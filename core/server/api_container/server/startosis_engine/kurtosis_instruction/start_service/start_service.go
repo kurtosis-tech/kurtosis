@@ -107,7 +107,7 @@ func (builtin *StartServiceCapabilities) FillPersistableAttributes(builder *encl
 	)
 }
 
-func (builtin *StartServiceCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
+func (builtin *StartServiceCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerator) error {
 	// start services doesn't affect the plan
 	return nil
 }

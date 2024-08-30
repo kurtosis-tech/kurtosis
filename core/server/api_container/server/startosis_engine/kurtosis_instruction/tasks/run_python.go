@@ -373,7 +373,7 @@ func (builtin *RunPythonCapabilities) FillPersistableAttributes(builder *enclave
 	builder.SetType(RunPythonBuiltinName)
 }
 
-func (builtin *RunPythonCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
+func (builtin *RunPythonCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerator) error {
 	err := plan.AddRunPython(builtin.run, builtin.description, builtin.returnValue, builtin.serviceConfig, builtin.storeSpecList, builtin.pythonArguments, builtin.packages)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred updating plan with run python")

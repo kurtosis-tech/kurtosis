@@ -214,7 +214,7 @@ func (builtin *ExecCapabilities) FillPersistableAttributes(builder *enclave_plan
 	builder.SetType(ExecBuiltinName)
 }
 
-func (builtin *ExecCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYaml) error {
+func (builtin *ExecCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYamlGenerator) error {
 	err := planYaml.AddExec(string(builtin.serviceName), builtin.description, builtin.returnValue, builtin.cmdList, builtin.acceptableCodes)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred updating plan with exec.")

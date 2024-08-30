@@ -8,7 +8,7 @@ const (
 	exec   TaskType = "exec"
 )
 
-type privatePlanYaml struct {
+type PlanYaml struct {
 	PackageId           string           `yaml:"packageId,omitempty"`
 	Services            []*Service       `yaml:"services,omitempty"`
 	FilesArtifacts      []*FilesArtifact `yaml:"filesArtifacts,omitempty"`

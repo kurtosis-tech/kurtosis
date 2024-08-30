@@ -107,7 +107,7 @@ func (builtin *StopServiceCapabilities) FillPersistableAttributes(builder *encla
 	)
 }
 
-func (builtin *StopServiceCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
+func (builtin *StopServiceCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerator) error {
 	// stop service does not affect the plan
 	return nil
 }

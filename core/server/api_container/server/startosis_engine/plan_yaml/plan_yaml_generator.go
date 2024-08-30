@@ -22,9 +22,9 @@ const (
 	outputFutureRefType    = "output"
 )
 
-// PlanYaml is a yaml representation of the effect of an Instructions Plan or sequence of instructions on the state of the Enclave.
-type PlanYaml struct {
-	privatePlanYaml *privatePlanYaml
+// PlanYamlGenerator is a yaml representation of the effect of an Instructions Plan or sequence of instructions on the state of the Enclave.
+type PlanYamlGenerator struct {
+	privatePlanYaml *PlanYaml
 
 	futureReferenceIndex map[string]string
 	filesArtifactIndex   map[string]*FilesArtifact
@@ -32,9 +32,9 @@ type PlanYaml struct {
 	imageSet             map[string]bool
 }
 
-func CreateEmptyPlan(packageId string) *PlanYaml {
-	return &PlanYaml{
-		privatePlanYaml: &privatePlanYaml{
+func CreateEmptyPlan(packageId string) *PlanYamlGenerator {
+	return &PlanYamlGenerator{
+		privatePlanYaml: &PlanYaml{
 			PackageId:           packageId,
 			Services:            []*Service{},
 			Tasks:               []*Task{},
@@ -49,7 +49,7 @@ func CreateEmptyPlan(packageId string) *PlanYaml {
 	}
 }
 
-func (planYaml *PlanYaml) GenerateYaml() (string, error) {
+func (planYaml *PlanYamlGenerator) GenerateYaml() (string, error) {
 	planYaml.AddImages()
 	yamlBytes, err := yaml.Marshal(planYaml.privatePlanYaml)
 	if err != nil {
@@ -58,7 +58,7 @@ func (planYaml *PlanYaml) GenerateYaml() (string, error) {
 	return string(yamlBytes), nil
 }
 
-func (planYaml *PlanYaml) AddService(
+func (planYaml *PlanYamlGenerator) AddService(
 	serviceName service.ServiceName,
 	serviceInfo *kurtosis_types.Service,
 	serviceConfig *service.ServiceConfig,
@@ -138,7 +138,7 @@ func (planYaml *PlanYaml) AddService(
 	return nil
 }
 
-func (planYaml *PlanYaml) AddRunSh(
+func (planYaml *PlanYamlGenerator) AddRunSh(
 	runCommand string,
 	description string,
 	returnValue *starlarkstruct.Struct,
@@ -213,7 +213,7 @@ func (planYaml *PlanYaml) AddRunSh(
 	return nil
 }
 
-func (planYaml *PlanYaml) AddRunPython(
+func (planYaml *PlanYamlGenerator) AddRunPython(
 	runCommand string,
 	description string,
 	returnValue *starlarkstruct.Struct,
@@ -293,7 +293,7 @@ func (planYaml *PlanYaml) AddRunPython(
 	return nil
 }
 
-func (planYaml *PlanYaml) AddExec(
+func (planYaml *PlanYamlGenerator) AddExec(
 	serviceName string,
 	description string,
 	returnValue *starlark.Dict,
@@ -345,7 +345,7 @@ func (planYaml *PlanYaml) AddExec(
 	return nil
 }
 
-func (planYaml *PlanYaml) AddRenderTemplates(filesArtifactName string, filepaths []string) error {
+func (planYaml *PlanYamlGenerator) AddRenderTemplates(filesArtifactName string, filepaths []string) error {
 	uuid := planYaml.generateUuid()
 	filesArtifactYaml := &FilesArtifact{} //nolint exhaustruct
 	filesArtifactYaml.Uuid = uuid
@@ -355,7 +355,7 @@ func (planYaml *PlanYaml) AddRenderTemplates(filesArtifactName string, filepaths
 	return nil
 }
 
-func (planYaml *PlanYaml) AddUploadFiles(filesArtifactName, locator string) error {
+func (planYaml *PlanYamlGenerator) AddUploadFiles(filesArtifactName, locator string) error {
 	uuid := planYaml.generateUuid()
 	filesArtifactYaml := &FilesArtifact{} //nolint exhauststruct
 	filesArtifactYaml.Uuid = uuid
@@ -365,7 +365,7 @@ func (planYaml *PlanYaml) AddUploadFiles(filesArtifactName, locator string) erro
 	return nil
 }
 
-func (planYaml *PlanYaml) AddStoreServiceFiles(filesArtifactName, locator string) error {
+func (planYaml *PlanYamlGenerator) AddStoreServiceFiles(filesArtifactName, locator string) error {
 	uuid := planYaml.generateUuid()
 	filesArtifactYaml := &FilesArtifact{} //nolint exhaustruct
 	filesArtifactYaml.Uuid = uuid
@@ -375,7 +375,7 @@ func (planYaml *PlanYaml) AddStoreServiceFiles(filesArtifactName, locator string
 	return nil
 }
 
-func (planYaml *PlanYaml) RemoveService(serviceName string) {
+func (planYaml *PlanYamlGenerator) RemoveService(serviceName string) {
 	for idx, service := range planYaml.privatePlanYaml.Services {
 		if service.Name == serviceName {
 			planYaml.privatePlanYaml.Services = slices.Delete(planYaml.privatePlanYaml.Services, idx, idx+1)
@@ -384,14 +384,14 @@ func (planYaml *PlanYaml) RemoveService(serviceName string) {
 	}
 }
 
-func (planYaml *PlanYaml) AddPackageDependencies(packageDependency map[string]bool) {
+func (planYaml *PlanYamlGenerator) AddPackageDependencies(packageDependency map[string]bool) {
 	for dependency := range packageDependency {
 		planYaml.privatePlanYaml.PackageDependencies = append(planYaml.privatePlanYaml.PackageDependencies, dependency)
 	}
 	slices.Sort(planYaml.privatePlanYaml.PackageDependencies)
 }
 
-func (planYaml *PlanYaml) AddImages() {
+func (planYaml *PlanYamlGenerator) AddImages() {
 	for img := range planYaml.imageSet {
 		planYaml.privatePlanYaml.Images = append(planYaml.privatePlanYaml.Images, img)
 	}
@@ -406,7 +406,7 @@ func (planYaml *PlanYaml) AddImages() {
 //     - create new files artifact
 //     - add the files artifact to the plan
 //     - add it to as a file mount accordingly
-func (planYaml *PlanYaml) getFileMountsFromFilesArtifacts(filesArtifactExpansion *service_directory.FilesArtifactsExpansion) []*FileMount {
+func (planYaml *PlanYamlGenerator) getFileMountsFromFilesArtifacts(filesArtifactExpansion *service_directory.FilesArtifactsExpansion) []*FileMount {
 	var fileMounts []*FileMount
 	if filesArtifactExpansion == nil {
 		return fileMounts
@@ -443,30 +443,30 @@ func (planYaml *PlanYaml) getFileMountsFromFilesArtifacts(filesArtifactExpansion
 	return fileMounts
 }
 
-func (planYaml *PlanYaml) addServiceYaml(service *Service) {
+func (planYaml *PlanYamlGenerator) addServiceYaml(service *Service) {
 	planYaml.privatePlanYaml.Services = append(planYaml.privatePlanYaml.Services, service)
 }
 
-func (planYaml *PlanYaml) addFilesArtifactYaml(filesArtifact *FilesArtifact) {
+func (planYaml *PlanYamlGenerator) addFilesArtifactYaml(filesArtifact *FilesArtifact) {
 	planYaml.filesArtifactIndex[filesArtifact.Name] = filesArtifact
 	planYaml.privatePlanYaml.FilesArtifacts = append(planYaml.privatePlanYaml.FilesArtifacts, filesArtifact)
 }
 
-func (planYaml *PlanYaml) addTaskYaml(task *Task) {
+func (planYaml *PlanYamlGenerator) addTaskYaml(task *Task) {
 	planYaml.privatePlanYaml.Tasks = append(planYaml.privatePlanYaml.Tasks, task)
 }
 
-func (planYaml *PlanYaml) addImage(img string) {
+func (planYaml *PlanYamlGenerator) addImage(img string) {
 	planYaml.imageSet[img] = true
 }
 
 // yaml future reference format: {{ kurtosis.<assigned uuid>.<future reference type }}
-func (planYaml *PlanYaml) storeFutureReference(uuid, futureReference, futureReferenceType string) {
+func (planYaml *PlanYamlGenerator) storeFutureReference(uuid, futureReference, futureReferenceType string) {
 	planYaml.futureReferenceIndex[futureReference] = fmt.Sprintf("{{ kurtosis.%v.%v }}", uuid, futureReferenceType)
 }
 
 // swapFutureReference replaces all future references in s, if any exist, with the value required for the yaml format
-func (planYaml *PlanYaml) swapFutureReference(s string) string {
+func (planYaml *PlanYamlGenerator) swapFutureReference(s string) string {
 	swappedString := s
 	for futureRef, yamlFutureRef := range planYaml.futureReferenceIndex {
 		swappedString = strings.Replace(swappedString, futureRef, yamlFutureRef, -1) // -1 to swap all instances of [futureRef]
@@ -474,7 +474,7 @@ func (planYaml *PlanYaml) swapFutureReference(s string) string {
 	return swappedString
 }
 
-func (planYaml *PlanYaml) generateUuid() string {
+func (planYaml *PlanYamlGenerator) generateUuid() string {
 	planYaml.latestUuid++
 	return strconv.Itoa(planYaml.latestUuid)
 }

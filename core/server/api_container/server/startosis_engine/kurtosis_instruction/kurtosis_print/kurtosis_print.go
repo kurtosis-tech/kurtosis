@@ -106,7 +106,7 @@ func (builtin *PrintCapabilities) FillPersistableAttributes(builder *enclave_pla
 	builder.SetType(PrintBuiltinName)
 }
 
-func (builitin *PrintCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
+func (builitin *PrintCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerator) error {
 	// print does not affect the plan
 	return nil
 }
