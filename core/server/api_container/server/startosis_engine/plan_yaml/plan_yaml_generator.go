@@ -29,15 +29,19 @@ type PlanYaml struct {
 	futureReferenceIndex map[string]string
 	filesArtifactIndex   map[string]*FilesArtifact
 	latestUuid           int
+	images               []string
+	packageDependencies  []string
 }
 
 func CreateEmptyPlan(packageId string) *PlanYaml {
 	return &PlanYaml{
 		privatePlanYaml: &privatePlanYaml{
-			PackageId:      packageId,
-			Services:       []*Service{},
-			Tasks:          []*Task{},
-			FilesArtifacts: []*FilesArtifact{},
+			PackageId:           packageId,
+			Services:            []*Service{},
+			Tasks:               []*Task{},
+			FilesArtifacts:      []*FilesArtifact{},
+			Images:              []string{},
+			PackageDependencies: []string{},
 		},
 		futureReferenceIndex: map[string]string{},
 		filesArtifactIndex:   map[string]*FilesArtifact{},
@@ -84,6 +88,8 @@ func (planYaml *PlanYaml) AddService(
 
 	imageYaml := &ImageSpec{} //nolint:exhaustruct
 	imageYaml.ImageName = serviceConfig.GetContainerImageName()
+	planYaml.addImage(imageYaml.ImageName)
+
 	imageYaml.BuildContextLocator = imageBuildContextLocator
 	imageYaml.TargetStage = imageTargetStage
 	imageYaml.Registry = imageRegistryAddress
@@ -168,6 +174,7 @@ func (planYaml *PlanYaml) AddRunSh(
 
 	taskYaml.RunCmd = []string{planYaml.swapFutureReference(runCommand)}
 	taskYaml.Image = serviceConfig.GetContainerImageName()
+	planYaml.addImage(taskYaml.Image)
 
 	var envVars []*EnvironmentVariable
 	for key, val := range serviceConfig.GetEnvVars() {
@@ -243,6 +250,7 @@ func (planYaml *PlanYaml) AddRunPython(
 
 	taskYaml.RunCmd = []string{planYaml.swapFutureReference(runCommand)}
 	taskYaml.Image = serviceConfig.GetContainerImageName()
+	planYaml.addImage(taskYaml.Image)
 
 	var envVars []*EnvironmentVariable
 	for key, val := range serviceConfig.GetEnvVars() {
@@ -375,6 +383,10 @@ func (planYaml *PlanYaml) RemoveService(serviceName string) {
 	}
 }
 
+func (planYaml *PlanYaml) AddPackageDependencies(packageDependency []string) {
+	planYaml.privatePlanYaml.PackageDependencies = append(planYaml.privatePlanYaml.PackageDependencies, packageDependency...)
+}
+
 // getFileMountsFromFilesArtifacts turns filesArtifactExpansions into FileMount's
 // file mounts have two cases:
 //  1. the referenced files artifact already exists in the planYaml, in which case add the referenced files artifact to the proper filepath as a file mount
@@ -431,6 +443,10 @@ func (planYaml *PlanYaml) addFilesArtifactYaml(filesArtifact *FilesArtifact) {
 
 func (planYaml *PlanYaml) addTaskYaml(task *Task) {
 	planYaml.privatePlanYaml.Tasks = append(planYaml.privatePlanYaml.Tasks, task)
+}
+
+func (planYaml *PlanYaml) addImage(img string) {
+	planYaml.privatePlanYaml.Images = append(planYaml.privatePlanYaml.Images, img)
 }
 
 // yaml future reference format: {{ kurtosis.<assigned uuid>.<future reference type }}

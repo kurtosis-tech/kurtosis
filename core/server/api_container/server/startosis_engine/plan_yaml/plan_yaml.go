@@ -9,11 +9,12 @@ const (
 )
 
 type privatePlanYaml struct {
-	PackageId              string                 `yaml:"packageId,omitempty"`
-	Services               []*Service             `yaml:"services,omitempty"`
-	FilesArtifacts         []*FilesArtifact       `yaml:"filesArtifacts,omitempty"`
-	Tasks                  []*Task                `yaml:"tasks,omitempty"`
-	PackageDependencyGraph PackageDependencyGraph `yaml:"packagDependencyGraph,omitempty"`
+	PackageId           string           `yaml:"packageId,omitempty"`
+	Services            []*Service       `yaml:"services,omitempty"`
+	FilesArtifacts      []*FilesArtifact `yaml:"filesArtifacts,omitempty"`
+	Tasks               []*Task          `yaml:"tasks,omitempty"`
+	Images              []string         `yaml:"images,omitempty"`
+	PackageDependencies []string         `yaml:"packageDependencies,omitempty"`
 }
 
 // Service represents a service in the system.
