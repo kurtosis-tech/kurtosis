@@ -49,9 +49,22 @@ func CreateEmptyPlan(packageId string) *PlanYamlGenerator {
 	}
 }
 
-func (planYaml *PlanYamlGenerator) GenerateYaml() (string, error) {
+func (planYaml *PlanYamlGenerator) GenerateYaml(dependenciesOnly bool) (string, error) {
 	planYaml.AddImages()
-	yamlBytes, err := yaml.Marshal(planYaml.privatePlanYaml)
+
+	var planYamlCopy PlanYaml
+	planYamlCopy = *planYaml.privatePlanYaml
+	if dependenciesOnly {
+		planYamlCopy = PlanYaml{
+			PackageId:           "",
+			Services:            nil,
+			FilesArtifacts:      nil,
+			Tasks:               nil,
+			Images:              planYaml.privatePlanYaml.Images,
+			PackageDependencies: planYaml.privatePlanYaml.PackageDependencies,
+		}
+	}
+	yamlBytes, err := yaml.Marshal(planYamlCopy)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred generating plan yaml.")
 	}

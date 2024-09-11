@@ -350,10 +350,6 @@ func (interpreter *StartosisInterpreter) interpretInternal(
 	return globalVariables, nil
 }
 
-func getModulePrefix(moduleId string) string {
-	return strings.Join(strings.SplitN(moduleId, "/", 4)[:3], "/")
-}
-
 func (interpreter *StartosisInterpreter) buildBindings(
 	packageId string,
 	thread *starlark.Thread,
@@ -393,6 +389,16 @@ func (interpreter *StartosisInterpreter) buildBindings(
 		predeclared[kurtosisTypeConstructors.Name()] = kurtosisTypeConstructors
 	}
 	return &predeclared, nil
+}
+
+const (
+	moduleIdSeperator     = "/"
+	numModuleIdSeparators = 4
+	prefixNum             = 3
+)
+
+func getModulePrefix(moduleId string) string {
+	return strings.Join(strings.SplitN(moduleId, moduleIdSeperator, numModuleIdSeparators)[:prefixNum], moduleIdSeperator)
 }
 
 func findFirstEqualInstructionPastIndex(currentEnclaveInstructionsList []*enclave_plan_persistence.EnclavePlanInstruction, naiveInstructionsList []*instructions_plan.ScheduledInstruction, minIndex int) int {
