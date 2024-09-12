@@ -94,7 +94,8 @@ const (
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
 
-	kurtosisYMLFilePath = "kurtosis.yml"
+	kurtosisYMLFilePath  = "kurtosis.yml"
+	kurtosisYMLFilePerms = 0644
 
 	portMappingSeparatorForLogs = ", "
 
@@ -888,7 +889,7 @@ func pullPackagesLocally(packageDependencies []string) (map[string]string, error
 }
 
 func updateKurtosisYamlWithReplaceDirectives(packageNamesToLocalFilepaths map[string]string) error {
-	file, err := os.OpenFile("kurtosis.yml", os.O_WRONLY|os.O_APPEND, 0644)
+	file, err := os.OpenFile(kurtosisYMLFilePath, os.O_WRONLY|os.O_APPEND, kurtosisYMLFilePerms)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred opening kurtosis.yml file.")
 	}
