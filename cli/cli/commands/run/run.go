@@ -876,8 +876,12 @@ func pullPackagesLocally(packageDependencies []string) (map[string]string, error
 			Tags:              0,
 			InsecureSkipTLS:   false,
 			CABundle:          nil,
-			ProxyOptions:      transport.ProxyOptions{},
-			Shared:            false,
+			ProxyOptions: transport.ProxyOptions{
+				URL:      "",
+				Username: "",
+				Password: "",
+			},
+			Shared: false,
 		})
 		if err != nil && !errors.Is(err, git.ErrRepositoryAlreadyExists) {
 			return nil, stacktrace.Propagate(err, "An error occurred cloning package '%s' to '%s'.", dependency, localPackagePath)
