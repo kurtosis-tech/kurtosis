@@ -3,6 +3,7 @@ package run
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport"
@@ -838,7 +839,8 @@ func pullImagesLocally(ctx context.Context, images []string) error {
 }
 
 func pullPackagesLocally(packageDependencies []string) (map[string]string, error) {
-	var localPackagesToRelativeFilepaths map[string]string
+	localPackagesToRelativeFilepaths := map[string]string{}
+
 	wd, err := os.Getwd()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting current working directory.")
@@ -848,14 +850,17 @@ func pullPackagesLocally(packageDependencies []string) (map[string]string, error
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting rel path between '%v' and '%v'.", wd, relParentCwd)
 	}
-	logrus.Infof("current wid: %v", wd)
-	logrus.Infof("rel parent wd: %v", relParentCwd)
-	for _, dep := range packageDependencies {
-		logrus.Infof("Pulling package: %v", dep)
-		// assume dep doesn't have http:// prefix or .git suffix
-		repoUrl := fmt.Sprintf("%s%s%s", "http://", dep, ".git")
+
+	for _, dependency := range packageDependencies {
+		packageIdParts := strings.Split(dependency, "/")
+		packageName := packageIdParts[len(packageIdParts)-1]
+		logrus.Infof("Pulling package: %v", dependency)
+
+		// assume dependency doesn't have http:// prefix or .git suffix
+		repoUrl := fmt.Sprintf("%s%s%s", "http://", dependency, ".git")
+		localPackagePath := fmt.Sprintf("%s/%s", parentCwd, packageName)
 		logrus.Infof("repo url: %v", repoUrl)
-		_, err := git.PlainClone(relParentCwd, false, &git.CloneOptions{
+		_, err := git.PlainClone(localPackagePath, false, &git.CloneOptions{
 			URL:               repoUrl,
 			Auth:              nil,
 			RemoteName:        "",
@@ -873,33 +878,33 @@ func pullPackagesLocally(packageDependencies []string) (map[string]string, error
 			ProxyOptions:      transport.ProxyOptions{},
 			Shared:            false,
 		})
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred cloning package locally.")
+		if err != nil && !errors.Is(err, git.ErrRepositoryAlreadyExists) {
+			return nil, stacktrace.Propagate(err, "An error occurred cloning package '%s' to '%s'.", dependency, localPackagePath)
 		}
-		parts := strings.Split(dep, "/")
-		packageName := parts[len(parts)-1]
-		localPackagesToRelativeFilepaths[dep] = fmt.Sprintf("%s/%s", relParentCwd, packageName)
+		localPackagesToRelativeFilepaths[dependency] = fmt.Sprintf("%s/%s", relParentCwd, packageName)
 	}
+
 	return localPackagesToRelativeFilepaths, nil
 }
 
 func updateKurtosisYamlWithReplaceDirectives(packageNamesToLocalFilepaths map[string]string) error {
-	file, err := os.OpenFile("kurtosis.yml", os.O_APPEND, 0644)
+	file, err := os.OpenFile("kurtosis.yml", os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred opening kurtosis.yml file.")
 	}
 	defer file.Close()
 
-	_, err = file.Write([]byte("replace:"))
+	_, err = file.Write([]byte("replace:\n"))
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred writing 'replace:' to kurtosis.yml")
 	}
 
 	for packageName, localFilepath := range packageNamesToLocalFilepaths {
-		_, err := file.Write([]byte(fmt.Sprintf("\t %s: %s", packageName, localFilepath)))
+		_, err := file.Write([]byte(fmt.Sprintf("  %s: %s\n", packageName, localFilepath)))
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred writing replace directive for '%v: %v'", packageName, localFilepath)
 		}
 	}
+
 	return nil
 }
