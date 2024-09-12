@@ -19,7 +19,7 @@ const (
 
 /*
 	NewImportModule returns a sequential (not parallel) implementation of an equivalent or `load` in Starlark
-	This function returns a starlarkstruct.Module object that can then me used to get variables and call functions from the loaded module.
+	This function returns a starlarkstruct.Module object that can then be used to get variables and call functions from the loaded module.
 
 How does the returned function work?
 1. The function first checks whether a module is currently loading. If so then there's cycle and it errors immediately,

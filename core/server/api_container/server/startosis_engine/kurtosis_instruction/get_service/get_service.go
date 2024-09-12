@@ -103,7 +103,7 @@ func (builtin *GetServiceCapabilities) FillPersistableAttributes(builder *enclav
 	builder.SetType(GetServiceBuiltinName).AddServiceName(builtin.serviceName)
 }
 
-func (builtin *GetServiceCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYaml) error {
+func (builtin *GetServiceCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYamlGenerator) error {
 	// get service does not affect the plan
 	return nil
 }

@@ -27,6 +27,7 @@ const (
 	// basepath/enclave uuid/service uuid <filetype>
 	PerFileFmtStr = "%s%s/%s%s"
 
+	// TODO: remove these from consts once PerWeekFileLayout is fully merged
 	// basepath /year/week
 	PerWeekDirPathStr = "%s%s/%s/"
 

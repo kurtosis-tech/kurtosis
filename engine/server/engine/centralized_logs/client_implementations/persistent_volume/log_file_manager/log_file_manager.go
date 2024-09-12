@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/file_layout"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_consts"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
@@ -28,6 +29,8 @@ type LogFileManager struct {
 
 	filesystem volume_filesystem.VolumeFilesystem
 
+	fileLayout file_layout.LogFileLayout
+
 	time logs_clock.LogsClock
 
 	logRetentionPeriodInWeeks int
@@ -36,11 +39,13 @@ type LogFileManager struct {
 func NewLogFileManager(
 	kurtosisBackend backend_interface.KurtosisBackend,
 	filesystem volume_filesystem.VolumeFilesystem,
+	fileLayout file_layout.LogFileLayout,
 	time logs_clock.LogsClock,
 	logRetentionPeriodInWeeks int) *LogFileManager {
 	return &LogFileManager{
 		kurtosisBackend:           kurtosisBackend,
 		filesystem:                filesystem,
+		fileLayout:                fileLayout,
 		time:                      time,
 		logRetentionPeriodInWeeks: logRetentionPeriodInWeeks,
 	}
@@ -51,12 +56,12 @@ func (manager *LogFileManager) StartLogFileManagement(ctx context.Context) {
 	// Schedule thread for removing log files beyond retention period
 	go func() {
 		logrus.Debugf("Scheduling log removal for log retention every '%v' hours...", volume_consts.RemoveLogsWaitHours)
-		manager.RemoveLogsBeyondRetentionPeriod()
+		manager.RemoveLogsBeyondRetentionPeriod(ctx)
 
 		logRemovalTicker := time.NewTicker(volume_consts.RemoveLogsWaitHours)
 		for range logRemovalTicker.C {
 			logrus.Debug("Attempting to remove old log file paths...")
-			manager.RemoveLogsBeyondRetentionPeriod()
+			manager.RemoveLogsBeyondRetentionPeriod(ctx)
 		}
 	}()
 
@@ -90,8 +95,6 @@ func (manager *LogFileManager) StartLogFileManagement(ctx context.Context) {
 func (manager *LogFileManager) CreateLogFiles(ctx context.Context) error {
 	var err error
 
-	year, week := manager.time.Now().ISOWeek()
-
 	enclaveToServicesMap, err := manager.getEnclaveAndServiceInfo(ctx)
 	if err != nil {
 		// already wrapped with propagate
@@ -104,18 +107,18 @@ func (manager *LogFileManager) CreateLogFiles(ctx context.Context) error {
 			serviceNameStr := string(serviceRegistration.GetName())
 			serviceShortUuidStr := uuid_generator.ShortenedUUIDString(serviceUuidStr)
 
-			serviceUuidFilePathStr := getFilepathStr(year, week, string(enclaveUuid), serviceUuidStr)
+			serviceUuidFilePathStr := manager.fileLayout.GetLogFilePath(manager.time.Now(), string(enclaveUuid), serviceUuidStr)
 			if err = manager.createLogFileIdempotently(serviceUuidFilePathStr); err != nil {
 				return err
 			}
 
-			serviceNameFilePathStr := getFilepathStr(year, week, string(enclaveUuid), serviceNameStr)
+			serviceNameFilePathStr := manager.fileLayout.GetLogFilePath(manager.time.Now(), string(enclaveUuid), serviceNameStr)
 			if err = manager.createSymlinkLogFile(serviceUuidFilePathStr, serviceNameFilePathStr); err != nil {
 				return err
 			}
 			logrus.Tracef("Created symlinked log file: '%v'", serviceNameFilePathStr)
 
-			serviceShortUuidFilePathStr := getFilepathStr(year, week, string(enclaveUuid), serviceShortUuidStr)
+			serviceShortUuidFilePathStr := manager.fileLayout.GetLogFilePath(manager.time.Now(), string(enclaveUuid), serviceShortUuidStr)
 			if err = manager.createSymlinkLogFile(serviceUuidFilePathStr, serviceShortUuidFilePathStr); err != nil {
 				return err
 			}
@@ -127,16 +130,56 @@ func (manager *LogFileManager) CreateLogFiles(ctx context.Context) error {
 }
 
 // RemoveLogsBeyondRetentionPeriod implements the Job cron interface. It removes logs a week older than the log retention period.
-func (manager *LogFileManager) RemoveLogsBeyondRetentionPeriod() {
-	// compute the next oldest week
-	year, weekToRemove := manager.time.Now().Add(time.Duration(-manager.logRetentionPeriodInWeeks) * oneWeek).ISOWeek()
-
-	// remove directory for that week
-	oldLogsDirPath := getLogsDirPathForWeek(year, weekToRemove)
-	if err := manager.filesystem.RemoveAll(oldLogsDirPath); err != nil {
-		logrus.Warnf("An error occurred removing old logs at the following path '%v': %v\n", oldLogsDirPath, err)
+func (manager *LogFileManager) RemoveLogsBeyondRetentionPeriod(ctx context.Context) {
+	var pathsToRemove []string
+	enclaveToServicesMap, err := manager.getEnclaveAndServiceInfo(ctx)
+	if err != nil {
+		logrus.Errorf("An error occurred getting enclave and service info while removing logs beyond retention: %v", err)
+		return
 	}
-	logrus.Debugf("Removed logs beyond retention period at the following path: '%v'", oldLogsDirPath)
+	for enclaveUuid, serviceRegistrations := range enclaveToServicesMap {
+		for _, serviceRegistration := range serviceRegistrations {
+			serviceUuidStr := string(serviceRegistration.GetUUID())
+			serviceNameStr := string(serviceRegistration.GetName())
+			serviceShortUuidStr := uuid_generator.ShortenedUUIDString(serviceUuidStr)
+
+			retentionPeriod := time.Duration(manager.logRetentionPeriodInWeeks) * oneWeek
+			oldServiceLogFilesByUuid, err := manager.fileLayout.GetLogFilePaths(manager.filesystem, retentionPeriod, 1, string(enclaveUuid), serviceUuidStr)
+			if err != nil {
+				logrus.Errorf("An error occurred getting log file paths for service '%v' in enclave '%v' logs beyond retention: %v", serviceUuidStr, enclaveUuid, err)
+			} else {
+				pathsToRemove = append(pathsToRemove, oldServiceLogFilesByUuid...)
+			}
+
+			oldServiceLogFilesByName, err := manager.fileLayout.GetLogFilePaths(manager.filesystem, retentionPeriod, 1, string(enclaveUuid), serviceNameStr)
+			if err != nil {
+				logrus.Errorf("An error occurred getting log file paths for service '%v' in enclave '%v' logs beyond retention: %v", serviceNameStr, enclaveUuid, err)
+			} else {
+				pathsToRemove = append(pathsToRemove, oldServiceLogFilesByName...)
+			}
+
+			oldServiceLogFilesByShortUuid, err := manager.fileLayout.GetLogFilePaths(manager.filesystem, retentionPeriod, 1, string(enclaveUuid), serviceShortUuidStr)
+			if err != nil {
+				logrus.Errorf("An error occurred getting log file paths for service '%v' in enclave '%v' logs beyond retention: %v", serviceShortUuidStr, enclaveUuid, err)
+			} else {
+				pathsToRemove = append(pathsToRemove, oldServiceLogFilesByShortUuid...)
+			}
+		}
+	}
+
+	successfullyRemovedLogFiles := []string{}
+	failedToRemoveLogFiles := []string{}
+	for _, pathToRemove := range pathsToRemove {
+		if err := manager.filesystem.Remove(pathToRemove); err != nil {
+			logrus.Warnf("An error occurred removing old log file at the following path '%v': %v\n", pathsToRemove, err)
+			failedToRemoveLogFiles = append(failedToRemoveLogFiles, pathToRemove)
+		}
+		successfullyRemovedLogFiles = append(successfullyRemovedLogFiles, pathToRemove)
+	}
+	logrus.Debugf("Successfully removed the following logs beyond retention period at the following path: '%v'", successfullyRemovedLogFiles)
+	if len(failedToRemoveLogFiles) > 0 {
+		logrus.Errorf("Failed to remove the following logs beyond retention period at the following path: '%v'", failedToRemoveLogFiles)
+	}
 }
 
 func (manager *LogFileManager) RemoveAllLogs() error {
@@ -208,13 +251,6 @@ func (manager *LogFileManager) createSymlinkLogFile(targetLogFilePath, symlinkLo
 		return stacktrace.Propagate(err, "An error occurred creating a symlink file path '%v' for target file path '%v'.", targetLogFilePath, targetLogFilePath)
 	}
 	return nil
-}
-
-// TODO: Implement a FilePath Builder to centralize log file path creation across the entire module
-// creates a filepath of format /<filepath_base>/year/week/<enclave>/serviceIdentifier.<filetype>
-func getFilepathStr(year, week int, enclaveUuid, serviceIdentifier string) string {
-	formattedWeekNum := fmt.Sprintf("%02d", week)
-	return fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), formattedWeekNum, enclaveUuid, serviceIdentifier, volume_consts.Filetype)
 }
 
 // creates a directory path of format /<filepath_base>/year/week/<enclave>/

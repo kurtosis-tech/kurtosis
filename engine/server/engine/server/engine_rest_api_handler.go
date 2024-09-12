@@ -3,9 +3,9 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs"
 	"net/http"
 
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_file_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/mapping/to_http"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/types"
@@ -23,7 +23,7 @@ type EngineRuntime struct {
 
 	EnclaveManager *enclave_manager.EnclaveManager
 
-	LogFileManager *log_file_manager.LogFileManager
+	LogsDbClient centralized_logs.LogsDatabaseClient
 
 	MetricsClient metrics_client.MetricsClient
 }
@@ -41,7 +41,7 @@ func (engine EngineRuntime) DeleteEnclaves(ctx context.Context, request api.Dele
 		}, nil
 	}
 	if removeAll {
-		if err = engine.LogFileManager.RemoveAllLogs(); err != nil {
+		if err = engine.LogsDbClient.RemoveAllLogs(); err != nil {
 			response := internalErrorResponseInfof(err, "An error occurred removing all logs")
 			return api.DeleteEnclavesdefaultJSONResponse{
 				Body:       response,

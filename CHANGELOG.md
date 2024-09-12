@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.2.0](https://github.com/kurtosis-tech/kurtosis/compare/1.1.0...1.2.0) (2024-08-29)
+
+
+### Features
+
+* [log retention improvements pt. 2] add flag for configuring log retention period ([#2536](https://github.com/kurtosis-tech/kurtosis/issues/2536)) ([185dc6f](https://github.com/kurtosis-tech/kurtosis/commit/185dc6fe60f47495f4e314a012e2d87d8e28f979))
+
+## [1.1.0](https://github.com/kurtosis-tech/kurtosis/compare/1.0.0...1.1.0) (2024-08-16)
+
+
+### Features
+
+* log retention improvements pt. 1: introduce file layout interface ([#2534](https://github.com/kurtosis-tech/kurtosis/issues/2534)) ([a494278](https://github.com/kurtosis-tech/kurtosis/commit/a4942781038330bd06d6dc3e9bc4c4550d2048dc))
+* make kurtosis service logs faster ([#2525](https://github.com/kurtosis-tech/kurtosis/issues/2525)) ([d6b246a](https://github.com/kurtosis-tech/kurtosis/commit/d6b246aebe36d81dfca38e6da7fb3bff8d22e36d))
+
 ## [1.0.0](https://github.com/kurtosis-tech/kurtosis/compare/0.90.1...1.0.0) (2024-07-03)
 
 

@@ -67,6 +67,8 @@ type EngineServerArgs struct {
 
 	// Enclave manager UI domain name
 	Domain string `json:"domain"`
+
+	LogRetentionPeriod string `json:"logRetentionPeriod"`
 }
 
 var skipValidation = map[string]bool{
@@ -125,6 +127,7 @@ func NewEngineServerArgs(
 	allowedCORSOrigins *[]string,
 	restartAPIContainers bool,
 	domain string,
+	logRetentionPeriod string,
 ) (*EngineServerArgs, error) {
 	if enclaveEnvVars == "" {
 		enclaveEnvVars = emptyJsonField
@@ -146,6 +149,7 @@ func NewEngineServerArgs(
 		AllowedCORSOrigins:          allowedCORSOrigins,
 		RestartAPIContainers:        restartAPIContainers,
 		Domain:                      domain,
+		LogRetentionPeriod:          logRetentionPeriod,
 	}
 	if err := result.validate(); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred validating engine server args")

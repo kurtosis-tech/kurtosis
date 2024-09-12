@@ -8,7 +8,9 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/file_layout"
 	"io/fs"
+	"math"
 	"net"
 	"net/http"
 	"os"
@@ -17,8 +19,6 @@ import (
 	"runtime"
 	"strings"
 	"time"
-
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_consts"
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings/kurtosis_engine_rpc_api_bindingsconnect"
@@ -63,6 +63,7 @@ const (
 	successExitCode = 0
 	failureExitCode = 1
 
+	numHoursInAWeek           = 7 * 24
 	grpcServerStopGracePeriod = 5 * time.Second
 
 	forceColors   = true
@@ -175,13 +176,12 @@ func runMain() error {
 		return stacktrace.Propagate(err, "An error occurred getting the Kurtosis backend for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
 	}
 
-	logsDatabaseClient := getLogsDatabaseClient(serverArgs.KurtosisBackendType, kurtosisBackend)
-
-	// TODO: Move log file management into LogsDatabaseClient
-	osFs := volume_filesystem.NewOsVolumeFilesystem()
-	realTime := logs_clock.NewRealClock()
-	logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, osFs, realTime, volume_consts.LogRetentionPeriodInWeeks)
-	logFileManager.StartLogFileManagement(ctx)
+	logRetentionPeriodDuration, err := time.ParseDuration(serverArgs.LogRetentionPeriod)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred parsing a duration from provided log retention period string: %v", serverArgs.LogRetentionPeriod)
+	}
+	logsDatabaseClient := getLogsDatabaseClient(serverArgs.KurtosisBackendType, kurtosisBackend, logRetentionPeriodDuration)
+	logsDatabaseClient.StartLogFileManagement(ctx)
 
 	enclaveManager, err := getEnclaveManager(
 		kurtosisBackend,
@@ -189,7 +189,7 @@ func runMain() error {
 		serverArgs.ImageVersionTag,
 		serverArgs.PoolSize,
 		serverArgs.EnclaveEnvVars,
-		logFileManager,
+		logsDatabaseClient,
 		serverArgs.MetricsUserID,
 		serverArgs.DidUserAcceptSendingMetrics,
 		serverArgs.IsCI,
@@ -290,7 +290,6 @@ func runMain() error {
 			serverArgs,
 			enclaveManager,
 			logsDatabaseClient,
-			logFileManager,
 			metricsClient,
 		)
 		if err != nil {
@@ -306,7 +305,6 @@ func runMain() error {
 		serverArgs.MetricsUserID,
 		serverArgs.DidUserAcceptSendingMetrics,
 		logsDatabaseClient,
-		logFileManager,
 		metricsClient)
 	apiPath, handler := kurtosis_engine_rpc_api_bindingsconnect.NewEngineServiceHandler(engineConnectServer)
 	defer func() {
@@ -329,7 +327,7 @@ func getEnclaveManager(
 	engineVersion string,
 	poolSize uint8,
 	enclaveEnvVars string,
-	enclaveLogFileManager *log_file_manager.LogFileManager,
+	logsDbClient centralized_logs.LogsDatabaseClient,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 	isCI bool,
@@ -358,7 +356,7 @@ func getEnclaveManager(
 		engineVersion,
 		poolSize,
 		enclaveEnvVars,
-		enclaveLogFileManager,
+		logsDbClient,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
 		isCI,
@@ -407,14 +405,23 @@ func getKurtosisBackend(ctx context.Context, kurtosisBackendType args.KurtosisBa
 }
 
 // if cluster is docker, return logs client for centralized logging, otherwise use logs db of kurtosis backend which uses k8s logs under the hood
-func getLogsDatabaseClient(kurtosisBackendType args.KurtosisBackendType, kurtosisBackend backend_interface.KurtosisBackend) centralized_logs.LogsDatabaseClient {
+func getLogsDatabaseClient(kurtosisBackendType args.KurtosisBackendType, kurtosisBackend backend_interface.KurtosisBackend, logRetentionPeriod time.Duration) centralized_logs.LogsDatabaseClient {
 	var logsDatabaseClient centralized_logs.LogsDatabaseClient
 	switch kurtosisBackendType {
 	case args.KurtosisBackendType_Docker:
-		osFs := volume_filesystem.NewOsVolumeFilesystem()
 		realTime := logs_clock.NewRealClock()
-		perWeekStreamLogsStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(realTime, volume_consts.LogRetentionPeriodInWeeks)
-		logsDatabaseClient = persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs, perWeekStreamLogsStrategy)
+
+		logRetentionPeriodInWeeks := int(math.Ceil(logRetentionPeriod.Hours() / float64(numHoursInAWeek)))
+		if logRetentionPeriodInWeeks < 1 {
+			logRetentionPeriodInWeeks = 1
+		}
+		logrus.Infof("Setting log retention period to '%v' week(s).", logRetentionPeriodInWeeks)
+		osFs := volume_filesystem.NewOsVolumeFilesystem()
+		perWeekFileLayout := file_layout.NewPerWeekFileLayout(realTime)
+		logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, osFs, perWeekFileLayout, realTime, logRetentionPeriodInWeeks)
+		perWeekStreamLogsStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(realTime, logRetentionPeriodInWeeks)
+
+		logsDatabaseClient = persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs, logFileManager, perWeekStreamLogsStrategy)
 	case args.KurtosisBackendType_Kubernetes:
 		logsDatabaseClient = kurtosis_backend.NewKurtosisBackendLogsDatabaseClient(kurtosisBackend)
 	}
@@ -436,7 +443,6 @@ func restApiServer(
 	serverArgs *args.EngineServerArgs,
 	enclave_manager *enclave_manager.EnclaveManager,
 	logsDatabaseClient centralized_logs.LogsDatabaseClient,
-	logFileManager *log_file_manager.LogFileManager,
 	metricsClient metrics_client.MetricsClient,
 ) error {
 
@@ -464,7 +470,7 @@ func restApiServer(
 	engineRuntime := restApi.EngineRuntime{
 		ImageVersionTag: serverArgs.ImageVersionTag,
 		EnclaveManager:  enclave_manager,
-		LogFileManager:  logFileManager,
+		LogsDbClient:    logsDatabaseClient,
 		MetricsClient:   metricsClient,
 	}
 	engineApi.RegisterHandlers(echoApiRouter, engineApi.NewStrictHandler(engineRuntime, nil))
@@ -481,7 +487,6 @@ func restApiServer(
 		MetricsUserID:               serverArgs.MetricsUserID,
 		DidUserAcceptSendingMetrics: serverArgs.DidUserAcceptSendingMetrics,
 		LogsDatabaseClient:          logsDatabaseClient,
-		LogFileManager:              logFileManager,
 		MetricsClient:               metricsClient,
 		AsyncStarlarkLogs:           asyncStarlarkLogs,
 		CorsConfig:                  *corsConfig,

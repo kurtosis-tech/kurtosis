@@ -5,6 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_file_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/stream_logs_strategy"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
@@ -22,17 +23,21 @@ type persistentVolumeLogsDatabaseClient struct {
 
 	filesystem volume_filesystem.VolumeFilesystem
 
+	logFileManager *log_file_manager.LogFileManager
+
 	streamStrategy stream_logs_strategy.StreamLogsStrategy
 }
 
 func NewPersistentVolumeLogsDatabaseClient(
 	kurtosisBackend backend_interface.KurtosisBackend,
 	filesystem volume_filesystem.VolumeFilesystem,
+	logFileManager *log_file_manager.LogFileManager,
 	streamStrategy stream_logs_strategy.StreamLogsStrategy,
 ) *persistentVolumeLogsDatabaseClient {
 	return &persistentVolumeLogsDatabaseClient{
 		kurtosisBackend: kurtosisBackend,
 		filesystem:      filesystem,
+		logFileManager:  logFileManager,
 		streamStrategy:  streamStrategy,
 	}
 }
@@ -63,7 +68,8 @@ func (client *persistentVolumeLogsDatabaseClient) StreamUserServiceLogs(
 	streamErrChan := make(chan error)
 
 	// this channel will return the user service log lines by service UUID
-	logsByKurtosisUserServiceUuidChan := make(chan map[service.ServiceUUID][]logline.LogLine)
+	logLineSender := logline.NewLogLineSender()
+	logsByKurtosisUserServiceUuidChan := logLineSender.GetLogsChannel()
 
 	wgSenders := &sync.WaitGroup{}
 	for serviceUuid := range userServiceUuids {
@@ -71,7 +77,7 @@ func (client *persistentVolumeLogsDatabaseClient) StreamUserServiceLogs(
 		go client.streamServiceLogLines(
 			ctx,
 			wgSenders,
-			logsByKurtosisUserServiceUuidChan,
+			logLineSender,
 			streamErrChan,
 			enclaveUuid,
 			serviceUuid,
@@ -87,7 +93,11 @@ func (client *persistentVolumeLogsDatabaseClient) StreamUserServiceLogs(
 		//wait for stream go routine to end
 		wgSenders.Wait()
 
-		close(logsByKurtosisUserServiceUuidChan)
+		// send all buffered log lines
+		logLineSender.Flush()
+
+		// wait until the channel has been fully read/empty before closing it
+		closeChannelWhenEmpty(logsByKurtosisUserServiceUuidChan)
 		close(streamErrChan)
 
 		//then cancel the context
@@ -122,6 +132,18 @@ func (client *persistentVolumeLogsDatabaseClient) FilterExistingServiceUuids(
 	return filteredServiceUuidsSet, nil
 }
 
+func (client *persistentVolumeLogsDatabaseClient) StartLogFileManagement(ctx context.Context) {
+	client.logFileManager.StartLogFileManagement(ctx)
+}
+
+func (client *persistentVolumeLogsDatabaseClient) RemoveEnclaveLogs(enclaveUuid string) error {
+	return client.logFileManager.RemoveEnclaveLogs(enclaveUuid)
+}
+
+func (client *persistentVolumeLogsDatabaseClient) RemoveAllLogs() error {
+	return client.logFileManager.RemoveAllLogs()
+}
+
 // ====================================================================================================
 //
 //	Private helper functions
@@ -130,7 +152,7 @@ func (client *persistentVolumeLogsDatabaseClient) FilterExistingServiceUuids(
 func (client *persistentVolumeLogsDatabaseClient) streamServiceLogLines(
 	ctx context.Context,
 	wgSenders *sync.WaitGroup,
-	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
+	logLineSender *logline.LogLineSender,
 	streamErrChan chan error,
 	enclaveUuid enclave.EnclaveUUID,
 	serviceUuid service.ServiceUUID,
@@ -143,7 +165,7 @@ func (client *persistentVolumeLogsDatabaseClient) streamServiceLogLines(
 	client.streamStrategy.StreamLogs(
 		ctx,
 		client.filesystem,
-		logsByKurtosisUserServiceUuidChan,
+		logLineSender,
 		streamErrChan,
 		enclaveUuid,
 		serviceUuid,
@@ -151,4 +173,13 @@ func (client *persistentVolumeLogsDatabaseClient) streamServiceLogLines(
 		shouldFollowLogs,
 		shouldReturnAllLogs,
 		numLogLines)
+}
+
+func closeChannelWhenEmpty(logsChan chan map[service.ServiceUUID][]logline.LogLine) {
+	for {
+		if len(logsChan) == 0 {
+			close(logsChan)
+			return
+		}
+	}
 }

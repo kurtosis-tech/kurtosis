@@ -48,6 +48,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 	githubAuthToken string,
 	restartAPIContainers bool,
 	domain string,
+	logRetentionPeriod string,
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicGrpcPortSpec *port_spec.PortSpec,
@@ -71,7 +72,8 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 		shouldStartInDebugMode,
 		githubAuthToken,
 		restartAPIContainers,
-		domain)
+		domain,
+		logRetentionPeriod)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", kurtosis_version.KurtosisVersion)
 	}
@@ -97,6 +99,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	githubAuthToken string,
 	restartAPIContainers bool,
 	domain string,
+	logRetentionPeriod string,
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicGrpcPortSpec *port_spec.PortSpec,
@@ -121,6 +124,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 		allowedCORSOrigins,
 		restartAPIContainers,
 		domain,
+		logRetentionPeriod,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred creating the engine server args")

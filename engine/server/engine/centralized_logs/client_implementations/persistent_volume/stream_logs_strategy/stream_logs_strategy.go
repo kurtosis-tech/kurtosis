@@ -15,7 +15,7 @@ type StreamLogsStrategy interface {
 	StreamLogs(
 		ctx context.Context,
 		fs volume_filesystem.VolumeFilesystem,
-		logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
+		logLineSender *logline.LogLineSender,
 		streamErrChan chan error,
 		enclaveUuid enclave.EnclaveUUID,
 		serviceUuid service.ServiceUUID,

@@ -5,10 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/file_layout"
 	"io"
-	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -21,7 +19,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"golang.org/x/exp/slices"
 )
 
 const (
@@ -48,7 +45,7 @@ func NewPerWeekStreamLogsStrategy(time logs_clock.LogsClock, logRetentionPeriodI
 func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 	ctx context.Context,
 	fs volume_filesystem.VolumeFilesystem,
-	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
+	logLineSender *logline.LogLineSender,
 	streamErrChan chan error,
 	enclaveUuid enclave.EnclaveUUID,
 	serviceUuid service.ServiceUUID,
@@ -89,24 +86,26 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 	}()
 
 	if shouldReturnAllLogs {
-		if err := strategy.streamAllLogs(ctx, logsReader, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
+		if err := strategy.streamAllLogs(ctx, logsReader, logLineSender, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
 			streamErrChan <- stacktrace.Propagate(err, "An error occurred streaming all logs for service '%v' in enclave '%v'", serviceUuid, enclaveUuid)
 			return
 		}
 	} else {
-		if err := strategy.streamTailLogs(ctx, logsReader, numLogLines, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
+		if err := strategy.streamTailLogs(ctx, logsReader, numLogLines, logLineSender, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
 			streamErrChan <- stacktrace.Propagate(err, "An error occurred streaming '%v' logs for service '%v' in enclave '%v'", numLogLines, serviceUuid, enclaveUuid)
 			return
 		}
 	}
 
+	// need to flush before following logs
+	logLineSender.Flush()
 	if shouldFollowLogs {
 		latestLogFile := paths[len(paths)-1]
-		if err := strategy.followLogs(ctx, latestLogFile, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
+		logrus.Debugf("Following logs...")
+		if err := strategy.followLogs(ctx, latestLogFile, logLineSender, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
 			streamErrChan <- stacktrace.Propagate(err, "An error occurred creating following logs for service '%v' in enclave '%v'", serviceUuid, enclaveUuid)
 			return
 		}
-		logrus.Debugf("Following logs...")
 	}
 }
 
@@ -117,43 +116,10 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 // - The list of file paths is returned in order of oldest logs to most recent logs e.g. [ 03/80124/1234.json, /04/801234/1234.json, ...]
 // - If a file path does not exist, the function with exits and returns whatever file paths were found
 func (strategy *PerWeekStreamLogsStrategy) getLogFilePaths(filesystem volume_filesystem.VolumeFilesystem, retentionPeriodInWeeks int, enclaveUuid, serviceUuid string) ([]string, error) {
-	var paths []string
-	currentTime := strategy.time.Now()
-
-	// scan for first existing log file
-	firstWeekWithLogs := 0
-	for i := 0; i < retentionPeriodInWeeks; i++ {
-		year, week := currentTime.Add(time.Duration(-i) * oneWeek).ISOWeek()
-		// %02d to format week num with leading zeros so 1-9 are converted to 01-09 for %V format
-		formattedWeekNum := fmt.Sprintf("%02d", week)
-		filePathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), formattedWeekNum, enclaveUuid, serviceUuid, volume_consts.Filetype)
-		if _, err := filesystem.Stat(filePathStr); err == nil {
-			paths = append(paths, filePathStr)
-			firstWeekWithLogs = i
-			break
-		} else {
-			// return if error is not due to nonexistent file path
-			if !os.IsNotExist(err) {
-				return paths, err
-			}
-		}
-	}
-
-	// scan for remaining files as far back as they exist
-	for i := firstWeekWithLogs + 1; i < retentionPeriodInWeeks; i++ {
-		year, week := currentTime.Add(time.Duration(-i) * oneWeek).ISOWeek()
-		formattedWeekNum := fmt.Sprintf("%02d", week)
-		filePathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), formattedWeekNum, enclaveUuid, serviceUuid, volume_consts.Filetype)
-		if _, err := filesystem.Stat(filePathStr); err != nil {
-			break
-		}
-		paths = append(paths, filePathStr)
-	}
-
-	// reverse for oldest to most recent
-	slices.Reverse(paths)
-
-	return paths, nil
+	// TODO: embed FileLayout into StreamLogsStrategy interface
+	perWeekFileLayout := file_layout.NewPerWeekFileLayout(strategy.time)
+	retentionPeriod := time.Duration(retentionPeriodInWeeks) * oneWeek
+	return perWeekFileLayout.GetLogFilePaths(filesystem, retentionPeriod, -1, enclaveUuid, serviceUuid)
 }
 
 // Returns a Reader over all logs in [logFilePaths] and the open file descriptors of the associated [logFilePaths]
@@ -180,7 +146,7 @@ func getLogsReader(filesystem volume_filesystem.VolumeFilesystem, logFilePaths [
 func (strategy *PerWeekStreamLogsStrategy) streamAllLogs(
 	ctx context.Context,
 	logsReader *bufio.Reader,
-	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
+	logLineSender *logline.LogLineSender,
 	serviceUuid service.ServiceUUID,
 	conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex) error {
 	for {
@@ -190,12 +156,14 @@ func (strategy *PerWeekStreamLogsStrategy) streamAllLogs(
 			return nil
 		default:
 			jsonLogStr, err := getCompleteJsonLogString(logsReader)
+
 			if isValidJsonEnding(jsonLogStr) {
 				jsonLog, err := convertStringToJson(jsonLogStr)
 				if err != nil {
 					return stacktrace.Propagate(err, "An error occurred converting the json log string '%v' into json.", jsonLogStr)
 				}
-				if err = strategy.sendJsonLogLine(jsonLog, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
+
+				if err = strategy.sendJsonLogLine(jsonLog, conjunctiveLogLinesFiltersWithRegex, logLineSender, serviceUuid); err != nil {
 					return err
 				}
 			}
@@ -217,7 +185,7 @@ func (strategy *PerWeekStreamLogsStrategy) streamTailLogs(
 	ctx context.Context,
 	logsReader *bufio.Reader,
 	numLogLines uint32,
-	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
+	logLineSender *logline.LogLineSender,
 	serviceUuid service.ServiceUUID,
 	conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex) error {
 	tailLogLines := make([]string, 0, numLogLines)
@@ -255,7 +223,7 @@ func (strategy *PerWeekStreamLogsStrategy) streamTailLogs(
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred converting the json log string '%v' into json.", jsonLogStr)
 		}
-		if err := strategy.sendJsonLogLine(jsonLog, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
+		if err = strategy.sendJsonLogLine(jsonLog, conjunctiveLogLinesFiltersWithRegex, logLineSender, serviceUuid); err != nil {
 			return err
 		}
 	}
@@ -298,11 +266,7 @@ func isValidJsonEnding(line string) bool {
 	return endOfLine == volume_consts.EndOfJsonLine
 }
 
-func (strategy *PerWeekStreamLogsStrategy) sendJsonLogLine(
-	jsonLog JsonLog,
-	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
-	serviceUuid service.ServiceUUID,
-	conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex) error {
+func (strategy *PerWeekStreamLogsStrategy) sendJsonLogLine(jsonLog JsonLog, conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex, logLineSender *logline.LogLineSender, serviceUuid service.ServiceUUID) error {
 	// each logLineStr is of the following structure: {"enclave_uuid": "...", "service_uuid":"...", "log": "...",.. "timestamp":"..."}
 	// eg. {"container_type":"api-container", "container_id":"8f8558ba", "container_name":"/kurtosis-api--ffd",
 	// "log":"hi","timestamp":"2023-08-14T14:57:49Z"}
@@ -338,12 +302,7 @@ func (strategy *PerWeekStreamLogsStrategy) sendJsonLogLine(
 		return nil
 	}
 
-	// send the log line
-	logLines := []logline.LogLine{*logLine}
-	userServicesLogLinesMap := map[service.ServiceUUID][]logline.LogLine{
-		serviceUuid: logLines,
-	}
-	logsByKurtosisUserServiceUuidChan <- userServicesLogLinesMap
+	logLineSender.Send(serviceUuid, *logLine)
 	return nil
 }
 
@@ -358,7 +317,7 @@ func (strategy *PerWeekStreamLogsStrategy) isWithinRetentionPeriod(logLine *logl
 func (strategy *PerWeekStreamLogsStrategy) followLogs(
 	ctx context.Context,
 	filepath string,
-	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
+	logLineSender *logline.LogLineSender,
 	serviceUuid service.ServiceUUID,
 	conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex,
 ) error {
@@ -399,8 +358,7 @@ func (strategy *PerWeekStreamLogsStrategy) followLogs(
 				// if tail package fails to parse a valid new line, fail fast
 				return stacktrace.NewError("hpcloud/tail returned the following line: '%v' that was not valid json.\nThis is potentially a bug in tailing package.", logLine.Text)
 			}
-			err = strategy.sendJsonLogLine(jsonLog, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex)
-			if err != nil {
+			if err = strategy.sendJsonLogLine(jsonLog, conjunctiveLogLinesFiltersWithRegex, logLineSender, serviceUuid); err != nil {
 				return stacktrace.Propagate(err, "An error occurred sending json log line '%v'.", logLine.Text)
 			}
 		}

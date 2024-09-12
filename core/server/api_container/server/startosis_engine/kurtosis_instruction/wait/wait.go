@@ -294,7 +294,7 @@ func (builtin *WaitCapabilities) FillPersistableAttributes(builder *enclave_plan
 	builder.SetType(WaitBuiltinName)
 }
 
-func (builtin *WaitCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
+func (builtin *WaitCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerator) error {
 	// wait does not affect the plan
 	return nil
 }

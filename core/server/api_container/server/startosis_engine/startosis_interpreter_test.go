@@ -1081,6 +1081,17 @@ def run(plan):
 	require.Nil(suite.T(), interpretationError)
 }
 
+func (suite *StartosisInterpreterTestSuite) TestGetModuleIdPrefix() {
+	githubModuleId := "github.com/some-person/some-pkg/main.star"
+	expectedGithubModuleId := "github.com/some-person/some-pkg"
+
+	require.Equal(suite.T(), expectedGithubModuleId, getModulePrefix(githubModuleId))
+
+	moduleId := "./some-person/some-pkg/main.star"
+	expectedModuleId := "./some-person/some-pkg"
+	require.Equal(suite.T(), expectedModuleId, getModulePrefix(moduleId))
+}
+
 // #####################################################################################################################
 //
 //	TEST HELPERS
