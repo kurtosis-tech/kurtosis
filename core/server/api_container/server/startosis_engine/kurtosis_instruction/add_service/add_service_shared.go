@@ -142,7 +142,7 @@ func invalidPortNameErrorText(
 	portName string,
 ) string {
 	return fmt.Sprintf(
-		"Port name '%v' is invalid as it contains disallowed characters. Service names must adhere to the RFC 6335 standard, specifically implementing this regex and be 1-15 characters long: %s. This means the service name must only contain lowercase alphanumeric characters or '-', and must start with a lowercase alphabet and end with a lowercase alphanumeric character.",
+		"Port name '%v' is invalid as it contains disallowed characters. Port names must adhere to the RFC 6335 standard, specifically implementing this regex and be 1-15 characters long: %s. This means the service name must only contain lowercase alphanumeric characters or '-', and must start with a lowercase alphabet and end with a lowercase alphanumeric character.",
 		portName,
 		service.PortNameRegex,
 	)
