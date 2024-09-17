@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	kurtosisDataTransferLimit = 2000 * 1024 * 1024 // 2 GB
+	kurtosisDataTransferLimit = 2000 * 1024 * 1024 // ~2 GB
 	tempCompressionDirPattern = "upload-compression-cache-"
 	compressionExtension      = ".tgz"
 	defaultTmpDir             = ""
