@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.3.0](https://github.com/kurtosis-tech/kurtosis/compare/1.2.0...1.3.0) (2024-09-18)
+
+
+### Features
+
+* increase max upload size ([#2552](https://github.com/kurtosis-tech/kurtosis/issues/2552)) ([b6a0d91](https://github.com/kurtosis-tech/kurtosis/commit/b6a0d9176431e6ab70d6f0c4a7cc3c95a6cc5e30))
+
+
+### Bug Fixes
+
+* Fix typo in the port name format help ([#2550](https://github.com/kurtosis-tech/kurtosis/issues/2550)) ([256d71a](https://github.com/kurtosis-tech/kurtosis/commit/256d71a48b517500ff19df346208bd147666a55a))
+
 ## [1.2.0](https://github.com/kurtosis-tech/kurtosis/compare/1.1.0...1.2.0) (2024-08-29)
 
 
