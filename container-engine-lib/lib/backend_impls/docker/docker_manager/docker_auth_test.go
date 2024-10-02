@@ -81,3 +81,20 @@ func TestGetAuthConfigForRepoOSX(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, authConfig, "Auth config should not be nil")
 }
+
+func TestGetAuthConfigForRepoUnix(t *testing.T) {
+	t.Skip("Skipping test that requires unix `pass` password manager")
+
+	cfg := `{
+		"auths": {
+			"https://index.docker.io/v1/": {}
+		},
+		"credsStore": "pass"
+	}`
+	tmpDir := WriteStaticConfig(t, cfg)
+	defer os.RemoveAll(tmpDir)
+
+	authConfig, err := GetAuthFromDockerConfig("my-repo/my-image:latest")
+	assert.NoError(t, err)
+	assert.NotNil(t, authConfig, "Auth config should not be nil")
+}
