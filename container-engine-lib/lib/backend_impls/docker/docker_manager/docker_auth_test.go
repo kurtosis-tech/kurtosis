@@ -34,7 +34,7 @@ func TestGetAuthConfigForRepoPlain(t *testing.T) {
 		Password: "password",
 	}
 
-	base64Auth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", expectedAuth.Username, expectedAuth.Password)))
+	encodedAuth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", expectedAuth.Username, expectedAuth.Password)))
 
 	cfg := fmt.Sprintf(`
 	{
@@ -43,12 +43,10 @@ func TestGetAuthConfigForRepoPlain(t *testing.T) {
 				"auth": "%s"
 			}
 		}
-	}`, base64Auth)
+	}`, encodedAuth)
 
 	tmpDir := WriteStaticConfig(t, cfg)
 	defer os.RemoveAll(tmpDir)
-
-	encodedAuth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", expectedAuth.Username, expectedAuth.Password)))
 
 	// Test 1: Retrieve auth config for Docker Hub using docker.io domain
 	authConfig, err := GetAuthFromDockerConfig("docker.io/my-repo/my-image:latest")

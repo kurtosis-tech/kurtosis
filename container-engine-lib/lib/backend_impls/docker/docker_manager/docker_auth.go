@@ -2,6 +2,7 @@ package docker_manager
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -74,7 +75,7 @@ func getCredentialsFromStore(credHelper string, registryURL string) (*registry.A
 		Username:      creds.Username,
 		Password:      creds.Secret,
 		ServerAddress: creds.ServerURL,
-		Auth:          "",
+		Auth:          base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", creds.Username, creds.Secret))),
 		Email:         "",
 		IdentityToken: "",
 		RegistryToken: "",
