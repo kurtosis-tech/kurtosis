@@ -29,22 +29,25 @@ func WriteStaticConfig(t *testing.T, configContent string) string {
 }
 
 func TestGetAuthConfigForRepoPlain(t *testing.T) {
-	cfg := `
-	{
-		"auths": {
-			"https://index.docker.io/v1/": {
-				"auth": "dXNlcjpwYXNzd29yZA=="
-			}
-		}
-	}
-	`
-	tmpDir := WriteStaticConfig(t, cfg)
-	defer os.RemoveAll(tmpDir)
-
 	expectedAuth := registry.AuthConfig{
 		Username: "user",
 		Password: "password",
 	}
+
+	base64Auth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", expectedAuth.Username, expectedAuth.Password)))
+
+	cfg := fmt.Sprintf(`
+	{
+		"auths": {
+			"https://index.docker.io/v1/": {
+				"auth": "%s"
+			}
+		}
+	}`, base64Auth)
+
+	tmpDir := WriteStaticConfig(t, cfg)
+	defer os.RemoveAll(tmpDir)
+
 	encodedAuth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", expectedAuth.Username, expectedAuth.Password)))
 
 	// Test 1: Retrieve auth config for Docker Hub using docker.io domain
