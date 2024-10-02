@@ -29,7 +29,7 @@ const (
 	EngineConfigLocalDir       = "/run/engine"
 
 	//The Docker network name where all the containers in the engine and logs service context will be added
-	NameOfNetworkToStartEngineAndLogServiceContainersIn = "bridge"
+	NameOfNetworkToStartEngineAndLogServiceContainersIn = "podman"
 	HttpApplicationProtocol                             = "http"
 
 	GitHubAuthStorageDirPath = "/kurtosis-data/github-auth/"

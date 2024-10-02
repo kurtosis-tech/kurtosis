@@ -93,7 +93,7 @@ func (builtin *GetFilesArtifactCapabilities) FillPersistableAttributes(builder *
 	builder.SetType(GetFilesArtifactBuiltinName).AddFilesArtifact(builtin.artifactName, nil)
 }
 
-func (builtin *GetFilesArtifactCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYaml) error {
+func (builtin *GetFilesArtifactCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYamlGenerator) error {
 	// get files artifact does not affect the planYaml
 	return nil
 }

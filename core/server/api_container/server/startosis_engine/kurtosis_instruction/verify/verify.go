@@ -161,7 +161,7 @@ func (builtin *VerifyCapabilities) FillPersistableAttributes(builder *enclave_pl
 	builder.SetType(VerifyBuiltinName)
 }
 
-func (builtin *VerifyCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
+func (builtin *VerifyCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerator) error {
 	// verify does not affect the plan
 	return nil
 }
