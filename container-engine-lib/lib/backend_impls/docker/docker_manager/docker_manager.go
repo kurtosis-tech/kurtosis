@@ -2281,7 +2281,7 @@ func pullImage(dockerClient *client.Client, imageName string, registrySpec *imag
 	}
 
 	// Try to obtain the auth configuration from the docker config file
-	authConfig, err := getAuthFromDockerConfig(imageName)
+	authConfig, err := GetAuthFromDockerConfig(imageName)
 	if err != nil {
 		logrus.Errorf("An error occurred while getting auth config for image: %s: %s", imageName, err.Error())
 	}

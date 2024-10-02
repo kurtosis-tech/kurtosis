@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/docker/docker/api/types/registry"
 	dockerregistry "github.com/docker/docker/registry"
 )
@@ -59,23 +60,44 @@ func getCredentialsFromStore(credHelper string, registryURL string) (*registry.A
 		return nil, fmt.Errorf("error executing credential helper %s: %v, %s", credHelperCmd, err, stderr.String())
 	}
 
-	// Parse the output (it should return JSON containing "Username" and "Secret")
-	var creds registry.AuthConfig
+	// Parse the output (it should return JSON containing "Username", "Secret" and "ServerURL")
+	creds := struct {
+		Username  string `json:"Username"`
+		Secret    string `json:"Secret"`
+		ServerURL string `json:"ServerURL"`
+	}{}
+
 	if err := json.Unmarshal(out.Bytes(), &creds); err != nil {
 		return nil, fmt.Errorf("error parsing credentials from store: %v", err)
 	}
 
-	return &creds, nil
+	return &registry.AuthConfig{
+		Username:      creds.Username,
+		Password:      creds.Secret,
+		ServerAddress: creds.ServerURL,
+	}, nil
 }
 
-// getAuthFromDockerConfig retrieves the auth configuration for a given repository
-func getAuthFromDockerConfig(repo string) (*registry.AuthConfig, error) {
+// GetAuthFromDockerConfig retrieves the auth configuration for a given repository
+// by checking the Docker config.json file and Docker credential helpers.
+// Returns nil if no credentials were found.
+func GetAuthFromDockerConfig(repo string) (*registry.AuthConfig, error) {
 	authConfig, err := loadDockerAuth()
 	if err != nil {
 		return nil, err
 	}
 
 	registryHost := dockerregistry.ConvertToHostname(repo)
+
+	spew.Dump(registryHost)
+	if !strings.Contains(registryHost, ".") || registryHost == "docker.io" || registryHost == "registry-1.docker.io" {
+		registryHost = "https://index.docker.io/v1/"
+	}
+
+	// Check if the URL contains "://", meaning it already has a protocol
+	if !strings.Contains(registryHost, "://") {
+		registryHost = "https://" + registryHost
+	}
 
 	// 1. Check if there is a credHelper for this specific registry
 	if credHelper, exists := authConfig.CredHelpers[registryHost]; exists {
