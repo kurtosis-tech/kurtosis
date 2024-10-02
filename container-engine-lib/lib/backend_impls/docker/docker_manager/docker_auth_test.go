@@ -3,7 +3,6 @@ package docker_manager
 import (
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -19,7 +18,7 @@ func WriteStaticConfig(t *testing.T, configContent string) string {
 	}
 
 	configPath := tmpDir + "/config.json"
-	err = ioutil.WriteFile(configPath, []byte(configContent), 0600)
+	err = os.WriteFile(configPath, []byte(configContent), 0600)
 	if err != nil {
 		t.Fatalf("Failed to write config.json: %v", err)
 	}
