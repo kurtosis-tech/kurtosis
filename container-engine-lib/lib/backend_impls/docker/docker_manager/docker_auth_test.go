@@ -6,7 +6,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/docker/docker/api/types/registry"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -29,12 +28,10 @@ func WriteStaticConfig(t *testing.T, configContent string) string {
 }
 
 func TestGetAuthConfigForRepoPlain(t *testing.T) {
-	expectedAuth := registry.AuthConfig{
-		Username: "user",
-		Password: "password",
-	}
+	expectedUser := "user"
+	expectedPassword := "password"
 
-	encodedAuth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", expectedAuth.Username, expectedAuth.Password)))
+	encodedAuth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", expectedUser, expectedPassword)))
 
 	cfg := fmt.Sprintf(`
 	{
