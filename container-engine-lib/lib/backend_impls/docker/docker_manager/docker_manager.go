@@ -2286,11 +2286,13 @@ func pullImage(dockerClient *client.Client, imageName string, registrySpec *imag
 		logrus.Errorf("An error occurred while getting auth config for image: %s: %s", imageName, err.Error())
 	}
 
-	authFromConfig, err := registry.EncodeAuthConfig(authConfig)
-	if err != nil {
-		logrus.Errorf("An error occurred while encoding auth config for image: %s: %s", imageName, err.Error())
-	} else {
-		imagePullOptions.RegistryAuth = authFromConfig
+	if authConfig != nil {
+		authFromConfig, err := registry.EncodeAuthConfig(*authConfig)
+		if err != nil {
+			logrus.Errorf("An error occurred while encoding auth config for image: %s: %s", imageName, err.Error())
+		} else {
+			imagePullOptions.RegistryAuth = authFromConfig
+		}
 	}
 
 	// If the registry spec is defined, use that for authentication

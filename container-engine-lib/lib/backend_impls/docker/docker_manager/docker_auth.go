@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/registry"
 	dockerregistry "github.com/docker/docker/registry"
 )
@@ -43,7 +42,7 @@ func loadDockerAuth() (RegistryAuthConfig, error) {
 }
 
 // getCredentialsFromStore fetches credentials from a Docker credential helper (credStore)
-func getCredentialsFromStore(credHelper string, registryURL string) (types.AuthConfig, error) {
+func getCredentialsFromStore(credHelper string, registryURL string) (*registry.AuthConfig, error) {
 	// Prepare the helper command (docker-credential-<store>)
 	credHelperCmd := "docker-credential-" + credHelper
 
@@ -57,23 +56,23 @@ func getCredentialsFromStore(credHelper string, registryURL string) (types.AuthC
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		return registry.AuthConfig{}, fmt.Errorf("error executing credential helper %s: %v, %s", credHelperCmd, err, stderr.String())
+		return nil, fmt.Errorf("error executing credential helper %s: %v, %s", credHelperCmd, err, stderr.String())
 	}
 
 	// Parse the output (it should return JSON containing "Username" and "Secret")
 	var creds registry.AuthConfig
 	if err := json.Unmarshal(out.Bytes(), &creds); err != nil {
-		return registry.AuthConfig{}, fmt.Errorf("error parsing credentials from store: %v", err)
+		return nil, fmt.Errorf("error parsing credentials from store: %v", err)
 	}
 
-	return creds, nil
+	return &creds, nil
 }
 
 // getAuthFromDockerConfig retrieves the auth configuration for a given repository
-func getAuthFromDockerConfig(repo string) (registry.AuthConfig, error) {
+func getAuthFromDockerConfig(repo string) (*registry.AuthConfig, error) {
 	authConfig, err := loadDockerAuth()
 	if err != nil {
-		return registry.AuthConfig{}, err
+		return nil, err
 	}
 
 	registryHost := dockerregistry.ConvertToHostname(repo)
@@ -90,9 +89,9 @@ func getAuthFromDockerConfig(repo string) (registry.AuthConfig, error) {
 
 	// 3. Fallback to credentials in "auths" if no credStore is available
 	if auth, exists := authConfig.Auths[registryHost]; exists {
-		return auth, nil
+		return &auth, nil
 	}
 
-	// Return an empty AuthConfig if no credentials were found
-	return registry.AuthConfig{}, nil
+	// Return no AuthConfig if no credentials were found
+	return nil, nil
 }
