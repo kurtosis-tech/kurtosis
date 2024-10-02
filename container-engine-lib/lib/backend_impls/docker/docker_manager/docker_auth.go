@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/docker/docker/api/types/registry"
 	dockerregistry "github.com/docker/docker/registry"
 )
@@ -89,7 +88,6 @@ func GetAuthFromDockerConfig(repo string) (*registry.AuthConfig, error) {
 
 	registryHost := dockerregistry.ConvertToHostname(repo)
 
-	spew.Dump(registryHost)
 	if !strings.Contains(registryHost, ".") || registryHost == "docker.io" || registryHost == "registry-1.docker.io" {
 		registryHost = "https://index.docker.io/v1/"
 	}
