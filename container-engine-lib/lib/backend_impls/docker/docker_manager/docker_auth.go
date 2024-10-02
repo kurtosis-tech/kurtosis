@@ -74,6 +74,7 @@ func getCredentialsFromStore(credHelper string, registryURL string) (*registry.A
 		Username:      creds.Username,
 		Password:      creds.Secret,
 		ServerAddress: creds.ServerURL,
+		Auth:          "",
 		Email:         "",
 		IdentityToken: "",
 		RegistryToken: "",
