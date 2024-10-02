@@ -370,7 +370,7 @@ func (builtin *AddServicesCapabilities) allServicesReadinessCheck(
 	return failedServiceChecksRegularMap
 }
 
-func (builtin *AddServicesCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
+func (builtin *AddServicesCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerator) error {
 	// TOOD: Implement
 	logrus.Warn("ADD SERVICES NOT IMPLEMENTED YET FOR UPDATING PLAN YAML.")
 	return nil

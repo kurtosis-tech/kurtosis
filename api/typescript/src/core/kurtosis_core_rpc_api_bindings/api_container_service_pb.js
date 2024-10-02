@@ -10882,7 +10882,8 @@ proto.api_container_api.StarlarkScriptPlanYamlArgs.toObject = function(includeIn
   var f, obj = {
     serializedScript: jspb.Message.getFieldWithDefault(msg, 1, ""),
     serializedParams: jspb.Message.getFieldWithDefault(msg, 2, ""),
-    mainFunctionName: jspb.Message.getFieldWithDefault(msg, 5, "")
+    mainFunctionName: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    dependenciesOnly: jspb.Message.getBooleanFieldWithDefault(msg, 6, false)
   };
 
   if (includeInstance) {
@@ -10931,6 +10932,10 @@ proto.api_container_api.StarlarkScriptPlanYamlArgs.deserializeBinaryFromReader =
       var value = /** @type {string} */ (reader.readString());
       msg.setMainFunctionName(value);
       break;
+    case 6:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setDependenciesOnly(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -10978,6 +10983,13 @@ proto.api_container_api.StarlarkScriptPlanYamlArgs.serializeBinaryToWriter = fun
   if (f != null) {
     writer.writeString(
       5,
+      f
+    );
+  }
+  f = /** @type {boolean} */ (jspb.Message.getField(message, 6));
+  if (f != null) {
+    writer.writeBool(
+      6,
       f
     );
   }
@@ -11074,6 +11086,42 @@ proto.api_container_api.StarlarkScriptPlanYamlArgs.prototype.hasMainFunctionName
 };
 
 
+/**
+ * optional bool dependencies_only = 6;
+ * @return {boolean}
+ */
+proto.api_container_api.StarlarkScriptPlanYamlArgs.prototype.getDependenciesOnly = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 6, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.api_container_api.StarlarkScriptPlanYamlArgs} returns this
+ */
+proto.api_container_api.StarlarkScriptPlanYamlArgs.prototype.setDependenciesOnly = function(value) {
+  return jspb.Message.setField(this, 6, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.StarlarkScriptPlanYamlArgs} returns this
+ */
+proto.api_container_api.StarlarkScriptPlanYamlArgs.prototype.clearDependenciesOnly = function() {
+  return jspb.Message.setField(this, 6, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.StarlarkScriptPlanYamlArgs.prototype.hasDependenciesOnly = function() {
+  return jspb.Message.getField(this, 6) != null;
+};
+
+
 
 
 
@@ -11109,7 +11157,8 @@ proto.api_container_api.StarlarkPackagePlanYamlArgs.toObject = function(includeI
     packageId: jspb.Message.getFieldWithDefault(msg, 1, ""),
     serializedParams: jspb.Message.getFieldWithDefault(msg, 2, ""),
     relativePathToMainFile: jspb.Message.getFieldWithDefault(msg, 3, ""),
-    mainFunctionName: jspb.Message.getFieldWithDefault(msg, 4, "")
+    mainFunctionName: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    dependenciesOnly: jspb.Message.getBooleanFieldWithDefault(msg, 5, false)
   };
 
   if (includeInstance) {
@@ -11161,6 +11210,10 @@ proto.api_container_api.StarlarkPackagePlanYamlArgs.deserializeBinaryFromReader 
     case 4:
       var value = /** @type {string} */ (reader.readString());
       msg.setMainFunctionName(value);
+      break;
+    case 5:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setDependenciesOnly(value);
       break;
     default:
       reader.skipField();
@@ -11216,6 +11269,13 @@ proto.api_container_api.StarlarkPackagePlanYamlArgs.serializeBinaryToWriter = fu
   if (f != null) {
     writer.writeString(
       4,
+      f
+    );
+  }
+  f = /** @type {boolean} */ (jspb.Message.getField(message, 5));
+  if (f != null) {
+    writer.writeBool(
+      5,
       f
     );
   }
@@ -11345,6 +11405,42 @@ proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.clearMainFunctionN
  */
 proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.hasMainFunctionName = function() {
   return jspb.Message.getField(this, 4) != null;
+};
+
+
+/**
+ * optional bool dependencies_only = 5;
+ * @return {boolean}
+ */
+proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.getDependenciesOnly = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 5, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.api_container_api.StarlarkPackagePlanYamlArgs} returns this
+ */
+proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.setDependenciesOnly = function(value) {
+  return jspb.Message.setField(this, 5, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.StarlarkPackagePlanYamlArgs} returns this
+ */
+proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.clearDependenciesOnly = function() {
+  return jspb.Message.setField(this, 5, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.hasDependenciesOnly = function() {
+  return jspb.Message.getField(this, 5) != null;
 };
 
 
