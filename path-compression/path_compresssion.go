@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	kurtosisDataTransferLimit = 100 * 1024 * 1024 // 100 MB
+	kurtosisDataTransferLimit = 2000 * 1024 * 1024 // ~2 GB
 	tempCompressionDirPattern = "upload-compression-cache-"
 	compressionExtension      = ".tgz"
 	defaultTmpDir             = ""
@@ -94,8 +94,8 @@ func CompressPathToFile(pathToCompress string, enforceMaxFileSizeLimit bool) (st
 
 	if enforceMaxFileSizeLimit && compressedFileSize >= kurtosisDataTransferLimit {
 		return "", 0, nil, stacktrace.NewError(
-			"The files you are trying to upload, which are now compressed, exceed or reach 100mb. " +
-				"Manipulation (i.e. uploads or downloads) of files larger than 100mb is currently disallowed in Kurtosis.")
+			"The files you are trying to upload, which are now compressed, exceed or reach 2 GB. " +
+				"Manipulation (i.e. uploads or downloads) of files larger than 2 GB is currently disallowed in Kurtosis.")
 	}
 
 	return compressedFilePath, compressedFileSize, compressedFileContentMd5.Sum(nil), nil
