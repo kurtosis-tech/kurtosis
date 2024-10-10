@@ -11,5 +11,6 @@ This document lists the individuals who are responsible for maintaining and cont
 - [Parithosh Jayanthi](https://github.com/parithosh) - Dev Ops @Ethereum Foundation
 - [John Hilliard](https://github.com/praetoriansentry) -  Dev Tools @Polygon Labs
 - [Léo Vincent](https://github.com/leovct) - Dev Tools @Polygon Labs
+- [Kevin Today](https://github.com/mieubrisse) - Original Contributor
 
 For any inquiries or questions regarding the project, please contact one of the core maintainers listed above.
