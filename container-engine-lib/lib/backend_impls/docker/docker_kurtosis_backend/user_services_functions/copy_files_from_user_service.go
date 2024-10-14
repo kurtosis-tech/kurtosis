@@ -26,8 +26,6 @@ func CopyFilesFromUserService(
 	output io.Writer,
 	dockerManager *docker_manager.DockerManager,
 ) error {
-	ctxWithoutCancel := context.WithoutCancel(ctx)
-
 	srcPath := srcPathOnContainer
 	srcPathBase := filepath.Base(srcPathOnContainer)
 	if srcPathBase == doNotIncludeParentDirInArchiveSymbol {
@@ -36,13 +34,13 @@ func CopyFilesFromUserService(
 	}
 
 	logrus.Debugf("Copying contents from the src path: %v and base %v", srcPath, srcPathBase)
-	_, serviceDockerResources, err := getSingleUserServiceObjAndResourcesNoMutex(ctxWithoutCancel, enclaveId, serviceUuid, dockerManager)
+	_, serviceDockerResources, err := getSingleUserServiceObjAndResourcesNoMutex(ctx, enclaveId, serviceUuid, dockerManager)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting user service with UUID '%v' in enclave with ID '%v'", serviceUuid, enclaveId)
 	}
 	container := serviceDockerResources.ServiceContainer
 
-	tarStreamReadCloser, err := dockerManager.CopyFromContainer(ctxWithoutCancel, container.GetId(), srcPath)
+	tarStreamReadCloser, err := dockerManager.CopyFromContainer(ctx, container.GetId(), srcPath)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
