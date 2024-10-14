@@ -257,6 +257,8 @@ func (manager *LogFileManager) createSymlinkLogFile(targetLogFilePath, symlinkLo
 	return nil
 }
 
+// TODO: implement the functionality from these methods into file layout
+
 // creates a directory path of format /<filepath_base>/year/week/<enclave>/
 func getEnclaveLogsDirPath(year, week int, enclaveUuid string) string {
 	logsDirPathForYearAndWeek := getLogsDirPathForWeek(year, week)
