@@ -41,7 +41,7 @@ func NewMockLogsClockPerDay(year, week, day int) *MockLogsClock {
 	}
 }
 
-func NewMockLogsClock(year, week, day, hour int) *MockLogsClock {
+func NewMockLogsClockPerHour(year, week, day, hour int) *MockLogsClock {
 	return &MockLogsClock{
 		year: year,
 		week: week,
@@ -50,18 +50,28 @@ func NewMockLogsClock(year, week, day, hour int) *MockLogsClock {
 	}
 }
 
-// The mocked Now() function returns a time object representing the start of date specified by the year, week, and day
 func (clock *MockLogsClock) Now() time.Time {
-	// Create a time.Time object for January 1st of the given year
-	startOfYear := time.Date(clock.year, time.January, 1, 0, 0, 0, 0, time.UTC)
+	// Create a time object for January 4th of the given year (ISO week 1 always includes January 4th).
+	startOfYear := time.Date(clock.year, time.January, 4, clock.hour, 0, 0, 0, time.UTC)
 
-	// Calculate the number of days to add to reach the start of the desired week.
-	daysToAdd := time.Duration(clock.week * daysInWeek)
+	// Get the Monday of the first ISO week of the year
+	isoYearStart := startOfYear.AddDate(0, 0, int(time.Monday-startOfYear.Weekday()))
 
-	// Calculate the start of the desired week by adding days to the start of the year.
-	startOfWeek := startOfYear.Add(daysToAdd * 24 * time.Hour)
+	// Adjust for Sunday as day 0 in the tests (Go uses Sunday as the first day of the week, but ISO uses Monday).
+	var dayToAdd int
+	if clock.day == 0 {
+		// If the test input day is 0 (Sunday), we need to handle it as the 7th day of the week.
+		dayToAdd = 6
+	} else {
+		// Otherwise, shift the day back by 1 to align with ISO (Monday as 1, etc.).
+		dayToAdd = clock.day - 1
+	}
 
-	// Adjust the start of the week to the beginning of the week (usually Sunday or Monday).
-	startOfWeek = startOfWeek.Add(time.Duration(clock.day) * 24 * time.Hour)
-	return startOfWeek
+	// Calculate the number of days to add based on the week and adjusted day.
+	daysToAdd := (clock.week-1)*daysInWeek + dayToAdd
+
+	// Add the calculated days to the ISO week start and return the result.
+	mockTime := isoYearStart.AddDate(0, 0, daysToAdd)
+
+	return mockTime
 }
