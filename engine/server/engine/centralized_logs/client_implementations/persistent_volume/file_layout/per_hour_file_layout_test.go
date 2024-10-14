@@ -145,6 +145,10 @@ func TestGetLogFilePathsWithHourlyRetentionAcrossYears(t *testing.T) {
 
 }
 
+func TestDurationToHour(t *testing.T) {
+
+}
+
 func createFilepaths(t *testing.T, filesystem volume_filesystem.VolumeFilesystem, filepaths []string) {
 	for _, path := range filepaths {
 		_, err := filesystem.Create(path)

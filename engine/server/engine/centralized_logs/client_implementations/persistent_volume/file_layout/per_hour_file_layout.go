@@ -50,15 +50,27 @@ func (phf *PerHourFileLayout) GetLogFilePaths(
 	enclaveUuid, serviceUuid string,
 ) ([]string, error) {
 	var paths []string
-	currentTime := phf.time.Now()
 	retentionPeriodInHours := DurationToHours(retentionPeriod)
+
+	if retentionPeriodIntervals < 0 {
+		return phf.getLogFilePathsFromNowTillRetentionPeriod(filesystem, retentionPeriodInHours, enclaveUuid, serviceUuid)
+	} else {
+		paths = phf.getLogFilePathsBeyondRetentionPeriod(filesystem, retentionPeriodInHours, retentionPeriodIntervals, enclaveUuid, serviceUuid)
+	}
+
+	return paths, nil
+}
+
+func (phf *PerHourFileLayout) getLogFilePathsFromNowTillRetentionPeriod(fs volume_filesystem.VolumeFilesystem, retentionPeriodInHours int, enclaveUuid, serviceUuid string) ([]string, error) {
+	var paths []string
+	currentTime := phf.time.Now()
 
 	// scan for first existing log file
 	firstHourWithLogs := 0
 	for i := 0; i < retentionPeriodInHours; i++ {
 		year, week, day, hour := TimeToWeekDayHour(currentTime.Add(time.Duration(-i) * time.Hour))
 		filePathStr := getHourlyLogFilePath(year, week, day, hour, enclaveUuid, serviceUuid)
-		if _, err := filesystem.Stat(filePathStr); err == nil {
+		if _, err := fs.Stat(filePathStr); err == nil {
 			paths = append(paths, filePathStr)
 			firstHourWithLogs = i
 			break
@@ -74,7 +86,7 @@ func (phf *PerHourFileLayout) GetLogFilePaths(
 	for i := firstHourWithLogs + 1; i < retentionPeriodInHours; i++ {
 		year, week, day, hour := TimeToWeekDayHour(currentTime.Add(time.Duration(-i) * time.Hour))
 		filePathStr := getHourlyLogFilePath(year, week, day, hour, enclaveUuid, serviceUuid)
-		if _, err := filesystem.Stat(filePathStr); err != nil {
+		if _, err := fs.Stat(filePathStr); err != nil {
 			break
 		}
 		paths = append(paths, filePathStr)
@@ -84,6 +96,24 @@ func (phf *PerHourFileLayout) GetLogFilePaths(
 	slices.Reverse(paths)
 
 	return paths, nil
+}
+
+func (phf *PerHourFileLayout) getLogFilePathsBeyondRetentionPeriod(fs volume_filesystem.VolumeFilesystem, retentionPeriodInHours int, retentionPeriodIntervals int, enclaveUuid, serviceUuid string) []string {
+	var paths []string
+	currentTime := phf.time.Now()
+
+	// scan for log files just beyond the retention period
+	for i := 0; i < retentionPeriodIntervals; i++ {
+		numHoursToGoBack := retentionPeriodInHours + i
+		year, week, day, hour := TimeToWeekDayHour(currentTime.Add(time.Duration(-numHoursToGoBack) * time.Hour))
+		filePathStr := getHourlyLogFilePath(year, week, day, hour, enclaveUuid, serviceUuid)
+		if _, err := fs.Stat(filePathStr); err != nil {
+			continue
+		}
+		paths = append(paths, filePathStr)
+	}
+
+	return paths
 }
 
 func getHourlyLogFilePath(year, week, day, hour int, enclaveUuid, serviceUuid string) string {

@@ -112,9 +112,9 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 // [getLogFilePaths] returns a list of log file paths containing logs for [serviceUuid] in [enclaveUuid]
 // going [retentionPeriodInWeeks] back from the [currentWeek].
 // Notes:
-// - File paths are of the format '/week/enclave uuid/service uuid.json' where 'week' is %V strftime specifier
+// - File paths are of the format '/week/{{ enclave uuid }}/{{ service uuid }}.json' where 'week' is %V strftime specifier
 // - The list of file paths is returned in order of oldest logs to most recent logs e.g. [ 03/80124/1234.json, /04/801234/1234.json, ...]
-// - If a file path does not exist, the function with exits and returns whatever file paths were found
+// - If a file path does not exist, the function exits and returns whatever file paths were found
 func (strategy *PerWeekStreamLogsStrategy) getLogFilePaths(filesystem volume_filesystem.VolumeFilesystem, retentionPeriodInWeeks int, enclaveUuid, serviceUuid string) ([]string, error) {
 	// TODO: embed FileLayout into StreamLogsStrategy interface
 	perWeekFileLayout := file_layout.NewPerWeekFileLayout(strategy.time)

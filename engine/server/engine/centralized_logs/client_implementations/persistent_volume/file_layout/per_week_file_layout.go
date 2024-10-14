@@ -40,7 +40,7 @@ func (pwf *PerWeekFileLayout) GetLogFileLayoutFormat() string {
 
 func (pwf *PerWeekFileLayout) GetLogFilePath(time time.Time, enclaveUuid, serviceUuid string) string {
 	year, week := time.ISOWeek()
-	return getLogFilePath(year, week, enclaveUuid, serviceUuid)
+	return getWeeklyFilePath(year, week, enclaveUuid, serviceUuid)
 }
 
 func (pwf *PerWeekFileLayout) GetLogFilePaths(
@@ -68,7 +68,7 @@ func (pwf *PerWeekFileLayout) getLogFilePathsFromNowTillRetentionPeriod(fs volum
 	firstWeekWithLogs := 0
 	for i := 0; i < retentionPeriodInWeeks; i++ {
 		year, week := currentTime.Add(time.Duration(-i) * oneWeekDuration).ISOWeek()
-		filePathStr := getLogFilePath(year, week, enclaveUuid, serviceUuid)
+		filePathStr := getWeeklyFilePath(year, week, enclaveUuid, serviceUuid)
 		if _, err := fs.Stat(filePathStr); err == nil {
 			paths = append(paths, filePathStr)
 			firstWeekWithLogs = i
@@ -84,7 +84,7 @@ func (pwf *PerWeekFileLayout) getLogFilePathsFromNowTillRetentionPeriod(fs volum
 	// scan for remaining files as far back as they exist before the retention period
 	for i := firstWeekWithLogs + 1; i < retentionPeriodInWeeks; i++ {
 		year, week := currentTime.Add(time.Duration(-i) * oneWeekDuration).ISOWeek()
-		filePathStr := getLogFilePath(year, week, enclaveUuid, serviceUuid)
+		filePathStr := getWeeklyFilePath(year, week, enclaveUuid, serviceUuid)
 		if _, err := fs.Stat(filePathStr); err != nil {
 			break
 		}
@@ -105,7 +105,7 @@ func (pwf *PerWeekFileLayout) getLogFilePathsBeyondRetentionPeriod(fs volume_fil
 	for i := 0; i < retentionPeriodIntervals; i++ {
 		numWeeksToGoBack := retentionPeriodInWeeks + i
 		year, weekToRemove := currentTime.Add(time.Duration(-numWeeksToGoBack) * oneWeekDuration).ISOWeek()
-		filePathStr := getLogFilePath(year, weekToRemove, enclaveUuid, serviceUuid)
+		filePathStr := getWeeklyFilePath(year, weekToRemove, enclaveUuid, serviceUuid)
 		if _, err := fs.Stat(filePathStr); err != nil {
 			continue
 		}
@@ -119,7 +119,7 @@ func DurationToWeeks(d time.Duration) int {
 	return int(math.Round(d.Hours() / float64(oneWeekInHours)))
 }
 
-func getLogFilePath(year, week int, enclaveUuid, serviceUuid string) string {
+func getWeeklyFilePath(year, week int, enclaveUuid, serviceUuid string) string {
 	formattedWeekNum := fmt.Sprintf("%02d", week)
 	return fmt.Sprintf(perWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), formattedWeekNum, enclaveUuid, serviceUuid, volume_consts.Filetype)
 }

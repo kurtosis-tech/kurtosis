@@ -9,8 +9,8 @@ type LogFileLayout interface {
 	// GetLogFileLayoutFormat returns a string representation the "format" that files are laid out in
 	// Formats are composed:
 	// - "/" - representing a nested directory
-	// - "<enclaveUuid>" - representing where an enclave uuid is inserted
-	// - "<serviceUuid>" - representing where a service uuid is inserted
+	// - "{{ enclaveUuid }}" - representing where an enclave uuid is inserted
+	// - "{{ serviceUuid }}" - representing where a service uuid is inserted
 	// - time formats specified by strftime https://cplusplus.com/reference/ctime/strftime/
 	// - any other ascii text
 	GetLogFileLayoutFormat() string
