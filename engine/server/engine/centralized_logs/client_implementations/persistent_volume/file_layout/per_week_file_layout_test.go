@@ -14,6 +14,7 @@ const (
 	retentionPeriodInWeeksForTesting = 5
 
 	defaultYear = 2023
+	defaultWeek = 17
 	defaultDay  = 0 // sunday
 )
 

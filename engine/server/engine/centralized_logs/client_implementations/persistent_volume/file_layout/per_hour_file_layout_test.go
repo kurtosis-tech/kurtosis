@@ -9,7 +9,7 @@ import (
 )
 
 func TestGetLogFilePath(t *testing.T) {
-	currentTime := logs_clock.NewMockLogsClock(2024, 1, 1, 1)
+	currentTime := logs_clock.NewMockLogsClockPerHour(2024, 1, 1, 1)
 	fileLayout := NewPerHourFileLayout(currentTime)
 
 	expectedFilepath := "/var/log/kurtosis/2024/01/01/01/test-enclave/test-user-service-1.json"
@@ -21,15 +21,15 @@ func TestGetLogFilePath(t *testing.T) {
 func TestGetLogFilePathsWithHourlyRetention(t *testing.T) {
 	filesystem := volume_filesystem.NewMockedVolumeFilesystem()
 
-	currentTime := logs_clock.NewMockLogsClock(defaultYear, defaultWeek, defaultDay, 5)
+	currentTime := logs_clock.NewMockLogsClockPerHour(defaultYear, defaultWeek, defaultDay, 5)
 	fileLayout := NewPerHourFileLayout(currentTime)
 
-	hourZeroFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(defaultYear, defaultWeek, defaultDay, 0).Now(), testEnclaveUuid, testUserService1Uuid)
-	hourOneFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(defaultYear, defaultWeek, defaultDay, 1).Now(), testEnclaveUuid, testUserService1Uuid)
-	hourTwoFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(defaultYear, defaultWeek, defaultDay, 2).Now(), testEnclaveUuid, testUserService1Uuid)
-	hourThreeFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(defaultYear, defaultWeek, defaultDay, 3).Now(), testEnclaveUuid, testUserService1Uuid)
-	hourFourFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(defaultYear, defaultWeek, defaultDay, 4).Now(), testEnclaveUuid, testUserService1Uuid)
-	hourFiveFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(defaultYear, defaultWeek, defaultDay, 5).Now(), testEnclaveUuid, testUserService1Uuid)
+	hourZeroFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerHour(defaultYear, defaultWeek, defaultDay, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	hourOneFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerHour(defaultYear, defaultWeek, defaultDay, 1).Now(), testEnclaveUuid, testUserService1Uuid)
+	hourTwoFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerHour(defaultYear, defaultWeek, defaultDay, 2).Now(), testEnclaveUuid, testUserService1Uuid)
+	hourThreeFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerHour(defaultYear, defaultWeek, defaultDay, 3).Now(), testEnclaveUuid, testUserService1Uuid)
+	hourFourFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerHour(defaultYear, defaultWeek, defaultDay, 4).Now(), testEnclaveUuid, testUserService1Uuid)
+	hourFiveFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerHour(defaultYear, defaultWeek, defaultDay, 5).Now(), testEnclaveUuid, testUserService1Uuid)
 
 	createFilepaths(t, filesystem, []string{
 		hourZeroFp,
@@ -62,15 +62,15 @@ func TestGetLogFilePathsWithHourlyRetention(t *testing.T) {
 func TestGetLogFilePathsWithHourlyRetentionAcrossDays(t *testing.T) {
 	filesystem := volume_filesystem.NewMockedVolumeFilesystem()
 
-	currentTime := logs_clock.NewMockLogsClock(defaultYear, defaultWeek, 1, 2)
+	currentTime := logs_clock.NewMockLogsClockPerHour(defaultYear, defaultWeek, 2, 2)
 	fileLayout := NewPerHourFileLayout(currentTime)
 
-	hourZeroFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(defaultYear, defaultWeek, 0, 21).Now(), testEnclaveUuid, testUserService1Uuid)
-	hourOneFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(defaultYear, defaultWeek, 0, 22).Now(), testEnclaveUuid, testUserService1Uuid)
-	hourTwoFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(defaultYear, defaultWeek, 0, 23).Now(), testEnclaveUuid, testUserService1Uuid)
-	hourThreeFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(defaultYear, defaultWeek, 1, 0).Now(), testEnclaveUuid, testUserService1Uuid)
-	hourFourFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(defaultYear, defaultWeek, 1, 1).Now(), testEnclaveUuid, testUserService1Uuid)
-	hourFiveFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(defaultYear, defaultWeek, 1, 2).Now(), testEnclaveUuid, testUserService1Uuid)
+	hourZeroFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerHour(defaultYear, defaultWeek, 1, 21).Now(), testEnclaveUuid, testUserService1Uuid)
+	hourOneFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerHour(defaultYear, defaultWeek, 1, 22).Now(), testEnclaveUuid, testUserService1Uuid)
+	hourTwoFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerHour(defaultYear, defaultWeek, 1, 23).Now(), testEnclaveUuid, testUserService1Uuid)
+	hourThreeFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerHour(defaultYear, defaultWeek, 2, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	hourFourFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerHour(defaultYear, defaultWeek, 2, 1).Now(), testEnclaveUuid, testUserService1Uuid)
+	hourFiveFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerHour(defaultYear, defaultWeek, 2, 2).Now(), testEnclaveUuid, testUserService1Uuid)
 
 	createFilepaths(t, filesystem, []string{
 		hourZeroFp,
@@ -90,7 +90,7 @@ func TestGetLogFilePathsWithHourlyRetentionAcrossDays(t *testing.T) {
 		hourFiveFp,
 	}
 
-	retentionPeriod := 5 * time.Hour // retention period of 6 hours should return all the file paths
+	retentionPeriod := 6 * time.Hour // retention period of 6 hours should return all the file paths
 	logFilePaths, err := fileLayout.GetLogFilePaths(filesystem, retentionPeriod, -1, testEnclaveUuid, testUserService1Uuid)
 
 	require.NoError(t, err)
@@ -103,15 +103,15 @@ func TestGetLogFilePathsWithHourlyRetentionAcrossDays(t *testing.T) {
 func TestGetLogFilePathsWithHourlyRetentionAcrossWeeks(t *testing.T) {
 	filesystem := volume_filesystem.NewMockedVolumeFilesystem()
 
-	currentTime := logs_clock.NewMockLogsClock(defaultYear, defaultWeek, 1, 2)
+	currentTime := logs_clock.NewMockLogsClockPerHour(defaultYear, 18, 1, 2)
 	fileLayout := NewPerHourFileLayout(currentTime)
 
-	hourZeroFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(defaultYear, defaultWeek, 0, 21).Now(), testEnclaveUuid, testUserService1Uuid)
-	hourOneFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(defaultYear, defaultWeek, 0, 22).Now(), testEnclaveUuid, testUserService1Uuid)
-	hourTwoFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(defaultYear, defaultWeek, 0, 23).Now(), testEnclaveUuid, testUserService1Uuid)
-	hourThreeFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(defaultYear, defaultWeek, 1, 0).Now(), testEnclaveUuid, testUserService1Uuid)
-	hourFourFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(defaultYear, defaultWeek, 1, 1).Now(), testEnclaveUuid, testUserService1Uuid)
-	hourFiveFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(defaultYear, defaultWeek, 1, 2).Now(), testEnclaveUuid, testUserService1Uuid)
+	hourZeroFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerHour(defaultYear, 17, 0, 21).Now(), testEnclaveUuid, testUserService1Uuid)
+	hourOneFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerHour(defaultYear, 17, 0, 22).Now(), testEnclaveUuid, testUserService1Uuid)
+	hourTwoFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerHour(defaultYear, 17, 0, 23).Now(), testEnclaveUuid, testUserService1Uuid)
+	hourThreeFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerHour(defaultYear, 18, 1, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	hourFourFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerHour(defaultYear, 18, 1, 1).Now(), testEnclaveUuid, testUserService1Uuid)
+	hourFiveFp := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerHour(defaultYear, 18, 1, 2).Now(), testEnclaveUuid, testUserService1Uuid)
 
 	createFilepaths(t, filesystem, []string{
 		hourZeroFp,
@@ -131,7 +131,7 @@ func TestGetLogFilePathsWithHourlyRetentionAcrossWeeks(t *testing.T) {
 		hourFiveFp,
 	}
 
-	retentionPeriod := 5 * time.Hour // retention period of 6 hours should return all the file paths
+	retentionPeriod := 6 * time.Hour // retention period of 6 hours should return all the file paths
 	logFilePaths, err := fileLayout.GetLogFilePaths(filesystem, retentionPeriod, -1, testEnclaveUuid, testUserService1Uuid)
 
 	require.NoError(t, err)
@@ -157,11 +157,7 @@ func createFilepaths(t *testing.T, filesystem volume_filesystem.VolumeFilesystem
 }
 
 // test get log file paths per hour across year
-
 // test get log file paths across days
-
 // test get log file paths across weeks
-
 // test get log file paths within the same day
-
 // test getting log file paths across days
