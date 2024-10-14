@@ -20,7 +20,7 @@ const (
 	perWeekDirPathFmtStr = "%s%s/%s/"
 
 	// ... enclave uuid/service uuid <filetype>
-	perWeekFilePathFmtStr = perWeekDirPathFmtStr + "%s/%s%s"
+	PerWeekFilePathFmtStr = perWeekDirPathFmtStr + "%s/%s%s"
 )
 
 type PerWeekFileLayout struct {
@@ -121,5 +121,5 @@ func DurationToWeeks(d time.Duration) int {
 
 func getWeeklyFilePath(year, week int, enclaveUuid, serviceUuid string) string {
 	formattedWeekNum := fmt.Sprintf("%02d", week)
-	return fmt.Sprintf(perWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), formattedWeekNum, enclaveUuid, serviceUuid, volume_consts.Filetype)
+	return fmt.Sprintf(PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), formattedWeekNum, enclaveUuid, serviceUuid, volume_consts.Filetype)
 }

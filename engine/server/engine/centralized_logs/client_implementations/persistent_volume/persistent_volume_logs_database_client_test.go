@@ -131,7 +131,7 @@ func TestStreamUserServiceLogsPerWeek_WithFilters(t *testing.T) {
 	}
 
 	underlyingFs := createFilledPerWeekFilesystem(startingWeek)
-	mockTime := logs_clock.NewMockLogsClock(defaultYear, startingWeek, defaultDay, 0)
+	mockTime := logs_clock.NewMockLogsClockPerDay(defaultYear, startingWeek, defaultDay)
 	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
@@ -214,7 +214,7 @@ func TestStreamUserServiceLogsPerWeek_NoLogsFromPersistentVolume(t *testing.T) {
 	}
 
 	underlyingFs := createEmptyPerWeekFilesystem(startingWeek)
-	mockTime := logs_clock.NewMockLogsClock(defaultYear, startingWeek, defaultDay, 0)
+	mockTime := logs_clock.NewMockLogsClockPerDay(defaultYear, startingWeek, defaultDay)
 	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
@@ -313,13 +313,13 @@ func TestStreamUserServiceLogsPerWeek_ThousandsOfLogLinesSuccessfulExecution(t *
 	underlyingFs := volume_filesystem.NewMockedVolumeFilesystem()
 	// %02d to format week num with leading zeros so 1-9 are converted to 01-09 for %V format
 	formattedWeekNum := fmt.Sprintf("%02d", startingWeek)
-	file1PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekNum, string(enclaveUuid), testUserService1Uuid, volume_consts.Filetype)
+	file1PathStr := fmt.Sprintf(file_layout.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekNum, string(enclaveUuid), testUserService1Uuid, volume_consts.Filetype)
 	file1, err := underlyingFs.Create(file1PathStr)
 	require.NoError(t, err)
 	_, err = file1.WriteString(logLinesStr)
 	require.NoError(t, err)
 
-	mockTime := logs_clock.NewMockLogsClock(defaultYear, startingWeek, defaultDay, 0)
+	mockTime := logs_clock.NewMockLogsClockPerDay(defaultYear, startingWeek, defaultDay)
 	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
@@ -400,13 +400,13 @@ func TestStreamUserServiceLogsPerWeek_EmptyLogLines(t *testing.T) {
 
 	underlyingFs := volume_filesystem.NewMockedVolumeFilesystem()
 	formattedWeekNum := fmt.Sprintf("%02d", startingWeek)
-	file1PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekNum, string(enclaveUuid), testUserService1Uuid, volume_consts.Filetype)
+	file1PathStr := fmt.Sprintf(file_layout.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekNum, string(enclaveUuid), testUserService1Uuid, volume_consts.Filetype)
 	file1, err := underlyingFs.Create(file1PathStr)
 	require.NoError(t, err)
 	_, err = file1.WriteString(logLinesStr)
 	require.NoError(t, err)
 
-	mockTime := logs_clock.NewMockLogsClock(defaultYear, startingWeek, defaultDay, 0)
+	mockTime := logs_clock.NewMockLogsClockPerDay(defaultYear, startingWeek, defaultDay)
 	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
@@ -460,20 +460,20 @@ func TestStreamUserServiceLogsPerWeek_WithLogsAcrossWeeks(t *testing.T) {
 	week4logLinesStr := strings.Join(week4logLines, "\n")
 
 	formattedWeekFour := fmt.Sprintf("%02d", 4)
-	week4filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekFour, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	week4filepath := fmt.Sprintf(file_layout.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekFour, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
 	week4, err := underlyingFs.Create(week4filepath)
 	require.NoError(t, err)
 	_, err = week4.WriteString(week4logLinesStr)
 	require.NoError(t, err)
 
 	formattedWeekThree := fmt.Sprintf("%02d", 3)
-	week3filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekThree, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	week3filepath := fmt.Sprintf(file_layout.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekThree, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
 	week3, err := underlyingFs.Create(week3filepath)
 	require.NoError(t, err)
 	_, err = week3.WriteString(week3logLinesStr)
 	require.NoError(t, err)
 
-	mockTime := logs_clock.NewMockLogsClock(defaultYear, 4, defaultDay, 0)
+	mockTime := logs_clock.NewMockLogsClockPerDay(defaultYear, 4, defaultDay)
 	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
@@ -529,20 +529,20 @@ func TestStreamUserServiceLogsPerWeek_WithLogLineAcrossWeeks(t *testing.T) {
 	week4logLinesStr := strings.Join(week4logLines, "\n") + "\n"
 
 	formattedWeekFour := fmt.Sprintf("%02d", 4)
-	week4filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekFour, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	week4filepath := fmt.Sprintf(file_layout.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekFour, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
 	week4, err := underlyingFs.Create(week4filepath)
 	require.NoError(t, err)
 	_, err = week4.WriteString(week4logLinesStr)
 	require.NoError(t, err)
 
 	formattedWeekThree := fmt.Sprintf("%02d", 3)
-	week3filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekThree, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	week3filepath := fmt.Sprintf(file_layout.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekThree, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
 	week3, err := underlyingFs.Create(week3filepath)
 	require.NoError(t, err)
 	_, err = week3.WriteString(week3logLinesStr)
 	require.NoError(t, err)
 
-	mockTime := logs_clock.NewMockLogsClock(defaultYear, 4, defaultDay, 0)
+	mockTime := logs_clock.NewMockLogsClockPerDay(defaultYear, 4, defaultDay)
 	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
@@ -587,13 +587,13 @@ func TestStreamUserServiceLogsPerWeekReturnsTimestampedLogLines(t *testing.T) {
 	underlyingFs := volume_filesystem.NewMockedVolumeFilesystem()
 
 	formattedWeekNum := fmt.Sprintf("%02d", startingWeek)
-	filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekNum, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	filepath := fmt.Sprintf(file_layout.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekNum, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
 	file, err := underlyingFs.Create(filepath)
 	require.NoError(t, err)
 	_, err = file.WriteString(timestampedLogLinesStr)
 	require.NoError(t, err)
 
-	mockTime := logs_clock.NewMockLogsClock(defaultYear, startingWeek, defaultDay, 0)
+	mockTime := logs_clock.NewMockLogsClockPerDay(defaultYear, startingWeek, defaultDay)
 	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
 
 	expectedTime, err := time.Parse(utcFormat, defaultUTCTimestampStr)
@@ -697,7 +697,7 @@ func executeStreamCallAndGetReceivedServiceLogLines(
 	kurtosisBackend := backend_interface.NewMockKurtosisBackend(t)
 
 	// no log file management is done in these tests so values for logFileManager aren't important
-	mockTime := logs_clock.NewMockLogsClock(0, 0, 0, 0)
+	mockTime := logs_clock.NewMockLogsClockPerDay(0, 0, 0)
 	fileLayout := file_layout.NewPerWeekFileLayout(mockTime)
 	logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, underlyingFs, fileLayout, mockTime, 0)
 	logsDatabaseClient := NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, underlyingFs, logFileManager, streamStrategy)
@@ -784,9 +784,9 @@ func createFilledPerWeekFilesystem(week int) volume_filesystem.VolumeFilesystem 
 	logLinesStr := strings.Join(logLines, "\n")
 	// %02d to format week num with leading zeros so 1-9 are converted to 01-09 for %V format
 	formattedWeekNum := fmt.Sprintf("%02d", week)
-	file1PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekNum, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
-	file2PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekNum, testEnclaveUuid, testUserService2Uuid, volume_consts.Filetype)
-	file3PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekNum, testEnclaveUuid, testUserService3Uuid, volume_consts.Filetype)
+	file1PathStr := fmt.Sprintf(file_layout.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekNum, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	file2PathStr := fmt.Sprintf(file_layout.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekNum, testEnclaveUuid, testUserService2Uuid, volume_consts.Filetype)
+	file3PathStr := fmt.Sprintf(file_layout.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekNum, testEnclaveUuid, testUserService3Uuid, volume_consts.Filetype)
 
 	mapFs := volume_filesystem.NewMockedVolumeFilesystem()
 
@@ -819,9 +819,9 @@ func createEmptyPerFileFilesystem() volume_filesystem.VolumeFilesystem {
 func createEmptyPerWeekFilesystem(week int) volume_filesystem.VolumeFilesystem {
 	// %02d to format week num with leading zeros so 1-9 are converted to 01-09 for %V format
 	formattedWeekNum := fmt.Sprintf("%02d", week)
-	file1PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekNum, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
-	file2PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekNum, testEnclaveUuid, testUserService2Uuid, volume_consts.Filetype)
-	file3PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekNum, testEnclaveUuid, testUserService3Uuid, volume_consts.Filetype)
+	file1PathStr := fmt.Sprintf(file_layout.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekNum, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	file2PathStr := fmt.Sprintf(file_layout.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekNum, testEnclaveUuid, testUserService2Uuid, volume_consts.Filetype)
+	file3PathStr := fmt.Sprintf(file_layout.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekNum, testEnclaveUuid, testUserService3Uuid, volume_consts.Filetype)
 
 	mapFs := volume_filesystem.NewMockedVolumeFilesystem()
 

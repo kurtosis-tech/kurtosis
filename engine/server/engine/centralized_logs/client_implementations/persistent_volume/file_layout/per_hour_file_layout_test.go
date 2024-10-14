@@ -145,6 +145,12 @@ func TestGetLogFilePathsWithHourlyRetentionAcrossYears(t *testing.T) {
 
 }
 
+// test get log file paths per hour across year
+// test get log file paths across days
+// test get log file paths across weeks
+// test get log file paths within the same day
+// test getting log file paths across days
+
 func TestDurationToHour(t *testing.T) {
 
 }
@@ -155,9 +161,3 @@ func createFilepaths(t *testing.T, filesystem volume_filesystem.VolumeFilesystem
 		require.NoError(t, err)
 	}
 }
-
-// test get log file paths per hour across year
-// test get log file paths across days
-// test get log file paths across weeks
-// test get log file paths within the same day
-// test getting log file paths across days

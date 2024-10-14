@@ -3,6 +3,7 @@ package stream_logs_strategy
 import (
 	"bufio"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/file_layout"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_consts"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
@@ -55,7 +56,7 @@ func TestGetLogFilePaths(t *testing.T) {
 		week17filepath,
 	}
 
-	mockTime := logs_clock.NewMockLogsClock(defaultYear, currentWeek, defaultDay, 0)
+	mockTime := logs_clock.NewMockLogsClockPerDay(defaultYear, currentWeek, defaultDay)
 	strategy := NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
 	logFilePaths, err := strategy.getLogFilePaths(filesystem, retentionPeriodInWeeksForTesting, testEnclaveUuid, testUserService1Uuid)
 
@@ -92,7 +93,7 @@ func TestGetLogFilePathsAcrossNewYear(t *testing.T) {
 		week2filepath,
 	}
 
-	mockTime := logs_clock.NewMockLogsClock(defaultYear, currentWeek, defaultDay, 0)
+	mockTime := logs_clock.NewMockLogsClockPerDay(defaultYear, currentWeek, defaultDay)
 	strategy := NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
 	logFilePaths, err := strategy.getLogFilePaths(filesystem, retentionPeriodInWeeksForTesting, testEnclaveUuid, testUserService1Uuid)
 
@@ -129,7 +130,7 @@ func TestGetLogFilePathsAcrossNewYearWith53Weeks(t *testing.T) {
 		week3filepath,
 	}
 
-	mockTime := logs_clock.NewMockLogsClock(2016, currentWeek, 1, 0)
+	mockTime := logs_clock.NewMockLogsClockPerDay(2016, currentWeek, 1)
 	strategy := NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
 	logFilePaths, err := strategy.getLogFilePaths(filesystem, retentionPeriodInWeeksForTesting, testEnclaveUuid, testUserService1Uuid)
 
@@ -161,7 +162,7 @@ func TestGetLogFilePathsWithDiffRetentionPeriod(t *testing.T) {
 		week2filepath,
 	}
 
-	mockTime := logs_clock.NewMockLogsClock(defaultYear, currentWeek, defaultDay, 0)
+	mockTime := logs_clock.NewMockLogsClockPerDay(defaultYear, currentWeek, defaultDay)
 	strategy := NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
 	logFilePaths, err := strategy.getLogFilePaths(filesystem, retentionPeriod, testEnclaveUuid, testUserService1Uuid)
 
@@ -193,7 +194,7 @@ func TestGetLogFilePathsReturnsAllAvailableWeeks(t *testing.T) {
 
 	currentWeek := 2
 
-	mockTime := logs_clock.NewMockLogsClock(defaultYear, currentWeek, defaultDay, 0)
+	mockTime := logs_clock.NewMockLogsClockPerDay(defaultYear, currentWeek, defaultDay)
 	strategy := NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
 	logFilePaths, err := strategy.getLogFilePaths(filesystem, retentionPeriodInWeeksForTesting, testEnclaveUuid, testUserService1Uuid)
 
@@ -218,7 +219,7 @@ func TestGetLogFilePathsReturnsCorrectPathsIfWeeksMissingInBetween(t *testing.T)
 
 	currentWeek := 3
 
-	mockTime := logs_clock.NewMockLogsClock(defaultYear, currentWeek, defaultDay, 0)
+	mockTime := logs_clock.NewMockLogsClockPerDay(defaultYear, currentWeek, defaultDay)
 	strategy := NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
 	logFilePaths, err := strategy.getLogFilePaths(filesystem, retentionPeriodInWeeksForTesting, testEnclaveUuid, testUserService1Uuid)
 
@@ -230,7 +231,7 @@ func TestGetLogFilePathsReturnsCorrectPathsIfWeeksMissingInBetween(t *testing.T)
 func TestGetLogFilePathsReturnsCorrectPathsIfCurrentWeekHasNoLogsYet(t *testing.T) {
 	// currently in week 3
 	currentWeek := 3
-	mockTime := logs_clock.NewMockLogsClock(defaultYear, currentWeek, defaultDay, 0)
+	mockTime := logs_clock.NewMockLogsClockPerDay(defaultYear, currentWeek, defaultDay)
 
 	filesystem := volume_filesystem.NewMockedVolumeFilesystem()
 
@@ -265,7 +266,7 @@ func TestIsWithinRetentionPeriod(t *testing.T) {
 	}
 
 	// week 41 would put the log line outside the retention period
-	mockTime := logs_clock.NewMockLogsClock(2023, 41, 0, 0)
+	mockTime := logs_clock.NewMockLogsClockPerDay(2023, 41, 0)
 	strategy := NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
 
 	timestamp, err := parseTimestampFromJsonLogLine(jsonLogLine)
@@ -281,7 +282,7 @@ func TestIsWithinRetentionPeriod(t *testing.T) {
 func getWeekFilepathStr(year, week int) string {
 	// %02d to format week num with leading zeros so 1-9 are converted to 01-09 for %V format
 	formattedWeekNum := fmt.Sprintf("%02d", week)
-	return fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), formattedWeekNum, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	return fmt.Sprintf(file_layout.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), formattedWeekNum, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
 }
 
 func TestGetCompleteJsonLogString(t *testing.T) {
