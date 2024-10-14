@@ -26,6 +26,7 @@ func CopyFilesFromUserService(
 	output io.Writer,
 	dockerManager *docker_manager.DockerManager,
 ) error {
+	ctx = context.WithoutCancel(ctx)
 
 	srcPath := srcPathOnContainer
 	srcPathBase := filepath.Base(srcPathOnContainer)
