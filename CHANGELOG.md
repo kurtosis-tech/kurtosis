@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/kurtosis-tech/kurtosis/compare/1.3.0...1.3.1) (2024-10-15)
+
+
+### Bug Fixes
+
+* use docker client without timeout for copy files operation ([#2565](https://github.com/kurtosis-tech/kurtosis/issues/2565)) ([a48ed55](https://github.com/kurtosis-tech/kurtosis/commit/a48ed55069bf7dce77b322bc30c4070a2c85cd7d))
+
 ## [1.3.0](https://github.com/kurtosis-tech/kurtosis/compare/1.2.0...1.3.0) (2024-09-18)
 
 
