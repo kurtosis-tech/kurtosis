@@ -4,18 +4,20 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
-	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	"text/template"
 	"time"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
+	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 )
 
 const (
 	// We use this image and version because we already are using this in other projects so there is a high probability
 	// that the image is in the local machine's cache
-	configuratorContainerImage = "alpine:3.17"
-	configuratorContainerName  = "kurtosis-fluentbit-configurator"
+	configuratorContainerImage      = "alpine:3.17"
+	configuratorContainerNamePrefix = "kurtosis-fluentbit-configurator"
 
 	shBinaryFilepath = "/bin/sh"
 	shCmdFlag        = "-c"
@@ -54,9 +56,16 @@ func (fluent *fluentbitConfigurationCreator) CreateConfiguration(
 		volumeName: configDirpathInContainer,
 	}
 
+	uuid, err := uuid_generator.GenerateUUIDString()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred generating a UUID for the configurator container name")
+	}
+
+	containerName := fmt.Sprintf("%s-%s", configuratorContainerNamePrefix, uuid)
+
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		configuratorContainerImage,
-		configuratorContainerName,
+		containerName,
 		targetNetworkId,
 	).WithEntrypointArgs(
 		entrypointArgs,
