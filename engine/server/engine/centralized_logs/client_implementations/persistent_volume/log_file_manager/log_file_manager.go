@@ -2,20 +2,17 @@ package log_file_manager
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/file_layout"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_consts"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"os"
-	"strconv"
 	"time"
 )
 
@@ -25,6 +22,8 @@ const (
 	removeLogsWaitHours = 6 * time.Hour
 
 	createLogsWaitMinutes = 1 * time.Minute
+
+	emptyEnclaveUuid = ""
 )
 
 // LogFileManager is responsible for creating and removing log files from filesystem.
@@ -187,21 +186,26 @@ func (manager *LogFileManager) RemoveLogsBeyondRetentionPeriod(ctx context.Conte
 }
 
 func (manager *LogFileManager) RemoveAllLogs() error {
-	// only removes logs for this year because Docker prevents all logs from base logs storage file path
-	year, _ := manager.time.Now().ISOWeek()
-	if err := manager.filesystem.RemoveAll(getLogsDirPathForYear(year)); err != nil {
-		return stacktrace.Propagate(err, "An error occurred attempting to remove all logs.")
+	logFilePaths, err := manager.fileLayout.GetAllLogFilesPaths(manager.filesystem, emptyEnclaveUuid)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting all log file paths.")
+	}
+	for _, filePath := range logFilePaths {
+		if err := manager.filesystem.Remove(filePath); err != nil {
+			return stacktrace.Propagate(err, "An error occurred removing log file path '%v'.", filePath)
+		}
 	}
 	return nil
 }
 
 func (manager *LogFileManager) RemoveEnclaveLogs(enclaveUuid string) error {
-	currentTime := manager.time.Now()
-	for i := 0; i < manager.logRetentionPeriodInWeeks; i++ {
-		year, week := currentTime.Add(time.Duration(-i) * oneWeek).ISOWeek()
-		enclaveLogsDirPathForWeek := getEnclaveLogsDirPath(year, week, enclaveUuid)
-		if err := manager.filesystem.RemoveAll(enclaveLogsDirPathForWeek); err != nil {
-			return stacktrace.Propagate(err, "An error occurred attempting to remove logs for enclave '%v' logs at the following path: %v", enclaveUuid, enclaveLogsDirPathForWeek)
+	enclaveLogFilePaths, err := manager.fileLayout.GetAllLogFilesPaths(manager.filesystem, enclaveUuid)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting all log file paths for '%v'.", enclaveUuid)
+	}
+	for _, filePath := range enclaveLogFilePaths {
+		if err := manager.filesystem.Remove(filePath); err != nil {
+			return stacktrace.Propagate(err, "An error occurred removing enclave '%v' log file path '%v'.", enclaveUuid, filePath)
 		}
 	}
 	return nil
@@ -255,24 +259,4 @@ func (manager *LogFileManager) createSymlinkLogFile(targetLogFilePath, symlinkLo
 		return stacktrace.Propagate(err, "An error occurred creating a symlink file path '%v' for target file path '%v'.", targetLogFilePath, targetLogFilePath)
 	}
 	return nil
-}
-
-// TODO: implement the functionality from these methods into file layout
-
-// creates a directory path of format /<filepath_base>/year/week/<enclave>/
-func getEnclaveLogsDirPath(year, week int, enclaveUuid string) string {
-	logsDirPathForYearAndWeek := getLogsDirPathForWeek(year, week)
-	return fmt.Sprintf("%s%s/", logsDirPathForYearAndWeek, enclaveUuid)
-}
-
-// creates a directory path of format /<filepath_base>/year/week/
-func getLogsDirPathForWeek(year, week int) string {
-	logsDirPathForYear := getLogsDirPathForYear(year)
-	formattedWeekNum := fmt.Sprintf("%02d", week)
-	return fmt.Sprintf("%s%s/", logsDirPathForYear, formattedWeekNum)
-}
-
-// creates a directory path of format /<filepath_base>/year/
-func getLogsDirPathForYear(year int) string {
-	return fmt.Sprintf("%s%s/", volume_consts.LogsStorageDirpath, strconv.Itoa(year))
 }
