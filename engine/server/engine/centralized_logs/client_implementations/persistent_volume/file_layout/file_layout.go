@@ -26,5 +26,5 @@ type LogFileLayout interface {
 
 	// GetAllLogFilePaths retrieves all filepaths associated with [enclaveUuid] in [filesystem]
 	// If [enclaveUuid] is the empty string, returns logs for all enclaves
-	GetAllLogFilesPaths(filesystem volume_filesystem.VolumeFilesystem, enclaveUuid string) ([]string, error)
+	GetAllLogFilePaths(filesystem volume_filesystem.VolumeFilesystem, enclaveUuid string) ([]string, error)
 }

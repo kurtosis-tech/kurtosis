@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/afero"
 	"io"
 	"os"
+	"path/filepath"
 )
 
 // VolumeFilesystem interface is an abstraction of the disk filesystem
@@ -15,6 +16,7 @@ type VolumeFilesystem interface {
 	RemoveAll(path string) error
 	Remove(filepath string) error
 	Symlink(target, link string) error
+	Walk(root string, walkFn filepath.WalkFunc) error
 }
 
 type VolumeFile interface {
@@ -58,6 +60,10 @@ func (fs *OsVolumeFilesystem) Symlink(target, link string) error {
 	return os.Symlink(target, link)
 }
 
+func (fs *OsVolumeFilesystem) Walk(root string, fn filepath.WalkFunc) error {
+	return filepath.Walk(root, fn)
+}
+
 // MockedVolumeFilesystem is an implementation used for unit testing
 type MockedVolumeFilesystem struct {
 	// uses an underlying map filesystem that's easy to mock file data with
@@ -92,4 +98,8 @@ func (fs *MockedVolumeFilesystem) Symlink(target, link string) error {
 	// afero.MemMapFs doesn't support symlinks so the best we can do is create the symlink
 	_, err := fs.mapFS.Create(link)
 	return err
+}
+
+func (fs *MockedVolumeFilesystem) Walk(root string, fn filepath.WalkFunc) error {
+	return afero.Walk(fs.mapFS, root, fn)
 }

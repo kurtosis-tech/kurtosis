@@ -416,8 +416,8 @@ func getLogsDatabaseClient(kurtosisBackendType args.KurtosisBackendType, kurtosi
 		}
 		logrus.Infof("Setting log retention period to '%v' week(s).", logRetentionPeriodInWeeks)
 		osFs := volume_filesystem.NewOsVolumeFilesystem()
-		perWeekFileLayout := file_layout.NewPerWeekFileLayout(realTime)
-		logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, osFs, perWeekFileLayout, realTime, logRetentionPeriodInWeeks)
+		perHourFileLayout := file_layout.NewPerHourFileLayout(logs_clock.NewRealClock())
+		logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, osFs, perHourFileLayout, realTime, logRetentionPeriodInWeeks)
 		perWeekStreamLogsStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(realTime, logRetentionPeriodInWeeks)
 
 		logsDatabaseClient = persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs, logFileManager, perWeekStreamLogsStrategy)

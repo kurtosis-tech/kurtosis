@@ -186,7 +186,7 @@ func (manager *LogFileManager) RemoveLogsBeyondRetentionPeriod(ctx context.Conte
 }
 
 func (manager *LogFileManager) RemoveAllLogs() error {
-	logFilePaths, err := manager.fileLayout.GetAllLogFilesPaths(manager.filesystem, emptyEnclaveUuid)
+	logFilePaths, err := manager.fileLayout.GetAllLogFilePaths(manager.filesystem, emptyEnclaveUuid)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting all log file paths.")
 	}
@@ -199,7 +199,7 @@ func (manager *LogFileManager) RemoveAllLogs() error {
 }
 
 func (manager *LogFileManager) RemoveEnclaveLogs(enclaveUuid string) error {
-	enclaveLogFilePaths, err := manager.fileLayout.GetAllLogFilesPaths(manager.filesystem, enclaveUuid)
+	enclaveLogFilePaths, err := manager.fileLayout.GetAllLogFilePaths(manager.filesystem, enclaveUuid)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting all log file paths for '%v'.", enclaveUuid)
 	}
