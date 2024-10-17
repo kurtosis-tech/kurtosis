@@ -187,7 +187,7 @@ func (builtin *SetServiceCapabilities) FillPersistableAttributes(builder *enclav
 	builder.SetType(SetServiceBuiltinName).AddServiceName(builtin.serviceName)
 }
 
-func (builtin *SetServiceCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYaml) error {
+func (builtin *SetServiceCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYamlGenerator) error {
 	// update service does not affect the plan
 	return nil
 }

@@ -286,7 +286,7 @@ func (builtin *AddServiceCapabilities) FillPersistableAttributes(builder *enclav
 	)
 }
 
-func (builtin *AddServiceCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYaml) error {
+func (builtin *AddServiceCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYamlGenerator) error {
 	var buildContextLocator string
 	var targetStage string
 	var registryAddress string

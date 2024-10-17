@@ -174,7 +174,7 @@ func (builtin *RenderTemplatesCapabilities) FillPersistableAttributes(builder *e
 	)
 }
 
-func (builtin *RenderTemplatesCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
+func (builtin *RenderTemplatesCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerator) error {
 	filepaths := []string{}
 	for filepath := range builtin.templatesAndDataByDestRelFilepath {
 		filepaths = append(filepaths, filepath)

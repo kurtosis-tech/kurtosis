@@ -98,7 +98,7 @@ func (builtin *kurtosisPlanInstructionInternal) GetPersistableAttributes() *encl
 	return enclavePlaneInstructionBuilder.SetStarlarkCode(builtin.String())
 }
 
-func (builtin *kurtosisPlanInstructionInternal) UpdatePlan(plan *plan_yaml.PlanYaml) error {
+func (builtin *kurtosisPlanInstructionInternal) UpdatePlan(plan *plan_yaml.PlanYamlGenerator) error {
 	return builtin.capabilities.UpdatePlan(plan)
 }
 
