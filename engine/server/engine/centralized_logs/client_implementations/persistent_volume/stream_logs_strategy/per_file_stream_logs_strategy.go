@@ -17,6 +17,7 @@ import (
 	"strings"
 )
 
+// TODO: Remove after FileLayout and new StreamLogStrategyImpl are merged
 // This strategy pulls logs from filesytsem where there is a log file per enclave, per service
 type PerFileStreamLogsStrategy struct {
 }
