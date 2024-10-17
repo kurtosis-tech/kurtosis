@@ -16,6 +16,7 @@ import (
 	"net"
 	"os"
 	"testing"
+	"time"
 )
 
 const (
@@ -75,7 +76,7 @@ func TestRemoveEnclaveLogs(t *testing.T) {
 	_, _ = mockFs.Create(week52filepath)
 	_, _ = mockFs.Create(week52filepathDiffService)
 
-	logFileManager := NewLogFileManager(mockKurtosisBackend, mockFs, fileLayout, mockTime, 5, volume_consts.LogsStorageDirpath)
+	logFileManager := NewLogFileManager(mockKurtosisBackend, mockFs, fileLayout, mockTime, convertWeeksToDuration(5), volume_consts.LogsStorageDirpath)
 	err := logFileManager.RemoveEnclaveLogs(testEnclaveUuid) // should remove only all log files for enclave one
 
 	require.NoError(t, err)
@@ -114,7 +115,7 @@ func TestRemoveAllLogs(t *testing.T) {
 	_, _ = mockFs.Create(week52filepath)
 	_, _ = mockFs.Create(week52filepathDiffService)
 
-	logFileManager := NewLogFileManager(mockKurtosisBackend, mockFs, fileLayout, mockTime, 5, volume_consts.LogsStorageDirpath)
+	logFileManager := NewLogFileManager(mockKurtosisBackend, mockFs, fileLayout, mockTime, convertWeeksToDuration(5), volume_consts.LogsStorageDirpath)
 	err := logFileManager.RemoveAllLogs()
 
 	require.NoError(t, err)
@@ -149,7 +150,7 @@ func TestCreateLogFiles(t *testing.T) {
 	expectedServiceNameFilePath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerDay(2022, 52, 0).Now(), testEnclaveUuid, testUserService1Name)
 	expectedServiceShortUuidFilePath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerDay(2022, 52, 0).Now(), testEnclaveUuid, uuid_generator.ShortenedUUIDString(testUserService1Uuid))
 
-	logFileManager := NewLogFileManager(mockKurtosisBackend, mockFs, fileLayout, mockTime, 5, volume_consts.LogsStorageDirpath)
+	logFileManager := NewLogFileManager(mockKurtosisBackend, mockFs, fileLayout, mockTime, convertWeeksToDuration(5), volume_consts.LogsStorageDirpath)
 	err := logFileManager.CreateLogFiles(ctx)
 	require.NoError(t, err)
 
@@ -190,4 +191,9 @@ func getMockedKurtosisBackendWithEnclavesAndServices(ctx context.Context, t *tes
 		GetUserServices(ctx, enclaveUuid, &service.ServiceFilters{Names: nil, UUIDs: nil, Statuses: nil}).
 		Return(servicesMap, nil)
 	return mockKurtosisBackend
+}
+
+func convertWeeksToDuration(retentionPeriodInWeeks int) time.Duration {
+	const hoursInWeek = 7 * 24 // 7 days * 24 hours
+	return time.Duration(retentionPeriodInWeeks*hoursInWeek) * time.Hour
 }

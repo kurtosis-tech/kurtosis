@@ -19,8 +19,6 @@ import (
 )
 
 const (
-	oneWeek = 7 * 24 * time.Hour
-
 	removeLogsWaitHours = 6 * time.Hour
 
 	createLogsWaitMinutes = 1 * time.Minute
@@ -38,19 +36,19 @@ type LogFileManager struct {
 
 	time logs_clock.LogsClock
 
-	logRetentionPeriodInWeeks int
+	logRetentionPeriod time.Duration
 
 	baseFilePath string
 }
 
-func NewLogFileManager(kurtosisBackend backend_interface.KurtosisBackend, filesystem volume_filesystem.VolumeFilesystem, fileLayout file_layout.LogFileLayout, time logs_clock.LogsClock, logRetentionPeriodInWeeks int, baseFilePath string) *LogFileManager {
+func NewLogFileManager(kurtosisBackend backend_interface.KurtosisBackend, filesystem volume_filesystem.VolumeFilesystem, fileLayout file_layout.LogFileLayout, time logs_clock.LogsClock, logRetentionPeriod time.Duration, baseFilePath string) *LogFileManager {
 	return &LogFileManager{
-		kurtosisBackend:           kurtosisBackend,
-		filesystem:                filesystem,
-		fileLayout:                fileLayout,
-		time:                      time,
-		logRetentionPeriodInWeeks: logRetentionPeriodInWeeks,
-		baseFilePath:              baseFilePath,
+		kurtosisBackend:    kurtosisBackend,
+		filesystem:         filesystem,
+		fileLayout:         fileLayout,
+		time:               time,
+		logRetentionPeriod: logRetentionPeriod,
+		baseFilePath:       baseFilePath,
 	}
 }
 
@@ -146,22 +144,21 @@ func (manager *LogFileManager) RemoveLogsBeyondRetentionPeriod(ctx context.Conte
 			serviceNameStr := string(serviceRegistration.GetName())
 			serviceShortUuidStr := uuid_generator.ShortenedUUIDString(serviceUuidStr)
 
-			retentionPeriod := time.Duration(manager.logRetentionPeriodInWeeks) * oneWeek
-			oldServiceLogFilesByUuid, err := manager.fileLayout.GetLogFilePaths(manager.filesystem, retentionPeriod, 1, string(enclaveUuid), serviceUuidStr)
+			oldServiceLogFilesByUuid, err := manager.fileLayout.GetLogFilePaths(manager.filesystem, manager.logRetentionPeriod, 1, string(enclaveUuid), serviceUuidStr)
 			if err != nil {
 				logrus.Errorf("An error occurred getting log file paths for service '%v' in enclave '%v' logs beyond retention: %v", serviceUuidStr, enclaveUuid, err)
 			} else {
 				pathsToRemove = append(pathsToRemove, oldServiceLogFilesByUuid...)
 			}
 
-			oldServiceLogFilesByName, err := manager.fileLayout.GetLogFilePaths(manager.filesystem, retentionPeriod, 1, string(enclaveUuid), serviceNameStr)
+			oldServiceLogFilesByName, err := manager.fileLayout.GetLogFilePaths(manager.filesystem, manager.logRetentionPeriod, 1, string(enclaveUuid), serviceNameStr)
 			if err != nil {
 				logrus.Errorf("An error occurred getting log file paths for service '%v' in enclave '%v' logs beyond retention: %v", serviceNameStr, enclaveUuid, err)
 			} else {
 				pathsToRemove = append(pathsToRemove, oldServiceLogFilesByName...)
 			}
 
-			oldServiceLogFilesByShortUuid, err := manager.fileLayout.GetLogFilePaths(manager.filesystem, retentionPeriod, 1, string(enclaveUuid), serviceShortUuidStr)
+			oldServiceLogFilesByShortUuid, err := manager.fileLayout.GetLogFilePaths(manager.filesystem, manager.logRetentionPeriod, 1, string(enclaveUuid), serviceShortUuidStr)
 			if err != nil {
 				logrus.Errorf("An error occurred getting log file paths for service '%v' in enclave '%v' logs beyond retention: %v", serviceShortUuidStr, enclaveUuid, err)
 			} else {

@@ -9,8 +9,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/file_layout"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_consts"
 	"io/fs"
-	"math"
 	"net"
 	"net/http"
 	"os"
@@ -410,17 +410,11 @@ func getLogsDatabaseClient(kurtosisBackendType args.KurtosisBackendType, kurtosi
 	case args.KurtosisBackendType_Docker:
 		realTime := logs_clock.NewRealClock()
 
-		logRetentionPeriodInWeeks := int(math.Round(logRetentionPeriod.Hours() / float64(7*24*time.Hour)))
-		if logRetentionPeriodInWeeks < 1 {
-			logRetentionPeriodInWeeks = 1
-		}
-		logrus.Infof("Setting log retention period to '%v' week(s).", logRetentionPeriodInWeeks)
 		osFs := volume_filesystem.NewOsVolumeFilesystem()
-		perHourFileLayout := file_layout.NewPerHourFileLayout(logs_clock.NewRealClock())
-		logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, osFs, perHourFileLayout, realTime, logRetentionPeriodInWeeks)
-		perWeekStreamLogsStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(realTime, logRetentionPeriodInWeeks)
-
-		logsDatabaseClient = persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs, logFileManager, perWeekStreamLogsStrategy)
+		perHourFileLayout := file_layout.NewPerHourFileLayout(realTime)
+		logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, osFs, perHourFileLayout, realTime, logRetentionPeriod, volume_consts.LogsStorageDirpath)
+		streamLogsStrategy := stream_logs_strategy.NewStreamLogsStrategyImpl(realTime, logRetentionPeriod, perHourFileLayout)
+		logsDatabaseClient = persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs, logFileManager, streamLogsStrategy)
 	case args.KurtosisBackendType_Kubernetes:
 		logsDatabaseClient = kurtosis_backend.NewKurtosisBackendLogsDatabaseClient(kurtosisBackend)
 	}

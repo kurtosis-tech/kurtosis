@@ -57,7 +57,7 @@ func TestGetLogFilePaths(t *testing.T) {
 	}
 
 	mockTime := logs_clock.NewMockLogsClockPerDay(defaultYear, currentWeek, defaultDay)
-	strategy := NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
+	strategy := NewStreamLogsStrategyImpl(mockTime, retentionPeriodInWeeksForTesting, file_layout.NewPerWeekFileLayout(mockTime))
 	logFilePaths, err := strategy.getLogFilePaths(filesystem, retentionPeriodInWeeksForTesting, testEnclaveUuid, testUserService1Uuid)
 
 	require.NoError(t, err)
@@ -94,7 +94,7 @@ func TestGetLogFilePathsAcrossNewYear(t *testing.T) {
 	}
 
 	mockTime := logs_clock.NewMockLogsClockPerDay(defaultYear, currentWeek, defaultDay)
-	strategy := NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
+	strategy := NewStreamLogsStrategyImpl(mockTime, retentionPeriodInWeeksForTesting, file_layout.NewPerWeekFileLayout(mockTime))
 	logFilePaths, err := strategy.getLogFilePaths(filesystem, retentionPeriodInWeeksForTesting, testEnclaveUuid, testUserService1Uuid)
 
 	require.NoError(t, err)
@@ -131,7 +131,7 @@ func TestGetLogFilePathsAcrossNewYearWith53Weeks(t *testing.T) {
 	}
 
 	mockTime := logs_clock.NewMockLogsClockPerDay(2016, currentWeek, 1)
-	strategy := NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
+	strategy := NewStreamLogsStrategyImpl(mockTime, retentionPeriodInWeeksForTesting, file_layout.NewPerWeekFileLayout(mockTime))
 	logFilePaths, err := strategy.getLogFilePaths(filesystem, retentionPeriodInWeeksForTesting, testEnclaveUuid, testUserService1Uuid)
 
 	require.NoError(t, err)
@@ -163,7 +163,7 @@ func TestGetLogFilePathsWithDiffRetentionPeriod(t *testing.T) {
 	}
 
 	mockTime := logs_clock.NewMockLogsClockPerDay(defaultYear, currentWeek, defaultDay)
-	strategy := NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
+	strategy := NewStreamLogsStrategyImpl(mockTime, retentionPeriodInWeeksForTesting, file_layout.NewPerWeekFileLayout(mockTime))
 	logFilePaths, err := strategy.getLogFilePaths(filesystem, retentionPeriod, testEnclaveUuid, testUserService1Uuid)
 
 	require.NoError(t, err)
@@ -195,7 +195,7 @@ func TestGetLogFilePathsReturnsAllAvailableWeeks(t *testing.T) {
 	currentWeek := 2
 
 	mockTime := logs_clock.NewMockLogsClockPerDay(defaultYear, currentWeek, defaultDay)
-	strategy := NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
+	strategy := NewStreamLogsStrategyImpl(mockTime, retentionPeriodInWeeksForTesting, file_layout.NewPerWeekFileLayout(mockTime))
 	logFilePaths, err := strategy.getLogFilePaths(filesystem, retentionPeriodInWeeksForTesting, testEnclaveUuid, testUserService1Uuid)
 
 	require.NoError(t, err)
@@ -220,7 +220,7 @@ func TestGetLogFilePathsReturnsCorrectPathsIfWeeksMissingInBetween(t *testing.T)
 	currentWeek := 3
 
 	mockTime := logs_clock.NewMockLogsClockPerDay(defaultYear, currentWeek, defaultDay)
-	strategy := NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
+	strategy := NewStreamLogsStrategyImpl(mockTime, retentionPeriodInWeeksForTesting, file_layout.NewPerWeekFileLayout(mockTime))
 	logFilePaths, err := strategy.getLogFilePaths(filesystem, retentionPeriodInWeeksForTesting, testEnclaveUuid, testUserService1Uuid)
 
 	require.NoError(t, err)
@@ -249,7 +249,7 @@ func TestGetLogFilePathsReturnsCorrectPathsIfCurrentWeekHasNoLogsYet(t *testing.
 		week2filepath,
 	}
 
-	strategy := NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
+	strategy := NewStreamLogsStrategyImpl(mockTime, retentionPeriodInWeeksForTesting, file_layout.NewPerWeekFileLayout(mockTime))
 	logFilePaths, err := strategy.getLogFilePaths(filesystem, retentionPeriodInWeeksForTesting, testEnclaveUuid, testUserService1Uuid)
 
 	require.NoError(t, err)
@@ -267,7 +267,7 @@ func TestIsWithinRetentionPeriod(t *testing.T) {
 
 	// week 41 would put the log line outside the retention period
 	mockTime := logs_clock.NewMockLogsClockPerDay(2023, 41, 0)
-	strategy := NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
+	strategy := NewStreamLogsStrategyImpl(mockTime, retentionPeriodInWeeksForTesting, file_layout.NewPerWeekFileLayout(mockTime))
 
 	timestamp, err := parseTimestampFromJsonLogLine(jsonLogLine)
 	require.NoError(t, err)
