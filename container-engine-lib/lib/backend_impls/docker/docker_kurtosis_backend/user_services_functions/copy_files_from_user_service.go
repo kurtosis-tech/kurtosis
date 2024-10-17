@@ -26,7 +26,6 @@ func CopyFilesFromUserService(
 	output io.Writer,
 	dockerManager *docker_manager.DockerManager,
 ) error {
-
 	srcPath := srcPathOnContainer
 	srcPathBase := filepath.Base(srcPathOnContainer)
 	if srcPathBase == doNotIncludeParentDirInArchiveSymbol {
@@ -54,10 +53,11 @@ func CopyFilesFromUserService(
 	}
 	defer tarStreamReadCloser.Close()
 
-	if _, err := io.Copy(output, tarStreamReadCloser); err != nil {
+	if numBytesCopied, err := io.Copy(output, tarStreamReadCloser); err != nil {
 		return stacktrace.Propagate(
 			err,
-			"An error occurred copying the bytes of TAR'd up files at '%v' on service '%v' to the output",
+			"'%v' bytes copied before an error occurred copying the bytes of TAR'd up files at '%v' on service '%v' to the output",
+			numBytesCopied,
 			srcPathOnContainer,
 			serviceUuid,
 		)

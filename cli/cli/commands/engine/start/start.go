@@ -97,7 +97,7 @@ var StartCmd = &lowlevel.LowlevelKurtosisCommand{
 		},
 		{
 			Key:       logRetentionPeriodFlagKey,
-			Usage:     "The length of time that Kurtosis should keep logs for. Eg. if set to 1week, Kurtosis will remove all logs beyond 1 week.",
+			Usage:     "The length of time that Kurtosis should keep logs for. Eg. if set to 168h, Kurtosis will remove all logs beyond 1 week. You can specify hours using 'h' however Kurtosis currently only supports setting retention on a weekly basis.",
 			Shorthand: "",
 			Type:      flags.FlagType_String,
 			Default:   defaults.DefaultLogRetentionPeriod,
@@ -169,7 +169,7 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 	}
 	_, err = time.ParseDuration(logRetentionPeriodStr)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred parsing provided log retention period '%v' into a duration. Ensure the provided value has the proper format. Valid time units are \"ns\", \"us\" (or \"µs\"), \"ms\", \"s\", \"m\", \"h\".", logRetentionPeriodStr)
+		return stacktrace.Propagate(err, "An error occurred parsing provided log retention period '%v' into a duration. Ensure the provided value has the proper format of hours using 'h'.", logRetentionPeriodStr)
 	}
 
 	if engineVersion == defaultEngineVersion && isDebugMode {
