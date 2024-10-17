@@ -50,7 +50,7 @@ func TestRemoveLogsBeyondRetentionPeriod(t *testing.T) {
 	_, _ = mockFs.Create(week1filepath)
 	_, _ = mockFs.Create(week2filepath)
 
-	logFileManager := NewLogFileManager(mockKurtosisBackend, mockFs, fileLayout, mockTime, 5, volume_consts.LogsStorageDirpath)
+	logFileManager := NewLogFileManager(mockKurtosisBackend, mockFs, fileLayout, mockTime, convertWeeksToDuration(5), volume_consts.LogsStorageDirpath)
 	logFileManager.RemoveLogsBeyondRetentionPeriod(ctx) // should remove week 49 logs
 
 	_, err := mockFs.Stat(week49filepath)
