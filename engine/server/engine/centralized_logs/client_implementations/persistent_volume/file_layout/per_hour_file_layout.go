@@ -5,9 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_consts"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
-	"github.com/kurtosis-tech/stacktrace"
 	"golang.org/x/exp/slices"
-	"io/fs"
 	"math"
 	"os"
 	"strconv"
@@ -58,26 +56,6 @@ func (phf *PerHourFileLayout) GetLogFilePaths(
 		return phf.getLogFilePathsFromNowTillRetentionPeriod(filesystem, retentionPeriodInHours, enclaveUuid, serviceUuid)
 	} else {
 		paths = phf.getLogFilePathsBeyondRetentionPeriod(filesystem, retentionPeriodInHours, retentionPeriodIntervals, enclaveUuid, serviceUuid)
-	}
-
-	return paths, nil
-}
-
-func (phf *PerHourFileLayout) GetAllLogFilePaths(filesystem volume_filesystem.VolumeFilesystem, enclaveUuid string) ([]string, error) {
-	var paths []string
-
-	root := ""
-	walkFunc := func(path string, info fs.FileInfo, err error) error {
-		paths = append(paths, path)
-		// first check that the path matches the format cause then it's a potential path in this file layout
-
-		//if it does check that it has the desired enclave uuid if enclave uuid isn't empty
-		return nil
-	}
-
-	err := filesystem.Walk(root, walkFunc)
-	if err != nil {
-		return []string{}, stacktrace.Propagate(err, "An error occurred walking file path.")
 	}
 
 	return paths, nil

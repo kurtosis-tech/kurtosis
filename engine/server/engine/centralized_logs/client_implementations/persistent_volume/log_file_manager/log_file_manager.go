@@ -11,8 +11,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"io/fs"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -37,20 +39,18 @@ type LogFileManager struct {
 	time logs_clock.LogsClock
 
 	logRetentionPeriodInWeeks int
+
+	baseFilePath string
 }
 
-func NewLogFileManager(
-	kurtosisBackend backend_interface.KurtosisBackend,
-	filesystem volume_filesystem.VolumeFilesystem,
-	fileLayout file_layout.LogFileLayout,
-	time logs_clock.LogsClock,
-	logRetentionPeriodInWeeks int) *LogFileManager {
+func NewLogFileManager(kurtosisBackend backend_interface.KurtosisBackend, filesystem volume_filesystem.VolumeFilesystem, fileLayout file_layout.LogFileLayout, time logs_clock.LogsClock, logRetentionPeriodInWeeks int, baseFilePath string) *LogFileManager {
 	return &LogFileManager{
 		kurtosisBackend:           kurtosisBackend,
 		filesystem:                filesystem,
 		fileLayout:                fileLayout,
 		time:                      time,
 		logRetentionPeriodInWeeks: logRetentionPeriodInWeeks,
+		baseFilePath:              baseFilePath,
 	}
 }
 
@@ -186,7 +186,7 @@ func (manager *LogFileManager) RemoveLogsBeyondRetentionPeriod(ctx context.Conte
 }
 
 func (manager *LogFileManager) RemoveAllLogs() error {
-	logFilePaths, err := manager.fileLayout.GetAllLogFilePaths(manager.filesystem, emptyEnclaveUuid)
+	logFilePaths, err := manager.getAllLogFilePaths(emptyEnclaveUuid)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting all log file paths.")
 	}
@@ -199,7 +199,7 @@ func (manager *LogFileManager) RemoveAllLogs() error {
 }
 
 func (manager *LogFileManager) RemoveEnclaveLogs(enclaveUuid string) error {
-	enclaveLogFilePaths, err := manager.fileLayout.GetAllLogFilePaths(manager.filesystem, enclaveUuid)
+	enclaveLogFilePaths, err := manager.getAllLogFilePaths(enclaveUuid)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting all log file paths for '%v'.", enclaveUuid)
 	}
@@ -259,4 +259,21 @@ func (manager *LogFileManager) createSymlinkLogFile(targetLogFilePath, symlinkLo
 		return stacktrace.Propagate(err, "An error occurred creating a symlink file path '%v' for target file path '%v'.", targetLogFilePath, targetLogFilePath)
 	}
 	return nil
+}
+
+func (manager *LogFileManager) getAllLogFilePaths(enclaveUuid string) ([]string, error) {
+	var paths []string
+	walkFunc := func(path string, info fs.FileInfo, err error) error {
+		paths = append(paths, path)
+		if enclaveUuid != emptyEnclaveUuid && strings.Contains(path, enclaveUuid) {
+			paths = append(paths, path)
+		} else {
+			paths = append(paths, path)
+		}
+		return nil
+	}
+	if err := manager.filesystem.Walk(manager.baseFilePath, walkFunc); err != nil {
+		return []string{}, stacktrace.Propagate(err, "An error occurred walking file path.")
+	}
+	return paths, nil
 }

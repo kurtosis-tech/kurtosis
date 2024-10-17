@@ -699,7 +699,7 @@ func executeStreamCallAndGetReceivedServiceLogLines(
 	// no log file management is done in these tests so values for logFileManager aren't important
 	mockTime := logs_clock.NewMockLogsClockPerDay(0, 0, 0)
 	fileLayout := file_layout.NewPerWeekFileLayout(mockTime)
-	logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, underlyingFs, fileLayout, mockTime, 0)
+	logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, underlyingFs, fileLayout, mockTime, 0, volume_consts.LogsStorageDirpath)
 	logsDatabaseClient := NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, underlyingFs, logFileManager, streamStrategy)
 
 	userServiceLogsByUuidChan, errChan, receivedCancelCtxFunc, err := logsDatabaseClient.StreamUserServiceLogs(ctx, enclaveUuid, userServiceUuids, logLinesFilters, shouldFollowLogs, defaultShouldReturnAllLogs, defaultNumLogLines)
