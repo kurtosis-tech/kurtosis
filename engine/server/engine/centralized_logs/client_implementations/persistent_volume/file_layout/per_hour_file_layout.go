@@ -33,6 +33,7 @@ func NewPerHourFileLayout(time logs_clock.LogsClock) *PerHourFileLayout {
 func (phf *PerHourFileLayout) GetLogFileLayoutFormat() string {
 	// Right now this format is specifically made for Vector Logs Aggregators format
 	// This wil be used my Vector LogsAggregator to determine the path to output to
+	// TODO: add a test that makes sure whats returned by the vector storage format always matches vector storage format
 	return fmt.Sprintf("%s%%Y/%%V/%%U/%%H/{{ enclave_uuid }}/{{ service_uuid }}.json", volume_consts.LogsStorageDirpath)
 }
 
