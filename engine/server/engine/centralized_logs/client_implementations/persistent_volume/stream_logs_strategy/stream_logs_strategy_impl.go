@@ -21,10 +21,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	oneWeek = 7 * 24 * time.Hour
-)
-
 // StreamLogsStrategyImpl pulls logs from filesystem where there is a log file per year, per week, per enclave, per service
 // Weeks are denoted 01-52
 // e.g.

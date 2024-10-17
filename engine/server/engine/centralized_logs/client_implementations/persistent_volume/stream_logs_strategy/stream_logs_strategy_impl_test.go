@@ -2,23 +2,18 @@ package stream_logs_strategy
 
 import (
 	"bufio"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/file_layout"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_consts"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
 	"github.com/stretchr/testify/require"
 	"io"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
 )
 
 const (
-	testEnclaveUuid      = "test-enclave"
-	testUserService1Uuid = "test-user-service-1"
-
 	retentionPeriodInWeeksForTesting = 5
 )
 
@@ -40,12 +35,6 @@ func TestIsWithinRetentionPeriod(t *testing.T) {
 
 	require.NoError(t, err)
 	require.False(t, isWithinRetentionPeriod)
-}
-
-func getWeekFilepathStr(year, week int) string {
-	// %02d to format week num with leading zeros so 1-9 are converted to 01-09 for %V format
-	formattedWeekNum := fmt.Sprintf("%02d", week)
-	return fmt.Sprintf(file_layout.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), formattedWeekNum, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
 }
 
 func TestGetCompleteJsonLogString(t *testing.T) {
