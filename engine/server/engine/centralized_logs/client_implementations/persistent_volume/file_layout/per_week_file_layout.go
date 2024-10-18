@@ -36,7 +36,7 @@ func (pwf *PerWeekFileLayout) GetLogFileLayoutFormat() string {
 	// Right now this format is specifically made for Vector Logs Aggregators format
 	// This wil be used my Vector LogsAggregator to determine the path to output to
 	// is there a way to get rid of the /var/log/kurtosis?
-	return fmt.Sprintf("%s%%Y/%%V/{{ enclave_uuid }}/{{ service_uuid }}.json", pwf.baseLogsFilePath)
+	return fmt.Sprintf("\"%s%%%%Y/%%%%V/{{ enclave_uuid }}/{{ service_uuid }}.json\"", pwf.baseLogsFilePath)
 }
 
 func (pwf *PerWeekFileLayout) GetLogFilePath(time time.Time, enclaveUuid, serviceUuid string) string {

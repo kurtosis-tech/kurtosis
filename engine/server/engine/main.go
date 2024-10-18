@@ -426,7 +426,7 @@ func getLogsDatabaseClient(kurtosisBackendType args.KurtosisBackendType, kurtosi
 		perHourFileLayout := file_layout.NewPerHourFileLayout(realTime, volume_consts.LogsStorageDirpath)
 		logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, osFs, perHourFileLayout, realTime, logRetentionPeriod, volume_consts.LogsStorageDirpath)
 		if logFileManager.GetLogFileLayoutFormat() != vector_consts.VectorLogsFilepathFormat {
-			return nil, stacktrace.NewError("Log file format for this logs database client does not much format output by Vector logs aggregator. This is a Kurtosis bug.")
+			return nil, stacktrace.NewError("Log file format for this logs database client '%v' does not much format output by Vector logs aggregator '%v'. This is a Kurtosis bug.", logFileManager.GetLogFileLayoutFormat(), vector_consts.VectorLogsFilepathFormat)
 		}
 		streamLogsStrategy := stream_logs_strategy.NewStreamLogsStrategyImpl(realTime, logRetentionPeriod, perHourFileLayout)
 		logsDatabaseClient = persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs, logFileManager, streamLogsStrategy)
