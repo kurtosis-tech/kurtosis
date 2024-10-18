@@ -184,11 +184,16 @@ func TestGetLogFilePathsWithHourlyRetentionAcrossYears(t *testing.T) {
 
 }
 
-func TestGetLogFilePathsWithHourlyRetentionWithinSameDay(t *testing.T) {
+func TestSundayIsConvertedFromStrftimeToGolangTime(t *testing.T) {
+	expectedFilepath := "/var/log/kurtosis/2024/02/7/05/test-enclave/test-user-service-1.json"
 
+	mockTime := logs_clock.NewMockLogsClockPerHour(2024, 2, 0, 5)
+	fileLayout := NewPerHourFileLayout(mockTime, volume_consts.LogsStorageDirpath)
+
+	actualFilePath := fileLayout.GetLogFilePath(mockTime.Now(), testEnclaveUuid, testUserService1Uuid)
+	require.Equal(t, expectedFilepath, actualFilePath)
 }
 
-//
 //func TestGetLogFilePathsWithHourlyRetentionReturnsCorrectPathsIfHoursMissingInBetween(t *testing.T) {
 //	filesystem := volume_filesystem.NewMockedVolumeFilesystem()
 //

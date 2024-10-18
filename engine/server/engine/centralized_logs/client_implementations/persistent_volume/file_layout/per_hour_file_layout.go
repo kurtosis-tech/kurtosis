@@ -43,10 +43,8 @@ func (phf *PerHourFileLayout) GetLogFileLayoutFormat() string {
 }
 
 func (phf *PerHourFileLayout) GetLogFilePath(time time.Time, enclaveUuid, serviceUuid string) string {
-	year, week := time.ISOWeek()
-	day := time.Weekday()
-	hour := time.Hour()
-	return phf.getHourlyLogFilePath(year, week, int(day), hour, enclaveUuid, serviceUuid)
+	year, week, day, hour := TimeToWeekDayHour(time)
+	return phf.getHourlyLogFilePath(year, week, day, hour, enclaveUuid, serviceUuid)
 }
 
 func (phf *PerHourFileLayout) GetLogFilePaths(
@@ -124,7 +122,7 @@ func (phf *PerHourFileLayout) getLogFilePathsBeyondRetentionPeriod(fs volume_fil
 }
 
 func (phf *PerHourFileLayout) getHourlyLogFilePath(year, week, day, hour int, enclaveUuid, serviceUuid string) string {
-	// these match the format in which Vector outputs week, hours, days
+	// match the format in which Vector outputs week, hours, days
 	formattedWeekNum := fmt.Sprintf("%02d", week)
 	formattedHourNum := fmt.Sprintf("%02d", hour)
 	return fmt.Sprintf(perHourFilePathFmtSt, phf.baseLogsFilePath, strconv.Itoa(year), formattedWeekNum, strconv.Itoa(day), formattedHourNum, enclaveUuid, serviceUuid, volume_consts.Filetype)
@@ -134,6 +132,10 @@ func TimeToWeekDayHour(time time.Time) (int, int, int, int) {
 	year, week := time.ISOWeek()
 	hour := time.Hour()
 	day := int(time.Weekday())
+	// convert sunday in golang's time(0) to sunday (0) in strftime/Vector log aggregator time(7)
+	if day == 0 {
+		day = 7
+	}
 	return year, week, day, hour
 }
 

@@ -116,11 +116,11 @@ func (pwf *PerWeekFileLayout) getLogFilePathsBeyondRetentionPeriod(fs volume_fil
 	return paths
 }
 
-func DurationToWeeks(d time.Duration) int {
-	return int(math.Round(d.Hours() / float64(oneWeekInHours)))
-}
-
 func (pwf *PerWeekFileLayout) getWeeklyFilePath(year, week int, enclaveUuid, serviceUuid string) string {
 	formattedWeekNum := fmt.Sprintf("%02d", week)
 	return fmt.Sprintf(PerWeekFilePathFmtStr, pwf.baseLogsFilePath, strconv.Itoa(year), formattedWeekNum, enclaveUuid, serviceUuid, volume_consts.Filetype)
+}
+
+func DurationToWeeks(d time.Duration) int {
+	return int(math.Round(d.Hours() / float64(oneWeekInHours)))
 }
