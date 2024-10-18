@@ -13,7 +13,7 @@ func TestGetLogFilePath(t *testing.T) {
 	currentTime := logs_clock.NewMockLogsClockPerHour(2024, 1, 1, 1)
 	fileLayout := NewPerHourFileLayout(currentTime, volume_consts.LogsStorageDirpath)
 
-	expectedFilepath := "/var/log/kurtosis/2024/01/01/01/test-enclave/test-user-service-1.json"
+	expectedFilepath := "/var/log/kurtosis/2024/01/1/01/test-enclave/test-user-service-1.json"
 	now := currentTime.Now()
 	actualFilePath := fileLayout.GetLogFilePath(now, testEnclaveUuid, testUserService1Uuid)
 	require.Equal(t, expectedFilepath, actualFilePath)

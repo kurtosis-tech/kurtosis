@@ -126,9 +126,8 @@ func (phf *PerHourFileLayout) getLogFilePathsBeyondRetentionPeriod(fs volume_fil
 func (phf *PerHourFileLayout) getHourlyLogFilePath(year, week, day, hour int, enclaveUuid, serviceUuid string) string {
 	// these match the format in which Vector outputs week, hours, days
 	formattedWeekNum := fmt.Sprintf("%02d", week)
-	formattedDayNum := fmt.Sprintf("%02d", day)
 	formattedHourNum := fmt.Sprintf("%02d", hour)
-	return fmt.Sprintf(perHourFilePathFmtSt, phf.baseLogsFilePath, strconv.Itoa(year), formattedWeekNum, formattedDayNum, formattedHourNum, enclaveUuid, serviceUuid, volume_consts.Filetype)
+	return fmt.Sprintf(perHourFilePathFmtSt, phf.baseLogsFilePath, strconv.Itoa(year), formattedWeekNum, strconv.Itoa(day), formattedHourNum, enclaveUuid, serviceUuid, volume_consts.Filetype)
 }
 
 func TimeToWeekDayHour(time time.Time) (int, int, int, int) {
