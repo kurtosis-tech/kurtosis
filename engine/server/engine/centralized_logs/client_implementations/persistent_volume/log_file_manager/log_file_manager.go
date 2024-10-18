@@ -208,6 +208,10 @@ func (manager *LogFileManager) RemoveEnclaveLogs(enclaveUuid string) error {
 	return nil
 }
 
+func (manager *LogFileManager) GetLogFileLayoutFormat() string {
+	return manager.fileLayout.GetLogFileLayoutFormat()
+}
+
 func (manager *LogFileManager) getEnclaveAndServiceInfo(ctx context.Context) (map[enclave.EnclaveUUID][]*service.ServiceRegistration, error) {
 	enclaveToServicesMap := map[enclave.EnclaveUUID][]*service.ServiceRegistration{}
 

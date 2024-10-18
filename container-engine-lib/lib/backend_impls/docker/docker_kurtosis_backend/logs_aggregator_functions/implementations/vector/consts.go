@@ -25,7 +25,7 @@ const (
 	// https://vector.dev/docs/reference/configuration/template-syntax/
 	baseLogsFilepath = "\"" + logsStorageDirpath + "%%Y/%%V/%%u/%%H/"
 
-	uuidLogsFilepath = baseLogsFilepath + "{{ enclave_uuid }}/{{ service_uuid }}.json\""
+	VectorLogsFilepathFormat = baseLogsFilepath + "{{ enclave_uuid }}/{{ service_uuid }}.json\""
 
 	sourceConfigFileTemplateName = "srcVectorConfigFileTemplate"
 	sinkConfigFileTemplateName   = "sinkVectorConfigFileTemplate"
