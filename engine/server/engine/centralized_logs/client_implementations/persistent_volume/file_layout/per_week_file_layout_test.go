@@ -2,6 +2,7 @@ package file_layout
 
 import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_consts"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -23,7 +24,7 @@ func TestGetLogFilePaths(t *testing.T) {
 
 	currentWeek := 17
 	currentTime := logs_clock.NewMockLogsClockPerDay(defaultYear, currentWeek, defaultDay)
-	fileLayout := NewPerWeekFileLayout(currentTime)
+	fileLayout := NewPerWeekFileLayout(currentTime, volume_consts.LogsStorageDirpath)
 
 	week12filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerDay(defaultYear, 12, 0).Now(), testEnclaveUuid, testUserService1Uuid)
 	week13filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerDay(defaultYear, 13, 0).Now(), testEnclaveUuid, testUserService1Uuid)
@@ -62,7 +63,7 @@ func TestGetLogFilePathsAcrossNewYear(t *testing.T) {
 
 	currentWeek := 2
 	currentTime := logs_clock.NewMockLogsClockPerDay(defaultYear, currentWeek, defaultDay)
-	fileLayout := NewPerWeekFileLayout(currentTime)
+	fileLayout := NewPerWeekFileLayout(currentTime, volume_consts.LogsStorageDirpath)
 
 	// ../week/enclave uuid/service uuid.json
 	week50filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerDay(defaultYear-1, 50, 0).Now(), testEnclaveUuid, testUserService1Uuid)
@@ -100,7 +101,7 @@ func TestGetLogFilePathsAcrossNewYearWith53Weeks(t *testing.T) {
 
 	currentWeek := 3
 	currentTime := logs_clock.NewMockLogsClockPerDay(2016, currentWeek, 1)
-	fileLayout := NewPerWeekFileLayout(currentTime)
+	fileLayout := NewPerWeekFileLayout(currentTime, volume_consts.LogsStorageDirpath)
 
 	// According to ISOWeek, 2015 has 53 weeks
 	week52filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerDay(2015, 51, 3).Now(), testEnclaveUuid, testUserService1Uuid)
@@ -138,7 +139,7 @@ func TestGetLogFilePathsWithDiffRetentionPeriod(t *testing.T) {
 
 	currentWeek := 2
 	mockTime := logs_clock.NewMockLogsClockPerDay(defaultYear, currentWeek, defaultDay)
-	fileLayout := NewPerWeekFileLayout(mockTime)
+	fileLayout := NewPerWeekFileLayout(mockTime, volume_consts.LogsStorageDirpath)
 
 	// ../week/enclave uuid/service uuid.json
 	week52filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerDay(defaultYear-1, 52, 0).Now(), testEnclaveUuid, testUserService1Uuid)
@@ -169,7 +170,7 @@ func TestGetLogFilePathsReturnsAllAvailableWeeks(t *testing.T) {
 
 	currentWeek := 2
 	currentTime := logs_clock.NewMockLogsClockPerDay(defaultYear, currentWeek, defaultDay)
-	fileLayout := NewPerWeekFileLayout(currentTime)
+	fileLayout := NewPerWeekFileLayout(currentTime, volume_consts.LogsStorageDirpath)
 
 	// ../week/enclave uuid/service uuid.json
 	week52filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerDay(defaultYear-1, 52, 0).Now(), testEnclaveUuid, testUserService1Uuid)
@@ -201,7 +202,7 @@ func TestGetLogFilePathsReturnsCorrectPathsIfWeeksMissingInBetween(t *testing.T)
 
 	currentWeek := 3
 	currentTime := logs_clock.NewMockLogsClockPerDay(defaultYear, currentWeek, defaultDay)
-	fileLayout := NewPerWeekFileLayout(currentTime)
+	fileLayout := NewPerWeekFileLayout(currentTime, volume_consts.LogsStorageDirpath)
 
 	// ../week/enclave uuid/service uuid.json
 	week52filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerDay(defaultYear, 0, 0).Now(), testEnclaveUuid, testUserService1Uuid)
@@ -224,7 +225,7 @@ func TestGetLogFilePathsReturnsCorrectPathsIfCurrentWeekHasNoLogsYet(t *testing.
 
 	currentWeek := 3
 	currentTime := logs_clock.NewMockLogsClockPerDay(defaultYear, currentWeek, defaultDay)
-	fileLayout := NewPerWeekFileLayout(currentTime)
+	fileLayout := NewPerWeekFileLayout(currentTime, volume_consts.LogsStorageDirpath)
 
 	// ../week/enclave uuid/service uuid.json
 	week1filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerDay(defaultYear, 1, 0).Now(), testEnclaveUuid, testUserService1Uuid)
@@ -254,7 +255,7 @@ func TestGetLogFilePathsOneIntervalBeyondRetentionPeriod(t *testing.T) {
 	filesystem := volume_filesystem.NewMockedVolumeFilesystem()
 
 	mockTime := logs_clock.NewMockLogsClockPerDay(2023, 2, defaultDay)
-	fileLayout := NewPerWeekFileLayout(mockTime)
+	fileLayout := NewPerWeekFileLayout(mockTime, volume_consts.LogsStorageDirpath)
 
 	week49filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerDay(2022, 49, 0).Now(), testEnclaveUuid, testUserService1Uuid)
 	week50filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerDay(2022, 50, 0).Now(), testEnclaveUuid, testUserService1Uuid)
@@ -281,7 +282,7 @@ func TestGetLogFilePathsTwoIntervalBeyondRetentionPeriod(t *testing.T) {
 	filesystem := volume_filesystem.NewMockedVolumeFilesystem()
 
 	mockTime := logs_clock.NewMockLogsClockPerDay(2023, 2, defaultDay)
-	fileLayout := NewPerWeekFileLayout(mockTime)
+	fileLayout := NewPerWeekFileLayout(mockTime, volume_consts.LogsStorageDirpath)
 
 	week48filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerDay(2022, 48, 0).Now(), testEnclaveUuid, testUserService1Uuid)
 	week49filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerDay(2022, 49, 0).Now(), testEnclaveUuid, testUserService1Uuid)
@@ -319,7 +320,7 @@ func TestGetLogFilePathsWithNoPathsBeyondRetentionPeriod(t *testing.T) {
 	filesystem := volume_filesystem.NewMockedVolumeFilesystem()
 
 	mockTime := logs_clock.NewMockLogsClockPerDay(2023, 2, defaultDay)
-	fileLayout := NewPerWeekFileLayout(mockTime)
+	fileLayout := NewPerWeekFileLayout(mockTime, volume_consts.LogsStorageDirpath)
 
 	week50filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerDay(2022, 50, 0).Now(), testEnclaveUuid, testUserService1Uuid)
 	week51filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerDay(2022, 51, 0).Now(), testEnclaveUuid, testUserService1Uuid)
@@ -344,7 +345,7 @@ func TestGetLogFilePathsWithMissingPathBetweenIntervals(t *testing.T) {
 	filesystem := volume_filesystem.NewMockedVolumeFilesystem()
 
 	mockTime := logs_clock.NewMockLogsClockPerDay(2023, 2, defaultDay)
-	fileLayout := NewPerWeekFileLayout(mockTime)
+	fileLayout := NewPerWeekFileLayout(mockTime, volume_consts.LogsStorageDirpath)
 
 	week47filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerDay(2022, 48, 0).Now(), testEnclaveUuid, testUserService1Uuid)
 	week49filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClockPerDay(2022, 49, 0).Now(), testEnclaveUuid, testUserService1Uuid)

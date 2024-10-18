@@ -24,23 +24,24 @@ const (
 )
 
 type PerWeekFileLayout struct {
-	time logs_clock.LogsClock
+	time             logs_clock.LogsClock
+	baseLogsFilePath string
 }
 
-func NewPerWeekFileLayout(time logs_clock.LogsClock) *PerWeekFileLayout {
-	return &PerWeekFileLayout{time: time}
+func NewPerWeekFileLayout(time logs_clock.LogsClock, baseLogsFilePath string) *PerWeekFileLayout {
+	return &PerWeekFileLayout{time: time, baseLogsFilePath: baseLogsFilePath}
 }
 
 func (pwf *PerWeekFileLayout) GetLogFileLayoutFormat() string {
 	// Right now this format is specifically made for Vector Logs Aggregators format
 	// This wil be used my Vector LogsAggregator to determine the path to output to
 	// is there a way to get rid of the /var/log/kurtosis?
-	return fmt.Sprintf("%s%%Y/%%V/{{ enclave_uuid }}/{{ service_uuid }}.json", volume_consts.LogsStorageDirpath)
+	return fmt.Sprintf("%s%%Y/%%V/{{ enclave_uuid }}/{{ service_uuid }}.json", pwf.baseLogsFilePath)
 }
 
 func (pwf *PerWeekFileLayout) GetLogFilePath(time time.Time, enclaveUuid, serviceUuid string) string {
 	year, week := time.ISOWeek()
-	return getWeeklyFilePath(year, week, enclaveUuid, serviceUuid)
+	return pwf.getWeeklyFilePath(year, week, enclaveUuid, serviceUuid)
 }
 
 func (pwf *PerWeekFileLayout) GetLogFilePaths(
@@ -68,7 +69,7 @@ func (pwf *PerWeekFileLayout) getLogFilePathsFromNowTillRetentionPeriod(fs volum
 	firstWeekWithLogs := 0
 	for i := 0; i < retentionPeriodInWeeks; i++ {
 		year, week := currentTime.Add(time.Duration(-i) * oneWeekDuration).ISOWeek()
-		filePathStr := getWeeklyFilePath(year, week, enclaveUuid, serviceUuid)
+		filePathStr := pwf.getWeeklyFilePath(year, week, enclaveUuid, serviceUuid)
 		if _, err := fs.Stat(filePathStr); err == nil {
 			paths = append(paths, filePathStr)
 			firstWeekWithLogs = i
@@ -84,7 +85,7 @@ func (pwf *PerWeekFileLayout) getLogFilePathsFromNowTillRetentionPeriod(fs volum
 	// scan for remaining files as far back as they exist before the retention period
 	for i := firstWeekWithLogs + 1; i < retentionPeriodInWeeks; i++ {
 		year, week := currentTime.Add(time.Duration(-i) * oneWeekDuration).ISOWeek()
-		filePathStr := getWeeklyFilePath(year, week, enclaveUuid, serviceUuid)
+		filePathStr := pwf.getWeeklyFilePath(year, week, enclaveUuid, serviceUuid)
 		if _, err := fs.Stat(filePathStr); err != nil {
 			break
 		}
@@ -105,7 +106,7 @@ func (pwf *PerWeekFileLayout) getLogFilePathsBeyondRetentionPeriod(fs volume_fil
 	for i := 0; i < retentionPeriodIntervals; i++ {
 		numWeeksToGoBack := retentionPeriodInWeeks + i
 		year, weekToRemove := currentTime.Add(time.Duration(-numWeeksToGoBack) * oneWeekDuration).ISOWeek()
-		filePathStr := getWeeklyFilePath(year, weekToRemove, enclaveUuid, serviceUuid)
+		filePathStr := pwf.getWeeklyFilePath(year, weekToRemove, enclaveUuid, serviceUuid)
 		if _, err := fs.Stat(filePathStr); err != nil {
 			continue
 		}
@@ -119,7 +120,7 @@ func DurationToWeeks(d time.Duration) int {
 	return int(math.Round(d.Hours() / float64(oneWeekInHours)))
 }
 
-func getWeeklyFilePath(year, week int, enclaveUuid, serviceUuid string) string {
+func (pwf *PerWeekFileLayout) getWeeklyFilePath(year, week int, enclaveUuid, serviceUuid string) string {
 	formattedWeekNum := fmt.Sprintf("%02d", week)
-	return fmt.Sprintf(PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), formattedWeekNum, enclaveUuid, serviceUuid, volume_consts.Filetype)
+	return fmt.Sprintf(PerWeekFilePathFmtStr, pwf.baseLogsFilePath, strconv.Itoa(year), formattedWeekNum, enclaveUuid, serviceUuid, volume_consts.Filetype)
 }

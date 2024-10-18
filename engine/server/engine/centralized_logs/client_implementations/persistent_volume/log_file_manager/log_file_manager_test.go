@@ -30,7 +30,7 @@ const (
 func TestRemoveLogsBeyondRetentionPeriod(t *testing.T) {
 	ctx := context.Background()
 	mockTime := logs_clock.NewMockLogsClockPerDay(2023, 2, defaultDay)
-	fileLayout := file_layout.NewPerWeekFileLayout(mockTime)
+	fileLayout := file_layout.NewPerWeekFileLayout(mockTime, volume_consts.LogsStorageDirpath)
 
 	mockKurtosisBackend := getMockedKurtosisBackendWithEnclavesAndServices(ctx, t, mockTime)
 
@@ -61,7 +61,7 @@ func TestRemoveLogsBeyondRetentionPeriod(t *testing.T) {
 func TestRemoveEnclaveLogs(t *testing.T) {
 	mockKurtosisBackend := backend_interface.NewMockKurtosisBackend(t)
 	mockTime := logs_clock.NewMockLogsClockPerDay(2022, 52, defaultDay)
-	fileLayout := file_layout.NewPerWeekFileLayout(mockTime)
+	fileLayout := file_layout.NewPerWeekFileLayout(mockTime, volume_consts.LogsStorageDirpath)
 
 	// setup filesystem
 	mockFs := volume_filesystem.NewMockedVolumeFilesystem()
@@ -100,7 +100,7 @@ func TestRemoveEnclaveLogs(t *testing.T) {
 func TestRemoveAllLogs(t *testing.T) {
 	mockKurtosisBackend := backend_interface.NewMockKurtosisBackend(t)
 	mockTime := logs_clock.NewMockLogsClockPerDay(2022, 52, defaultDay)
-	fileLayout := file_layout.NewPerWeekFileLayout(mockTime)
+	fileLayout := file_layout.NewPerWeekFileLayout(mockTime, volume_consts.LogsStorageDirpath)
 
 	// setup filesystem
 	mockFs := volume_filesystem.NewMockedVolumeFilesystem()
@@ -140,7 +140,7 @@ func TestRemoveAllLogs(t *testing.T) {
 func TestCreateLogFiles(t *testing.T) {
 	mockTime := logs_clock.NewMockLogsClockPerDay(2022, 52, defaultDay)
 	mockFs := volume_filesystem.NewMockedVolumeFilesystem()
-	fileLayout := file_layout.NewPerWeekFileLayout(mockTime)
+	fileLayout := file_layout.NewPerWeekFileLayout(mockTime, volume_consts.LogsStorageDirpath)
 
 	// setup kurtosis backend
 	ctx := context.Background()

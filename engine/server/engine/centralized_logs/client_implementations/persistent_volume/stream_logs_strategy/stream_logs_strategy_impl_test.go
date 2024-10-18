@@ -25,7 +25,7 @@ func TestIsWithinRetentionPeriod(t *testing.T) {
 
 	// week 41 would put the log line outside the retention period
 	mockTime := logs_clock.NewMockLogsClockPerDay(2023, 41, 0)
-	strategy := NewStreamLogsStrategyImpl(mockTime, convertWeeksToDuration(retentionPeriodInWeeksForTesting), file_layout.NewPerWeekFileLayout(mockTime))
+	strategy := NewStreamLogsStrategyImpl(mockTime, convertWeeksToDuration(retentionPeriodInWeeksForTesting), file_layout.NewPerWeekFileLayout(mockTime, volume_consts.LogsStorageDirpath))
 
 	timestamp, err := parseTimestampFromJsonLogLine(jsonLogLine)
 	require.NoError(t, err)

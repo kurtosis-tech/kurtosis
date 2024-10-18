@@ -22,12 +22,14 @@ const (
 )
 
 type PerHourFileLayout struct {
-	time logs_clock.LogsClock
+	time             logs_clock.LogsClock
+	baseLogsFilePath string
 }
 
-func NewPerHourFileLayout(time logs_clock.LogsClock) *PerHourFileLayout {
+func NewPerHourFileLayout(time logs_clock.LogsClock, baseLogsFilePath string) *PerHourFileLayout {
 	return &PerHourFileLayout{
-		time: time,
+		time:             time,
+		baseLogsFilePath: baseLogsFilePath,
 	}
 }
 
@@ -44,7 +46,7 @@ func (phf *PerHourFileLayout) GetLogFilePath(time time.Time, enclaveUuid, servic
 	year, week := time.ISOWeek()
 	day := time.Weekday()
 	hour := time.Hour()
-	return getHourlyLogFilePath(year, week, int(day), hour, enclaveUuid, serviceUuid)
+	return phf.getHourlyLogFilePath(year, week, int(day), hour, enclaveUuid, serviceUuid)
 }
 
 func (phf *PerHourFileLayout) GetLogFilePaths(
@@ -73,7 +75,7 @@ func (phf *PerHourFileLayout) getLogFilePathsFromNowTillRetentionPeriod(fs volum
 	firstHourWithLogs := 0
 	for i := 0; i < retentionPeriodInHours; i++ {
 		year, week, day, hour := TimeToWeekDayHour(currentTime.Add(time.Duration(-i) * time.Hour))
-		filePathStr := getHourlyLogFilePath(year, week, day, hour, enclaveUuid, serviceUuid)
+		filePathStr := phf.getHourlyLogFilePath(year, week, day, hour, enclaveUuid, serviceUuid)
 		logrus.Infof("Looking for logs for service '%v' in enclave '%v' at filepath: %v", enclaveUuid, serviceUuid, filePathStr)
 		if _, err := fs.Stat(filePathStr); err == nil {
 			paths = append(paths, filePathStr)
@@ -90,7 +92,7 @@ func (phf *PerHourFileLayout) getLogFilePathsFromNowTillRetentionPeriod(fs volum
 	// scan for remaining files as far back as they exist before the retention period
 	for i := firstHourWithLogs + 1; i < retentionPeriodInHours; i++ {
 		year, week, day, hour := TimeToWeekDayHour(currentTime.Add(time.Duration(-i) * time.Hour))
-		filePathStr := getHourlyLogFilePath(year, week, day, hour, enclaveUuid, serviceUuid)
+		filePathStr := phf.getHourlyLogFilePath(year, week, day, hour, enclaveUuid, serviceUuid)
 		if _, err := fs.Stat(filePathStr); err != nil {
 			break
 		}
@@ -111,7 +113,7 @@ func (phf *PerHourFileLayout) getLogFilePathsBeyondRetentionPeriod(fs volume_fil
 	for i := 0; i < retentionPeriodIntervals; i++ {
 		numHoursToGoBack := retentionPeriodInHours + i
 		year, week, day, hour := TimeToWeekDayHour(currentTime.Add(time.Duration(-numHoursToGoBack) * time.Hour))
-		filePathStr := getHourlyLogFilePath(year, week, day, hour, enclaveUuid, serviceUuid)
+		filePathStr := phf.getHourlyLogFilePath(year, week, day, hour, enclaveUuid, serviceUuid)
 		if _, err := fs.Stat(filePathStr); err != nil {
 			continue
 		}
@@ -121,12 +123,12 @@ func (phf *PerHourFileLayout) getLogFilePathsBeyondRetentionPeriod(fs volume_fil
 	return paths
 }
 
-func getHourlyLogFilePath(year, week, day, hour int, enclaveUuid, serviceUuid string) string {
+func (phf *PerHourFileLayout) getHourlyLogFilePath(year, week, day, hour int, enclaveUuid, serviceUuid string) string {
 	// these match the format in which Vector outputs week, hours, days
 	formattedWeekNum := fmt.Sprintf("%02d", week)
 	formattedDayNum := fmt.Sprintf("%02d", day)
 	formattedHourNum := fmt.Sprintf("%02d", hour)
-	return fmt.Sprintf(perHourFilePathFmtSt, volume_consts.LogsStorageDirpath, strconv.Itoa(year), formattedWeekNum, formattedDayNum, formattedHourNum, enclaveUuid, serviceUuid, volume_consts.Filetype)
+	return fmt.Sprintf(perHourFilePathFmtSt, phf.baseLogsFilePath, strconv.Itoa(year), formattedWeekNum, formattedDayNum, formattedHourNum, enclaveUuid, serviceUuid, volume_consts.Filetype)
 }
 
 func TimeToWeekDayHour(time time.Time) (int, int, int, int) {
