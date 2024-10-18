@@ -357,7 +357,12 @@ func (interpreter *StartosisInterpreter) buildBindings(
 	moduleGlobalCache map[string]*startosis_packages.ModuleCacheEntry,
 	packageReplaceOptions map[string]string,
 ) (*starlark.StringDict, *startosis_errors.InterpretationError) {
+	packagePrefix := getModulePrefix(packageId)
 	recursiveInterpretForModuleLoading := func(moduleId string, serializedStartosis string) (starlark.StringDict, *startosis_errors.InterpretationError) {
+		modulePrefix := getModulePrefix(moduleId)
+		if modulePrefix != packagePrefix {
+			instructionPlan.AddPackageDependency(modulePrefix)
+		}
 		result, err := interpreter.interpretInternal(packageId, moduleId, serializedStartosis, instructionPlan, moduleGlobalCache, packageReplaceOptions)
 		if err != nil {
 			return nil, err
@@ -384,6 +389,16 @@ func (interpreter *StartosisInterpreter) buildBindings(
 		predeclared[kurtosisTypeConstructors.Name()] = kurtosisTypeConstructors
 	}
 	return &predeclared, nil
+}
+
+const (
+	moduleIdSeperator     = "/"
+	numModuleIdSeparators = 4
+	prefixNum             = 3
+)
+
+func getModulePrefix(moduleId string) string {
+	return strings.Join(strings.SplitN(moduleId, moduleIdSeperator, numModuleIdSeparators)[:prefixNum], moduleIdSeperator)
 }
 
 func findFirstEqualInstructionPastIndex(currentEnclaveInstructionsList []*enclave_plan_persistence.EnclavePlanInstruction, naiveInstructionsList []*instructions_plan.ScheduledInstruction, minIndex int) int {

@@ -36,5 +36,5 @@ type KurtosisInstruction interface {
 	GetPersistableAttributes() *enclave_plan_persistence.EnclavePlanInstructionBuilder
 
 	// UpdatePlan updates the plan with the effects of running this instruction.
-	UpdatePlan(plan *plan_yaml.PlanYaml) error
+	UpdatePlan(plan *plan_yaml.PlanYamlGenerator) error
 }

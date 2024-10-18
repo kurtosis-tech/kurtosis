@@ -97,10 +97,11 @@ fi
         exit 1
     fi
     # Executing goreleaser v1.26.2 without needing to install it
-    if ! curl -sfL https://goreleaser.com/static/run | VERSION=v1.26.2 DISTRIBUTION=oss bash -s -- ${goreleaser_verb_and_flags}; then
-        echo "Error: Couldn't build the CLI binary for the current OS/arch" >&2
-        exit 1
-    fi
+#     if ! curl -sfL https://goreleaser.com/static/run | VERSION=v1.26.2 DISTRIBUTION=oss bash -s -- ${goreleaser_verb_and_flags}; then
+     if ! GORELEASER_CURRENT_TAG=$(cat $root_dirpath/version.txt) goreleaser ${goreleaser_verb_and_flags}; then
+         echo "Error: Couldn't build the CLI binary for the current OS/arch" >&2
+         exit 1
+     fi
 )
 
 # Final verification
