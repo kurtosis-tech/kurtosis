@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/file_layout"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_file_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/persistent_volume_helpers"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/stream_logs_strategy"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_consts"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
@@ -132,7 +133,7 @@ func TestStreamUserServiceLogsPerWeek_WithFilters(t *testing.T) {
 
 	underlyingFs := createFilledPerWeekFilesystem(startingWeek)
 	mockTime := logs_clock.NewMockLogsClockPerDay(defaultYear, startingWeek, defaultDay)
-	perWeekStreamStrategy := stream_logs_strategy.NewStreamLogsStrategyImpl(mockTime, convertWeeksToDuration(retentionPeriodInWeeksForTesting), file_layout.NewPerWeekFileLayout(mockTime, volume_consts.LogsStorageDirpath))
+	perWeekStreamStrategy := stream_logs_strategy.NewStreamLogsStrategyImpl(mockTime, persistent_volume_helpers.ConvertWeeksToDuration(retentionPeriodInWeeksForTesting), file_layout.NewPerWeekFileLayout(mockTime, volume_consts.LogsStorageDirpath))
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
 		t,
@@ -215,7 +216,7 @@ func TestStreamUserServiceLogsPerWeek_NoLogsFromPersistentVolume(t *testing.T) {
 
 	underlyingFs := createEmptyPerWeekFilesystem(startingWeek)
 	mockTime := logs_clock.NewMockLogsClockPerDay(defaultYear, startingWeek, defaultDay)
-	perWeekStreamStrategy := stream_logs_strategy.NewStreamLogsStrategyImpl(mockTime, convertWeeksToDuration(retentionPeriodInWeeksForTesting), file_layout.NewPerWeekFileLayout(mockTime, volume_consts.LogsStorageDirpath))
+	perWeekStreamStrategy := stream_logs_strategy.NewStreamLogsStrategyImpl(mockTime, persistent_volume_helpers.ConvertWeeksToDuration(retentionPeriodInWeeksForTesting), file_layout.NewPerWeekFileLayout(mockTime, volume_consts.LogsStorageDirpath))
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
 		t,
@@ -320,7 +321,7 @@ func TestStreamUserServiceLogsPerWeek_ThousandsOfLogLinesSuccessfulExecution(t *
 	require.NoError(t, err)
 
 	mockTime := logs_clock.NewMockLogsClockPerDay(defaultYear, startingWeek, defaultDay)
-	perWeekStreamStrategy := stream_logs_strategy.NewStreamLogsStrategyImpl(mockTime, convertWeeksToDuration(retentionPeriodInWeeksForTesting), file_layout.NewPerWeekFileLayout(mockTime, volume_consts.LogsStorageDirpath))
+	perWeekStreamStrategy := stream_logs_strategy.NewStreamLogsStrategyImpl(mockTime, persistent_volume_helpers.ConvertWeeksToDuration(retentionPeriodInWeeksForTesting), file_layout.NewPerWeekFileLayout(mockTime, volume_consts.LogsStorageDirpath))
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
 		t,
@@ -407,7 +408,7 @@ func TestStreamUserServiceLogsPerWeek_EmptyLogLines(t *testing.T) {
 	require.NoError(t, err)
 
 	mockTime := logs_clock.NewMockLogsClockPerDay(defaultYear, startingWeek, defaultDay)
-	perWeekStreamStrategy := stream_logs_strategy.NewStreamLogsStrategyImpl(mockTime, convertWeeksToDuration(retentionPeriodInWeeksForTesting), file_layout.NewPerWeekFileLayout(mockTime, volume_consts.LogsStorageDirpath))
+	perWeekStreamStrategy := stream_logs_strategy.NewStreamLogsStrategyImpl(mockTime, persistent_volume_helpers.ConvertWeeksToDuration(retentionPeriodInWeeksForTesting), file_layout.NewPerWeekFileLayout(mockTime, volume_consts.LogsStorageDirpath))
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
 		t,
@@ -474,7 +475,7 @@ func TestStreamUserServiceLogsPerWeek_WithLogsAcrossWeeks(t *testing.T) {
 	require.NoError(t, err)
 
 	mockTime := logs_clock.NewMockLogsClockPerDay(defaultYear, 4, defaultDay)
-	perWeekStreamStrategy := stream_logs_strategy.NewStreamLogsStrategyImpl(mockTime, convertWeeksToDuration(retentionPeriodInWeeksForTesting), file_layout.NewPerWeekFileLayout(mockTime, volume_consts.LogsStorageDirpath))
+	perWeekStreamStrategy := stream_logs_strategy.NewStreamLogsStrategyImpl(mockTime, persistent_volume_helpers.ConvertWeeksToDuration(retentionPeriodInWeeksForTesting), file_layout.NewPerWeekFileLayout(mockTime, volume_consts.LogsStorageDirpath))
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
 		t,
@@ -543,7 +544,7 @@ func TestStreamUserServiceLogsPerWeek_WithLogLineAcrossWeeks(t *testing.T) {
 	require.NoError(t, err)
 
 	mockTime := logs_clock.NewMockLogsClockPerDay(defaultYear, 4, defaultDay)
-	perWeekStreamStrategy := stream_logs_strategy.NewStreamLogsStrategyImpl(mockTime, convertWeeksToDuration(retentionPeriodInWeeksForTesting), file_layout.NewPerWeekFileLayout(mockTime, volume_consts.LogsStorageDirpath))
+	perWeekStreamStrategy := stream_logs_strategy.NewStreamLogsStrategyImpl(mockTime, persistent_volume_helpers.ConvertWeeksToDuration(retentionPeriodInWeeksForTesting), file_layout.NewPerWeekFileLayout(mockTime, volume_consts.LogsStorageDirpath))
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
 		t,
@@ -594,7 +595,7 @@ func TestStreamUserServiceLogsPerWeekReturnsTimestampedLogLines(t *testing.T) {
 	require.NoError(t, err)
 
 	mockTime := logs_clock.NewMockLogsClockPerDay(defaultYear, startingWeek, defaultDay)
-	perWeekStreamStrategy := stream_logs_strategy.NewStreamLogsStrategyImpl(mockTime, convertWeeksToDuration(retentionPeriodInWeeksForTesting), file_layout.NewPerWeekFileLayout(mockTime, volume_consts.LogsStorageDirpath))
+	perWeekStreamStrategy := stream_logs_strategy.NewStreamLogsStrategyImpl(mockTime, persistent_volume_helpers.ConvertWeeksToDuration(retentionPeriodInWeeksForTesting), file_layout.NewPerWeekFileLayout(mockTime, volume_consts.LogsStorageDirpath))
 
 	expectedTime, err := time.Parse(utcFormat, defaultUTCTimestampStr)
 	require.NoError(t, err)
@@ -830,9 +831,4 @@ func createEmptyPerWeekFilesystem(week int) volume_filesystem.VolumeFilesystem {
 	_, _ = mapFs.Create(file3PathStr)
 
 	return mapFs
-}
-
-func convertWeeksToDuration(retentionPeriodInWeeks int) time.Duration {
-	const hoursInWeek = 7 * 24 // 7 days * 24 hours
-	return time.Duration(retentionPeriodInWeeks*hoursInWeek) * time.Hour
 }

@@ -21,6 +21,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	nowToRetentionPeriod = -1
+)
+
 // StreamLogsStrategyImpl pulls logs from filesystem where there is a log file per year, per week, per enclave, per service
 // Weeks are denoted 01-52
 // e.g.
@@ -52,7 +56,7 @@ func (strategy *StreamLogsStrategyImpl) StreamLogs(
 	shouldReturnAllLogs bool,
 	numLogLines uint32,
 ) {
-	paths, err := strategy.fileLayout.GetLogFilePaths(fs, strategy.logRetentionPeriod, -1, string(enclaveUuid), string(serviceUuid))
+	paths, err := strategy.fileLayout.GetLogFilePaths(fs, strategy.logRetentionPeriod, nowToRetentionPeriod, string(enclaveUuid), string(serviceUuid))
 	if err != nil {
 		streamErrChan <- stacktrace.Propagate(err, "An error occurred retrieving log file paths for service '%v' in enclave '%v'.", serviceUuid, enclaveUuid)
 		return

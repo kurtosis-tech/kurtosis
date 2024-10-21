@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/file_layout"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/persistent_volume_helpers"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_consts"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
 	"github.com/stretchr/testify/require"
@@ -25,7 +26,7 @@ func TestIsWithinRetentionPeriod(t *testing.T) {
 
 	// week 41 would put the log line outside the retention period
 	mockTime := logs_clock.NewMockLogsClockPerDay(2023, 41, 0)
-	strategy := NewStreamLogsStrategyImpl(mockTime, convertWeeksToDuration(retentionPeriodInWeeksForTesting), file_layout.NewPerWeekFileLayout(mockTime, volume_consts.LogsStorageDirpath))
+	strategy := NewStreamLogsStrategyImpl(mockTime, persistent_volume_helpers.ConvertWeeksToDuration(retentionPeriodInWeeksForTesting), file_layout.NewPerWeekFileLayout(mockTime, volume_consts.LogsStorageDirpath))
 
 	timestamp, err := parseTimestampFromJsonLogLine(jsonLogLine)
 	require.NoError(t, err)
@@ -268,9 +269,4 @@ func TestParseTimestampFromJsonLogLineWithNoTimestampFieldReturnsError(t *testin
 	_, err := parseTimestampFromJsonLogLine(jsonLogLine)
 
 	require.Error(t, err)
-}
-
-func convertWeeksToDuration(retentionPeriodInWeeks int) time.Duration {
-	const hoursInWeek = 7 * 24 // 7 days * 24 hours
-	return time.Duration(retentionPeriodInWeeks*hoursInWeek) * time.Hour
 }

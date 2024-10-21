@@ -221,13 +221,106 @@ func TestGetLogFilePathsWithHourlyRetentionReturnsCorrectPathsIfHoursMissingInBe
 	require.Equal(t, hourFiveFp, logFilePaths[0]) // should only return hour 5 3 because hour 4 is missing
 }
 
+func TestTimeToWeekDayHour(t *testing.T) {
+	tests := []struct {
+		name         string
+		inputTime    time.Time
+		expectedYear int
+		expectedWeek int
+		expectedDay  int
+		expectedHour int
+	}{
+		{
+			name:         "Midweek Wednesday 14:00",
+			inputTime:    time.Date(2023, 10, 18, 14, 0, 0, 0, time.UTC),
+			expectedYear: 2023,
+			expectedWeek: 42,
+			expectedDay:  3,
+			expectedHour: 14,
+		},
+		{
+			name:         "Sunday midnight",
+			inputTime:    time.Date(2023, 10, 15, 0, 0, 0, 0, time.UTC),
+			expectedYear: 2023,
+			expectedWeek: 41,
+			expectedDay:  7, // Sunday should be converted to 7
+			expectedHour: 0,
+		},
+		{
+			name:         "Monday 9:30",
+			inputTime:    time.Date(2024, 1, 1, 9, 30, 0, 0, time.UTC),
+			expectedYear: 2024,
+			expectedWeek: 1,
+			expectedDay:  1,
+			expectedHour: 9,
+		},
+		{
+			name:         "Saturday afternoon",
+			inputTime:    time.Date(2024, 10, 19, 15, 0, 0, 0, time.UTC),
+			expectedYear: 2024,
+			expectedWeek: 42,
+			expectedDay:  6,
+			expectedHour: 15,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			year, week, day, hour := TimeToWeekDayHour(tt.inputTime)
+			if year != tt.expectedYear || week != tt.expectedWeek || day != tt.expectedDay || hour != tt.expectedHour {
+				t.Errorf("TimeToWeekDayHour(%v) = (%d, %d, %d, %d); expected (%d, %d, %d, %d)",
+					tt.inputTime, year, week, day, hour, tt.expectedYear, tt.expectedWeek, tt.expectedDay, tt.expectedHour)
+			}
+		})
+	}
+}
+
+func TestDurationToHours(t *testing.T) {
+	tests := []struct {
+		name          string
+		inputDuration time.Duration
+		expectedHours int
+	}{
+		{
+			name:          "Zero duration",
+			inputDuration: 0,
+			expectedHours: 0,
+		},
+		{
+			name:          "One hour duration",
+			inputDuration: time.Hour,
+			expectedHours: 1,
+		},
+		{
+			name:          "Fractional hour duration",
+			inputDuration: 90 * time.Minute, // 1.5 hours
+			expectedHours: 2,                // should round up
+		},
+		{
+			name:          "More than one day",
+			inputDuration: 25 * time.Hour,
+			expectedHours: 25,
+		},
+		{
+			name:          "Negative duration",
+			inputDuration: -time.Hour,
+			expectedHours: -1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := DurationToHours(tt.inputDuration)
+			if result != tt.expectedHours {
+				t.Errorf("DurationToHours(%v) = %d; expected %d", tt.inputDuration, result, tt.expectedHours)
+			}
+		})
+	}
+}
+
 func createFilepaths(t *testing.T, filesystem volume_filesystem.VolumeFilesystem, filepaths []string) {
 	for _, path := range filepaths {
 		_, err := filesystem.Create(path)
 		require.NoError(t, err)
 	}
-}
-
-func TestDurationToHour(t *testing.T) {
-
 }
