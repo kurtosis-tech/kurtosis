@@ -14,7 +14,7 @@ const (
 	userOverrideServiceName = "user-override"
 
 	starlarkScriptWithUserIdPassed = `
-IMAGE = "hyperledger/besu:latest"
+IMAGE = "hyperledger/besu:24.3"
 def run(plan, args):
 	no_override = plan.add_service(
 		name = "` + noOverrideServiceName + `",
