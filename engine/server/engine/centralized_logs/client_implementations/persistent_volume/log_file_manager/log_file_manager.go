@@ -264,17 +264,18 @@ func (manager *LogFileManager) createSymlinkLogFile(targetLogFilePath, symlinkLo
 	return nil
 }
 
+// if [enclaveUuid] is empty, gets log file paths from all enclaves
 func (manager *LogFileManager) getAllLogFilePaths(enclaveUuid string) ([]string, error) {
 	var paths []string
 	walkFunc := func(path string, info fs.FileInfo, err error) error {
-		if enclaveUuid != emptyEnclaveUuid {
-			if strings.Contains(path, enclaveUuid) && !info.IsDir() {
-				paths = append(paths, path)
-			}
-		} else {
-			if !info.IsDir() {
-				paths = append(paths, path)
-			}
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		if enclaveUuid == emptyEnclaveUuid || strings.Contains(path, enclaveUuid) {
+			paths = append(paths, path)
 		}
 		return nil
 	}
