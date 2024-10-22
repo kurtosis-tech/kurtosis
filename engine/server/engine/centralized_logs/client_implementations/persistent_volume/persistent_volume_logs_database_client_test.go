@@ -891,6 +891,143 @@ func TestStreamUserServiceLogsPerHour_WithLogLineAcrossHours(t *testing.T) {
 	}
 }
 
+func TestStreamUserServiceLogsPerHour_WithLogLineAcrossWeekDayHour(t *testing.T) {
+	expectedAmountLogLines := 8
+
+	expectedServiceAmountLogLinesByServiceUuid := map[service.ServiceUUID]int{
+		testUserService1Uuid: expectedAmountLogLines,
+	}
+
+	var logLinesFilters []logline.LogLineFilter
+
+	userServiceUuids := map[service.ServiceUUID]bool{
+		testUserService1Uuid: true,
+	}
+
+	expectedFirstLogLine := "Starting feature 'centralized logs'"
+
+	day1Hour0logLines := []string{
+		logLine3b,
+		logLine4,
+		logLine5,
+		logLine6,
+		logLine7,
+		logLine8}
+	day0Hour24logLines := []string{
+		logLine1,
+		logLine2,
+		logLine3a}
+
+	underlyingFs := volume_filesystem.NewMockedVolumeFilesystem()
+	day1Hour0Time := logs_clock.NewMockLogsClockPerHour(defaultYear, 4, 1, 0)
+	day0Hour24Time := logs_clock.NewMockLogsClockPerHour(defaultYear, 3, 0, 23)
+
+	perHourFileLayout := file_layout.NewPerHourFileLayout(day1Hour0Time, volume_consts.LogsStorageDirpath)
+
+	day1Hour0logLinesStr := strings.Join(day1Hour0logLines, "\n") + "\n"
+	day0Hour24logLinesStr := strings.Join(day0Hour24logLines, "\n")
+
+	day1Hour0filepath := perHourFileLayout.GetLogFilePath(day1Hour0Time.Now(), testEnclaveUuid, testUserService1Uuid)
+	day1Hour0, err := underlyingFs.Create(day1Hour0filepath)
+	require.NoError(t, err)
+	_, err = day1Hour0.WriteString(day1Hour0logLinesStr)
+	require.NoError(t, err)
+
+	day0Hour24filepath := perHourFileLayout.GetLogFilePath(day0Hour24Time.Now(), testEnclaveUuid, testUserService1Uuid)
+	day0Hour24, err := underlyingFs.Create(day0Hour24filepath)
+	require.NoError(t, err)
+	_, err = day0Hour24.WriteString(day0Hour24logLinesStr)
+	require.NoError(t, err)
+
+	perHourStreamStrategy := stream_logs_strategy.NewStreamLogsStrategyImpl(day1Hour0Time, persistent_volume_helpers.ConvertWeeksToDuration(retentionPeriodInWeeksForTesting), perHourFileLayout)
+
+	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
+		t,
+		logLinesFilters,
+		userServiceUuids,
+		expectedServiceAmountLogLinesByServiceUuid,
+		doNotFollowLogs,
+		underlyingFs,
+		perHourStreamStrategy,
+	)
+	require.NoError(t, testEvaluationErr)
+
+	for serviceUuid, serviceLogLines := range receivedUserServiceLogsByUuid {
+		expectedAmountLogLines, found := expectedServiceAmountLogLinesByServiceUuid[serviceUuid]
+		require.True(t, found)
+		require.Equal(t, expectedAmountLogLines, len(serviceLogLines))
+		require.Equal(t, expectedFirstLogLine, serviceLogLines[0].GetContent())
+	}
+}
+
+func TestStreamUserServiceLogsPerHour_WithLogLineAcrossWeeks(t *testing.T) {
+	expectedAmountLogLines := 8
+
+	expectedServiceAmountLogLinesByServiceUuid := map[service.ServiceUUID]int{
+		testUserService1Uuid: expectedAmountLogLines,
+	}
+
+	var logLinesFilters []logline.LogLineFilter
+
+	userServiceUuids := map[service.ServiceUUID]bool{
+		testUserService1Uuid: true,
+	}
+
+	expectedFirstLogLine := "Starting feature 'centralized logs'"
+
+	hour4logLines := []string{
+		logLine3b,
+		logLine4,
+		logLine5,
+		logLine6,
+		logLine7,
+		logLine8}
+	hour3logLines := []string{
+		logLine1,
+		logLine2,
+		logLine3a}
+
+	underlyingFs := volume_filesystem.NewMockedVolumeFilesystem()
+	hour4Time := logs_clock.NewMockLogsClockPerHour(defaultYear, startingWeek, defaultDay, 4)
+	perHourFileLayout := file_layout.NewPerHourFileLayout(hour4Time, volume_consts.LogsStorageDirpath)
+
+	hour3logLinesStr := strings.Join(hour3logLines, "\n") + "\n"
+	hour4logLinesStr := strings.Join(hour4logLines, "\n")
+
+	hour4filepath := perHourFileLayout.GetLogFilePath(hour4Time.Now(), testEnclaveUuid, testUserService1Uuid)
+	hour4, err := underlyingFs.Create(hour4filepath)
+	require.NoError(t, err)
+	_, err = hour4.WriteString(hour4logLinesStr)
+	require.NoError(t, err)
+
+	hour3Time := logs_clock.NewMockLogsClockPerHour(defaultYear, startingWeek, defaultDay, 3)
+	hour3filepath := perHourFileLayout.GetLogFilePath(hour3Time.Now(), testEnclaveUuid, testUserService1Uuid)
+	hour3, err := underlyingFs.Create(hour3filepath)
+	require.NoError(t, err)
+	_, err = hour3.WriteString(hour3logLinesStr)
+	require.NoError(t, err)
+
+	perHourStreamStrategy := stream_logs_strategy.NewStreamLogsStrategyImpl(hour4Time, persistent_volume_helpers.ConvertWeeksToDuration(retentionPeriodInWeeksForTesting), perHourFileLayout)
+
+	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
+		t,
+		logLinesFilters,
+		userServiceUuids,
+		expectedServiceAmountLogLinesByServiceUuid,
+		doNotFollowLogs,
+		underlyingFs,
+		perHourStreamStrategy,
+	)
+	require.NoError(t, testEvaluationErr)
+
+	for serviceUuid, serviceLogLines := range receivedUserServiceLogsByUuid {
+		expectedAmountLogLines, found := expectedServiceAmountLogLinesByServiceUuid[serviceUuid]
+		require.True(t, found)
+		require.Equal(t, expectedAmountLogLines, len(serviceLogLines))
+		require.Equal(t, expectedFirstLogLine, serviceLogLines[0].GetContent())
+	}
+}
+
 func TestStreamUserServiceLogsPerWeekReturnsTimestampedLogLines(t *testing.T) {
 	expectedAmountLogLines := 3
 
