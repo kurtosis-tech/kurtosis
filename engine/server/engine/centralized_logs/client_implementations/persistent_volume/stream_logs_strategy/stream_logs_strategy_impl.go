@@ -22,27 +22,29 @@ import (
 )
 
 const (
-	oneWeek = 7 * 24 * time.Hour
+	nowToRetentionPeriod = -1
 )
 
-// PerWeekStreamLogsStrategy pulls logs from filesystem where there is a log file per year, per week, per enclave, per service
+// StreamLogsStrategyImpl pulls logs from filesystem where there is a log file per year, per week, per enclave, per service
 // Weeks are denoted 01-52
 // e.g.
 // [.../28/d3e8832d671f/61830789f03a.json] is the file containing logs from service with uuid 61830789f03a, in enclave with uuid d3e8832d671f,
 // in the 28th week of the current year
-type PerWeekStreamLogsStrategy struct {
-	time                      logs_clock.LogsClock
-	logRetentionPeriodInWeeks int
+type StreamLogsStrategyImpl struct {
+	time               logs_clock.LogsClock
+	logRetentionPeriod time.Duration
+	fileLayout         file_layout.LogFileLayout
 }
 
-func NewPerWeekStreamLogsStrategy(time logs_clock.LogsClock, logRetentionPeriodInWeeks int) *PerWeekStreamLogsStrategy {
-	return &PerWeekStreamLogsStrategy{
-		time:                      time,
-		logRetentionPeriodInWeeks: logRetentionPeriodInWeeks,
+func NewStreamLogsStrategyImpl(time logs_clock.LogsClock, logRetentionPeriod time.Duration, fileLayout file_layout.LogFileLayout) *StreamLogsStrategyImpl {
+	return &StreamLogsStrategyImpl{
+		time:               time,
+		logRetentionPeriod: logRetentionPeriod,
+		fileLayout:         fileLayout,
 	}
 }
 
-func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
+func (strategy *StreamLogsStrategyImpl) StreamLogs(
 	ctx context.Context,
 	fs volume_filesystem.VolumeFilesystem,
 	logLineSender *logline.LogLineSender,
@@ -54,7 +56,7 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 	shouldReturnAllLogs bool,
 	numLogLines uint32,
 ) {
-	paths, err := strategy.getLogFilePaths(fs, strategy.logRetentionPeriodInWeeks, string(enclaveUuid), string(serviceUuid))
+	paths, err := strategy.fileLayout.GetLogFilePaths(fs, strategy.logRetentionPeriod, nowToRetentionPeriod, string(enclaveUuid), string(serviceUuid))
 	if err != nil {
 		streamErrChan <- stacktrace.Propagate(err, "An error occurred retrieving log file paths for service '%v' in enclave '%v'.", serviceUuid, enclaveUuid)
 		return
@@ -66,12 +68,6 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 					2) Logs were manually removed.`,
 			serviceUuid, enclaveUuid)
 		return
-	}
-	if len(paths) > strategy.logRetentionPeriodInWeeks {
-		logrus.Warnf(
-			`We expected to retrieve logs going back '%v' weeks, but instead retrieved logs going back '%v' weeks. 
-					This means logs past the retention period are being returned, likely a bug in Kurtosis.`,
-			strategy.logRetentionPeriodInWeeks, len(paths))
 	}
 
 	logsReader, files, err := getLogsReader(fs, paths)
@@ -109,19 +105,6 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 	}
 }
 
-// [getLogFilePaths] returns a list of log file paths containing logs for [serviceUuid] in [enclaveUuid]
-// going [retentionPeriodInWeeks] back from the [currentWeek].
-// Notes:
-// - File paths are of the format '/week/enclave uuid/service uuid.json' where 'week' is %V strftime specifier
-// - The list of file paths is returned in order of oldest logs to most recent logs e.g. [ 03/80124/1234.json, /04/801234/1234.json, ...]
-// - If a file path does not exist, the function with exits and returns whatever file paths were found
-func (strategy *PerWeekStreamLogsStrategy) getLogFilePaths(filesystem volume_filesystem.VolumeFilesystem, retentionPeriodInWeeks int, enclaveUuid, serviceUuid string) ([]string, error) {
-	// TODO: embed FileLayout into StreamLogsStrategy interface
-	perWeekFileLayout := file_layout.NewPerWeekFileLayout(strategy.time)
-	retentionPeriod := time.Duration(retentionPeriodInWeeks) * oneWeek
-	return perWeekFileLayout.GetLogFilePaths(filesystem, retentionPeriod, -1, enclaveUuid, serviceUuid)
-}
-
 // Returns a Reader over all logs in [logFilePaths] and the open file descriptors of the associated [logFilePaths]
 func getLogsReader(filesystem volume_filesystem.VolumeFilesystem, logFilePaths []string) (*bufio.Reader, []volume_filesystem.VolumeFile, error) {
 	var fileReaders []io.Reader
@@ -143,7 +126,7 @@ func getLogsReader(filesystem volume_filesystem.VolumeFilesystem, logFilePaths [
 	return bufio.NewReader(combinedLogsReader), files, nil
 }
 
-func (strategy *PerWeekStreamLogsStrategy) streamAllLogs(
+func (strategy *StreamLogsStrategyImpl) streamAllLogs(
 	ctx context.Context,
 	logsReader *bufio.Reader,
 	logLineSender *logline.LogLineSender,
@@ -181,7 +164,7 @@ func (strategy *PerWeekStreamLogsStrategy) streamAllLogs(
 }
 
 // tail -n X
-func (strategy *PerWeekStreamLogsStrategy) streamTailLogs(
+func (strategy *StreamLogsStrategyImpl) streamTailLogs(
 	ctx context.Context,
 	logsReader *bufio.Reader,
 	numLogLines uint32,
@@ -266,7 +249,7 @@ func isValidJsonEnding(line string) bool {
 	return endOfLine == volume_consts.EndOfJsonLine
 }
 
-func (strategy *PerWeekStreamLogsStrategy) sendJsonLogLine(jsonLog JsonLog, conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex, logLineSender *logline.LogLineSender, serviceUuid service.ServiceUUID) error {
+func (strategy *StreamLogsStrategyImpl) sendJsonLogLine(jsonLog JsonLog, conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex, logLineSender *logline.LogLineSender, serviceUuid service.ServiceUUID) error {
 	// each logLineStr is of the following structure: {"enclave_uuid": "...", "service_uuid":"...", "log": "...",.. "timestamp":"..."}
 	// eg. {"container_type":"api-container", "container_id":"8f8558ba", "container_name":"/kurtosis-api--ffd",
 	// "log":"hi","timestamp":"2023-08-14T14:57:49Z"}
@@ -307,14 +290,14 @@ func (strategy *PerWeekStreamLogsStrategy) sendJsonLogLine(jsonLog JsonLog, conj
 }
 
 // Returns true if [logLine] has no timestamp
-func (strategy *PerWeekStreamLogsStrategy) isWithinRetentionPeriod(logLine *logline.LogLine) (bool, error) {
-	retentionPeriod := strategy.time.Now().Add(time.Duration(-strategy.logRetentionPeriodInWeeks) * oneWeek)
+func (strategy *StreamLogsStrategyImpl) isWithinRetentionPeriod(logLine *logline.LogLine) (bool, error) {
+	oldestTimeWithinRetentionPeriod := strategy.time.Now().Add(-strategy.logRetentionPeriod)
 	timestamp := logLine.GetTimestamp()
-	return timestamp.After(retentionPeriod), nil
+	return timestamp.After(oldestTimeWithinRetentionPeriod), nil
 }
 
 // Continue streaming log lines as they are written to log file (tail -f [filepath])
-func (strategy *PerWeekStreamLogsStrategy) followLogs(
+func (strategy *StreamLogsStrategyImpl) followLogs(
 	ctx context.Context,
 	filepath string,
 	logLineSender *logline.LogLineSender,
