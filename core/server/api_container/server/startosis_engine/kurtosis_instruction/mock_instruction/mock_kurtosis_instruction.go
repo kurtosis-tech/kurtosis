@@ -347,11 +347,11 @@ func (_c *MockKurtosisInstruction_TryResolveWith_Call) RunAndReturn(run func(*en
 }
 
 // UpdatePlan provides a mock function with given fields: plan
-func (_m *MockKurtosisInstruction) UpdatePlan(plan *plan_yaml.PlanYaml) error {
+func (_m *MockKurtosisInstruction) UpdatePlan(plan *plan_yaml.PlanYamlGenerator) error {
 	ret := _m.Called(plan)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*plan_yaml.PlanYaml) error); ok {
+	if rf, ok := ret.Get(0).(func(*plan_yaml.PlanYamlGenerator) error); ok {
 		r0 = rf(plan)
 	} else {
 		r0 = ret.Error(0)
@@ -366,14 +366,14 @@ type MockKurtosisInstruction_UpdatePlan_Call struct {
 }
 
 // UpdatePlan is a helper method to define mock.On call
-//   - plan *plan_yaml.PlanYaml
+//   - plan *plan_yaml.PlanYamlGenerator
 func (_e *MockKurtosisInstruction_Expecter) UpdatePlan(plan interface{}) *MockKurtosisInstruction_UpdatePlan_Call {
 	return &MockKurtosisInstruction_UpdatePlan_Call{Call: _e.mock.On("UpdatePlan", plan)}
 }
 
-func (_c *MockKurtosisInstruction_UpdatePlan_Call) Run(run func(plan *plan_yaml.PlanYaml)) *MockKurtosisInstruction_UpdatePlan_Call {
+func (_c *MockKurtosisInstruction_UpdatePlan_Call) Run(run func(plan *plan_yaml.PlanYamlGenerator)) *MockKurtosisInstruction_UpdatePlan_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*plan_yaml.PlanYaml))
+		run(args[0].(*plan_yaml.PlanYamlGenerator))
 	})
 	return _c
 }
@@ -383,7 +383,7 @@ func (_c *MockKurtosisInstruction_UpdatePlan_Call) Return(_a0 error) *MockKurtos
 	return _c
 }
 
-func (_c *MockKurtosisInstruction_UpdatePlan_Call) RunAndReturn(run func(*plan_yaml.PlanYaml) error) *MockKurtosisInstruction_UpdatePlan_Call {
+func (_c *MockKurtosisInstruction_UpdatePlan_Call) RunAndReturn(run func(*plan_yaml.PlanYamlGenerator) error) *MockKurtosisInstruction_UpdatePlan_Call {
 	_c.Call.Return(run)
 	return _c
 }

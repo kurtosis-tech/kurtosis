@@ -114,7 +114,7 @@ func (builtin *RemoveServiceCapabilities) FillPersistableAttributes(builder *enc
 	)
 }
 
-func (builtin *RemoveServiceCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
+func (builtin *RemoveServiceCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerator) error {
 	plan.RemoveService(string(builtin.serviceName))
 	return nil
 }

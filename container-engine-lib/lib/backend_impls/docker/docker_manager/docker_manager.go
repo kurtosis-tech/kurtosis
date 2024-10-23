@@ -413,6 +413,32 @@ func (manager *DockerManager) RemoveNetwork(context context.Context, networkId s
 	return nil
 }
 
+func (manager *DockerManager) GetDefaultNetwork(ctx context.Context) (*docker_manager_types.Network, error) {
+
+	matchingNetworks, err := manager.GetNetworksByName(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred getting networks matching the network we want to start the engine in, '%v'",
+			consts.NameOfNetworkToStartEngineAndLogServiceContainersIn,
+		)
+	}
+	numMatchingNetworks := len(matchingNetworks)
+	if numMatchingNetworks > 1 {
+		return nil, stacktrace.NewError(
+			"Expected exactly one network matching the name of the network that we want to start the engine in, '%v', but got %v",
+			consts.NameOfNetworkToStartEngineAndLogServiceContainersIn,
+			numMatchingNetworks,
+		)
+	}
+
+	if numMatchingNetworks == 0 {
+		return nil, stacktrace.NewError(fmt.Sprintf("No matching network found with the configured name: %v", consts.NameOfNetworkToStartEngineAndLogServiceContainersIn))
+	}
+
+	return matchingNetworks[0], nil
+}
+
 /*
 CreateVolume
 Creates a Docker volume identified by the given name.
@@ -481,6 +507,21 @@ func (manager *DockerManager) GetVolumesByLabels(ctx context.Context, labels map
 
 	result := []*volume.Volume{}
 	if resp.Volumes != nil {
+		// Podman API inconsistency - filter out the union matches that podman returns while docker only returns the intersect matches when filtering by label
+		for _, vol := range resp.Volumes {
+			allLabelsMatch := true
+
+			for label, val := range labels {
+				if volValue, exists := vol.Labels[label]; !exists || volValue != val {
+					allLabelsMatch = false
+					break
+				}
+			}
+
+			if allLabelsMatch {
+				result = append(result, vol)
+			}
+		}
 		result = resp.Volumes
 	}
 
@@ -804,8 +845,17 @@ func (manager *DockerManager) GetContainerIps(ctx context.Context, containerId s
 		return nil, stacktrace.Propagate(err, "An error occurred inspecting container with ID '%v'", containerId)
 	}
 	allNetworkInfo := resp.NetworkSettings.Networks
-	for _, networkInfo := range allNetworkInfo {
-		containerIps[networkInfo.NetworkID] = networkInfo.IPAddress
+	// for _, networkInfo := range allNetworkInfo {
+	// 	containerIps[networkInfo.NetworkID] = networkInfo.IPAddress
+	// }
+	for networkKey, networkInfo := range allNetworkInfo {
+		// podman does not return the networkID properly and as such we need to make sure we get it.
+		network, err := manager.dockerClient.NetworkInspect(ctx, networkInfo.NetworkID, types.NetworkInspectOptions{})
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred inspecting network: '%v'", networkKey)
+		}
+
+		containerIps[network.ID] = networkInfo.IPAddress
 	}
 	return containerIps, nil
 }
@@ -1171,6 +1221,15 @@ func (manager *DockerManager) ConnectContainerToNetwork(ctx context.Context, net
 	}
 
 	config := getEndpointSettingsForIpAddress(staticIpAddressStr, alias)
+
+	logrus.Infof("Listing all networks right before attempting to connect to network...")
+	networkResources, err := manager.dockerClient.NetworkList(ctx, types.NetworkListOptions{})
+	for _, networkResource := range networkResources {
+		logrus.Infof("Information about network '%v' that exists: %v", networkResource.Name, networkResource)
+		if networkResource.ID == networkId {
+			logrus.Infof("The network we are trying to connect to exists right before connection.")
+		}
+	}
 
 	err = manager.dockerClient.NetworkConnect(
 		ctx,
@@ -1738,7 +1797,7 @@ func (manager *DockerManager) getContainerHostConfig(
 			portMap[containerPort] = []nat.PortBinding{
 				// Leaving this struct empty will cause Docker to automatically choose an interface IP & port on the host machine
 				{
-					HostIP:   "",
+					HostIP:   "0.0.0.0",
 					HostPort: "",
 				},
 			}
@@ -1773,6 +1832,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		securityOptStr := string(securityOpt)
 		securityOptsSlice = append(securityOptsSlice, securityOptStr)
 	}
+	securityOptsSlice = append(securityOptsSlice, "")
 
 	extraHosts := []string{}
 	if needsToAccessDockerHostMachine {
@@ -1875,21 +1935,25 @@ func (manager *DockerManager) getContainerHostConfig(
 		Privileged:      false,
 		PublishAllPorts: false,
 		ReadonlyRootfs:  false,
-		SecurityOpt:     securityOptsSlice,
-		StorageOpt:      nil,
-		Tmpfs:           nil,
-		UTSMode:         "",
-		UsernsMode:      "",
-		ShmSize:         0,
-		Sysctls:         nil,
-		Runtime:         "",
-		ConsoleSize:     [2]uint{},
-		Isolation:       "",
-		Resources:       resources,
-		Mounts:          nil,
-		MaskedPaths:     nil,
-		ReadonlyPaths:   nil,
-		Init:            &useInit,
+		//SecurityOpt:     securityOptsSlice,
+		SecurityOpt: []string{
+			"label=disable",       // Disables SELinux
+			"apparmor:unconfined", // Disables AppArmor
+		},
+		StorageOpt:    nil,
+		Tmpfs:         nil,
+		UTSMode:       "",
+		UsernsMode:    "",
+		ShmSize:       0,
+		Sysctls:       nil,
+		Runtime:       "",
+		ConsoleSize:   [2]uint{},
+		Isolation:     "",
+		Resources:     resources,
+		Mounts:        nil,
+		MaskedPaths:   nil,
+		ReadonlyPaths: nil,
+		Init:          &useInit,
 	}
 	return containerHostConfigPtr, nil
 }

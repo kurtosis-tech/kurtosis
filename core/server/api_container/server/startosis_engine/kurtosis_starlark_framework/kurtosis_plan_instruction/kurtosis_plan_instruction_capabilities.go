@@ -28,5 +28,5 @@ type KurtosisPlanInstructionCapabilities interface {
 	Description() string
 
 	// UpdatePlan applies the effect of this instruction capabilities onto the yaml representation of the instruction plan.
-	UpdatePlan(plan *plan_yaml.PlanYaml) error
+	UpdatePlan(plan *plan_yaml.PlanYamlGenerator) error
 }
