@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// WriteStaticConfig writes a static Docker config.json file to a temporary directory
-func WriteStaticConfig(t *testing.T, configContent string) string {
+// writeStaticConfig writes a static Docker config.json file to a temporary directory
+func writeStaticConfig(t *testing.T, configContent string) string {
 	tmpDir, err := os.MkdirTemp("", "docker-config")
 	if err != nil {
 		t.Fatalf("Failed to create temp directory: %v", err)
@@ -42,7 +42,7 @@ func TestGetAuthConfigForRepoPlain(t *testing.T) {
 		}
 	}`, encodedAuth)
 
-	tmpDir := WriteStaticConfig(t, cfg)
+	tmpDir := writeStaticConfig(t, cfg)
 	defer os.RemoveAll(tmpDir)
 
 	// Test 1: Retrieve auth config for Docker Hub using docker.io domain
@@ -71,7 +71,7 @@ func TestGetAuthConfigForRepoOSX(t *testing.T) {
 		},
 		"credsStore": "osxkeychain"
 	}`
-	tmpDir := WriteStaticConfig(t, cfg)
+	tmpDir := writeStaticConfig(t, cfg)
 	defer os.RemoveAll(tmpDir)
 
 	authConfig, err := GetAuthFromDockerConfig("my-repo/my-image:latest")
@@ -88,7 +88,7 @@ func TestGetAuthConfigForRepoUnix(t *testing.T) {
 		},
 		"credsStore": "pass"
 	}`
-	tmpDir := WriteStaticConfig(t, cfg)
+	tmpDir := writeStaticConfig(t, cfg)
 	defer os.RemoveAll(tmpDir)
 
 	authConfig, err := GetAuthFromDockerConfig("my-repo/my-image:latest")

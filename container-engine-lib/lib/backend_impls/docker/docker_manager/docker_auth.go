@@ -42,6 +42,35 @@ func loadDockerAuth() (RegistryAuthConfig, error) {
 	return authConfig, nil
 }
 
+// getRegistriesFromCredsStore fetches all registries from a Docker credential helper (credStore)
+func getRegistriesFromCredsStore(credHelper string) ([]string, error) {
+	credHelperCmd := "docker-credential-" + credHelper
+
+	cmd := exec.Command(credHelperCmd, "list")
+
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		return nil, fmt.Errorf("error executing credential helper %s: %v, %s", credHelperCmd, err, stderr.String())
+	}
+	// Output will look like this: {"https://index.docker.io/v1/":"username"}
+	var result map[string]string
+	outStr := out.String()
+	err := json.Unmarshal([]byte(outStr), &result)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshaling credential helper list output %s: %s, %v", credHelperCmd, outStr, err)
+	}
+
+	registries := []string{}
+	for k := range result {
+		registries = append(registries, k)
+	}
+	return registries, nil
+}
+
 // getCredentialsFromStore fetches credentials from a Docker credential helper (credStore)
 func getCredentialsFromStore(credHelper string, registryURL string) (*registry.AuthConfig, error) {
 	// Prepare the helper command (docker-credential-<store>)
@@ -119,4 +148,31 @@ func GetAuthFromDockerConfig(repo string) (*registry.AuthConfig, error) {
 
 	// Return no AuthConfig if no credentials were found
 	return nil, nil
+}
+
+// GetAllRegistriesFromDockerConfig retrieves all registries from the Docker config.json file
+func GetAllRegistriesFromDockerConfig() ([]string, error) {
+	authConfig, err := loadDockerAuth()
+	if err != nil {
+		return nil, err
+	}
+
+	var registries []string
+	for registry := range authConfig.Auths {
+		registries = append(registries, registry)
+	}
+
+	for registry := range authConfig.CredHelpers {
+		registries = append(registries, registry)
+	}
+
+	if authConfig.CredsStore != "" {
+		r, err := getRegistriesFromCredsStore(authConfig.CredsStore)
+		if err != nil {
+			return nil, err
+		}
+		registries = append(registries, r...)
+	}
+
+	return registries, nil
 }
