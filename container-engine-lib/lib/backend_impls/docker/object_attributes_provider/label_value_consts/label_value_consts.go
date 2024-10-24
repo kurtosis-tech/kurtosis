@@ -28,6 +28,7 @@ const (
 	logsStorageVolumeTypeLabelValueStr            = "kurtosis-logs-storage"
 	logsCollectorVolumeTypeLabelValueStr          = "logs-collector-data"
 	githubAuthStorageVolumeTypeLabelValueStr      = "github-auth-storage"
+	dockerConfigStorageVolumeTypeLabelValueStr    = "docker-config-storage"
 )
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -54,3 +55,4 @@ var PersistentDirectoryVolumeTypeDockerLabelValue = docker_label_value.MustCreat
 var LogsStorageVolumeTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(logsStorageVolumeTypeLabelValueStr)
 var LogsCollectorVolumeTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(logsCollectorVolumeTypeLabelValueStr)
 var GitHubAuthStorageVolumeTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(githubAuthStorageVolumeTypeLabelValueStr)
+var DockerConfigStorageVolumeTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(dockerConfigStorageVolumeTypeLabelValueStr)

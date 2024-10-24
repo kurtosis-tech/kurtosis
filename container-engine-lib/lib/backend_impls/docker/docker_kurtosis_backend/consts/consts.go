@@ -33,6 +33,7 @@ const (
 	HttpApplicationProtocol                             = "http"
 
 	GitHubAuthStorageDirPath = "/kurtosis-data/github-auth/"
+	DockerConfigStorageDir   = "/root/.docker/"
 
 	EmptyApplicationURL = ""
 )
