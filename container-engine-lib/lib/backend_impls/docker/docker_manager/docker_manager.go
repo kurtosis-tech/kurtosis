@@ -1553,7 +1553,7 @@ func (manager *DockerManager) CopyFromContainer(ctx context.Context, containerId
 		}
 	}
 
-	tarStreamReadCloser, _, err := manager.dockerClient.CopyFromContainer(
+	tarStreamReadCloser, _, err := manager.dockerClientNoTimeout.CopyFromContainer(
 		ctx,
 		containerId,
 		srcPath)
