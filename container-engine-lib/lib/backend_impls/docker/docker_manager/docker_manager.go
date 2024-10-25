@@ -2313,6 +2313,7 @@ func pullImage(dockerClient *client.Client, imageName string, registrySpec *imag
 		imagePullOptions.RegistryAuth = encodedAuthConfig
 
 	}
+
 	out, err := dockerClient.ImagePull(pullImageCtx, imageName, imagePullOptions)
 	if err != nil {
 		return stacktrace.Propagate(err, "Tried pulling image '%v' with platform '%v' but failed", imageName, platform), false

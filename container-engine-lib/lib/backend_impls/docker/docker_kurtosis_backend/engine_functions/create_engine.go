@@ -265,7 +265,7 @@ func CreateEngine(
 	if err = dockerManager.CreateVolume(ctx, dockerConfigStorageVolNameStr, dockerConfigStorageVolLabelStrs); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating Docker config storage volume.")
 	}
-	err = docker_config_storage_creator.CreateDockerConfigStorage(ctx, targetNetworkId, dockerConfigStorageVolNameStr, consts.DockerConfigStorageDir, dockerManager)
+	err = docker_config_storage_creator.CreateDockerConfigStorage(ctx, targetNetworkId, dockerConfigStorageVolNameStr, consts.DockerConfigStorageDirPath, dockerManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating Docker config storage.")
 	}
@@ -278,7 +278,7 @@ func CreateEngine(
 	volumeMounts := map[string]string{
 		logsStorageVolNameStr:         logsStorageDirPath,
 		githubAuthStorageVolNameStr:   consts.GitHubAuthStorageDirPath,
-		dockerConfigStorageVolNameStr: consts.DockerConfigStorageDir,
+		dockerConfigStorageVolNameStr: consts.DockerConfigStorageDirPath,
 	}
 
 	if serverArgs.OnBastionHost {
