@@ -90,15 +90,6 @@ func CreateDockerConfigStorage(
 	return nil
 }
 
-// GetGitHubAuthToken Returns empty string if no token found in [githubAuthTokenFile] or [githubAuthTokenFile] doesn't exist
-//func GetGitHubAuthToken() string {
-//	tokenBytes, err := os.ReadFile(path.Join(consts.GitHubAuthStorageDirPath, configFilePath))
-//	if err != nil {
-//		return ""
-//	}
-//	return string(tokenBytes)
-//}
-
 func storeConfigInVolume(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
