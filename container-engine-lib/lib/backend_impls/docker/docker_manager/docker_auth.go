@@ -11,6 +11,7 @@ import (
 
 	"github.com/docker/docker/api/types/registry"
 	dockerregistry "github.com/docker/docker/registry"
+	"github.com/kurtosis-tech/stacktrace"
 )
 
 const (
@@ -35,12 +36,12 @@ func loadDockerAuth() (RegistryAuthConfig, error) {
 
 	file, err := os.ReadFile(configFilePath)
 	if err != nil {
-		return RegistryAuthConfig{}, fmt.Errorf("error reading Docker config file: %v", err)
+		return RegistryAuthConfig{}, stacktrace.Propagate(err, "error reading Docker config file")
 	}
 
 	var authConfig RegistryAuthConfig
 	if err := json.Unmarshal(file, &authConfig); err != nil {
-		return RegistryAuthConfig{}, fmt.Errorf("error unmarshalling Docker config file: %v", err)
+		return RegistryAuthConfig{}, stacktrace.Propagate(err, "error unmarshalling Docker config file")
 	}
 
 	return authConfig, nil
@@ -58,14 +59,14 @@ func getRegistriesFromCredsStore(credHelper string) ([]string, error) {
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("error executing credential helper %s: %v, %s", credHelperCmd, err, stderr.String())
+		return nil, stacktrace.Propagate(err, "error executing credential helper %s: %s", credHelperCmd, stderr.String())
 	}
 	// Output will look like this: {"https://index.docker.io/v1/":"username"}
 	var result map[string]string
 	outStr := out.String()
 	err := json.Unmarshal([]byte(outStr), &result)
 	if err != nil {
-		return nil, fmt.Errorf("error unmarshaling credential helper list output %s: %s, %v", credHelperCmd, outStr, err)
+		return nil, stacktrace.Propagate(err, "error unmarshaling credential helper list output %s: %s", credHelperCmd, outStr)
 	}
 
 	registries := []string{}
@@ -90,7 +91,7 @@ func getCredentialsFromStore(credHelper string, registryURL string) (*registry.A
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("error executing credential helper %s: %v, %s", credHelperCmd, err, stderr.String())
+		return nil, stacktrace.Propagate(err, "error executing credential helper %s: %s", credHelperCmd, stderr.String())
 	}
 
 	// Parse the output (it should return JSON containing "Username", "Secret" and "ServerURL")
@@ -101,7 +102,7 @@ func getCredentialsFromStore(credHelper string, registryURL string) (*registry.A
 	}{}
 
 	if err := json.Unmarshal(out.Bytes(), &creds); err != nil {
-		return nil, fmt.Errorf("error parsing credentials from store: %v", err)
+		return nil, stacktrace.Propagate(err, "error parsing credentials from store")
 	}
 
 	return &registry.AuthConfig{
