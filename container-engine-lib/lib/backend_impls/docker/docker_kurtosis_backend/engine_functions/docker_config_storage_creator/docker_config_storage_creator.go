@@ -119,7 +119,7 @@ func storeConfigInVolume(
 		cfg.Auths[registry] = *creds
 	}
 
-	b, err := json.Marshal(cfg)
+	cfgJsonStr, err := json.Marshal(cfg)
 	if err != nil {
 		return stacktrace.NewError("An error occurred marshalling the Docker config into JSON: %v", err)
 	}
@@ -128,7 +128,7 @@ func storeConfigInVolume(
 	commandStr := fmt.Sprintf(
 		"%v '%v' > %v",
 		printfCmdName,
-		string(b),
+		string(cfgJsonStr),
 		fmt.Sprintf("%s/%s", storageDirPath, configFilePath),
 	)
 
