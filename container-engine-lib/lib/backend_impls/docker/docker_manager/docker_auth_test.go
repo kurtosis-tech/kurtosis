@@ -23,7 +23,7 @@ func writeStaticConfig(t *testing.T, configContent string) string {
 	}
 
 	// Set the DOCKER_CONFIG environment variable to the temp directory
-	os.Setenv("DOCKER_CONFIG", tmpDir)
+	os.Setenv(ENV_DOCKER_CONFIG, tmpDir)
 	return tmpDir
 }
 

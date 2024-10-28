@@ -13,6 +13,10 @@ import (
 	dockerregistry "github.com/docker/docker/registry"
 )
 
+const (
+	ENV_DOCKER_CONFIG string = "DOCKER_CONFIG"
+)
+
 // RegistryAuthConfig holds authentication configuration for a container registry
 type RegistryAuthConfig struct {
 	Auths       map[string]registry.AuthConfig `json:"auths"`
@@ -22,7 +26,7 @@ type RegistryAuthConfig struct {
 
 // loadDockerAuth loads the authentication configuration from the config.json file located in $DOCKER_CONFIG or ~/.docker
 func loadDockerAuth() (RegistryAuthConfig, error) {
-	configFilePath := os.Getenv("DOCKER_CONFIG")
+	configFilePath := os.Getenv(ENV_DOCKER_CONFIG)
 	if configFilePath == "" {
 		configFilePath = os.Getenv("HOME") + "/.docker/config.json"
 	} else {
