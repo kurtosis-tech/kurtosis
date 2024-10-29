@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
 	"strings"
@@ -38,6 +39,7 @@ func loadDockerAuth() (RegistryAuthConfig, error) {
 	file, err := os.ReadFile(configFilePath)
 	if errors.Is(err, os.ErrNotExist) {
 		// If the auth config doesn't exist, return an empty auth config
+		logrus.Debugf("No docker config found at '%s'. Returning empty registry auth config.", configFilePath)
 		return RegistryAuthConfig{}, nil
 	} else if err != nil {
 		return RegistryAuthConfig{}, stacktrace.Propagate(err, "error reading Docker config file at '%s'", configFilePath)
