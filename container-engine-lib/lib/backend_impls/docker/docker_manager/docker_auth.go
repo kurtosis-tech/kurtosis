@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -35,13 +36,16 @@ func loadDockerAuth() (RegistryAuthConfig, error) {
 	}
 
 	file, err := os.ReadFile(configFilePath)
-	if err != nil {
-		return RegistryAuthConfig{}, stacktrace.Propagate(err, "error reading Docker config file")
+	if errors.Is(err, os.ErrNotExist) {
+		// If the auth config doesn't exist, return an empty auth config
+		return RegistryAuthConfig{}, nil
+	} else if err != nil {
+		return RegistryAuthConfig{}, stacktrace.Propagate(err, "error reading Docker config file at '%s'", configFilePath)
 	}
 
 	var authConfig RegistryAuthConfig
 	if err := json.Unmarshal(file, &authConfig); err != nil {
-		return RegistryAuthConfig{}, stacktrace.Propagate(err, "error unmarshalling Docker config file")
+		return RegistryAuthConfig{}, stacktrace.Propagate(err, "error unmarshalling Docker config file at '%s'", configFilePath)
 	}
 
 	return authConfig, nil
