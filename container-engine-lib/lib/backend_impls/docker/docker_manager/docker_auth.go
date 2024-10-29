@@ -59,14 +59,14 @@ func getRegistriesFromCredsStore(credHelper string) ([]string, error) {
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		return nil, stacktrace.Propagate(err, "error executing credential helper %s: %s", credHelperCmd, stderr.String())
+		return nil, stacktrace.Propagate(err, "error executing credential helper '%s': %s", cmd.String(), stderr.String())
 	}
 	// Output will look like this: {"https://index.docker.io/v1/":"username"}
 	var result map[string]string
 	outStr := out.String()
 	err := json.Unmarshal([]byte(outStr), &result)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "error unmarshaling credential helper list output %s: %s", credHelperCmd, outStr)
+		return nil, stacktrace.Propagate(err, "error unmarshaling credential helper list output '%s': %s", cmd.String(), outStr)
 	}
 
 	registries := []string{}
@@ -91,7 +91,7 @@ func getCredentialsFromStore(credHelper string, registryURL string) (*registry.A
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		return nil, stacktrace.Propagate(err, "error executing credential helper %s: %s", credHelperCmd, stderr.String())
+		return nil, stacktrace.Propagate(err, "error executing credential helper '%s' for '%s': %s", cmd.String(), registryURL, stderr.String())
 	}
 
 	// Parse the output (it should return JSON containing "Username", "Secret" and "ServerURL")
