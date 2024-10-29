@@ -40,17 +40,25 @@ func loadDockerAuth() (RegistryAuthConfig, error) {
 	if errors.Is(err, os.ErrNotExist) {
 		// If the auth config doesn't exist, return an empty auth config
 		logrus.Debugf("No docker config found at '%s'. Returning empty registry auth config.", configFilePath)
-		return RegistryAuthConfig{}, nil
+		return emptyRegistryAuthConfig(), nil
 	} else if err != nil {
-		return RegistryAuthConfig{}, stacktrace.Propagate(err, "error reading Docker config file at '%s'", configFilePath)
+		return emptyRegistryAuthConfig(), stacktrace.Propagate(err, "error reading Docker config file at '%s'", configFilePath)
 	}
 
 	var authConfig RegistryAuthConfig
 	if err := json.Unmarshal(file, &authConfig); err != nil {
-		return RegistryAuthConfig{}, stacktrace.Propagate(err, "error unmarshalling Docker config file at '%s'", configFilePath)
+		return emptyRegistryAuthConfig(), stacktrace.Propagate(err, "error unmarshalling Docker config file at '%s'", configFilePath)
 	}
 
 	return authConfig, nil
+}
+
+func emptyRegistryAuthConfig() RegistryAuthConfig {
+	return RegistryAuthConfig{
+		Auths:       map[string]registry.AuthConfig{},
+		CredHelpers: map[string]string{},
+		CredsStore:  "",
+	}
 }
 
 // getRegistriesFromCredsStore fetches all registries from a Docker credential helper (credStore)
@@ -105,7 +113,11 @@ func getCredentialsFromStore(credHelper string, registryURL string) (*registry.A
 		Username  string `json:"Username"`
 		Secret    string `json:"Secret"`
 		ServerURL string `json:"ServerURL"`
-	}{}
+	}{
+		Username:  "",
+		Secret:    "",
+		ServerURL: "",
+	}
 
 	if err := json.Unmarshal(out.Bytes(), &creds); err != nil {
 		return nil, stacktrace.Propagate(err, "error parsing credentials from store")
