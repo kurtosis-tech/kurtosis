@@ -116,7 +116,10 @@ func storeConfigInVolume(
 		if err != nil {
 			return stacktrace.NewError("An error occurred getting auth for registry '%v' from Docker config: %v", registry, err)
 		}
-		cfg.Auths[registry] = *creds
+		// creds can be nil if the registry doesn't have auth
+		if creds != nil {
+			cfg.Auths[registry] = *creds
+		}
 	}
 
 	cfgJsonStr, err := json.Marshal(cfg)
