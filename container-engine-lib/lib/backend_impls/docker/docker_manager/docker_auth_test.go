@@ -27,8 +27,7 @@ func writeStaticConfig(t *testing.T, configContent string) string {
 	return tmpDir
 }
 
-func TestGetNoAuth(t *testing.T) {
-	os.Setenv(ENV_DOCKER_CONFIG, "/does/not/exist")
+func TestGetAuthWithNoAuthSetReturnsNilAndNoError(t *testing.T) {
 	authConfig, err := GetAuthFromDockerConfig("my-repo/my-image:latest")
 	assert.NoError(t, err)
 	assert.Nil(t, authConfig, "Auth config should be nil")
