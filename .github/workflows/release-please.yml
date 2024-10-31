@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository == 'kurtosis-tech/kurtosis'
     steps:
-      - uses: googleapis/release-please-action@v4.1.3
+      - uses: googleapis/release-please-action@d1a8f221d7723166f48a584aebba00ef3f6febec
         with:
           # We use the RELEASER_TOKEN so that the GitHub Actions
           # can run on the PR created
