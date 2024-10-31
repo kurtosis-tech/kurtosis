@@ -9,16 +9,10 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository == 'kurtosis-tech/kurtosis'
     steps:
-      - uses: google-github-actions/release-please-action@v3
+      - uses: googleapis/release-please-action@v4
         with:
           # We use the RELEASER_TOKEN so that the GitHub Actions
           # can run on the PR created
           # https://github.com/kurtosis-tech/kurtosis/issues/688
           token: "${{ secrets.RELEASER_TOKEN }}"
           release-type: simple
-          package-name: kurtosis
-          bump-minor-pre-major: false
-          bump-patch-for-minor-pre-major: false
-          # Our CI, Docker Images, Kurtosis-SDK bumps all depend on
-          # non v tags
-          include-v-in-tag: false
