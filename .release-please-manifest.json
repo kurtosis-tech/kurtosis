@@ -1,0 +1,10 @@
+{
+  "packages": {
+    ".": {
+      "package-name": "kurtosis",
+      "bump-minor-pre-major": false,
+      "bump-path-for-minor-pre-major": false,
+      "include-v-in-tag": false
+    }
+  }
+}
