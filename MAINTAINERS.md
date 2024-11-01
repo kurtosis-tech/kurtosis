@@ -9,6 +9,7 @@ This document lists the individuals who are responsible for maintaining and cont
 - [Dan Park](https://github.com/chunha-park) - BD/Product Marketing @KurtosisTech
 - [Barnabas Busa](https://github.com/barnabasbusa) - Dev Ops @Ethereum Foundation
 - [Parithosh Jayanthi](https://github.com/parithosh) - Dev Ops @Ethereum Foundation
+- [Rafael Matias](https://github.com/skylenet) - Dev Ops @Ethereum Foundation
 - [John Hilliard](https://github.com/praetoriansentry) -  Dev Tools @Polygon Labs
 - [Léo Vincent](https://github.com/leovct) - Dev Tools @Polygon Labs
 - [Kevin Today](https://github.com/mieubrisse) - Original Contributor
