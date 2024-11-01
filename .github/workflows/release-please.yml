@@ -16,3 +16,5 @@ jobs:
           # https://github.com/kurtosis-tech/kurtosis/issues/688
           token: "${{ secrets.RELEASER_TOKEN }}"
           release-type: simple
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
