@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.2](https://github.com/kurtosis-tech/kurtosis/compare/v1.4.1...v1.4.2) (2024-11-01)
+
+
+### Bug Fixes
+
+* make releases work again without v in tags ([#2586](https://github.com/kurtosis-tech/kurtosis/issues/2586)) ([a87f945](https://github.com/kurtosis-tech/kurtosis/commit/a87f945ca9014a632ccde85631b364dad3304fbb))
+
 ## [1.4.1](https://github.com/kurtosis-tech/kurtosis/compare/1.4.0...v1.4.1) (2024-11-01)
 
 
