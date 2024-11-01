@@ -4,7 +4,7 @@
       "package-name": "kurtosis",
       "bump-minor-pre-major": false,
       "bump-path-for-minor-pre-major": false,
-      "include-v-in-tag": false
+      "include-v-in-tags": false
     }
   },
   ".": "1.4.1"
