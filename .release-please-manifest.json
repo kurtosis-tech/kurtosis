@@ -6,5 +6,6 @@
       "bump-path-for-minor-pre-major": false,
       "include-v-in-tag": false
     }
-  }
+  },
+  ".": "1.4.1"
 }
