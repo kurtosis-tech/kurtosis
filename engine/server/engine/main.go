@@ -8,9 +8,10 @@ package main
 import (
 	"context"
 	"fmt"
+	vector_consts "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_aggregator_functions/implementations/vector"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/file_layout"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_consts"
 	"io/fs"
-	"math"
 	"net"
 	"net/http"
 	"os"
@@ -180,7 +181,11 @@ func runMain() error {
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing a duration from provided log retention period string: %v", serverArgs.LogRetentionPeriod)
 	}
-	logsDatabaseClient := getLogsDatabaseClient(serverArgs.KurtosisBackendType, kurtosisBackend, logRetentionPeriodDuration)
+	logsDatabaseClient, err := getLogsDatabaseClient(serverArgs.KurtosisBackendType, kurtosisBackend, logRetentionPeriodDuration)
+	if err != nil {
+		// already wrapped
+		return err
+	}
 	logsDatabaseClient.StartLogFileManagement(ctx)
 
 	enclaveManager, err := getEnclaveManager(
@@ -405,27 +410,25 @@ func getKurtosisBackend(ctx context.Context, kurtosisBackendType args.KurtosisBa
 }
 
 // if cluster is docker, return logs client for centralized logging, otherwise use logs db of kurtosis backend which uses k8s logs under the hood
-func getLogsDatabaseClient(kurtosisBackendType args.KurtosisBackendType, kurtosisBackend backend_interface.KurtosisBackend, logRetentionPeriod time.Duration) centralized_logs.LogsDatabaseClient {
+func getLogsDatabaseClient(kurtosisBackendType args.KurtosisBackendType, kurtosisBackend backend_interface.KurtosisBackend, logRetentionPeriod time.Duration) (centralized_logs.LogsDatabaseClient, error) {
 	var logsDatabaseClient centralized_logs.LogsDatabaseClient
 	switch kurtosisBackendType {
 	case args.KurtosisBackendType_Docker:
 		realTime := logs_clock.NewRealClock()
 
-		logRetentionPeriodInWeeks := int(math.Ceil(logRetentionPeriod.Hours() / float64(numHoursInAWeek)))
-		if logRetentionPeriodInWeeks < 1 {
-			logRetentionPeriodInWeeks = 1
-		}
-		logrus.Infof("Setting log retention period to '%v' week(s).", logRetentionPeriodInWeeks)
+		logrus.Infof("Setting log retention period to '%v' hours(s).", logRetentionPeriod.Hours())
 		osFs := volume_filesystem.NewOsVolumeFilesystem()
-		perWeekFileLayout := file_layout.NewPerWeekFileLayout(realTime)
-		logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, osFs, perWeekFileLayout, realTime, logRetentionPeriodInWeeks)
-		perWeekStreamLogsStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(realTime, logRetentionPeriodInWeeks)
-
-		logsDatabaseClient = persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs, logFileManager, perWeekStreamLogsStrategy)
+		perHourFileLayout := file_layout.NewPerHourFileLayout(realTime, volume_consts.LogsStorageDirpath)
+		logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, osFs, perHourFileLayout, realTime, logRetentionPeriod, volume_consts.LogsStorageDirpath)
+		if logFileManager.GetLogFileLayoutFormat() != vector_consts.VectorLogsFilepathFormat {
+			return nil, stacktrace.NewError("Log file format for this logs database client '%v' does not much format output by Vector logs aggregator '%v'. This is a Kurtosis bug.", logFileManager.GetLogFileLayoutFormat(), vector_consts.VectorLogsFilepathFormat)
+		}
+		streamLogsStrategy := stream_logs_strategy.NewStreamLogsStrategyImpl(realTime, logRetentionPeriod, perHourFileLayout)
+		logsDatabaseClient = persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs, logFileManager, streamLogsStrategy)
 	case args.KurtosisBackendType_Kubernetes:
 		logsDatabaseClient = kurtosis_backend.NewKurtosisBackendLogsDatabaseClient(kurtosisBackend)
 	}
-	return logsDatabaseClient
+	return logsDatabaseClient, nil
 }
 
 func formatFilenameFunctionForLogs(filename string, functionName string) string {
