@@ -31,6 +31,7 @@ const (
 	enclaveManagerUIPort                        = 9711
 	enclaveManagerAPIPort                       = 8081
 	engineDebugServerPort                       = 50102 // in ClI this is 50101 and 50103 for the APIC
+	pprofServerPort                             = 6060
 	maxWaitForEngineAvailabilityRetries         = 40
 	timeBetweenWaitForEngineAvailabilityRetries = 2 * time.Second
 	logsStorageDirPath                          = "/var/log/kurtosis/"
@@ -169,12 +170,12 @@ func CreateEngine(
 		)
 	}
 
-	pprofPortSpec, err := port_spec.NewPortSpec(6060, consts.EngineTransportProtocol, consts.HttpApplicationProtocol, defaultWait, consts.EmptyApplicationURL)
+	pprofPortSpec, err := port_spec.NewPortSpec(pprofServerPort, consts.EngineTransportProtocol, consts.HttpApplicationProtocol, defaultWait, consts.EmptyApplicationURL)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred creating the pprofs http port spec object using number '%v' and protocol '%v'",
-			6060,
+			"An error occurred creating the pprof http port spec object using number '%v' and protocol '%v'",
+			pprofServerPort,
 			consts.EngineTransportProtocol.String(),
 		)
 	}
@@ -225,7 +226,7 @@ func CreateEngine(
 		enclaveManagerUIDockerPort:  docker_manager.NewManualPublishingSpec(uint16(enclaveManagerUIPort)),
 		enclaveManagerAPIDockerPort: docker_manager.NewManualPublishingSpec(uint16(enclaveManagerAPIPort)),
 		restAPIDockerPort:           docker_manager.NewManualPublishingSpec(engine.RESTAPIPortAddr),
-		pprofDockerPort:             docker_manager.NewManualPublishingSpec(6060),
+		pprofDockerPort:             docker_manager.NewManualPublishingSpec(pprofServerPort),
 	}
 
 	// Configure the debug port only if it's required
