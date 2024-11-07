@@ -27,6 +27,12 @@ func writeStaticConfig(t *testing.T, configContent string) string {
 	return tmpDir
 }
 
+func TestGetAuthWithNoAuthSetReturnsNilAndNoError(t *testing.T) {
+	authConfig, err := GetAuthFromDockerConfig("my-repo/my-image:latest")
+	assert.NoError(t, err)
+	assert.Nil(t, authConfig, "Auth config should be nil")
+}
+
 func TestGetAuthConfigForRepoPlain(t *testing.T) {
 	expectedUser := "user"
 	expectedPassword := "password"
