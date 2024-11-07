@@ -722,7 +722,9 @@ func executeStreamCallAndGetReceivedServiceLogLines(
 			return nil, stacktrace.NewError("Receiving stream logs in the test has reached the '%v' time out", testTimeOut)
 		case streamErr, isChanOpen := <-errChan:
 			if !isChanOpen {
-				shouldReceiveStream = false
+				if len(userServiceLogsByUuidChan) == 0 {
+					shouldReceiveStream = false
+				}
 				break
 			}
 			return nil, stacktrace.Propagate(streamErr, "Receiving streaming error.")

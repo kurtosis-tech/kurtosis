@@ -169,6 +169,16 @@ func CreateEngine(
 		)
 	}
 
+	pprofPortSpec, err := port_spec.NewPortSpec(6060, consts.EngineTransportProtocol, consts.HttpApplicationProtocol, defaultWait, consts.EmptyApplicationURL)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating the pprofs http port spec object using number '%v' and protocol '%v'",
+			6060,
+			consts.EngineTransportProtocol.String(),
+		)
+	}
+
 	engineAttrs, err := objAttrsProvider.ForEngineServer(
 		engineGuid,
 		consts.KurtosisInternalContainerGrpcPortId,
@@ -205,11 +215,17 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the Enclave Manager API port spec to a Docker port")
 	}
 
+	pprofDockerPort, err := shared_helpers.TransformPortSpecToDockerPort(pprofPortSpec)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the pprof port spec to a Docker port")
+	}
+
 	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
 		privateGrpcDockerPort:       docker_manager.NewManualPublishingSpec(grpcPortNum),
 		enclaveManagerUIDockerPort:  docker_manager.NewManualPublishingSpec(uint16(enclaveManagerUIPort)),
 		enclaveManagerAPIDockerPort: docker_manager.NewManualPublishingSpec(uint16(enclaveManagerAPIPort)),
 		restAPIDockerPort:           docker_manager.NewManualPublishingSpec(engine.RESTAPIPortAddr),
+		pprofDockerPort:             docker_manager.NewManualPublishingSpec(6060),
 	}
 
 	// Configure the debug port only if it's required

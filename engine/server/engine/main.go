@@ -8,18 +8,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/file_layout"
-	"io/fs"
-	"math"
-	"net"
-	"net/http"
-	"os"
-	"path"
-	"path/filepath"
-	"runtime"
-	"strings"
-	"time"
-
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings/kurtosis_engine_rpc_api_bindingsconnect"
 	enclaveApi "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/server/core_rest_api"
@@ -39,6 +27,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/kurtosis_backend"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/file_layout"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_file_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/stream_logs_strategy"
@@ -57,6 +46,17 @@ import (
 	echomiddleware "github.com/labstack/echo/v4/middleware"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
+	"io/fs"
+	"math"
+	"net"
+	"net/http"
+	_ "net/http/pprof"
+	"os"
+	"path"
+	"path/filepath"
+	"runtime"
+	"strings"
+	"time"
 )
 
 const (
@@ -199,6 +199,14 @@ func runMain() error {
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create an enclave manager for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
 	}
+
+	// start server
+	go func() {
+		logrus.Info("Starting pprof server on :6060")
+		if err := http.ListenAndServe("0.0.0.0:6060", nil); err != nil {
+			logrus.Fatalf("pprof server failed: %v", err)
+		}
+	}()
 
 	go func() {
 		envJsFilePath := filepath.Join(pathToStaticFolder, envJsFilename)
