@@ -93,7 +93,7 @@ func (client *persistentVolumeLogsDatabaseClient) StreamUserServiceLogs(
 		// wait for stream go routine to end
 		wgSenders.Wait()
 
-		// flush should send remainder of logs in the channel
+		// flush should send remainder of logs in the buffer to the channel to be read
 		logLineSender.Flush()
 
 		close(logsByKurtosisUserServiceUuidChan)
