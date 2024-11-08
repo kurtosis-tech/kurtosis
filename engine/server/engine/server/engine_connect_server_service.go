@@ -358,16 +358,20 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 			}
 		//client cancel ctx case
 		case <-contextWithCancel.Done():
+			if len(serviceLogsByServiceUuidChan) == 0 {
+				return nil
+			}
 			logrus.Debug("The user service logs stream has done")
-			return nil
 		//error from logs database case
 		case err, isChanOpen := <-errChan:
 			if isChanOpen {
 				logrus.Debug("Exiting the stream because an error from the logs database client was received through the error chan.")
 				return stacktrace.Propagate(err, "An error occurred streaming user service logs.")
 			}
-			logrus.Debug("Exiting the stream loop after receiving a close signal from the error chan")
-			return nil
+			if len(serviceLogsByServiceUuidChan) == 0 {
+				logrus.Debug("Exiting the stream loop after receiving a close signal from the error chan")
+				return nil
+			}
 		}
 	}
 }
