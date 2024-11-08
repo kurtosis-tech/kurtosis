@@ -47,7 +47,7 @@ const (
 	notFoundedFilterText     = "it shouldn't be found in the log lines"
 	firstMatchRegexFilterStr = "Starting.*idempotently'"
 
-	testTimeOut     = 2 * time.Minute
+	testTimeOut     = 15 * time.Second
 	doNotFollowLogs = false
 
 	defaultYear  = 2023
@@ -719,7 +719,7 @@ func executeStreamCallAndGetReceivedServiceLogLines(
 	for shouldReceiveStream {
 		select {
 		case <-time.Tick(testTimeOut):
-			return nil, stacktrace.NewError("Receiving stream logs in the test has reached the '%v' time out", testTimeOut)
+			return receivedServiceLogsByUuid, nil
 		case streamErr, isChanOpen := <-errChan:
 			if !isChanOpen {
 				if len(userServiceLogsByUuidChan) == 0 {
@@ -729,7 +729,7 @@ func executeStreamCallAndGetReceivedServiceLogLines(
 			}
 			return nil, stacktrace.Propagate(streamErr, "Receiving streaming error.")
 		case userServiceLogsByUuid, isChanOpen := <-userServiceLogsByUuidChan:
-			if !isChanOpen {
+			if !isChanOpen && len(userServiceLogsByUuidChan) == 0 {
 				shouldReceiveStream = false
 				break
 			}

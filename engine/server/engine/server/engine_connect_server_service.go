@@ -347,7 +347,7 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 		//stream case
 		case serviceLogsByServiceUuid, isChanOpen := <-serviceLogsByServiceUuidChan:
 			//If the channel is closed means that the logs database client won't continue sending streams
-			if !isChanOpen {
+			if !isChanOpen && len(serviceLogsByServiceUuidChan) == 0 {
 				logrus.Debug("Exiting the stream loop after receiving a close signal from the service logs by service UUID channel")
 				return nil
 			}
