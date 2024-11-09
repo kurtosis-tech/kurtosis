@@ -202,7 +202,7 @@ func runMain() error {
 	}
 
 	go func() {
-		logrus.Info("Starting pprof server on :6060")
+		logrus.Infof("Starting pprof server on: %s", pprofPortAddr)
 		if err := http.ListenAndServe(pprofPortAddr, nil); err != nil {
 			logrus.Fatalf("pprof server failed: %v", err)
 		}
