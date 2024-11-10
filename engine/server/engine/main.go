@@ -73,7 +73,6 @@ const (
 	functionPathSeparator     = "."
 	emptyFunctionName         = ""
 	webappPortAddr            = ":9711"
-	pprofPortAddr             = ":6060"
 
 	remoteBackendConfigFilename = "remote_backend_config.json"
 	pathToStaticFolder          = "/run/webapp"
@@ -200,13 +199,6 @@ func runMain() error {
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create an enclave manager for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
 	}
-
-	go func() {
-		logrus.Infof("Starting pprof server on: %s", pprofPortAddr)
-		if err := http.ListenAndServe(pprofPortAddr, nil); err != nil {
-			logrus.Fatalf("pprof server failed: %v", err)
-		}
-	}()
 
 	go func() {
 		envJsFilePath := filepath.Join(pathToStaticFolder, envJsFilename)
