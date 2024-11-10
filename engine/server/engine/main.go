@@ -73,6 +73,7 @@ const (
 	functionPathSeparator     = "."
 	emptyFunctionName         = ""
 	webappPortAddr            = ":9711"
+	pprofPath                 = "/debug/pprof/"
 
 	remoteBackendConfigFilename = "remote_backend_config.json"
 	pathToStaticFolder          = "/run/webapp"
@@ -213,8 +214,9 @@ func runMain() error {
 		}
 		logrus.Debugf("Created environment js file with content: \n%s", envJsFileContent)
 
+		handler := http.NewServeMux()
 		fileServer := http.FileServer(http.Dir(pathToStaticFolder))
-		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handler.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			path, err := filepath.Abs(r.URL.Path)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
@@ -236,6 +238,7 @@ func runMain() error {
 			w.Header().Add("Cache-Control", "no-store")
 			fileServer.ServeHTTP(w, r)
 		})
+		handler.Handle(pprofPath, http.HandlerFunc(http.DefaultServeMux.ServeHTTP))
 
 		err := http.ListenAndServe(webappPortAddr, handler)
 		if err != nil {
