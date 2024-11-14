@@ -60,10 +60,10 @@ const (
 	dryRunFlagKey = "dry-run"
 	defaultDryRun = "false"
 
-	dependenciesFlagKey     = "dependencies"
-	defaultDependencies     = "false"
-	pullDependenciesFlagKey = "pull"
-	defaultPullDependencies = "false"
+	dependenciesFlagKey         = "dependencies"
+	dependenciesFlagDefault     = "false"
+	pullDependenciesFlagKey     = "pull"
+	pullDependenciesFlagDefault = "false"
 
 	fullUuidsFlagKey       = "full-uuids"
 	fullUuidFlagKeyDefault = "false"
@@ -117,7 +117,8 @@ const (
 	nonBlockingModeFlagKey = "non-blocking-tasks"
 	defaultBlockingMode    = "false"
 
-	httpProtocolRegexStr = "^(http|https)://"
+	httpProtocolRegexStr  = "^(http|https)://"
+	shouldCloneNormalRepo = false
 )
 
 var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -141,15 +142,15 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 		},
 		{
 			Key:     dependenciesFlagKey,
-			Usage:   "If true, a yaml will be returned with a list of images and packages that this run depends on.",
+			Usage:   "If true, a yaml will be output (to stdout) with a list of images and packages that this run depends on.",
 			Type:    flags.FlagType_Bool,
-			Default: defaultDependencies,
+			Default: dependenciesFlagDefault,
 		},
 		{
 			Key:     pullDependenciesFlagKey,
-			Usage:   "If true, and the dependencies flag is passed, attempts to pull all images and packages that the run depends on locally. kurtosis.yml is updated with the replace directives pointing to locally pulled packages.",
+			Usage:   fmt.Sprintf("If true, and the %s flag is passed, attempts to pull all images and packages that the run depends on locally. %s is updated with replace directives pointing to locally pulled packages. If a replace directive already exists an error is thrown. Note: this currently only works on the Docker backend.", dependenciesFlagKey, kurtosisYMLFilePath),
 			Type:    flags.FlagType_Bool,
-			Default: defaultPullDependencies,
+			Default: pullDependenciesFlagDefault,
 		},
 		{
 			Key: enclaveIdentifierFlagKey,
@@ -285,7 +286,7 @@ func run(
 		return stacktrace.Propagate(err, "Expected a boolean flag with key '%v' but none was found; this is an error in Kurtosis!", dryRunFlagKey)
 	}
 
-	dependencies, err := flags.GetBool(dependenciesFlagKey)
+	isDependenciesOnly, err := flags.GetBool(dependenciesFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a boolean flag with key '%v' but none was found; this is an error in Kurtosis!", dependenciesFlagKey)
 	}
@@ -401,10 +402,10 @@ func run(
 
 	isRemotePackage := strings.HasPrefix(starlarkScriptOrPackagePath, githubDomainPrefix)
 
-	if dependencies {
+	if isDependenciesOnly {
 		dependencyYaml, err := getPackageDependencyYaml(ctx, enclaveCtx, starlarkScriptOrPackagePath, isRemotePackage, packageArgs)
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred getting package dependencies")
+			return stacktrace.Propagate(err, "An error occurred getting package dependencies.")
 		}
 		fmt.Printf("%v\n", dependencyYaml.PlanYaml)
 
@@ -416,9 +417,10 @@ func run(
 			var pkgDeps PackageDependencies
 			err := yaml.Unmarshal([]byte(dependencyYaml.PlanYaml), &pkgDeps)
 			if err != nil {
-				return stacktrace.Propagate(err, "An error occurred unmarhsaling dependency yaml string")
+				return stacktrace.Propagate(err, "An error occurred unmarshalling dependency yaml string")
 			}
 
+			// errors below already wrapped w propagate
 			err = pullImagesLocally(ctx, pkgDeps.Images)
 			if err != nil {
 				return err
@@ -842,26 +844,37 @@ func pullImagesLocally(ctx context.Context, images []string) error {
 func pullPackagesLocally(packageDependencies []string) (map[string]string, error) {
 	localPackagesToRelativeFilepaths := map[string]string{}
 
-	wd, err := os.Getwd()
+	workingDirectory, err := os.Getwd()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting current working directory.")
 	}
-	parentCwd := filepath.Dir(wd)
-	relParentCwd, err := filepath.Rel(wd, parentCwd)
+	parentCwd := filepath.Dir(workingDirectory)
+	relParentCwd, err := filepath.Rel(workingDirectory, parentCwd)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting rel path between '%v' and '%v'.", wd, relParentCwd)
+		return nil, stacktrace.Propagate(err, "An error occurred getting rel path between '%v' and '%v'.", workingDirectory, relParentCwd)
 	}
 
+	if _, err := os.Stat(fmt.Sprintf("%s/%s", parentCwd, kurtosisYMLFilePath)); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, stacktrace.Propagate(err, "%s does not exist in current working directory. Make sure you are running this at the root of the package with the %s.", kurtosisYMLFilePath, kurtosisYMLFilePath)
+		} else {
+			return nil, stacktrace.Propagate(err, "An error occurred checking if %s exists.", kurtosisYMLFilePath)
+		}
+	}
 	for _, dependency := range packageDependencies {
 		packageIdParts := strings.Split(dependency, "/")
 		packageName := packageIdParts[len(packageIdParts)-1]
 		logrus.Infof("Pulling package: %v", dependency)
 
-		// assume dependency doesn't have http:// prefix or .git suffix
-		repoUrl := fmt.Sprintf("%s%s%s", "http://", dependency, ".git")
+		var repoUrl string
+		if !strings.HasPrefix("http://", dependency) {
+			repoUrl = "http://" + dependency
+		}
+		if !strings.HasSuffix(".git", dependency) {
+			repoUrl += ".git"
+		}
 		localPackagePath := fmt.Sprintf("%s/%s", parentCwd, packageName)
-		logrus.Infof("repo url: %v", repoUrl)
-		_, err := git.PlainClone(localPackagePath, false, &git.CloneOptions{
+		_, err := git.PlainClone(localPackagePath, shouldCloneNormalRepo, &git.CloneOptions{
 			URL:               repoUrl,
 			Auth:              nil,
 			RemoteName:        "",
@@ -895,7 +908,7 @@ func pullPackagesLocally(packageDependencies []string) (map[string]string, error
 func updateKurtosisYamlWithReplaceDirectives(packageNamesToLocalFilepaths map[string]string) error {
 	file, err := os.OpenFile(kurtosisYMLFilePath, os.O_WRONLY|os.O_APPEND, kurtosisYMLFilePerms)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred opening kurtosis.yml file.")
+		return stacktrace.Propagate(err, "An error occurred opening %s file.", kurtosisYMLFilePath)
 	}
 	defer file.Close()
 
