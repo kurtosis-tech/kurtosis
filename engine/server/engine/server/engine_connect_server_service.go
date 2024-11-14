@@ -366,8 +366,10 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 				logrus.Debug("Exiting the stream because an error from the logs database client was received through the error chan.")
 				return stacktrace.Propagate(err, "An error occurred streaming user service logs.")
 			}
-			logrus.Debug("Exiting the stream loop after receiving a close signal from the error chan")
-			return nil
+			if len(serviceLogsByServiceUuidChan) == 0 {
+				logrus.Debug("Exiting the stream loop after receiving a close signal from the error chan")
+				return nil
+			}
 		}
 	}
 }

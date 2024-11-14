@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.4.1](https://github.com/kurtosis-tech/kurtosis/compare/1.4.0...v1.4.1) (2024-11-01)
+
+
+### Bug Fixes
+
+* add rafael as maintainer ([#2583](https://github.com/kurtosis-tech/kurtosis/issues/2583)) ([ab5eb9e](https://github.com/kurtosis-tech/kurtosis/commit/ab5eb9efdbccfae28ee56ee96350daef7412c6ae))
+* docker auth panic ([b36ddc9](https://github.com/kurtosis-tech/kurtosis/commit/b36ddc9d6c3b2baa8fe03a3f27ec5f3cae68c043))
+
+## [1.4.0](https://github.com/kurtosis-tech/kurtosis/compare/1.3.1...1.4.0) (2024-10-29)
+
+
+### Features
+
+* support auth from docker config ([#2560](https://github.com/kurtosis-tech/kurtosis/issues/2560)) ([dab4470](https://github.com/kurtosis-tech/kurtosis/commit/dab4470ec18f7324b22b780de8d923ceef965428))
+
 ## [1.3.1](https://github.com/kurtosis-tech/kurtosis/compare/1.3.0...1.3.1) (2024-10-15)
 
 

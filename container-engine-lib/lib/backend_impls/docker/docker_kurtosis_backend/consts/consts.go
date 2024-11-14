@@ -32,7 +32,8 @@ const (
 	NameOfNetworkToStartEngineAndLogServiceContainersIn = "bridge"
 	HttpApplicationProtocol                             = "http"
 
-	GitHubAuthStorageDirPath = "/kurtosis-data/github-auth/"
+	GitHubAuthStorageDirPath   = "/kurtosis-data/github-auth/"
+	DockerConfigStorageDirPath = "/root/.docker/"
 
 	EmptyApplicationURL = ""
 )
