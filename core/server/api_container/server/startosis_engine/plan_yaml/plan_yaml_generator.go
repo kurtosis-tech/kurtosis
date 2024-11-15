@@ -22,7 +22,7 @@ const (
 	outputFutureRefType    = "output"
 )
 
-// PlanYamlGenerator is a yaml representation of the effect of an Instructions Plan or sequence of instructions on the state of the Enclave.
+// PlanYamlGenerator generates a PlanYaml representing the effect of an Instructions Plan or sequence of instructions on the state of the Enclave.
 type PlanYamlGenerator struct {
 	privatePlanYaml *PlanYaml
 
@@ -49,21 +49,11 @@ func CreateEmptyPlan(packageId string) *PlanYamlGenerator {
 	}
 }
 
-func (planYaml *PlanYamlGenerator) GenerateYaml(dependenciesOnly bool) (string, error) {
+func (planYaml *PlanYamlGenerator) GenerateYaml() (string, error) {
 	planYaml.AddImages()
 
 	var planYamlCopy PlanYaml
 	planYamlCopy = *planYaml.privatePlanYaml
-	if dependenciesOnly {
-		planYamlCopy = PlanYaml{
-			PackageId:           "",
-			Services:            nil,
-			FilesArtifacts:      nil,
-			Tasks:               nil,
-			Images:              planYaml.privatePlanYaml.Images,
-			PackageDependencies: planYaml.privatePlanYaml.PackageDependencies,
-		}
-	}
 	yamlBytes, err := yaml.Marshal(planYamlCopy)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred generating plan yaml.")

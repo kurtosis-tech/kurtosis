@@ -663,7 +663,6 @@ func (apicService *ApiContainerService) GetStarlarkPackagePlanYaml(ctx context.C
 	serializedParams := args.GetSerializedParams()
 	requestedRelativePathToMainFile := args.GetRelativePathToMainFile()
 	mainFuncName := args.GetMainFunctionName()
-	dependenciesOnly := args.GetDependenciesOnly()
 
 	var scriptWithRunFunction string
 	var interpretationError *startosis_errors.InterpretationError
@@ -692,7 +691,7 @@ func (apicService *ApiContainerService) GetStarlarkPackagePlanYaml(ctx context.C
 		interpretationError = startosis_errors.NewInterpretationError(apiInterpretationError.GetErrorMessage())
 		return nil, stacktrace.Propagate(interpretationError, "An interpretation error occurred interpreting package for retrieving plan yaml for package: %v", packageIdFromArgs)
 	}
-	planYamlStr, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(packageIdFromArgs), dependenciesOnly)
+	planYamlStr, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(packageIdFromArgs))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred generating plan yaml for package: %v", packageIdFromArgs)
 	}
@@ -708,7 +707,6 @@ func (apicService *ApiContainerService) GetStarlarkScriptPlanYaml(ctx context.Co
 	serializedStarlarkScript := args.GetSerializedScript()
 	serializedParams := args.GetSerializedParams()
 	mainFuncName := args.GetMainFunctionName()
-	dependenciesOnly := args.GetDependenciesOnly()
 	noPackageReplaceOptions := map[string]string{}
 
 	_, instructionsPlan, apiInterpretationError := apicService.startosisInterpreter.Interpret(
@@ -726,7 +724,7 @@ func (apicService *ApiContainerService) GetStarlarkScriptPlanYaml(ctx context.Co
 	if apiInterpretationError != nil {
 		return nil, startosis_errors.NewInterpretationError(apiInterpretationError.GetErrorMessage())
 	}
-	planYamlStr, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript), dependenciesOnly)
+	planYamlStr, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript))
 	if err != nil {
 		return nil, err
 	}

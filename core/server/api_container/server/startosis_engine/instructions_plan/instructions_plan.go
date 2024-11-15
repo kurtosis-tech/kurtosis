@@ -81,7 +81,7 @@ func (plan *InstructionsPlan) GeneratePlan() ([]*ScheduledInstruction, *startosi
 }
 
 // GenerateYaml takes in an existing planYaml (usually empty) and returns a yaml string containing the effects of the plan
-func (plan *InstructionsPlan) GenerateYaml(planYaml *plan_yaml.PlanYamlGenerator, dependenciesOnly bool) (string, error) {
+func (plan *InstructionsPlan) GenerateYaml(planYaml *plan_yaml.PlanYamlGenerator) (string, error) {
 	for _, instructionUuid := range plan.instructionsSequence {
 		instruction, found := plan.scheduledInstructionsIndex[instructionUuid]
 		if !found {
@@ -93,7 +93,7 @@ func (plan *InstructionsPlan) GenerateYaml(planYaml *plan_yaml.PlanYamlGenerator
 		}
 	}
 	planYaml.AddPackageDependencies(plan.packageDependencies)
-	return planYaml.GenerateYaml(dependenciesOnly)
+	return planYaml.GenerateYaml()
 }
 
 func (plan *InstructionsPlan) AddPackageDependency(packageDependency string) {
