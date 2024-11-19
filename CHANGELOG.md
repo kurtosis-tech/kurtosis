@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.4.2](https://github.com/kurtosis-tech/kurtosis/compare/v1.4.1...1.4.2) (2024-11-10)
+
+
+### Bug Fixes
+
+* don't include component name in release please tags ([#2590](https://github.com/kurtosis-tech/kurtosis/issues/2590)) ([28582cc](https://github.com/kurtosis-tech/kurtosis/commit/28582cce6b41903b1d683126ed0f75c6503d45ff))
+* make releases work again without v in tags ([#2586](https://github.com/kurtosis-tech/kurtosis/issues/2586)) ([a87f945](https://github.com/kurtosis-tech/kurtosis/commit/a87f945ca9014a632ccde85631b364dad3304fbb))
+* remove closeChannelWhenEmpty busy loop ([#2594](https://github.com/kurtosis-tech/kurtosis/issues/2594)) ([dbb2193](https://github.com/kurtosis-tech/kurtosis/commit/dbb2193c3215ee86ea5a54a19efecc0985b4511b))
+* wrong config structure for release please ([#2588](https://github.com/kurtosis-tech/kurtosis/issues/2588)) ([e7263c3](https://github.com/kurtosis-tech/kurtosis/commit/e7263c3558b27390439a0e3456955306a06a7cb0))
+
 ## [1.4.1](https://github.com/kurtosis-tech/kurtosis/compare/1.4.0...v1.4.1) (2024-11-01)
 
 
