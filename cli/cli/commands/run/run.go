@@ -943,7 +943,7 @@ func updateKurtosisYamlWithReplaceDirectives(packageNamesToLocalFilepaths map[st
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred reading '%s' file.", kurtosisYMLFilePath)
 	}
-	replaceDirectiveStr := fmt.Sprintf("%s:\n", packageReplaceKeyInKurtosisYml)
+	replaceDirectiveStr := fmt.Sprintf("%s\n", packageReplaceKeyInKurtosisYml)
 	for packageName, localFilepath := range packageNamesToLocalFilepaths {
 		// TODO: this assumes the users kurtosis yml is indented by two spaces which might always not be true and this could break a users kurtosis.yml
 		// TODO: find a way to handle other indentation levels
