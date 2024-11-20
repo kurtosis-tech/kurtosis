@@ -20,6 +20,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/git_package_content_provider"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/resolve"
 	"go.starlark.net/starlark"
@@ -392,13 +393,13 @@ func (interpreter *StartosisInterpreter) buildBindings(
 }
 
 const (
-	moduleIdSeperator     = "/"
-	numModuleIdSeparators = 4
-	prefixNum             = 3
+	numModIdSeparators = 3
 )
 
+// gets the prefix of a module id
+// eg. "github.com/kurtosis-tech/postgres-package/main.star" returns "github.com/kurtosis-tech/postgres-package"
 func getModulePrefix(moduleId string) string {
-	return strings.Join(strings.SplitN(moduleId, moduleIdSeperator, numModuleIdSeparators)[:prefixNum], moduleIdSeperator)
+	return strings.Join(strings.SplitN(moduleId, git_package_content_provider.OsPathSeparatorString, numModIdSeparators+1)[:numModIdSeparators], git_package_content_provider.OsPathSeparatorString)
 }
 
 func findFirstEqualInstructionPastIndex(currentEnclaveInstructionsList []*enclave_plan_persistence.EnclavePlanInstruction, naiveInstructionsList []*instructions_plan.ScheduledInstruction, minIndex int) int {
