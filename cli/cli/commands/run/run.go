@@ -695,6 +695,9 @@ func getPackageDependencyYaml(
 				return nil, stacktrace.Propagate(err, "Unable to read content of Starlark script file '%s'", starlarkScriptOrPackageId)
 			}
 			packageYaml, err = enclaveCtx.GetStarlarkScriptPlanYaml(ctx, string(scriptContentBytes), packageArgs)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred retrieving plan yaml for provided package.")
+			}
 		}
 	}
 	return packageYaml, nil
