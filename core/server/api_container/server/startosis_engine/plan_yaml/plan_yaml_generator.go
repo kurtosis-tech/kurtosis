@@ -30,6 +30,7 @@ type PlanYamlGenerator struct {
 	filesArtifactIndex   map[string]*FilesArtifact
 	latestUuid           int
 	imageSet             map[string]bool
+	packageDependencySet map[string]bool
 }
 
 func CreateEmptyPlan(packageId string) *PlanYamlGenerator {
@@ -43,6 +44,7 @@ func CreateEmptyPlan(packageId string) *PlanYamlGenerator {
 			PackageDependencies: []string{},
 		},
 		imageSet:             map[string]bool{},
+		packageDependencySet: map[string]bool{},
 		futureReferenceIndex: map[string]string{},
 		filesArtifactIndex:   map[string]*FilesArtifact{},
 		latestUuid:           0,
@@ -50,11 +52,10 @@ func CreateEmptyPlan(packageId string) *PlanYamlGenerator {
 }
 
 func (planYaml *PlanYamlGenerator) GenerateYaml() (string, error) {
-	planYaml.AddImages()
+	planYaml.privatePlanYaml.Images = convertStrMapSetToSortedStrList(planYaml.imageSet)
+	planYaml.privatePlanYaml.PackageDependencies = convertStrMapSetToSortedStrList(planYaml.packageDependencySet)
 
-	var planYamlCopy PlanYaml
-	planYamlCopy = *planYaml.privatePlanYaml
-	yamlBytes, err := yaml.Marshal(planYamlCopy)
+	yamlBytes, err := yaml.Marshal(*planYaml.privatePlanYaml)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred generating plan yaml.")
 	}
@@ -389,9 +390,8 @@ func (planYaml *PlanYamlGenerator) RemoveService(serviceName string) {
 
 func (planYaml *PlanYamlGenerator) AddPackageDependencies(packageDependency map[string]bool) {
 	for dependency := range packageDependency {
-		planYaml.privatePlanYaml.PackageDependencies = append(planYaml.privatePlanYaml.PackageDependencies, dependency)
+		planYaml.packageDependencySet[dependency] = true
 	}
-	slices.Sort(planYaml.privatePlanYaml.PackageDependencies)
 }
 
 func (planYaml *PlanYamlGenerator) AddImages() {
@@ -480,4 +480,13 @@ func (planYaml *PlanYamlGenerator) swapFutureReference(s string) string {
 func (planYaml *PlanYamlGenerator) generateUuid() string {
 	planYaml.latestUuid++
 	return strconv.Itoa(planYaml.latestUuid)
+}
+
+func convertStrMapSetToSortedStrList(mapSet map[string]bool) []string {
+	l := make([]string, 0, len(mapSet))
+	for v := range mapSet {
+		l = append(l, v)
+	}
+	slices.Sort(l)
+	return l
 }
