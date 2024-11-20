@@ -680,6 +680,9 @@ func getPackageDependencyYaml(
 	var err error
 	if isRemote {
 		packageYaml, err = enclaveCtx.GetStarlarkPackagePlanYaml(ctx, starlarkScriptOrPackageId, packageArgs)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred retrieving plan yaml for provided package.")
+		}
 	} else {
 		fileOrDir, err := os.Stat(starlarkScriptOrPackageId)
 		if err != nil {
@@ -693,9 +696,6 @@ func getPackageDependencyYaml(
 			}
 			packageYaml, err = enclaveCtx.GetStarlarkScriptPlanYaml(ctx, string(scriptContentBytes), packageArgs)
 		}
-	}
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred retrieving plan yaml for provided package.")
 	}
 	return packageYaml, nil
 }
