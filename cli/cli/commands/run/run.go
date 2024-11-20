@@ -868,6 +868,14 @@ func pullPackagesLocally(packageDependencies []string) (map[string]string, error
 		return nil, stacktrace.Propagate(err, "An error occurred getting current working directory.")
 	}
 	// ensure a kurtosis yml exists here so that packages get cloned to the right place (one dir above/nested in the same dir as the package)
+	if _, err := os.Stat(fmt.Sprintf("%s/%s", workingDirectory, kurtosisYMLFilePath)); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, stacktrace.Propagate(err, "'%s' does not exist in current working directory. Make sure you are running this at the root of the package with the %s.", kurtosisYMLFilePath, kurtosisYMLFilePath)
+		} else {
+			return nil, stacktrace.Propagate(err, "An error occurred checking if %s exists.", kurtosisYMLFilePath)
+		}
+	}
+
 	file, err := os.OpenFile(kurtosisYMLFilePath, os.O_WRONLY|os.O_APPEND, kurtosisYMLFilePerms)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred opening '%s' file. Make sure this command is being run from within the directory of a kurtosis package.", kurtosisYMLFilePath)
@@ -878,14 +886,6 @@ func pullPackagesLocally(packageDependencies []string) (map[string]string, error
 	relParentCwd, err := filepath.Rel(workingDirectory, parentCwd)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting rel path between '%v' and '%v'.", workingDirectory, relParentCwd)
-	}
-
-	if _, err := os.Stat(fmt.Sprintf("%s/%s", parentCwd, kurtosisYMLFilePath)); err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return nil, stacktrace.Propagate(err, "%s does not exist in current working directory. Make sure you are running this at the root of the package with the %s.", kurtosisYMLFilePath, kurtosisYMLFilePath)
-		} else {
-			return nil, stacktrace.Propagate(err, "An error occurred checking if %s exists.", kurtosisYMLFilePath)
-		}
 	}
 	for _, dependency := range packageDependencies {
 		packageIdParts := strings.Split(dependency, "/")
@@ -900,7 +900,6 @@ func pullPackagesLocally(packageDependencies []string) (map[string]string, error
 			repoUrl += ".git"
 		}
 		localPackagePath := fmt.Sprintf("%s/%s", parentCwd, packageName)
-		// find the kurtosis.yml
 		_, err := git.PlainClone(localPackagePath, shouldCloneNormalRepo, &git.CloneOptions{
 			URL:               repoUrl,
 			Auth:              nil,
