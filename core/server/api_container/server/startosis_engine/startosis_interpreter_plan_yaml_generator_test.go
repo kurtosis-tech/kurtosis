@@ -24,7 +24,7 @@ const (
 	mockApicVersion = "1234"
 )
 
-type StartosisIntepreterPlanYamlTestSuite struct {
+type StartosisIntepreterPlanYamlGeneratorTestSuite struct {
 	suite.Suite
 	serviceNetwork               *service_network.MockServiceNetwork
 	packageContentProvider       *mock_package_content_provider.MockPackageContentProvider
@@ -34,7 +34,7 @@ type StartosisIntepreterPlanYamlTestSuite struct {
 	interpreter *StartosisInterpreter
 }
 
-func (suite *StartosisIntepreterPlanYamlTestSuite) SetupTest() {
+func (suite *StartosisIntepreterPlanYamlGeneratorTestSuite) SetupTest() {
 	// mock package content provider
 	suite.packageContentProvider = mock_package_content_provider.NewMockPackageContentProvider()
 	enclaveDb := getEnclaveDBForTest(suite.T())
@@ -72,15 +72,15 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) SetupTest() {
 	suite.interpreter = NewStartosisInterpreter(suite.serviceNetwork, suite.packageContentProvider, suite.runtimeValueStore, nil, "", suite.interpretationTimeValueStore)
 }
 
-func TestRunStartosisIntepreterPlanYamlTestSuite(t *testing.T) {
-	suite.Run(t, new(StartosisIntepreterPlanYamlTestSuite))
+func TestRunStartosisIntepreterPlanYamlGeneratorTestSuite(t *testing.T) {
+	suite.Run(t, new(StartosisIntepreterPlanYamlGeneratorTestSuite))
 }
 
-func (suite *StartosisIntepreterPlanYamlTestSuite) TearDownTest() {
+func (suite *StartosisIntepreterPlanYamlGeneratorTestSuite) TearDownTest() {
 	suite.packageContentProvider.RemoveAll()
 }
 
-func (suite *StartosisIntepreterPlanYamlTestSuite) TestAddServiceWithFilesArtifact() {
+func (suite *StartosisIntepreterPlanYamlGeneratorTestSuite) TestAddServiceWithFilesArtifact() {
 	script := `def run(plan, hi_files_artifact):
 	service_name = "serviceA"
 	config = ServiceConfig(
@@ -115,7 +115,7 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestAddServiceWithFilesArtifa
 	require.Nil(suite.T(), interpretationError)
 	require.Equal(suite.T(), 1, instructionsPlan.Size())
 
-	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript), false)
+	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript))
 	require.NoError(suite.T(), err)
 
 	expectedYaml :=
@@ -153,7 +153,7 @@ images:
 	require.Equal(suite.T(), expectedYaml, planYaml)
 }
 
-func (suite *StartosisIntepreterPlanYamlTestSuite) TestRunShWithFilesArtifacts() {
+func (suite *StartosisIntepreterPlanYamlGeneratorTestSuite) TestRunShWithFilesArtifacts() {
 	script := `def run(plan, hi_files_artifact):
     plan.run_sh(
         run="echo bye > /bye.txt",
@@ -185,7 +185,7 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestRunShWithFilesArtifacts()
 	require.Nil(suite.T(), interpretationError)
 	require.Equal(suite.T(), 1, instructionsPlan.Size())
 
-	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript), false)
+	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript))
 	require.NoError(suite.T(), err)
 
 	expectedYaml := `packageId: DEFAULT_PACKAGE_ID_FOR_SCRIPT
@@ -220,7 +220,7 @@ images:
 	require.Equal(suite.T(), expectedYaml, planYaml)
 }
 
-func (suite *StartosisIntepreterPlanYamlTestSuite) TestRunPython() {
+func (suite *StartosisIntepreterPlanYamlGeneratorTestSuite) TestRunPython() {
 	script := `def run(plan, hi_files_artifact):
      plan.run_python(
         run = """
@@ -260,7 +260,7 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestRunPython() {
 	require.Nil(suite.T(), interpretationError)
 	require.Equal(suite.T(), 1, instructionsPlan.Size())
 
-	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript), false)
+	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript))
 	require.NoError(suite.T(), err)
 
 	expectedYaml := `packageId: DEFAULT_PACKAGE_ID_FOR_SCRIPT
@@ -298,7 +298,7 @@ images:
 	require.Equal(suite.T(), expectedYaml, planYaml)
 }
 
-func (suite *StartosisIntepreterPlanYamlTestSuite) TestExec() {
+func (suite *StartosisIntepreterPlanYamlGeneratorTestSuite) TestExec() {
 	script := `def run(plan, hi_files_artifact):
 	plan.add_service(
 		name="db",
@@ -336,7 +336,7 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestExec() {
 	require.Nil(suite.T(), interpretationError)
 	require.Equal(suite.T(), 2, instructionsPlan.Size())
 
-	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript), false)
+	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript))
 	require.NoError(suite.T(), err)
 
 	expectedYaml := `packageId: DEFAULT_PACKAGE_ID_FOR_SCRIPT
@@ -374,7 +374,7 @@ images:
 	require.Equal(suite.T(), expectedYaml, planYaml)
 }
 
-func (suite *StartosisIntepreterPlanYamlTestSuite) TestRenderTemplate() {
+func (suite *StartosisIntepreterPlanYamlGeneratorTestSuite) TestRenderTemplate() {
 	script := `def run(plan, args):
     bye_files_artifact = plan.render_templates(
         name="bye-file",
@@ -414,7 +414,7 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestRenderTemplate() {
 	require.Nil(suite.T(), interpretationError)
 	require.Equal(suite.T(), 2, instructionsPlan.Size())
 
-	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript), false)
+	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript))
 	require.NoError(suite.T(), err)
 
 	expectedYaml := `packageId: DEFAULT_PACKAGE_ID_FOR_SCRIPT
@@ -442,7 +442,7 @@ images:
 	require.Equal(suite.T(), expectedYaml, planYaml)
 }
 
-func (suite *StartosisIntepreterPlanYamlTestSuite) TestAddServiceWithImageBuildSpec() {
+func (suite *StartosisIntepreterPlanYamlGeneratorTestSuite) TestAddServiceWithImageBuildSpec() {
 	dockerfileModulePath := "github.com/kurtosis-tech/plan-yaml-prac/server/Dockerfile"
 	serverModulePath := "github.com/kurtosis-tech/plan-yaml-prac/server"
 	dockerfileContents := `RUN ["something"]`
@@ -481,7 +481,7 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestAddServiceWithImageBuildS
 	require.Nil(suite.T(), interpretationError)
 	require.Equal(suite.T(), 1, instructionsPlan.Size())
 
-	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(packageId), false)
+	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(packageId))
 	require.NoError(suite.T(), err)
 
 	expectedYaml := `packageId: ` + packageId + `
@@ -506,7 +506,7 @@ images:
 	require.Equal(suite.T(), expectedYaml, planYaml)
 }
 
-func (suite *StartosisIntepreterPlanYamlTestSuite) TestAddServiceWithImageSpec() {
+func (suite *StartosisIntepreterPlanYamlGeneratorTestSuite) TestAddServiceWithImageSpec() {
 	dockerfileModulePath := "github.com/kurtosis-tech/plan-yaml-prac/server/Dockerfile"
 	serverModulePath := "github.com/kurtosis-tech/plan-yaml-prac/server"
 	dockerfileContents := `RUN ["something"]`
@@ -544,7 +544,7 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestAddServiceWithImageSpec()
 	require.Nil(suite.T(), interpretationError)
 	require.Equal(suite.T(), 1, instructionsPlan.Size())
 
-	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(packageId), false)
+	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(packageId))
 	require.NoError(suite.T(), err)
 
 	expectedYaml := `packageId: ` + packageId + `
@@ -568,7 +568,7 @@ images:
 	require.Equal(suite.T(), expectedYaml, planYaml)
 }
 
-func (suite *StartosisIntepreterPlanYamlTestSuite) TestUploadFiles() {
+func (suite *StartosisIntepreterPlanYamlGeneratorTestSuite) TestUploadFiles() {
 	dockerfileModulePath := "github.com/kurtosis-tech/plan-yaml-prac/server/Dockerfile"
 	serverModulePath := "github.com/kurtosis-tech/plan-yaml-prac/server"
 	dockerfileContents := `RUN ["something"]`
@@ -603,7 +603,7 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestUploadFiles() {
 	require.Nil(suite.T(), interpretationError)
 	require.Equal(suite.T(), 2, instructionsPlan.Size())
 
-	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(packageId), false)
+	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(packageId))
 	require.NoError(suite.T(), err)
 
 	expectedYaml := `packageId: ` + packageId + `
@@ -630,7 +630,7 @@ images:
 	require.Equal(suite.T(), expectedYaml, planYaml)
 }
 
-func (suite *StartosisIntepreterPlanYamlTestSuite) TestStoreServiceFiles() {
+func (suite *StartosisIntepreterPlanYamlGeneratorTestSuite) TestStoreServiceFiles() {
 	script := `def run(plan, hi_files_artifact):
     plan.add_service(
         name="db",
@@ -665,7 +665,7 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestStoreServiceFiles() {
 	require.Nil(suite.T(), interpretationError)
 	require.Equal(suite.T(), 2, instructionsPlan.Size())
 
-	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript), false)
+	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript))
 	require.NoError(suite.T(), err)
 
 	expectedYaml := `packageId: DEFAULT_PACKAGE_ID_FOR_SCRIPT
@@ -695,7 +695,7 @@ images:
 	require.Equal(suite.T(), expectedYaml, planYaml)
 }
 
-func (suite *StartosisIntepreterPlanYamlTestSuite) TestRemoveService() {
+func (suite *StartosisIntepreterPlanYamlGeneratorTestSuite) TestRemoveService() {
 	script := `def run(plan, hi_files_artifact):
 	plan.add_service(
 		name="db",
@@ -728,7 +728,7 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestRemoveService() {
 	require.Nil(suite.T(), interpretationError)
 	require.Equal(suite.T(), 2, instructionsPlan.Size())
 
-	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript), false)
+	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript))
 	require.NoError(suite.T(), err)
 
 	expectedYaml := `packageId: DEFAULT_PACKAGE_ID_FOR_SCRIPT
@@ -741,7 +741,7 @@ images:
 	require.Equal(suite.T(), expectedYaml, planYaml)
 }
 
-func (suite *StartosisIntepreterPlanYamlTestSuite) TestFutureReferencesAreSwapped() {
+func (suite *StartosisIntepreterPlanYamlGeneratorTestSuite) TestFutureReferencesAreSwapped() {
 	script := `def run(plan, hi_files_artifact):
 	service = plan.add_service(
 		name="db",
@@ -789,7 +789,7 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestFutureReferencesAreSwappe
 	require.Nil(suite.T(), interpretationError)
 	require.Equal(suite.T(), 4, instructionsPlan.Size())
 
-	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript), false)
+	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript))
 	require.NoError(suite.T(), err)
 
 	expectedYaml := `packageId: DEFAULT_PACKAGE_ID_FOR_SCRIPT
