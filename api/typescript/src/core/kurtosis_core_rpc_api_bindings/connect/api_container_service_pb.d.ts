@@ -1882,13 +1882,6 @@ export declare class StarlarkScriptPlanYamlArgs extends Message<StarlarkScriptPl
    */
   mainFunctionName?: string;
 
-  /**
-   * Whether to return only the dependencies of the starlark script
-   *
-   * @generated from field: optional bool dependencies_only = 6;
-   */
-  dependenciesOnly?: boolean;
-
   constructor(data?: PartialMessage<StarlarkScriptPlanYamlArgs>);
 
   static readonly runtime: typeof proto3;
@@ -1934,13 +1927,6 @@ export declare class StarlarkPackagePlanYamlArgs extends Message<StarlarkPackage
    * @generated from field: optional string main_function_name = 4;
    */
   mainFunctionName?: string;
-
-  /**
-   * Whether to return only the dependencies of the Starlark package
-   *
-   * @generated from field: optional bool dependencies_only = 5;
-   */
-  dependenciesOnly?: boolean;
 
   constructor(data?: PartialMessage<StarlarkPackagePlanYamlArgs>);
 

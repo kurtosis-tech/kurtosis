@@ -1511,11 +1511,6 @@ export class StarlarkScriptPlanYamlArgs extends jspb.Message {
   hasMainFunctionName(): boolean;
   clearMainFunctionName(): StarlarkScriptPlanYamlArgs;
 
-  getDependenciesOnly(): boolean;
-  setDependenciesOnly(value: boolean): StarlarkScriptPlanYamlArgs;
-  hasDependenciesOnly(): boolean;
-  clearDependenciesOnly(): StarlarkScriptPlanYamlArgs;
-
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StarlarkScriptPlanYamlArgs.AsObject;
   static toObject(includeInstance: boolean, msg: StarlarkScriptPlanYamlArgs): StarlarkScriptPlanYamlArgs.AsObject;
@@ -1529,7 +1524,6 @@ export namespace StarlarkScriptPlanYamlArgs {
     serializedScript: string,
     serializedParams?: string,
     mainFunctionName?: string,
-    dependenciesOnly?: boolean,
   }
 
   export enum SerializedParamsCase { 
@@ -1540,11 +1534,6 @@ export namespace StarlarkScriptPlanYamlArgs {
   export enum MainFunctionNameCase { 
     _MAIN_FUNCTION_NAME_NOT_SET = 0,
     MAIN_FUNCTION_NAME = 5,
-  }
-
-  export enum DependenciesOnlyCase { 
-    _DEPENDENCIES_ONLY_NOT_SET = 0,
-    DEPENDENCIES_ONLY = 6,
   }
 }
 
@@ -1567,11 +1556,6 @@ export class StarlarkPackagePlanYamlArgs extends jspb.Message {
   hasMainFunctionName(): boolean;
   clearMainFunctionName(): StarlarkPackagePlanYamlArgs;
 
-  getDependenciesOnly(): boolean;
-  setDependenciesOnly(value: boolean): StarlarkPackagePlanYamlArgs;
-  hasDependenciesOnly(): boolean;
-  clearDependenciesOnly(): StarlarkPackagePlanYamlArgs;
-
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StarlarkPackagePlanYamlArgs.AsObject;
   static toObject(includeInstance: boolean, msg: StarlarkPackagePlanYamlArgs): StarlarkPackagePlanYamlArgs.AsObject;
@@ -1586,7 +1570,6 @@ export namespace StarlarkPackagePlanYamlArgs {
     serializedParams?: string,
     relativePathToMainFile?: string,
     mainFunctionName?: string,
-    dependenciesOnly?: boolean,
   }
 
   export enum SerializedParamsCase { 
@@ -1602,11 +1585,6 @@ export namespace StarlarkPackagePlanYamlArgs {
   export enum MainFunctionNameCase { 
     _MAIN_FUNCTION_NAME_NOT_SET = 0,
     MAIN_FUNCTION_NAME = 4,
-  }
-
-  export enum DependenciesOnlyCase { 
-    _DEPENDENCIES_ONLY_NOT_SET = 0,
-    DEPENDENCIES_ONLY = 5,
   }
 }
 

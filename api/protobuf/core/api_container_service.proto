@@ -598,9 +598,6 @@ message StarlarkScriptPlanYamlArgs {
 
   // The name of the main function, the default value is "run"
   optional string main_function_name = 5;
-
-  // Whether to return only the dependencies of the starlark script
-  optional bool dependencies_only = 6;
 }
 
 message StarlarkPackagePlanYamlArgs {
@@ -615,7 +612,4 @@ message StarlarkPackagePlanYamlArgs {
 
   // The name of the main function, the default value is "run"
   optional string main_function_name = 4;
-
-  // Whether to return only the dependencies of the Starlark package
-  optional bool dependencies_only = 5;
 }

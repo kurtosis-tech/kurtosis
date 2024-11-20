@@ -709,9 +709,6 @@ pub struct StarlarkScriptPlanYamlArgs {
     /// The name of the main function, the default value is "run"
     #[prost(string, optional, tag = "5")]
     pub main_function_name: ::core::option::Option<::prost::alloc::string::String>,
-    /// Whether to return only the dependencies of the starlark script
-    #[prost(bool, optional, tag = "6")]
-    pub dependencies_only: ::core::option::Option<bool>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -730,9 +727,6 @@ pub struct StarlarkPackagePlanYamlArgs {
     /// The name of the main function, the default value is "run"
     #[prost(string, optional, tag = "4")]
     pub main_function_name: ::core::option::Option<::prost::alloc::string::String>,
-    /// Whether to return only the dependencies of the Starlark package
-    #[prost(bool, optional, tag = "5")]
-    pub dependencies_only: ::core::option::Option<bool>,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
