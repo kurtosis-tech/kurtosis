@@ -44,7 +44,7 @@ const (
 	filePathToKurtosisOrComposeYamlNotFound  = ""
 	replaceCountPackageDirWithGithubConstant = 1
 
-	osPathSeparatorString = string(os.PathSeparator)
+	OsPathSeparatorString = string(os.PathSeparator)
 
 	onlyOneReplace = 1
 
@@ -549,8 +549,8 @@ func validatePackageNameMatchesKurtosisYamlLocation(kurtosisYaml *yaml_parser.Ku
 	packageNameFromAbsPackagePath := strings.Replace(absPathToKurtosisYmlInThePackage, packageDir, shared_utils.GithubDomainPrefix, replaceCountPackageDirWithGithubConstant)
 	packageName := kurtosisYaml.GetPackageName()
 
-	if strings.HasSuffix(packageName, osPathSeparatorString) {
-		return startosis_errors.NewInterpretationError("Kurtosis package name cannot have trailing %q; package name: %v and kurtosis.yml is found at: %v", osPathSeparatorString, packageName, packageNameFromAbsPackagePath)
+	if strings.HasSuffix(packageName, OsPathSeparatorString) {
+		return startosis_errors.NewInterpretationError("Kurtosis package name cannot have trailing %q; package name: %v and kurtosis.yml is found at: %v", OsPathSeparatorString, packageName, packageNameFromAbsPackagePath)
 	}
 
 	// re-using ParseGitURL with packageName found from kurtosis.yml as it already does some validations
@@ -592,8 +592,8 @@ func getKurtosisOrComposeYamlPathForFileUrlInternal(absPathToFile string, packag
 		return filePathToKurtosisOrComposeYamlNotFound, startosis_errors.NewInterpretationError("Absolute path to file: %v must start with following prefix %v", absPathToFile, packagesDir)
 	}
 
-	removeTrailingPathSeparator := strings.Trim(beginSearchForKurtosisYamlFromRepo, osPathSeparatorString)
-	dirs := strings.Split(removeTrailingPathSeparator, osPathSeparatorString)
+	removeTrailingPathSeparator := strings.Trim(beginSearchForKurtosisYamlFromRepo, OsPathSeparatorString)
+	dirs := strings.Split(removeTrailingPathSeparator, OsPathSeparatorString)
 	logrus.Debugf("Found directories: %v", dirs)
 
 	var validYamlFilenames []string
@@ -619,7 +619,7 @@ func getKurtosisOrComposeYamlPathForFileUrlInternal(absPathToFile string, packag
 }
 
 func isLocalDependencyReplace(replace string) bool {
-	if strings.HasPrefix(replace, osPathSeparatorString) || strings.HasPrefix(replace, dotRelativePathIndicatorString) {
+	if strings.HasPrefix(replace, OsPathSeparatorString) || strings.HasPrefix(replace, dotRelativePathIndicatorString) {
 		return true
 	}
 	return false

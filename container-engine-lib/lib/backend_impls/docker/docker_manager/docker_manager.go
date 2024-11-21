@@ -1612,7 +1612,7 @@ func (manager *DockerManager) CopyFromContainer(ctx context.Context, containerId
 		}
 	}
 
-	tarStreamReadCloser, _, err := manager.dockerClient.CopyFromContainer(
+	tarStreamReadCloser, _, err := manager.dockerClientNoTimeout.CopyFromContainer(
 		ctx,
 		containerId,
 		srcPath)
@@ -2343,6 +2343,25 @@ func pullImage(dockerClient *client.Client, imageName string, registrySpec *imag
 		PrivilegeFunc: nil,
 		Platform:      platform,
 	}
+
+	// Try to obtain the auth configuration from the docker config file
+	authConfig, err := GetAuthFromDockerConfig(imageName)
+	if err != nil {
+		logrus.Warnf("An error occurred while getting auth config for image: %s: %s", imageName, err.Error())
+		logrus.Warnf("Falling back to pulling image with no auth config.")
+	}
+
+	if authConfig != nil {
+		authFromConfig, err := registry.EncodeAuthConfig(*authConfig)
+		if err != nil {
+			logrus.Warnf("An error occurred while encoding auth config for image: %s: %s", imageName, err.Error())
+			logrus.Warnf("Falling back to pulling image with no auth config.")
+		} else {
+			imagePullOptions.RegistryAuth = authFromConfig
+		}
+	}
+
+	// If the registry spec is defined, use that for authentication
 	if registrySpec != nil {
 		authConfig := registry.AuthConfig{
 			Username:      registrySpec.GetUsername(),
@@ -2360,6 +2379,7 @@ func pullImage(dockerClient *client.Client, imageName string, registrySpec *imag
 		imagePullOptions.RegistryAuth = encodedAuthConfig
 
 	}
+
 	out, err := dockerClient.ImagePull(pullImageCtx, imageName, imagePullOptions)
 	if err != nil {
 		return stacktrace.Propagate(err, "Tried pulling image '%v' with platform '%v' but failed", imageName, platform), false

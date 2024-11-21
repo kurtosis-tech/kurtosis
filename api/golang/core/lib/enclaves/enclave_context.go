@@ -531,25 +531,24 @@ func (enclaveCtx *EnclaveContext) GetStarlarkRun(ctx context.Context) (*kurtosis
 	return response, nil
 }
 
-func (enclaveCtx *EnclaveContext) GetStarlarkPackagePlanYaml(ctx context.Context, packageId string, serializedParams string, dependenciesOnly bool) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
+func (enclaveCtx *EnclaveContext) GetStarlarkPackagePlanYaml(ctx context.Context, packageId string, serializedParams string) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
 	serializedParams, err := maybeParseYaml(serializedParams)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred when parsing YAML args for package '%v'", serializedParams)
+		return nil, stacktrace.Propagate(err, "An error occurred when parsing YAML args for package '%s':\n%s", packageId, serializedParams)
 	}
 	response, err := enclaveCtx.client.GetStarlarkPackagePlanYaml(ctx, &kurtosis_core_rpc_api_bindings.StarlarkPackagePlanYamlArgs{
 		PackageId:              packageId,
 		SerializedParams:       &serializedParams,
 		RelativePathToMainFile: nil,
 		MainFunctionName:       nil,
-		DependenciesOnly:       &dependenciesOnly,
 	})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while getting the starlark package plan yaml run.")
+		return nil, stacktrace.Propagate(err, "An error occurred while getting the Starlark package plan yaml.")
 	}
 	return response, nil
 }
 
-func (enclaveCtx *EnclaveContext) GetStarlarkScriptPlanYaml(ctx context.Context, serializedScript string, serializedParams string, dependenciesOnly bool) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
+func (enclaveCtx *EnclaveContext) GetStarlarkScriptPlanYaml(ctx context.Context, serializedScript string, serializedParams string) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
 	serializedParams, err := maybeParseYaml(serializedParams)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred when parsing YAML args for package '%v'", serializedParams)
@@ -558,10 +557,9 @@ func (enclaveCtx *EnclaveContext) GetStarlarkScriptPlanYaml(ctx context.Context,
 		SerializedScript: serializedScript,
 		SerializedParams: &serializedParams,
 		MainFunctionName: nil,
-		DependenciesOnly: &dependenciesOnly,
 	})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while getting the last starlark script plan yaml run.")
+		return nil, stacktrace.Propagate(err, "An error occurred while getting the starlark script plan yaml.")
 	}
 	return response, nil
 }

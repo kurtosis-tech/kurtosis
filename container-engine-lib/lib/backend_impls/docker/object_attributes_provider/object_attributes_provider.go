@@ -17,12 +17,13 @@ import (
 )
 
 const (
-	engineServerNamePrefix      = "kurtosis-engine"
-	logsAggregatorName          = "kurtosis-logs-aggregator"
-	logsStorageVolumeName       = "kurtosis-logs-storage"
-	githubAuthStorageVolumeName = "kurtosis-github-auth-storage"
-	engineRESTAPIPortStr        = "engine-rest-api"
-	reverseProxyNamePrefix      = "kurtosis-reverse-proxy"
+	engineServerNamePrefix        = "kurtosis-engine"
+	logsAggregatorName            = "kurtosis-logs-aggregator"
+	logsStorageVolumeName         = "kurtosis-logs-storage"
+	githubAuthStorageVolumeName   = "kurtosis-github-auth-storage"
+	dockerConfigStorageVolumeName = "kurtosis-docker-config-storage"
+	engineRESTAPIPortStr          = "engine-rest-api"
+	reverseProxyNamePrefix        = "kurtosis-reverse-proxy"
 )
 
 type DockerObjectAttributesProvider interface {
@@ -38,6 +39,7 @@ type DockerObjectAttributesProvider interface {
 	ForLogsStorageVolume() (DockerObjectAttributes, error)
 	ForReverseProxy(engineGuid engine.EngineGUID) (DockerObjectAttributes, error)
 	ForGitHubAuthStorageVolume() (DockerObjectAttributes, error)
+	ForDockerConfigStorageVolume() (DockerObjectAttributes, error)
 }
 
 func GetDockerObjectAttributesProvider() DockerObjectAttributesProvider {
@@ -163,6 +165,23 @@ func (provider *dockerObjectAttributesProviderImpl) ForGitHubAuthStorageVolume()
 
 	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
 		docker_label_key.VolumeTypeDockerLabelKey: label_value_consts.GitHubAuthStorageVolumeTypeDockerLabelValue,
+	}
+
+	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels '%+v'", name, labels)
+	}
+	return objectAttributes, nil
+}
+
+func (provider *dockerObjectAttributesProviderImpl) ForDockerConfigStorageVolume() (DockerObjectAttributes, error) {
+	name, err := docker_object_name.CreateNewDockerObjectName(dockerConfigStorageVolumeName)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker object name object from string '%v'", dockerConfigStorageVolumeName)
+	}
+
+	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
+		docker_label_key.VolumeTypeDockerLabelKey: label_value_consts.DockerConfigStorageVolumeTypeDockerLabelValue,
 	}
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)

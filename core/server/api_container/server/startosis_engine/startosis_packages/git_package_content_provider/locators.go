@@ -13,7 +13,7 @@ const (
 )
 
 func isLocalLocator(locator string) bool {
-	if strings.HasPrefix(locator, osPathSeparatorString) || strings.HasPrefix(locator, dotRelativePathIndicatorString) {
+	if strings.HasPrefix(locator, OsPathSeparatorString) || strings.HasPrefix(locator, dotRelativePathIndicatorString) {
 		return true
 	}
 	return false

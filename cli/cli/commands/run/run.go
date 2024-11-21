@@ -8,6 +8,7 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/configs"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
@@ -60,10 +61,10 @@ const (
 	dryRunFlagKey = "dry-run"
 	defaultDryRun = "false"
 
-	dependenciesFlagKey     = "dependencies"
-	defaultDependencies     = "false"
-	pullDependenciesFlagKey = "pull"
-	defaultPullDependencies = "false"
+	dependenciesFlagKey         = "dependencies"
+	dependenciesFlagDefault     = "false"
+	pullDependenciesFlagKey     = "pull"
+	pullDependenciesFlagDefault = "false"
 
 	fullUuidsFlagKey       = "full-uuids"
 	fullUuidFlagKeyDefault = "false"
@@ -117,7 +118,9 @@ const (
 	nonBlockingModeFlagKey = "non-blocking-tasks"
 	defaultBlockingMode    = "false"
 
-	httpProtocolRegexStr = "^(http|https)://"
+	httpProtocolRegexStr           = "^(http|https)://"
+	shouldCloneNormalRepo          = false
+	packageReplaceKeyInKurtosisYml = "replace:"
 )
 
 var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -141,15 +144,15 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 		},
 		{
 			Key:     dependenciesFlagKey,
-			Usage:   "If true, a yaml will be returned with a list of images and packages that this run depends on.",
+			Usage:   "If true, a yaml will be output (to stdout) with a list of images and packages that this run depends on.",
 			Type:    flags.FlagType_Bool,
-			Default: defaultDependencies,
+			Default: dependenciesFlagDefault,
 		},
 		{
 			Key:     pullDependenciesFlagKey,
-			Usage:   "If true, and the dependencies flag is passed, attempts to pull all images and packages that the run depends on locally. kurtosis.yml is updated with the replace directives pointing to locally pulled packages.",
+			Usage:   fmt.Sprintf("If true, and the %s flag is passed, attempts to pull all images and packages that the run depends on locally. %s is updated with replace directives pointing to locally pulled packages. If a replace directive already exists an error is thrown. Note: this currently only works on the Docker backend.", dependenciesFlagKey, kurtosisYMLFilePath),
 			Type:    flags.FlagType_Bool,
-			Default: defaultPullDependencies,
+			Default: pullDependenciesFlagDefault,
 		},
 		{
 			Key: enclaveIdentifierFlagKey,
@@ -285,7 +288,7 @@ func run(
 		return stacktrace.Propagate(err, "Expected a boolean flag with key '%v' but none was found; this is an error in Kurtosis!", dryRunFlagKey)
 	}
 
-	dependencies, err := flags.GetBool(dependenciesFlagKey)
+	isDependenciesOnly, err := flags.GetBool(dependenciesFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a boolean flag with key '%v' but none was found; this is an error in Kurtosis!", dependenciesFlagKey)
 	}
@@ -401,24 +404,32 @@ func run(
 
 	isRemotePackage := strings.HasPrefix(starlarkScriptOrPackagePath, githubDomainPrefix)
 
-	if dependencies {
+	if isDependenciesOnly {
 		dependencyYaml, err := getPackageDependencyYaml(ctx, enclaveCtx, starlarkScriptOrPackagePath, isRemotePackage, packageArgs)
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred getting package dependencies")
+			return stacktrace.Propagate(err, "An error occurred getting package dependencies.")
 		}
-		fmt.Printf("%v\n", dependencyYaml.PlanYaml)
+
+		type PackageDependencies struct {
+			Images   []string `yaml:"images"`
+			Packages []string `yaml:"packageDependencies"`
+		}
+		var pkgDeps PackageDependencies
+		err = yaml.Unmarshal([]byte(dependencyYaml.PlanYaml), &pkgDeps)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred unmarshalling dependency yaml string")
+		}
+		out.PrintOutLn("Images:")
+		for _, imageStr := range pkgDeps.Images {
+			out.PrintOutLn(fmt.Sprintf(" %s", imageStr))
+		}
+		out.PrintOutLn("Packages:")
+		for _, packageStr := range pkgDeps.Packages {
+			out.PrintOutLn(fmt.Sprintf(" %s", packageStr))
+		}
 
 		if pullDependencies {
-			type PackageDependencies struct {
-				Images   []string `yaml:"images"`
-				Packages []string `yaml:"packageDependencies"`
-			}
-			var pkgDeps PackageDependencies
-			err := yaml.Unmarshal([]byte(dependencyYaml.PlanYaml), &pkgDeps)
-			if err != nil {
-				return stacktrace.Propagate(err, "An error occurred unmarhsaling dependency yaml string")
-			}
-
+			// errors below already wrapped w propagate
 			err = pullImagesLocally(ctx, pkgDeps.Images)
 			if err != nil {
 				return err
@@ -668,12 +679,26 @@ func getPackageDependencyYaml(
 	var packageYaml *kurtosis_core_rpc_api_bindings.PlanYaml
 	var err error
 	if isRemote {
-		packageYaml, err = enclaveCtx.GetStarlarkPackagePlanYaml(ctx, starlarkScriptOrPackageId, packageArgs, true)
+		packageYaml, err = enclaveCtx.GetStarlarkPackagePlanYaml(ctx, starlarkScriptOrPackageId, packageArgs)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred retrieving plan yaml for provided package.")
+		}
 	} else {
-		packageYaml, err = enclaveCtx.GetStarlarkScriptPlanYaml(ctx, starlarkScriptOrPackageId, packageArgs, true)
-	}
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred retrieving plan yaml for provided package.")
+		fileOrDir, err := os.Stat(starlarkScriptOrPackageId)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "There was an error reading file or package from disk at '%v'", starlarkScriptOrPackageId)
+		}
+
+		if isStandaloneScript(fileOrDir, kurtosisYMLFilePath) {
+			scriptContentBytes, err := os.ReadFile(starlarkScriptOrPackageId)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "Unable to read content of Starlark script file '%s'", starlarkScriptOrPackageId)
+			}
+			packageYaml, err = enclaveCtx.GetStarlarkScriptPlanYaml(ctx, string(scriptContentBytes), packageArgs)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred retrieving plan yaml for provided package.")
+			}
+		}
 	}
 	return packageYaml, nil
 }
@@ -702,7 +727,6 @@ func parseVerbosityFlag(flags *flags.ParsedFlags) (command_args_run.Verbosity, e
 
 // Get the image download flag is present, and parse it to a valid ImageDownload value
 func parseImageDownloadFlag(flags *flags.ParsedFlags) (*kurtosis_core_rpc_api_bindings.ImageDownloadMode, error) {
-
 	imageDownloadStr, err := flags.GetString(imageDownloadFlagKey)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the image-download using flag key '%s'", imageDownloadFlagKey)
@@ -842,26 +866,44 @@ func pullImagesLocally(ctx context.Context, images []string) error {
 func pullPackagesLocally(packageDependencies []string) (map[string]string, error) {
 	localPackagesToRelativeFilepaths := map[string]string{}
 
-	wd, err := os.Getwd()
+	workingDirectory, err := os.Getwd()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting current working directory.")
 	}
-	parentCwd := filepath.Dir(wd)
-	relParentCwd, err := filepath.Rel(wd, parentCwd)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting rel path between '%v' and '%v'.", wd, relParentCwd)
+	// ensure a kurtosis yml exists here so that packages get cloned to the right place (one dir above/nested in the same dir as the package)
+	if _, err := os.Stat(fmt.Sprintf("%s/%s", workingDirectory, kurtosisYMLFilePath)); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, stacktrace.Propagate(err, "'%s' does not exist in current working directory. Make sure you are running this at the root of the package with the %s.", kurtosisYMLFilePath, kurtosisYMLFilePath)
+		} else {
+			return nil, stacktrace.Propagate(err, "An error occurred checking if %s exists.", kurtosisYMLFilePath)
+		}
 	}
 
+	file, err := os.OpenFile(kurtosisYMLFilePath, os.O_WRONLY|os.O_APPEND, kurtosisYMLFilePerms)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred opening '%s' file. Make sure this command is being run from within the directory of a kurtosis package.", kurtosisYMLFilePath)
+	}
+	defer file.Close()
+
+	parentCwd := filepath.Dir(workingDirectory)
+	relParentCwd, err := filepath.Rel(workingDirectory, parentCwd)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting rel path between '%v' and '%v'.", workingDirectory, relParentCwd)
+	}
 	for _, dependency := range packageDependencies {
 		packageIdParts := strings.Split(dependency, "/")
 		packageName := packageIdParts[len(packageIdParts)-1]
 		logrus.Infof("Pulling package: %v", dependency)
 
-		// assume dependency doesn't have http:// prefix or .git suffix
-		repoUrl := fmt.Sprintf("%s%s%s", "http://", dependency, ".git")
+		var repoUrl string
+		if !strings.HasPrefix("http://", dependency) {
+			repoUrl = "http://" + dependency
+		}
+		if !strings.HasSuffix(".git", dependency) {
+			repoUrl += ".git"
+		}
 		localPackagePath := fmt.Sprintf("%s/%s", parentCwd, packageName)
-		logrus.Infof("repo url: %v", repoUrl)
-		_, err := git.PlainClone(localPackagePath, false, &git.CloneOptions{
+		_, err := git.PlainClone(localPackagePath, shouldCloneNormalRepo, &git.CloneOptions{
 			URL:               repoUrl,
 			Auth:              nil,
 			RemoteName:        "",
@@ -895,21 +937,28 @@ func pullPackagesLocally(packageDependencies []string) (map[string]string, error
 func updateKurtosisYamlWithReplaceDirectives(packageNamesToLocalFilepaths map[string]string) error {
 	file, err := os.OpenFile(kurtosisYMLFilePath, os.O_WRONLY|os.O_APPEND, kurtosisYMLFilePerms)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred opening kurtosis.yml file.")
+		return stacktrace.Propagate(err, "An error occurred opening '%s' file.", kurtosisYMLFilePath)
 	}
 	defer file.Close()
 
-	_, err = file.Write([]byte("replace:\n"))
+	// assume kurtosis.yml is a small file so okay to read into memory
+	kurtosisYmlBytes, err := os.ReadFile(kurtosisYMLFilePath)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred writing 'replace:' to kurtosis.yml")
+		return stacktrace.Propagate(err, "An error occurred reading '%s' file.", kurtosisYMLFilePath)
 	}
-
+	replaceDirectiveStr := fmt.Sprintf("%s\n", packageReplaceKeyInKurtosisYml)
 	for packageName, localFilepath := range packageNamesToLocalFilepaths {
-		_, err := file.Write([]byte(fmt.Sprintf("  %s: %s\n", packageName, localFilepath)))
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred writing replace directive for '%v: %v'", packageName, localFilepath)
-		}
+		// TODO: this assumes the users kurtosis yml is indented by two spaces which might always not be true and this could break a users kurtosis.yml
+		// TODO: find a way to handle other indentation levels
+		replaceDirectiveStr += fmt.Sprintf("  %s: %s\n", packageName, localFilepath)
 	}
-
+	if strings.Contains(string(kurtosisYmlBytes), packageReplaceKeyInKurtosisYml) {
+		logrus.Infof("A replace directive was already detected in '%s' so we will avoid overwriting it. Update the replace directive with the following:\n%s", kurtosisYMLFilePath, replaceDirectiveStr)
+		return nil
+	}
+	_, err = file.Write([]byte(replaceDirectiveStr))
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred writing '%s' to kurtosis.yml", replaceDirectiveStr)
+	}
 	return nil
 }
