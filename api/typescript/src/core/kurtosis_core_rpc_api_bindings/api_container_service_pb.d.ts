@@ -1546,6 +1546,9 @@ export class StarlarkPackagePlanYamlArgs extends jspb.Message {
   hasSerializedParams(): boolean;
   clearSerializedParams(): StarlarkPackagePlanYamlArgs;
 
+  getIsRemote(): boolean;
+  setIsRemote(value: boolean): StarlarkPackagePlanYamlArgs;
+
   getRelativePathToMainFile(): string;
   setRelativePathToMainFile(value: string): StarlarkPackagePlanYamlArgs;
   hasRelativePathToMainFile(): boolean;
@@ -1568,6 +1571,7 @@ export namespace StarlarkPackagePlanYamlArgs {
   export type AsObject = {
     packageId: string,
     serializedParams?: string,
+    isRemote: boolean,
     relativePathToMainFile?: string,
     mainFunctionName?: string,
   }
@@ -1579,12 +1583,12 @@ export namespace StarlarkPackagePlanYamlArgs {
 
   export enum RelativePathToMainFileCase { 
     _RELATIVE_PATH_TO_MAIN_FILE_NOT_SET = 0,
-    RELATIVE_PATH_TO_MAIN_FILE = 3,
+    RELATIVE_PATH_TO_MAIN_FILE = 4,
   }
 
   export enum MainFunctionNameCase { 
     _MAIN_FUNCTION_NAME_NOT_SET = 0,
-    MAIN_FUNCTION_NAME = 4,
+    MAIN_FUNCTION_NAME = 5,
   }
 }
 

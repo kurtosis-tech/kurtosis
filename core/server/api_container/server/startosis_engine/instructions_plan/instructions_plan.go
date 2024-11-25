@@ -21,6 +21,9 @@ type InstructionsPlan struct {
 	scheduledInstructionsIndex map[ScheduledInstructionUuid]*ScheduledInstruction
 
 	instructionsSequence []ScheduledInstructionUuid
+
+	// list of package names that this instructions plan relies on
+	packageDependencies map[string]bool
 }
 
 func NewInstructionsPlan() *InstructionsPlan {
@@ -28,6 +31,7 @@ func NewInstructionsPlan() *InstructionsPlan {
 		indexOfFirstInstruction:    0,
 		scheduledInstructionsIndex: map[ScheduledInstructionUuid]*ScheduledInstruction{},
 		instructionsSequence:       []ScheduledInstructionUuid{},
+		packageDependencies:        map[string]bool{},
 	}
 }
 
@@ -77,7 +81,7 @@ func (plan *InstructionsPlan) GeneratePlan() ([]*ScheduledInstruction, *startosi
 }
 
 // GenerateYaml takes in an existing planYaml (usually empty) and returns a yaml string containing the effects of the plan
-func (plan *InstructionsPlan) GenerateYaml(planYaml *plan_yaml.PlanYaml) (string, error) {
+func (plan *InstructionsPlan) GenerateYaml(planYaml *plan_yaml.PlanYamlGenerator) (string, error) {
 	for _, instructionUuid := range plan.instructionsSequence {
 		instruction, found := plan.scheduledInstructionsIndex[instructionUuid]
 		if !found {
@@ -88,7 +92,12 @@ func (plan *InstructionsPlan) GenerateYaml(planYaml *plan_yaml.PlanYaml) (string
 			return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred updating the plan with instruction: %v.", instructionUuid)
 		}
 	}
+	planYaml.AddPackageDependencies(plan.packageDependencies)
 	return planYaml.GenerateYaml()
+}
+
+func (plan *InstructionsPlan) AddPackageDependency(packageDependency string) {
+	plan.packageDependencies[packageDependency] = true
 }
 
 func (plan *InstructionsPlan) Size() int {

@@ -670,7 +670,7 @@ func (apicService *ApiContainerService) GetStarlarkPackagePlanYaml(ctx context.C
 	var detectedPackageReplaceOptions map[string]string
 	var actualRelativePathToMainFile string
 	scriptWithRunFunction, actualRelativePathToMainFile, detectedPackageId, detectedPackageReplaceOptions, interpretationError =
-		apicService.runStarlarkPackageSetup(packageIdFromArgs, true, nil, requestedRelativePathToMainFile)
+		apicService.runStarlarkPackageSetup(packageIdFromArgs, args.IsRemote, nil, requestedRelativePathToMainFile)
 	if interpretationError != nil {
 		return nil, stacktrace.Propagate(interpretationError, "An interpretation error occurred setting up the package for retrieving plan yaml for package: %v", packageIdFromArgs)
 	}

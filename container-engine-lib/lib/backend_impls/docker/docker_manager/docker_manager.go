@@ -2283,13 +2283,15 @@ func pullImage(dockerClient *client.Client, imageName string, registrySpec *imag
 	// Try to obtain the auth configuration from the docker config file
 	authConfig, err := GetAuthFromDockerConfig(imageName)
 	if err != nil {
-		logrus.Errorf("An error occurred while getting auth config for image: %s: %s", imageName, err.Error())
+		logrus.Warnf("An error occurred while getting auth config for image: %s: %s", imageName, err.Error())
+		logrus.Warnf("Falling back to pulling image with no auth config.")
 	}
 
 	if authConfig != nil {
 		authFromConfig, err := registry.EncodeAuthConfig(*authConfig)
 		if err != nil {
-			logrus.Errorf("An error occurred while encoding auth config for image: %s: %s", imageName, err.Error())
+			logrus.Warnf("An error occurred while encoding auth config for image: %s: %s", imageName, err.Error())
+			logrus.Warnf("Falling back to pulling image with no auth config.")
 		} else {
 			imagePullOptions.RegistryAuth = authFromConfig
 		}

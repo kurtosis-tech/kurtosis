@@ -143,6 +143,11 @@ func GetAuthFromDockerConfig(repo string) (*registry.AuthConfig, error) {
 		return nil, err
 	}
 
+	// if repo string doesn't contain a repo prefix assume its an official docker library image
+	if !strings.Contains(repo, "/") {
+		repo = "library/" + repo
+	}
+
 	registryHost := dockerregistry.ConvertToHostname(repo)
 
 	if !strings.Contains(registryHost, ".") || registryHost == "docker.io" || registryHost == "registry-1.docker.io" {

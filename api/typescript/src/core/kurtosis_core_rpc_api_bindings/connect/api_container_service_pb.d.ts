@@ -1915,16 +1915,23 @@ export declare class StarlarkPackagePlanYamlArgs extends Message<StarlarkPackage
   serializedParams?: string;
 
   /**
+   * whether or not this is package yaml should be pulled from on disk package or cloned
+   *
+   * @generated from field: bool is_remote = 3;
+   */
+  isRemote: boolean;
+
+  /**
    * The relative main file filepath, the default value is the "main.star" file in the root of a package
    *
-   * @generated from field: optional string relative_path_to_main_file = 3;
+   * @generated from field: optional string relative_path_to_main_file = 4;
    */
   relativePathToMainFile?: string;
 
   /**
    * The name of the main function, the default value is "run"
    *
-   * @generated from field: optional string main_function_name = 4;
+   * @generated from field: optional string main_function_name = 5;
    */
   mainFunctionName?: string;
 
