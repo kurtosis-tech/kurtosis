@@ -719,13 +719,16 @@ pub struct StarlarkPackagePlanYamlArgs {
     /// This should be a valid JSON string
     #[prost(string, optional, tag = "2")]
     pub serialized_params: ::core::option::Option<::prost::alloc::string::String>,
+    /// whether or not this is package yaml should be pulled from on disk package or cloned
+    #[prost(bool, tag = "3")]
+    pub is_remote: bool,
     /// The relative main file filepath, the default value is the "main.star" file in the root of a package
-    #[prost(string, optional, tag = "3")]
+    #[prost(string, optional, tag = "4")]
     pub relative_path_to_main_file: ::core::option::Option<
         ::prost::alloc::string::String,
     >,
     /// The name of the main function, the default value is "run"
-    #[prost(string, optional, tag = "4")]
+    #[prost(string, optional, tag = "5")]
     pub main_function_name: ::core::option::Option<::prost::alloc::string::String>,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
