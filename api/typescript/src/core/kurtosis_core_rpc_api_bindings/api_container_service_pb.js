@@ -11107,9 +11107,10 @@ proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.toObject = functio
 proto.api_container_api.StarlarkPackagePlanYamlArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
     packageId: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    serializedParams: jspb.Message.getFieldWithDefault(msg, 2, ""),
-    relativePathToMainFile: jspb.Message.getFieldWithDefault(msg, 3, ""),
-    mainFunctionName: jspb.Message.getFieldWithDefault(msg, 4, "")
+    isRemote: jspb.Message.getBooleanFieldWithDefault(msg, 2, false),
+    serializedParams: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    relativePathToMainFile: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    mainFunctionName: jspb.Message.getFieldWithDefault(msg, 5, "")
   };
 
   if (includeInstance) {
@@ -11151,14 +11152,18 @@ proto.api_container_api.StarlarkPackagePlanYamlArgs.deserializeBinaryFromReader 
       msg.setPackageId(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
-      msg.setSerializedParams(value);
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setIsRemote(value);
       break;
     case 3:
       var value = /** @type {string} */ (reader.readString());
-      msg.setRelativePathToMainFile(value);
+      msg.setSerializedParams(value);
       break;
     case 4:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setRelativePathToMainFile(value);
+      break;
+    case 5:
       var value = /** @type {string} */ (reader.readString());
       msg.setMainFunctionName(value);
       break;
@@ -11198,9 +11203,9 @@ proto.api_container_api.StarlarkPackagePlanYamlArgs.serializeBinaryToWriter = fu
       f
     );
   }
-  f = /** @type {string} */ (jspb.Message.getField(message, 2));
-  if (f != null) {
-    writer.writeString(
+  f = message.getIsRemote();
+  if (f) {
+    writer.writeBool(
       2,
       f
     );
@@ -11216,6 +11221,13 @@ proto.api_container_api.StarlarkPackagePlanYamlArgs.serializeBinaryToWriter = fu
   if (f != null) {
     writer.writeString(
       4,
+      f
+    );
+  }
+  f = /** @type {string} */ (jspb.Message.getField(message, 5));
+  if (f != null) {
+    writer.writeString(
+      5,
       f
     );
   }
@@ -11241,46 +11253,28 @@ proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.setPackageId = fun
 
 
 /**
- * optional string serialized_params = 2;
+ * optional bool is_remote = 2;
+ * @return {boolean}
+ */
+proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.getIsRemote = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 2, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.api_container_api.StarlarkPackagePlanYamlArgs} returns this
+ */
+proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.setIsRemote = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 2, value);
+};
+
+
+/**
+ * optional string serialized_params = 3;
  * @return {string}
  */
 proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.getSerializedParams = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
-};
-
-
-/**
- * @param {string} value
- * @return {!proto.api_container_api.StarlarkPackagePlanYamlArgs} returns this
- */
-proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.setSerializedParams = function(value) {
-  return jspb.Message.setField(this, 2, value);
-};
-
-
-/**
- * Clears the field making it undefined.
- * @return {!proto.api_container_api.StarlarkPackagePlanYamlArgs} returns this
- */
-proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.clearSerializedParams = function() {
-  return jspb.Message.setField(this, 2, undefined);
-};
-
-
-/**
- * Returns whether this field is set.
- * @return {boolean}
- */
-proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.hasSerializedParams = function() {
-  return jspb.Message.getField(this, 2) != null;
-};
-
-
-/**
- * optional string relative_path_to_main_file = 3;
- * @return {string}
- */
-proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.getRelativePathToMainFile = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
 };
 
@@ -11289,7 +11283,7 @@ proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.getRelativePathToM
  * @param {string} value
  * @return {!proto.api_container_api.StarlarkPackagePlanYamlArgs} returns this
  */
-proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.setRelativePathToMainFile = function(value) {
+proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.setSerializedParams = function(value) {
   return jspb.Message.setField(this, 3, value);
 };
 
@@ -11298,7 +11292,7 @@ proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.setRelativePathToM
  * Clears the field making it undefined.
  * @return {!proto.api_container_api.StarlarkPackagePlanYamlArgs} returns this
  */
-proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.clearRelativePathToMainFile = function() {
+proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.clearSerializedParams = function() {
   return jspb.Message.setField(this, 3, undefined);
 };
 
@@ -11307,16 +11301,16 @@ proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.clearRelativePathT
  * Returns whether this field is set.
  * @return {boolean}
  */
-proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.hasRelativePathToMainFile = function() {
+proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.hasSerializedParams = function() {
   return jspb.Message.getField(this, 3) != null;
 };
 
 
 /**
- * optional string main_function_name = 4;
+ * optional string relative_path_to_main_file = 4;
  * @return {string}
  */
-proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.getMainFunctionName = function() {
+proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.getRelativePathToMainFile = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 4, ""));
 };
 
@@ -11325,7 +11319,7 @@ proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.getMainFunctionNam
  * @param {string} value
  * @return {!proto.api_container_api.StarlarkPackagePlanYamlArgs} returns this
  */
-proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.setMainFunctionName = function(value) {
+proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.setRelativePathToMainFile = function(value) {
   return jspb.Message.setField(this, 4, value);
 };
 
@@ -11334,7 +11328,7 @@ proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.setMainFunctionNam
  * Clears the field making it undefined.
  * @return {!proto.api_container_api.StarlarkPackagePlanYamlArgs} returns this
  */
-proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.clearMainFunctionName = function() {
+proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.clearRelativePathToMainFile = function() {
   return jspb.Message.setField(this, 4, undefined);
 };
 
@@ -11343,8 +11337,44 @@ proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.clearMainFunctionN
  * Returns whether this field is set.
  * @return {boolean}
  */
-proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.hasMainFunctionName = function() {
+proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.hasRelativePathToMainFile = function() {
   return jspb.Message.getField(this, 4) != null;
+};
+
+
+/**
+ * optional string main_function_name = 5;
+ * @return {string}
+ */
+proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.getMainFunctionName = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.StarlarkPackagePlanYamlArgs} returns this
+ */
+proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.setMainFunctionName = function(value) {
+  return jspb.Message.setField(this, 5, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.StarlarkPackagePlanYamlArgs} returns this
+ */
+proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.clearMainFunctionName = function() {
+  return jspb.Message.setField(this, 5, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.StarlarkPackagePlanYamlArgs.prototype.hasMainFunctionName = function() {
+  return jspb.Message.getField(this, 5) != null;
 };
 
 
