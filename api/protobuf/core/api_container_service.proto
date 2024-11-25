@@ -603,12 +603,12 @@ message StarlarkScriptPlanYamlArgs {
 message StarlarkPackagePlanYamlArgs {
   string package_id = 1;
 
-  // whether or not this is package yaml should be pulled from on disk package or cloned
-  bool is_remote = 2;
-
   // Serialized parameters data for the Starlark package main function
   // This should be a valid JSON string
-  optional string serialized_params = 3;
+  optional string serialized_params = 2;
+
+  // whether or not this is package yaml should be pulled from on disk package or cloned
+  bool is_remote = 3;
 
   // The relative main file filepath, the default value is the "main.star" file in the root of a package
   optional string relative_path_to_main_file = 4;

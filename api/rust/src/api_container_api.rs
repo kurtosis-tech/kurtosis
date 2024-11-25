@@ -715,13 +715,13 @@ pub struct StarlarkScriptPlanYamlArgs {
 pub struct StarlarkPackagePlanYamlArgs {
     #[prost(string, tag = "1")]
     pub package_id: ::prost::alloc::string::String,
-    /// whether or not this is package yaml should be pulled from on disk package or cloned
-    #[prost(bool, tag = "2")]
-    pub is_remote: bool,
     /// Serialized parameters data for the Starlark package main function
     /// This should be a valid JSON string
-    #[prost(string, optional, tag = "3")]
+    #[prost(string, optional, tag = "2")]
     pub serialized_params: ::core::option::Option<::prost::alloc::string::String>,
+    /// whether or not this is package yaml should be pulled from on disk package or cloned
+    #[prost(bool, tag = "3")]
+    pub is_remote: bool,
     /// The relative main file filepath, the default value is the "main.star" file in the root of a package
     #[prost(string, optional, tag = "4")]
     pub relative_path_to_main_file: ::core::option::Option<

@@ -1907,19 +1907,19 @@ export declare class StarlarkPackagePlanYamlArgs extends Message<StarlarkPackage
   packageId: string;
 
   /**
-   * whether or not this is package yaml should be pulled from on disk package or cloned
-   *
-   * @generated from field: bool is_remote = 2;
-   */
-  isRemote: boolean;
-
-  /**
    * Serialized parameters data for the Starlark package main function
    * This should be a valid JSON string
    *
-   * @generated from field: optional string serialized_params = 3;
+   * @generated from field: optional string serialized_params = 2;
    */
   serializedParams?: string;
+
+  /**
+   * whether or not this is package yaml should be pulled from on disk package or cloned
+   *
+   * @generated from field: bool is_remote = 3;
+   */
+  isRemote: boolean;
 
   /**
    * The relative main file filepath, the default value is the "main.star" file in the root of a package

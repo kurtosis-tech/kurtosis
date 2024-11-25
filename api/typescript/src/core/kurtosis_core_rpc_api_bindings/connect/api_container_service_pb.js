@@ -669,8 +669,8 @@ export const StarlarkPackagePlanYamlArgs = proto3.makeMessageType(
   "api_container_api.StarlarkPackagePlanYamlArgs",
   () => [
     { no: 1, name: "package_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "is_remote", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
-    { no: 3, name: "serialized_params", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 2, name: "serialized_params", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 3, name: "is_remote", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
     { no: 4, name: "relative_path_to_main_file", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 5, name: "main_function_name", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ],

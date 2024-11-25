@@ -538,8 +538,8 @@ func (enclaveCtx *EnclaveContext) GetStarlarkRemotePackagePlanYaml(ctx context.C
 	}
 	response, err := enclaveCtx.client.GetStarlarkPackagePlanYaml(ctx, &kurtosis_core_rpc_api_bindings.StarlarkPackagePlanYamlArgs{
 		PackageId:              packageId,
-		IsRemote:               true,
 		SerializedParams:       &serializedParams,
+		IsRemote:               true,
 		RelativePathToMainFile: nil,
 		MainFunctionName:       nil,
 	})
@@ -573,8 +573,8 @@ func (enclaveCtx *EnclaveContext) GetStarlarkPackagePlanYaml(ctx context.Context
 
 	response, err := enclaveCtx.client.GetStarlarkPackagePlanYaml(ctx, &kurtosis_core_rpc_api_bindings.StarlarkPackagePlanYamlArgs{
 		PackageId:              packageName,
-		IsRemote:               false,
 		SerializedParams:       &serializedParams,
+		IsRemote:               false,
 		RelativePathToMainFile: nil,
 		MainFunctionName:       nil,
 	})
