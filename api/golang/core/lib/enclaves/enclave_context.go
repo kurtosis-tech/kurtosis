@@ -531,7 +531,7 @@ func (enclaveCtx *EnclaveContext) GetStarlarkRun(ctx context.Context) (*kurtosis
 	return response, nil
 }
 
-func (enclaveCtx *EnclaveContext) GetStarlarkPackagePlanYaml(ctx context.Context, packageId string, serializedParams string) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
+func (enclaveCtx *EnclaveContext) GetStarlarkRemotePackagePlanYaml(ctx context.Context, packageId string, serializedParams string) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
 	serializedParams, err := maybeParseYaml(serializedParams)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred when parsing YAML args for package '%s':\n%s", packageId, serializedParams)
@@ -539,6 +539,42 @@ func (enclaveCtx *EnclaveContext) GetStarlarkPackagePlanYaml(ctx context.Context
 	response, err := enclaveCtx.client.GetStarlarkPackagePlanYaml(ctx, &kurtosis_core_rpc_api_bindings.StarlarkPackagePlanYamlArgs{
 		PackageId:              packageId,
 		SerializedParams:       &serializedParams,
+		IsRemote:               true,
+		RelativePathToMainFile: nil,
+		MainFunctionName:       nil,
+	})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while getting the Starlark package plan yaml.")
+	}
+	return response, nil
+}
+
+func (enclaveCtx *EnclaveContext) GetStarlarkPackagePlanYaml(ctx context.Context, packageRootPath string, serializedParams string) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
+	packageName, packageReplaceOptions, err := getPackageNameAndReplaceOptions(packageRootPath)
+	if err != nil {
+		return nil, err
+	}
+
+	serializedParams, err = maybeParseYaml(serializedParams)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred when parsing YAML args for package '%s':\n%s", packageName, serializedParams)
+	}
+
+	err = enclaveCtx.uploadStarlarkPackage(packageName, packageRootPath)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error uploading package '%s' prior to executing it", packageRootPath)
+	}
+
+	if len(packageReplaceOptions) > 0 {
+		if err = enclaveCtx.uploadLocalStarlarkPackageDependencies(packageRootPath, packageReplaceOptions); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred while uploading the local starlark package dependencies from the replace options '%+v'", packageReplaceOptions)
+		}
+	}
+
+	response, err := enclaveCtx.client.GetStarlarkPackagePlanYaml(ctx, &kurtosis_core_rpc_api_bindings.StarlarkPackagePlanYamlArgs{
+		PackageId:              packageName,
+		SerializedParams:       &serializedParams,
+		IsRemote:               false,
 		RelativePathToMainFile: nil,
 		MainFunctionName:       nil,
 	})

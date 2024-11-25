@@ -679,7 +679,7 @@ func getPackageDependencyYaml(
 	var packageYaml *kurtosis_core_rpc_api_bindings.PlanYaml
 	var err error
 	if isRemote {
-		packageYaml, err = enclaveCtx.GetStarlarkPackagePlanYaml(ctx, starlarkScriptOrPackageId, packageArgs)
+		packageYaml, err = enclaveCtx.GetStarlarkRemotePackagePlanYaml(ctx, starlarkScriptOrPackageId, packageArgs)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred retrieving plan yaml for provided package.")
 		}
@@ -695,6 +695,20 @@ func getPackageDependencyYaml(
 				return nil, stacktrace.Propagate(err, "Unable to read content of Starlark script file '%s'", starlarkScriptOrPackageId)
 			}
 			packageYaml, err = enclaveCtx.GetStarlarkScriptPlanYaml(ctx, string(scriptContentBytes), packageArgs)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred retrieving plan yaml for provided package.")
+			}
+		} else {
+			// if the path is a file with `kurtosis.yml` at the end it's a module dir
+			// we remove the `kurtosis.yml` to get just the Dir containing the module
+			if isKurtosisYMLFileInPackageDir(fileOrDir, kurtosisYMLFilePath) {
+				starlarkScriptOrPackageId = path.Dir(starlarkScriptOrPackageId)
+			}
+			// we pass the sanitized path and look for a Kurtosis YML within it to get the package name
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "Tried parsing Kurtosis YML at '%v' to get package name but failed", starlarkScriptOrPackageId)
+			}
+			packageYaml, err = enclaveCtx.GetStarlarkPackagePlanYaml(ctx, starlarkScriptOrPackageId, packageArgs)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "An error occurred retrieving plan yaml for provided package.")
 			}
