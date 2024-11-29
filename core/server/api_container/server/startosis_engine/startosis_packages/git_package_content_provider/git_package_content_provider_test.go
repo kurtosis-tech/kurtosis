@@ -600,6 +600,17 @@ func TestGetAbsoluteLocator_AbsoluteLocatorIsInRootPackageButSourceIsNotShouldNo
 	require.Nil(t, err)
 }
 
+func TestGetAbsoluteLocator_RepositoriesWithSamePrefixNameShouldNotBeBlocked(t *testing.T) {
+	provider := NewGitPackageContentProvider("", "", NewGitHubPackageAuthProvider(""), nil)
+
+	packageId := "github.com/main-package"
+	locatorOfModuleInWhichThisBuiltInIsBeingCalled := "github.com/main-package-xyz/main.star" // same package prefix
+	maybeRelativeLocator := "github.com/main-package/file.star"
+
+	_, err := provider.GetAbsoluteLocator(packageId, locatorOfModuleInWhichThisBuiltInIsBeingCalled, maybeRelativeLocator, noPackageReplaceOptions)
+	require.Nil(t, err)
+}
+
 func Test_isSamePackageLocalAbsoluteLocator_TestDetectionInSubpath(t *testing.T) {
 	result := shouldBlockAbsoluteLocatorBecauseIsInTheSameSourceModuleLocatorPackage("github.com/author/package/bang/lib.star", "github.com/author/package/main.star", "github.com/author/package/")
 	require.True(t, result)
