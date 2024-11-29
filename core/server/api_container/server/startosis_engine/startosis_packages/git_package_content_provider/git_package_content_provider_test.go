@@ -2,6 +2,10 @@ package git_package_content_provider
 
 import (
 	"fmt"
+	"os"
+	"path"
+	"testing"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/docker_compose_transpiler"
@@ -12,9 +16,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
-	"os"
-	"path"
-	"testing"
 )
 
 const (
@@ -600,7 +601,7 @@ func TestGetAbsoluteLocator_AbsoluteLocatorIsInRootPackageButSourceIsNotShouldNo
 	require.Nil(t, err)
 }
 
-func TestGetAbsoluteLocator_RepositoriesWithSamePrefixNameShouldNotBeBlocked(t *testing.T) {
+func TestGetAbsoluteLocator_ImportPackageWithSamePrefixNameAsRootPackageShouldNotBeBlocked(t *testing.T) {
 	provider := NewGitPackageContentProvider("", "", NewGitHubPackageAuthProvider(""), nil)
 
 	packageId := "github.com/main-package"
@@ -631,7 +632,7 @@ func Test_isSamePackageLocalAbsoluteLocator_TestDetectionInDifferentSubdirectori
 	require.True(t, result)
 }
 
-func Test_isNotSamePackageLocalAbsoluteLocator_TestRepositoriesWithSamePrefixNames(t *testing.T) {
+func Test_isNotSamePackageLocalAbsoluteLocator_TestImportPackageWithSamePrefixNameAsRootPackages(t *testing.T) {
 	// Without root package id trailing slash.
 	result := shouldBlockAbsoluteLocatorBecauseIsInTheSameSourceModuleLocatorPackage("github.com/author/package2/main.star", "github.com/author/package/main.star", "github.com/author/package")
 	require.False(t, result)
