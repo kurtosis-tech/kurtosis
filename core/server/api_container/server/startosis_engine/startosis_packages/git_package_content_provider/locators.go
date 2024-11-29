@@ -20,10 +20,8 @@ func isLocalLocator(locator string) bool {
 }
 
 func shouldBlockAbsoluteLocatorBecauseIsInTheSameSourceModuleLocatorPackage(relativeOrAbsoluteLocator string, sourceModuleLocator string, rootPackageId string) bool {
-
 	isSourceModuleInRootPackage := strings.HasPrefix(sourceModuleLocator, rootPackageId)
 	isAbsoluteLocatorInRootPackage := strings.HasPrefix(relativeOrAbsoluteLocator, rootPackageId)
-
 	return isSourceModuleInRootPackage && isAbsoluteLocatorInRootPackage
 }
 
