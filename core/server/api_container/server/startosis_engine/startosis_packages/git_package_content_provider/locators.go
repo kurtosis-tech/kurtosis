@@ -21,7 +21,7 @@ func isLocalLocator(locator string) bool {
 
 func shouldBlockAbsoluteLocatorBecauseIsInTheSameSourceModuleLocatorPackage(relativeOrAbsoluteLocator string, sourceModuleLocator string, rootPackageId string) bool {
 	// Make sure the root package id ends with a trailing slash.
-	rootPackageId = strings.TrimPrefix(rootPackageId, "/") + "/"
+	rootPackageId = strings.TrimSuffix(rootPackageId, "/") + "/"
 	isSourceModuleInRootPackage := strings.HasPrefix(sourceModuleLocator, rootPackageId)
 	isAbsoluteLocatorInRootPackage := strings.HasPrefix(relativeOrAbsoluteLocator, rootPackageId)
 	return isSourceModuleInRootPackage && isAbsoluteLocatorInRootPackage
