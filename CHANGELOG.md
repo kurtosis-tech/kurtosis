@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.3](https://github.com/kurtosis-tech/kurtosis/compare/1.4.2...1.4.3) (2024-12-04)
+
+
+### Bug Fixes
+
+* add suffix to fluentbit configurator ([#2567](https://github.com/kurtosis-tech/kurtosis/issues/2567)) ([f797516](https://github.com/kurtosis-tech/kurtosis/commit/f7975163155264c4d62a11e42697b723cc568ca3))
+
 ## [1.4.2](https://github.com/kurtosis-tech/kurtosis/compare/v1.4.1...1.4.2) (2024-11-10)
 
 
