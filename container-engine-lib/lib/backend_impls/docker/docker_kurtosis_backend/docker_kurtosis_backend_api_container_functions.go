@@ -3,9 +3,10 @@ package docker_kurtosis_backend
 import (
 	"context"
 	"encoding/json"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"net"
 	"time"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
 
@@ -79,6 +80,11 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	githubAuthStorageVolumeName, err := backend.getGitHubAuthStorageVolume(ctx)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the GitHub auth storage volume name.")
+	}
+
+	dockerConfigStorageVolumeName, err := backend.getDockerConfigStorageVolume(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the Docker config storage volume name.")
 	}
 
 	// Get the Docker network ID where we'll start the new API container
@@ -191,8 +197,9 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	}
 
 	volumeMounts := map[string]string{
-		enclaveDataVolumeName:       enclaveDataVolumeDirpath,
-		githubAuthStorageVolumeName: consts.GitHubAuthStorageDirPath,
+		enclaveDataVolumeName:         enclaveDataVolumeDirpath,
+		githubAuthStorageVolumeName:   consts.GitHubAuthStorageDirPath,
+		dockerConfigStorageVolumeName: consts.DockerConfigStorageDirPath,
 	}
 
 	labelStrs := map[string]string{}

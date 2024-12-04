@@ -8,18 +8,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/file_layout"
-	"io/fs"
-	"math"
-	"net"
-	"net/http"
-	"os"
-	"path"
-	"path/filepath"
-	"runtime"
-	"strings"
-	"time"
-
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings/kurtosis_engine_rpc_api_bindingsconnect"
 	enclaveApi "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/server/core_rest_api"
@@ -39,6 +27,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/kurtosis_backend"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/file_layout"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_file_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/stream_logs_strategy"
@@ -57,6 +46,17 @@ import (
 	echomiddleware "github.com/labstack/echo/v4/middleware"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
+	"io/fs"
+	"math"
+	"net"
+	"net/http"
+	_ "net/http/pprof"
+	"os"
+	"path"
+	"path/filepath"
+	"runtime"
+	"strings"
+	"time"
 )
 
 const (
@@ -73,6 +73,7 @@ const (
 	functionPathSeparator     = "."
 	emptyFunctionName         = ""
 	webappPortAddr            = ":9711"
+	pprofPath                 = "/debug/pprof/"
 
 	remoteBackendConfigFilename = "remote_backend_config.json"
 	pathToStaticFolder          = "/run/webapp"
@@ -213,8 +214,9 @@ func runMain() error {
 		}
 		logrus.Debugf("Created environment js file with content: \n%s", envJsFileContent)
 
+		handler := http.NewServeMux()
 		fileServer := http.FileServer(http.Dir(pathToStaticFolder))
-		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handler.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			path, err := filepath.Abs(r.URL.Path)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
@@ -236,6 +238,7 @@ func runMain() error {
 			w.Header().Add("Cache-Control", "no-store")
 			fileServer.ServeHTTP(w, r)
 		})
+		handler.Handle(pprofPath, http.HandlerFunc(http.DefaultServeMux.ServeHTTP))
 
 		err := http.ListenAndServe(webappPortAddr, handler)
 		if err != nil {

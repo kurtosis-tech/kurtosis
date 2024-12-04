@@ -3,8 +3,10 @@ package engine_functions
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/github_auth_storage_creator"
 	"time"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/docker_config_storage_creator"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/github_auth_storage_creator"
 
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
@@ -249,14 +251,34 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred creating GitHub auth storage.")
 	}
 
+	// Configure Docker Config by writing the provided config files to a volume that's accessible by the engine
+	dockerConfigStorageVolObjAttrs, err := objAttrsProvider.ForDockerConfigStorageVolume()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred retrieving object attributes for GitHub auth storage.")
+	}
+	dockerConfigStorageVolNameStr := dockerConfigStorageVolObjAttrs.GetName().GetString()
+	dockerConfigStorageVolLabelStrs := map[string]string{}
+	for labelKey, labelValue := range dockerConfigStorageVolObjAttrs.GetLabels() {
+		dockerConfigStorageVolLabelStrs[labelKey.GetString()] = labelValue.GetString()
+	}
+	// This volume is created idempotently (like logs storage volume) and just write the token to the file everytime the engine starts
+	if err = dockerManager.CreateVolume(ctx, dockerConfigStorageVolNameStr, dockerConfigStorageVolLabelStrs); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating Docker config storage volume.")
+	}
+	err = docker_config_storage_creator.CreateDockerConfigStorage(ctx, targetNetworkId, dockerConfigStorageVolNameStr, consts.DockerConfigStorageDirPath, dockerManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating Docker config storage.")
+	}
+
 	bindMounts := map[string]string{
 		// Necessary so that the engine server can interact with the Docker engine
 		consts.DockerSocketFilepath: consts.DockerSocketFilepath,
 	}
 
 	volumeMounts := map[string]string{
-		logsStorageVolNameStr:       logsStorageDirPath,
-		githubAuthStorageVolNameStr: consts.GitHubAuthStorageDirPath,
+		logsStorageVolNameStr:         logsStorageDirPath,
+		githubAuthStorageVolNameStr:   consts.GitHubAuthStorageDirPath,
+		dockerConfigStorageVolNameStr: consts.DockerConfigStorageDirPath,
 	}
 
 	if serverArgs.OnBastionHost {
