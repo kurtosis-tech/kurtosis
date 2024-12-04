@@ -642,6 +642,16 @@ func Test_isNotSamePackageLocalAbsoluteLocator_TestImportPackageWithSamePrefixNa
 	require.False(t, result)
 }
 
+func Test_isNotSamePackageLocalAbsoluteLocator_TestImportSubPackageWithSamePrefixNameAsRootPackages(t *testing.T) {
+	// Without root package id trailing slash.
+	result := shouldBlockAbsoluteLocatorBecauseIsInTheSameSourceModuleLocatorPackage("github.com/author/package/package2/main.star", "github.com/author/package/main.star", "github.com/author/package")
+	require.False(t, result)
+
+	// With root package id trailing slash.
+	result = shouldBlockAbsoluteLocatorBecauseIsInTheSameSourceModuleLocatorPackage("github.com/author/package/package2/main.star", "github.com/author/package/main.star", "github.com/author/package/")
+	require.False(t, result)
+}
+
 func Test_getPathToPackageRoot(t *testing.T) {
 	githubUrlWithKurtosisPackageInSubfolder := "github.com/sample/sample-package/folder/subpackage"
 	parsedGitUrl, err := shared_utils.ParseGitURL(githubUrlWithKurtosisPackageInSubfolder)
