@@ -92,7 +92,7 @@ func (builtin *GetServicesCapabilities) FillPersistableAttributes(builder *encla
 	builder.SetType(GetServicesBuiltinName)
 }
 
-func (builtin *GetServicesCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYaml) error {
+func (builtin *GetServicesCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYamlGenerator) error {
 	// get services does not affect the plan
 	return nil
 }

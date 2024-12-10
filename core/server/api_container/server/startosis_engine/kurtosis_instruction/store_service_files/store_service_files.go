@@ -180,7 +180,7 @@ func (builtin *StoreServiceFilesCapabilities) FillPersistableAttributes(builder 
 	)
 }
 
-func (builtin *StoreServiceFilesCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
+func (builtin *StoreServiceFilesCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerator) error {
 	err := plan.AddStoreServiceFiles(builtin.artifactName, builtin.src)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred updating plan with store service files")

@@ -20,6 +20,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/git_package_content_provider"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/resolve"
 	"go.starlark.net/starlark"
@@ -357,7 +358,12 @@ func (interpreter *StartosisInterpreter) buildBindings(
 	moduleGlobalCache map[string]*startosis_packages.ModuleCacheEntry,
 	packageReplaceOptions map[string]string,
 ) (*starlark.StringDict, *startosis_errors.InterpretationError) {
+	packagePrefix := getModulePrefix(packageId)
 	recursiveInterpretForModuleLoading := func(moduleId string, serializedStartosis string) (starlark.StringDict, *startosis_errors.InterpretationError) {
+		modulePrefix := getModulePrefix(moduleId)
+		if modulePrefix != packagePrefix {
+			instructionPlan.AddPackageDependency(modulePrefix)
+		}
 		result, err := interpreter.interpretInternal(packageId, moduleId, serializedStartosis, instructionPlan, moduleGlobalCache, packageReplaceOptions)
 		if err != nil {
 			return nil, err
@@ -384,6 +390,16 @@ func (interpreter *StartosisInterpreter) buildBindings(
 		predeclared[kurtosisTypeConstructors.Name()] = kurtosisTypeConstructors
 	}
 	return &predeclared, nil
+}
+
+const (
+	numModIdSeparators = 3
+)
+
+// gets the prefix of a module id
+// eg. "github.com/kurtosis-tech/postgres-package/main.star" returns "github.com/kurtosis-tech/postgres-package"
+func getModulePrefix(moduleId string) string {
+	return strings.Join(strings.SplitN(moduleId, git_package_content_provider.OsPathSeparatorString, numModIdSeparators+1)[:numModIdSeparators], git_package_content_provider.OsPathSeparatorString)
 }
 
 func findFirstEqualInstructionPastIndex(currentEnclaveInstructionsList []*enclave_plan_persistence.EnclavePlanInstruction, naiveInstructionsList []*instructions_plan.ScheduledInstruction, minIndex int) int {

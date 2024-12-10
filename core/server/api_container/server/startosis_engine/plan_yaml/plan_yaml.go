@@ -8,11 +8,13 @@ const (
 	exec   TaskType = "exec"
 )
 
-type privatePlanYaml struct {
-	PackageId      string           `yaml:"packageId,omitempty"`
-	Services       []*Service       `yaml:"services,omitempty"`
-	FilesArtifacts []*FilesArtifact `yaml:"filesArtifacts,omitempty"`
-	Tasks          []*Task          `yaml:"tasks,omitempty"`
+type PlanYaml struct {
+	PackageId           string           `yaml:"packageId,omitempty"`
+	Services            []*Service       `yaml:"services,omitempty"`
+	FilesArtifacts      []*FilesArtifact `yaml:"filesArtifacts,omitempty"`
+	Tasks               []*Task          `yaml:"tasks,omitempty"`
+	Images              []string         `yaml:"images,omitempty"`
+	PackageDependencies []string         `yaml:"packageDependencies,omitempty"`
 }
 
 // Service represents a service in the system.
@@ -110,3 +112,16 @@ type Task struct {
 
 // TaskType represents the type of task (either python or shell)
 type TaskType string
+
+type Package struct {
+	PackageId       string
+	ContainerImages []string
+}
+
+type PackageDependencyGraph struct {
+	RootPackageId string
+
+	PackageIndex map[string]Package
+
+	PackageGraph map[string][]Package
+}
