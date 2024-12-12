@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/kurtosis-tech/kurtosis/compare/1.4.3...2.0.0) (2024-12-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* impl dependency list flag  ([#2543](https://github.com/kurtosis-tech/kurtosis/issues/2543))
+
+### Features
+
+* impl dependency list flag  ([#2543](https://github.com/kurtosis-tech/kurtosis/issues/2543)) ([a6c1113](https://github.com/kurtosis-tech/kurtosis/commit/a6c1113ec43c052f06c5512f6bc1c9d006c2c16e))
+
 ## [1.4.3](https://github.com/kurtosis-tech/kurtosis/compare/1.4.2...1.4.3) (2024-12-04)
 
 
