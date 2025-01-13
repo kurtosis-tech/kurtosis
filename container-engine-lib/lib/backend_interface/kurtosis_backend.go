@@ -282,7 +282,19 @@ type KurtosisBackend interface {
 		enclaveUuid enclave.EnclaveUUID,
 		userServiceCommands map[service.ServiceUUID][]string,
 	) (
-		succesfulUserServiceExecResults map[service.ServiceUUID]*exec_result.ExecResult,
+		successfulUserServiceExecResults map[service.ServiceUUID]*exec_result.ExecResult,
+		erroredUserServiceUuids map[service.ServiceUUID]error,
+		resultErr error,
+	)
+
+	// Executes a shell command inside an user service instance indenfified by its ID and as a specifc user
+	RunUserServiceExecCommandsAsUser(
+		ctx context.Context,
+		enclaveUuid enclave.EnclaveUUID,
+		containerUser string,
+		userServiceCommands map[service.ServiceUUID][]string,
+	) (
+		successfulUserServiceExecResults map[service.ServiceUUID]*exec_result.ExecResult,
 		erroredUserServiceUuids map[service.ServiceUUID]error,
 		resultErr error,
 	)

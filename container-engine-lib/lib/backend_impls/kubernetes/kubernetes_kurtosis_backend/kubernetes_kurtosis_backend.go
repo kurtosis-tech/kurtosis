@@ -363,6 +363,20 @@ func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 		backend.kubernetesManager)
 }
 
+func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommandsAsUser(
+	ctx context.Context,
+	_ enclave.EnclaveUUID,
+	_ string,
+	_ map[service.ServiceUUID][]string,
+) (
+	succesfulUserServiceExecResults map[service.ServiceUUID]*exec_result.ExecResult,
+	erroredUserServiceUuids map[service.ServiceUUID]error,
+	resultErr error,
+) {
+	resultErr = stacktrace.NewError("--user not implemented for kurtosis backend")
+	return
+}
+
 func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommandWithStreamedOutput(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,

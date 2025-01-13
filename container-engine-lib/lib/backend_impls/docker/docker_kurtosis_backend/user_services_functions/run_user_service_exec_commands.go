@@ -17,6 +17,7 @@ import (
 func RunUserServiceExecCommands(
 	ctx context.Context,
 	enclaveId enclave.EnclaveUUID,
+	containerUser string,
 	userServiceCommands map[service.ServiceUUID][]string,
 	dockerManager *docker_manager.DockerManager,
 ) (
@@ -46,7 +47,7 @@ func RunUserServiceExecCommands(
 		// the error to the map downstream
 	}
 
-	successfulExecs, failedExecs, err := runExecOperationsInParallel(ctx, userServiceCommands, userServiceDockerResources, dockerManager)
+	successfulExecs, failedExecs, err := runExecOperationsInParallel(ctx, containerUser, userServiceCommands, userServiceDockerResources, dockerManager)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An unexpected error occurred running the exec commands in parallel")
 	}
@@ -55,6 +56,7 @@ func RunUserServiceExecCommands(
 
 func runExecOperationsInParallel(
 	ctx context.Context,
+	containerUser string,
 	commandArgs map[service.ServiceUUID][]string,
 	userServiceDockerResources map[service.ServiceUUID]*shared_helpers.UserServiceDockerResources,
 	dockerManager *docker_manager.DockerManager,
@@ -79,7 +81,7 @@ func runExecOperationsInParallel(
 		}
 
 		execOperationId := operation_parallelizer.OperationID(serviceUuid)
-		execOperation := createExecOperation(ctx, serviceUuid, userServiceDockerResource, commandArg, dockerManager)
+		execOperation := createExecOperation(ctx, serviceUuid, containerUser, userServiceDockerResource, commandArg, dockerManager)
 		execOperations[execOperationId] = execOperation
 	}
 
@@ -108,6 +110,7 @@ func runExecOperationsInParallel(
 func createExecOperation(
 	ctx context.Context,
 	serviceUuid service.ServiceUUID,
+	containerUser string,
 	userServiceDockerResource *shared_helpers.UserServiceDockerResources,
 	commandArg []string,
 	dockerManager *docker_manager.DockerManager,
@@ -116,9 +119,10 @@ func createExecOperation(
 		execOutputBuf := &bytes.Buffer{}
 		userServiceDockerContainer := userServiceDockerResource.ServiceContainer
 
-		exitCode, err := dockerManager.RunExecCommand(
+		exitCode, err := dockerManager.RunExecCommandAsUser(
 			ctx,
 			userServiceDockerContainer.GetId(),
+			containerUser,
 			commandArg,
 			execOutputBuf,
 		)
