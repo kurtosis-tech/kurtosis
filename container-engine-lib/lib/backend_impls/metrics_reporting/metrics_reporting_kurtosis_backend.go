@@ -350,7 +350,7 @@ func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommands(
 	erroredUserServiceUuids map[service.ServiceUUID]error,
 	resultErr error,
 ) {
-	return backend.RunUserServiceExecCommands(ctx, enclaveUuid, userServiceCommands)
+	return backend.underlying.RunUserServiceExecCommands(ctx, enclaveUuid, userServiceCommands)
 }
 
 func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommandWithStreamedOutput(
