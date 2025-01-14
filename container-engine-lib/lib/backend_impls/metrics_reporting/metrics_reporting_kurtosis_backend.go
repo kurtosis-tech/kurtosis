@@ -319,7 +319,7 @@ func (backend *MetricsReportingKurtosisBackend) GetUserServiceLogs(
 	return userServiceLogs, erroredUserServices, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommandsAsUser(
+func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommands(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
 	containerUser string,
@@ -329,7 +329,7 @@ func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommandsAsUser
 	erroredUserServiceUuids map[service.ServiceUUID]error,
 	resultErr error,
 ) {
-	successfulUserServiceExecResults, erroredUserServiceUuids, err := backend.underlying.RunUserServiceExecCommandsAsUser(ctx, enclaveUuid, containerUser, userServiceCommands)
+	successfulUserServiceExecResults, erroredUserServiceUuids, err := backend.underlying.RunUserServiceExecCommands(ctx, enclaveUuid, containerUser, userServiceCommands)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(
 			err,
@@ -339,18 +339,6 @@ func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommandsAsUser
 		)
 	}
 	return successfulUserServiceExecResults, erroredUserServiceUuids, nil
-}
-
-func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommands(
-	ctx context.Context,
-	enclaveUuid enclave.EnclaveUUID,
-	userServiceCommands map[service.ServiceUUID][]string,
-) (
-	successfulUserServiceExecResults map[service.ServiceUUID]*exec_result.ExecResult,
-	erroredUserServiceUuids map[service.ServiceUUID]error,
-	resultErr error,
-) {
-	return backend.underlying.RunUserServiceExecCommands(ctx, enclaveUuid, userServiceCommands)
 }
 
 func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommandWithStreamedOutput(

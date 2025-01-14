@@ -3,6 +3,8 @@ package user_service_functions
 import (
 	"bytes"
 	"context"
+	"reflect"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -10,7 +12,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/operation_parallelizer"
 	"github.com/kurtosis-tech/stacktrace"
-	"reflect"
 )
 
 // TODO Switch these to streaming so that huge command outputs don't blow up the API container memory
@@ -119,7 +120,7 @@ func createExecOperation(
 		execOutputBuf := &bytes.Buffer{}
 		userServiceDockerContainer := userServiceDockerResource.ServiceContainer
 
-		exitCode, err := dockerManager.RunExecCommandAsUser(
+		exitCode, err := dockerManager.RunUserServiceExecCommands(
 			ctx,
 			userServiceDockerContainer.GetId(),
 			containerUser,

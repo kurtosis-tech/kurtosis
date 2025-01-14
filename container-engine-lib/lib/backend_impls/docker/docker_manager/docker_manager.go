@@ -990,14 +990,10 @@ func (manager *DockerManager) GetContainerLogs(
 }
 
 /*
-RunExecCommand
+RunUserServiceExecCommands
 Executes the given command inside the container with the given ID, blocking until the command completes
 */
-func (manager *DockerManager) RunExecCommand(context context.Context, containerId string, command []string, logOutput io.Writer) (int32, error) {
-	return manager.RunExecCommandAsUser(context, containerId, "", command, logOutput)
-}
-
-func (manager *DockerManager) RunExecCommandAsUser(context context.Context, containerId, userId string, command []string, logOutput io.Writer) (int32, error) {
+func (manager *DockerManager) RunUserServiceExecCommands(context context.Context, containerId, userId string, command []string, logOutput io.Writer) (int32, error) {
 	dockerClient := manager.dockerClient
 	execConfig := types.ExecConfig{
 		User:         userId,

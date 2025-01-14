@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
+	"path"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"os"
-	"path"
-	"time"
 )
 
 const (
@@ -124,7 +125,7 @@ func storeTokenInVolume(
 	}
 	for i := uint(0); i < maxRetries; i++ {
 		outputBuffer := &bytes.Buffer{}
-		exitCode, err := dockerManager.RunExecCommand(ctx, containerId, execCmd, outputBuffer)
+		exitCode, err := dockerManager.RunUserServiceExecCommands(ctx, containerId, "", execCmd, outputBuffer)
 		if err == nil {
 			if exitCode == authStorageCreationSuccessExitCode {
 				logrus.Debugf("The GitHub auth token was successfully added into the volume.")
