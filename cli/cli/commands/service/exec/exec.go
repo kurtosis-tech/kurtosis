@@ -120,17 +120,17 @@ func run(
 	}
 	serviceUuid := service.ServiceUUID(serviceCtx.GetServiceUUID())
 
-	execContainerUser, err := flags.GetString(containerUserKey)
+	containerUser, err := flags.GetString(containerUserKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the exec container user flag '%v'", containerUserKey)
 	}
 	// convert "root" to "" as it is implied if empty. This simplifies the backend
 	// impl usages that do not support --user
-	if execContainerUser == containerUserDefault {
-		execContainerUser = ""
+	if containerUser == containerUserDefault {
+		containerUser = ""
 	}
 
-	results, resultErrors, err := kurtosisBackend.RunUserServiceExecCommandsAsUser(ctx, enclaveUuid, execContainerUser, map[service.ServiceUUID][]string{
+	results, resultErrors, err := kurtosisBackend.RunUserServiceExecCommands(ctx, enclaveUuid, containerUser, map[service.ServiceUUID][]string{
 		serviceUuid: {
 			binShCommand,
 			binShCommandFlag,
