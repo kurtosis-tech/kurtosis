@@ -418,24 +418,24 @@ func GetEngineAndLogsComponentsNetwork(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
 ) (*types.Network, error) {
-	matchingNetworks, err := dockerManager.GetNetworksByName(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred getting networks matching the network we want to start the engine in, '%v'",
-			consts.NameOfNetworkToStartEngineAndLogServiceContainersIn,
-		)
-	}
-	numMatchingNetworks := len(matchingNetworks)
-	if numMatchingNetworks == 0 && numMatchingNetworks > 1 {
-		return nil, stacktrace.NewError(
-			"Expected exactly one network matching the name of the network that we want to start the engine in, '%v', but got %v",
-			consts.NameOfNetworkToStartEngineAndLogServiceContainersIn,
-			numMatchingNetworks,
-		)
-	}
-	targetNetwork := matchingNetworks[0]
-	return targetNetwork, nil
+	// matchingNetworks, err := dockerManager.GetNetworksByName(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn)
+	// if err != nil {
+	// 	return nil, stacktrace.Propagate(
+	// 		err,
+	// 		"An error occurred getting networks matching the network we want to start the engine in, '%v'",
+	// 		consts.NameOfNetworkToStartEngineAndLogServiceContainersIn,
+	// 	)
+	// }
+	// numMatchingNetworks := len(matchingNetworks)
+	// if numMatchingNetworks == 0 && numMatchingNetworks > 1 {
+	// 	return nil, stacktrace.NewError(
+	// 		"Expected exactly one network matching the name of the network that we want to start the engine in, '%v', but got %v",
+	// 		consts.NameOfNetworkToStartEngineAndLogServiceContainersIn,
+	// 		numMatchingNetworks,
+	// 	)
+	// }
+	// targetNetwork := matchingNetworks[0]
+	return dockerManager.GetDefaultNetwork(ctx)
 }
 
 func DumpContainers(ctx context.Context, dockerManager *docker_manager.DockerManager, containers []*types.Container, outputDirpath string) error {
