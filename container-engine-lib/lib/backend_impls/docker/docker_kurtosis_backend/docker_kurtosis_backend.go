@@ -297,13 +297,14 @@ func (backend *DockerKurtosisBackend) GetUserServiceLogs(
 func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
+	containerUser string,
 	userServiceCommands map[service.ServiceUUID][]string,
 ) (
 	map[service.ServiceUUID]*exec_result.ExecResult,
 	map[service.ServiceUUID]error,
 	error,
 ) {
-	return user_service_functions.RunUserServiceExecCommands(ctx, enclaveUuid, userServiceCommands, backend.dockerManager)
+	return user_service_functions.RunUserServiceExecCommands(ctx, enclaveUuid, containerUser, userServiceCommands, backend.dockerManager)
 }
 
 func (backend *DockerKurtosisBackend) RunUserServiceExecCommandWithStreamedOutput(

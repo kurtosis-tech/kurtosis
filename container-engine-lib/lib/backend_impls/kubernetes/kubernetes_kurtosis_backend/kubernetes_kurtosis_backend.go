@@ -347,12 +347,17 @@ func (backend *KubernetesKurtosisBackend) GetUserServiceLogs(
 func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
+	containerUser string,
 	userServiceCommands map[service.ServiceUUID][]string,
 ) (
 	succesfulUserServiceExecResults map[service.ServiceUUID]*exec_result.ExecResult,
 	erroredUserServiceUuids map[service.ServiceUUID]error,
 	resultErr error,
 ) {
+	if containerUser != "" {
+		resultErr = stacktrace.NewError("--user not implemented for kurtosis backend")
+		return
+	}
 	return user_services_functions.RunUserServiceExecCommands(
 		ctx,
 		enclaveUuid,

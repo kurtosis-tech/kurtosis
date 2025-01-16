@@ -129,7 +129,7 @@ func (fluent *fluentbitConfigurationCreator) createFluentbitConfigFileInVolume(
 	}
 	for i := uint(0); i < maxRetries; i++ {
 		outputBuffer := &bytes.Buffer{}
-		exitCode, err := dockerManager.RunExecCommand(ctx, containerId, execCmd, outputBuffer)
+		exitCode, err := dockerManager.RunUserServiceExecCommands(ctx, containerId, "", execCmd, outputBuffer)
 		if err == nil {
 			if exitCode == configFileCreationSuccessExitCode {
 				logrus.Debugf("The Fluentbit config file with content '%v' was successfully added into the volume", configFileContentStr)
