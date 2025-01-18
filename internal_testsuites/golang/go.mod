@@ -3,7 +3,7 @@ module github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite
 go 1.20
 
 replace (
-	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
+	github.com/kurtosis-tech/kurtosis/api/golang/v2 => ../../api/golang
 	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
 	github.com/kurtosis-tech/kurtosis/path-compression => ./../../path-compression
 )
@@ -12,7 +12,6 @@ require (
 	github.com/golang/protobuf v1.5.3
 	github.com/kurtosis-tech/example-api-server/api/golang v0.0.0-20211207020812-00a54fc29318
 	github.com/kurtosis-tech/example-datastore-server/api/golang v0.0.0-20211207020830-504dbf5ed1a6
-	github.com/kurtosis-tech/kurtosis/api/golang v0.0.0 // local dependency
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.8.4
@@ -21,6 +20,7 @@ require (
 )
 
 require (
+	github.com/kurtosis-tech/kurtosis/api/golang/v2 v2.0.0-pre.1
 	github.com/kurtosis-tech/kurtosis/path-compression v0.0.0-20240307154559-64d2929cd265
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	k8s.io/utils v0.0.0-20230711102312-30195339c3c7
