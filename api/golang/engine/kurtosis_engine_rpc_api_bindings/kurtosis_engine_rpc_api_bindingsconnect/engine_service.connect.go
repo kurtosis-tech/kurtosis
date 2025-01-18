@@ -8,7 +8,7 @@ import (
 	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	kurtosis_engine_rpc_api_bindings "github.com/kurtosis-tech/kurtosis/api/golang/v2/engine/kurtosis_engine_rpc_api_bindings"
+	kurtosis_engine_rpc_api_bindings "github.com/kurtosis-tech/kurtosis/api/golang/v2/v2/engine/kurtosis_engine_rpc_api_bindings"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	http "net/http"
 	strings "strings"
