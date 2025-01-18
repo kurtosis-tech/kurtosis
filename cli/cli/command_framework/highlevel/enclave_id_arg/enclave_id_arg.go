@@ -89,27 +89,6 @@ func getCompletions(ctx context.Context, flags *flags.ParsedFlags, previousArgs 
 	return enclaveNames, nil
 }
 
-// Make best-effort attempt to get enclave names
-func getExistingAndHistoricalCompletions(ctx context.Context, _ *flags.ParsedFlags, _ *args.ParsedArgs) ([]string, error) {
-	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred connecting to the Kurtosis engine for retrieving the names for tab completion",
-		)
-	}
-
-	enclaveIdentifiers, err := kurtosisCtx.GetExistingAndHistoricalEnclaveIdentifiers(ctx)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred getting the enclave identifiers",
-		)
-	}
-
-	return enclaveIdentifiers.GetOrderedListOfNames(), nil
-}
-
 // Create a validation function using the previously-created
 func getValidationFunc(argKey string, _ string, isGreedy bool) func(context.Context, *flags.ParsedFlags, *args.ParsedArgs) error {
 	return func(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
