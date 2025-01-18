@@ -18,4 +18,4 @@ jobs:
           github_repo: ${{ github.repository }}
           version: ${{ env.CURRENT_VERSION }}
           git_commit_sha: ${{ github.sha }}
-          git_tag_prefix: "api/golang/v"
+          git_tag_prefix: "api/golang/v2/v"

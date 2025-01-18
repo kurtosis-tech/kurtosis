@@ -14,7 +14,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 
-	api_type "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/api_types"
+	api_type "github.com/kurtosis-tech/kurtosis/api/golang/v2/http_rest/api_types"
 )
 
 var (

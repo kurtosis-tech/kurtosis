@@ -4,8 +4,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/utils"
 	"github.com/kurtosis-tech/stacktrace"
 
-	rpc_api "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	api_type "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/api_types"
+	rpc_api "github.com/kurtosis-tech/kurtosis/api/golang/v2/core/kurtosis_core_rpc_api_bindings"
+	api_type "github.com/kurtosis-tech/kurtosis/api/golang/v2/http_rest/api_types"
 )
 
 func ToHttpStarlarkRunResponseLine(rpc_value *rpc_api.StarlarkRunResponseLine) (*api_type.StarlarkRunResponseLine, error) {

@@ -2,10 +2,12 @@ module github.com/kurtosis-tech/kurtosis/enclave-manager
 
 go 1.20
 
+replace github.com/kurtosis-tech/kurtosis/api/golang/v2 => ../../api/golang
+
 require (
 	connectrpc.com/connect v1.11.1
 	github.com/google/go-github/v60 v60.0.0
-	github.com/kurtosis-tech/kurtosis/api/golang v0.84.10
+	github.com/kurtosis-tech/kurtosis/api/golang/v2 v2.0.0-pre.1
 	github.com/kurtosis-tech/kurtosis/cloud/api/golang v0.0.0-20230828153722-32770ca96513
 	github.com/kurtosis-tech/kurtosis/connect-server v0.0.0-20230828153722-32770ca96513
 	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0-20240325164203-1197d5589b85
@@ -37,6 +39,7 @@ require (
 	github.com/google/uuid v1.4.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
+	github.com/kurtosis-tech/kurtosis/api/golang v0.84.10 // indirect
 	github.com/kurtosis-tech/kurtosis/path-compression v0.0.0-20240307154559-64d2929cd265 // indirect
 	github.com/mholt/archiver v3.1.1+incompatible // indirect
 	github.com/moby/buildkit v0.12.4 // indirect

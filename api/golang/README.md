@@ -14,6 +14,12 @@ This guide will also help you create and get these contexts.
 To use the Kurtosis Go SDK, you need to add it as a dependency to your Go module. You can do this with the following `go get` command:
 
 ```console
+$ go get github.com/kurtosis-tech/kurtosis/api/golang/v2
+```
+
+To use `api/golang` version one, you can import:
+
+```
 $ go get github.com/kurtosis-tech/kurtosis/api/golang
 ```
 
