@@ -55,7 +55,7 @@ func NewHistoricalEnclaveIdentifiersArgWithValidationDisabled(
 		DefaultValue:          "",
 		IsGreedy:              isGreedy,
 		ValidationFunc:        noValidationFunc,
-		ArgCompletionProvider: args.NewManualCompletionsProvider(getExistingAndHistoricalCompletions),
+		ArgCompletionProvider: args.NewManualCompletionsProvider(getCompletions),
 	}
 }
 
