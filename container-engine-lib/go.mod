@@ -2,7 +2,10 @@ module github.com/kurtosis-tech/kurtosis/container-engine-lib
 
 go 1.20
 
-replace github.com/kurtosis-tech/kurtosis/path-compression => ./../path-compression
+replace (
+	github.com/kurtosis-tech/kurtosis/api/golang/v2 => ./../api/golang
+	github.com/kurtosis-tech/kurtosis/path-compression => ./../path-compression
+)
 
 require (
 	github.com/dmarkham/enumer v1.5.5
@@ -11,7 +14,7 @@ require (
 	github.com/docker/go-units v0.5.0
 	github.com/gammazero/workerpool v1.1.2
 	github.com/google/uuid v1.4.0
-	github.com/kurtosis-tech/kurtosis/api/golang v0.84.10
+	github.com/kurtosis-tech/kurtosis/api/golang/v2 v2.0.0-pre.1
 	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0-20231024185242-de10c7bab36c
 	github.com/kurtosis-tech/kurtosis/engine/launcher v0.0.0-20231024185242-de10c7bab36c
 	github.com/kurtosis-tech/kurtosis/path-compression v0.0.0-20240307154559-64d2929cd265
@@ -30,11 +33,15 @@ require (
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
+	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/containerd/containerd v1.7.2 // indirect
 	github.com/containerd/typeurl/v2 v2.1.1 // indirect
 	github.com/creack/pty v1.1.21 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/distribution v2.8.2+incompatible // indirect
+	github.com/docker/go-metrics v0.0.1 // indirect
+	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
 	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
 	github.com/emicklei/go-restful/v3 v3.10.1 // indirect
 	github.com/gammazero/deque v0.1.0 // indirect
@@ -50,11 +57,13 @@ require (
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
+	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
 	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/mholt/archiver v3.1.1+incompatible // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
 	github.com/moby/term v0.0.0-20220808134915-39b0c02b01ae // indirect
@@ -71,6 +80,10 @@ require (
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/prometheus/client_golang v1.14.0 // indirect
+	github.com/prometheus/client_model v0.3.0 // indirect
+	github.com/prometheus/common v0.42.0 // indirect
+	github.com/prometheus/procfs v0.9.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/ulikunitz/xz v0.5.11 // indirect
