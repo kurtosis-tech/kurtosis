@@ -247,6 +247,7 @@ github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
 github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=
 github.com/kr/text v0.2.0/go.mod h1:eLer722TekiGuMkidMxC/pM04lWEeraHUUmBw8l2grE=
+github.com/kurtosis-tech/kurtosis/api/golang v0.84.10/go.mod h1:M0nqIXP4zMaQwzWUCjuIyAAYRudh47/udpESVnjne04=
 github.com/kurtosis-tech/kurtosis/cloud/api/golang v0.0.0-20230828153722-32770ca96513 h1:mMYtfT5tLXPFUwCIigL4YVyJtAzyrMe1kIe/Vf/kN+k=
 github.com/kurtosis-tech/kurtosis/cloud/api/golang v0.0.0-20230828153722-32770ca96513/go.mod h1:7wEpADHHiptqiCiomzqRy9Anczj4+NrgxA8GPXk7EF0=
 github.com/kurtosis-tech/kurtosis/enclave-manager/api/golang v0.0.0-20230828153722-32770ca96513 h1:KSyu8+axnBYr2pmq+T1ktUWXrJzeepvvm0T2tJNUtAA=

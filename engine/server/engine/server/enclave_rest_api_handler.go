@@ -21,9 +21,9 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	rpc_api "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	api_type "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/api_types"
-	api "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/server/core_rest_api"
+	rpc_api "github.com/kurtosis-tech/kurtosis/api/golang/v2/core/kurtosis_core_rpc_api_bindings"
+	api_type "github.com/kurtosis-tech/kurtosis/api/golang/v2/http_rest/api_types"
+	api "github.com/kurtosis-tech/kurtosis/api/golang/v2/http_rest/server/core_rest_api"
 )
 
 const (

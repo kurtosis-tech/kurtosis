@@ -13,8 +13,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/sirupsen/logrus"
 
-	api_type "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/api_types"
-	api "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/server/engine_rest_api"
+	api_type "github.com/kurtosis-tech/kurtosis/api/golang/v2/http_rest/api_types"
+	api "github.com/kurtosis-tech/kurtosis/api/golang/v2/http_rest/server/engine_rest_api"
 )
 
 type EngineRuntime struct {

@@ -7,7 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
 	"golang.org/x/exp/slices"
 
-	api_type "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/api_types"
+	api_type "github.com/kurtosis-tech/kurtosis/api/golang/v2/http_rest/api_types"
 )
 
 func ToHttpServiceLogs(
