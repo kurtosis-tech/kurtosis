@@ -50,7 +50,7 @@ steps_prepare_testing_k8s_k3s: &steps_prepare_testing_k8s_k3s
 
           docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.file-artifacts-expander-image-filename >>"
 
-          k3d image import "kurtosistech/core:$kurtosis_version" "kurtosistech/engine:$kurtosis_version" "kurtosistech/files-artifacts-expander:$kurtosis_version"
+          k3d image import --verbose "kurtosistech/core:$kurtosis_version" "kurtosistech/engine:$kurtosis_version" "kurtosistech/files-artifacts-expander:$kurtosis_version"
     # Edit the Kurtosis config file in order to have K3S cluster configuration
     - run:
         name: Add K3S cluster config in Kurtosis config file
