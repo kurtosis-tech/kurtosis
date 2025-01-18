@@ -1,4 +1,4 @@
 package: api_types
 generate:
   models: true
-output: api/golang/v2/http_rest/api_types/api_types.gen.go
+output: api/golang/http_rest/api_types/api_types.gen.go

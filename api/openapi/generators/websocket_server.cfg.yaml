@@ -4,9 +4,9 @@ generate:
   echo-server: true
   strict-server: false
 additional-imports:
-  - package: github.com/kurtosis-tech/kurtosis/api/golang/http_rest/api_types
+  - package: github.com/kurtosis-tech/kurtosis/api/golang/v2/http_rest/api_types
     alias: .
-output: api/golang/v2/http_rest/server/websocket_api/websocket_server.gen.go
+output: api/golang/http_rest/server/websocket_api/websocket_server.gen.go
 output-options:
   include-tags:
     - streaming
