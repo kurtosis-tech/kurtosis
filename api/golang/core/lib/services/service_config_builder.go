@@ -2,7 +2,7 @@ package services
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/v2/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/v2/v2/core/kurtosis_core_rpc_api_bindings"
 	"strings"
 )
 

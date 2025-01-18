@@ -2,9 +2,9 @@ package util
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/api/golang/v2/core/lib/enclaves"
-	"github.com/kurtosis-tech/kurtosis/api/golang/v2/core/lib/starlark_run_config"
-	"github.com/kurtosis-tech/kurtosis/api/golang/v2/engine/lib/kurtosis_context"
+	"github.com/kurtosis-tech/kurtosis/api/golang/v2/v2/core/lib/enclaves"
+	"github.com/kurtosis-tech/kurtosis/api/golang/v2/v2/core/lib/starlark_run_config"
+	"github.com/kurtosis-tech/kurtosis/api/golang/v2/v2/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/stacktrace"
 )
 

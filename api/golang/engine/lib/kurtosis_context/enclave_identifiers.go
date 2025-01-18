@@ -1,8 +1,8 @@
 package kurtosis_context
 
 import (
-	"github.com/kurtosis-tech/kurtosis/api/golang/v2/core/lib/enclaves"
-	"github.com/kurtosis-tech/kurtosis/api/golang/v2/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/v2/v2/core/lib/enclaves"
+	"github.com/kurtosis-tech/kurtosis/api/golang/v2/v2/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
 	"sort"
 )
