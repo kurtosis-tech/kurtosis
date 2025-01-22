@@ -2,6 +2,8 @@ package test_engine
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -12,7 +14,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
-	"testing"
 )
 
 type setServiceTestCase struct {
@@ -29,7 +30,32 @@ func (suite *KurtosisPlanInstructionTestSuite) TestSetService() {
 	require.NoError(suite.T(), err)
 	suite.interpretationTimeValueStore = interpretationTimeValueStore
 
-	testServiceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, nil, nil, []string{}, []string{}, map[string]string{}, nil, nil, 0, 0, "IP-ADDRESS", 0, 0, map[string]string{}, nil, nil, nil, image_download_mode.ImageDownloadMode_Always, true)
+	testServiceConfig, err := service.CreateServiceConfig(
+		testContainerImageName,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		[]string{},
+		[]string{},
+		map[string]string{},
+		nil,
+		nil,
+		0,
+		0,
+		"",
+		0,
+		0,
+		map[string]string{},
+		map[string]string{}, // ingressAnnotations
+		nil,                 // ingressClassName
+		nil,                 // user
+		nil,                 // tolerations
+		map[string]string{}, // nodeSelectors
+		image_download_mode.ImageDownloadMode_Always,
+		true,
+	)
 	require.NoError(suite.T(), err)
 	suite.interpretationTimeValueStore.PutServiceConfig(testServiceName, testServiceConfig)
 

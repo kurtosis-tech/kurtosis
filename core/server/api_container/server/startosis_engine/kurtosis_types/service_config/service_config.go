@@ -2,6 +2,9 @@ package service_config
 
 import (
 	"fmt"
+	"math"
+	"path"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
@@ -24,8 +27,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"go.starlark.net/starlark"
 	v1 "k8s.io/api/core/v1"
-	"math"
-	"path"
 )
 
 const (
@@ -558,6 +559,8 @@ func (config *ServiceConfig) ToKurtosisType(
 		minCpu,
 		minMemory,
 		labels,
+		map[string]string{}, // ingressAnnotations
+		nil,                 // ingressClassName
 		serviceUser,
 		tolerations,
 		nodeSelectors,

@@ -20,6 +20,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
+	"k8s.io/api/core/v1"
 )
 
 type addServiceTestCase struct {
@@ -36,7 +37,32 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddService() {
 		mock.Anything,
 		testServiceName,
 		mock.MatchedBy(func(serviceConfig *service.ServiceConfig) bool {
-			expectedServiceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, map[string]*port_spec.PortSpec{}, map[string]*port_spec.PortSpec{}, nil, nil, map[string]string{}, nil, nil, 0, 0, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true)
+			expectedServiceConfig, err := service.CreateServiceConfig(
+				testContainerImageName,
+				nil,                                    // imageBuildSpec
+				nil,                                    // imageRegistrySpec
+				nil,                                    // nixBuildSpec
+				map[string]*port_spec.PortSpec{},      // privatePorts
+				map[string]*port_spec.PortSpec{},      // publicPorts
+				nil,                                    // entrypointArgs
+				nil,                                    // cmdArgs
+				map[string]string{},                   // envVars
+				nil,                                    // filesArtifactExpansion
+				nil,                                    // persistentDirectories
+				uint64(0),                             // cpuAllocationMillicpus
+				uint64(0),                             // memoryAllocationMegabytes
+				service_config.DefaultPrivateIPAddrPlaceholder,
+				uint64(0),                             // minCpuAllocationMilliCpus
+				uint64(0),                             // minMemoryAllocationMegabytes
+				map[string]string{},                   // labels
+				map[string]string{},                   // ingressAnnotations
+				nil,                                    // ingressClassName
+				nil,                                    // user
+				[]v1.Toleration{},                     // tolerations
+				map[string]string{},                   // nodeSelectors
+				image_download_mode.ImageDownloadMode_Missing,
+				true,
+			)
 			require.NoError(suite.T(), err)
 
 			actualServiceConfig := serviceConfig

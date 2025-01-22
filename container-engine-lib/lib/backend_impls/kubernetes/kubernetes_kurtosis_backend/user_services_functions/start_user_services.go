@@ -3,8 +3,9 @@ package user_services_functions
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"strings"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
 
@@ -437,7 +438,7 @@ func createStartServiceOperation(
 		}()
 
 		// Create the ingress for the reverse proxy
-		ingressAttributes, err := enclaveObjAttributesProvider.ForUserServiceIngress(serviceUuid, serviceName, privatePorts)
+		ingressAttributes, err := enclaveObjAttributesProvider.ForUserServiceIngress(serviceUuid, serviceName, privatePorts, serviceConfig.GetIngressAnnotations(), serviceConfig.GetIngressClassName())
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting attributes for new ingress for service with UUID '%v'", serviceUuid)
 		}
@@ -458,6 +459,7 @@ func createStartServiceOperation(
 				ingressName,
 				ingressLabelsStrs,
 				ingressAnnotationsStrs,
+				serviceConfig.GetIngressClassName(),
 				ingressRules,
 			)
 			if err != nil {

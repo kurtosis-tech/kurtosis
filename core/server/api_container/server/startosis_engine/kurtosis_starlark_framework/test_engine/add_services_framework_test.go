@@ -2,13 +2,14 @@ package test_engine
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"testing"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
 
@@ -23,6 +24,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
+	v1 "k8s.io/api/core/v1"
 )
 
 type addServicesTestCase struct {
@@ -52,13 +54,63 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 			suite.Require().Contains(configs, testServiceName)
 			suite.Require().Contains(configs, testServiceName2)
 
-			expectedServiceConfig1, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, map[string]*port_spec.PortSpec{}, map[string]*port_spec.PortSpec{}, nil, nil, map[string]string{}, nil, nil, 0, 0, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true)
+			expectedServiceConfig1, err := service.CreateServiceConfig(
+				testContainerImageName1,
+				nil,                              // imageBuildSpec
+				nil,                              // imageRegistrySpec
+				nil,                              // nixBuildSpec
+				map[string]*port_spec.PortSpec{}, // privatePorts
+				map[string]*port_spec.PortSpec{}, // publicPorts
+				nil,                              // entrypointArgs
+				nil,                              // cmdArgs
+				map[string]string{},              // envVars
+				nil,                              // filesArtifactExpansion
+				nil,                              // persistentDirectories
+				uint64(0),                        // cpuAllocationMillicpus
+				uint64(0),                        // memoryAllocationMegabytes
+				service_config.DefaultPrivateIPAddrPlaceholder,
+				uint64(0),           // minCpuAllocationMilliCpus
+				uint64(0),           // minMemoryAllocationMegabytes
+				map[string]string{}, // labels
+				map[string]string{}, // ingressAnnotations
+				nil,                 // ingressClassName
+				nil,                 // user
+				[]v1.Toleration{},   // tolerations
+				map[string]string{}, // nodeSelectors
+				image_download_mode.ImageDownloadMode_Missing,
+				true,
+			)
 			require.NoError(suite.T(), err)
 
 			actualServiceConfig1 := configs[testServiceName]
 			suite.Assert().Equal(expectedServiceConfig1, actualServiceConfig1)
 
-			expectedServiceConfig2, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, map[string]*port_spec.PortSpec{}, map[string]*port_spec.PortSpec{}, nil, nil, map[string]string{}, nil, nil, testCpuAllocation, testMemoryAllocation, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true)
+			expectedServiceConfig2, err := service.CreateServiceConfig(
+				testContainerImageName2,
+				nil,                              // imageBuildSpec
+				nil,                              // imageRegistrySpec
+				nil,                              // nixBuildSpec
+				map[string]*port_spec.PortSpec{}, // privatePorts
+				map[string]*port_spec.PortSpec{}, // publicPorts
+				nil,                              // entrypointArgs
+				nil,                              // cmdArgs
+				map[string]string{},              // envVars
+				nil,                              // filesArtifactExpansion
+				nil,                              // persistentDirectories
+				uint64(0),                        // cpuAllocationMillicpus
+				uint64(0),                        // memoryAllocationMegabytes
+				service_config.DefaultPrivateIPAddrPlaceholder,
+				uint64(0),           // minCpuAllocationMilliCpus
+				uint64(0),           // minMemoryAllocationMegabytes
+				map[string]string{}, // labels
+				map[string]string{}, // ingressAnnotations
+				nil,                 // ingressClassName
+				nil,                 // user
+				[]v1.Toleration{},   // tolerations
+				map[string]string{}, // nodeSelectors
+				image_download_mode.ImageDownloadMode_Missing,
+				true,
+			)
 			require.NoError(suite.T(), err)
 
 			actualServiceConfig2 := configs[testServiceName2]
@@ -195,8 +247,8 @@ func (t *addServicesTestCase) GetStarlarkCode() string {
 		testReadyConditions2Interval,
 		testReadyConditions2Timeout,
 	)
-	serviceConfig1 := fmt.Sprintf("ServiceConfig(image=%q, ready_conditions=%s)", testContainerImageName, service1ReadyConditionsScriptPart)
-	serviceConfig2 := fmt.Sprintf("ServiceConfig(image=%q, cpu_allocation=%d, memory_allocation=%d, ready_conditions=%s)", testContainerImageName, testCpuAllocation, testMemoryAllocation, service2ReadyConditionsScriptPart)
+	serviceConfig1 := fmt.Sprintf("ServiceConfig(image=%q, ready_conditions=%s)", testContainerImageName1, service1ReadyConditionsScriptPart)
+	serviceConfig2 := fmt.Sprintf("ServiceConfig(image=%q, cpu_allocation=%d, memory_allocation=%d, ready_conditions=%s)", testContainerImageName2, testCpuAllocation, testMemoryAllocation, service2ReadyConditionsScriptPart)
 	return fmt.Sprintf(`%s(%s={%q: %s, %q: %s})`, add_service.AddServicesBuiltinName, add_service.ConfigsArgName, testServiceName, serviceConfig1, testServiceName2, serviceConfig2)
 }
 

@@ -667,6 +667,7 @@ func createEngineIngress(
 		engineIngressName,
 		engineIngressLabels,
 		engineIngressAnnotations,
+		nil, // Engine ingress uses default ingress class
 		engineIngressRules,
 	)
 	if err != nil {

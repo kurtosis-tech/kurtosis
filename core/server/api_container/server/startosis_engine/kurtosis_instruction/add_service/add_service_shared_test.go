@@ -2,10 +2,11 @@ package add_service
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"os"
 	"testing"
 
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
@@ -14,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
 	"go.starlark.net/starlark"
+	v1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -38,7 +40,32 @@ func TestAddServiceShared_EntryPointArgsRuntimeValueAreReplaced(t *testing.T) {
 	runtimeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, stringValueUuid, runtimeValueName)
 
 	serviceName := service.ServiceName("example-datastore-server-2")
-	serviceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, nil, nil, []string{"-- " + runtimeValue}, nil, nil, nil, nil, 0, 0, "", 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true)
+	serviceConfig, err := service.CreateServiceConfig(
+		testContainerImageName,
+		nil,                              // imageBuildSpec
+		nil,                              // imageRegistrySpec
+		nil,                              // nixBuildSpec
+		map[string]*port_spec.PortSpec{}, // privatePorts
+		map[string]*port_spec.PortSpec{}, // publicPorts
+		[]string{"-- " + runtimeValue},   // entrypointArgs
+		[]string{},                       // cmdArgs
+		map[string]string{},              // envVars
+		nil,                              // filesArtifactExpansion
+		nil,                              // persistentDirectories
+		0,                                // cpuAllocationMillicpus
+		0,                                // memoryAllocationMegabytes
+		"",                               // privateIPAddrPlaceholder
+		0,                                // minCpuAllocationMilliCpus
+		0,                                // minMemoryAllocationMegabytes
+		map[string]string{},              // labels
+		map[string]string{},              // ingressAnnotations
+		nil,                              // ingressClassName
+		nil,                              // user
+		[]v1.Toleration{},                // tolerations
+		map[string]string{},              // nodeSelectors
+		image_download_mode.ImageDownloadMode_Missing,
+		true,
+	)
 	require.NoError(t, err)
 
 	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(runtimeValueStore, serviceName, serviceConfig)
@@ -64,7 +91,32 @@ func TestAddServiceShared_CmdArgsRuntimeValueAreReplaced(t *testing.T) {
 	runtimeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, stringValueUuid, runtimeValueName)
 
 	serviceName := service.ServiceName("example-datastore-server-2")
-	serviceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, nil, nil, nil, []string{"bash", "-c", "sleep " + runtimeValue}, nil, nil, nil, 0, 0, "", 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true)
+	serviceConfig, err := service.CreateServiceConfig(
+		testContainerImageName,
+		nil,                              // imageBuildSpec
+		nil,                              // imageRegistrySpec
+		nil,                              // nixBuildSpec
+		map[string]*port_spec.PortSpec{}, // privatePorts
+		map[string]*port_spec.PortSpec{}, // publicPorts
+		[]string{},                       // entrypointArgs
+		[]string{"bash", "-c", "sleep " + runtimeValue}, // cmdArgs
+		map[string]string{},                             // envVars
+		nil,                                             // filesArtifactExpansion
+		nil,                                             // persistentDirectories
+		0,                                              // cpuAllocationMillicpus
+		0,                                              // memoryAllocationMegabytes
+		"",                                             // privateIPAddrPlaceholder
+		0,                                              // minCpuAllocationMilliCpus
+		0,                                              // minMemoryAllocationMegabytes
+		map[string]string{},                             // labels
+		map[string]string{},                             // ingressAnnotations
+		nil,                                             // ingressClassName
+		nil,                                             // user
+		[]v1.Toleration{},                               // tolerations
+		map[string]string{},                             // nodeSelectors
+		image_download_mode.ImageDownloadMode_Missing,
+		true,
+	)
 	require.NoError(t, err)
 
 	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(runtimeValueStore, serviceName, serviceConfig)
@@ -90,9 +142,34 @@ func TestAddServiceShared_EnvVarsWithRuntimeValueAreReplaced(t *testing.T) {
 	runtimeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, stringValueUuid, runtimeValueName)
 
 	serviceName := service.ServiceName("example-datastore-server-2")
-	serviceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, nil, nil, nil, nil, map[string]string{
-		"PORT": runtimeValue,
-	}, nil, nil, 0, 0, "", 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true)
+	serviceConfig, err := service.CreateServiceConfig(
+		testContainerImageName,
+		nil,                              // imageBuildSpec
+		nil,                              // imageRegistrySpec
+		nil,                              // nixBuildSpec
+		map[string]*port_spec.PortSpec{}, // privatePorts
+		map[string]*port_spec.PortSpec{}, // publicPorts
+		[]string{},                       // entrypointArgs
+		[]string{},                       // cmdArgs
+		map[string]string{ // envVars
+			"PORT": runtimeValue,
+		},
+		nil,                 // filesArtifactExpansion
+		nil,                 // persistentDirectories
+		0,                   // cpuAllocationMillicpus
+		0,                   // memoryAllocationMegabytes
+		"",                  // privateIPAddrPlaceholder
+		0,                   // minCpuAllocationMilliCpus
+		0,                   // minMemoryAllocationMegabytes
+		map[string]string{}, // labels
+		map[string]string{}, // ingressAnnotations
+		nil,                 // ingressClassName
+		nil,                 // user
+		[]v1.Toleration{},   // tolerations
+		map[string]string{}, // nodeSelectors
+		image_download_mode.ImageDownloadMode_Missing,
+		true,
+	)
 	require.NoError(t, err)
 
 	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(runtimeValueStore, serviceName, serviceConfig)
@@ -121,7 +198,32 @@ func TestAddServiceShared_ServiceNameWithRuntimeValuesAreReplaced(t *testing.T) 
 	stringRuntimeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, stringValueUuid, valueName)
 
 	serviceName := service.ServiceName(stringRuntimeValue)
-	serviceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 0, 0, "", 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true)
+	serviceConfig, err := service.CreateServiceConfig(
+		testContainerImageName,
+		nil,                              // imageBuildSpec
+		nil,                              // imageRegistrySpec
+		nil,                              // nixBuildSpec
+		map[string]*port_spec.PortSpec{}, // privatePorts
+		map[string]*port_spec.PortSpec{}, // publicPorts
+		[]string{},                       // entrypointArgs
+		[]string{},                       // cmdArgs
+		map[string]string{},              // envVars
+		nil,                              // filesArtifactExpansion
+		nil,                              // persistentDirectories
+		0,                                // cpuAllocationMillicpus
+		0,                                // memoryAllocationMegabytes
+		"",                               // privateIPAddrPlaceholder
+		0,                                // minCpuAllocationMilliCpus
+		0,                                // minMemoryAllocationMegabytes
+		map[string]string{},              // labels
+		map[string]string{},              // ingressAnnotations
+		nil,                              // ingressClassName
+		nil,                              // user
+		[]v1.Toleration{},                // tolerations
+		map[string]string{},              // nodeSelectors
+		image_download_mode.ImageDownloadMode_Missing,
+		true,
+	)
 	require.NoError(t, err)
 
 	replacedServiceName, _, err := replaceMagicStrings(runtimeValueStore, serviceName, serviceConfig)
