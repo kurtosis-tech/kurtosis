@@ -2,12 +2,13 @@ package service_registration
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"math/rand"
 	"net"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -307,7 +308,7 @@ func getServiceConfigForTest(t *testing.T, imageName string) *service.ServiceCon
 	serviceConfig, err := service.CreateServiceConfig(imageName, nil, nil, nil, testPrivatePorts(t), testPublicPorts(t), []string{"bin", "bash", "ls"}, []string{"-l", "-a"}, testEnvVars(), testFilesArtifactExpansion(), testPersistentDirectory(), 500, 1024, "IP-ADDRESS", 100, 512, map[string]string{
 		"test-label-key":        "test-label-value",
 		"test-second-label-key": "test-second-label-value",
-	}, nil, nil, map[string]string{
+	}, map[string]string{}, nil, nil, nil, map[string]string{
 		"disktype": "ssd",
 	}, image_download_mode.ImageDownloadMode_Missing, true)
 	require.NoError(t, err)
@@ -362,11 +363,11 @@ func testFilesArtifactExpansion() *service_directory.FilesArtifactsExpansion {
 		uint64(500),
 		uint64(50),
 		map[string]string{},
-		map[string]string{},  // ingressAnnotations
-		nil,                  // ingressClassName
-		nil,                  // user
-		nil,                  // tolerations
-		map[string]string{},  // nodeSelectors
+		map[string]string{}, // ingressAnnotations
+		nil,                 // ingressClassName
+		nil,                 // user
+		nil,                 // tolerations
+		map[string]string{}, // nodeSelectors
 		image_download_mode.ImageDownloadMode_Missing,
 		true,
 	)
