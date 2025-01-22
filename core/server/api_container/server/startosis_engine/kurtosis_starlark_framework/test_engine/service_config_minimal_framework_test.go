@@ -2,8 +2,9 @@ package test_engine
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"testing"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -47,7 +48,32 @@ func (t *serviceConfigMinimalTestCase) Assert(typeValue builtin_argument.Kurtosi
 		image_download_mode.ImageDownloadMode_Missing)
 	require.Nil(t, interpretationErr)
 
-	expectedServiceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, map[string]*port_spec.PortSpec{}, map[string]*port_spec.PortSpec{}, nil, nil, map[string]string{}, nil, nil, 0, 0, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true)
+	expectedServiceConfig, err := service.CreateServiceConfig(
+		testContainerImageName,
+		nil,                              // imageBuildSpec
+		nil,                              // imageRegistrySpec
+		nil,                              // nixBuildSpec
+		map[string]*port_spec.PortSpec{}, // privatePorts
+		map[string]*port_spec.PortSpec{}, // publicPorts
+		nil,                              // entrypointArgs
+		nil,                              // cmdArgs
+		map[string]string{},              // envVars
+		nil,                              // filesArtifactExpansion
+		nil,                              // persistentDirectories
+		0,                                // cpuAllocationMillicpus
+		0,                                // memoryAllocationMegabytes
+		service_config.DefaultPrivateIPAddrPlaceholder,
+		0,                   // minCpuAllocationMilliCpus
+		0,                   // minMemoryAllocationMegabytes
+		map[string]string{}, // labels
+		map[string]string{}, // ingressAnnotations
+		nil,                 // ingressClassName
+		nil,                 // user
+		nil,                 // tolerations
+		map[string]string{}, // nodeSelectors
+		image_download_mode.ImageDownloadMode_Missing,
+		true, // waitForPorts
+	)
 	require.NoError(t, err)
 	require.Equal(t, expectedServiceConfig, serviceConfig)
 	require.Nil(t, serviceConfig.GetImageBuildSpec())

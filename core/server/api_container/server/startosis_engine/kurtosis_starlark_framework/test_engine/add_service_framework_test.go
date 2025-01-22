@@ -2,9 +2,10 @@ package test_engine
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
-	"testing"
 
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
 
@@ -20,7 +21,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
-	"k8s.io/api/core/v1"
 )
 
 type addServiceTestCase struct {
@@ -39,27 +39,27 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddService() {
 		mock.MatchedBy(func(serviceConfig *service.ServiceConfig) bool {
 			expectedServiceConfig, err := service.CreateServiceConfig(
 				testContainerImageName,
-				nil,                                    // imageBuildSpec
-				nil,                                    // imageRegistrySpec
-				nil,                                    // nixBuildSpec
-				map[string]*port_spec.PortSpec{},      // privatePorts
-				map[string]*port_spec.PortSpec{},      // publicPorts
-				nil,                                    // entrypointArgs
-				nil,                                    // cmdArgs
-				map[string]string{},                   // envVars
-				nil,                                    // filesArtifactExpansion
-				nil,                                    // persistentDirectories
-				uint64(0),                             // cpuAllocationMillicpus
-				uint64(0),                             // memoryAllocationMegabytes
+				nil,                              // imageBuildSpec
+				nil,                              // imageRegistrySpec
+				nil,                              // nixBuildSpec
+				map[string]*port_spec.PortSpec{}, // privatePorts
+				map[string]*port_spec.PortSpec{}, // publicPorts
+				nil,                              // entrypointArgs
+				nil,                              // cmdArgs
+				map[string]string{},              // envVars
+				nil,                              // filesArtifactExpansion
+				nil,                              // persistentDirectories
+				0,                                // cpuAllocationMillicpus
+				0,                                // memoryAllocationMegabytes
 				service_config.DefaultPrivateIPAddrPlaceholder,
-				uint64(0),                             // minCpuAllocationMilliCpus
-				uint64(0),                             // minMemoryAllocationMegabytes
-				map[string]string{},                   // labels
-				map[string]string{},                   // ingressAnnotations
-				nil,                                    // ingressClassName
-				nil,                                    // user
-				[]v1.Toleration{},                     // tolerations
-				map[string]string{},                   // nodeSelectors
+				0,                   // minCpuAllocationMilliCpus
+				0,                   // minMemoryAllocationMegabytes
+				map[string]string{}, // labels
+				map[string]string{}, // ingressAnnotations
+				nil,                 // ingressClassName
+				nil,                 // user
+				nil,                 // tolerations
+				map[string]string{}, // nodeSelectors
 				image_download_mode.ImageDownloadMode_Missing,
 				true,
 			)

@@ -10,6 +10,7 @@ import (
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
 
@@ -19,12 +20,15 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
-	v1 "k8s.io/api/core/v1"
+)
+
+const (
+	testContainerImageName1 = "kurtosistech/example-datastore-server:1.0.0"
+	testContainerImageName2 = "kurtosistech/example-datastore-server:2.0.0"
 )
 
 type addServicesTestCase struct {
@@ -66,16 +70,16 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 				map[string]string{},              // envVars
 				nil,                              // filesArtifactExpansion
 				nil,                              // persistentDirectories
-				uint64(0),                        // cpuAllocationMillicpus
-				uint64(0),                        // memoryAllocationMegabytes
-				service_config.DefaultPrivateIPAddrPlaceholder,
-				uint64(0),           // minCpuAllocationMilliCpus
-				uint64(0),           // minMemoryAllocationMegabytes
+				0,                                // cpuAllocationMillicpus
+				0,                                // memoryAllocationMegabytes
+				service_config.DefaultPrivateIPAddrPlaceholder, // privateIPAddrPlaceholder
+				0,                   // minCpuAllocationMilliCpus
+				0,                   // minMemoryAllocationMegabytes
 				map[string]string{}, // labels
 				map[string]string{}, // ingressAnnotations
 				nil,                 // ingressClassName
 				nil,                 // user
-				[]v1.Toleration{},   // tolerations
+				nil,                 // tolerations
 				map[string]string{}, // nodeSelectors
 				image_download_mode.ImageDownloadMode_Missing,
 				true,
@@ -97,16 +101,16 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 				map[string]string{},              // envVars
 				nil,                              // filesArtifactExpansion
 				nil,                              // persistentDirectories
-				uint64(0),                        // cpuAllocationMillicpus
-				uint64(0),                        // memoryAllocationMegabytes
-				service_config.DefaultPrivateIPAddrPlaceholder,
-				uint64(0),           // minCpuAllocationMilliCpus
-				uint64(0),           // minMemoryAllocationMegabytes
+				testCpuAllocation,                // cpuAllocationMillicpus
+				testMemoryAllocation,             // memoryAllocationMegabytes
+				service_config.DefaultPrivateIPAddrPlaceholder, // privateIPAddrPlaceholder
+				0,                   // minCpuAllocationMilliCpus
+				0,                   // minMemoryAllocationMegabytes
 				map[string]string{}, // labels
 				map[string]string{}, // ingressAnnotations
 				nil,                 // ingressClassName
 				nil,                 // user
-				[]v1.Toleration{},   // tolerations
+				nil,                 // tolerations
 				map[string]string{}, // nodeSelectors
 				image_download_mode.ImageDownloadMode_Missing,
 				true,

@@ -2,9 +2,10 @@ package test_engine
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
-	"testing"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -60,7 +61,32 @@ func (t *serviceConfigImageSpecTest) Assert(typeValue builtin_argument.KurtosisV
 	require.Nil(t, interpretationErr)
 
 	expectedImageRegistrySpec := image_registry_spec.NewImageRegistrySpec(testContainerImageName, testRegistryUsername, testRegistryPassword, testRegistryAddr)
-	expectedServiceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, expectedImageRegistrySpec, nil, map[string]*port_spec.PortSpec{}, map[string]*port_spec.PortSpec{}, nil, nil, map[string]string{}, nil, nil, 0, 0, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true)
+	expectedServiceConfig, err := service.CreateServiceConfig(
+		testContainerImageName,
+		nil,                              // imageBuildSpec
+		expectedImageRegistrySpec,        // imageRegistrySpec
+		nil,                              // nixBuildSpec
+		map[string]*port_spec.PortSpec{}, // privatePorts
+		map[string]*port_spec.PortSpec{}, // publicPorts
+		nil,                              // entrypointArgs
+		nil,                              // cmdArgs
+		map[string]string{},              // envVars
+		nil,                              // filesArtifactExpansion
+		nil,                              // persistentDirectories
+		0,                                // cpuAllocationMillicpus
+		0,                                // memoryAllocationMegabytes
+		service_config.DefaultPrivateIPAddrPlaceholder,
+		0,                   // minCpuAllocationMilliCpus
+		0,                   // minMemoryAllocationMegabytes
+		map[string]string{}, // labels
+		map[string]string{}, // ingressAnnotations
+		nil,                 // ingressClassName
+		nil,                 // user
+		nil,                 // tolerations
+		map[string]string{}, // nodeSelectors
+		image_download_mode.ImageDownloadMode_Missing,
+		true, // waitForPorts
+	)
 	require.NoError(t, err)
 	require.Equal(t, expectedServiceConfig, serviceConfig)
 	require.Equal(t, expectedImageRegistrySpec, serviceConfig.GetImageRegistrySpec())
