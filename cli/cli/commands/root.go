@@ -8,6 +8,12 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/Masterminds/semver/v3"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/analytics"
@@ -47,11 +53,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"io"
-	"net/http"
-	"os"
-	"strings"
-	"time"
 )
 
 const (
@@ -186,7 +187,7 @@ func setupCLILogs(cmd *cobra.Command) error {
 	if err != nil {
 		return stacktrace.Propagate(err, "Could not parse log level string '%v'", logLevelStr)
 	}
-	logrus.SetOutput(cmd.OutOrStdout())
+	logrus.SetOutput(cmd.OutOrStderr())
 	logrus.SetLevel(logLevel)
 	return nil
 }
