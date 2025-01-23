@@ -340,39 +340,6 @@ func testFilesArtifactExpansion() *service_directory.FilesArtifactsExpansion {
 			"/expander/dir2": "/service/dir2",
 		},
 	}
-	persistentDirectories := service_directory.NewPersistentDirectories(map[string]service_directory.PersistentDirectory{
-		"dirpath1": {PersistentKey: service_directory.DirectoryPersistentKey("dirpath1_persistent_directory_key"), Size: service_directory.DirectoryPersistentSize(int64(0))},
-		"dirpath2": {PersistentKey: service_directory.DirectoryPersistentKey("dirpath2_persistent_directory_key"), Size: service_directory.DirectoryPersistentSize(int64(0))},
-	})
-
-	serviceConfig, err := service.CreateServiceConfig(
-		imageName,
-		nil,
-		nil,
-		nil,
-		map[string]*port_spec.PortSpec{},
-		map[string]*port_spec.PortSpec{},
-		[]string{},
-		[]string{},
-		map[string]string{},
-		filesArtifactsExpansion,
-		persistentDirectories,
-		uint64(1000),
-		uint64(100),
-		"test-placeholder",
-		uint64(500),
-		uint64(50),
-		map[string]string{},
-		map[string]string{}, // ingressAnnotations
-		nil,                 // ingressClassName
-		nil,                 // user
-		nil,                 // tolerations
-		map[string]string{}, // nodeSelectors
-		image_download_mode.ImageDownloadMode_Missing,
-		true,
-	)
-	require.NoError(t, err)
-	return serviceConfig
 }
 
 func testPrivatePorts(t *testing.T) map[string]*port_spec.PortSpec {
