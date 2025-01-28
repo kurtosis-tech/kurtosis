@@ -7,7 +7,12 @@ package logs
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"os"
+	"os/signal"
+	"strconv"
+
 	"github.com/fatih/color"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
@@ -24,9 +29,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"os"
-	"os/signal"
-	"strconv"
 )
 
 const (
@@ -192,6 +194,10 @@ func run(
 	shouldFollowLogs, err := flags.GetBool(shouldFollowLogsFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the should-follow-logs flag using key '%v'", shouldFollowLogsFlagKey)
+	}
+
+	if shouldFollowLogs && flags.HasFlag(returnNumLogsFlagKey) {
+		return stacktrace.Propagate(errors.ErrUnsupported, "`%v` flag cannot be used with `%v` flag", shouldFollowLogsFlagKey, returnNumLogsFlagKey)
 	}
 
 	shouldReturnAllLogs, err := flags.GetBool(returnAllLogsFlagKey)
