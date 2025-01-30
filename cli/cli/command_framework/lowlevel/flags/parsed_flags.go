@@ -57,8 +57,3 @@ func (flags *ParsedFlags) GetBool(name string) (bool, error) {
 	}
 	return value, nil
 }
-
-func (flags *ParsedFlags) HasFlag(name string) bool {
-	_, err := flags.cmdFlagsSet.GetString(name)
-	return err != nil
-}

@@ -55,7 +55,7 @@ const (
 
 	interruptChanBufferSize = 5
 
-	defaultNumLogLines            = 200
+	defaultNumLogLines            = 0
 	commonInstructionInMatchFlags = "Important: " + matchTextFilterFlagKey + " and " + matchRegexFilterFlagKey + " flags cannot be used at the same time. You should either use one or the other."
 )
 
@@ -195,10 +195,6 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the should-follow-logs flag using key '%v'", shouldFollowLogsFlagKey)
 	}
 
-	if shouldFollowLogs && flags.HasFlag(returnNumLogsFlagKey) {
-		return stacktrace.Propagate(stacktrace.NewError("Unsupported flags combination"), "`%v` flag cannot be used with `%v` flag", shouldFollowLogsFlagKey, returnNumLogsFlagKey)
-	}
-
 	shouldReturnAllLogs, err := flags.GetBool(returnAllLogsFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the 'all' flag using key '%v'", returnAllLogsFlagKey)
@@ -207,6 +203,10 @@ func run(
 	numLogLines, err := flags.GetUint32(returnNumLogsFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the 'num' flag using key '%v'", returnNumLogsFlagKey)
+	}
+
+	if shouldFollowLogs && numLogLines > 0 {
+		return stacktrace.Propagate(stacktrace.NewError("Unsupported flags combination"), "`%v` flag cannot be used with `%v` flag", shouldFollowLogsFlagKey, returnNumLogsFlagKey)
 	}
 
 	matchTextStr, err := flags.GetString(matchTextFilterFlagKey)
