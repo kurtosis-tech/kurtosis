@@ -7,7 +7,6 @@ package logs
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -197,7 +196,7 @@ func run(
 	}
 
 	if shouldFollowLogs && flags.HasFlag(returnNumLogsFlagKey) {
-		return stacktrace.Propagate(errors.ErrUnsupported, "`%v` flag cannot be used with `%v` flag", shouldFollowLogsFlagKey, returnNumLogsFlagKey)
+		return stacktrace.Propagate(stacktrace.NewError("Unsupported flags combination"), "`%v` flag cannot be used with `%v` flag", shouldFollowLogsFlagKey, returnNumLogsFlagKey)
 	}
 
 	shouldReturnAllLogs, err := flags.GetBool(returnAllLogsFlagKey)
