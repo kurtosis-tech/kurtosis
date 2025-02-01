@@ -63,11 +63,22 @@ type StartosisInterpreter struct {
 	starlarkValueSerde           *kurtosis_types.StarlarkValueSerde
 	enclaveEnvVars               string
 	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore
+	// This is a function that allows the consumer of the interpreter to adjust the default builtins.
+	// It is useful when external libraries or helpers need to be plugged in to kurtosis,
+	// for example when running unit tests using the starlarktest package
+	processBuiltins StartosisInterpreterBuiltinsProcessor
 }
+
+// StartosisInterpreterBuiltinsProcessor is a builtins transformer function
+type StartosisInterpreterBuiltinsProcessor func(thread *starlark.Thread, predeclared starlark.StringDict) starlark.StringDict
 
 type SerializedInterpretationOutput string
 
 func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, packageContentProvider startosis_packages.PackageContentProvider, runtimeValueStore *runtime_value_store.RuntimeValueStore, starlarkValueSerde *kurtosis_types.StarlarkValueSerde, enclaveVarEnvs string, interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore) *StartosisInterpreter {
+	return NewStartosisInterpreterWithBuiltinsProcessor(serviceNetwork, packageContentProvider, runtimeValueStore, starlarkValueSerde, enclaveVarEnvs, interpretationTimeValueStore, nil)
+}
+
+func NewStartosisInterpreterWithBuiltinsProcessor(serviceNetwork service_network.ServiceNetwork, packageContentProvider startosis_packages.PackageContentProvider, runtimeValueStore *runtime_value_store.RuntimeValueStore, starlarkValueSerde *kurtosis_types.StarlarkValueSerde, enclaveVarEnvs string, interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore, processBuiltins StartosisInterpreterBuiltinsProcessor) *StartosisInterpreter {
 	return &StartosisInterpreter{
 		mutex:                        &sync.Mutex{},
 		serviceNetwork:               serviceNetwork,
@@ -76,6 +87,7 @@ func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, pack
 		enclaveEnvVars:               enclaveVarEnvs,
 		starlarkValueSerde:           starlarkValueSerde,
 		interpretationTimeValueStore: interpretationTimeValueStore,
+		processBuiltins:              processBuiltins,
 	}
 }
 
@@ -389,6 +401,15 @@ func (interpreter *StartosisInterpreter) buildBindings(
 	for _, kurtosisTypeConstructors := range KurtosisTypeConstructors() {
 		predeclared[kurtosisTypeConstructors.Name()] = kurtosisTypeConstructors
 	}
+
+	// Allow the consumers to adjust the builtins
+	//
+	// This is useful for adding e.g. starlarktest package
+	// for unit testing of kurtosis scripts
+	if interpreter.processBuiltins != nil {
+		predeclared = interpreter.processBuiltins(thread, predeclared)
+	}
+
 	return &predeclared, nil
 }
 
