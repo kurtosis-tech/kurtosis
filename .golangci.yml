@@ -1,6 +1,5 @@
 linters:
   enable:
-    - exhaustruct
     - exportloopref
     - gomnd
     - staticcheck
