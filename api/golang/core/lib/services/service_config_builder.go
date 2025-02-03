@@ -2,8 +2,9 @@ package services
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"strings"
+
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 )
 
 type FilesArtifactUUID string
@@ -36,6 +37,8 @@ func GetServiceConfigStarlark(
 	memoryAllocationMegabytes int,
 	minCpuMilliCores int,
 	minMemoryMegaBytes int,
+	ingressClassName string,
+	ingressAnnotations map[string]string,
 ) string {
 	starlarkFields := []string{}
 
@@ -85,6 +88,18 @@ func GetServiceConfigStarlark(
 	}
 	if minMemoryMegaBytes != 0 {
 		starlarkFields = append(starlarkFields, fmt.Sprintf(`min_memory=%d`, minMemoryMegaBytes))
+	}
+
+	if ingressClassName != "" {
+		starlarkFields = append(starlarkFields, fmt.Sprintf(`ingress_class_name=%q`, ingressClassName))
+	}
+
+	if len(ingressAnnotations) > 0 {
+		ingressAnnotationStrings := []string{}
+		for key, value := range ingressAnnotations {
+			ingressAnnotationStrings = append(ingressAnnotationStrings, fmt.Sprintf("%q:%q", key, value))
+		}
+		starlarkFields = append(starlarkFields, fmt.Sprintf(`ingress_annotations={%s}`, strings.Join(ingressAnnotationStrings, ",")))
 	}
 
 	return fmt.Sprintf("ServiceConfig(%s)", strings.Join(starlarkFields, ","))

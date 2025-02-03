@@ -556,10 +556,10 @@
           "detail": "This field can be used to check the service's readiness after this is started to confirm that it is ready to receive connections and traffic"
         },
         {
-          "name": "ingress_class",
+          "name": "ingress_class_name",
           "type": "string",
-          "content": "ingress_class?",
-          "detail": "The Kubernetes ingress class to use for this service. This is only applicable when running on Kubernetes and will be ignored for Docker."
+          "content": "ingress_class_name?",
+          "detail": "The Kubernetes ingress class name to use for this service. This is only applicable when running on Kubernetes and will be ignored for Docker."
         },
         {
           "name": "ingress_annotations",

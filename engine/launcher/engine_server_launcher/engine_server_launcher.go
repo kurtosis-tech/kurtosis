@@ -21,7 +21,7 @@ import (
 
 const (
 	// TODO This should come from the same logic that builds the server image!!!!!
-	containerImage = "kurtosistech/engine"
+  containerImage = "k3d-registry:5000/kurtosistech/engine"
 )
 
 type EngineServerLauncher struct {

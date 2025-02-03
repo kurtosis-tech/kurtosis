@@ -3,9 +3,10 @@ package add
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 	"strconv"
 	"strings"
+
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
@@ -196,6 +197,16 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Type:    flags.FlagType_Bool,
 			Default: fullUuidFlagKeyDefault,
 		},
+		{
+			Key:   "ingress-class",
+			Usage: "Ingress class for the service",
+			Type:  flags.FlagType_String,
+		},
+		{
+			Key:   "ingress-annotations",
+			Usage: "Ingress annotations for the service",
+			Type:  flags.FlagType_String,
+		},
 	},
 	RunFunc: run,
 }
@@ -258,6 +269,16 @@ func run(
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", fullUuidsFlagKey)
 	}
 
+	ingressClass, err := flags.GetString("ingress-class")
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the ingress class using key 'ingress-class'")
+	}
+
+	ingressAnnotationsStr, err := flags.GetString("ingress-annotations")
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the ingress annotations string using key 'ingress-annotations'")
+	}
+
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
@@ -272,7 +293,7 @@ func run(
 	if entrypointStr != "" {
 		entrypoint = append(entrypoint, entrypointStr)
 	}
-	serviceConfigStarlark, err := GetServiceConfigStarlark(image, portsStr, cmdArgs, entrypoint, envvarsStr, filesArtifactMountsStr, defaultLimits, defaultLimits, defaultLimits, defaultLimits, privateIPAddressPlaceholder)
+	serviceConfigStarlark, err := GetServiceConfigStarlark(image, portsStr, cmdArgs, entrypoint, envvarsStr, filesArtifactMountsStr, defaultLimits, defaultLimits, defaultLimits, defaultLimits, privateIPAddressPlaceholder, ingressClass, parseIngressAnnotations(ingressAnnotationsStr))
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
@@ -403,10 +424,12 @@ func GetServiceConfigStarlark(
 	minCpuMilliCores int,
 	minMemoryMegaBytes int,
 	privateIPAddressPlaceholder string,
+	ingressClass string,
+	ingressAnnotations map[string]string,
 ) (string, error) {
 	envvarsMap, err := parseEnvVarsStr(envvarsStr)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred parsing environment variables string '%v'", envvarsStr)
+		return "", stacktrace.Propagate(err, "An error occurred parsing envvars string '%v'", envvarsStr)
 	}
 
 	ports, err := parsePortsStr(portsStr)
@@ -418,7 +441,38 @@ func GetServiceConfigStarlark(
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred parsing files artifact mounts string '%v'", filesArtifactMountsStr)
 	}
-	return services.GetServiceConfigStarlark(image, ports, filesArtifactMounts, entrypoint, cmdArgs, envvarsMap, privateIPAddressPlaceholder, cpuAllocationMillicpus, memoryAllocationMegabytes, minCpuMilliCores, minMemoryMegaBytes), nil
+
+	return services.GetServiceConfigStarlark(image, ports, filesArtifactMounts, entrypoint, cmdArgs, envvarsMap, privateIPAddressPlaceholder, cpuAllocationMillicpus, memoryAllocationMegabytes, minCpuMilliCores, minMemoryMegaBytes, ingressClass, ingressAnnotations), nil
+}
+
+func parseIngressAnnotations(ingressAnnotationsStr string) map[string]string {
+	result := map[string]string{}
+	if strings.TrimSpace(ingressAnnotationsStr) == "" {
+		return result
+	}
+
+	allAnnotationDeclarationStrs := strings.Split(ingressAnnotationsStr, envvarDeclarationsDelimiter)
+	for _, annotationDeclarationStr := range allAnnotationDeclarationStrs {
+		if len(strings.TrimSpace(annotationDeclarationStr)) == 0 {
+			continue
+		}
+
+		annotationKeyValueComponents := strings.SplitN(annotationDeclarationStr, envvarKeyValueDelimiter, expectedNumberKeyValueComponentsInEnvvarDeclaration)
+		if len(annotationKeyValueComponents) < expectedNumberKeyValueComponentsInEnvvarDeclaration {
+			return nil
+		}
+		key := annotationKeyValueComponents[0]
+		value := annotationKeyValueComponents[1]
+
+		_, found := result[key]
+		if found {
+			return nil
+		}
+
+		result[key] = value
+	}
+
+	return result
 }
 
 // Parses a string in the form KEY1=VALUE1,KEY2=VALUE2 into a map of strings

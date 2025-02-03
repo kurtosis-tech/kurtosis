@@ -28,7 +28,7 @@ const (
 	logRetentionPeriodFlagKey      = "log-retention-period"
 
 	defaultEngineVersion          = ""
-	kurtosisTechEngineImagePrefix = "kurtosistech/engine"
+  kurtosisTechEngineImagePrefix = "k3d-registry:5000/kurtosistech/engine"
 	imageVersionDelimiter         = ":"
 
 	defaultShouldRestartAPIContainers = "false"

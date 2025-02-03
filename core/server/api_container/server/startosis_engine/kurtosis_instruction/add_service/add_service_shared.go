@@ -227,8 +227,8 @@ func replaceMagicStrings(
 		serviceConfig.GetMinCPUAllocationMillicpus(),
 		serviceConfig.GetMinMemoryAllocationMegabytes(),
 		serviceConfig.GetLabels(),
-		map[string]string{},  // ingressAnnotations
-		nil,                  // ingressClassName
+		serviceConfig.GetIngressAnnotations(),
+		serviceConfig.GetIngressClassName(),
 		serviceConfig.GetUser(),
 		serviceConfig.GetTolerations(),
 		serviceConfig.GetNodeSelectors(),

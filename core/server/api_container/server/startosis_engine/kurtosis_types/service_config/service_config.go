@@ -53,12 +53,14 @@ const (
 	NodeSelectorsAttr               = "node_selectors"
 	FilesToBeMovedAttr              = "files_to_be_moved"
 	TiniEnabledAttr                 = "tini_enabled"
+	IngressClassNameAttr            = "ingress_class_name"
+	IngressAnnotationsAttr          = "ingress_annotations"
 
 	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
 	filesArtifactExpansionDirsParentDirpath string = "/files-artifacts"
 	// TODO This should be populated from the build flow that builds the files-artifacts-expander Docker image
-	filesArtifactsExpanderImage string = "kurtosistech/files-artifacts-expander"
+	filesArtifactsExpanderImage string = "k3d-registry:5000/kurtosistech/files-artifacts-expander"
 
 	minimumMemoryAllocationMegabytes = 6
 )
@@ -226,6 +228,18 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					Name:              TiniEnabledAttr,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Bool],
+					Validator:         nil,
+				},
+				{
+					Name:              IngressClassNameAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
+					Validator:         nil,
+				},
+				{
+					Name:              IngressAnnotationsAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
 					Validator:         nil,
 				},
 			},
@@ -541,6 +555,28 @@ func (config *ServiceConfig) ToKurtosisType(
 		tiniEnabled = bool(tiniEnabledStarlark)
 	}
 
+	var ingressClassName *string
+	ingressClassNameStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](config.KurtosisValueTypeDefault, IngressClassNameAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found {
+		ingressClassNameStr := ingressClassNameStarlark.GoString()
+		ingressClassName = &ingressClassNameStr
+	}
+
+	var ingressAnnotations = make(map[string]string)
+	ingressAnnotationsStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](config.KurtosisValueTypeDefault, IngressAnnotationsAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found && ingressAnnotationsStarlark.Len() > 0 {
+		ingressAnnotations, interpretationErr = kurtosis_types.SafeCastToMapStringString(ingressAnnotationsStarlark, IngressAnnotationsAttr)
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
+	}
+
 	serviceConfig, err := service.CreateServiceConfig(
 		imageName,
 		maybeImageBuildSpec,
@@ -559,8 +595,8 @@ func (config *ServiceConfig) ToKurtosisType(
 		minCpu,
 		minMemory,
 		labels,
-		map[string]string{}, // ingressAnnotations
-		nil,                 // ingressClassName
+		ingressAnnotations,
+		ingressClassName,
 		serviceUser,
 		tolerations,
 		nodeSelectors,
