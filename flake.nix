@@ -12,6 +12,7 @@
     in utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
+
         unstable_pkgs = unstable.legacyPackages.${system};
         node-devtools = import ./nix-pkgs/node-tools/. {
           inherit pkgs system;
@@ -29,7 +30,7 @@
                 import ./nix-pkgs/grpc-tools-node.nix { inherit pkgs; };
             in [
               goreleaser
-              go_1_20
+              go
               gopls
               golangci-lint
               delve
@@ -45,13 +46,20 @@
               protoc-gen-grpc-web
               grpc-tools
               grpcui
-              rustc
-              cargo
-              rustfmt
-              rust-analyzer
-              clippy
+              unstable_pkgs.rustc
+              unstable_pkgs.cargo
+              unstable_pkgs.rustfmt
+              unstable_pkgs.rust-analyzer
+              unstable_pkgs.clippy
               libiconv
               bash-completion
+              # Standard C libraries needed for linking
+              glibc
+              glibc.dev
+              glibc.static
+              gcc
+              binutils
+              stdenv.cc.cc.lib
               # local definition (see above)
               openapi-codegen-go
               grpc-tools-node
