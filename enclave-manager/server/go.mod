@@ -1,6 +1,8 @@
 module github.com/kurtosis-tech/kurtosis/enclave-manager
 
-go 1.20
+go 1.21
+
+toolchain go1.21.5
 
 require (
 	connectrpc.com/connect v1.11.1
@@ -17,7 +19,7 @@ require (
 )
 
 require (
-	cloud.google.com/go/compute/metadata v0.2.3 // indirect
+	cloud.google.com/go/compute v1.20.1 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/containerd/containerd v1.7.2 // indirect
