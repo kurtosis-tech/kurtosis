@@ -2,6 +2,7 @@
 # 2021-07-08 WATERMARK, DO NOT REMOVE - This script was generated from the Kurtosis Bash script template
 
 set -euo pipefail   # Bash "strict mode"
+set -x
 script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cli_module_dirpath="$(dirname "${script_dirpath}")"
 root_dirpath="$(dirname "$(dirname "${cli_module_dirpath}")")"
@@ -62,7 +63,9 @@ fi
         echo "Error: Go generate failed" >&2
         exit 1
     fi
-    if ! CGO_ENABLED=1 go test "./..."; then
+    # Enable CGO but without any special linking flags
+    export CGO_ENABLED=1
+    if ! go test "./..."; then
         echo "Error: Go tests failed" >&2
         exit 1
     fi
@@ -97,6 +100,12 @@ fi
         exit 1
     fi
     # Executing goreleaser v1.26.2 without needing to install it
+    echo "pwd on a) $(pwd)"
+    echo "VERSION=v1.26.2 DISTRIBUTION=oss bash -s -- ${goreleaser_verb_and_flags}"
+    VERSION=v1.26.2 DISTRIBUTION=oss goreleaser ${goreleaser_verb_and_flags}
+    exit 0
+
+    #if ! curl -sfL https://goreleaser.com/static/run | VERSION=v1.26.2 DISTRIBUTION=oss bash -s -- ${goreleaser_verb_and_flags}; then
     if ! curl -sfL https://goreleaser.com/static/run | VERSION=v1.26.2 DISTRIBUTION=oss bash -s -- ${goreleaser_verb_and_flags}; then
         echo "Error: Couldn't build the CLI binary for the current OS/arch" >&2
         exit 1
@@ -116,7 +125,10 @@ if [ "${goarch}" == "${GO_ARCH_ENV_AMD64_VALUE}" ]; then
   architecture_dirname="${architecture_dirname}_${goamd64}"
 fi
 
+echo "pwd on b) $(pwd)"
 cli_binary_filepath="${cli_module_dirpath}/${GORELEASER_OUTPUT_DIRNAME}/${architecture_dirname}/${CLI_BINARY_FILENAME}"
+echo "cli_bin fp = ${cli_binary_filepath}"
+
 if ! [ -f "${cli_binary_filepath}" ]; then
     echo "Error: Expected a CLI binary to have been built by Goreleaser at '${cli_binary_filepath}' but none exists" >&2
     exit 1
