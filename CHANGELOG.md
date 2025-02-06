@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.4](https://github.com/kurtosis-tech/kurtosis/compare/2.1.0...1.4.4) (2025-02-06)
+
+
+### Bug Fixes
+
+* release 1.4.4 ([#2643](https://github.com/kurtosis-tech/kurtosis/issues/2643)) ([f7644b0](https://github.com/kurtosis-tech/kurtosis/commit/f7644b0ef0e97d54fe37e105a9b60940557fcab2))
+* revert release please config ([#2645](https://github.com/kurtosis-tech/kurtosis/issues/2645)) ([5866673](https://github.com/kurtosis-tech/kurtosis/commit/58666733d2e10473b98a1b086a95e848bc47b0f9))
+
 ## [2.1.0](https://github.com/kurtosis-tech/kurtosis/compare/2.0.0...2.1.0) (2025-01-16)
 
 
