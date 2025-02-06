@@ -8,14 +8,15 @@
 * release 1.4.4 ([#2643](https://github.com/kurtosis-tech/kurtosis/issues/2643)) ([f7644b0](https://github.com/kurtosis-tech/kurtosis/commit/f7644b0ef0e97d54fe37e105a9b60940557fcab2))
 * revert release please config ([#2645](https://github.com/kurtosis-tech/kurtosis/issues/2645)) ([5866673](https://github.com/kurtosis-tech/kurtosis/commit/58666733d2e10473b98a1b086a95e848bc47b0f9))
 
-## [2.1.0](https://github.com/kurtosis-tech/kurtosis/compare/2.0.0...2.1.0) (2025-01-16)
+## [2.1.0](https://github.com/kurtosis-tech/kurtosis/compare/2.0.0...2.1.0) (2025-01-16) [DEPRECATED]
 
+* The features in this releases will still be available in the next release but Kurtosis is downgrading from 2.1.0 to 1.4.4. Existing users on 2.1.0 will still be able to use the version, however we encourage uninstalling CLI and API library versions of 2.1.0 and pulling the new latest which will be 1.4.4.
 
 ### Features
 
 * add user flag to service exec command ([#2626](https://github.com/kurtosis-tech/kurtosis/issues/2626)) ([be3dbe2](https://github.com/kurtosis-tech/kurtosis/commit/be3dbe2dd863ec55ba6ab94b570f2f79c8c61080))
 
-## [2.0.0](https://github.com/kurtosis-tech/kurtosis/compare/1.4.3...2.0.0) (2025-01-02)
+## [2.0.0](https://github.com/kurtosis-tech/kurtosis/compare/1.4.3...2.0.0) (2025-01-02) [DEPRECATED]
 
 
 ### ⚠ BREAKING CHANGES
