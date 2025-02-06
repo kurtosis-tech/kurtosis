@@ -1,13 +1,15 @@
 # Changelog
 
-## [2.1.0](https://github.com/kurtosis-tech/kurtosis/compare/2.0.0...2.1.0) (2025-01-16)
+## [2.1.0](https://github.com/kurtosis-tech/kurtosis/compare/2.0.0...2.1.0) (2025-01-16) [DEPRECATED]
+
+* The features in this releases will still be available in the next release but Kurtosis is downgrading from 2.1.0 to 1.4.4.
 
 
 ### Features
 
 * add user flag to service exec command ([#2626](https://github.com/kurtosis-tech/kurtosis/issues/2626)) ([be3dbe2](https://github.com/kurtosis-tech/kurtosis/commit/be3dbe2dd863ec55ba6ab94b570f2f79c8c61080))
 
-## [2.0.0](https://github.com/kurtosis-tech/kurtosis/compare/1.4.3...2.0.0) (2025-01-02)
+## [2.0.0](https://github.com/kurtosis-tech/kurtosis/compare/1.4.3...2.0.0) (2025-01-02) [DEPRECATED]
 
 
 ### ⚠ BREAKING CHANGES
