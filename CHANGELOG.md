@@ -2,7 +2,7 @@
 
 ## [2.1.0](https://github.com/kurtosis-tech/kurtosis/compare/2.0.0...2.1.0) (2025-01-16) [DEPRECATED]
 
-* The features in this releases will still be available in the next release but Kurtosis is downgrading from 2.1.0 to 1.4.4.
+* The features in this releases will still be available in the next release but Kurtosis is downgrading from 2.1.0 to 1.4.4. 2.1.0 will still be available to use but we encourage uninstalling CLI and API library versions of 2.1.0 and pulling the new latest which will be 1.4.4.
 
 
 ### Features
