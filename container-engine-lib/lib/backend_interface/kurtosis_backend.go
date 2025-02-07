@@ -280,9 +280,10 @@ type KurtosisBackend interface {
 	RunUserServiceExecCommands(
 		ctx context.Context,
 		enclaveUuid enclave.EnclaveUUID,
+		containerUser string,
 		userServiceCommands map[service.ServiceUUID][]string,
 	) (
-		succesfulUserServiceExecResults map[service.ServiceUUID]*exec_result.ExecResult,
+		successfulUserServiceExecResults map[service.ServiceUUID]*exec_result.ExecResult,
 		erroredUserServiceUuids map[service.ServiceUUID]error,
 		resultErr error,
 	)
