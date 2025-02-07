@@ -16,7 +16,7 @@ func writeStaticConfig(t *testing.T, configContent string) string {
 		t.Fatalf("Failed to create temp directory: %v", err)
 	}
 
-	// only set auth if content is empty
+	// only write to file if content is not empty
 	if configContent != "" {
 		configPath := tmpDir + "/config.json"
 		err = os.WriteFile(configPath, []byte(configContent), 0600)
