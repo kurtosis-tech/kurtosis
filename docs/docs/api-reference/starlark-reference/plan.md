@@ -445,7 +445,7 @@ plan.print(http_response["extract.extracted-field"]) # Prints the result of runn
 
 The instruction returns a response, which is a `dict` with following key-value pair; the values are a [future reference][future-references-reference] 
 * `response["code"]` - returns the future reference to the `status code` of the response 
-* `response["body"]` - returns the future reference to the `body` of the the response
+* `response["body"]` - returns the future reference to the `body` of the response
 * `response["extract.some-custom-field"]` - it is an optional field and returns the future reference to the value extracted from `body`, which is explained below.
 
 #### extract

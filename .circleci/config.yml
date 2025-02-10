@@ -624,7 +624,7 @@ jobs:
       # but without dumping anything! To avoid our CI runs getting an extra 15 minutes added on, we're only dumping enclaves in Docker
       # Second reason:
       # As of 2023-07-26, stop enclave calls were replaced by destroy enclave calls because doing so improve the velocity of the entire K8s test suite by 6min
-      # We can't run enclave dumps if the the enclaves are not running at the moment, but we could enable it once the centralized logs feature is added on Kurtosis
+      # We can't run enclave dumps if the enclaves are not running at the moment, but we could enable it once the centralized logs feature is added on Kurtosis
       # because we could use enclave-dumps again (it will be calling the centralize logs component instead of getting the logs form the containers)
 
       # TODO UNCOMMENT THIS WHEN WE FIX THE BUG ABOVE!!!
