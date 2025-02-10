@@ -55,6 +55,8 @@ const (
 	TiniEnabledAttr                 = "tini_enabled"
 	IngressClassNameAttr            = "ingress_class_name"
 	IngressAnnotationsAttr          = "ingress_annotations"
+	IngressHostAttr                 = "ingress_host"
+	IngressTLSAttr                  = "ingress_tls_host"
 
 	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
@@ -240,6 +242,18 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					Name:              IngressAnnotationsAttr,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
+					Validator:         nil,
+				},
+				{
+					Name:              IngressHostAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
+					Validator:         nil,
+				},
+				{
+					Name:              IngressTLSAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator:         nil,
 				},
 			},
@@ -577,6 +591,26 @@ func (config *ServiceConfig) ToKurtosisType(
 		}
 	}
 
+	var ingressHost *string
+	ingressHostStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](config.KurtosisValueTypeDefault, IngressHostAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found {
+		ingressHostStr := ingressHostStarlark.GoString()
+		ingressHost = &ingressHostStr
+	}
+
+	var ingressTLSHost *string
+	ingressTLSHostStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](config.KurtosisValueTypeDefault, IngressTLSAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found {
+		ingressTLSHostStr := ingressTLSHostStarlark.GoString()
+		ingressTLSHost = &ingressTLSHostStr
+	}
+
 	serviceConfig, err := service.CreateServiceConfig(
 		imageName,
 		maybeImageBuildSpec,
@@ -597,6 +631,8 @@ func (config *ServiceConfig) ToKurtosisType(
 		labels,
 		ingressAnnotations,
 		ingressClassName,
+		ingressHost,
+		ingressTLSHost,
 		serviceUser,
 		tolerations,
 		nodeSelectors,

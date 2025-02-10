@@ -86,9 +86,11 @@ func getTestServiceConfigForService(name service.ServiceName, imageTag string) (
 		map[string]string{},
 		map[string]string{}, // ingressAnnotations
 		nil,                 // ingressClassName
+		nil,                 // ingressHost
+		nil,                 // ingressTLSHost
 		nil,                 // user
 		nil,                 // tolerations
-		map[string]string{}, // nodeSelectors
+		map[string]string{},
 		image_download_mode.ImageDownloadMode_Always,
 		true,
 	)

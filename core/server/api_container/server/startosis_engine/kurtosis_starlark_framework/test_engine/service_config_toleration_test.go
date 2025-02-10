@@ -79,9 +79,11 @@ func (t *serviceConfigTolerationTest) Assert(typeValue builtin_argument.Kurtosis
 		0,
 		0,
 		map[string]string{},
-		map[string]string{},  // ingressAnnotations
-		nil,                  // ingressClassName
-		nil,                  // user
+		map[string]string{},
+		nil, // ingressClassName
+		nil, // ingressHost
+		nil, // ingressTLSHost
+		nil, // user
 		expectedTolerations,
 		map[string]string{},  // nodeSelectors
 		image_download_mode.ImageDownloadMode_Missing,

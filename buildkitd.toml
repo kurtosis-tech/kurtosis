@@ -1,0 +1,5 @@
+insecure-entitlements = [ "network.host", "security.insecure" ]
+[registry."k3d-registry:5000"]
+http = true
+insecure = true
+

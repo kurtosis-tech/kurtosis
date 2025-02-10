@@ -1225,9 +1225,11 @@ func testServiceConfig(t *testing.T, imageName string) *service.ServiceConfig {
 		0,
 		map[string]string{},
 		map[string]string{},
-		nil,
-		nil,
-		nil,
+		nil, // ingressClassName
+		nil, // ingressHost
+		nil, // ingressTLSHost
+		nil, // user
+		nil, // tolerations
 		map[string]string{},
 		image_download_mode.ImageDownloadMode_Missing,
 		true,

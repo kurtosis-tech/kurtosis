@@ -1,6 +1,8 @@
 package service
 
 import (
+	"fmt"
+
 	"encoding/json"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
@@ -78,6 +80,12 @@ type privateServiceConfig struct {
 	// IngressClassName so users may specify an existing ingress controller
 	IngressClassName *string
 
+	// IngressHost specifies the hostname for external-dns and cert-manager
+	IngressHost *string
+
+	// IngressTLSHost specifies the TLS host for cert-manager
+	IngressTLSHost *string
+
 	ImageDownloadMode image_download_mode.ImageDownloadMode
 
 	FilesToBeMoved map[string]string
@@ -85,7 +93,7 @@ type privateServiceConfig struct {
 	TiniEnabled bool
 }
 
-func CreateServiceConfig(containerImageName string, imageBuildSpec *image_build_spec.ImageBuildSpec, imageRegistrySpec *image_registry_spec.ImageRegistrySpec, nixBuildSpec *nix_build_spec.NixBuildSpec, privatePorts map[string]*port_spec.PortSpec, publicPorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, envVars map[string]string, filesArtifactExpansion *service_directory.FilesArtifactsExpansion, persistentDirectories *service_directory.PersistentDirectories, cpuAllocationMillicpus uint64, memoryAllocationMegabytes uint64, privateIPAddrPlaceholder string, minCpuMilliCpus uint64, minMemoryMegaBytes uint64, labels map[string]string, ingressAnnotations map[string]string, ingressClassName *string, user *service_user.ServiceUser, tolerations []v1.Toleration, nodeSelectors map[string]string, imageDownloadMode image_download_mode.ImageDownloadMode, tiniEnabled bool) (*ServiceConfig, error) {
+func CreateServiceConfig(containerImageName string, imageBuildSpec *image_build_spec.ImageBuildSpec, imageRegistrySpec *image_registry_spec.ImageRegistrySpec, nixBuildSpec *nix_build_spec.NixBuildSpec, privatePorts map[string]*port_spec.PortSpec, publicPorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, envVars map[string]string, filesArtifactExpansion *service_directory.FilesArtifactsExpansion, persistentDirectories *service_directory.PersistentDirectories, cpuAllocationMillicpus uint64, memoryAllocationMegabytes uint64, privateIPAddrPlaceholder string, minCpuMilliCpus uint64, minMemoryMegaBytes uint64, labels map[string]string, ingressAnnotations map[string]string, ingressClassName *string, ingressHost *string, ingressTLSHost *string, user *service_user.ServiceUser, tolerations []v1.Toleration, nodeSelectors map[string]string, imageDownloadMode image_download_mode.ImageDownloadMode, tiniEnabled bool) (*ServiceConfig, error) {
 
 	if err := ValidateServiceConfigLabels(labels); err != nil {
 		return nil, stacktrace.Propagate(err, "Invalid service config labels '%+v'", labels)
@@ -112,6 +120,8 @@ func CreateServiceConfig(containerImageName string, imageBuildSpec *image_build_
 		Labels:                       labels,
 		IngressAnnotations:           ingressAnnotations,
 		IngressClassName:             ingressClassName,
+		IngressHost:                  ingressHost,
+		IngressTLSHost:               ingressTLSHost,
 		User:                         user,
 		Tolerations:                  tolerations,
 		NodeSelectors:                nodeSelectors,
@@ -250,6 +260,25 @@ func (serviceConfig *ServiceConfig) GetIngressClassName() *string {
 
 func (serviceConfig *ServiceConfig) SetIngressClassName(className *string) {
 	serviceConfig.privateServiceConfig.IngressClassName = className
+}
+
+func (serviceConfig *ServiceConfig) GetIngressHost() *string {
+	fmt.Println("serviceConfig: ", serviceConfig)
+	fmt.Println("privateServiceConfig: ", serviceConfig.privateServiceConfig)
+	fmt.Println("ingresshost: ", serviceConfig.privateServiceConfig.IngressHost)
+	return serviceConfig.privateServiceConfig.IngressHost
+}
+
+func (serviceConfig *ServiceConfig) SetIngressHost(host *string) {
+	serviceConfig.privateServiceConfig.IngressHost = host
+}
+
+func (serviceConfig *ServiceConfig) GetIngressTLSHost() *string {
+	return serviceConfig.privateServiceConfig.IngressTLSHost
+}
+
+func (serviceConfig *ServiceConfig) SetIngressTLSHost(host *string) {
+	serviceConfig.privateServiceConfig.IngressTLSHost = host
 }
 
 func (serviceConfig *ServiceConfig) GetTolerations() []v1.Toleration {

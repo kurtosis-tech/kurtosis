@@ -589,7 +589,7 @@ func GenerateRandomTempFile(byteSize int, filePathOptional string) (string, func
 //
 // ====================================================================================================
 func getDatastoreServiceConfigStarlark() string {
-	return services.GetServiceConfigStarlark(datastoreImage, map[string]*kurtosis_core_rpc_api_bindings.Port{datastorePortId: datastorePortSpec}, emptyFileArtifactMountPoints, emptyEntrypointArgs, emptyCmdArgs, emptyEnvVars, emptyPrivateIpAddrPlaceholder, emptyCpuAllocationMillicpus, emptyMemoryAllocationMegabytes, 0, 0, "", nil)
+	return services.GetServiceConfigStarlark(datastoreImage, map[string]*kurtosis_core_rpc_api_bindings.Port{datastorePortId: datastorePortSpec}, emptyFileArtifactMountPoints, emptyEntrypointArgs, emptyCmdArgs, emptyEnvVars, emptyPrivateIpAddrPlaceholder, emptyCpuAllocationMillicpus, emptyMemoryAllocationMegabytes, 0, 0, "", nil, "", "")
 }
 
 func getApiServiceServiceConfigStarlark(apiConfigArtifactName string) string {
@@ -599,7 +599,7 @@ func getApiServiceServiceConfigStarlark(apiConfigArtifactName string) string {
 		path.Join(configMountpathOnApiContainer, configFilename),
 	}
 
-	return services.GetServiceConfigStarlark(apiServiceImage, map[string]*kurtosis_core_rpc_api_bindings.Port{apiPortId: apiPortSpec}, map[string]string{configMountpathOnApiContainer: apiConfigArtifactName}, emptyEntrypointArgs, startCmd, emptyEnvVars, emptyPrivateIpAddrPlaceholder, emptyCpuAllocationMillicpus, emptyMemoryAllocationMegabytes, 0, 0, "", nil)
+	return services.GetServiceConfigStarlark(apiServiceImage, map[string]*kurtosis_core_rpc_api_bindings.Port{apiPortId: apiPortSpec}, map[string]string{configMountpathOnApiContainer: apiConfigArtifactName}, emptyEntrypointArgs, startCmd, emptyEnvVars, emptyPrivateIpAddrPlaceholder, emptyCpuAllocationMillicpus, emptyMemoryAllocationMegabytes, 0, 0, "", nil, "", "")
 }
 
 func createApiConfigFile(datastoreIP string) (string, error) {
@@ -653,7 +653,7 @@ func getFileServerServiceConfigStarlark(filesArtifactMountPoints map[string]serv
 		filesArtifactMountPointsStr[k] = string(v)
 	}
 
-	return services.GetServiceConfigStarlark(fileServerServiceImage, map[string]*kurtosis_core_rpc_api_bindings.Port{fileServerPortId: fileServerPortSpec}, filesArtifactMountPointsStr, emptyEntrypointArgs, emptyCmdArgs, emptyEnvVars, emptyPrivateIpAddrPlaceholder, emptyCpuAllocationMillicpus, emptyMemoryAllocationMegabytes, 0, 0, "", nil)
+	return services.GetServiceConfigStarlark(fileServerServiceImage, map[string]*kurtosis_core_rpc_api_bindings.Port{fileServerPortId: fileServerPortSpec}, filesArtifactMountPointsStr, emptyEntrypointArgs, emptyCmdArgs, emptyEnvVars, emptyPrivateIpAddrPlaceholder, emptyCpuAllocationMillicpus, emptyMemoryAllocationMegabytes, 0, 0, "", nil, "", "")
 }
 
 func createDatastoreClient(ipAddr string, portNum uint16) (datastore_rpc_api_bindings.DatastoreServiceClient, func(), error) {
@@ -706,7 +706,7 @@ func getServiceWithLogLinesServiceConfigStarlark(logLines []string) string {
 
 	cmdArgs := []string{echoLogLinesLoopCmdStr}
 
-	return services.GetServiceConfigStarlark(dockerGettingStartedImage, emptyPrivatePorts, emptyFileArtifactMountPoints, entrypointArgs, cmdArgs, emptyEnvVars, emptyPrivateIpAddrPlaceholder, emptyCpuAllocationMillicpus, emptyMemoryAllocationMegabytes, 0, 0, "", nil)
+	return services.GetServiceConfigStarlark(dockerGettingStartedImage, emptyPrivatePorts, emptyFileArtifactMountPoints, entrypointArgs, cmdArgs, emptyEnvVars, emptyPrivateIpAddrPlaceholder, emptyCpuAllocationMillicpus, emptyMemoryAllocationMegabytes, 0, 0, "", nil, "", "")
 }
 
 func SkipFlakyTest(t *testing.T, testName string) {

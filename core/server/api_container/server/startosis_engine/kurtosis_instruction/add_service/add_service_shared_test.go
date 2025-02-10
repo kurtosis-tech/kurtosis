@@ -60,6 +60,8 @@ func TestAddServiceShared_EntryPointArgsRuntimeValueAreReplaced(t *testing.T) {
 		map[string]string{},              // labels
 		map[string]string{},              // ingressAnnotations
 		nil,                              // ingressClassName
+		nil,                              // ingressHost
+		nil,                              // ingressTLSHost
 		nil,                              // user
 		[]v1.Toleration{},                // tolerations
 		map[string]string{},              // nodeSelectors
@@ -103,14 +105,16 @@ func TestAddServiceShared_CmdArgsRuntimeValueAreReplaced(t *testing.T) {
 		map[string]string{},                             // envVars
 		nil,                                             // filesArtifactExpansion
 		nil,                                             // persistentDirectories
-		0,                                              // cpuAllocationMillicpus
-		0,                                              // memoryAllocationMegabytes
-		"",                                             // privateIPAddrPlaceholder
-		0,                                              // minCpuAllocationMilliCpus
-		0,                                              // minMemoryAllocationMegabytes
+		0,                                               // cpuAllocationMillicpus
+		0,                                               // memoryAllocationMegabytes
+		"",                                              // privateIPAddrPlaceholder
+		0,                                               // minCpuAllocationMilliCpus
+		0,                                               // minMemoryAllocationMegabytes
 		map[string]string{},                             // labels
 		map[string]string{},                             // ingressAnnotations
 		nil,                                             // ingressClassName
+		nil,                                             // ingressHost
+		nil,                                             // ingressTLSHost
 		nil,                                             // user
 		[]v1.Toleration{},                               // tolerations
 		map[string]string{},                             // nodeSelectors
@@ -164,6 +168,8 @@ func TestAddServiceShared_EnvVarsWithRuntimeValueAreReplaced(t *testing.T) {
 		map[string]string{}, // labels
 		map[string]string{}, // ingressAnnotations
 		nil,                 // ingressClassName
+		nil,                 // ingressHost
+		nil,                 // ingressTLSHost
 		nil,                 // user
 		[]v1.Toleration{},   // tolerations
 		map[string]string{}, // nodeSelectors
@@ -218,6 +224,8 @@ func TestAddServiceShared_ServiceNameWithRuntimeValuesAreReplaced(t *testing.T) 
 		map[string]string{},              // labels
 		map[string]string{},              // ingressAnnotations
 		nil,                              // ingressClassName
+		nil,                              // ingressHost
+		nil,                              // ingressTLSHost
 		nil,                              // user
 		[]v1.Toleration{},                // tolerations
 		map[string]string{},              // nodeSelectors

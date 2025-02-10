@@ -3,6 +3,7 @@ package startosis_engine
 import (
 	"context"
 	"fmt"
+	"log"
 	"runtime"
 	"strings"
 
@@ -289,7 +290,9 @@ func getServiceNameToPortIDsMap(serviceNames map[service.ServiceName]bool, netwo
 	for serviceName := range serviceNames {
 		service, err := network.GetService(ctx, string(serviceName))
 		if err != nil {
-			return nil, stacktrace.NewError("An error occurred while fetching service '%s' for its private port mappings", serviceName)
+			logrus.Errorf("THIS IS THE FUCKING ERROR YOU CUNT: %s", err)
+			log.Printf(">>>>>>>>> THIS IS THE FUCKING ERROR YOU CUNT: %s", err)
+			return nil, stacktrace.NewError("An error occurred while fetching service '%s' for its private port mappings error: %s", serviceName, err)
 		}
 		serviceToPrivatePortIds[serviceName] = []string{}
 		privatePorts := service.GetPrivatePorts()

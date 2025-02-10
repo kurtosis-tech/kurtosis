@@ -2546,6 +2546,11 @@ func (manager *KubernetesManager) RemoveIngress(ctx context.Context, ingress *ne
 	return nil
 }
 
+func (manager *KubernetesManager) UpdateIngress(ctx context.Context, namespace string, ingress *netv1.Ingress) (*netv1.Ingress, error) {
+	ingressClient := manager.kubernetesClientSet.NetworkingV1().Ingresses(namespace)
+	return ingressClient.Update(ctx, ingress, metav1.UpdateOptions{})
+}
+
 // TODO Delete this after 2022-08-01 if we're not using Jobs
 /*
 func (manager *KubernetesManager) CreateJobWithContainerAndVolume(ctx context.Context,

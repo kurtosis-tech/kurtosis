@@ -207,6 +207,16 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Usage: "Ingress annotations for the service",
 			Type:  flags.FlagType_String,
 		},
+		{
+			Key:   "ingress-host",
+			Usage: "Ingress host for the service",
+			Type:  flags.FlagType_String,
+		},
+		{
+			Key:   "ingress-tls-host",
+			Usage: "Ingress TLS for the service",
+			Type:  flags.FlagType_String,
+		},
 	},
 	RunFunc: run,
 }
@@ -279,6 +289,16 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the ingress annotations string using key 'ingress-annotations'")
 	}
 
+	ingressHost, err := flags.GetString("ingress-host")
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the ingress host string using key 'ingress-host'")
+	}
+
+	ingressTLSHost, err := flags.GetString("ingress-tls-host")
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the ingress tls string using key 'ingress-tls-host'")
+	}
+
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
@@ -293,7 +313,7 @@ func run(
 	if entrypointStr != "" {
 		entrypoint = append(entrypoint, entrypointStr)
 	}
-	serviceConfigStarlark, err := GetServiceConfigStarlark(image, portsStr, cmdArgs, entrypoint, envvarsStr, filesArtifactMountsStr, defaultLimits, defaultLimits, defaultLimits, defaultLimits, privateIPAddressPlaceholder, ingressClass, parseIngressAnnotations(ingressAnnotationsStr))
+	serviceConfigStarlark, err := GetServiceConfigStarlark(image, portsStr, cmdArgs, entrypoint, envvarsStr, filesArtifactMountsStr, defaultLimits, defaultLimits, defaultLimits, defaultLimits, privateIPAddressPlaceholder, ingressClass, parseIngressAnnotations(ingressAnnotationsStr), ingressHost, ingressTLSHost)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
@@ -426,6 +446,8 @@ func GetServiceConfigStarlark(
 	privateIPAddressPlaceholder string,
 	ingressClass string,
 	ingressAnnotations map[string]string,
+	ingressHost string,
+	ingressTLS string,
 ) (string, error) {
 	envvarsMap, err := parseEnvVarsStr(envvarsStr)
 	if err != nil {
@@ -442,7 +464,7 @@ func GetServiceConfigStarlark(
 		return "", stacktrace.Propagate(err, "An error occurred parsing files artifact mounts string '%v'", filesArtifactMountsStr)
 	}
 
-	return services.GetServiceConfigStarlark(image, ports, filesArtifactMounts, entrypoint, cmdArgs, envvarsMap, privateIPAddressPlaceholder, cpuAllocationMillicpus, memoryAllocationMegabytes, minCpuMilliCores, minMemoryMegaBytes, ingressClass, ingressAnnotations), nil
+	return services.GetServiceConfigStarlark(image, ports, filesArtifactMounts, entrypoint, cmdArgs, envvarsMap, privateIPAddressPlaceholder, cpuAllocationMillicpus, memoryAllocationMegabytes, minCpuMilliCores, minMemoryMegaBytes, ingressClass, ingressAnnotations, ingressHost, ingressTLS), nil
 }
 
 func parseIngressAnnotations(ingressAnnotationsStr string) map[string]string {

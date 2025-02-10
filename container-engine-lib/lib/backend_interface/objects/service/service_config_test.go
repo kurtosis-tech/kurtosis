@@ -80,7 +80,7 @@ func TestIngressAnnotations(t *testing.T) {
 		100, 512,
 		map[string]string{},
 		map[string]string{"ingress.kubernetes.io/test": "value"},
-		nil,
+		nil, nil, nil,
 		nil, nil, nil,
 		image_download_mode.ImageDownloadMode_Always,
 		true,
@@ -119,7 +119,7 @@ func TestIngressClassName(t *testing.T) {
 		100, 512,
 		map[string]string{},
 		nil,
-		&className,
+		&className, nil, nil,
 		nil, nil, nil,
 		image_download_mode.ImageDownloadMode_Always,
 		true,
@@ -141,11 +141,75 @@ func TestIngressClassName(t *testing.T) {
 	require.Nil(t, serviceConfig.GetIngressClassName())
 }
 
+func TestIngressHost(t *testing.T) {
+	host := "test.example.com"
+	serviceConfig, err := CreateServiceConfig(
+		"test-image",
+		nil, nil, nil,
+		map[string]*port_spec.PortSpec{},
+		map[string]*port_spec.PortSpec{},
+		[]string{}, []string{},
+		map[string]string{},
+		nil, nil,
+		500, 1024,
+		"test-ip",
+		100, 512,
+		map[string]string{},
+		nil,
+		nil, &host, nil,
+		nil, nil, nil,
+		image_download_mode.ImageDownloadMode_Always,
+		true,
+	)
+	require.NoError(t, err)
+
+	// Test initial host
+	require.NotNil(t, serviceConfig.GetIngressHost())
+	require.Equal(t, host, *serviceConfig.GetIngressHost())
+
+	// Test setting new host
+	newHost := "new.example.com"
+	serviceConfig.SetIngressHost(&newHost)
+	require.Equal(t, newHost, *serviceConfig.GetIngressHost())
+}
+
+func TestIngressTLS(t *testing.T) {
+	tlsHost := "test.example.com"
+	serviceConfig, err := CreateServiceConfig(
+		"test-image",
+		nil, nil, nil,
+		map[string]*port_spec.PortSpec{},
+		map[string]*port_spec.PortSpec{},
+		[]string{}, []string{},
+		map[string]string{},
+		nil, nil,
+		500, 1024,
+		"test-ip",
+		100, 512,
+		map[string]string{},
+		nil,
+		nil, nil, &tlsHost,
+		nil, nil, nil,
+		image_download_mode.ImageDownloadMode_Always,
+		true,
+	)
+	require.NoError(t, err)
+
+	// Test initial TLS host
+	require.NotNil(t, serviceConfig.GetIngressTLSHost())
+	require.Equal(t, tlsHost, *serviceConfig.GetIngressTLSHost())
+
+	// Test setting new TLS host
+	newTLSHost := "new.example.com"
+	serviceConfig.SetIngressTLSHost(&newTLSHost)
+	require.Equal(t, newTLSHost, *serviceConfig.GetIngressTLSHost())
+}
+
 func getServiceConfigForTest(t *testing.T, imageName string) *ServiceConfig {
 	serviceConfig, err := CreateServiceConfig(imageName, testImageBuildSpec(), testImageRegistrySpec(), testNixBuildSpec(), testPrivatePorts(t), testPublicPorts(t), []string{"bin", "bash", "ls"}, []string{"-l", "-a"}, testEnvVars(), testFilesArtifactExpansion(), testPersistentDirectory(), 500, 1024, "IP-ADDRESS", 100, 512, map[string]string{
-		"test-label-key":        "test-label-value",
-		"test-second-label-key": "test-second-label-value",
-	}, testIngressAnnotations(), testIngressClassName(), testServiceUser(), testToleration(), testNodeSelectors(), testImageDownloadMode(), true)
+		"test-label-key":       "test-label-value",
+		"test-label-key-empty": "test-second-label-value",
+	}, testIngressAnnotations(), testIngressClassName(), testIngressHost(), testIngressTLS(), testServiceUser(), testToleration(), testNodeSelectors(), testImageDownloadMode(), true)
 	require.NoError(t, err)
 	return serviceConfig
 }
@@ -290,4 +354,14 @@ func testIngressAnnotations() map[string]string {
 func testIngressClassName() *string {
 	className := "test-ingress-class"
 	return &className
+}
+
+func testIngressHost() *string {
+	host := "test.example.com"
+	return &host
+}
+
+func testIngressTLS() *string {
+	host := "test.example.com"
+	return &host
 }

@@ -247,6 +247,8 @@ func convertComposeProjectToStarlark(compose *types.Project) (string, map[string
 			emptyPrivateIpPlaceholder,
 			"",
 			nil,
+			"",
+			"",
 		)
 		if err != nil {
 			return "", nil, stacktrace.Propagate(err, "Error getting service config starlark for '%v'", serviceConfig)

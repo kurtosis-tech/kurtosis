@@ -75,6 +75,8 @@ func (t *serviceConfigImageSpecMinimalTest) Assert(typeValue builtin_argument.Ku
 		map[string]string{}, // labels
 		map[string]string{}, // ingressAnnotations
 		nil,                 // ingressClassName
+		nil,                 // ingressHost
+		nil,                 // ingressTLSHost
 		nil,                 // user
 		nil,                 // tolerations
 		map[string]string{}, // nodeSelectors

@@ -229,6 +229,8 @@ func replaceMagicStrings(
 		serviceConfig.GetLabels(),
 		serviceConfig.GetIngressAnnotations(),
 		serviceConfig.GetIngressClassName(),
+		serviceConfig.GetIngressHost(),
+		serviceConfig.GetIngressTLSHost(),
 		serviceConfig.GetUser(),
 		serviceConfig.GetTolerations(),
 		serviceConfig.GetNodeSelectors(),

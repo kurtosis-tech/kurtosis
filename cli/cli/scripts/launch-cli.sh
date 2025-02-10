@@ -28,6 +28,7 @@ if [ "${goarch}" == "${GO_ARCH_ENV_AMD64_VALUE}" ]; then
 fi
 
 cli_binary_filepath="${cli_module_dirpath}/${GORELEASER_OUTPUT_DIRNAME}/${architecture_dirname}/${CLI_BINARY_FILENAME}"
+echo $cli_binary_filepath
 
 if ! [ -f "${cli_binary_filepath}" ]; then
     echo "Error: Expected a CLI binary to have been built by Goreleaser at '${cli_binary_filepath}' but none exists" >&2

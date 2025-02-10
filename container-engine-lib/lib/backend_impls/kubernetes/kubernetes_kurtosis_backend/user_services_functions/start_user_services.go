@@ -445,37 +445,34 @@ func createStartServiceOperation(
 		ingressLabelsStrs := shared_helpers.GetStringMapFromLabelMap(ingressAttributes.GetLabels())
 		ingressAnnotationsStrs := shared_helpers.GetStringMapFromAnnotationMap(ingressAttributes.GetAnnotations())
 
-		ingressRules, err := getUserServiceIngressRules(serviceRegistrationObj, privatePorts)
+		ingress, err := createUserServiceIngress(
+			ctx,
+			kubernetesManager,
+			namespaceName,
+			serviceRegistrationObj,
+			privatePorts,
+			ingressLabelsStrs,
+			ingressAnnotationsStrs,
+			serviceConfig.GetIngressClassName(),
+			serviceConfig.GetIngressHost(),
+			serviceConfig.GetIngressTLSHost(),
+		)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred creating the user service ingress rules for service with UUID '%v'", serviceUuid)
+			return nil, stacktrace.Propagate(err, "An error occurred creating ingress for service with UUID '%v'", serviceUuid)
 		}
-
-		shouldDestroyIngress := false
-		if ingressRules != nil {
-			ingressName := string(serviceName)
-			createdIngress, err := kubernetesManager.CreateIngress(
-				ctx,
-				namespaceName,
-				ingressName,
-				ingressLabelsStrs,
-				ingressAnnotationsStrs,
-				serviceConfig.GetIngressClassName(),
-				ingressRules,
-			)
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "An error occurred creating ingress for service with UUID '%v'", serviceUuid)
+		// if ingress == nil {
+		// 	return nil, nil
+		// }
+		shouldDestroyIngress := true
+		defer func() {
+			if ingress == nil || !shouldDestroyIngress {
+				return
 			}
-			shouldDestroyIngress = true
-			defer func() {
-				if !shouldDestroyIngress {
-					return
-				}
-				if err := kubernetesManager.RemoveIngress(ctx, createdIngress); err != nil {
-					logrus.Errorf("Starting service didn't complete successfully so we tried to remove the ingress we created but doing so threw an error:\n%v", err)
-					logrus.Errorf("ACTION REQUIRED: You'll need to remove ingress '%v' in '%v' manually!!!", ingressName, namespaceName)
-				}
-			}()
-		}
+			if err := kubernetesManager.RemoveIngress(ctx, ingress); err != nil {
+				logrus.Errorf("Starting service didn't complete successfully so we tried to remove the ingress we created but doing so threw an error:\n%v", err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to remove ingress '%v' in '%v' manually!!!", ingress.Name, namespaceName)
+			}
+		}()
 
 		updatedService, undoServiceUpdateFunc, err := updateServiceWhenContainerStarted(ctx, namespaceName, kubernetesService, privatePorts, kubernetesManager)
 		if err != nil {
@@ -516,10 +513,56 @@ func createStartServiceOperation(
 	}
 }
 
-// Update the service to:
-//   - Set the service ports appropriately
-//   - Irrevocably record that a pod is bound to the service (so that even if the pod is deleted, the service won't
-//     be usable again
+func createUserServiceIngress(
+	ctx context.Context,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+	namespace string,
+	serviceRegistration *service.ServiceRegistration,
+	privatePorts map[string]*port_spec.PortSpec,
+	labels map[string]string,
+	annotations map[string]string,
+	ingressClassName *string,
+	ingressHost *string,
+	ingressTLSHost *string,
+) (*netv1.Ingress, error) {
+	ingressRules, ingressTLS, err := getUserServiceIngressRules(serviceRegistration, privatePorts, ingressHost, ingressTLSHost)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting ingress rules for service '%v'", serviceRegistration.GetUUID())
+	}
+
+	if len(ingressRules) == 0 {
+		return nil, nil
+	}
+
+	// Create ingress without TLS first
+	ingress, err := kubernetesManager.CreateIngress(
+		ctx,
+		namespace,
+		string(serviceRegistration.GetUUID()),
+		labels,
+		annotations,
+		ingressClassName,
+		ingressRules,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating ingress for service '%v'", serviceRegistration.GetUUID())
+	}
+	if ingress == nil {
+		return nil, nil
+	}
+
+	// If we have TLS configuration, update the ingress with it
+	if len(ingressTLS) > 0 {
+		ingress.Spec.TLS = ingressTLS
+		ingress, err = kubernetesManager.UpdateIngress(ctx, namespace, ingress)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred updating ingress with TLS configuration for service '%v'", serviceRegistration.GetUUID())
+		}
+	}
+
+	return ingress, nil
+}
+
 func updateServiceWhenContainerStarted(
 	ctx context.Context,
 	namespaceName string,
@@ -942,42 +985,90 @@ func createRegisterUserServiceOperation(
 func getUserServiceIngressRules(
 	serviceRegistration *service.ServiceRegistration,
 	privatePorts map[string]*port_spec.PortSpec,
-) ([]netv1.IngressRule, error) {
+	ingressHost *string,
+	ingressTLSHost *string,
+) ([]netv1.IngressRule, []netv1.IngressTLS, error) {
 	var ingressRules []netv1.IngressRule
+	var ingressTLS []netv1.IngressTLS
+
+	// serviceConfig := serviceRegistration.GetConfig()
+
 	enclaveShortUuid := uuid_generator.ShortenedUUIDString(string(serviceRegistration.GetEnclaveID()))
 	serviceShortUuid := uuid_generator.ShortenedUUIDString(string(serviceRegistration.GetUUID()))
+
+	// Get ingress host and TLS configuration
+	// ingressHost := serviceConfig.GetIngressHost()
+	// ingressTLSHost := serviceConfig.GetIngressTLSHost()
+	// hasIngressConfig := *ingressHost != "" || *ingressTLSHost != ""
+	hasIngressConfig := (ingressHost != nil && *ingressHost != "") && (ingressTLSHost != nil && *ingressTLSHost != "")
+	if hasIngressConfig {
+		if len(privatePorts) == 0 {
+			return nil, nil, stacktrace.NewError(
+				"Ingress host and/or tls host configuration supplied but service does not have any ports",
+			)
+		}
+	}
+
+	// User hasn't configured ingress host and/or tls host so
+	// we don't need any rules here
+	if !hasIngressConfig {
+		return []netv1.IngressRule{}, []netv1.IngressTLS{}, nil
+	}
+
+	// Create ingress rules for each port
 	for _, portSpec := range privatePorts {
 		maybeApplicationProtocol := ""
 		if portSpec.GetMaybeApplicationProtocol() != nil {
 			maybeApplicationProtocol = *portSpec.GetMaybeApplicationProtocol()
 		}
+
 		if maybeApplicationProtocol == consts.HttpApplicationProtocol {
-			host := fmt.Sprintf("%d-%s-%s", portSpec.GetNumber(), serviceShortUuid, enclaveShortUuid)
-			ingressRule := netv1.IngressRule{
-				Host: host,
-				IngressRuleValue: netv1.IngressRuleValue{
-					HTTP: &netv1.HTTPIngressRuleValue{
-						Paths: []netv1.HTTPIngressPath{
-							{
-								Path:     consts.IngressRulePathAllPaths,
-								PathType: &consts.IngressRulePathTypePrefix,
-								Backend: netv1.IngressBackend{
-									Service: &netv1.IngressServiceBackend{
-										Name: string(serviceRegistration.GetName()),
-										Port: netv1.ServiceBackendPort{
-											Name:   "",
-											Number: int32(portSpec.GetNumber()),
+			// Create the default host pattern
+			defaultHost := fmt.Sprintf("%d-%s-%s", portSpec.GetNumber(), serviceShortUuid, enclaveShortUuid)
+
+			// Create a list of hosts to use - always include the default host
+			hosts := []string{defaultHost}
+
+			// Add custom host if specified
+			if ingressHost != nil && *ingressHost != "" {
+				hosts = append(hosts, *ingressHost)
+			}
+
+			// Create ingress rules for each host
+			for _, host := range hosts {
+				ingressRule := netv1.IngressRule{
+					Host: host,
+					IngressRuleValue: netv1.IngressRuleValue{
+						HTTP: &netv1.HTTPIngressRuleValue{
+							Paths: []netv1.HTTPIngressPath{
+								{
+									Path:     consts.IngressRulePathAllPaths,
+									PathType: &consts.IngressRulePathTypePrefix,
+									Backend: netv1.IngressBackend{
+										Service: &netv1.IngressServiceBackend{
+											Name: string(serviceRegistration.GetName()),
+											Port: netv1.ServiceBackendPort{
+												Number: int32(portSpec.GetNumber()),
+											},
 										},
 									},
-									Resource: nil,
 								},
 							},
 						},
 					},
-				},
+				}
+				ingressRules = append(ingressRules, ingressRule)
 			}
-			ingressRules = append(ingressRules, ingressRule)
 		}
 	}
-	return ingressRules, nil
+
+	// Add TLS configuration if specified
+	if ingressHost != nil && *ingressHost != "" && ingressTLSHost != nil && *ingressTLSHost != "" {
+		ingressTLS = append(ingressTLS, netv1.IngressTLS{
+			Hosts:      []string{*ingressTLSHost},
+			SecretName: fmt.Sprintf("%s-tls", *ingressTLSHost),
+		})
+	}
+
+	return ingressRules, ingressTLS, nil
 }

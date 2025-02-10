@@ -566,6 +566,18 @@
           "type": "dict<string, string>",
           "content": "ingress_annotations?",
           "detail": "A map of annotations to add to the Kubernetes ingress for this service. This is only applicable when running on Kubernetes and will be ignored for Docker."
+        },
+        {
+          "name": "ingress_host",
+          "type": "string",
+          "content": "ingress_host?",
+          "detail": "The host to use for the Kubernetes ingress for this service. This is only applicable when running on Kubernetes and will be ignored for Docker."
+        },
+        {
+          "name": "ingress_tls_host",
+          "type": "string",
+          "content": "ingress_tls_host?",
+          "detail": "the host to enable tls for, should match ingress_host"
         }
       ]
     },

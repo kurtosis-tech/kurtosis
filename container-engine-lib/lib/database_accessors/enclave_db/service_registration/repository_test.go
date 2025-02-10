@@ -14,9 +14,11 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
+	v1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -305,12 +307,42 @@ func getServiceRegistrationWithDataForTest(
 }
 
 func getServiceConfigForTest(t *testing.T, imageName string) *service.ServiceConfig {
-	serviceConfig, err := service.CreateServiceConfig(imageName, nil, nil, nil, testPrivatePorts(t), testPublicPorts(t), []string{"bin", "bash", "ls"}, []string{"-l", "-a"}, testEnvVars(), testFilesArtifactExpansion(), testPersistentDirectory(), 500, 1024, "IP-ADDRESS", 100, 512, map[string]string{
-		"test-label-key":        "test-label-value",
-		"test-second-label-key": "test-second-label-value",
-	}, map[string]string{}, nil, nil, nil, map[string]string{
-		"disktype": "ssd",
-	}, image_download_mode.ImageDownloadMode_Missing, true)
+	var user *service_user.ServiceUser
+	var tolerations []v1.Toleration
+
+	serviceConfig, err := service.CreateServiceConfig(
+		imageName,
+		nil,
+		nil,
+		nil,
+		testPrivatePorts(t),
+		testPublicPorts(t),
+		[]string{"bin", "bash", "ls"},
+		[]string{"-l", "-a"},
+		testEnvVars(),
+		testFilesArtifactExpansion(),
+		testPersistentDirectory(),
+		500,
+		1024,
+		"IP-ADDRESS",
+		100,
+		512,
+		map[string]string{
+			"test-label-key":        "test-label-value",
+			"test-second-label-key": "test-second-label-value",
+		},
+		map[string]string{},
+		nil,
+		nil,
+		nil,
+		user,
+		tolerations,
+		map[string]string{
+			"disktype": "ssd",
+		},
+		image_download_mode.ImageDownloadMode_Missing,
+		true,
+	)
 	require.NoError(t, err)
 	return serviceConfig
 }

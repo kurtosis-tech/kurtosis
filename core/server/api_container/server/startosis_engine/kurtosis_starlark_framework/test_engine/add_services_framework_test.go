@@ -78,6 +78,8 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 				map[string]string{}, // labels
 				map[string]string{}, // ingressAnnotations
 				nil,                 // ingressClassName
+				nil,                 // ingressHost
+				nil,                 // ingressTLSHost
 				nil,                 // user
 				nil,                 // tolerations
 				map[string]string{}, // nodeSelectors
@@ -109,6 +111,8 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 				map[string]string{}, // labels
 				map[string]string{}, // ingressAnnotations
 				nil,                 // ingressClassName
+				nil,                 // ingressHost
+				nil,                 // ingressTLSHost
 				nil,                 // user
 				nil,                 // tolerations
 				map[string]string{}, // nodeSelectors

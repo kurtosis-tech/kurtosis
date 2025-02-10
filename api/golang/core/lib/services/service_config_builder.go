@@ -39,6 +39,8 @@ func GetServiceConfigStarlark(
 	minMemoryMegaBytes int,
 	ingressClassName string,
 	ingressAnnotations map[string]string,
+	ingressHost string,
+	ingressTLS string,
 ) string {
 	starlarkFields := []string{}
 
@@ -100,6 +102,14 @@ func GetServiceConfigStarlark(
 			ingressAnnotationStrings = append(ingressAnnotationStrings, fmt.Sprintf("%q:%q", key, value))
 		}
 		starlarkFields = append(starlarkFields, fmt.Sprintf(`ingress_annotations={%s}`, strings.Join(ingressAnnotationStrings, ",")))
+	}
+
+	if ingressHost != "" {
+		starlarkFields = append(starlarkFields, fmt.Sprintf(`ingress_host=%q`, ingressHost))
+	}
+
+	if ingressTLS != "" {
+		starlarkFields = append(starlarkFields, fmt.Sprintf(`ingress_tls_host=%q`, ingressTLS))
 	}
 
 	return fmt.Sprintf("ServiceConfig(%s)", strings.Join(starlarkFields, ","))
