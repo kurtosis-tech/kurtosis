@@ -135,6 +135,7 @@ var (
 type KubernetesManager struct {
 	// The underlying K8s client that will be used to modify the K8s environment
 	kubernetesClientSet *kubernetes.Clientset
+	KubernetesClientSet *kubernetes.Clientset
 	// Underlying restClient configuration
 	kuberneteRestConfig *rest.Config
 	// The storage class name as specified in the `kurtosis-config.yaml`
@@ -146,6 +147,7 @@ func int64Ptr(i int64) *int64 { return &i }
 func NewKubernetesManager(kubernetesClientSet *kubernetes.Clientset, kuberneteRestConfig *rest.Config, storageClass string) *KubernetesManager {
 	return &KubernetesManager{
 		kubernetesClientSet: kubernetesClientSet,
+		KubernetesClientSet: kubernetesClientSet,
 		kuberneteRestConfig: kuberneteRestConfig,
 		storageClass:        storageClass,
 	}

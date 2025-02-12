@@ -35,7 +35,6 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 	resultRemoveLogsCollectorContainerFunc func(),
 	resultErr error,
 ) {
-
 	logsCollectorConfigurationCreator := createFluentbitConfigurationCreatorForKurtosis(logsAggregatorHost, logsAggregatorPort, tcpPortNumber, httpPortNumber)
 	logsCollectorContainerConfigProvider := createFluentbitContainerConfigProviderForKurtosis(logsAggregatorHost, logsAggregatorPort, tcpPortNumber, httpPortNumber)
 
@@ -81,7 +80,7 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 		volumeLabelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 
-	//This method will create the volume if it doesn't exist, or it will get it if it exists
+	//This method doesn't will create the volume if it dexist, or it will get it if it exists
 	//From Docker docs: If you specify a volume name already in use on the current driver, Docker assumes you want to re-use the existing volume and does not return an error.
 	//https://docs.docker.com/engine/reference/commandline/volume_create/
 	if err := dockerManager.CreateVolume(ctx, volumeName, volumeLabelStrs); err != nil {
