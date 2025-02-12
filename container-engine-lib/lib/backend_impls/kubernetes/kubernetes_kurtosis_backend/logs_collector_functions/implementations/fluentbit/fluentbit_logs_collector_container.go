@@ -189,14 +189,14 @@ func CreateLogsCollectorDaemonSet(ctx context.Context, manager *kubernetes_manag
 									MountPropagation: nil,
 									SubPathExpr:      "",
 								},
-								//{
-								//	Name:             "fluent-bit-host-logs",
-								//	ReadOnly:         false,
-								//	MountPath:        "/fluent-bit-logs",
-								//	SubPath:          "",
-								//	MountPropagation: nil,
-								//	SubPathExpr:      "",
-								//},
+								{
+									Name:             "fluent-bit-host-logs",
+									ReadOnly:         false,
+									MountPath:        "/fluent-bit-logs",
+									SubPath:          "",
+									MountPropagation: nil,
+									SubPathExpr:      "",
+								},
 							},
 						},
 					},
@@ -240,15 +240,14 @@ func CreateLogsCollectorDaemonSet(ctx context.Context, manager *kubernetes_manag
 								},
 							},
 						},
-						//{
-						//	Name: "fluent-bit-host-logs",
-						//	VolumeSource: apiv1.VolumeSource{
-						//		HostPath: &apiv1.HostPathVolumeSource{
-						//			Path: "/var/log/fluentbit",
-						//			Type: nil,
-						//		},
-						//	},
-						//},
+						{
+							Name: "fluent-bit-host-logs",
+							VolumeSource: apiv1.VolumeSource{
+								HostPath: &apiv1.HostPathVolumeSource{
+									Path: "/var/log/fluentbit",
+								},
+							},
+						},
 					},
 					InitContainers: []apiv1.Container{},
 				},
