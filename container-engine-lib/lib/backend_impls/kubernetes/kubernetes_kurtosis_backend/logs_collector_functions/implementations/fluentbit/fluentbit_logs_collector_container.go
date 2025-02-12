@@ -7,7 +7,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -279,16 +278,16 @@ func CreateLogsCollectorConfigMap(ctx context.Context, manager *kubernetes_manag
 		},
 	}
 
-	maybeConfigMap, err := configMapClient.Get(ctx, fluentBitConfigMapName, metav1.GetOptions{})
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while getting config map for fluentbit log collector config.")
-	}
-	if maybeConfigMap != nil {
-		logrus.Debugf("Fluent bit config map already exists, skipping creating config map.")
-		return nil
-	}
+	//maybeConfigMap, err := configMapClient.Get(ctx, fluentBitConfigMapName, metav1.GetOptions{})
+	//if err != nil {
+	//	return stacktrace.Propagate(err, "An error occurred while getting config map for fluentbit log collector config.")
+	//}
+	//if maybeConfigMap != nil {
+	//	logrus.Debugf("Fluent bit config map already exists, skipping creating config map.")
+	//	return nil
+	//}
 
-	_, err = configMapClient.Create(ctx, configMap, metav1.CreateOptions{})
+	_, err := configMapClient.Create(ctx, configMap, metav1.CreateOptions{})
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while creating config map for fluentbit log collector config.")
 	}

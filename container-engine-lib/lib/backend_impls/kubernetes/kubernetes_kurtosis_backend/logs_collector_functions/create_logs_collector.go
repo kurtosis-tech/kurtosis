@@ -68,7 +68,5 @@ func CreateLogsCollectorForEnclave(
 	// get logs collector object
 
 	// check for availability
-
 	return nil, nil
-
 }
