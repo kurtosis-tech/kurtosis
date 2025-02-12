@@ -127,7 +127,7 @@ if ! docker buildx create --driver-opt network=${network_name} --config ./${BUIL
   exit 1
 fi
 
-image_tags_concatenated="-t k3d-registry:5000/kurtosistech/files-artifacts-expander:f7984a-dirty"
+image_tags_concatenated="-t europe-west1-docker.pkg.dev/randamu-prod/infra/kurtosistech/files-artifacts-expander:f7984a-dirty"
 dockerfile_filepath=/home/laith/code/randamu/workbench/kurtosis/core/files_artifacts_expander/Dockerfile
 dockerfile_dirpath=/home/laith/code/randamu/workbench/kurtosis/core/files_artifacts_expander
 

@@ -28,7 +28,7 @@ const (
 	logRetentionPeriodFlagKey      = "log-retention-period"
 
 	defaultEngineVersion          = ""
-  kurtosisTechEngineImagePrefix = "k3d-registry:5000/kurtosistech/engine"
+	kurtosisTechEngineImagePrefix = "europe-west1-docker.pkg.dev/randamu-prod/infra/kurtosistech/engine"
 	imageVersionDelimiter         = ":"
 
 	defaultShouldRestartAPIContainers = "false"

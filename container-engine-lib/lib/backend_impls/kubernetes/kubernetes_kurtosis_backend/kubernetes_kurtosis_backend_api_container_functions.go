@@ -39,7 +39,9 @@ const (
 
 	enclaveDataDirVolumeName = "enclave-data"
 
-	enclaveDataDirVolumeSize int64 = 1 * 1024 * 1024 * 1024 // 1g minimum size on Kubernetes
+	// enclaveDataDirVolumeSize int64 = 1 * 1024 * 1024 * 1024 // 1g minimum size on Kubernetes
+	// Read this from the environment variable KURTOSIS_ENCLAVE_DATA_DIR_VOLUME_SIZE
+	enclaveDataDirVolumeSize int64 = 4 * 1024 * 1024 * 1024 // 4gi minimum size for hyperdisk-balanced
 )
 
 var noWait *port_spec.Wait = nil
@@ -449,6 +451,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	for key, value := range volumeAttrs.GetLabels() {
 		volumeLabelsStrs[key.GetString()] = value.GetString()
 	}
+	fmt.Printf("Creating persistent volume claim for enclave data dir volume for enclave '%s' size: %d\n", enclaveDataDirVolumeName, enclaveDataDirVolumeSize)
 	if _, err = backend.kubernetesManager.CreatePersistentVolumeClaim(ctx, enclaveNamespaceName, enclaveDataDirVolumeName, volumeLabelsStrs, enclaveDataDirVolumeSize); err != nil {
 		errMsg := fmt.Sprintf("An error occurred creating the persistent volume claim for enclave data dir volume for enclave '%s'", enclaveDataDirVolumeName)
 		logrus.Errorf("%s. Error was:\n%s", errMsg, err)

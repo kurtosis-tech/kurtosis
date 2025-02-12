@@ -2,8 +2,9 @@ package resolved_config
 
 import (
 	"context"
-	v4 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v4"
 	"strings"
+
+	v4 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v4"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend"
@@ -16,9 +17,9 @@ import (
 )
 
 const (
-	defaultKubernetesEnclaveDataVolumeSizeInMegabytes = uint(1024)
-	// this will schedule engine on node selected by k8s scheduler
-	defaultEngineNodeName = ""
+	// Increase this to the minimum required for hyperdisk storage controllers
+	// XXX: This should be configurable in cluster config and/or env/cli
+	defaultKubernetesEnclaveDataVolumeSizeInMegabytes = 4 * uint(1024)
 )
 
 type kurtosisBackendSupplier func(ctx context.Context) (backend_interface.KurtosisBackend, error)
