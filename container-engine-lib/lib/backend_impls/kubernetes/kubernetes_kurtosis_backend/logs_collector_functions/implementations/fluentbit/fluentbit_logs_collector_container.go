@@ -3,9 +3,12 @@ package fluentbit
 import (
 	"context"
 	"github.com/docker/go-connections/nat"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
@@ -76,9 +79,17 @@ func (fluentbitPod *fluentbitLogsCollector) CreateAndStart(
 	resultRemoveLogsCollectorContainerFunc func(),
 	resultErr error,
 ) {
+	// TODO: the creation of this will likely move
+	logsCollectorGuidStr, err := uuid_generator.GenerateUUIDString()
+	if err != nil {
+		return "", map[string]string{}, make(map[nat.Port]*nat.PortBinding), func() { return }, stacktrace.Propagate(err, "An error occurred creating uuid for logs collector.")
+	}
+	logsCollectorGuid := logs_collector.LogsCollectorGuid(logsCollectorGuidStr)
+	logsCollectorAttrProvider := objAttrsProvider.ForLogsCollector(logsCollectorGuid)
+
 	// create config creator - this can be done with config map + init container
 	// create fluentbit container config provider - this can with config map + an init container
-	err := CreateLogsCollectorConfigMap(ctx, kubernetesManager)
+	err = CreateLogsCollectorConfigMap(ctx, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
 		return "", map[string]string{}, make(map[nat.Port]*nat.PortBinding), func() { return }, stacktrace.Propagate(err, "An error occurred while trying to create config map for fluent-bit log collector.")
 	}
@@ -86,19 +97,12 @@ func (fluentbitPod *fluentbitLogsCollector) CreateAndStart(
 	// TODO figure out what ports are needed for this container
 	// get information about ports
 
-	// TODO: embed log collector info into enclave object attr provider, for now hardcode them in daemonset and consts
-	// get enclave obj attr provider for log collector
-	// get log collector attributes
-	// - container name
-	// - container labels
-	// - volume info
-
 	// create and start daemonest
 	//logsCollectorDaemonSet, err := kubernetesManager.CreatePod(ctx, createAndStartArgs)
 	//if err != nil {
 	//	return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred starting the logs collector container with these args '%+v'", createAndStartArgs)
 	//}
-	_, err = CreateLogsCollectorDaemonSet(ctx, kubernetesManager)
+	_, err = CreateLogsCollectorDaemonSet(ctx, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
 		return "", map[string]string{}, make(map[nat.Port]*nat.PortBinding), func() { return }, stacktrace.Propagate(err, "An error occurred while trying to daemonset for fluent-bit log collector.")
 	}
@@ -127,13 +131,31 @@ func (fluentbitPod *fluentbitLogsCollector) CreateAndStart(
 	return "", map[string]string{}, make(map[nat.Port]*nat.PortBinding), func() { return }, nil
 }
 
-func CreateLogsCollectorDaemonSet(ctx context.Context, manager *kubernetes_manager.KubernetesManager) (*appsv1.DaemonSet, error) {
+func CreateLogsCollectorDaemonSet(
+	ctx context.Context,
+	objAttrProvider object_attributes_provider.KubernetesLogsCollectorObjectAttributesProvider,
+	manager *kubernetes_manager.KubernetesManager) (*appsv1.DaemonSet, error) {
 	daemonSetClient := manager.KubernetesClientSet.AppsV1().DaemonSets(kubeSystemNamespaceName)
+
+	daemonSetAttrProvider, err := objAttrProvider.ForLogsCollectorDaemonSet()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating fluentbit daemonset.")
+	}
+	namespaceProvider, err := objAttrProvider.ForLogsCollectorNamespace()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating fluentbit daemonset.")
+	}
+	namespaceName := namespaceProvider.GetName().GetString()
+	name := daemonSetAttrProvider.GetName().GetString()
+	labels := shared_helpers.GetStringMapFromLabelMap(daemonSetAttrProvider.GetLabels())
+	annotations := shared_helpers.GetStringMapFromAnnotationMap(daemonSetAttrProvider.GetAnnotations())
 
 	daemonSet := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "fluent-bit",
-			Namespace: "",
+			Name:        name,
+			Namespace:   namespaceName,
+			Labels:      labels,
+			Annotations: annotations,
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
@@ -265,29 +287,37 @@ func CreateLogsCollectorDaemonSet(ctx context.Context, manager *kubernetes_manag
 	return logsCollectorDaemonSet, nil
 }
 
-func CreateLogsCollectorConfigMap(ctx context.Context, manager *kubernetes_manager.KubernetesManager) error {
+func CreateLogsCollectorConfigMap(ctx context.Context,
+	objAttrProvider object_attributes_provider.KubernetesLogsCollectorObjectAttributesProvider,
+	manager *kubernetes_manager.KubernetesManager) error {
 	configMapClient := manager.KubernetesClientSet.CoreV1().ConfigMaps(kubeSystemNamespaceName)
+
+	configMapAttrProvider, err := objAttrProvider.ForLogsCollectorConfigMap()
+	if err != nil {
+		return err
+	}
+	namespaceProvider, err := objAttrProvider.ForLogsCollectorNamespace()
+	if err != nil {
+		return err
+	}
+	namespaceName := namespaceProvider.GetName().GetString()
+	name := configMapAttrProvider.GetName().GetString()
+	labels := shared_helpers.GetStringMapFromLabelMap(configMapAttrProvider.GetLabels())
+	annotations := shared_helpers.GetStringMapFromAnnotationMap(configMapAttrProvider.GetAnnotations())
 
 	configMap := &apiv1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fluentBitConfigMapName,
-			Namespace: kubeSystemNamespaceName,
+			Name:        name,
+			Namespace:   namespaceName,
+			Labels:      labels,
+			Annotations: annotations,
 		},
 		Data: map[string]string{
 			"fluent-bit.conf": fluentBitConfigStr,
 		},
 	}
 
-	//maybeConfigMap, err := configMapClient.Get(ctx, fluentBitConfigMapName, metav1.GetOptions{})
-	//if err != nil {
-	//	return stacktrace.Propagate(err, "An error occurred while getting config map for fluentbit log collector config.")
-	//}
-	//if maybeConfigMap != nil {
-	//	logrus.Debugf("Fluent bit config map already exists, skipping creating config map.")
-	//	return nil
-	//}
-
-	_, err := configMapClient.Create(ctx, configMap, metav1.CreateOptions{})
+	_, err = configMapClient.Create(ctx, configMap, metav1.CreateOptions{})
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while creating config map for fluentbit log collector config.")
 	}
