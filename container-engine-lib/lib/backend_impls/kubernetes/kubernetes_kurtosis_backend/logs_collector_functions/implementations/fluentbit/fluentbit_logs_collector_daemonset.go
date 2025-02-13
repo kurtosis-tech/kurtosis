@@ -6,10 +6,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -62,14 +62,12 @@ func NewFluentbitLogsCollector() *fluentbitLogsCollector {
 
 func (fluentbitPod *fluentbitLogsCollector) CreateAndStart(
 	ctx context.Context,
-	enclaveUuid enclave.EnclaveUUID,
 	logsAggregatorHost string,
 	logsAggregatorPort uint16,
 	tcpPortNumber uint16,
 	httpPortNumber uint16,
 	logsCollectorTcpPortId string,
 	logsCollectorHttpPortId string,
-	targetNetworkId string,
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (
@@ -88,16 +86,17 @@ func (fluentbitPod *fluentbitLogsCollector) CreateAndStart(
 	logsCollectorAttrProvider := objAttrsProvider.ForLogsCollector(logsCollectorGuid)
 
 	// create config creator - this can be done with config map + init container
-	// create fluentbit container config provider - this can with config map + an init container
+	// create Fluentbit container config provider - this can with config map + an init container
 	err = CreateLogsCollectorConfigMap(ctx, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
 		return "", map[string]string{}, make(map[nat.Port]*nat.PortBinding), func() { return }, stacktrace.Propagate(err, "An error occurred while trying to create config map for fluent-bit log collector.")
 	}
 
-	// TODO figure out what ports are needed for this container
-	// get information about ports
+	// TODO: Figure out what ports are needed for this container
+	// Get information about ports
 
-	// create and start daemonest
+	// Create and start Daemonset
+
 	//logsCollectorDaemonSet, err := kubernetesManager.CreatePod(ctx, createAndStartArgs)
 	//if err != nil {
 	//	return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred starting the logs collector container with these args '%+v'", createAndStartArgs)
@@ -106,7 +105,6 @@ func (fluentbitPod *fluentbitLogsCollector) CreateAndStart(
 	if err != nil {
 		return "", map[string]string{}, make(map[nat.Port]*nat.PortBinding), func() { return }, stacktrace.Propagate(err, "An error occurred while trying to daemonset for fluent-bit log collector.")
 	}
-
 	// TODO: enable remove mechanism
 	//removeContainerFunc := func() {
 	//	removeCtx := context.Background()
@@ -148,6 +146,7 @@ func CreateLogsCollectorDaemonSet(
 	namespaceName := namespaceProvider.GetName().GetString()
 	name := daemonSetAttrProvider.GetName().GetString()
 	labels := shared_helpers.GetStringMapFromLabelMap(daemonSetAttrProvider.GetLabels())
+	logrus.Infof("Log collector daemon set labels: %v", name)
 	annotations := shared_helpers.GetStringMapFromAnnotationMap(daemonSetAttrProvider.GetAnnotations())
 
 	daemonSet := &appsv1.DaemonSet{
@@ -281,8 +280,6 @@ func CreateLogsCollectorDaemonSet(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while creating fluentbit daemonset.")
 	}
-
-	// TODO: wait for daemonset availability
 
 	return logsCollectorDaemonSet, nil
 }

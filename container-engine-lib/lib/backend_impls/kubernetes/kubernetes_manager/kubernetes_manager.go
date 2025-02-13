@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	v1 "k8s.io/api/apps/v1"
 	"net/http"
 	"net/url"
 	"os"
@@ -1578,6 +1579,19 @@ func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace
 		ListMeta: pods.ListMeta,
 	}
 	return &podsNotMarkedForDeletionPodList, nil
+}
+
+func (manager *KubernetesManager) GetDaemonSetsByLabels(ctx context.Context, namespace string, daemonSetLabels map[string]string) (*v1.DaemonSetList, error) {
+	namespaceDaemonSetClient := manager.kubernetesClientSet.AppsV1().DaemonSets(namespace)
+
+	opts := buildListOptionsFromLabels(daemonSetLabels)
+	daemonSets, err := namespaceDaemonSetClient.List(ctx, opts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get daemonsets with labels '%+v', instead a non-nil error was returned", daemonSetLabels)
+	}
+
+	logrus.Info("Found daemonsets for these labels: dae: %v\n", daemonSets)
+	return daemonSets, nil
 }
 
 func (manager *KubernetesManager) GetPodPortforwardEndpointUrl(namespace string, podName string) *url.URL {
