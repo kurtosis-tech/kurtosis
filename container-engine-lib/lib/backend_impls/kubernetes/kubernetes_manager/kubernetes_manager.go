@@ -1200,6 +1200,35 @@ func (manager *KubernetesManager) GetPod(ctx context.Context, namespace string, 
 	return pod, nil
 }
 
+// ---------------------------daemon sets---------------------------------------------------------------------------------------
+func (manager *KubernetesManager) RemoveDaemonSet(ctx context.Context, namespace string, daemonSet *v1.DaemonSet) error {
+	client := manager.kubernetesClientSet.AppsV1().DaemonSets(namespace)
+
+	if err := client.Delete(ctx, daemonSet.Name, globalDeleteOptions); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete daemon set with name '%s' with delete options '%+v'", daemonSet.Name, globalDeleteOptions)
+	}
+
+	// TODO: maybe add a termination wait?
+	return nil
+}
+
+func (manager *KubernetesManager) GetDaemonSet(ctx context.Context, namespace string, name string) (*v1.DaemonSet, error) {
+	daemonSetClient := manager.kubernetesClientSet.AppsV1().DaemonSets(namespace)
+
+	daemonSet, err := daemonSetClient.Get(ctx, name, metav1.GetOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		ResourceVersion: "",
+	})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to get pod with name '%s'", name)
+	}
+
+	return daemonSet, nil
+}
+
 // GetContainerLogs gets the logs for a given container running inside the given pod in the give namespace
 // TODO We could upgrade this to get the logs of many containers at once just like kubectl does, see:
 //
@@ -1590,7 +1619,6 @@ func (manager *KubernetesManager) GetDaemonSetsByLabels(ctx context.Context, nam
 		return nil, stacktrace.Propagate(err, "Expected to be able to get daemonsets with labels '%+v', instead a non-nil error was returned", daemonSetLabels)
 	}
 
-	logrus.Infof("Found daemon sets for these labels %v: %v\n", daemonSetLabels, daemonSets)
 	return daemonSets, nil
 }
 

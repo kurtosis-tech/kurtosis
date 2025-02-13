@@ -29,26 +29,20 @@ func CreateLogsCollector(
 		return nil, stacktrace.Propagate(err, "An error occurred getting logs aggregator container.")
 	}
 	if logsCollectorDaemonSetResource != nil {
-		logrus.Info("Found existing logs collector daemon set.")
+		logrus.Debug("Found existing logs collector daemon set.")
 		logsCollectorDaemonSetObj, err := getLogsCollectorDaemonSetObject(ctx, logsCollectorDaemonSetResource)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting logs collector daemon set object.")
 		}
-		// removeFunc := func() {
-		//		removeLogsCollectorContainerFunc()
-		//}()
 		return logsCollectorDaemonSetObj, nil
 	}
 
-	// get logs aggregator host an port number
-
-	logrus.Info("Did not find existing log collector, creating one...")
-	// create and start the logs collector container
+	logrus.Debug("Did not find existing log collector, creating one...")
 	// TODO: adjust return values to whats needed for daemonset
 	containerId, _, _, _, err := logsCollectorDaemonSet.CreateAndStart(
 		ctx,
-		"",
-		0,
+		"", // TODO: fill these in when adding aggregator to k8s
+		0,  // TODO: fill these in when adding aggregator to k8s
 		logsCollectorTcpPortNumber,
 		logsCollectorHttpPortNumber,
 		"",
@@ -69,12 +63,7 @@ func CreateLogsCollector(
 			"",
 		)
 	}
-	//shouldRemoveLogsCollectorContainerFunc := true
-	//defer func() {
-	//	if shouldRemoveLogsCollectorContainerFunc {
-	//		removeLogsCollectorContainerFunc()
-	//	}
-	//}()
+	// we need info to do daemon set removal
 
 	// get logs collector object
 
@@ -83,6 +72,8 @@ func CreateLogsCollector(
 	// WaitForPortAvailabilityUsingNetstat <- could do this for all the pods / containers in the logs collector daemon set
 	// could use the same availability checker that docker uses - if we can just turn ip add
 
-	//shouldRemoveLogsCollectorContainerFunc := true
+	// need port info to do availability check
+	// so need ip addresses or hostnames of all the pods started by the daemonset
+
 	return nil, nil
 }

@@ -15,45 +15,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	kubeSystemNamespaceName = "kube-system"
-
-	fluentBitImage = "fluent/fluent-bit:latest-debug"
-
-	fluentBitConfigMapName = "fluent-bit-config"
-	fluentBitConfigStr     = `
-[SERVICE]
-    Parsers_File /fluent-bit/etc/parsers.conf
-
-[INPUT]
-    Name              tail
-    Tag               kurtosis.*
-    Path              /var/log/containers/*_kt-*_user-service-container-*.log
-    Parser            docker
-
-[OUTPUT]
-    Name              stdout
-    Match             *
-    Format            json_lines
-
-[OUTPUT]
-    Name              file
-    Match             *
-    Path              /fluent-bit-logs/
-    File              fluentbit-output.log
-    Format            plain
-
-[FILTER]
-    Name              kubernetes
-    Match             kurtosis.*
-    Merge_Log         On
-    Merge_Log_Key     On
-    Labels            On
-    Annotations       On
-    Kube_Tag_Prefix   kurtosis.var.log.containers.
-`
-)
-
 type fluentbitLogsCollector struct{}
 
 func NewFluentbitLogsCollector() *fluentbitLogsCollector {
@@ -87,7 +48,7 @@ func (fluentbitPod *fluentbitLogsCollector) CreateAndStart(
 
 	// create config creator - this can be done with config map + init container
 	// create Fluentbit container config provider - this can with config map + an init container
-	err = CreateLogsCollectorConfigMap(ctx, logsCollectorAttrProvider, kubernetesManager)
+	fluentBitConfigConfigMapName, err := CreateLogsCollectorConfigMap(ctx, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
 		return "", map[string]string{}, make(map[nat.Port]*nat.PortBinding), func() { return }, stacktrace.Propagate(err, "An error occurred while trying to create config map for fluent-bit log collector.")
 	}
@@ -101,7 +62,7 @@ func (fluentbitPod *fluentbitLogsCollector) CreateAndStart(
 	//if err != nil {
 	//	return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred starting the logs collector container with these args '%+v'", createAndStartArgs)
 	//}
-	_, err = CreateLogsCollectorDaemonSet(ctx, logsCollectorAttrProvider, kubernetesManager)
+	_, err = CreateLogsCollectorDaemonSet(ctx, fluentBitConfigConfigMapName, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
 		return "", map[string]string{}, make(map[nat.Port]*nat.PortBinding), func() { return }, stacktrace.Propagate(err, "An error occurred while trying to daemonset for fluent-bit log collector.")
 	}
@@ -131,6 +92,7 @@ func (fluentbitPod *fluentbitLogsCollector) CreateAndStart(
 
 func CreateLogsCollectorDaemonSet(
 	ctx context.Context,
+	fluentBitCfgConfigMapName string,
 	objAttrProvider object_attributes_provider.KubernetesLogsCollectorObjectAttributesProvider,
 	manager *kubernetes_manager.KubernetesManager) (*appsv1.DaemonSet, error) {
 	daemonSetClient := manager.KubernetesClientSet.AppsV1().DaemonSets(kubeSystemNamespaceName)
@@ -158,16 +120,16 @@ func CreateLogsCollectorDaemonSet(
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{"app": "fluent-bit"},
+				MatchLabels: map[string]string{"app": "fluent-bit"}, // do the pods need the same labels as the daemon set?
 			},
 			Template: apiv1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"app": "fluent-bit"},
+					Labels: map[string]string{"app": "fluent-bit"}, // do the pods need the same labels as the daemon set?
 				},
 				Spec: apiv1.PodSpec{
 					Containers: []apiv1.Container{
 						{
-							Name:  "fluent-bit",
+							Name:  "fluent-bit", // how should it be named?
 							Image: fluentBitImage,
 							Args: []string{
 								"/fluent-bit/bin/fluent-bit",
@@ -253,7 +215,7 @@ func CreateLogsCollectorDaemonSet(
 							Name: "fluent-bit-config",
 							VolumeSource: apiv1.VolumeSource{
 								ConfigMap: &apiv1.ConfigMapVolumeSource{
-									LocalObjectReference: apiv1.LocalObjectReference{Name: fluentBitConfigMapName},
+									LocalObjectReference: apiv1.LocalObjectReference{Name: fluentBitCfgConfigMapName},
 									Items:                nil,
 									DefaultMode:          nil,
 									Optional:             nil,
@@ -286,17 +248,18 @@ func CreateLogsCollectorDaemonSet(
 
 func CreateLogsCollectorConfigMap(ctx context.Context,
 	objAttrProvider object_attributes_provider.KubernetesLogsCollectorObjectAttributesProvider,
-	manager *kubernetes_manager.KubernetesManager) error {
+	manager *kubernetes_manager.KubernetesManager) (string, error) {
 	configMapClient := manager.KubernetesClientSet.CoreV1().ConfigMaps(kubeSystemNamespaceName)
 
 	configMapAttrProvider, err := objAttrProvider.ForLogsCollectorConfigMap()
 	if err != nil {
-		return err
+		return "", err
 	}
 	namespaceProvider, err := objAttrProvider.ForLogsCollectorNamespace()
 	if err != nil {
-		return err
+		return "", err
 	}
+
 	namespaceName := namespaceProvider.GetName().GetString()
 	name := configMapAttrProvider.GetName().GetString()
 	labels := shared_helpers.GetStringMapFromLabelMap(configMapAttrProvider.GetLabels())
@@ -316,8 +279,8 @@ func CreateLogsCollectorConfigMap(ctx context.Context,
 
 	_, err = configMapClient.Create(ctx, configMap, metav1.CreateOptions{})
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while creating config map for fluentbit log collector config.")
+		return "", stacktrace.Propagate(err, "An error occurred while creating config map for fluentbit log collector config.")
 	}
 
-	return nil
+	return name, nil
 }

@@ -9,7 +9,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/apps/v1"
 	"net"
 )
@@ -27,11 +26,10 @@ func getLogsCollectorDaemonSetForCluster(ctx context.Context, namespace string, 
 
 	var logCollectorDaemonSets []v1.DaemonSet
 	logCollectorDaemonSets = append(logCollectorDaemonSets, matchingLogsCollectorDaemonsets.Items...)
-	logrus.Info("size of daemon sets: %v", len(logCollectorDaemonSets))
 
 	// There should every only be one log collector daemonset deployed in a cluster so error if more are found
 	if len(logCollectorDaemonSets) > 1 {
-		return nil, stacktrace.NewError("Multiple log collector daemonsets were detected inside the cluster, but there should only be one. This is likely a bug inside Kurtosis.")
+		return nil, stacktrace.NewError("Multiple log collector daemon sets were detected inside the cluster, but there should only be one. This is likely a bug inside Kurtosis.")
 	}
 
 	if len(logCollectorDaemonSets) == 0 {
@@ -42,21 +40,37 @@ func getLogsCollectorDaemonSetForCluster(ctx context.Context, namespace string, 
 }
 
 func getLogsCollectorDaemonSetObject(ctx context.Context, logsCollectorDaemonSetResource *v1.DaemonSet) (*logs_collector.LogsCollector, error) {
-	// translate log collector daemonset info to logs collector info
-	dummyPortSpecOne, err := port_spec.NewPortSpec(1234, port_spec.TransportProtocol(0), "HTTP", nil, "")
+
+	var (
+		logsCollectorStatus container.ContainerStatus
+		privateIpAddr       net.IP
+		bridgeNetworkIpAddr net.IP
+		err                 error
+	)
+
+	// TODO: get the status of all the fluentbit pods/containers - if they are all running, set to running, else set to stopped
+	logsCollectorStatus = container.ContainerStatus_Running
+
+	// daemon sets don't have a entrypoint so leave these blank for now
+	// if at some point, we need to access fluent bit log collectors via IP in some way, can create an entrypoint that allows
+	// accessing log collectors via IP
+	privateIpAddr = net.IP{}
+	bridgeNetworkIpAddr = net.IP{}
+
+	dummyPortSpecOne, err := port_spec.NewPortSpec(0, port_spec.TransportProtocol(0), "HTTP", nil, "")
 	if err != nil {
 		return nil, err
 	}
 
-	dummyPortSpecTwo, err := port_spec.NewPortSpec(1234, port_spec.TransportProtocol(0), "HTTP", nil, "")
+	dummyPortSpecTwo, err := port_spec.NewPortSpec(0, port_spec.TransportProtocol(0), "HTTP", nil, "")
 	if err != nil {
 		return nil, err
 	}
 
 	return logs_collector.NewLogsCollector(
-		container.ContainerStatus_Running,
-		net.IP{},
-		net.IP{},
+		logsCollectorStatus,
+		privateIpAddr,
+		bridgeNetworkIpAddr,
 		dummyPortSpecOne,
 		dummyPortSpecTwo,
 	), nil

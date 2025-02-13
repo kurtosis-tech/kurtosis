@@ -3,6 +3,8 @@ package engine_functions
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_collector_functions"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_collector_functions/implementations/fluentbit"
 	"time"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/consts"
@@ -46,7 +48,6 @@ func CreateEngine(
 	githubAuthToken string,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
-
 ) (
 	*engine.Engine,
 	error,
@@ -204,6 +205,24 @@ func CreateEngine(
 		}
 	}()
 
+	logrus.Infof("Starting the centralized logs components...")
+	logsCollectorDaemonSet := fluentbit.NewFluentbitLogsCollector()
+
+	_, err = logs_collector_functions.CreateLogsCollector(ctx, 0, 0, logsCollectorDaemonSet, nil, kubernetesManager, objAttrsProvider)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the engine ingress")
+	}
+	var shouldRemoveLogsCollector = true
+	defer func() {
+		if shouldRemoveLogsCollector {
+			//if err := kubernetesManager.RemoveIngress(ctx, engineIngress); err != nil {
+			//	logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete logs collector daemonset that we created but an error was thrown:\n%v", err)
+			//	logrus.Errorf("ACTION REQUIRED: You'll need to manually remove logs collector daemonset ingress with name !!!!!!!")
+			//}
+		}
+	}()
+	logrus.Infof("Centralized logs components started.")
+
 	engineResources := &engineKubernetesResources{
 		clusterRole:        clusterRole,
 		clusterRoleBinding: clusterRoleBindings,
@@ -250,6 +269,7 @@ func CreateEngine(
 			return nil, stacktrace.Propagate(err, "An error occurred waiting for the engine grpc proxy port '%v/%v' to become available", privateGrpcProxyPortSpec.GetTransportProtocol(), privateGrpcProxyPortSpec.GetNumber())
 		}*/
 
+	shouldRemoveLogsCollector = false
 	shouldRemoveNamespace = false
 	shouldRemoveServiceAccount = false
 	shouldRemoveClusterRole = false
