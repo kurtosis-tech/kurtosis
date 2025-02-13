@@ -1590,7 +1590,7 @@ func (manager *KubernetesManager) GetDaemonSetsByLabels(ctx context.Context, nam
 		return nil, stacktrace.Propagate(err, "Expected to be able to get daemonsets with labels '%+v', instead a non-nil error was returned", daemonSetLabels)
 	}
 
-	logrus.Info("Found daemonsets for these labels: dae: %v\n", daemonSets)
+	logrus.Infof("Found daemon sets for these labels %v: %v\n", daemonSetLabels, daemonSets)
 	return daemonSets, nil
 }
 

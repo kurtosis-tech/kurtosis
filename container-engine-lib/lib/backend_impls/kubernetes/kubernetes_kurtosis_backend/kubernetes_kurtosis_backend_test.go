@@ -24,5 +24,5 @@ func TestCreateLogsCollectorForEnclave(t *testing.T) {
 
 	logCollector, err := backend.CreateLogsCollectorForEnclave(ctx, "1234", 2020, 2020)
 	require.NoError(t, err)
-	require.Nil(t, logCollector)
+	require.NotNil(t, logCollector)
 }
