@@ -460,7 +460,7 @@ func (backend *KubernetesKurtosisBackend) DestroyLogsAggregator(ctx context.Cont
 }
 
 func (backend *KubernetesKurtosisBackend) CreateLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, logsCollectorHttpPortNumber uint16, logsCollectorTcpPortNumber uint16) (*logs_collector.LogsCollector, error) {
-	// TODO: check that logs aggregator exists first
+	// TODO: check that logs aggregator exists first when logs aggregator is implemented
 
 	//Declaring the implementation
 	logsCollectorDaemonSet := fluentbit.NewFluentbitLogsCollector()
@@ -471,7 +471,7 @@ func (backend *KubernetesKurtosisBackend) CreateLogsCollectorForEnclave(ctx cont
 		logsCollectorTcpPortNumber,
 		logsCollectorHttpPortNumber,
 		logsCollectorDaemonSet,
-		nil,
+		nil, // TODO: provide when logs aggregator is implemented
 		backend.kubernetesManager,
 		backend.objAttrsProvider,
 	)
@@ -483,8 +483,14 @@ func (backend *KubernetesKurtosisBackend) CreateLogsCollectorForEnclave(ctx cont
 }
 
 func (backend *KubernetesKurtosisBackend) GetLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (*logs_collector.LogsCollector, error) {
-	// TODO IMPLEMENT
-	return nil, stacktrace.NewError("Creating the logs collector isn't yet implemented on Kubernetes")
+	maybeLogsCollector, err := logs_collector_functions.GetLogsCollector(
+		ctx,
+		backend.kubernetesManager,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
+	}
+	return maybeLogsCollector, nil
 }
 
 func (backend *KubernetesKurtosisBackend) DestroyLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) error {

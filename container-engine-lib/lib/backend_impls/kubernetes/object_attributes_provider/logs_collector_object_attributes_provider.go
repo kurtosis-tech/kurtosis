@@ -53,6 +53,7 @@ func (provider *kubernetesLogsCollectorObjectAttributesProviderImpl) ForLogsColl
 	}
 
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
+		kubernetes_label_key.AppIDKubernetesLabelKey:                label_value_consts.AppIDKubernetesLabelValue,
 		kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.LogsCollectorKurtosisResourceTypeKubernetesLabelValue,
 	}
 
@@ -73,6 +74,7 @@ func (provider *kubernetesLogsCollectorObjectAttributesProviderImpl) ForLogsColl
 	}
 
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
+		kubernetes_label_key.AppIDKubernetesLabelKey:                label_value_consts.AppIDKubernetesLabelValue,
 		kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.LogsCollectorKurtosisResourceTypeKubernetesLabelValue,
 	}
 

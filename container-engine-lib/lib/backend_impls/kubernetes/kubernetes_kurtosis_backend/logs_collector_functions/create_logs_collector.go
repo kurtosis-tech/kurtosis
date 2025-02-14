@@ -23,18 +23,13 @@ func CreateLogsCollector(
 	// TODO: if the logs collector lifecycle is managed by the engine, might want to return a removal function so the engine can get rid of if defer undoing
 	error,
 ) {
-	//get logs collector for enclave
-	logsCollectorDaemonSetResource, err := getLogsCollectorDaemonSetForCluster(ctx, "kube-system", kubernetesManager)
+	logsCollectorObj, err := getLogsCollectorObjForCluster(ctx, kubernetesManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting logs aggregator container.")
 	}
-	if logsCollectorDaemonSetResource != nil {
+	if logsCollectorObj != nil {
 		logrus.Debug("Found existing logs collector daemon set.")
-		logsCollectorDaemonSetObj, err := getLogsCollectorDaemonSetObject(ctx, logsCollectorDaemonSetResource)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting logs collector daemon set object.")
-		}
-		return logsCollectorDaemonSetObj, nil
+		return logsCollectorObj, nil
 	}
 
 	logrus.Debug("Did not find existing log collector, creating one...")

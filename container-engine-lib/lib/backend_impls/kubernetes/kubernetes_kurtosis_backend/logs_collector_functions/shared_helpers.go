@@ -15,13 +15,30 @@ import (
 	"net"
 )
 
+func getLogsCollectorObjForCluster(ctx context.Context, kubernetesManager *kubernetes_manager.KubernetesManager) (*logs_collector.LogsCollector, error) {
+	kubernetesResources, err := getLogsCollectorKubernetesResourcesForCluster(ctx, "namespace", kubernetesManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes resources for logs collectors.")
+	}
+
+	obj, err := getLogsCollectorsObjectFromKubernetesResources(ctx, kubernetesManager, kubernetesResources)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting logs collector object from kubernetes resources.")
+	}
+	return obj, nil
+}
+
 func getLogsCollectorKubernetesResourcesForCluster(ctx context.Context, namespace string, kubernetesManager *kubernetes_manager.KubernetesManager) (*logsCollectorKubernetesResources, error) {
 	logsCollectorDaemonSetSearchLabels := map[string]string{
 		kubernetes_label_key.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
 		kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.LogsCollectorKurtosisResourceTypeKubernetesLabelValue.GetString(),
 	}
 
+	// TODO: where can we get this logs collector guid str?
 	logsCollectorGuidStr := ""
+
+	// TODO: figure out what post filter label key needs to be
+	// TODO: figure out what post filter label values need to be
 	logsCollectorCfgConfigMaps, err := kubernetes_resource_collectors.CollectMatchingConfigMaps(ctx, kubernetesManager, namespace, logsCollectorDaemonSetSearchLabels, "kurtosis-logs-collector", map[string]bool{})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting config map for logs collector in namespace '%v'", namespace)
@@ -39,41 +56,36 @@ func getLogsCollectorKubernetesResourcesForCluster(ctx context.Context, namespac
 		configMap = configMapForId[0]
 	}
 
-	logsCollectorCfgConfigMaps, err := kubernetes_resource_collectors.CollectMatchingConfigMaps(ctx, kubernetesManager, namespace, logsCollectorDaemonSetSearchLabels, "kurtosis-logs-collector", map[string]bool{})
+	daemonSets, err := kubernetes_resource_collectors.CollectMatchingDaemonSets(ctx, kubernetesManager, namespace, logsCollectorDaemonSetSearchLabels, "kurtosis-logs-collector", map[string]bool{})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting config map for logs collector in namespace '%v'", namespace)
 	}
-	var configMap *apiv1.ConfigMap
-	if configMapForId, found := logsCollectorCfgConfigMaps[logsCollectorGuidStr]; found {
-		if len(configMapForId) > 1 {
+	var daemonSet *v1.DaemonSet
+	if logsCollectorDaemonSet, found := daemonSets[logsCollectorGuidStr]; found {
+		if len(logsCollectorDaemonSet) > 1 {
 			return nil, stacktrace.NewError(
-				"Expected at most one logs collector config maps in namespace '%v' for logs collector with GUID '%v' but found '%v'",
+				"Expected at most one logs collector daemon set in namespace '%v' for logs collector with GUID '%v' but found '%v'",
 				namespace,
 				logsCollectorGuidStr,
 				len(logsCollectorCfgConfigMaps),
 			)
 		}
-		configMap = configMapForId[0]
+		if len(logsCollectorDaemonSet) == 0 {
+			daemonSet = nil
+		} else {
+			daemonSet = logsCollectorDaemonSet[0]
+		}
 	}
 
-	var logCollectorDaemonSets []v1.DaemonSet
-	logCollectorDaemonSets = append(logCollectorDaemonSets, matchingLogsCollectorDaemonsets.Items...)
-
-	// There should every only be one log collector daemonset deployed in a cluster so error if more are found
-	if len(logCollectorDaemonSets) > 1 {
-		return nil, stacktrace.NewError("Multiple log collector daemon sets were detected inside the cluster, but there should only be one. This is likely a bug inside Kurtosis.")
+	logsCollectorKubernetesResources := &logsCollectorKubernetesResources{
+		daemonSet: daemonSet,
+		configMap: configMap,
 	}
 
-	if len(logCollectorDaemonSets) == 0 {
-		return nil, nil
-	}
-
-	logsCollectorKubernetesResources :=
-
-	return &logCollectorDaemonSets[0], nil
+	return logsCollectorKubernetesResources, nil
 }
 
-func getLogsCollectorsObjectFromKubernetesResources(ctx context.Context, logsCollectorKubernetesResources *logsCollectorKubernetesResources) (*logs_collector.LogsCollector, error) {
+func getLogsCollectorsObjectFromKubernetesResources(ctx context.Context, kubernetesManager *kubernetes_manager.KubernetesManager, logsCollectorKubernetesResources *logsCollectorKubernetesResources) (*logs_collector.LogsCollector, error) {
 	var (
 		logsCollectorStatus container.ContainerStatus
 		privateIpAddr       net.IP
