@@ -3,6 +3,7 @@ package logs_collector_functions
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
@@ -10,18 +11,49 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 	v1 "k8s.io/api/apps/v1"
+	apiv1 "k8s.io/api/core/v1"
 	"net"
 )
 
-func getLogsCollectorDaemonSetForCluster(ctx context.Context, namespace string, kubernetesManager *kubernetes_manager.KubernetesManager) (*v1.DaemonSet, error) {
+func getLogsCollectorKubernetesResourcesForCluster(ctx context.Context, namespace string, kubernetesManager *kubernetes_manager.KubernetesManager) (*logsCollectorKubernetesResources, error) {
 	logsCollectorDaemonSetSearchLabels := map[string]string{
 		kubernetes_label_key.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
 		kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.LogsCollectorKurtosisResourceTypeKubernetesLabelValue.GetString(),
 	}
 
-	matchingLogsCollectorDaemonsets, err := kubernetesManager.GetDaemonSetsByLabels(ctx, namespace, logsCollectorDaemonSetSearchLabels)
+	logsCollectorGuidStr := ""
+	logsCollectorCfgConfigMaps, err := kubernetes_resource_collectors.CollectMatchingConfigMaps(ctx, kubernetesManager, namespace, logsCollectorDaemonSetSearchLabels, "kurtosis-logs-collector", map[string]bool{})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred fetching logs collector containers using labels: %+v", logsCollectorDaemonSetSearchLabels)
+		return nil, stacktrace.Propagate(err, "An error occurred getting config map for logs collector in namespace '%v'", namespace)
+	}
+	var configMap *apiv1.ConfigMap
+	if configMapForId, found := logsCollectorCfgConfigMaps[logsCollectorGuidStr]; found {
+		if len(configMapForId) > 1 {
+			return nil, stacktrace.NewError(
+				"Expected at most one logs collector config maps in namespace '%v' for logs collector with GUID '%v' but found '%v'",
+				namespace,
+				logsCollectorGuidStr,
+				len(logsCollectorCfgConfigMaps),
+			)
+		}
+		configMap = configMapForId[0]
+	}
+
+	logsCollectorCfgConfigMaps, err := kubernetes_resource_collectors.CollectMatchingConfigMaps(ctx, kubernetesManager, namespace, logsCollectorDaemonSetSearchLabels, "kurtosis-logs-collector", map[string]bool{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting config map for logs collector in namespace '%v'", namespace)
+	}
+	var configMap *apiv1.ConfigMap
+	if configMapForId, found := logsCollectorCfgConfigMaps[logsCollectorGuidStr]; found {
+		if len(configMapForId) > 1 {
+			return nil, stacktrace.NewError(
+				"Expected at most one logs collector config maps in namespace '%v' for logs collector with GUID '%v' but found '%v'",
+				namespace,
+				logsCollectorGuidStr,
+				len(logsCollectorCfgConfigMaps),
+			)
+		}
+		configMap = configMapForId[0]
 	}
 
 	var logCollectorDaemonSets []v1.DaemonSet
@@ -36,11 +68,12 @@ func getLogsCollectorDaemonSetForCluster(ctx context.Context, namespace string, 
 		return nil, nil
 	}
 
+	logsCollectorKubernetesResources :=
+
 	return &logCollectorDaemonSets[0], nil
 }
 
-func getLogsCollectorDaemonSetObject(ctx context.Context, logsCollectorDaemonSetResource *v1.DaemonSet) (*logs_collector.LogsCollector, error) {
-
+func getLogsCollectorsObjectFromKubernetesResources(ctx context.Context, logsCollectorKubernetesResources *logsCollectorKubernetesResources) (*logs_collector.LogsCollector, error) {
 	var (
 		logsCollectorStatus container.ContainerStatus
 		privateIpAddr       net.IP

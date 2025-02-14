@@ -1616,10 +1616,22 @@ func (manager *KubernetesManager) GetDaemonSetsByLabels(ctx context.Context, nam
 	opts := buildListOptionsFromLabels(daemonSetLabels)
 	daemonSets, err := namespaceDaemonSetClient.List(ctx, opts)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to get daemonsets with labels '%+v', instead a non-nil error was returned", daemonSetLabels)
+		return nil, stacktrace.Propagate(err, "Expected to be able to get daemon sets with labels '%+v', instead a non-nil error was returned", daemonSetLabels)
 	}
 
 	return daemonSets, nil
+}
+
+func (manager *KubernetesManager) GetConfigMapByLabels(ctx context.Context, namespace string, configMapLabels map[string]string) (*apiv1.ConfigMapList, error) {
+	configMapClient := manager.kubernetesClientSet.CoreV1().ConfigMaps(namespace)
+
+	opts := buildListOptionsFromLabels(configMapLabels)
+	configMaps, err := configMapClient.List(ctx, opts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get daemonsets with labels '%+v', instead a non-nil error was returned", configMapLabels)
+	}
+
+	return configMaps, nil
 }
 
 func (manager *KubernetesManager) GetPodPortforwardEndpointUrl(namespace string, podName string) *url.URL {
