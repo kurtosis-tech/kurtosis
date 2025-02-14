@@ -2,14 +2,12 @@ package fluentbit
 
 import (
 	"context"
-	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,39 +30,34 @@ func (fluentbitPod *fluentbitLogsCollector) CreateAndStart(
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (
-	resultContainerId string,
-	resultContainerLabels map[string]string,
-	resultHostMachinePortBindings map[nat.Port]*nat.PortBinding,
-	resultRemoveLogsCollectorContainerFunc func(),
-	resultErr error,
+	*appsv1.DaemonSet,
+	*apiv1.ConfigMap,
+	func(),
+	error,
 ) {
-	// TODO: the creation of this will likely move
+	// TODO: the creation of this uuid will likely move
 	logsCollectorGuidStr, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
-		return "", map[string]string{}, make(map[nat.Port]*nat.PortBinding), func() { return }, stacktrace.Propagate(err, "An error occurred creating uuid for logs collector.")
+		return nil, nil, func() { return }, stacktrace.Propagate(err, "An error occurred creating uuid for logs collector.")
 	}
 	logsCollectorGuid := logs_collector.LogsCollectorGuid(logsCollectorGuidStr)
 	logsCollectorAttrProvider := objAttrsProvider.ForLogsCollector(logsCollectorGuid)
 
 	// create config creator - this can be done with config map + init container
 	// create Fluentbit container config provider - this can with config map + an init container
-	fluentBitConfigConfigMapName, err := CreateLogsCollectorConfigMap(ctx, logsCollectorAttrProvider, kubernetesManager)
+	configMap, err := CreateLogsCollectorConfigMap(ctx, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
-		return "", map[string]string{}, make(map[nat.Port]*nat.PortBinding), func() { return }, stacktrace.Propagate(err, "An error occurred while trying to create config map for fluent-bit log collector.")
+		return nil, nil, func() { return }, stacktrace.Propagate(err, "An error occurred while trying to create config map for fluent-bit log collector.")
 	}
+	// create remove function
 
 	// TODO: Figure out what ports are needed for this container
 	// Get information about ports
 
 	// Create and start Daemonset
-
-	//logsCollectorDaemonSet, err := kubernetesManager.CreatePod(ctx, createAndStartArgs)
-	//if err != nil {
-	//	return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred starting the logs collector container with these args '%+v'", createAndStartArgs)
-	//}
-	_, err = CreateLogsCollectorDaemonSet(ctx, fluentBitConfigConfigMapName, logsCollectorAttrProvider, kubernetesManager)
+	daemonSet, err := CreateLogsCollectorDaemonSet(ctx, configMap.Name, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
-		return "", map[string]string{}, make(map[nat.Port]*nat.PortBinding), func() { return }, stacktrace.Propagate(err, "An error occurred while trying to daemonset for fluent-bit log collector.")
+		return nil, nil, func() { return }, stacktrace.Propagate(err, "An error occurred while trying to daemonset for fluent-bit log collector.")
 	}
 	// TODO: enable remove mechanism
 	//removeContainerFunc := func() {
@@ -87,9 +80,11 @@ func (fluentbitPod *fluentbitLogsCollector) CreateAndStart(
 	//}()
 
 	//shouldRemoveLogsCollectorContainer = false
-	return "", map[string]string{}, make(map[nat.Port]*nat.PortBinding), func() { return }, nil
+	//shouldRemoveLogsCollectorConfigMap = false
+	return daemonSet, configMap, func() { return }, nil
 }
 
+// TODO: consider pushing creation of daemon set down into the k8s engine
 func CreateLogsCollectorDaemonSet(
 	ctx context.Context,
 	fluentBitCfgConfigMapName string,
@@ -108,7 +103,6 @@ func CreateLogsCollectorDaemonSet(
 	namespaceName := namespaceProvider.GetName().GetString()
 	name := daemonSetAttrProvider.GetName().GetString()
 	labels := shared_helpers.GetStringMapFromLabelMap(daemonSetAttrProvider.GetLabels())
-	logrus.Infof("Log collector daemon set labels: %v", name)
 	annotations := shared_helpers.GetStringMapFromAnnotationMap(daemonSetAttrProvider.GetAnnotations())
 
 	daemonSet := &appsv1.DaemonSet{
@@ -246,18 +240,19 @@ func CreateLogsCollectorDaemonSet(
 	return logsCollectorDaemonSet, nil
 }
 
+// TODO: consider pushing creation of daemon set into kubernetes manager
 func CreateLogsCollectorConfigMap(ctx context.Context,
 	objAttrProvider object_attributes_provider.KubernetesLogsCollectorObjectAttributesProvider,
-	manager *kubernetes_manager.KubernetesManager) (string, error) {
+	manager *kubernetes_manager.KubernetesManager) (*apiv1.ConfigMap, error) {
 	configMapClient := manager.KubernetesClientSet.CoreV1().ConfigMaps(kubeSystemNamespaceName)
 
 	configMapAttrProvider, err := objAttrProvider.ForLogsCollectorConfigMap()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	namespaceProvider, err := objAttrProvider.ForLogsCollectorNamespace()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	namespaceName := namespaceProvider.GetName().GetString()
@@ -277,10 +272,10 @@ func CreateLogsCollectorConfigMap(ctx context.Context,
 		},
 	}
 
-	_, err = configMapClient.Create(ctx, configMap, metav1.CreateOptions{})
+	configMap, err = configMapClient.Create(ctx, configMap, metav1.CreateOptions{})
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while creating config map for fluentbit log collector config.")
+		return nil, stacktrace.Propagate(err, "An error occurred while creating config map for fluentbit log collector config.")
 	}
 
-	return name, nil
+	return configMap, nil
 }

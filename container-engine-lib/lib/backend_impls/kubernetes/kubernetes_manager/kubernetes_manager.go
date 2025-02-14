@@ -1208,7 +1208,7 @@ func (manager *KubernetesManager) RemoveDaemonSet(ctx context.Context, namespace
 		return stacktrace.Propagate(err, "Failed to delete daemon set with name '%s' with delete options '%+v'", daemonSet.Name, globalDeleteOptions)
 	}
 
-	// TODO: maybe add a termination wait?
+	// TODO: maybe add a termination wait here?
 	return nil
 }
 
@@ -1228,6 +1228,8 @@ func (manager *KubernetesManager) GetDaemonSet(ctx context.Context, namespace st
 
 	return daemonSet, nil
 }
+
+// TODO: create daemonset?
 
 // GetContainerLogs gets the logs for a given container running inside the given pod in the give namespace
 // TODO We could upgrade this to get the logs of many containers at once just like kubectl does, see:

@@ -205,24 +205,6 @@ func CreateEngine(
 		}
 	}()
 
-	logrus.Infof("Starting the centralized logs components...")
-	logsCollectorDaemonSet := fluentbit.NewFluentbitLogsCollector()
-
-	_, err = logs_collector_functions.CreateLogsCollector(ctx, 0, 0, logsCollectorDaemonSet, nil, kubernetesManager, objAttrsProvider)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the engine ingress")
-	}
-	var shouldRemoveLogsCollector = true
-	defer func() {
-		if shouldRemoveLogsCollector {
-			//if err := kubernetesManager.RemoveIngress(ctx, engineIngress); err != nil {
-			//	logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete logs collector daemonset that we created but an error was thrown:\n%v", err)
-			//	logrus.Errorf("ACTION REQUIRED: You'll need to manually remove logs collector daemonset ingress with name !!!!!!!")
-			//}
-		}
-	}()
-	logrus.Infof("Centralized logs components started.")
-
 	engineResources := &engineKubernetesResources{
 		clusterRole:        clusterRole,
 		clusterRoleBinding: clusterRoleBindings,
@@ -268,6 +250,23 @@ func CreateEngine(
 		); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred waiting for the engine grpc proxy port '%v/%v' to become available", privateGrpcProxyPortSpec.GetTransportProtocol(), privateGrpcProxyPortSpec.GetNumber())
 		}*/
+
+	logrus.Infof("Starting the centralized logs components...")
+	logsCollectorDaemonSet := fluentbit.NewFluentbitLogsCollector()
+
+	_, removeLogsCollectorFunc, err := logs_collector_functions.CreateLogsCollector(ctx, 0, 0, logsCollectorDaemonSet, nil, kubernetesManager, objAttrsProvider)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the engine ingress")
+	}
+	var shouldRemoveLogsCollector = true
+	defer func() {
+		if shouldRemoveLogsCollector {
+			if err := removeLogsCollectorFunc(); err != nil {
+
+			}
+		}
+	}()
+	logrus.Infof("Centralized logs components started.")
 
 	shouldRemoveLogsCollector = false
 	shouldRemoveNamespace = false

@@ -466,7 +466,7 @@ func (backend *KubernetesKurtosisBackend) CreateLogsCollectorForEnclave(ctx cont
 	logsCollectorDaemonSet := fluentbit.NewFluentbitLogsCollector()
 
 	logrus.Info("Creating logs collector...")
-	logsCollector, err := logs_collector_functions.CreateLogsCollector(
+	logsCollector, _, err := logs_collector_functions.CreateLogsCollector(
 		ctx,
 		logsCollectorTcpPortNumber,
 		logsCollectorHttpPortNumber,

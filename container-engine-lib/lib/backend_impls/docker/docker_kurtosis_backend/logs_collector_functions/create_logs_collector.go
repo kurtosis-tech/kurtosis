@@ -84,9 +84,9 @@ func CreateLogsCollectorForEnclave(
 			enclaveNetwork,
 		)
 	}
-	shouldRemoveLogsCollectorContainerFunc := true
+	shouldRemoveLogsCollectorContainer := true
 	defer func() {
-		if shouldRemoveLogsCollectorContainerFunc {
+		if shouldRemoveLogsCollectorContainer {
 			removeLogsCollectorContainerFunc()
 		}
 	}()
@@ -126,6 +126,6 @@ func CreateLogsCollectorForEnclave(
 	logrus.Debugf("Logs collector successfully created with container ID '%v' for enclave '%v'", containerId, enclaveUuid)
 
 	shouldDisconnectLogsCollectorFromEnclaveNetwork = false
-	shouldRemoveLogsCollectorContainerFunc = false
+	shouldRemoveLogsCollectorContainer = false
 	return logsCollectorObj, nil
 }

@@ -2,9 +2,10 @@ package logs_collector_functions
 
 import (
 	"context"
-	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
+	appsv1 "k8s.io/api/apps/v1"
+	apiv1 "k8s.io/api/core/v1"
 )
 
 type LogsCollectorDaemonSet interface {
@@ -18,5 +19,5 @@ type LogsCollectorDaemonSet interface {
 		logsCollectorHttpPortId string,
 		objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
 		kubernetesManager *kubernetes_manager.KubernetesManager,
-	) (string, map[string]string, map[nat.Port]*nat.PortBinding, func(), error)
+	) (*appsv1.DaemonSet, *apiv1.ConfigMap, func(), error)
 }
