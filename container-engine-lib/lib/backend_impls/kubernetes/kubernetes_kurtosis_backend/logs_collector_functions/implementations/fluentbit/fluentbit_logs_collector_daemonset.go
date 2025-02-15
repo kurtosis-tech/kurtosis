@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 )
@@ -36,46 +37,65 @@ func (fluentbitPod *fluentbitLogsCollector) CreateAndStart(
 ) {
 	logsCollectorGuidStr, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
-		return nil, nil, func() { return }, stacktrace.Propagate(err, "An error occurred creating uuid for logs collector.")
+		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating uuid for logs collector.")
 	}
 	logsCollectorGuid := logs_collector.LogsCollectorGuid(logsCollectorGuidStr)
 	logsCollectorAttrProvider := objAttrsProvider.ForLogsCollector(logsCollectorGuid)
 
 	configMap, err := CreateLogsCollectorConfigMap(ctx, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
-		return nil, nil, func() { return }, stacktrace.Propagate(err, "An error occurred while trying to create config map for fluent-bit log collector.")
+		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create config map for fluent-bit log collector.")
 	}
-	// TODO: create remove function
+	removeConfigMapFunc := func() {
+		removeCtx := context.Background()
+		if err := kubernetesManager.RemoveConfigMap(removeCtx, "kube-system", configMap); err != nil {
+			logrus.Errorf(
+				"Launching the logs collector daemon with name '%v' didn't complete successfully so we "+
+					"tried to remove the config map we started, but doing so exited with an error:\n%v",
+				configMap.Name,
+				err)
+			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs collector config map with Kubernetes name '%v' in namespace '%v'!!!!!!", configMap.Name, configMap.Namespace)
+		}
+	}
+	shouldRemoveLogsCollectorConfigMap := true
+	defer func() {
+		if shouldRemoveLogsCollectorConfigMap {
+			removeConfigMapFunc()
+		}
+	}()
 
 	// TODO: Get port information
 
 	daemonSet, err := CreateLogsCollectorDaemonSet(ctx, configMap.Name, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
-		return nil, nil, func() { return }, stacktrace.Propagate(err, "An error occurred while trying to daemonset for fluent-bit log collector.")
+		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to daemonset for fluent-bit log collector.")
 	}
-	// TODO: create remove function
-	//removeContainerFunc := func() {
-	//	removeCtx := context.Background()
-	//
-	//	if err := kubernetesManager.RemovePod(removeCtx, containerId); err != nil {
-	//		logrus.Errorf(
-	//			"Launching the logs collector container with ID '%v' didn't complete successfully so we "+
-	//				"tried to remove the container we started, but doing so exited with an error:\n%v",
-	//			containerId,
-	//			err)
-	//		logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs collector server with Docker container ID '%v'!!!!!!", containerId)
-	//	}
-	//}
-	//shouldRemoveLogsCollectorContainer := true
-	//defer func() {
-	//	if shouldRemoveLogsCollectorContainer {
-	//		removeContainerFunc()
-	//	}
-	//}()
+	removeDaemonSetFunc := func() {
+		removeCtx := context.Background()
+		if err := kubernetesManager.RemoveDaemonSet(removeCtx, "kube-system", daemonSet); err != nil {
+			logrus.Errorf(
+				"Launching the logs collector daemon with name '%v' didn't complete successfully so we "+
+					"tried to remove the daemon set we started, but doing so exited with an error:\n%v",
+				daemonSet.Name,
+				err)
+			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs collector daemon set with Kubernetes name '%v' in namespace '%v'!!!!!!", daemonSet.Name, daemonSet.Namespace)
+		}
+	}
+	shouldRemoveLogsCollectorDaemonSet := true
+	defer func() {
+		if shouldRemoveLogsCollectorDaemonSet {
+			removeDaemonSetFunc()
+		}
+	}()
 
-	//shouldRemoveLogsCollectorContainer = false
-	//shouldRemoveLogsCollectorConfigMap = false
-	return daemonSet, configMap, func() { return }, nil
+	removeLogsCollectorFunc := func() {
+		removeConfigMapFunc()
+		removeDaemonSetFunc()
+	}
+
+	shouldRemoveLogsCollectorDaemonSet = false
+	shouldRemoveLogsCollectorConfigMap = false
+	return daemonSet, configMap, removeLogsCollectorFunc, nil
 }
 
 func CreateLogsCollectorDaemonSet(

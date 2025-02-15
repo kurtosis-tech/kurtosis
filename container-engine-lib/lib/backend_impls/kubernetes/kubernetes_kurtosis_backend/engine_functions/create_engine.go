@@ -261,9 +261,7 @@ func CreateEngine(
 	var shouldRemoveLogsCollector = true
 	defer func() {
 		if shouldRemoveLogsCollector {
-			if err := removeLogsCollectorFunc(); err != nil {
-
-			}
+			removeLogsCollectorFunc()
 		}
 	}()
 	logrus.Infof("Centralized logs components started.")

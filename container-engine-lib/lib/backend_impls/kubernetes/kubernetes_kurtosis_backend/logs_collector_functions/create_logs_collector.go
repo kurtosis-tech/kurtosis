@@ -20,7 +20,7 @@ func CreateLogsCollector(
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
 ) (
 	*logs_collector.LogsCollector,
-	func() error,
+	func(),
 	error,
 ) {
 	var logsCollectorObj *logs_collector.LogsCollector
@@ -36,7 +36,7 @@ func CreateLogsCollector(
 	// TODO: get logs collector tcp and http port id
 
 	logrus.Debug("Did not find existing log collector, creating one...")
-	daemonSet, configMap, removeLogsCollectorDaemonSetFunc, err := logsCollectorDaemonSet.CreateAndStart(
+	daemonSet, configMap, removeLogsCollectorFunc, err := logsCollectorDaemonSet.CreateAndStart(
 		ctx,
 		"", // TODO: fill these in when adding aggregator to k8s
 		0,  // TODO: fill these in when adding aggregator to k8s
@@ -58,10 +58,10 @@ func CreateLogsCollector(
 			logsCollectorTcpPortNumber,
 		)
 	}
-	shouldRemoveLogsCollectorDaemonSet := true
+	shouldRemoveLogsCollector := true
 	defer func() {
-		if shouldRemoveLogsCollectorDaemonSet {
-			removeLogsCollectorDaemonSetFunc()
+		if shouldRemoveLogsCollector {
+			removeLogsCollectorFunc()
 		}
 	}()
 
@@ -83,5 +83,5 @@ func CreateLogsCollector(
 	// need port info to do availability check
 	// so need ip addresses or hostnames of all the pods started by the daemon set
 
-	return logsCollectorObj, nil, nil
+	return logsCollectorObj, removeLogsCollectorFunc, nil
 }
