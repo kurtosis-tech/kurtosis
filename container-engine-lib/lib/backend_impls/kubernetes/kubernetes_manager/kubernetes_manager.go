@@ -1223,13 +1223,136 @@ func (manager *KubernetesManager) GetDaemonSet(ctx context.Context, namespace st
 		ResourceVersion: "",
 	})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get pod with name '%s'", name)
+		return nil, stacktrace.Propagate(err, "Failed to get daemon set with name '%s'", name)
 	}
 
 	return daemonSet, nil
 }
 
-// TODO: create daemonset?
+func (manager *KubernetesManager) CreateDaemonSet(
+	ctx context.Context,
+	namespaceName string,
+	daemonSetName string,
+	daemonSetLabels map[string]string,
+	daemonSetAnnotations map[string]string,
+	initContainers []apiv1.Container,
+	containers []apiv1.Container,
+	volumes []apiv1.Volume,
+) (*v1.DaemonSet, error) {
+	daemonSetClient := manager.kubernetesClientSet.AppsV1().DaemonSets(namespaceName)
+
+	daemonSetMeta := metav1.ObjectMeta{
+		Name:        daemonSetName,
+		Namespace:   namespaceName,
+		Labels:      daemonSetLabels,
+		Annotations: daemonSetAnnotations,
+	}
+	daemonSetSpec := v1.DaemonSetSpec{
+		Selector: &metav1.LabelSelector{
+			MatchLabels: daemonSetLabels,
+		},
+		Template: apiv1.PodTemplateSpec{
+			ObjectMeta: metav1.ObjectMeta{
+				Labels: daemonSetLabels,
+			},
+			Spec: apiv1.PodSpec{
+				Containers:     containers,
+				InitContainers: initContainers,
+				Volumes:        volumes,
+			},
+		},
+	}
+
+	daemonSetToCreate := &v1.DaemonSet{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		ObjectMeta: daemonSetMeta,
+		Spec:       daemonSetSpec,
+	}
+
+	if daemonSetDefinitionBytes, err := json.Marshal(daemonSetToCreate); err == nil {
+		logrus.Debugf("Going to start daemon set using the following JSON: %v", string(daemonSetDefinitionBytes))
+	}
+
+	createdDaemonSet, err := daemonSetClient.Create(ctx, daemonSetToCreate, globalCreateOptions)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating daemon set.")
+	}
+
+	return createdDaemonSet, nil
+}
+
+// ---------------------------config map---------------------------------------------------------------------------------------
+func (manager *KubernetesManager) RemoveConfigMap(ctx context.Context, namespace string, configMap *apiv1.ConfigMap) error {
+	client := manager.kubernetesClientSet.CoreV1().ConfigMaps(namespace)
+
+	if err := client.Delete(ctx, configMap.Name, globalDeleteOptions); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete config map with name '%s' with delete options '%+v'", configMap.Name, globalDeleteOptions)
+	}
+
+	return nil
+}
+
+func (manager *KubernetesManager) GetConfigMap(ctx context.Context, namespace string, name string) (*apiv1.ConfigMap, error) {
+	client := manager.kubernetesClientSet.CoreV1().ConfigMaps(namespace)
+
+	configMap, err := client.Get(ctx, name, metav1.GetOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		ResourceVersion: "",
+	})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to get config map with name '%s'", name)
+	}
+
+	return configMap, nil
+}
+
+func (manager *KubernetesManager) CreateConfigMap(
+	ctx context.Context,
+	namespaceName string,
+	configMapName string,
+	labels map[string]string,
+	annotations map[string]string,
+	data map[string]string,
+) (*apiv1.ConfigMap, error) {
+	client := manager.kubernetesClientSet.CoreV1().ConfigMaps(namespaceName)
+
+	configMapToCreate := &apiv1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:                       configMapName,
+			GenerateName:               "",
+			Namespace:                  namespaceName,
+			SelfLink:                   "",
+			UID:                        "",
+			ResourceVersion:            "",
+			Generation:                 0,
+			CreationTimestamp:          metav1.Time{},
+			DeletionTimestamp:          nil,
+			DeletionGracePeriodSeconds: nil,
+			Labels:                     labels,
+			Annotations:                annotations,
+			OwnerReferences:            nil,
+			Finalizers:                 nil,
+			ManagedFields:              nil,
+		},
+		Immutable:  nil,
+		Data:       data,
+		BinaryData: nil,
+	}
+
+	createdConfigMap, err := client.Create(ctx, configMapToCreate, globalCreateOptions)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating config map.")
+	}
+
+	return createdConfigMap, nil
+}
 
 // GetContainerLogs gets the logs for a given container running inside the given pod in the give namespace
 // TODO We could upgrade this to get the logs of many containers at once just like kubectl does, see:

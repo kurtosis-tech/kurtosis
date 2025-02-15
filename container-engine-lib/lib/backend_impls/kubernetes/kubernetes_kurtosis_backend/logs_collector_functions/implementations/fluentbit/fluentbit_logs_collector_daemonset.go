@@ -10,7 +10,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type fluentbitLogsCollector struct{}
@@ -35,7 +34,6 @@ func (fluentbitPod *fluentbitLogsCollector) CreateAndStart(
 	func(),
 	error,
 ) {
-	// TODO: the creation of this uuid will likely move
 	logsCollectorGuidStr, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
 		return nil, nil, func() { return }, stacktrace.Propagate(err, "An error occurred creating uuid for logs collector.")
@@ -43,23 +41,19 @@ func (fluentbitPod *fluentbitLogsCollector) CreateAndStart(
 	logsCollectorGuid := logs_collector.LogsCollectorGuid(logsCollectorGuidStr)
 	logsCollectorAttrProvider := objAttrsProvider.ForLogsCollector(logsCollectorGuid)
 
-	// create config creator - this can be done with config map + init container
-	// create Fluentbit container config provider - this can with config map + an init container
 	configMap, err := CreateLogsCollectorConfigMap(ctx, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
 		return nil, nil, func() { return }, stacktrace.Propagate(err, "An error occurred while trying to create config map for fluent-bit log collector.")
 	}
-	// create remove function
+	// TODO: create remove function
 
-	// TODO: Figure out what ports are needed for this container
-	// Get information about ports
+	// TODO: Get port information
 
-	// Create and start Daemonset
 	daemonSet, err := CreateLogsCollectorDaemonSet(ctx, configMap.Name, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
 		return nil, nil, func() { return }, stacktrace.Propagate(err, "An error occurred while trying to daemonset for fluent-bit log collector.")
 	}
-	// TODO: enable remove mechanism
+	// TODO: create remove function
 	//removeContainerFunc := func() {
 	//	removeCtx := context.Background()
 	//
@@ -84,197 +78,178 @@ func (fluentbitPod *fluentbitLogsCollector) CreateAndStart(
 	return daemonSet, configMap, func() { return }, nil
 }
 
-// TODO: consider pushing creation of daemon set down into the k8s engine
 func CreateLogsCollectorDaemonSet(
 	ctx context.Context,
 	fluentBitCfgConfigMapName string,
 	objAttrProvider object_attributes_provider.KubernetesLogsCollectorObjectAttributesProvider,
-	manager *kubernetes_manager.KubernetesManager) (*appsv1.DaemonSet, error) {
-	daemonSetClient := manager.KubernetesClientSet.AppsV1().DaemonSets(kubeSystemNamespaceName)
+	kubernetesManager *kubernetes_manager.KubernetesManager) (*appsv1.DaemonSet, error) {
 
 	daemonSetAttrProvider, err := objAttrProvider.ForLogsCollectorDaemonSet()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while creating fluentbit daemonset.")
+		return nil, stacktrace.Propagate(err, "An error occurred while getting logs collector daemon set attributes provider.")
 	}
-	namespaceProvider, err := objAttrProvider.ForLogsCollectorNamespace()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while creating fluentbit daemonset.")
-	}
-	namespaceName := namespaceProvider.GetName().GetString()
 	name := daemonSetAttrProvider.GetName().GetString()
 	labels := shared_helpers.GetStringMapFromLabelMap(daemonSetAttrProvider.GetLabels())
 	annotations := shared_helpers.GetStringMapFromAnnotationMap(daemonSetAttrProvider.GetAnnotations())
 
-	daemonSet := &appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Namespace:   namespaceName,
-			Labels:      labels,
-			Annotations: annotations,
-		},
-		Spec: appsv1.DaemonSetSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{"app": "fluent-bit"}, // do the pods need the same labels as the daemon set?
+	namespaceProvider, err := objAttrProvider.ForLogsCollectorNamespace()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while getting logs collector namespace attributes provider.")
+	}
+	namespaceName := namespaceProvider.GetName().GetString()
+
+	containers := []apiv1.Container{
+		{
+			Name:  "fluent-bit", // how should it be named?
+			Image: fluentBitImage,
+			Args: []string{
+				"/fluent-bit/bin/fluent-bit",
+				"--config=/fluent-bit/etc/conf/fluent-bit.conf",
 			},
-			Template: apiv1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"app": "fluent-bit"}, // do the pods need the same labels as the daemon set?
+			Ports: []apiv1.ContainerPort{
+				{ContainerPort: 80},
+			},
+			VolumeMounts: []apiv1.VolumeMount{
+				{
+					Name:             "varlog",
+					ReadOnly:         false,
+					MountPath:        "/var/log",
+					SubPath:          "",
+					MountPropagation: nil,
+					SubPathExpr:      "",
 				},
-				Spec: apiv1.PodSpec{
-					Containers: []apiv1.Container{
-						{
-							Name:  "fluent-bit", // how should it be named?
-							Image: fluentBitImage,
-							Args: []string{
-								"/fluent-bit/bin/fluent-bit",
-								"--config=/fluent-bit/etc/conf/fluent-bit.conf",
-							},
-							Ports: []apiv1.ContainerPort{
-								{ContainerPort: 80},
-							},
-							VolumeMounts: []apiv1.VolumeMount{
-								{
-									Name:             "varlog",
-									ReadOnly:         false,
-									MountPath:        "/var/log",
-									SubPath:          "",
-									MountPropagation: nil,
-									SubPathExpr:      "",
-								},
-								{
-									Name:             "varlibdockercontainers",
-									ReadOnly:         false,
-									MountPath:        "/var/lib/docker/containers",
-									SubPath:          "",
-									MountPropagation: nil,
-									SubPathExpr:      "",
-								},
-								{
-									Name:             "varlogcontainers",
-									ReadOnly:         false,
-									MountPath:        "/var/log/containers",
-									SubPath:          "",
-									MountPropagation: nil,
-									SubPathExpr:      "",
-								},
-								{
-									Name:             "fluent-bit-config",
-									ReadOnly:         false,
-									MountPath:        "/fluent-bit/etc/conf",
-									SubPath:          "",
-									MountPropagation: nil,
-									SubPathExpr:      "",
-								},
-								{
-									Name:             "fluent-bit-host-logs",
-									ReadOnly:         false,
-									MountPath:        "/fluent-bit-logs",
-									SubPath:          "",
-									MountPropagation: nil,
-									SubPathExpr:      "",
-								},
-							},
-						},
-					},
-					Volumes: []apiv1.Volume{
-						{
-							Name: "varlog",
-							VolumeSource: apiv1.VolumeSource{
-								HostPath: &apiv1.HostPathVolumeSource{
-									Path: "/var/log",
-									Type: nil,
-								},
-							},
-						},
-						{
-							// is this where docker container logs are stored across all kubernetes clusters?
-							Name: "varlibdockercontainers",
-							VolumeSource: apiv1.VolumeSource{
-								HostPath: &apiv1.HostPathVolumeSource{
-									Path: "/var/lib/docker/containers",
-									Type: nil,
-								},
-							},
-						},
-						{
-							Name: "varlogcontainers",
-							VolumeSource: apiv1.VolumeSource{
-								HostPath: &apiv1.HostPathVolumeSource{
-									Path: "/var/log/containers",
-									Type: nil,
-								},
-							},
-						},
-						{
-							Name: "fluent-bit-config",
-							VolumeSource: apiv1.VolumeSource{
-								ConfigMap: &apiv1.ConfigMapVolumeSource{
-									LocalObjectReference: apiv1.LocalObjectReference{Name: fluentBitCfgConfigMapName},
-									Items:                nil,
-									DefaultMode:          nil,
-									Optional:             nil,
-								},
-							},
-						},
-						{
-							Name: "fluent-bit-host-logs",
-							VolumeSource: apiv1.VolumeSource{
-								HostPath: &apiv1.HostPathVolumeSource{
-									Path: "/var/log/fluentbit",
-								},
-							},
-						},
-					},
-					InitContainers: []apiv1.Container{},
+				{
+					Name:             "varlibdockercontainers",
+					ReadOnly:         false,
+					MountPath:        "/var/lib/docker/containers",
+					SubPath:          "",
+					MountPropagation: nil,
+					SubPathExpr:      "",
+				},
+				{
+					Name:             "varlogcontainers",
+					ReadOnly:         false,
+					MountPath:        "/var/log/containers",
+					SubPath:          "",
+					MountPropagation: nil,
+					SubPathExpr:      "",
+				},
+				{
+					Name:             "fluent-bit-config",
+					ReadOnly:         false,
+					MountPath:        "/fluent-bit/etc/conf",
+					SubPath:          "",
+					MountPropagation: nil,
+					SubPathExpr:      "",
+				},
+				{
+					Name:             "fluent-bit-host-logs",
+					ReadOnly:         false,
+					MountPath:        "/fluent-bit-logs",
+					SubPath:          "",
+					MountPropagation: nil,
+					SubPathExpr:      "",
 				},
 			},
 		},
 	}
 
-	// deploy the daemon set
-	logsCollectorDaemonSet, err := daemonSetClient.Create(ctx, daemonSet, metav1.CreateOptions{})
+	volumes := []apiv1.Volume{
+		{
+			Name: "varlog",
+			VolumeSource: apiv1.VolumeSource{
+				HostPath: &apiv1.HostPathVolumeSource{
+					Path: "/var/log",
+					Type: nil,
+				},
+			},
+		},
+		{
+			// is this where docker container logs are stored across all kubernetes clusters?
+			Name: "varlibdockercontainers",
+			VolumeSource: apiv1.VolumeSource{
+				HostPath: &apiv1.HostPathVolumeSource{
+					Path: "/var/lib/docker/containers",
+					Type: nil,
+				},
+			},
+		},
+		{
+			Name: "varlogcontainers",
+			VolumeSource: apiv1.VolumeSource{
+				HostPath: &apiv1.HostPathVolumeSource{
+					Path: "/var/log/containers",
+					Type: nil,
+				},
+			},
+		},
+		{
+			Name: "fluent-bit-config",
+			VolumeSource: apiv1.VolumeSource{
+				ConfigMap: &apiv1.ConfigMapVolumeSource{
+					LocalObjectReference: apiv1.LocalObjectReference{Name: fluentBitCfgConfigMapName},
+					Items:                nil,
+					DefaultMode:          nil,
+					Optional:             nil,
+				},
+			},
+		},
+		{
+			Name: "fluent-bit-host-logs",
+			VolumeSource: apiv1.VolumeSource{
+				HostPath: &apiv1.HostPathVolumeSource{
+					Path: "/var/log/fluentbit",
+				},
+			},
+		},
+	}
+
+	logsCollectorDaemonSet, err := kubernetesManager.CreateDaemonSet(
+		ctx,
+		namespaceName,
+		name,
+		labels,
+		annotations,
+		[]apiv1.Container{},
+		containers,
+		volumes,
+	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while creating fluentbit daemonset.")
+		return nil, stacktrace.Propagate(err, "An error occurred creating daemon set for fluent bit logs collector.")
 	}
 
 	return logsCollectorDaemonSet, nil
 }
 
-// TODO: consider pushing creation of daemon set into kubernetes manager
 func CreateLogsCollectorConfigMap(ctx context.Context,
 	objAttrProvider object_attributes_provider.KubernetesLogsCollectorObjectAttributesProvider,
-	manager *kubernetes_manager.KubernetesManager) (*apiv1.ConfigMap, error) {
-	configMapClient := manager.KubernetesClientSet.CoreV1().ConfigMaps(kubeSystemNamespaceName)
-
+	kubernetesManager *kubernetes_manager.KubernetesManager) (*apiv1.ConfigMap, error) {
 	configMapAttrProvider, err := objAttrProvider.ForLogsCollectorConfigMap()
 	if err != nil {
 		return nil, err
 	}
-	namespaceProvider, err := objAttrProvider.ForLogsCollectorNamespace()
-	if err != nil {
-		return nil, err
-	}
-
-	namespaceName := namespaceProvider.GetName().GetString()
 	name := configMapAttrProvider.GetName().GetString()
 	labels := shared_helpers.GetStringMapFromLabelMap(configMapAttrProvider.GetLabels())
 	annotations := shared_helpers.GetStringMapFromAnnotationMap(configMapAttrProvider.GetAnnotations())
 
-	configMap := &apiv1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Namespace:   namespaceName,
-			Labels:      labels,
-			Annotations: annotations,
-		},
-		Data: map[string]string{
+	namespaceProvider, err := objAttrProvider.ForLogsCollectorNamespace()
+	if err != nil {
+		return nil, err
+	}
+	namespaceName := namespaceProvider.GetName().GetString()
+
+	configMap, err := kubernetesManager.CreateConfigMap(
+		ctx,
+		namespaceName,
+		name,
+		labels,
+		annotations,
+		map[string]string{
 			"fluent-bit.conf": fluentBitConfigStr,
 		},
-	}
-
-	configMap, err = configMapClient.Create(ctx, configMap, metav1.CreateOptions{})
+	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while creating config map for fluentbit log collector config.")
+		return nil, stacktrace.Propagate(err, "An error occurred while creating config map for fluent bit log collector config.")
 	}
 
 	return configMap, nil
