@@ -6,7 +6,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 )
 
-// TODO: implement
 // DestroyLogsCollector Destroys the logs collector and its associated resources
 func DestroyLogsCollector(ctx context.Context, kubernetesManager *kubernetes_manager.KubernetesManager) error {
 	logsCollectorResources, err := getLogsCollectorKubernetesResourcesForCluster(ctx, "kube-system", kubernetesManager)
