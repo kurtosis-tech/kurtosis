@@ -53,7 +53,6 @@ func (provider *kubernetesLogsCollectorObjectAttributesProviderImpl) ForLogsColl
 	}
 
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		kubernetes_label_key.AppIDKubernetesLabelKey:                label_value_consts.AppIDKubernetesLabelValue,
 		kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.LogsCollectorKurtosisResourceTypeKubernetesLabelValue,
 	}
 
@@ -74,7 +73,6 @@ func (provider *kubernetesLogsCollectorObjectAttributesProviderImpl) ForLogsColl
 	}
 
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		kubernetes_label_key.AppIDKubernetesLabelKey:                label_value_consts.AppIDKubernetesLabelValue,
 		kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.LogsCollectorKurtosisResourceTypeKubernetesLabelValue,
 	}
 
@@ -88,8 +86,8 @@ func (provider *kubernetesLogsCollectorObjectAttributesProviderImpl) ForLogsColl
 	return objectAttributes, nil
 }
 
+// TODO: deploy log collector in its own namespace?
 func (provider *kubernetesLogsCollectorObjectAttributesProviderImpl) ForLogsCollectorNamespace() (KubernetesObjectAttributes, error) {
-	// TODO: deploy log collector in its own namespace?
 	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(logsCollectorNamespace)
 	if err != nil {
 		return nil, err

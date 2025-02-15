@@ -494,8 +494,10 @@ func (backend *KubernetesKurtosisBackend) GetLogsCollectorForEnclave(ctx context
 }
 
 func (backend *KubernetesKurtosisBackend) DestroyLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) error {
-	// TODO IMPLEMENT
-	return stacktrace.NewError("Destroy the logs collector for enclave isn't yet implemented on Kubernetes")
+	if err := logs_collector_functions.DestroyLogsCollector(ctx, backend.kubernetesManager); err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying logs collector.")
+	}
+	return nil
 }
 
 func (backend *KubernetesKurtosisBackend) GetReverseProxy(

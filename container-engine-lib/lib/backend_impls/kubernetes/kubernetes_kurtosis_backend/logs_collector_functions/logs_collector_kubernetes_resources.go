@@ -8,12 +8,12 @@ import (
 type logsCollectorKubernetesResources struct {
 	daemonSet *v1.DaemonSet
 
+	// TODO: deploy collector in its own namespace
+	// namespace?
+
 	// store all pods associated with fluent bit log collectors?
 	// could make it easier to do health and status checks?
 	//pods *apiv1.Pod
-
-	// TODO: deploy collector in its own namespace
-	// namespace?
 
 	configMap *apiv1.ConfigMap
 }
