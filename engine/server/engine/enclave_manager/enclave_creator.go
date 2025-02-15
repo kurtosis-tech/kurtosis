@@ -84,7 +84,7 @@ func (creator *EnclaveCreator) CreateEnclave(
 	}()
 
 	// only create log collector for backend as
-	shouldDeleteLogsCollector := false
+	shouldDeleteLogsCollector := true
 	// TODO the logs collector has a random private ip address in the enclave network that must be tracked
 	if _, err := creator.kurtosisBackend.CreateLogsCollectorForEnclave(setupCtx, enclaveUuid, defaultTcpLogsCollectorPortNum, defaultHttpLogsCollectorPortNum); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the logs collector with TCP port number '%v' and HTTP port number '%v'", defaultTcpLogsCollectorPortNum, defaultHttpLogsCollectorPortNum)
