@@ -10,13 +10,14 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	"net"
 )
 
 func getLogsCollectorObjForCluster(ctx context.Context, kubernetesManager *kubernetes_manager.KubernetesManager) (*logs_collector.LogsCollector, error) {
-	kubernetesResources, err := getLogsCollectorKubernetesResourcesForCluster(ctx, "kube-system", kubernetesManager)
+	kubernetesResources, err := getLogsCollectorKubernetesResourcesForCluster(ctx, kubernetesManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes resources for logs collectors.")
 	}
@@ -28,67 +29,106 @@ func getLogsCollectorObjForCluster(ctx context.Context, kubernetesManager *kuber
 	return obj, nil
 }
 
-func getLogsCollectorKubernetesResourcesForCluster(ctx context.Context, namespace string, kubernetesManager *kubernetes_manager.KubernetesManager) (*logsCollectorKubernetesResources, error) {
+func getLogsCollectorKubernetesResourcesForCluster(ctx context.Context, kubernetesManager *kubernetes_manager.KubernetesManager) (*logsCollectorKubernetesResources, error) {
+	resourceTypeLabelKeyStr := kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey.GetString()
+	logsCollectorResourceTypeLabelValStr := label_value_consts.LogsCollectorKurtosisResourceTypeKubernetesLabelValue.GetString()
 	logsCollectorDaemonSetSearchLabels := map[string]string{
-		kubernetes_label_key.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
-		kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.LogsCollectorKurtosisResourceTypeKubernetesLabelValue.GetString(),
+		kubernetes_label_key.AppIDKubernetesLabelKey.GetString(): label_value_consts.AppIDKubernetesLabelValue.GetString(),
+		resourceTypeLabelKeyStr:                                  logsCollectorResourceTypeLabelValStr,
+		// could retrieve the logs collector by the logs collector guid if we added guid labels, but for now just retrieve by resource type
 	}
+
+	logsCollectorNamespaces, err := kubernetes_resource_collectors.CollectMatchingNamespaces(ctx, kubernetesManager, logsCollectorDaemonSetSearchLabels, resourceTypeLabelKeyStr, map[string]bool{logsCollectorResourceTypeLabelValStr: true})
+	if err != nil {
+		return nil, err
+	}
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting namepsace for logs collector.")
+	}
+	var namespace *apiv1.Namespace
+	if logsCollectorNamespaceForLabel, found := logsCollectorNamespaces[logsCollectorResourceTypeLabelValStr]; found {
+		if len(logsCollectorNamespaceForLabel) > 1 {
+			return nil, stacktrace.NewError(
+				"Expected at most one namespaces for the logs collector but found '%v'",
+				namespace,
+				len(logsCollectorNamespaceForLabel),
+			)
+		}
+		if len(logsCollectorNamespaceForLabel) == 0 {
+			// if no namespace for logs collector, assume it doesn't exist at all
+			return &logsCollectorKubernetesResources{
+				daemonSet: nil,
+				configMap: nil,
+				namespace: nil,
+			}, nil
+		} else {
+			namespace = logsCollectorNamespaceForLabel[0]
+		}
+	} else {
+		return &logsCollectorKubernetesResources{
+			daemonSet: nil,
+			configMap: nil,
+			namespace: nil,
+		}, nil
+	}
+	logrus.Infof("Logs collector namespace name: %v", namespace.Name)
 
 	logsCollectorCfgConfigMaps, err := kubernetes_resource_collectors.CollectMatchingConfigMaps(
 		ctx,
 		kubernetesManager,
-		namespace,
-		logsCollectorDaemonSetSearchLabels, // could retrieve the logs collector by the logs collector guid, but for now just retrieve by resource type
-		kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey.GetString(),
+		namespace.Name,
+		logsCollectorDaemonSetSearchLabels,
+		resourceTypeLabelKeyStr,
 		map[string]bool{
-			label_value_consts.LogsCollectorKurtosisResourceTypeKubernetesLabelValue.GetString(): true,
+			logsCollectorResourceTypeLabelValStr: true,
 		})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting config map for logs collector in namespace '%v'", namespace)
+		return nil, stacktrace.Propagate(err, "An error occurred getting config map for logs collector in namespace '%v'", namespace.Name)
 	}
 	var configMap *apiv1.ConfigMap
-	if configMapForId, found := logsCollectorCfgConfigMaps[label_value_consts.LogsCollectorKurtosisResourceTypeKubernetesLabelValue.GetString()]; found {
-		if len(configMapForId) > 1 {
+	if configMapForForLabel, found := logsCollectorCfgConfigMaps[logsCollectorResourceTypeLabelValStr]; found {
+		if len(configMapForForLabel) > 1 {
 			return nil, stacktrace.NewError(
 				"Expected at most one logs collector config maps in namespace '%v' for logs collector but found '%v'",
-				namespace,
-				len(logsCollectorCfgConfigMaps),
+				namespace.Name,
+				len(configMapForForLabel),
 			)
 		}
-		configMap = configMapForId[0]
+		configMap = configMapForForLabel[0]
 	}
 
 	daemonSets, err := kubernetes_resource_collectors.CollectMatchingDaemonSets(
 		ctx,
 		kubernetesManager,
-		namespace,
+		namespace.Name,
 		logsCollectorDaemonSetSearchLabels,
-		kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey.GetString(),
+		resourceTypeLabelKeyStr,
 		map[string]bool{
-			label_value_consts.LogsCollectorKurtosisResourceTypeKubernetesLabelValue.GetString(): true,
+			logsCollectorResourceTypeLabelValStr: true,
 		})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting config map for logs collector in namespace '%v'", namespace)
 	}
 	var daemonSet *v1.DaemonSet
-	if logsCollectorDaemonSet, found := daemonSets[label_value_consts.LogsCollectorKurtosisResourceTypeKubernetesLabelValue.GetString()]; found {
-		if len(logsCollectorDaemonSet) > 1 {
+	if logsCollectorDaemonSetsForLabel, found := daemonSets[logsCollectorResourceTypeLabelValStr]; found {
+		if len(logsCollectorDaemonSetsForLabel) > 1 {
 			return nil, stacktrace.NewError(
 				"Expected at most one logs collector daemon set in namespace '%v' for logs collector but found '%v'",
-				namespace,
-				len(logsCollectorCfgConfigMaps),
+				namespace.Name,
+				len(logsCollectorDaemonSetsForLabel),
 			)
 		}
-		if len(logsCollectorDaemonSet) == 0 {
+		if len(logsCollectorDaemonSetsForLabel) == 0 {
 			daemonSet = nil
 		} else {
-			daemonSet = logsCollectorDaemonSet[0]
+			daemonSet = logsCollectorDaemonSetsForLabel[0]
 		}
 	}
 
 	logsCollectorKubernetesResources := &logsCollectorKubernetesResources{
 		daemonSet: daemonSet,
 		configMap: configMap,
+		namespace: namespace,
 	}
 
 	return logsCollectorKubernetesResources, nil

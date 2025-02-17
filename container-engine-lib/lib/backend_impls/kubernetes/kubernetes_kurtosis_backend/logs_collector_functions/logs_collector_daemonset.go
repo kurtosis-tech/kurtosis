@@ -19,5 +19,5 @@ type LogsCollectorDaemonSet interface {
 		logsCollectorHttpPortId string,
 		objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
 		kubernetesManager *kubernetes_manager.KubernetesManager,
-	) (*appsv1.DaemonSet, *apiv1.ConfigMap, func(), error)
+	) (*appsv1.DaemonSet, *apiv1.ConfigMap, *apiv1.Namespace, func(), error)
 }

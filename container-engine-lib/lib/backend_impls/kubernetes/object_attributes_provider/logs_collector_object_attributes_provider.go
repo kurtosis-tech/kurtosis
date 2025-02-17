@@ -5,17 +5,13 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_value"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_object_name"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
 const (
-	// TODO: should we deploy logs collector in kube-system or in a kurtosis controlled namespace? I'm leaning towards Kurtosis created namespace
-	// could also go in its own namespace?
-	logsCollectorNamespace        = "kube-system"
-	logsCollectorNamePrefix       = "kurtosis-logs-collector-config"
+	logsCollectorNamePrefix       = "kurtosis-logs-collector"
 	logsCollectorConfigNamePrefix = "kurtosis-logs-collector-config"
 )
 
@@ -86,14 +82,15 @@ func (provider *kubernetesLogsCollectorObjectAttributesProviderImpl) ForLogsColl
 	return objectAttributes, nil
 }
 
-// TODO: deploy log collector in its own namespace?
 func (provider *kubernetesLogsCollectorObjectAttributesProviderImpl) ForLogsCollectorNamespace() (KubernetesObjectAttributes, error) {
-	name, err := kubernetes_object_name.CreateNewKubernetesObjectName(logsCollectorNamespace)
+	name, err := getCompositeKubernetesObjectName([]string{logsCollectorNamePrefix, string(provider.logsCollectorGuid)})
 	if err != nil {
 		return nil, err
 	}
 
-	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{}
+	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
+		kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.LogsCollectorKurtosisResourceTypeKubernetesLabelValue,
+	}
 
 	annotations := make(map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue)
 

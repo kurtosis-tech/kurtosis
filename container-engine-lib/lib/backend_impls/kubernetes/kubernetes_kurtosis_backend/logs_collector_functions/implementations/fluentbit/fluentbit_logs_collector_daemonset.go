@@ -32,30 +32,56 @@ func (fluentbitPod *fluentbitLogsCollector) CreateAndStart(
 ) (
 	*appsv1.DaemonSet,
 	*apiv1.ConfigMap,
+	*apiv1.Namespace,
 	func(),
 	error,
 ) {
 	logsCollectorGuidStr, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
-		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating uuid for logs collector.")
+		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating uuid for logs collector.")
 	}
+
 	logsCollectorGuid := logs_collector.LogsCollectorGuid(logsCollectorGuidStr)
 	logsCollectorAttrProvider := objAttrsProvider.ForLogsCollector(logsCollectorGuid)
 
-	configMap, err := CreateLogsCollectorConfigMap(ctx, logsCollectorAttrProvider, kubernetesManager)
+	namespace, err := CreateLogsCollectorNamespace(ctx, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
-		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create config map for fluent-bit log collector.")
+		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating namespace for logs collector.")
+	}
+	removeNamespaceFunc := func() {
+		removeCtx := context.Background()
+		if err := kubernetesManager.RemoveNamespace(removeCtx, namespace); err != nil {
+			logrus.Errorf(
+				"Launching the logs collector daemon set with name '%v' didn't complete successfully so we "+
+					"tried to remove the namespace we started, but doing so exited with an error:\n%v",
+				namespace.Name,
+				err)
+			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs collector namespace with Kubernetes name '%v'!!!!!!", namespace.Name)
+		}
+		logrus.Infof("REMOVING NAMESPACE: %v", namespace.Name)
+	}
+	shouldRemoveLogsCollectorNamespace := true
+	defer func() {
+		if shouldRemoveLogsCollectorNamespace {
+			removeNamespaceFunc()
+		}
+	}()
+
+	configMap, err := CreateLogsCollectorConfigMap(ctx, namespace.Name, logsCollectorAttrProvider, kubernetesManager)
+	if err != nil {
+		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create config map for fluent-bit log collector.")
 	}
 	removeConfigMapFunc := func() {
 		removeCtx := context.Background()
-		if err := kubernetesManager.RemoveConfigMap(removeCtx, "kube-system", configMap); err != nil {
+		if err := kubernetesManager.RemoveConfigMap(removeCtx, namespace.Name, configMap); err != nil {
 			logrus.Errorf(
-				"Launching the logs collector daemon with name '%v' didn't complete successfully so we "+
+				"Launching the logs collector daemon set with name '%v' didn't complete successfully so we "+
 					"tried to remove the config map we started, but doing so exited with an error:\n%v",
 				configMap.Name,
 				err)
 			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs collector config map with Kubernetes name '%v' in namespace '%v'!!!!!!", configMap.Name, configMap.Namespace)
 		}
+		logrus.Info("REMOVED CONFIG MAP")
 	}
 	shouldRemoveLogsCollectorConfigMap := true
 	defer func() {
@@ -66,13 +92,13 @@ func (fluentbitPod *fluentbitLogsCollector) CreateAndStart(
 
 	// TODO: Get port information
 
-	daemonSet, err := CreateLogsCollectorDaemonSet(ctx, configMap.Name, logsCollectorAttrProvider, kubernetesManager)
+	daemonSet, err := CreateLogsCollectorDaemonSet(ctx, namespace.Name, configMap.Name, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
-		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to daemonset for fluent-bit log collector.")
+		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to daemonset for fluent-bit log collector.")
 	}
 	removeDaemonSetFunc := func() {
 		removeCtx := context.Background()
-		if err := kubernetesManager.RemoveDaemonSet(removeCtx, "kube-system", daemonSet); err != nil {
+		if err := kubernetesManager.RemoveDaemonSet(removeCtx, namespace.Name, daemonSet); err != nil {
 			logrus.Errorf(
 				"Launching the logs collector daemon with name '%v' didn't complete successfully so we "+
 					"tried to remove the daemon set we started, but doing so exited with an error:\n%v",
@@ -80,6 +106,7 @@ func (fluentbitPod *fluentbitLogsCollector) CreateAndStart(
 				err)
 			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs collector daemon set with Kubernetes name '%v' in namespace '%v'!!!!!!", daemonSet.Name, daemonSet.Namespace)
 		}
+		logrus.Info("REMOVED DAEMON ET")
 	}
 	shouldRemoveLogsCollectorDaemonSet := true
 	defer func() {
@@ -89,17 +116,20 @@ func (fluentbitPod *fluentbitLogsCollector) CreateAndStart(
 	}()
 
 	removeLogsCollectorFunc := func() {
-		removeConfigMapFunc()
 		removeDaemonSetFunc()
+		removeConfigMapFunc()
+		removeNamespaceFunc()
 	}
 
-	shouldRemoveLogsCollectorDaemonSet = false
+	shouldRemoveLogsCollectorNamespace = false
 	shouldRemoveLogsCollectorConfigMap = false
-	return daemonSet, configMap, removeLogsCollectorFunc, nil
+	shouldRemoveLogsCollectorDaemonSet = false
+	return daemonSet, configMap, namespace, removeLogsCollectorFunc, nil
 }
 
 func CreateLogsCollectorDaemonSet(
 	ctx context.Context,
+	namespace string,
 	fluentBitCfgConfigMapName string,
 	objAttrProvider object_attributes_provider.KubernetesLogsCollectorObjectAttributesProvider,
 	kubernetesManager *kubernetes_manager.KubernetesManager) (*appsv1.DaemonSet, error) {
@@ -111,12 +141,6 @@ func CreateLogsCollectorDaemonSet(
 	name := daemonSetAttrProvider.GetName().GetString()
 	labels := shared_helpers.GetStringMapFromLabelMap(daemonSetAttrProvider.GetLabels())
 	annotations := shared_helpers.GetStringMapFromAnnotationMap(daemonSetAttrProvider.GetAnnotations())
-
-	namespaceProvider, err := objAttrProvider.ForLogsCollectorNamespace()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while getting logs collector namespace attributes provider.")
-	}
-	namespaceName := namespaceProvider.GetName().GetString()
 
 	containers := []apiv1.Container{
 		{
@@ -226,7 +250,7 @@ func CreateLogsCollectorDaemonSet(
 
 	logsCollectorDaemonSet, err := kubernetesManager.CreateDaemonSet(
 		ctx,
-		namespaceName,
+		namespace,
 		name,
 		labels,
 		annotations,
@@ -241,7 +265,9 @@ func CreateLogsCollectorDaemonSet(
 	return logsCollectorDaemonSet, nil
 }
 
-func CreateLogsCollectorConfigMap(ctx context.Context,
+func CreateLogsCollectorConfigMap(
+	ctx context.Context,
+	namespace string,
 	objAttrProvider object_attributes_provider.KubernetesLogsCollectorObjectAttributesProvider,
 	kubernetesManager *kubernetes_manager.KubernetesManager) (*apiv1.ConfigMap, error) {
 	configMapAttrProvider, err := objAttrProvider.ForLogsCollectorConfigMap()
@@ -252,15 +278,9 @@ func CreateLogsCollectorConfigMap(ctx context.Context,
 	labels := shared_helpers.GetStringMapFromLabelMap(configMapAttrProvider.GetLabels())
 	annotations := shared_helpers.GetStringMapFromAnnotationMap(configMapAttrProvider.GetAnnotations())
 
-	namespaceProvider, err := objAttrProvider.ForLogsCollectorNamespace()
-	if err != nil {
-		return nil, err
-	}
-	namespaceName := namespaceProvider.GetName().GetString()
-
 	configMap, err := kubernetesManager.CreateConfigMap(
 		ctx,
-		namespaceName,
+		namespace,
 		name,
 		labels,
 		annotations,
@@ -273,4 +293,27 @@ func CreateLogsCollectorConfigMap(ctx context.Context,
 	}
 
 	return configMap, nil
+}
+
+func CreateLogsCollectorNamespace(
+	ctx context.Context,
+	objAttrProvider object_attributes_provider.KubernetesLogsCollectorObjectAttributesProvider,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+) (*apiv1.Namespace, error) {
+	namespaceProvider, err := objAttrProvider.ForLogsCollectorNamespace()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while getting logs collector namespace attributes provider.")
+	}
+	namespaceName := namespaceProvider.GetName().GetString()
+	namespaceLabels := shared_helpers.GetStringMapFromLabelMap(namespaceProvider.GetLabels())
+	namespaceAnnotations := shared_helpers.GetStringMapFromAnnotationMap(namespaceProvider.GetAnnotations())
+
+	namespaceObj, err := kubernetesManager.CreateNamespace(ctx, namespaceName, namespaceLabels, namespaceAnnotations)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating namepsace for logs collector with name '%s'", namespaceName)
+	}
+	logrus.Infof("SUCCESSFULLY CREATED LOGS COLLECTOR NAMESPACE: %v", namespaceObj.Name)
+
+	return namespaceObj, nil
+
 }
