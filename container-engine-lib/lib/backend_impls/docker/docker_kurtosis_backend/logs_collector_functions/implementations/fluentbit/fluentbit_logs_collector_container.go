@@ -8,12 +8,25 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"net"
 )
 
-type fluentbitLogsCollectorContainer struct{}
+type fluentbitLogsCollectorContainer struct {
+	fluentbitHealthCheckPath string
+
+	bridgeNetworkIpAddress net.IP
+
+	portNumber uint16
+}
 
 func NewFluentbitLogsCollectorContainer() *fluentbitLogsCollectorContainer {
-	return &fluentbitLogsCollectorContainer{}
+	return &fluentbitLogsCollectorContainer{
+		fluentbitHealthCheckPath: healthCheckEndpointPath,
+
+		// these will get set after container is created
+		bridgeNetworkIpAddress: nil,
+		portNumber:             0,
+	}
 }
 
 func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
@@ -140,4 +153,8 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 
 	shouldRemoveLogsCollectorContainer = false
 	return containerId, containerLabelStrs, hostMachinePortBindings, removeContainerFunc, nil
+}
+
+func (fluentbitContainer *fluentbitLogsCollectorContainer) GetHttpHealthCheckEndpoint() string {
+	return healthCheckEndpointPath
 }
