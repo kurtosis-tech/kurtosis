@@ -51,7 +51,6 @@ func getLogsCollectorKubernetesResourcesForCluster(ctx context.Context, kubernet
 		if len(logsCollectorNamespaceForLabel) > 1 {
 			return nil, stacktrace.NewError(
 				"Expected at most one namespaces for the logs collector but found '%v'",
-				namespace,
 				len(logsCollectorNamespaceForLabel),
 			)
 		}

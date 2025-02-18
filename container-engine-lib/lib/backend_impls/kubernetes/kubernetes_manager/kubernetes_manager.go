@@ -1291,7 +1291,7 @@ func (manager *KubernetesManager) GetPodsManagedByDaemonSet(ctx context.Context,
 
 	pods, err := podsClient.List(ctx, metav1.ListOptions{LabelSelector: selector})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred retrieving list of pods in namespace '%v' with label selectors: %v\n")
+		return nil, stacktrace.Propagate(err, "An error occurred retrieving list of pods in namespace '%v' with label selectors: %v.", daemonSet.Namespace, selector)
 	}
 
 	var podsManagedByDaemonSet []*apiv1.Pod
