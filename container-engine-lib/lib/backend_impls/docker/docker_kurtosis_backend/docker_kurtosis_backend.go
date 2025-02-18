@@ -232,8 +232,6 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 		return nil, nil, stacktrace.NewError("Expected the logs collector to have an ip address in the enclave network but it does not.")
 	}
 
-	logsCollectorAvailabilityChecker := fluentbit.NewFluentbitAvailabilityChecker(logsCollectorIpAddressInEnclaveNetwork, logsCollector.GetPrivateHttpPort().GetNumber())
-
 	var restartPolicy docker_manager.RestartPolicy = docker_manager.NoRestart
 	if backend.productionMode {
 		restartPolicy = docker_manager.RestartAlways
@@ -245,7 +243,9 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 		services,
 		backend.serviceRegistrationRepository,
 		logsCollector,
-		logsCollectorAvailabilityChecker,
+		logsCollectorIpAddressInEnclaveNetwork,
+		logsCollector.GetPrivateHttpPort().GetNumber(),
+		fluentbit.NewFluentbitLogsCollectorContainer().GetHttpHealthCheckEndpoint(),
 		backend.objAttrsProvider,
 		freeIpAddrProviderForEnclave,
 		backend.dockerManager,
