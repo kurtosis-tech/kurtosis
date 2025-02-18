@@ -1284,6 +1284,25 @@ func (manager *KubernetesManager) CreateDaemonSet(
 	return createdDaemonSet, nil
 }
 
+func (manager *KubernetesManager) GetPodsManagedByDaemonSet(ctx context.Context, daemonSet *v1.DaemonSet) ([]*apiv1.Pod, error) {
+	podsClient := manager.kubernetesClientSet.CoreV1().Pods(daemonSet.Namespace)
+
+	selector := metav1.FormatLabelSelector(daemonSet.Spec.Selector)
+
+	pods, err := podsClient.List(ctx, metav1.ListOptions{LabelSelector: selector})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred retrieving list of pods in namespace '%v' with label selectors: %v\n")
+	}
+
+	var podsManagedByDaemonSet []*apiv1.Pod
+	for _, pod := range pods.Items {
+		podsManagedByDaemonSet = append(podsManagedByDaemonSet, &pod)
+
+	}
+
+	return podsManagedByDaemonSet, nil
+}
+
 // ---------------------------config map---------------------------------------------------------------------------------------
 func (manager *KubernetesManager) RemoveConfigMap(ctx context.Context, namespace string, configMap *apiv1.ConfigMap) error {
 	client := manager.kubernetesClientSet.CoreV1().ConfigMaps(namespace)

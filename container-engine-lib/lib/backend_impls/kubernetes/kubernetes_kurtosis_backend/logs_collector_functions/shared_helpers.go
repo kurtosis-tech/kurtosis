@@ -2,6 +2,7 @@ package logs_collector_functions
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
@@ -135,7 +136,7 @@ func getLogsCollectorKubernetesResourcesForCluster(ctx context.Context, kubernet
 }
 
 func getLogsCollectorsObjectFromKubernetesResources(ctx context.Context, kubernetesManager *kubernetes_manager.KubernetesManager, logsCollectorKubernetesResources *logsCollectorKubernetesResources) (*logs_collector.LogsCollector, error) {
-	if logsCollectorKubernetesResources.daemonSet == nil || logsCollectorKubernetesResources.configMap == nil {
+	if logsCollectorKubernetesResources.namespace == nil || logsCollectorKubernetesResources.daemonSet == nil || logsCollectorKubernetesResources.configMap == nil {
 		// if any resources not found for logs collector, don't return an object
 		return nil, nil
 	}
@@ -147,10 +148,12 @@ func getLogsCollectorsObjectFromKubernetesResources(ctx context.Context, kuberne
 		err                 error
 	)
 
-	// TODO: get the status of all the fluentbit pods/containers - if they are all running, set to running, else set to stopped
-	logsCollectorStatus = container.ContainerStatus_Running
+	logsCollectorStatus, err = getLogsCollectorStatus(ctx, kubernetesManager, logsCollectorKubernetesResources.daemonSet)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the status of the logs collector.")
+	}
 
-	// daemon sets don't have a entrypoint so leave these blank for now
+	// daemon sets don't have an entrypoint so leave these blank for now
 	// if at some point, we need to access fluent bit log collectors via IP in some way, can create an entrypoint that allows
 	// accessing log collectors via IP
 	privateIpAddr = net.IP{}
@@ -173,4 +176,33 @@ func getLogsCollectorsObjectFromKubernetesResources(ctx context.Context, kuberne
 		dummyPortSpecOne,
 		dummyPortSpecTwo,
 	), nil
+}
+
+// TODO: container status is outdated for k8s pods (see TODO in shared_helpers.GetContainerStatusFromPod)
+// in the meantime logs collector status is container.ContainerStatus_Running if all pods managed by the logs collector DaemonSet are running
+// if one is failing/or stopped, the logs collector is to considered to be stopped
+func getLogsCollectorStatus(ctx context.Context, kubernetesManager *kubernetes_manager.KubernetesManager, logsCollectorDaemonSet *v1.DaemonSet) (container.ContainerStatus, error) {
+	logsCollectorPods, err := kubernetesManager.GetPodsManagedByDaemonSet(ctx, logsCollectorDaemonSet)
+	if err != nil {
+		return container.ContainerStatus_Stopped, stacktrace.Propagate(err, "An error occurred getting pods managed by logs collector daemon set '%v'.", logsCollectorDaemonSet.Name)
+	}
+	logrus.Infof("Retrieved '%d' pods managed by logs collector daemon set '%v'", len(logsCollectorPods), logsCollectorDaemonSet.Name)
+
+	logsCollectorStatus := container.ContainerStatus_Running
+	for _, pod := range logsCollectorPods {
+		podStatus, err := shared_helpers.GetContainerStatusFromPod(pod)
+		if err != nil {
+			return container.ContainerStatus_Stopped, stacktrace.Propagate(err, "An error occurred retrieving container status for a pod manageged by logs collectors collector daemon set '%v' with name: %v\n", logsCollectorDaemonSet.Name, pod.Name)
+		}
+		logrus.Infof("Retrieved '%v' pod status from pod '%v' managed by logs collector daemon set", podStatus, pod.Name)
+		switch podStatus {
+		case container.ContainerStatus_Running:
+			logsCollectorStatus = container.ContainerStatus_Running
+		case container.ContainerStatus_Stopped:
+			logsCollectorStatus = container.ContainerStatus_Stopped
+			return logsCollectorStatus, nil
+		}
+	}
+
+	return logsCollectorStatus, nil
 }
