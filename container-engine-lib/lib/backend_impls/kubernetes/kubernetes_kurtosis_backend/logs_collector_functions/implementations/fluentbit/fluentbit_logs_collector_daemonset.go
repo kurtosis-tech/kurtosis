@@ -19,7 +19,7 @@ func NewFluentbitLogsCollector() *fluentbitLogsCollector {
 	return &fluentbitLogsCollector{}
 }
 
-func (fluentbitPod *fluentbitLogsCollector) CreateAndStart(
+func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 	ctx context.Context,
 	logsAggregatorHost string,
 	logsAggregatorPort uint16,
@@ -44,7 +44,7 @@ func (fluentbitPod *fluentbitLogsCollector) CreateAndStart(
 	logsCollectorGuid := logs_collector.LogsCollectorGuid(logsCollectorGuidStr)
 	logsCollectorAttrProvider := objAttrsProvider.ForLogsCollector(logsCollectorGuid)
 
-	namespace, err := CreateLogsCollectorNamespace(ctx, logsCollectorAttrProvider, kubernetesManager)
+	namespace, err := createLogsCollectorNamespace(ctx, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
 		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating namespace for logs collector.")
 	}
@@ -67,7 +67,7 @@ func (fluentbitPod *fluentbitLogsCollector) CreateAndStart(
 		}
 	}()
 
-	configMap, err := CreateLogsCollectorConfigMap(ctx, namespace.Name, logsCollectorAttrProvider, kubernetesManager)
+	configMap, err := createLogsCollectorConfigMap(ctx, namespace.Name, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
 		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create config map for fluent-bit log collector.")
 	}
@@ -92,7 +92,7 @@ func (fluentbitPod *fluentbitLogsCollector) CreateAndStart(
 
 	// TODO: Get port information
 
-	daemonSet, err := CreateLogsCollectorDaemonSet(ctx, namespace.Name, configMap.Name, logsCollectorAttrProvider, kubernetesManager)
+	daemonSet, err := createLogsCollectorDaemonSet(ctx, namespace.Name, configMap.Name, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
 		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to daemonset for fluent-bit log collector.")
 	}
@@ -127,7 +127,11 @@ func (fluentbitPod *fluentbitLogsCollector) CreateAndStart(
 	return daemonSet, configMap, namespace, removeLogsCollectorFunc, nil
 }
 
-func CreateLogsCollectorDaemonSet(
+func (fluentbit *fluentbitLogsCollector) GetHttpHealthCheckEndpoint() string {
+	return healthCheckEndpointPath
+}
+
+func createLogsCollectorDaemonSet(
 	ctx context.Context,
 	namespace string,
 	fluentBitCfgConfigMapName string,
@@ -265,7 +269,7 @@ func CreateLogsCollectorDaemonSet(
 	return logsCollectorDaemonSet, nil
 }
 
-func CreateLogsCollectorConfigMap(
+func createLogsCollectorConfigMap(
 	ctx context.Context,
 	namespace string,
 	objAttrProvider object_attributes_provider.KubernetesLogsCollectorObjectAttributesProvider,
@@ -295,7 +299,7 @@ func CreateLogsCollectorConfigMap(
 	return configMap, nil
 }
 
-func CreateLogsCollectorNamespace(
+func createLogsCollectorNamespace(
 	ctx context.Context,
 	objAttrProvider object_attributes_provider.KubernetesLogsCollectorObjectAttributesProvider,
 	kubernetesManager *kubernetes_manager.KubernetesManager,

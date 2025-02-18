@@ -24,66 +24,69 @@ func CreateLogsCollector(
 	error,
 ) {
 	var logsCollectorObj *logs_collector.LogsCollector
-	logsCollectorObj, err := getLogsCollectorObjForCluster(ctx, kubernetesManager)
+	var kubernetesResources *logsCollectorKubernetesResources
+	var removeLogsCollectorFunc func()
+	var err error
+
+	logsCollectorObj, kubernetesResources, err = getLogsCollectorObjAndResourcesForCluster(ctx, kubernetesManager)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting logs aggregator container.")
 	}
-	if logsCollectorObj != nil {
-		logrus.Debug("Found existing logs collector daemon set.")
-		return logsCollectorObj, nil, nil
-	}
 
-	// TODO: get logs collector tcp and http port id
-
-	logrus.Debug("Did not find existing log collector, creating one...")
-	daemonSet, configMap, namespace, removeLogsCollectorFunc, err := logsCollectorDaemonSet.CreateAndStart(
-		ctx,
-		"", // TODO: fill these in when adding aggregator to k8s
-		0,  // TODO: fill these in when adding aggregator to k8s
-		logsCollectorTcpPortNumber,
-		logsCollectorHttpPortNumber,
-		"",
-		"",
-		objAttrsProvider,
-		kubernetesManager,
-	)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(
-			err,
-			"An error occurred starting the logs collector daemon set with logs aggregator host '%v', logs aggregator port '%v', HTTP port number '%v', TCP port id '%v', and HTTP port id '%v'",
-			"",
-			"",
-			"",
-			logsCollectorHttpPortNumber,
-			logsCollectorTcpPortNumber,
-		)
-	}
 	shouldRemoveLogsCollector := true
-	defer func() {
-		if shouldRemoveLogsCollector {
-			removeLogsCollectorFunc()
+	if logsCollectorObj == nil {
+		logrus.Debug("Found existing logs collector daemon set.")
+	} else {
+		logrus.Debug("Did not find existing log collector, creating one...")
+		daemonSet, configMap, namespace, removeLogsCollectorFunc, err := logsCollectorDaemonSet.CreateAndStart(
+			ctx,
+			"", // TODO: fill these in when adding aggregator to k8s
+			0,  // TODO: fill these in when adding aggregator to k8s
+			logsCollectorTcpPortNumber,
+			logsCollectorHttpPortNumber,
+			"tcp",
+			"http",
+			objAttrsProvider,
+			kubernetesManager,
+		)
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(
+				err,
+				"An error occurred starting the logs collector daemon set with logs aggregator host '%v', logs aggregator port '%v', HTTP port number '%v', TCP port id '%v', and HTTP port id '%v'",
+				"",
+				"",
+				"",
+				logsCollectorHttpPortNumber,
+				logsCollectorTcpPortNumber,
+			)
 		}
-	}()
+		defer func() {
+			if shouldRemoveLogsCollector {
+				removeLogsCollectorFunc()
+			}
+		}()
 
-	kubernetesResources := &logsCollectorKubernetesResources{
-		daemonSet: daemonSet,
-		configMap: configMap,
-		namespace: namespace,
+		kubernetesResources = &logsCollectorKubernetesResources{
+			daemonSet: daemonSet,
+			configMap: configMap,
+			namespace: namespace,
+		}
+
+		logsCollectorObj, err = getLogsCollectorsObjectFromKubernetesResources(ctx, kubernetesManager, kubernetesResources)
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector object from kubernetes resources.")
+		}
 	}
 
-	logsCollectorObj, err = getLogsCollectorsObjectFromKubernetesResources(ctx, kubernetesManager, kubernetesResources)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector object from kubernetes resources.")
+	logrus.Debugf("Checking for logs collector availability in namespace '%v'...", kubernetesResources.namespace.Name)
+
+	logsCollectorAvailabilityEndpoint := logsCollectorDaemonSet.GetHttpHealthCheckEndpoint()
+	if err = waitForLogsCollectorAvailability(ctx, logsCollectorHttpPortNumber, logsCollectorAvailabilityEndpoint, kubernetesResources, kubernetesManager); err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred while waiting for the logs collector daemon set to become available")
 	}
+	logrus.Debugf("...logs collector is available in namepsace '%v'", kubernetesResources.namespace.Name)
 
-	// TODO: Availability check
-	// figure out how to check availability for all pods in a daemon set
-	// WaitForPortAvailabilityUsingNetstat <- could do this for all the pods / containers in the logs collector daemon set
-	// could use the same availability checker that docker uses - if we can just turn ip add
-
-	// need port info to do availability check
-	// so need ip addresses or hostnames of all the pods started by the daemon set
-
+	logrus.Debugf("Logs collector successfully created with name '%v' in namepsace'%v'", kubernetesResources.daemonSet.Name, kubernetesResources.namespace.Name)
 	shouldRemoveLogsCollector = false
 	return logsCollectorObj, removeLogsCollectorFunc, nil
 }

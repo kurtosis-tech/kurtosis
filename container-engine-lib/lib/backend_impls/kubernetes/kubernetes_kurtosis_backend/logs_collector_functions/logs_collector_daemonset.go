@@ -20,4 +20,7 @@ type LogsCollectorDaemonSet interface {
 		objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
 		kubernetesManager *kubernetes_manager.KubernetesManager,
 	) (*appsv1.DaemonSet, *apiv1.ConfigMap, *apiv1.Namespace, func(), error)
+
+	// GetHttpHealthCheckEndpoint returns endpoint for verifying the availability of the logs collector application on pods managed by the daemon set
+	GetHttpHealthCheckEndpoint() string
 }

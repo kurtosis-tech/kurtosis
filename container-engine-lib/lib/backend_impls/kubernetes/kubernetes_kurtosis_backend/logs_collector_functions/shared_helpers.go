@@ -2,6 +2,7 @@ package logs_collector_functions
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/availability_checker"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
@@ -17,17 +18,17 @@ import (
 	"net"
 )
 
-func getLogsCollectorObjForCluster(ctx context.Context, kubernetesManager *kubernetes_manager.KubernetesManager) (*logs_collector.LogsCollector, error) {
+func getLogsCollectorObjAndResourcesForCluster(ctx context.Context, kubernetesManager *kubernetes_manager.KubernetesManager) (*logs_collector.LogsCollector, *logsCollectorKubernetesResources, error) {
 	kubernetesResources, err := getLogsCollectorKubernetesResourcesForCluster(ctx, kubernetesManager)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes resources for logs collectors.")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes resources for logs collectors.")
 	}
 
 	obj, err := getLogsCollectorsObjectFromKubernetesResources(ctx, kubernetesManager, kubernetesResources)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting logs collector object from kubernetes resources.")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting logs collector object from kubernetes resources.")
 	}
-	return obj, nil
+	return obj, kubernetesResources, nil
 }
 
 func getLogsCollectorKubernetesResourcesForCluster(ctx context.Context, kubernetesManager *kubernetes_manager.KubernetesManager) (*logsCollectorKubernetesResources, error) {
@@ -41,10 +42,7 @@ func getLogsCollectorKubernetesResourcesForCluster(ctx context.Context, kubernet
 
 	logsCollectorNamespaces, err := kubernetes_resource_collectors.CollectMatchingNamespaces(ctx, kubernetesManager, logsCollectorDaemonSetSearchLabels, resourceTypeLabelKeyStr, map[string]bool{logsCollectorResourceTypeLabelValStr: true})
 	if err != nil {
-		return nil, err
-	}
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting namepsace for logs collector.")
+		return nil, stacktrace.Propagate(err, "An error occurred getting namespace for logs collector.")
 	}
 	var namespace *apiv1.Namespace
 	if logsCollectorNamespaceForLabel, found := logsCollectorNamespaces[logsCollectorResourceTypeLabelValStr]; found {
@@ -204,4 +202,31 @@ func getLogsCollectorStatus(ctx context.Context, kubernetesManager *kubernetes_m
 	}
 
 	return logsCollectorStatus, nil
+}
+
+func waitForLogsCollectorAvailability(
+	ctx context.Context,
+	logsCollectorHttpPortNumber uint16,
+	logsCollectorAvailabilityEndpoint string,
+	k8sResources *logsCollectorKubernetesResources,
+	kubernetesManager *kubernetes_manager.KubernetesManager) error {
+	logsCollectorDaemonSet := k8sResources.daemonSet
+	pods, err := kubernetesManager.GetPodsManagedByDaemonSet(ctx, k8sResources.daemonSet)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting pods managed by logs collector daemon set '%v'", logsCollectorDaemonSet.Name)
+	}
+
+	for _, pod := range pods {
+		podIP := net.ParseIP(pod.Status.PodIP)
+		if podIP == nil {
+			return stacktrace.NewError("No IP address was found on pod '%v' managed by logs collector damon set '%v'", pod.Name, logsCollectorDaemonSet.Name)
+		}
+
+		if err := availability_checker.WaitForAvailability(podIP, logsCollectorHttpPortNumber, logsCollectorAvailabilityEndpoint); err != nil {
+			return stacktrace.NewError("An error occurred while checking for availability of pod '%v' managed by logs collector daemon set '%v'", pod.Name, logsCollectorDaemonSet.Name)
+		}
+	}
+
+	return nil
+
 }

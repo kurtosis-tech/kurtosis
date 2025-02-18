@@ -11,7 +11,7 @@ func GetLogsCollector(
 	ctx context.Context,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (*logs_collector.LogsCollector, error) {
-	obj, err := getLogsCollectorObjForCluster(ctx, kubernetesManager)
+	obj, _, err := getLogsCollectorObjAndResourcesForCluster(ctx, kubernetesManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting logs collector object for cluster.")
 	}
