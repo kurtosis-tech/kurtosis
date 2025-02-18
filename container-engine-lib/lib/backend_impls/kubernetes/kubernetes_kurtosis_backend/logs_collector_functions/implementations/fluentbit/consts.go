@@ -11,10 +11,10 @@ const (
 
 	fluentBitConfigStr = `
 [SERVICE]
-	HTTP_Server  On
-    HTTP_Listen  0.0.0.0
-    HTTP_PORT    2020
-    Parsers_File /fluent-bit/etc/parsers.conf
+    HTTP_Server       On
+    HTTP_Listen       0.0.0.0
+    HTTP_PORT         2020
+    Parsers_File      /fluent-bit/etc/parsers.conf
 
 [INPUT]
     Name              tail

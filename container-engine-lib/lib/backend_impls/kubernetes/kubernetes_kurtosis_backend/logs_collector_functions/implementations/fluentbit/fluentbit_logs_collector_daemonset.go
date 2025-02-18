@@ -11,6 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
+	"time"
 )
 
 type fluentbitLogsCollector struct{}
@@ -58,7 +59,6 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 				err)
 			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs collector namespace with Kubernetes name '%v'!!!!!!", namespace.Name)
 		}
-		logrus.Infof("REMOVING NAMESPACE: %v", namespace.Name)
 	}
 	shouldRemoveLogsCollectorNamespace := true
 	defer func() {
@@ -81,7 +81,6 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 				err)
 			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs collector config map with Kubernetes name '%v' in namespace '%v'!!!!!!", configMap.Name, configMap.Namespace)
 		}
-		logrus.Info("REMOVED CONFIG MAP")
 	}
 	shouldRemoveLogsCollectorConfigMap := true
 	defer func() {
@@ -106,7 +105,6 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 				err)
 			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs collector daemon set with Kubernetes name '%v' in namespace '%v'!!!!!!", daemonSet.Name, daemonSet.Namespace)
 		}
-		logrus.Info("REMOVED DAEMON ET")
 	}
 	shouldRemoveLogsCollectorDaemonSet := true
 	defer func() {
@@ -114,6 +112,11 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 			removeDaemonSetFunc()
 		}
 	}()
+
+	// wait until the first pod associated with this daemon set is online before returning
+	if err = waitForAtLeastOneActivePodManagedByDaemonSet(ctx, daemonSet, kubernetesManager); err != nil {
+		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred waiting for at least one active pod managed by logs collector daemon set '%v'", daemonSet.Name)
+	}
 
 	removeLogsCollectorFunc := func() {
 		removeDaemonSetFunc()
@@ -316,8 +319,39 @@ func createLogsCollectorNamespace(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating namepsace for logs collector with name '%s'", namespaceName)
 	}
-	logrus.Infof("SUCCESSFULLY CREATED LOGS COLLECTOR NAMESPACE: %v", namespaceObj.Name)
 
 	return namespaceObj, nil
 
+}
+
+func waitForAtLeastOneActivePodManagedByDaemonSet(ctx context.Context, logsCollectorDaemonSet *appsv1.DaemonSet, kubernetesManager *kubernetes_manager.KubernetesManager) error {
+	retryInterval := 500 * time.Millisecond
+	maxRetries := 10
+	timeoutCtx, cancel := context.WithTimeout(ctx, time.Duration(maxRetries)*retryInterval)
+	defer cancel()
+
+	ticker := time.NewTicker(retryInterval)
+	defer ticker.Stop()
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		select {
+		case <-timeoutCtx.Done():
+			return stacktrace.NewError(
+				"Timeout waiting for a pod managed by logs collector daemon set '%s' to come online",
+				logsCollectorDaemonSet.Name,
+			)
+		case <-ticker.C:
+			pods, err := kubernetesManager.GetPodsManagedByDaemonSet(ctx, logsCollectorDaemonSet)
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred getting pods managed by logs collector daemon set '%v'", logsCollectorDaemonSet.Name)
+			}
+			if len(pods) > 0 {
+				// found a pod, success
+				return nil
+			}
+		}
+	}
+	return stacktrace.NewError(
+		"Exceeded max retries (%d) waiting for a pod managed by daemon set '%s' to come online",
+		maxRetries, logsCollectorDaemonSet.Name,
+	)
 }

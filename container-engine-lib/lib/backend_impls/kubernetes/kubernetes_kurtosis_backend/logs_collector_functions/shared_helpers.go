@@ -2,7 +2,6 @@ package logs_collector_functions
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/availability_checker"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
@@ -16,6 +15,7 @@ import (
 	v1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	"net"
+	"time"
 )
 
 func getLogsCollectorObjAndResourcesForCluster(ctx context.Context, kubernetesManager *kubernetes_manager.KubernetesManager) (*logs_collector.LogsCollector, *logsCollectorKubernetesResources, error) {
@@ -69,7 +69,6 @@ func getLogsCollectorKubernetesResourcesForCluster(ctx context.Context, kubernet
 			namespace: nil,
 		}, nil
 	}
-	logrus.Infof("Logs collector namespace name: %v", namespace.Name)
 
 	logsCollectorCfgConfigMaps, err := kubernetes_resource_collectors.CollectMatchingConfigMaps(
 		ctx,
@@ -149,6 +148,7 @@ func getLogsCollectorsObjectFromKubernetesResources(ctx context.Context, kuberne
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the status of the logs collector.")
 	}
+	logrus.Infof("Log collector has status %v", logsCollectorStatus)
 
 	// daemon sets don't have an entrypoint so leave these blank for now
 	// if at some point, we need to access fluent bit log collectors via IP in some way, can create an entrypoint that allows
@@ -183,18 +183,21 @@ func getLogsCollectorStatus(ctx context.Context, kubernetesManager *kubernetes_m
 	if err != nil {
 		return container.ContainerStatus_Stopped, stacktrace.Propagate(err, "An error occurred getting pods managed by logs collector daemon set '%v'.", logsCollectorDaemonSet.Name)
 	}
-	logrus.Infof("Retrieved '%d' pods managed by logs collector daemon set '%v'", len(logsCollectorPods), logsCollectorDaemonSet.Name)
+	if len(logsCollectorPods) < 1 {
+		// if there are no pods associated with logs collector daemon set, assume something is wrong and err
+		return container.ContainerStatus_Stopped, stacktrace.NewError("No pods managed by logs collector daemon set were found. There should be at least one. This is likely a bug in Kurtosis.")
+	}
 
 	logsCollectorStatus := container.ContainerStatus_Running
 	for _, pod := range logsCollectorPods {
 		podStatus, err := shared_helpers.GetContainerStatusFromPod(pod)
 		if err != nil {
-			return container.ContainerStatus_Stopped, stacktrace.Propagate(err, "An error occurred retrieving container status for a pod manageged by logs collectors collector daemon set '%v' with name: %v\n", logsCollectorDaemonSet.Name, pod.Name)
+			return container.ContainerStatus_Stopped, stacktrace.Propagate(err, "An error occurred retrieving container status for a pod managed by logs collectors collector daemon set '%v' with name: %v\n", logsCollectorDaemonSet.Name, pod.Name)
 		}
-		logrus.Infof("Retrieved '%v' pod status from pod '%v' managed by logs collector daemon set", podStatus, pod.Name)
+
 		switch podStatus {
 		case container.ContainerStatus_Running:
-			logsCollectorStatus = container.ContainerStatus_Running
+			continue
 		case container.ContainerStatus_Stopped:
 			logsCollectorStatus = container.ContainerStatus_Stopped
 			return logsCollectorStatus, nil
@@ -206,8 +209,7 @@ func getLogsCollectorStatus(ctx context.Context, kubernetesManager *kubernetes_m
 
 func waitForLogsCollectorAvailability(
 	ctx context.Context,
-	logsCollectorHttpPortNumber uint16,
-	logsCollectorAvailabilityEndpoint string,
+	logsCollectorPortSpec *port_spec.PortSpec,
 	k8sResources *logsCollectorKubernetesResources,
 	kubernetesManager *kubernetes_manager.KubernetesManager) error {
 	logsCollectorDaemonSet := k8sResources.daemonSet
@@ -217,13 +219,13 @@ func waitForLogsCollectorAvailability(
 	}
 
 	for _, pod := range pods {
-		podIP := net.ParseIP(pod.Status.PodIP)
-		if podIP == nil {
-			return stacktrace.NewError("No IP address was found on pod '%v' managed by logs collector damon set '%v'", pod.Name, logsCollectorDaemonSet.Name)
+		// NOTE: ideally we'd actually curl the health endpoint of the fluent bit container (like we do for Docker)
+		// this part of code runs on users machine logs collector isn't exposed so we have to exec onto the pod containers - which may not have curl on them
+		if len(pod.Spec.Containers) < 1 {
+			return stacktrace.NewError("Pod managed by logs collector daemon set doesn't have any conatiner's assocaited with it. There should be at least one container.")
 		}
-
-		if err := availability_checker.WaitForAvailability(podIP, logsCollectorHttpPortNumber, logsCollectorAvailabilityEndpoint); err != nil {
-			return stacktrace.NewError("An error occurred while checking for availability of pod '%v' managed by logs collector daemon set '%v'", pod.Name, logsCollectorDaemonSet.Name)
+		if err = shared_helpers.WaitForPortAvailabilityUsingNetstat(kubernetesManager, k8sResources.namespace.Name, pod.Name, pod.Spec.Containers[0].Name, logsCollectorPortSpec, 10, 500*time.Millisecond); err != nil {
+			return stacktrace.Propagate(err, "An error occurred while checking for availability of pod '%v' managed by logs collector daemon set '%v'", pod.Name, logsCollectorDaemonSet.Name)
 		}
 	}
 

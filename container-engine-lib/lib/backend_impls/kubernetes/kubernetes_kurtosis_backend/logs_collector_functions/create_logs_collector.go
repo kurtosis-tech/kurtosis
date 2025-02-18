@@ -6,8 +6,14 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+)
+
+const (
+	httpProtocolStr = "http"
+	emptyUrl        = ""
 )
 
 func CreateLogsCollector(
@@ -34,7 +40,7 @@ func CreateLogsCollector(
 	}
 
 	shouldRemoveLogsCollector := true
-	if logsCollectorObj == nil {
+	if logsCollectorObj != nil {
 		logrus.Debug("Found existing logs collector daemon set.")
 	} else {
 		logrus.Debug("Did not find existing log collector, creating one...")
@@ -80,8 +86,17 @@ func CreateLogsCollector(
 
 	logrus.Debugf("Checking for logs collector availability in namespace '%v'...", kubernetesResources.namespace.Name)
 
-	logsCollectorAvailabilityEndpoint := logsCollectorDaemonSet.GetHttpHealthCheckEndpoint()
-	if err = waitForLogsCollectorAvailability(ctx, logsCollectorHttpPortNumber, logsCollectorAvailabilityEndpoint, kubernetesResources, kubernetesManager); err != nil {
+	// this port spec represents the http port that each log collector container (on each pod managed by the daemon set) wll have a port exposed on
+	httpPortSpec, err := port_spec.NewPortSpec(logsCollectorHttpPortNumber, port_spec.TransportProtocol_TCP, httpProtocolStr, nil, emptyUrl)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating the log collectors public HTTP port spec object using number '%v' and protocol '%v'",
+			logsCollectorHttpPortNumber,
+			port_spec.TransportProtocol_TCP,
+		)
+	}
+	if err = waitForLogsCollectorAvailability(ctx, httpPortSpec, kubernetesResources, kubernetesManager); err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while waiting for the logs collector daemon set to become available")
 	}
 	logrus.Debugf("...logs collector is available in namepsace '%v'", kubernetesResources.namespace.Name)
