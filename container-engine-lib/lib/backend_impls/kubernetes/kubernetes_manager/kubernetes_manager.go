@@ -136,7 +136,7 @@ var (
 type KubernetesManager struct {
 	// The underlying K8s client that will be used to modify the K8s environment
 	kubernetesClientSet *kubernetes.Clientset
-	KubernetesClientSet *kubernetes.Clientset
+
 	// Underlying restClient configuration
 	kuberneteRestConfig *rest.Config
 	// The storage class name as specified in the `kurtosis-config.yaml`
@@ -148,7 +148,6 @@ func int64Ptr(i int64) *int64 { return &i }
 func NewKubernetesManager(kubernetesClientSet *kubernetes.Clientset, kuberneteRestConfig *rest.Config, storageClass string) *KubernetesManager {
 	return &KubernetesManager{
 		kubernetesClientSet: kubernetesClientSet,
-		KubernetesClientSet: kubernetesClientSet,
 		kuberneteRestConfig: kuberneteRestConfig,
 		storageClass:        storageClass,
 	}
@@ -1242,25 +1241,80 @@ func (manager *KubernetesManager) CreateDaemonSet(
 	daemonSetClient := manager.kubernetesClientSet.AppsV1().DaemonSets(namespaceName)
 
 	daemonSetMeta := metav1.ObjectMeta{
-		Name:        daemonSetName,
-		Namespace:   namespaceName,
-		Labels:      daemonSetLabels,
-		Annotations: daemonSetAnnotations,
+		Name:            daemonSetName,
+		GenerateName:    "",
+		Namespace:       namespaceName,
+		SelfLink:        "",
+		UID:             "",
+		ResourceVersion: "",
+		Generation:      0,
+		CreationTimestamp: metav1.Time{
+			Time: time.Time{},
+		},
+		DeletionTimestamp:          nil,
+		DeletionGracePeriodSeconds: nil,
+		Labels:                     daemonSetLabels,
+		Annotations:                daemonSetAnnotations,
+		OwnerReferences:            nil,
+		Finalizers:                 nil,
+		ManagedFields:              nil,
 	}
+
 	daemonSetSpec := v1.DaemonSetSpec{
 		Selector: &metav1.LabelSelector{
-			MatchLabels: daemonSetLabels,
+			MatchLabels:      daemonSetLabels,
+			MatchExpressions: nil,
 		},
 		Template: apiv1.PodTemplateSpec{
-			ObjectMeta: metav1.ObjectMeta{
-				Labels: daemonSetLabels,
-			},
+			ObjectMeta: daemonSetMeta,
 			Spec: apiv1.PodSpec{
-				Containers:     containers,
-				InitContainers: initContainers,
-				Volumes:        volumes,
+				Volumes:                       volumes,
+				InitContainers:                initContainers,
+				Containers:                    containers,
+				EphemeralContainers:           nil,
+				RestartPolicy:                 "",
+				TerminationGracePeriodSeconds: nil,
+				ActiveDeadlineSeconds:         nil,
+				DNSPolicy:                     "",
+				NodeSelector:                  nil,
+				ServiceAccountName:            "",
+				DeprecatedServiceAccount:      "",
+				AutomountServiceAccountToken:  nil,
+				NodeName:                      "",
+				HostNetwork:                   false,
+				HostPID:                       false,
+				HostIPC:                       false,
+				ShareProcessNamespace:         nil,
+				SecurityContext:               nil,
+				ImagePullSecrets:              nil,
+				Hostname:                      "",
+				Subdomain:                     "",
+				Affinity:                      nil,
+				SchedulerName:                 "",
+				Tolerations:                   nil,
+				HostAliases:                   nil,
+				PriorityClassName:             "",
+				Priority:                      nil,
+				DNSConfig:                     nil,
+				ReadinessGates:                nil,
+				RuntimeClassName:              nil,
+				EnableServiceLinks:            nil,
+				PreemptionPolicy:              nil,
+				Overhead:                      nil,
+				TopologySpreadConstraints:     nil,
+				SetHostnameAsFQDN:             nil,
+				OS:                            nil,
+				HostUsers:                     nil,
+				SchedulingGates:               nil,
+				ResourceClaims:                nil,
 			},
 		},
+		UpdateStrategy: v1.DaemonSetUpdateStrategy{
+			Type:          "",
+			RollingUpdate: nil,
+		},
+		MinReadySeconds:      0,
+		RevisionHistoryLimit: nil,
 	}
 
 	daemonSetToCreate := &v1.DaemonSet{
@@ -1270,6 +1324,18 @@ func (manager *KubernetesManager) CreateDaemonSet(
 		},
 		ObjectMeta: daemonSetMeta,
 		Spec:       daemonSetSpec,
+		Status: v1.DaemonSetStatus{
+			CurrentNumberScheduled: 0,
+			NumberMisscheduled:     0,
+			DesiredNumberScheduled: 0,
+			NumberReady:            0,
+			ObservedGeneration:     0,
+			UpdatedNumberScheduled: 0,
+			NumberAvailable:        0,
+			NumberUnavailable:      0,
+			CollisionCount:         nil,
+			Conditions:             nil,
+		},
 	}
 
 	if daemonSetDefinitionBytes, err := json.Marshal(daemonSetToCreate); err == nil {
@@ -1289,14 +1355,30 @@ func (manager *KubernetesManager) GetPodsManagedByDaemonSet(ctx context.Context,
 
 	selector := metav1.FormatLabelSelector(daemonSet.Spec.Selector)
 
-	pods, err := podsClient.List(ctx, metav1.ListOptions{LabelSelector: selector})
+	pods, err := podsClient.List(ctx, metav1.ListOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		LabelSelector:        selector,
+		FieldSelector:        "",
+		Watch:                false,
+		AllowWatchBookmarks:  false,
+		ResourceVersion:      "",
+		ResourceVersionMatch: "",
+		TimeoutSeconds:       nil,
+		Limit:                0,
+		Continue:             "",
+		SendInitialEvents:    nil,
+	})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred retrieving list of pods in namespace '%v' with label selectors: %v.", daemonSet.Namespace, selector)
 	}
 
 	var podsManagedByDaemonSet []*apiv1.Pod
 	for _, pod := range pods.Items {
-		podsManagedByDaemonSet = append(podsManagedByDaemonSet, &pod)
+		podToAdd := pod
+		podsManagedByDaemonSet = append(podsManagedByDaemonSet, &podToAdd)
 	}
 
 	return podsManagedByDaemonSet, nil
@@ -1341,16 +1423,21 @@ func (manager *KubernetesManager) CreateConfigMap(
 	client := manager.kubernetesClientSet.CoreV1().ConfigMaps(namespaceName)
 
 	configMapToCreate := &apiv1.ConfigMap{
-		TypeMeta: metav1.TypeMeta{},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:                       configMapName,
-			GenerateName:               "",
-			Namespace:                  namespaceName,
-			SelfLink:                   "",
-			UID:                        "",
-			ResourceVersion:            "",
-			Generation:                 0,
-			CreationTimestamp:          metav1.Time{},
+			Name:            configMapName,
+			GenerateName:    "",
+			Namespace:       namespaceName,
+			SelfLink:        "",
+			UID:             "",
+			ResourceVersion: "",
+			Generation:      0,
+			CreationTimestamp: metav1.Time{
+				Time: time.Time{},
+			},
 			DeletionTimestamp:          nil,
 			DeletionGracePeriodSeconds: nil,
 			Labels:                     labels,

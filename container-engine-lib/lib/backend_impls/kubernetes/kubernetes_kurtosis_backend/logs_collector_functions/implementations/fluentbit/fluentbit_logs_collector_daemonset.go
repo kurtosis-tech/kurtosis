@@ -18,6 +18,8 @@ import (
 const (
 	httpProtocolStr = "http"
 	emptyUrl        = ""
+	retryInterval   = 1 * time.Second
+	maxRetries      = 10
 )
 
 var noWait *port_spec.Wait = nil
@@ -192,7 +194,29 @@ func createLogsCollectorDaemonSet(
 				"/fluent-bit/bin/fluent-bit",
 				"--config=/fluent-bit/etc/conf/fluent-bit.conf",
 			},
-			Ports: ports,
+			Ports:      ports,
+			Command:    nil,
+			WorkingDir: "",
+			EnvFrom:    nil,
+			Env:        nil,
+			Resources: apiv1.ResourceRequirements{
+				Limits:   nil,
+				Requests: nil,
+				Claims:   nil,
+			},
+			ResizePolicy:             nil,
+			VolumeDevices:            nil,
+			LivenessProbe:            nil,
+			ReadinessProbe:           nil,
+			StartupProbe:             nil,
+			Lifecycle:                nil,
+			TerminationMessagePath:   "",
+			TerminationMessagePolicy: "",
+			ImagePullPolicy:          "",
+			SecurityContext:          nil,
+			Stdin:                    false,
+			StdinOnce:                false,
+			TTY:                      false,
 			VolumeMounts: []apiv1.VolumeMount{
 				{
 					Name:             varLogVolumeName,
@@ -237,52 +261,27 @@ func createLogsCollectorDaemonSet(
 			},
 		},
 	}
+
 	volumes := []apiv1.Volume{
 		{
-			Name: varLogVolumeName,
-			VolumeSource: apiv1.VolumeSource{
-				HostPath: &apiv1.HostPathVolumeSource{
-					Path: varLogMountPath,
-					Type: nil,
-				},
-			},
+			Name:         varLogVolumeName,
+			VolumeSource: getVolumeSourceForHostPath(varLogMountPath),
 		},
 		{
-			Name: varLibDockerContainersVolumeName,
-			VolumeSource: apiv1.VolumeSource{
-				HostPath: &apiv1.HostPathVolumeSource{
-					Path: varLibDockerContainersMountPath,
-					Type: nil,
-				},
-			},
+			Name:         varLibDockerContainersVolumeName,
+			VolumeSource: getVolumeSourceForHostPath(varLibDockerContainersMountPath),
 		},
 		{
-			Name: varLogDockerContainersVolumeName,
-			VolumeSource: apiv1.VolumeSource{
-				HostPath: &apiv1.HostPathVolumeSource{
-					Path: varLogDockerContainersMountPath,
-					Type: nil,
-				},
-			},
+			Name:         varLogDockerContainersVolumeName,
+			VolumeSource: getVolumeSourceForHostPath(varLogDockerContainersMountPath),
 		},
 		{
-			Name: fluentBitConfigVolumeName,
-			VolumeSource: apiv1.VolumeSource{
-				ConfigMap: &apiv1.ConfigMapVolumeSource{
-					LocalObjectReference: apiv1.LocalObjectReference{Name: fluentBitCfgConfigMapName},
-					Items:                nil,
-					DefaultMode:          nil,
-					Optional:             nil,
-				},
-			},
+			Name:         fluentBitConfigVolumeName,
+			VolumeSource: getVolumeSourceForConfigMap(fluentBitCfgConfigMapName),
 		},
 		{
-			Name: fluentBitHostLogsVolumeName,
-			VolumeSource: apiv1.VolumeSource{
-				HostPath: &apiv1.HostPathVolumeSource{
-					Path: fluentBitHostLogsMountPath,
-				},
-			},
+			Name:         fluentBitHostLogsVolumeName,
+			VolumeSource: getVolumeSourceForHostPath(fluentBitHostLogsMountPath),
 		},
 	}
 
@@ -356,8 +355,6 @@ func createLogsCollectorNamespace(
 }
 
 func waitForAtLeastOneActivePodManagedByDaemonSet(ctx context.Context, logsCollectorDaemonSet *appsv1.DaemonSet, kubernetesManager *kubernetes_manager.KubernetesManager) error {
-	retryInterval := 500 * time.Millisecond
-	maxRetries := 10
 	timeoutCtx, cancel := context.WithTimeout(ctx, time.Duration(maxRetries)*retryInterval)
 	defer cancel()
 
@@ -385,4 +382,80 @@ func waitForAtLeastOneActivePodManagedByDaemonSet(ctx context.Context, logsColle
 		"Exceeded max retries (%d) waiting for a pod managed by daemon set '%s' to come online",
 		maxRetries, logsCollectorDaemonSet.Name,
 	)
+}
+
+func getVolumeSourceForHostPath(mountPath string) apiv1.VolumeSource {
+	return apiv1.VolumeSource{
+		HostPath: &apiv1.HostPathVolumeSource{
+			Path: mountPath,
+			Type: nil,
+		},
+		EmptyDir:              nil,
+		GCEPersistentDisk:     nil,
+		AWSElasticBlockStore:  nil,
+		GitRepo:               nil,
+		Secret:                nil,
+		NFS:                   nil,
+		ISCSI:                 nil,
+		Glusterfs:             nil,
+		PersistentVolumeClaim: nil,
+		RBD:                   nil,
+		FlexVolume:            nil,
+		Cinder:                nil,
+		CephFS:                nil,
+		Flocker:               nil,
+		DownwardAPI:           nil,
+		FC:                    nil,
+		AzureFile:             nil,
+		ConfigMap:             nil,
+		VsphereVolume:         nil,
+		Quobyte:               nil,
+		AzureDisk:             nil,
+		PhotonPersistentDisk:  nil,
+		Projected:             nil,
+		PortworxVolume:        nil,
+		ScaleIO:               nil,
+		StorageOS:             nil,
+		CSI:                   nil,
+		Ephemeral:             nil,
+	}
+}
+
+func getVolumeSourceForConfigMap(configMapName string) apiv1.VolumeSource {
+	return apiv1.VolumeSource{
+		ConfigMap: &apiv1.ConfigMapVolumeSource{
+			LocalObjectReference: apiv1.LocalObjectReference{Name: configMapName},
+			Items:                nil,
+			DefaultMode:          nil,
+			Optional:             nil,
+		},
+		HostPath:              nil,
+		EmptyDir:              nil,
+		GCEPersistentDisk:     nil,
+		AWSElasticBlockStore:  nil,
+		GitRepo:               nil,
+		Secret:                nil,
+		NFS:                   nil,
+		ISCSI:                 nil,
+		Glusterfs:             nil,
+		PersistentVolumeClaim: nil,
+		RBD:                   nil,
+		FlexVolume:            nil,
+		Cinder:                nil,
+		CephFS:                nil,
+		Flocker:               nil,
+		DownwardAPI:           nil,
+		FC:                    nil,
+		AzureFile:             nil,
+		VsphereVolume:         nil,
+		Quobyte:               nil,
+		AzureDisk:             nil,
+		PhotonPersistentDisk:  nil,
+		Projected:             nil,
+		PortworxVolume:        nil,
+		ScaleIO:               nil,
+		StorageOS:             nil,
+		CSI:                   nil,
+		Ephemeral:             nil,
+	}
 }
