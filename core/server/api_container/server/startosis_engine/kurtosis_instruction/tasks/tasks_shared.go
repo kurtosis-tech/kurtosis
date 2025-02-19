@@ -52,7 +52,7 @@ const (
 	runResultOutputKey   = "output"
 	runFilesArtifactsKey = "files_artifacts"
 
-	shellWrapperCommand = "bin/bash"
+	shellWrapperCommand = "/bin/bash"
 	taskLogFilePath     = "/tmp/kurtosis-task.log"
 	noNameSet           = ""
 	uniqueNameGenErrStr = "error occurred while generating unique name for the file artifact"
