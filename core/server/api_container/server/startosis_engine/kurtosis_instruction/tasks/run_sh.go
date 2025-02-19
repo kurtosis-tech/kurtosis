@@ -121,6 +121,8 @@ func NewRunShService(
 				wait:                   DefaultWaitTimeoutDurationStr,
 				description:            "",  // populated at interpretation time
 				returnValue:            nil, // populated at interpretation time
+				skipCodeCheck:          false,
+				acceptableCodes:        []int64{},
 			}
 		},
 
