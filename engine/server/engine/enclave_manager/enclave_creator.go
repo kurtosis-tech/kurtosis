@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	defaultHttpLogsCollectorPortNum = uint16(9712)
-	defaultTcpLogsCollectorPortNum  = uint16(9713)
+	defaultTcpLogsCollectorPortNum  = uint16(9712)
+	defaultHttpLogsCollectorPortNum = uint16(9713)
 )
 
 type EnclaveCreator struct {
@@ -86,7 +86,7 @@ func (creator *EnclaveCreator) CreateEnclave(
 	// only create log collector for backend as
 	shouldDeleteLogsCollector := true
 	// TODO the logs collector has a random private ip address in the enclave network that must be tracked
-	if _, err := creator.kurtosisBackend.CreateLogsCollectorForEnclave(setupCtx, enclaveUuid, defaultTcpLogsCollectorPortNum, defaultHttpLogsCollectorPortNum); err != nil {
+	if _, err := creator.kurtosisBackend.CreateLogsCollectorForEnclave(setupCtx, enclaveUuid, defaultHttpLogsCollectorPortNum, defaultTcpLogsCollectorPortNum); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the logs collector with TCP port number '%v' and HTTP port number '%v'", defaultTcpLogsCollectorPortNum, defaultHttpLogsCollectorPortNum)
 	}
 	defer func() {
