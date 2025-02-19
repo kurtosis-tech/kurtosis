@@ -30,8 +30,8 @@ const (
 	maxWaitForEngineContainerAvailabilityRetries         = 30
 	timeBetweenWaitForEngineContainerAvailabilityRetries = 1 * time.Second
 	httpApplicationProtocol                              = "http"
-	logsCollectorHttpPortNum                             = 9712
-	logsCollectorTCPPortNum                              = 9713
+	logsCollectorHttpPortNum                             = 9713
+	logsCollectorTcpPortNum                              = 9712
 )
 
 var noWait *port_spec.Wait = nil
@@ -256,7 +256,7 @@ func CreateEngine(
 	logrus.Infof("Starting the centralized logs components...")
 	logsCollectorDaemonSet := fluentbit.NewFluentbitLogsCollector()
 
-	_, removeLogsCollectorFunc, err := logs_collector_functions.CreateLogsCollector(ctx, logsCollectorTCPPortNum, logsCollectorHttpPortNum, logsCollectorDaemonSet, nil, kubernetesManager, objAttrsProvider)
+	_, removeLogsCollectorFunc, err := logs_collector_functions.CreateLogsCollector(ctx, logsCollectorTcpPortNum, logsCollectorHttpPortNum, logsCollectorDaemonSet, nil, kubernetesManager, objAttrsProvider)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the engine logs collector")
 	}

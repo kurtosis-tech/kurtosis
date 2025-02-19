@@ -5,11 +5,12 @@ const (
 
 	fluentBitImage = "fluent/fluent-bit:latest-debug"
 
+	// TODO: construct fluentbit config via go templating based on inputs
 	fluentBitConfigStr = `
 [SERVICE]
     HTTP_Server       On
     HTTP_Listen       0.0.0.0
-    HTTP_PORT         9712
+    HTTP_PORT         9713
     Parsers_File      /fluent-bit/etc/parsers.conf
 
 [INPUT]
