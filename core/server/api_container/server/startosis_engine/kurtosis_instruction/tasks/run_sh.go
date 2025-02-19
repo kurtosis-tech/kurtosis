@@ -279,14 +279,14 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 	fullCommandToRun := getCommandToRunForStreamingLogs(commandToRun)
 
 	// run the command passed in by user in the container
-	createDefaultDirectoryResult, err := executeWithWait(ctx, builtin.serviceNetwork, builtin.name, builtin.wait, fullCommandToRun)
+	execResult, err := executeWithWait(ctx, builtin.serviceNetwork, builtin.name, builtin.wait, fullCommandToRun)
 	if err != nil {
 		return "", stacktrace.Propagate(err, fmt.Sprintf("error occurred while executing one time task command: %v ", builtin.run))
 	}
 
 	result := map[string]starlark.Comparable{
-		runResultOutputKey: starlark.String(createDefaultDirectoryResult.GetOutput()),
-		runResultCodeKey:   starlark.MakeInt(int(createDefaultDirectoryResult.GetExitCode())),
+		runResultOutputKey: starlark.String(execResult.GetOutput()),
+		runResultCodeKey:   starlark.MakeInt(int(execResult.GetExitCode())),
 	}
 
 	if err := builtin.runtimeValueStore.SetValue(builtin.resultUuid, result); err != nil {
@@ -295,9 +295,9 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 	instructionResult := resultMapToString(result, RunShBuiltinName)
 
 	// throw an error as execution of the command failed
-	if createDefaultDirectoryResult.GetExitCode() != 0 {
-		errorMessage := fmt.Sprintf("Shell command: %q exited with code %d and output", commandToRun, createDefaultDirectoryResult.GetExitCode())
-		return "", stacktrace.NewError(formatErrorMessage(errorMessage, createDefaultDirectoryResult.GetOutput()))
+	if execResult.GetExitCode() != 0 {
+		errorMessage := fmt.Sprintf("Shell command: %q exited with code %d and output", commandToRun, execResult.GetExitCode())
+		return "", stacktrace.NewError(formatErrorMessage(errorMessage, execResult.GetOutput()))
 	}
 
 	if builtin.storeSpecList != nil {

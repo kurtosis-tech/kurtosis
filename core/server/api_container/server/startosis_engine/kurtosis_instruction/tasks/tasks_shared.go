@@ -49,7 +49,7 @@ const (
 	runResultOutputKey   = "output"
 	runFilesArtifactsKey = "files_artifacts"
 
-	shellWrapperCommand = "/bin/sh"
+	shellWrapperCommand = "bin/bash"
 	taskLogFilePath     = "/tmp/kurtosis-task.log"
 	noNameSet           = ""
 	uniqueNameGenErrStr = "error occurred while generating unique name for the file artifact"
@@ -58,15 +58,21 @@ const (
 	tiniEnabled = true
 )
 
+// runCommandToStreamTaskLogs sets the entrypoint of a task container with a command that creates and tails a log file for tasks run on the container
+// all tasks redirect output to the task log file (see getCommandToRunForStreamingLogs for details) where they will be picked up by the main process
+// and streamed to stdout via tail -F
 var runCommandToStreamTaskLogs = []string{shellWrapperCommand, "-c", fmt.Sprintf("touch %s && tail -F %s", taskLogFilePath, taskLogFilePath)}
 
 // Wraps [commandToRun] to enable streaming logs from tasks.
-// Uses curly braces to execute the command(s) in the current shell.
-// Adds an extra echo to ensure each log ends with a newline.
-// Uses tee to direct output to the task log file while maintaining output to stdout.
-// Redirects stderr to stdout.
+// e.g. /bin/bash -c 'set -o pipefail; { <users command> ;} 2>&1 | tee /tmp/kurtosis-task.log; exit_code=$?; echo >> /tmp/kurtosis-task.log; exit $exit_code”
+// uses curly braces to execute the commandToRun in a subshell.
+// 2>&1 redirects stderr to stdout.
+// uses tee to direct output to the task log file while also streaming output to stdout.
+// uses set -o pipefail, exit_code=$?, and exit $exit_code to save and exit with the exit code from the users command
+// uses single quotes ” to prevent variable expansion from $
+// adds an extra echo to ensure each log ends with a newline.
 func getCommandToRunForStreamingLogs(commandToRun string) []string {
-	return []string{shellWrapperCommand, "-c", fmt.Sprintf("{ %v; } %v %v %v %v %v %v %v %v", commandToRun, "2>&1", "|", "tee", taskLogFilePath, "&&", "echo", ">>", taskLogFilePath)}
+	return []string{shellWrapperCommand, "-c", fmt.Sprintf("'set -o pipefail; { %v; } 2>&1 | tee %v; exit_code=$?; echo >> %v; exit $exit_code'", commandToRun, taskLogFilePath, taskLogFilePath)}
 }
 
 func parseStoreFilesArg(serviceNetwork service_network.ServiceNetwork, arguments *builtin_argument.ArgumentValuesSet) ([]*store_spec.StoreSpec, *startosis_errors.InterpretationError) {
