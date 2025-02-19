@@ -302,8 +302,8 @@ func (builtin *RunPythonCapabilities) Interpret(locatorOfModuleInWhichThisBuilti
 		if err != nil {
 			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to parse '%v' argument", acceptableCodes)
 		}
-		builtin.acceptableCodes = acceptableCodes
 	}
+	builtin.acceptableCodes = acceptableCodes
 
 	skipCodeCheck := defaultSkipCodeCheck
 	if arguments.IsSet(SkipCodeCheckArgName) {
@@ -312,8 +312,8 @@ func (builtin *RunPythonCapabilities) Interpret(locatorOfModuleInWhichThisBuilti
 			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", SkipCodeCheckArgName)
 		}
 		skipCodeCheck = bool(skipCodeCheckArgumentValue)
-		builtin.skipCodeCheck = skipCodeCheck
 	}
+	builtin.skipCodeCheck = skipCodeCheck
 
 	resultUuid, err := builtin.runtimeValueStore.CreateValue()
 	if err != nil {

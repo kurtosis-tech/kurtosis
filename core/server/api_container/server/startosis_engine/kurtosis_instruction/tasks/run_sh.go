@@ -31,7 +31,7 @@ import (
 const (
 	RunShBuiltinName = "run_sh"
 
-	defaultRunShImageName  = "tedim52/curl-jq-bash:latest"
+	defaultRunShImageName  = "tedim52/curl-jq-bash"
 	shScriptPrintCharLimit = 80
 	runningShScriptPrefix  = "Running sh script"
 )
@@ -256,8 +256,8 @@ func (builtin *RunShCapabilities) Interpret(locatorOfModuleInWhichThisBuiltinIsB
 		if err != nil {
 			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to parse '%v' argument", acceptableCodes)
 		}
-		builtin.acceptableCodes = acceptableCodes
 	}
+	builtin.acceptableCodes = acceptableCodes
 
 	skipCodeCheck := defaultSkipCodeCheck
 	if arguments.IsSet(SkipCodeCheckArgName) {
@@ -266,8 +266,8 @@ func (builtin *RunShCapabilities) Interpret(locatorOfModuleInWhichThisBuiltinIsB
 			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", SkipCodeCheckArgName)
 		}
 		skipCodeCheck = bool(skipCodeCheckArgumentValue)
-		builtin.skipCodeCheck = skipCodeCheck
 	}
+	builtin.skipCodeCheck = skipCodeCheck
 
 	resultUuid, err := builtin.runtimeValueStore.CreateValue()
 	if err != nil {

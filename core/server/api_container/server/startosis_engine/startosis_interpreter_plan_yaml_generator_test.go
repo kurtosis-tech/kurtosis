@@ -202,7 +202,7 @@ tasks:
   taskType: sh
   command:
   - echo bye > /bye.txt
-  image: badouralix/curl-jq
+  image: tedim52/curl-jq-bash
   files:
   - mountPath: /root
     filesArtifacts:
@@ -215,7 +215,7 @@ tasks:
   - key: HELLO
     value: Hello!
 images:
-- badouralix/curl-jq
+- tedim52/curl-jq-bash
 `
 	require.Equal(suite.T(), expectedYaml, planYaml)
 }
@@ -430,14 +430,14 @@ tasks:
   taskType: sh
   command:
   - cat /root/bye.txt
-  image: badouralix/curl-jq
+  image: tedim52/curl-jq-bash
   files:
   - mountPath: /root
     filesArtifacts:
     - uuid: "1"
       name: bye-file
 images:
-- badouralix/curl-jq
+- tedim52/curl-jq-bash
 `
 	require.Equal(suite.T(), expectedYaml, planYaml)
 }
@@ -618,14 +618,14 @@ tasks:
   taskType: sh
   command:
   - cat /root/Dockerfile
-  image: badouralix/curl-jq
+  image: tedim52/curl-jq-bash
   files:
   - mountPath: /root
     filesArtifacts:
     - uuid: "1"
       name: dockerfile
 images:
-- badouralix/curl-jq
+- tedim52/curl-jq-bash
 `
 	require.Equal(suite.T(), expectedYaml, planYaml)
 }
@@ -826,16 +826,16 @@ tasks:
   taskType: sh
   command:
   - echo {{ kurtosis.3.code }} {{ kurtosis.3.output }}
-  image: badouralix/curl-jq
+  image: tedim52/curl-jq-bash
 - uuid: "5"
   name: Say db ip again
   taskType: sh
   command:
   - echo {{ kurtosis.4.code }} {{ kurtosis.4.output }}
-  image: badouralix/curl-jq
+  image: tedim52/curl-jq-bash
 images:
-- badouralix/curl-jq
 - postgres:latest
+- tedim52/curl-jq-bash
 `
 	require.Equal(suite.T(), expectedYaml, planYaml)
 }
