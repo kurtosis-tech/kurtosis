@@ -47,6 +47,8 @@ const (
 	runPythonDefaultDescription = "Running Python script"
 )
 
+var defaultPythonPackages = []string{"bash"}
+
 func NewRunPythonService(
 	serviceNetwork service_network.ServiceNetwork,
 	runtimeValueStore *runtime_value_store.RuntimeValueStore,
@@ -207,6 +209,7 @@ func (builtin *RunPythonCapabilities) Interpret(locatorOfModuleInWhichThisBuilti
 		builtin.pythonArguments = argsList
 	}
 
+	builtin.packages = defaultPythonPackages
 	if arguments.IsSet(PackagesArgName) {
 		packagesValue, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, PackagesArgName)
 		if err != nil {
@@ -216,7 +219,7 @@ func (builtin *RunPythonCapabilities) Interpret(locatorOfModuleInWhichThisBuilti
 		if sliceParsingErr != nil {
 			return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while converting Starlark list of packages to a golang string slice")
 		}
-		builtin.packages = packagesList
+		builtin.packages = append(builtin.packages, packagesList...)
 	}
 
 	var maybeImageName string
