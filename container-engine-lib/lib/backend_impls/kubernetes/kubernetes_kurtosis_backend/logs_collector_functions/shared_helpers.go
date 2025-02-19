@@ -18,8 +18,8 @@ import (
 )
 
 const (
-	maxAvailabilityCheckRetries     = 10
-	timeToWaitBetweenChecksDuration = 500 * time.Millisecond
+	maxAvailabilityCheckRetries     = 30
+	timeToWaitBetweenChecksDuration = 1 * time.Second
 )
 
 func getLogsCollectorObjAndResourcesForCluster(ctx context.Context, kubernetesManager *kubernetes_manager.KubernetesManager) (*logs_collector.LogsCollector, *logsCollectorKubernetesResources, error) {
