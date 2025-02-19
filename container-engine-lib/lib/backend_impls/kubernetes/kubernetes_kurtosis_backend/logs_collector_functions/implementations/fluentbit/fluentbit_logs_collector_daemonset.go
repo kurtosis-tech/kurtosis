@@ -377,8 +377,8 @@ func waitForAtLeastOneActivePodManagedByDaemonSet(ctx context.Context, logsColle
 			if err != nil {
 				return stacktrace.Propagate(err, "An error occurred getting pods managed by logs collector daemon set '%v'", logsCollectorDaemonSet.Name)
 			}
-			if len(pods) > 0 {
-				// found a pod, success
+			if len(pods) > 0 && len(pods[0].Status.ContainerStatuses) > 0 && pods[0].Status.ContainerStatuses[0].Ready {
+				// found a pod with a running fluent bit container
 				return nil
 			}
 		}

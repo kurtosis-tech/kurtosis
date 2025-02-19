@@ -40,7 +40,7 @@ func DestroyLogsCollector(ctx context.Context, kubernetesManager *kubernetes_man
 		return stacktrace.Propagate(err, "An error occurred removing logs collector namespace.")
 	}
 
-	logrus.Info("Successfully destroyed logs collector.")
+	logrus.Debugf("Successfully destroyed logs collector.")
 
 	return nil
 }

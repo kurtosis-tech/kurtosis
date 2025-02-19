@@ -11,7 +11,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	"net"
@@ -153,30 +152,21 @@ func getLogsCollectorsObjectFromKubernetesResources(ctx context.Context, kuberne
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the status of the logs collector.")
 	}
-	logrus.Infof("Log collector has status %v", logsCollectorStatus)
 
 	// daemon sets don't have an entrypoint so leave these blank for now
 	// if at some point, we need to access fluent bit log collectors via IP in some way, can create an entrypoint that allows
 	// accessing log collectors via IP
 	privateIpAddr = net.IP{}
 	bridgeNetworkIpAddr = net.IP{}
-
-	dummyPortSpecOne, err := port_spec.NewPortSpec(0, port_spec.TransportProtocol(0), "HTTP", nil, "")
-	if err != nil {
-		return nil, err
-	}
-
-	dummyPortSpecTwo, err := port_spec.NewPortSpec(0, port_spec.TransportProtocol(0), "HTTP", nil, "")
-	if err != nil {
-		return nil, err
-	}
+	var privateHttpPortSpec *port_spec.PortSpec
+	var privateTcpPortSpec *port_spec.PortSpec
 
 	return logs_collector.NewLogsCollector(
 		logsCollectorStatus,
 		privateIpAddr,
 		bridgeNetworkIpAddr,
-		dummyPortSpecOne,
-		dummyPortSpecTwo,
+		privateTcpPortSpec,
+		privateHttpPortSpec,
 	), nil
 }
 
@@ -246,5 +236,4 @@ func waitForLogsCollectorAvailability(
 	}
 
 	return nil
-
 }
