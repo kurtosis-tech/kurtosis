@@ -188,7 +188,7 @@ func createLogsCollectorDaemonSet(
 
 	containers := []apiv1.Container{
 		{
-			Name:  "fluent-bit", // how should it be named?
+			Name:  fluentBitContainerName,
 			Image: fluentBitImage,
 			Args: []string{
 				"/fluent-bit/bin/fluent-bit",

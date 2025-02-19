@@ -41,7 +41,6 @@ func getLogsCollectorKubernetesResourcesForCluster(ctx context.Context, kubernet
 	logsCollectorDaemonSetSearchLabels := map[string]string{
 		kubernetes_label_key.AppIDKubernetesLabelKey.GetString(): label_value_consts.AppIDKubernetesLabelValue.GetString(),
 		resourceTypeLabelKeyStr:                                  logsCollectorResourceTypeLabelValStr,
-		// could retrieve the logs collector by the logs collector guid if we added guid labels, but for now just retrieve by resource type
 	}
 
 	logsCollectorNamespaces, err := kubernetes_resource_collectors.CollectMatchingNamespaces(ctx, kubernetesManager, logsCollectorDaemonSetSearchLabels, resourceTypeLabelKeyStr, map[string]bool{logsCollectorResourceTypeLabelValStr: true})

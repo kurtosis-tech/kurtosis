@@ -21,11 +21,6 @@ type KubernetesLogsCollectorObjectAttributesProvider interface {
 	ForLogsCollectorNamespace() (KubernetesObjectAttributes, error)
 
 	ForLogsCollectorConfigMap() (KubernetesObjectAttributes, error)
-
-	// TODO: might need to implement these if the log collector requires roles for requesting tags from api server
-	//ForLogsCollectorServiceAccount() (KubernetesObjectAttributes, error)
-	//ForLogsCollectorClusterRole() (KubernetesObjectAttributes, error)
-	//ForLogsCollectorClusterRoleBindings() (KubernetesObjectAttributes, error)
 }
 
 func GetKubernetesLogsCollectorObjectAttributesProvider(logsCollectorGuid logs_collector.LogsCollectorGuid) KubernetesLogsCollectorObjectAttributesProvider {
