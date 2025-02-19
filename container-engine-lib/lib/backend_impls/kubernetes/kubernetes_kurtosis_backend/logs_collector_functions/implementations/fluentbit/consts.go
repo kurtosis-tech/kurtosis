@@ -5,15 +5,11 @@ const (
 
 	fluentBitImage = "fluent/fluent-bit:latest-debug"
 
-	//logLevel               = "debug"
-	//httpServerEnabledValue = "On"
-	//httpServerLocalhost    = "0.0.0.0"
-
 	fluentBitConfigStr = `
 [SERVICE]
     HTTP_Server       On
     HTTP_Listen       0.0.0.0
-    HTTP_PORT         2020
+    HTTP_PORT         9712
     Parsers_File      /fluent-bit/etc/parsers.conf
 
 [INPUT]

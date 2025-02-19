@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -13,6 +14,13 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 	"time"
 )
+
+const (
+	httpProtocolStr = "http"
+	emptyUrl        = ""
+)
+
+var noWait *port_spec.Wait = nil
 
 type fluentbitLogsCollector struct{}
 
@@ -89,9 +97,35 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 		}
 	}()
 
-	// TODO: Get port information
+	httpPortSpec, err := port_spec.NewPortSpec(httpPortNumber, port_spec.TransportProtocol_TCP, httpProtocolStr, noWait, emptyUrl)
+	if err != nil {
+		return nil, nil, nil, nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating the log collectors HTTP port spec object using number '%v' and protocol '%v'",
+			httpPortNumber,
+			httpProtocolStr,
+		)
+	}
+	tcpPortSpec, err := port_spec.NewPortSpec(tcpPortNumber, port_spec.TransportProtocol_TCP, httpProtocolStr, noWait, emptyUrl)
+	if err != nil {
+		return nil, nil, nil, nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating the log collectors TCP port spec object using number '%v' and protocol '%v'",
+			tcpPortNumber,
+			port_spec.TransportProtocol_TCP,
+		)
+	}
+	privatePorts := map[string]*port_spec.PortSpec{
+		logsCollectorTcpPortId:  tcpPortSpec,
+		logsCollectorHttpPortId: httpPortSpec,
+	}
 
-	daemonSet, err := createLogsCollectorDaemonSet(ctx, namespace.Name, configMap.Name, logsCollectorAttrProvider, kubernetesManager)
+	containerPorts, err := shared_helpers.GetKubernetesContainerPortsFromPrivatePortSpecs(privatePorts)
+	if err != nil {
+		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector fluent bit container ports from the port specs")
+	}
+
+	daemonSet, err := createLogsCollectorDaemonSet(ctx, namespace.Name, configMap.Name, containerPorts, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
 		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to daemonset for fluent-bit log collector.")
 	}
@@ -138,6 +172,7 @@ func createLogsCollectorDaemonSet(
 	ctx context.Context,
 	namespace string,
 	fluentBitCfgConfigMapName string,
+	ports []apiv1.ContainerPort,
 	objAttrProvider object_attributes_provider.KubernetesLogsCollectorObjectAttributesProvider,
 	kubernetesManager *kubernetes_manager.KubernetesManager) (*appsv1.DaemonSet, error) {
 
@@ -157,9 +192,7 @@ func createLogsCollectorDaemonSet(
 				"/fluent-bit/bin/fluent-bit",
 				"--config=/fluent-bit/etc/conf/fluent-bit.conf",
 			},
-			Ports: []apiv1.ContainerPort{
-				{ContainerPort: 80},
-			},
+			Ports: ports,
 			VolumeMounts: []apiv1.VolumeMount{
 				{
 					Name:             "varlog",

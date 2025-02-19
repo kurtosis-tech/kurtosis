@@ -1297,7 +1297,6 @@ func (manager *KubernetesManager) GetPodsManagedByDaemonSet(ctx context.Context,
 	var podsManagedByDaemonSet []*apiv1.Pod
 	for _, pod := range pods.Items {
 		podsManagedByDaemonSet = append(podsManagedByDaemonSet, &pod)
-
 	}
 
 	return podsManagedByDaemonSet, nil

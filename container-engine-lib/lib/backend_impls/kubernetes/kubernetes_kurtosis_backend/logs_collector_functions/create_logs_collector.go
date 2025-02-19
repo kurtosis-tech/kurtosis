@@ -12,9 +12,13 @@ import (
 )
 
 const (
-	httpProtocolStr = "http"
-	emptyUrl        = ""
+	emptyUrl                = ""
+	httpProtocolStr         = "http"
+	logsCollectorTcpPortId  = "tcp"
+	logsCollectorHttpPortId = "http"
 )
+
+var noWait *port_spec.Wait = nil
 
 func CreateLogsCollector(
 	ctx context.Context,
@@ -50,8 +54,8 @@ func CreateLogsCollector(
 			0,  // TODO: fill these in when adding aggregator to k8s
 			logsCollectorTcpPortNumber,
 			logsCollectorHttpPortNumber,
-			"tcp",
-			"http",
+			logsCollectorTcpPortId,
+			logsCollectorHttpPortId,
 			objAttrsProvider,
 			kubernetesManager,
 		)
@@ -86,17 +90,7 @@ func CreateLogsCollector(
 
 	logrus.Debugf("Checking for logs collector availability in namespace '%v'...", kubernetesResources.namespace.Name)
 
-	// this port spec represents the http port that each log collector container (on each pod managed by the daemon set) wll have a port exposed on
-	httpPortSpec, err := port_spec.NewPortSpec(logsCollectorHttpPortNumber, port_spec.TransportProtocol_TCP, httpProtocolStr, nil, emptyUrl)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(
-			err,
-			"An error occurred creating the log collectors public HTTP port spec object using number '%v' and protocol '%v'",
-			logsCollectorHttpPortNumber,
-			port_spec.TransportProtocol_TCP,
-		)
-	}
-	if err = waitForLogsCollectorAvailability(ctx, httpPortSpec, kubernetesResources, kubernetesManager); err != nil {
+	if err = waitForLogsCollectorAvailability(ctx, logsCollectorHttpPortNumber, kubernetesResources, kubernetesManager); err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while waiting for the logs collector daemon set to become available")
 	}
 	logrus.Debugf("...logs collector is available in namepsace '%v'", kubernetesResources.namespace.Name)

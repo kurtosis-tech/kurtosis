@@ -18,6 +18,11 @@ import (
 	"time"
 )
 
+const (
+	maxAvailabilityCheckRetries     = 10
+	timeToWaitBetweenChecksDuration = 500 * time.Millisecond
+)
+
 func getLogsCollectorObjAndResourcesForCluster(ctx context.Context, kubernetesManager *kubernetes_manager.KubernetesManager) (*logs_collector.LogsCollector, *logsCollectorKubernetesResources, error) {
 	kubernetesResources, err := getLogsCollectorKubernetesResourcesForCluster(ctx, kubernetesManager)
 	if err != nil {
@@ -209,7 +214,7 @@ func getLogsCollectorStatus(ctx context.Context, kubernetesManager *kubernetes_m
 
 func waitForLogsCollectorAvailability(
 	ctx context.Context,
-	logsCollectorPortSpec *port_spec.PortSpec,
+	logsCollectorHttpPortNumber uint16,
 	k8sResources *logsCollectorKubernetesResources,
 	kubernetesManager *kubernetes_manager.KubernetesManager) error {
 	logsCollectorDaemonSet := k8sResources.daemonSet
@@ -218,13 +223,24 @@ func waitForLogsCollectorAvailability(
 		return stacktrace.Propagate(err, "An error occurred getting pods managed by logs collector daemon set '%v'", logsCollectorDaemonSet.Name)
 	}
 
+	// this port spec represents the http port that each log collector container (on each pod managed by the daemon set) wll have a port exposed on
+	httpPortSpec, err := port_spec.NewPortSpec(logsCollectorHttpPortNumber, port_spec.TransportProtocol_TCP, httpProtocolStr, noWait, emptyUrl)
+	if err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred creating the log collectors public HTTP port spec object using number '%v' and protocol '%v'",
+			logsCollectorHttpPortNumber,
+			port_spec.TransportProtocol_TCP,
+		)
+	}
 	for _, pod := range pods {
-		// NOTE: ideally we'd actually curl the health endpoint of the fluent bit container (like we do for Docker)
-		// this part of code runs on users machine logs collector isn't exposed so we have to exec onto the pod containers - which may not have curl on them
 		if len(pod.Spec.Containers) < 1 {
-			return stacktrace.NewError("Pod managed by logs collector daemon set doesn't have any conatiner's assocaited with it. There should be at least one container.")
+			return stacktrace.NewError("Pod '%v' managed by logs collector daemon set '%v' doesn't have any containers associated with it. There should be at least one container.", pod.Name, logsCollectorDaemonSet.Name)
 		}
-		if err = shared_helpers.WaitForPortAvailabilityUsingNetstat(kubernetesManager, k8sResources.namespace.Name, pod.Name, pod.Spec.Containers[0].Name, logsCollectorPortSpec, 10, 500*time.Millisecond); err != nil {
+
+		// NOTE: ideally we'd actually curl the health endpoint of the fluent bit container (like we do for Docker)
+		// this part of code runs on users machine logs collector isn't exposed so we exec onto the pod containers - which may not have curl on them, hence netstat check
+		if err = shared_helpers.WaitForPortAvailabilityUsingNetstat(kubernetesManager, k8sResources.namespace.Name, pod.Name, pod.Spec.Containers[0].Name, httpPortSpec, maxAvailabilityCheckRetries, timeToWaitBetweenChecksDuration); err != nil {
 			return stacktrace.Propagate(err, "An error occurred while checking for availability of pod '%v' managed by logs collector daemon set '%v'", pod.Name, logsCollectorDaemonSet.Name)
 		}
 	}
