@@ -20,7 +20,7 @@ func DestroyLogsCollector(ctx context.Context, kubernetesManager *kubernetes_man
 		logsCollectorNamespace = logsCollectorResources.namespace
 	} else {
 		// assume if there is no namespace, there's no logs collector but log a debug in case
-		logrus.Info("No logs collector namespace found. Returning without attempting to destroy remaining logs collector resources.")
+		logrus.Debug("No logs collector namespace found. Returning without attempting to destroy remaining logs collector resources.")
 		return nil
 	}
 

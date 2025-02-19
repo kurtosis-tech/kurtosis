@@ -19,7 +19,7 @@ const (
 	httpProtocolStr = "http"
 	emptyUrl        = ""
 	retryInterval   = 1 * time.Second
-	maxRetries      = 10
+	maxRetries      = 30
 )
 
 var noWait *port_spec.Wait = nil
@@ -218,6 +218,10 @@ func createLogsCollectorDaemonSet(
 			StdinOnce:                false,
 			TTY:                      false,
 			VolumeMounts: []apiv1.VolumeMount{
+				// these volumes are where logs from pods on a node in a k8s cluster get stored
+				// they get mounted to the fluentbit pod so the fluentbit pod can read them via the `tail` input plugin
+				// https://docs.fluentbit.io/manual/installation/kubernetes#details
+				//
 				{
 					Name:             varLogVolumeName,
 					ReadOnly:         false,
