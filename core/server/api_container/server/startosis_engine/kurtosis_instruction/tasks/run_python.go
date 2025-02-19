@@ -106,6 +106,18 @@ func NewRunPythonService(
 						return builtin_argument.DurationOrNone(value, WaitArgName)
 					},
 				},
+				{
+					Name:              AcceptableCodesArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
+					Validator:         nil,
+				},
+				{
+					Name:              SkipCodeCheckArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Bool],
+					Validator:         nil,
+				},
 			},
 		},
 
@@ -159,11 +171,13 @@ type RunPythonCapabilities struct {
 	packageContentProvider startosis_packages.PackageContentProvider
 	packageReplaceOptions  map[string]string
 
-	returnValue   *starlarkstruct.Struct
-	serviceConfig *service.ServiceConfig
-	storeSpecList []*store_spec.StoreSpec
-	wait          string
-	description   string
+	returnValue     *starlarkstruct.Struct
+	serviceConfig   *service.ServiceConfig
+	storeSpecList   []*store_spec.StoreSpec
+	wait            string
+	description     string
+	acceptableCodes []int64
+	skipCodeCheck   bool
 }
 
 func (builtin *RunPythonCapabilities) Interpret(locatorOfModuleInWhichThisBuiltinIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -276,6 +290,29 @@ func (builtin *RunPythonCapabilities) Interpret(locatorOfModuleInWhichThisBuilti
 		builtin.wait = waitTimeout
 	}
 
+	acceptableCodes := defaultAcceptableCodes
+	if arguments.IsSet(AcceptableCodesArgName) {
+		acceptableCodesValue, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, AcceptableCodesArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%v' argument", acceptableCodes)
+		}
+		acceptableCodes, err = kurtosis_types.SafeCastToIntegerSlice(acceptableCodesValue)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to parse '%v' argument", acceptableCodes)
+		}
+		builtin.acceptableCodes = acceptableCodes
+	}
+
+	skipCodeCheck := defaultSkipCodeCheck
+	if arguments.IsSet(SkipCodeCheckArgName) {
+		skipCodeCheckArgumentValue, err := builtin_argument.ExtractArgumentValue[starlark.Bool](arguments, SkipCodeCheckArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", SkipCodeCheckArgName)
+		}
+		skipCodeCheck = bool(skipCodeCheckArgumentValue)
+		builtin.skipCodeCheck = skipCodeCheck
+	}
+
 	resultUuid, err := builtin.runtimeValueStore.CreateValue()
 	if err != nil {
 		return nil, startosis_errors.NewInterpretationError("An error occurred while generating UUID for future reference for %v instruction", RunPythonBuiltinName)
@@ -338,10 +375,10 @@ func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_ar
 	}
 	instructionResult := resultMapToString(result, RunPythonBuiltinName)
 
-	// throw an error as execution of the command failed
-	if runPythonExecutionResult.GetExitCode() != 0 {
-		errorMessage := fmt.Sprintf("Python command: %q exited with code %d and output", commandToRun, runPythonExecutionResult.GetExitCode())
-		return "", stacktrace.NewError(formatErrorMessage(errorMessage, runPythonExecutionResult.GetOutput()))
+	// throw an error as execution of the command is not a part of acceptable codes
+	if !builtin.skipCodeCheck && isAcceptableCode(builtin.acceptableCodes, result) {
+		errorMessage := fmt.Sprintf("Run python returned exit code '%v' that is not part of the acceptable status codes '%v', with output:", result["code"], builtin.acceptableCodes)
+		return "", stacktrace.NewError(formatErrorMessage(errorMessage, result["output"].String()))
 	}
 
 	if builtin.storeSpecList != nil {

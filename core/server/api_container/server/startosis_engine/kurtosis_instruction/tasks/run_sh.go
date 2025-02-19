@@ -90,6 +90,18 @@ func NewRunShService(
 						return builtin_argument.DurationOrNone(value, WaitArgName)
 					},
 				},
+				{
+					Name:              AcceptableCodesArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
+					Validator:         nil,
+				},
+				{
+					Name:              SkipCodeCheckArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Bool],
+					Validator:         nil,
+				},
 			},
 		},
 
@@ -137,11 +149,13 @@ type RunShCapabilities struct {
 	packageContentProvider startosis_packages.PackageContentProvider
 	packageReplaceOptions  map[string]string
 
-	serviceConfig *service.ServiceConfig
-	storeSpecList []*store_spec.StoreSpec
-	returnValue   *starlarkstruct.Struct
-	wait          string
-	description   string
+	serviceConfig   *service.ServiceConfig
+	storeSpecList   []*store_spec.StoreSpec
+	returnValue     *starlarkstruct.Struct
+	wait            string
+	description     string
+	acceptableCodes []int64
+	skipCodeCheck   bool
 }
 
 func (builtin *RunShCapabilities) Interpret(locatorOfModuleInWhichThisBuiltinIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -230,6 +244,29 @@ func (builtin *RunShCapabilities) Interpret(locatorOfModuleInWhichThisBuiltinIsB
 		builtin.wait = waitTimeout
 	}
 
+	acceptableCodes := defaultAcceptableCodes
+	if arguments.IsSet(AcceptableCodesArgName) {
+		acceptableCodesValue, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, AcceptableCodesArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%v' argument", acceptableCodes)
+		}
+		acceptableCodes, err = kurtosis_types.SafeCastToIntegerSlice(acceptableCodesValue)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to parse '%v' argument", acceptableCodes)
+		}
+		builtin.acceptableCodes = acceptableCodes
+	}
+
+	skipCodeCheck := defaultSkipCodeCheck
+	if arguments.IsSet(SkipCodeCheckArgName) {
+		skipCodeCheckArgumentValue, err := builtin_argument.ExtractArgumentValue[starlark.Bool](arguments, SkipCodeCheckArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", SkipCodeCheckArgName)
+		}
+		skipCodeCheck = bool(skipCodeCheckArgumentValue)
+		builtin.skipCodeCheck = skipCodeCheck
+	}
+
 	resultUuid, err := builtin.runtimeValueStore.CreateValue()
 	if err != nil {
 		return nil, startosis_errors.NewInterpretationError("An error occurred while generating UUID for future reference for %v instruction", RunShBuiltinName)
@@ -279,14 +316,14 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 	fullCommandToRun := getCommandToRunForStreamingLogs(commandToRun)
 
 	// run the command passed in by user in the container
-	execResult, err := executeWithWait(ctx, builtin.serviceNetwork, builtin.name, builtin.wait, fullCommandToRun)
+	runShResult, err := executeWithWait(ctx, builtin.serviceNetwork, builtin.name, builtin.wait, fullCommandToRun)
 	if err != nil {
 		return "", stacktrace.Propagate(err, fmt.Sprintf("error occurred while executing one time task command: %v ", builtin.run))
 	}
 
 	result := map[string]starlark.Comparable{
-		runResultOutputKey: starlark.String(execResult.GetOutput()),
-		runResultCodeKey:   starlark.MakeInt(int(execResult.GetExitCode())),
+		runResultOutputKey: starlark.String(runShResult.GetOutput()),
+		runResultCodeKey:   starlark.MakeInt(int(runShResult.GetExitCode())),
 	}
 
 	if err := builtin.runtimeValueStore.SetValue(builtin.resultUuid, result); err != nil {
@@ -294,10 +331,10 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 	}
 	instructionResult := resultMapToString(result, RunShBuiltinName)
 
-	// throw an error as execution of the command failed
-	if execResult.GetExitCode() != 0 {
-		errorMessage := fmt.Sprintf("Shell command: %q exited with code %d and output", commandToRun, execResult.GetExitCode())
-		return "", stacktrace.NewError(formatErrorMessage(errorMessage, execResult.GetOutput()))
+	// throw an error as execution if returned code is not an  acceptable exit code
+	if !builtin.skipCodeCheck && isAcceptableCode(builtin.acceptableCodes, result) {
+		errorMessage := fmt.Sprintf("Run sh returned exit code '%v' that is not part of the acceptable status codes '%v', with output:", result["code"], builtin.acceptableCodes)
+		return "", stacktrace.NewError(formatErrorMessage(errorMessage, result["output"].String()))
 	}
 
 	if builtin.storeSpecList != nil {

@@ -32,13 +32,16 @@ import (
 
 // shared constants
 const (
-	ImageNameArgName  = "image"
-	TaskNameArgName   = "name"
-	RunArgName        = "run"
-	StoreFilesArgName = "store"
-	WaitArgName       = "wait"
-	FilesArgName      = "files"
-	EnvVarsArgName    = "env_vars"
+	ImageNameArgName       = "image"
+	TaskNameArgName        = "name"
+	RunArgName             = "run"
+	StoreFilesArgName      = "store"
+	WaitArgName            = "wait"
+	FilesArgName           = "files"
+	EnvVarsArgName         = "env_vars"
+	AcceptableCodesArgName = "acceptable_codes"
+	SkipCodeCheckArgName   = "skip_code_check"
+	defaultSkipCodeCheck   = false
 
 	newlineChar = "\n"
 
@@ -57,6 +60,10 @@ const (
 	//  enables init mode on containers; cleaning up any zombie processes
 	tiniEnabled = true
 )
+
+var defaultAcceptableCodes = []int64{
+	0, // EXIT_SUCCESS
+}
 
 // runCommandToStreamTaskLogs sets the entrypoint of a task container with a command that creates and tails a log file for tasks run on the container
 // all tasks redirect output to the task log file (see getCommandToRunForStreamingLogs for details) where they will be picked up by the main process
@@ -342,4 +349,15 @@ func getTaskNameFromArgs(arguments *builtin_argument.ArgumentValuesSet) (string,
 		randomUuid := uuid.NewRandom()
 		return fmt.Sprintf("task-%v", randomUuid.String()), nil
 	}
+}
+
+func isAcceptableCode(acceptableCodes []int64, recipeResult map[string]starlark.Comparable) bool {
+	isAcceptable := false
+	for _, acceptableCode := range acceptableCodes {
+		if recipeResult[runResultCodeKey] == starlark.MakeInt64(acceptableCode) {
+			isAcceptable = true
+			break
+		}
+	}
+	return isAcceptable
 }
