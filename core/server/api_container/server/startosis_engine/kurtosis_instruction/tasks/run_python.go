@@ -378,7 +378,7 @@ func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_ar
 	instructionResult := resultMapToString(result, RunPythonBuiltinName)
 
 	// throw an error as execution of the command is not a part of acceptable codes
-	if !builtin.skipCodeCheck && isAcceptableCode(builtin.acceptableCodes, result) {
+	if !builtin.skipCodeCheck && !isAcceptableCode(builtin.acceptableCodes, result) {
 		errorMessage := fmt.Sprintf("Run python returned exit code '%v' that is not part of the acceptable status codes '%v', with output:", result["code"], builtin.acceptableCodes)
 		return "", stacktrace.NewError(formatErrorMessage(errorMessage, result["output"].String()))
 	}

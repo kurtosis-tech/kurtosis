@@ -52,7 +52,7 @@ const (
 	runResultOutputKey   = "output"
 	runFilesArtifactsKey = "files_artifacts"
 
-	shellWrapperCommand = "/bin/bash"
+	shellWrapperCommand = "bash"
 	taskLogFilePath     = "/tmp/kurtosis-task.log"
 	noNameSet           = ""
 	uniqueNameGenErrStr = "error occurred while generating unique name for the file artifact"
@@ -76,10 +76,9 @@ var runCommandToStreamTaskLogs = []string{shellWrapperCommand, "-c", fmt.Sprintf
 // 2>&1 redirects stderr to stdout.
 // uses tee to direct output to the task log file while also streaming output to stdout.
 // uses set -o pipefail, exit_code=$?, and exit $exit_code to save and exit with the exit code from the users command
-// uses single quotes ” to prevent variable expansion from $
-// adds an extra echo to ensure each log ends with a newline.
+// adds an extra echo to add newline at the end (without newline that line will be written to task file but won't be picked up by tail from `runCommandToStreamTaskLogs`)
 func getCommandToRunForStreamingLogs(commandToRun string) []string {
-	return []string{shellWrapperCommand, "-c", fmt.Sprintf("'set -o pipefail; { %v; } 2>&1 | tee %v; exit_code=$?; echo >> %v; exit $exit_code'", commandToRun, taskLogFilePath, taskLogFilePath)}
+	return []string{shellWrapperCommand, "-c", fmt.Sprintf("set -o pipefail;{ %v; } 2>&1 | tee %v; exit_code=$?; echo >> %v; exit $exit_code", commandToRun, taskLogFilePath, taskLogFilePath)}
 }
 
 func parseStoreFilesArg(serviceNetwork service_network.ServiceNetwork, arguments *builtin_argument.ArgumentValuesSet) ([]*store_spec.StoreSpec, *startosis_errors.InterpretationError) {

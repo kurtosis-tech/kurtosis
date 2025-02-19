@@ -334,7 +334,7 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 	instructionResult := resultMapToString(result, RunShBuiltinName)
 
 	// throw an error as execution if returned code is not an  acceptable exit code
-	if !builtin.skipCodeCheck && isAcceptableCode(builtin.acceptableCodes, result) {
+	if !builtin.skipCodeCheck && !isAcceptableCode(builtin.acceptableCodes, result) {
 		errorMessage := fmt.Sprintf("Run sh returned exit code '%v' that is not part of the acceptable status codes '%v', with output:", result["code"], builtin.acceptableCodes)
 		return "", stacktrace.NewError(formatErrorMessage(errorMessage, result["output"].String()))
 	}
