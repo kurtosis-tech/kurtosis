@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.5.0](https://github.com/kurtosis-tech/kurtosis/compare/1.4.4...1.5.0) (2025-02-07)
+
+
+### Features
+
+* Allow builtin manipulation for programmatic use ([#2642](https://github.com/kurtosis-tech/kurtosis/issues/2642)) ([bb508ca](https://github.com/kurtosis-tech/kurtosis/commit/bb508ca59fe8c807011da57cbc652215a7f0390d))
+
+
+### Bug Fixes
+
+* nil docker auth test ([#2630](https://github.com/kurtosis-tech/kurtosis/issues/2630)) ([ae3b2e6](https://github.com/kurtosis-tech/kurtosis/commit/ae3b2e655806ca41fe3bb87e4f25845149ee1874))
+* Stdout/Stderr mixing in commands ([#2637](https://github.com/kurtosis-tech/kurtosis/issues/2637)) ([afe0d87](https://github.com/kurtosis-tech/kurtosis/commit/afe0d87dad2e17e64ced1d1e00bb5b20d6745416))
+
 ## [1.4.4](https://github.com/kurtosis-tech/kurtosis/compare/2.1.0...1.4.4) (2025-02-06)
 
 
