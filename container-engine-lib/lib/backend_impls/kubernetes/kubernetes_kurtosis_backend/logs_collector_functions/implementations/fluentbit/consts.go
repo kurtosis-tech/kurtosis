@@ -14,14 +14,13 @@ const (
 	varLogDockerContainersVolumeName = "varlogcontainers"
 	varLogDockerContainersMountPath  = "/var/log/containers"
 
-	fluentBit
 	fluentBitConfigVolumeName = "fluent-bit-config"
 	fluentBitConfigMountPath  = "/fluent-bit/etc/conf"
 
 	// for now, fluent bit will also stores all combined logs in files on the node
 	// TODO: remove when output is logs aggregator
 	fluentBitHostLogsVolumeName = "fluent-bit-host-logs"
-	fluentBitHostLogsMountPath  = "/avr/lfluent-bit-host-logsog/fluentbit"
+	fluentBitHostLogsMountPath  = "/var/fluent-bit-host-logs/fluentbit"
 
 	// TODO: construct fluentbit config via go templating based on inputs
 	fluentBitConfigFileName = "fluent-bit.conf"
@@ -46,7 +45,7 @@ const (
 [OUTPUT]
     Name              file
     Match             *
-    Path              /fluent-bit-logs/
+    Path              /var/fluent-bit-host-logs/fluentbit
     File              fluentbit-output.log
     Format            plain
 
