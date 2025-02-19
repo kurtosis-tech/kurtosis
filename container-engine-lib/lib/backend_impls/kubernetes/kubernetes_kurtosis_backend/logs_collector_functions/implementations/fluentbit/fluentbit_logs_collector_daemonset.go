@@ -195,41 +195,41 @@ func createLogsCollectorDaemonSet(
 			Ports: ports,
 			VolumeMounts: []apiv1.VolumeMount{
 				{
-					Name:             "varlog",
+					Name:             varLogVolumeName,
 					ReadOnly:         false,
-					MountPath:        "/var/log",
+					MountPath:        varLogMountPath,
 					SubPath:          "",
 					MountPropagation: nil,
 					SubPathExpr:      "",
 				},
 				{
-					Name:             "varlibdockercontainers",
+					Name:             varLibDockerContainersVolumeName,
 					ReadOnly:         false,
-					MountPath:        "/var/lib/docker/containers",
+					MountPath:        varLibDockerContainersMountPath,
 					SubPath:          "",
 					MountPropagation: nil,
 					SubPathExpr:      "",
 				},
 				{
-					Name:             "varlogcontainers",
+					Name:             varLogDockerContainersVolumeName,
 					ReadOnly:         false,
-					MountPath:        "/var/log/containers",
+					MountPath:        varLogDockerContainersMountPath,
 					SubPath:          "",
 					MountPropagation: nil,
 					SubPathExpr:      "",
 				},
 				{
-					Name:             "fluent-bit-config",
+					Name:             fluentBitConfigVolumeName,
 					ReadOnly:         false,
-					MountPath:        "/fluent-bit/etc/conf",
+					MountPath:        fluentBitConfigMountPath,
 					SubPath:          "",
 					MountPropagation: nil,
 					SubPathExpr:      "",
 				},
 				{
-					Name:             "fluent-bit-host-logs",
+					Name:             fluentBitHostLogsVolumeName,
 					ReadOnly:         false,
-					MountPath:        "/fluent-bit-logs",
+					MountPath:        fluentBitHostLogsMountPath,
 					SubPath:          "",
 					MountPropagation: nil,
 					SubPathExpr:      "",
@@ -237,38 +237,36 @@ func createLogsCollectorDaemonSet(
 			},
 		},
 	}
-
 	volumes := []apiv1.Volume{
 		{
-			Name: "varlog",
+			Name: varLogVolumeName,
 			VolumeSource: apiv1.VolumeSource{
 				HostPath: &apiv1.HostPathVolumeSource{
-					Path: "/var/log",
+					Path: varLogMountPath,
 					Type: nil,
 				},
 			},
 		},
 		{
-			// is this where docker container logs are stored across all kubernetes clusters?
-			Name: "varlibdockercontainers",
+			Name: varLibDockerContainersVolumeName,
 			VolumeSource: apiv1.VolumeSource{
 				HostPath: &apiv1.HostPathVolumeSource{
-					Path: "/var/lib/docker/containers",
+					Path: varLibDockerContainersMountPath,
 					Type: nil,
 				},
 			},
 		},
 		{
-			Name: "varlogcontainers",
+			Name: varLogDockerContainersVolumeName,
 			VolumeSource: apiv1.VolumeSource{
 				HostPath: &apiv1.HostPathVolumeSource{
-					Path: "/var/log/containers",
+					Path: varLogDockerContainersMountPath,
 					Type: nil,
 				},
 			},
 		},
 		{
-			Name: "fluent-bit-config",
+			Name: fluentBitConfigVolumeName,
 			VolumeSource: apiv1.VolumeSource{
 				ConfigMap: &apiv1.ConfigMapVolumeSource{
 					LocalObjectReference: apiv1.LocalObjectReference{Name: fluentBitCfgConfigMapName},
@@ -279,10 +277,10 @@ func createLogsCollectorDaemonSet(
 			},
 		},
 		{
-			Name: "fluent-bit-host-logs",
+			Name: fluentBitHostLogsVolumeName,
 			VolumeSource: apiv1.VolumeSource{
 				HostPath: &apiv1.HostPathVolumeSource{
-					Path: "/var/log/fluentbit",
+					Path: fluentBitHostLogsMountPath,
 				},
 			},
 		},
@@ -325,7 +323,7 @@ func createLogsCollectorConfigMap(
 		labels,
 		annotations,
 		map[string]string{
-			"fluent-bit.conf": fluentBitConfigStr,
+			fluentBitConfigFileName: fluentBitConfigStr,
 		},
 	)
 	if err != nil {

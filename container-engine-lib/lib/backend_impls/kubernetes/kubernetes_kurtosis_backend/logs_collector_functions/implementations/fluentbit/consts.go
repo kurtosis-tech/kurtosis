@@ -5,8 +5,26 @@ const (
 
 	fluentBitImage = "fluent/fluent-bit:latest-debug"
 
+	// volumes pulled from official fluent bit helm chart: https://github.com/fluent/helm-charts/blob/main/charts/fluent-bit/values.yaml
+	varLogVolumeName                 = "varlog"
+	varLogMountPath                  = "/var/log"
+	varLibDockerContainersVolumeName = "varlibdockercontainers"
+	varLibDockerContainersMountPath  = "/var/lib/docker/containers"
+	varLogDockerContainersVolumeName = "varlogcontainers"
+	varLogDockerContainersMountPath  = "/var/log/containers"
+
+	fluentBit
+	fluentBitConfigVolumeName = "fluent-bit-config"
+	fluentBitConfigMountPath  = "/fluent-bit/etc/conf"
+
+	// for now, fluent bit will also stores all combined logs in files on the node
+	// TODO: remove when output is logs aggregator
+	fluentBitHostLogsVolumeName = "fluent-bit-host-logs"
+	fluentBitHostLogsMountPath  = "/avr/lfluent-bit-host-logsog/fluentbit"
+
 	// TODO: construct fluentbit config via go templating based on inputs
-	fluentBitConfigStr = `
+	fluentBitConfigFileName = "fluent-bit.conf"
+	fluentBitConfigStr      = `
 [SERVICE]
     HTTP_Server       On
     HTTP_Listen       0.0.0.0
