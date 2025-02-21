@@ -42,9 +42,9 @@ const (
     Tag               kurtosis.*
     Path              /var/log/containers/*_kt-*_user-service-container-*.log
     Parser            docker
-    DB                /var/log/fluent-bit/fluent-bit.db
-    DB.Sync           normal
-    Read_From_Head    true
+    DB                /var/log/fluent-bit/db/fluent-bit.db
+    DB.sync           normal
+    Read_from_Head    true
 
 [OUTPUT]
     Name              stdout
