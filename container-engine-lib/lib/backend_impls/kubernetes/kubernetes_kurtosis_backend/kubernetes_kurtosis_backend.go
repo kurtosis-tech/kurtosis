@@ -498,6 +498,7 @@ func (backend *KubernetesKurtosisBackend) DestroyLogsCollectorForEnclave(ctx con
 	if err := logs_collector_functions.DestroyLogsCollector(ctx, backend.kubernetesManager); err != nil {
 		return stacktrace.Propagate(err, "An error occurred destroying logs collector.")
 	}
+	logrus.Debug("Successfully destroyed logs collector.")
 	return nil
 }
 
