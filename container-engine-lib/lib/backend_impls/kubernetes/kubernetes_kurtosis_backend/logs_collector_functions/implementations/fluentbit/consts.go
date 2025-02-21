@@ -20,7 +20,13 @@ const (
 	// for now, fluent bit will also stores all combined logs in files on the node
 	// TODO: remove when output is logs aggregator
 	fluentBitHostLogsVolumeName = "fluent-bit-host-logs"
-	fluentBitHostLogsMountPath  = "/var/fluent-bit-host-logs/fluentbit"
+	fluentBitHostLogsMountPath  = "/var/log/fluent-bit"
+
+	// this db will store information about the offsets of log files the fluent bit log collector has processed
+	// this way if it is restarted, fluent bit will start reading from where it left off and no logs will be missed
+	// https://docs.fluentbit.io/manual/pipeline/inputs/tail#keep_state
+	fluentBitCheckpointDbVolumeName = "fluent-bit-db"
+	fluentBitCheckpointDbMountPath  = "/var/log/fluent-bit/db"
 
 	// TODO: construct fluentbit config via go templating based on inputs
 	fluentBitConfigFileName = "fluent-bit.conf"
@@ -36,6 +42,9 @@ const (
     Tag               kurtosis.*
     Path              /var/log/containers/*_kt-*_user-service-container-*.log
     Parser            docker
+    DB                /var/log/fluent-bit/fluent-bit.db
+    DB.Sync           normal
+    Read_From_Head    true
 
 [OUTPUT]
     Name              stdout
@@ -45,8 +54,8 @@ const (
 [OUTPUT]
     Name              file
     Match             *
-    Path              /var/fluent-bit-host-logs/fluentbit
-    File              fluentbit-output.log
+    Path              /var/log/fluent-bit
+    File              fluent-bit-output.log
     Format            plain
 
 [FILTER]

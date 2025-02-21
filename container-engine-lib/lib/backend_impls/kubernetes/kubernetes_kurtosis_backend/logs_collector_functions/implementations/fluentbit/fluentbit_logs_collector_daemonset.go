@@ -262,6 +262,14 @@ func createLogsCollectorDaemonSet(
 					MountPropagation: nil,
 					SubPathExpr:      "",
 				},
+				{
+					Name:             fluentBitCheckpointDbVolumeName,
+					ReadOnly:         false,
+					MountPath:        fluentBitCheckpointDbMountPath,
+					SubPath:          "",
+					MountPropagation: nil,
+					SubPathExpr:      "",
+				},
 			},
 		},
 	}
@@ -286,6 +294,10 @@ func createLogsCollectorDaemonSet(
 		{
 			Name:         fluentBitHostLogsVolumeName,
 			VolumeSource: getVolumeSourceForHostPath(fluentBitHostLogsMountPath),
+		},
+		{
+			Name:         fluentBitCheckpointDbVolumeName,
+			VolumeSource: getVolumeSourceForHostPath(fluentBitCheckpointDbMountPath),
 		},
 	}
 
