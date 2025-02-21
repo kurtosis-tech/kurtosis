@@ -218,13 +218,15 @@ func createLogsCollectorDaemonSet(
 			// Note: only runs if container is shut down gracefully, therefore will not remove the checkpoint db if the pod crashes
 			// TODO: find a way to remove fluent bit checkpoint db during kurtosis clean -a instead of kurtosis engine stop
 			Lifecycle: &apiv1.Lifecycle{
+				PostStart: nil,
 				PreStop: &apiv1.LifecycleHandler{
 					Exec: &apiv1.ExecAction{
 						Command: []string{"sh", "-c", fmt.Sprintf("rm -rf %v/*", fluentBitCheckpointDbMountPath)},
 					},
+					HTTPGet:   nil,
+					TCPSocket: nil,
 				},
 			},
-			TerminationMessagePath:   "",
 			TerminationMessagePolicy: "",
 			ImagePullPolicy:          "",
 			SecurityContext:          nil,
