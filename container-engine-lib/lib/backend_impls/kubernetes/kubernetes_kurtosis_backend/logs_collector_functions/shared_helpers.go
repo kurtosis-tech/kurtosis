@@ -62,9 +62,8 @@ func getLogsCollectorKubernetesResourcesForCluster(ctx context.Context, kubernet
 				configMap: nil,
 				namespace: nil,
 			}, nil
-		} else {
-			namespace = logsCollectorNamespaceForLabel[0]
 		}
+		namespace = logsCollectorNamespaceForLabel[0]
 	} else {
 		return &logsCollectorKubernetesResources{
 			daemonSet: nil,
@@ -73,7 +72,7 @@ func getLogsCollectorKubernetesResourcesForCluster(ctx context.Context, kubernet
 		}, nil
 	}
 
-	logsCollectorCfgConfigMaps, err := kubernetes_resource_collectors.CollectMatchingConfigMaps(
+	logsCollectorConfigConfigMaps, err := kubernetes_resource_collectors.CollectMatchingConfigMaps(
 		ctx,
 		kubernetesManager,
 		namespace.Name,
@@ -86,7 +85,7 @@ func getLogsCollectorKubernetesResourcesForCluster(ctx context.Context, kubernet
 		return nil, stacktrace.Propagate(err, "An error occurred getting config map for logs collector in namespace '%v'", namespace.Name)
 	}
 	var configMap *apiv1.ConfigMap
-	if configMapForForLabel, found := logsCollectorCfgConfigMaps[logsCollectorResourceTypeLabelValStr]; found {
+	if configMapForForLabel, found := logsCollectorConfigConfigMaps[logsCollectorResourceTypeLabelValStr]; found {
 		if len(configMapForForLabel) > 1 {
 			return nil, stacktrace.NewError(
 				"Expected at most one logs collector config maps in namespace '%v' for logs collector but found '%v'",
@@ -94,7 +93,11 @@ func getLogsCollectorKubernetesResourcesForCluster(ctx context.Context, kubernet
 				len(configMapForForLabel),
 			)
 		}
-		configMap = configMapForForLabel[0]
+		if len(configMapForForLabel) == 0 {
+			configMap = nil
+		} else {
+			configMap = configMapForForLabel[0]
+		}
 	}
 
 	daemonSets, err := kubernetes_resource_collectors.CollectMatchingDaemonSets(
@@ -134,6 +137,8 @@ func getLogsCollectorKubernetesResourcesForCluster(ctx context.Context, kubernet
 	return logsCollectorKubernetesResources, nil
 }
 
+// getLogsCollectorsObjectFromKubernetesResources returns a logs collector object if any only if all kubernetes resources required for the logs collector exists
+// otherwise returns nil object or error
 func getLogsCollectorsObjectFromKubernetesResources(ctx context.Context, kubernetesManager *kubernetes_manager.KubernetesManager, logsCollectorKubernetesResources *logsCollectorKubernetesResources) (*logs_collector.LogsCollector, error) {
 	if logsCollectorKubernetesResources.namespace == nil || logsCollectorKubernetesResources.daemonSet == nil || logsCollectorKubernetesResources.configMap == nil {
 		// if any resources not found for logs collector, don't return an object
@@ -152,7 +157,7 @@ func getLogsCollectorsObjectFromKubernetesResources(ctx context.Context, kuberne
 		return nil, stacktrace.Propagate(err, "An error occurred getting the status of the logs collector.")
 	}
 
-	// daemon sets don't have an entrypoint so leave these blank for now
+	// no way to access from logs collector daemon set from outside the cluster so leave these blank for now
 	// if at some point, we need to access fluent bit log collectors via IP in some way, can create an entrypoint that allows
 	// accessing log collectors via IP
 	privateIpAddr = net.IP{}
@@ -193,8 +198,7 @@ func getLogsCollectorStatus(ctx context.Context, kubernetesManager *kubernetes_m
 		case container.ContainerStatus_Running:
 			continue
 		case container.ContainerStatus_Stopped:
-			logsCollectorStatus = container.ContainerStatus_Stopped
-			return logsCollectorStatus, nil
+			return container.ContainerStatus_Stopped, nil
 		}
 	}
 
@@ -228,8 +232,16 @@ func waitForLogsCollectorAvailability(
 		}
 
 		// NOTE: ideally we'd actually curl the health endpoint of the fluent bit container (like we do for Docker)
-		// this part of code runs on users machine logs collector isn't exposed so we exec onto the pod containers - which may not have curl on them, hence netstat check
-		if err = shared_helpers.WaitForPortAvailabilityUsingNetstat(kubernetesManager, k8sResources.namespace.Name, pod.Name, pod.Spec.Containers[0].Name, httpPortSpec, maxAvailabilityCheckRetries, timeToWaitBetweenChecksDuration); err != nil {
+		// this part of code runs on a users machine where the  logs collector isn't exposed so we exec onto the pod containers - which may not have curl on them, hence netstat check
+		fluentBitContainerName := pod.Spec.Containers[0].Name // assume there's only one container and it's the fluent bit one (as configured)
+		if err = shared_helpers.WaitForPortAvailabilityUsingNetstat(
+			kubernetesManager,
+			k8sResources.namespace.Name,
+			pod.Name,
+			fluentBitContainerName,
+			httpPortSpec,
+			maxAvailabilityCheckRetries,
+			timeToWaitBetweenChecksDuration); err != nil {
 			return stacktrace.Propagate(err, "An error occurred while checking for availability of pod '%v' managed by logs collector daemon set '%v'", pod.Name, logsCollectorDaemonSet.Name)
 		}
 	}

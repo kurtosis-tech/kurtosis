@@ -63,7 +63,6 @@ func CreateLogsCollector(
 			return nil, nil, stacktrace.Propagate(
 				err,
 				"An error occurred starting the logs collector daemon set with logs collector with '%v', HTTP port number '%v', TCP port id '%v', and HTTP port id '%v'",
-				"",
 				logsCollectorTcpPortNumber,
 				logsCollectorHttpPortNumber,
 				logsCollectorTcpPortId,

@@ -24,7 +24,7 @@ const (
 	PersistentVolumesKubernetesResource      = "persistentvolumes"
 	PersistentVolumeClaimsKubernetesResource = "persistentvolumeclaims"
 	IngressesKubernetesResource              = "ingresses"
-	ConfigMapKubernetesResource              = "configmaps"
+	ConfigMapsKubernetesResource             = "configmaps"
 	DaemonSetsKubernetesResource             = "daemonsets"
 
 	ClusterRoleKubernetesResourceType = "ClusterRole"

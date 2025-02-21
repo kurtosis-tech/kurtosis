@@ -40,7 +40,7 @@ func newKubernetesLogsCollectorObjectAttributesProvider(logsCollectorGuid logs_c
 func (provider *kubernetesLogsCollectorObjectAttributesProviderImpl) ForLogsCollectorDaemonSet() (KubernetesObjectAttributes, error) {
 	name, err := getCompositeKubernetesObjectName([]string{logsCollectorNamePrefix, string(provider.logsCollectorGuid)})
 	if err != nil {
-		return nil, err
+		return nil, err // already wrapped with propagate
 	}
 
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
@@ -60,7 +60,7 @@ func (provider *kubernetesLogsCollectorObjectAttributesProviderImpl) ForLogsColl
 func (provider *kubernetesLogsCollectorObjectAttributesProviderImpl) ForLogsCollectorConfigMap() (KubernetesObjectAttributes, error) {
 	name, err := getCompositeKubernetesObjectName([]string{logsCollectorConfigNamePrefix, string(provider.logsCollectorGuid)})
 	if err != nil {
-		return nil, err
+		return nil, err // already wrapped with propagate
 	}
 
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
@@ -80,7 +80,7 @@ func (provider *kubernetesLogsCollectorObjectAttributesProviderImpl) ForLogsColl
 func (provider *kubernetesLogsCollectorObjectAttributesProviderImpl) ForLogsCollectorNamespace() (KubernetesObjectAttributes, error) {
 	name, err := getCompositeKubernetesObjectName([]string{logsCollectorNamePrefix, string(provider.logsCollectorGuid)})
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "An error occurred while creating a Kubernetes object name with prefix '%v' and guid '%v'.", logsCollectorConfigNamePrefix, provider.logsCollectorGuid)
 	}
 
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
