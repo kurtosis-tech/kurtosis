@@ -71,7 +71,7 @@ func StopEngines(
 
 	// Stop centralized logging components
 	if err := logs_collector_functions.DestroyLogsCollector(ctx, kubernetesManager); err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred removing the logs colector .")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred removing the logs collector.")
 	}
 
 	return successfulEngineGuids, erroredEngineGuids, nil

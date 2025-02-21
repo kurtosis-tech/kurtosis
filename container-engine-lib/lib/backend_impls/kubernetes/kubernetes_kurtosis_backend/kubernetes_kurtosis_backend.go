@@ -460,7 +460,8 @@ func (backend *KubernetesKurtosisBackend) DestroyLogsAggregator(ctx context.Cont
 }
 
 func (backend *KubernetesKurtosisBackend) CreateLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, logsCollectorHttpPortNumber uint16, logsCollectorTcpPortNumber uint16) (*logs_collector.LogsCollector, error) {
-	// TODO: check that logs aggregator exists first when logs aggregator is implemented
+	// TODO: after logs aggregator is implemented, check that the logs aggregator exists before creating the logs collector
+	// TODO: this acts as a check that any logs collected by the logs collectors will successfully go to the logs aggregator (also done for DockerBackend)
 
 	//Declaring the implementation
 	logsCollectorDaemonSet := fluentbit.NewFluentbitLogsCollector()
@@ -476,7 +477,7 @@ func (backend *KubernetesKurtosisBackend) CreateLogsCollectorForEnclave(ctx cont
 		backend.objAttrsProvider,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the logs collector using the '%v' TCP port number, the '%v' HTTP port number and the los collector container '%+v'", logsCollectorTcpPortNumber, logsCollectorHttpPortNumber, nil)
+		return nil, stacktrace.Propagate(err, "An error occurred creating the logs collector using the '%v' TCP port number, the '%v' HTTP port number and the logs collector daemon set '%+v'", logsCollectorTcpPortNumber, logsCollectorHttpPortNumber, logsCollectorDaemonSet)
 	}
 
 	return logsCollector, nil

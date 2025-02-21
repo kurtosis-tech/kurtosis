@@ -35,15 +35,15 @@ func CreateLogsCollector(
 ) {
 	var logsCollectorObj *logs_collector.LogsCollector
 	var kubernetesResources *logsCollectorKubernetesResources
+	shouldRemoveLogsCollector := false // only gets set to true if a create logs collector is created (and might need to be removed)
 	var removeLogsCollectorFunc func()
 	var err error
 
 	logsCollectorObj, kubernetesResources, err = getLogsCollectorObjAndResourcesForCluster(ctx, kubernetesManager)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting logs aggregator container.")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting logs collector object and resources for cluster.")
 	}
 
-	shouldRemoveLogsCollector := true
 	if logsCollectorObj != nil {
 		logrus.Debug("Found existing logs collector daemon set.")
 	} else {
@@ -62,14 +62,15 @@ func CreateLogsCollector(
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(
 				err,
-				"An error occurred starting the logs collector daemon set with logs aggregator host '%v', logs aggregator port '%v', HTTP port number '%v', TCP port id '%v', and HTTP port id '%v'",
+				"An error occurred starting the logs collector daemon set with logs collector with '%v', HTTP port number '%v', TCP port id '%v', and HTTP port id '%v'",
 				"",
-				"",
-				"",
-				logsCollectorHttpPortNumber,
 				logsCollectorTcpPortNumber,
+				logsCollectorHttpPortNumber,
+				logsCollectorTcpPortId,
+				logsCollectorHttpPortId,
 			)
 		}
+		shouldRemoveLogsCollector = true
 		defer func() {
 			if shouldRemoveLogsCollector {
 				removeLogsCollectorFunc()

@@ -256,6 +256,8 @@ func CreateEngine(
 	logrus.Infof("Starting the centralized logs components...")
 	logsCollectorDaemonSet := fluentbit.NewFluentbitLogsCollector()
 
+	// Unlike the DockerBackend, where the log collectors are deployed by the engine during enclave creation
+	// for k8s backend, the logs collector lifecycle gets managed with the engine's and is created during engine creation
 	_, removeLogsCollectorFunc, err := logs_collector_functions.CreateLogsCollector(ctx, logsCollectorTcpPortNum, logsCollectorHttpPortNum, logsCollectorDaemonSet, nil, kubernetesManager, objAttrsProvider)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the engine logs collector")
