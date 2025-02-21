@@ -2,6 +2,7 @@ package fluentbit
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
@@ -208,12 +209,21 @@ func createLogsCollectorDaemonSet(
 				Requests: nil,
 				Claims:   nil,
 			},
-			ResizePolicy:             nil,
-			VolumeDevices:            nil,
-			LivenessProbe:            nil,
-			ReadinessProbe:           nil,
-			StartupProbe:             nil,
-			Lifecycle:                nil,
+			ResizePolicy:   nil,
+			VolumeDevices:  nil,
+			LivenessProbe:  nil,
+			ReadinessProbe: nil,
+			StartupProbe:   nil,
+			// Clean up job to remove the fluent bit checkpoint dbs when they are stopped
+			// Note: only runs if container is shut down gracefully, therefore will not remove the checkpoint db if the pod crashes
+			// TODO: find a way to remove fluent bit checkpoint db during kurtosis clean -a instead of kurtosis engine stop
+			Lifecycle: &apiv1.Lifecycle{
+				PreStop: &apiv1.LifecycleHandler{
+					Exec: &apiv1.ExecAction{
+						Command: []string{"sh", "-c", fmt.Sprintf("rm -rf %v/*", fluentBitCheckpointDbMountPath)},
+					},
+				},
+			},
 			TerminationMessagePath:   "",
 			TerminationMessagePolicy: "",
 			ImagePullPolicy:          "",
@@ -304,6 +314,8 @@ func createLogsCollectorDaemonSet(
 			VolumeSource: getVolumeSourceForHostPath(fluentBitCheckpointDbMountPath),
 		},
 	}
+
+	// this
 
 	logsCollectorDaemonSet, err := kubernetesManager.CreateDaemonSet(
 		ctx,
