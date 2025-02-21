@@ -79,7 +79,7 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 
 	configMap, err := createLogsCollectorConfigMap(ctx, namespace.Name, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
-		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create config map for fluent-bit log collector.")
+		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create config map for fluent bit log collector.")
 	}
 	removeConfigMapFunc := func() {
 		removeCtx := context.Background()
@@ -129,7 +129,7 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 
 	daemonSet, err := createLogsCollectorDaemonSet(ctx, namespace.Name, configMap.Name, containerPorts, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
-		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to daemonset for fluent-bit log collector.")
+		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create daemon set for fluent bit logs collector.")
 	}
 	removeDaemonSetFunc := func() {
 		removeCtx := context.Background()
@@ -190,12 +190,16 @@ func createLogsCollectorDaemonSet(
 		{
 			Name:  fluentBitContainerName,
 			Image: fluentBitImage,
-			Args: []string{
+			// uses values from official fluent bit helm chart:
+			// https://github.com/fluent/helm-charts/blob/f87fec5d36cf871ad5174c021b8d6ceb6a1b2001/charts/fluent-bit/values.yaml#L489
+			Command: []string{
 				"/fluent-bit/bin/fluent-bit",
+			},
+			Args: []string{
+				"--workdir=/fluent-bit/etc",
 				"--config=/fluent-bit/etc/conf/fluent-bit.conf",
 			},
 			Ports:      ports,
-			Command:    nil,
 			WorkingDir: "",
 			EnvFrom:    nil,
 			Env:        nil,
@@ -353,13 +357,13 @@ func createLogsCollectorNamespace(
 	objAttrProvider object_attributes_provider.KubernetesLogsCollectorObjectAttributesProvider,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (*apiv1.Namespace, error) {
-	namespaceProvider, err := objAttrProvider.ForLogsCollectorNamespace()
+	namespaceAttrProvider, err := objAttrProvider.ForLogsCollectorNamespace()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while getting logs collector namespace attributes provider.")
 	}
-	namespaceName := namespaceProvider.GetName().GetString()
-	namespaceLabels := shared_helpers.GetStringMapFromLabelMap(namespaceProvider.GetLabels())
-	namespaceAnnotations := shared_helpers.GetStringMapFromAnnotationMap(namespaceProvider.GetAnnotations())
+	namespaceName := namespaceAttrProvider.GetName().GetString()
+	namespaceLabels := shared_helpers.GetStringMapFromLabelMap(namespaceAttrProvider.GetLabels())
+	namespaceAnnotations := shared_helpers.GetStringMapFromAnnotationMap(namespaceAttrProvider.GetAnnotations())
 
 	namespaceObj, err := kubernetesManager.CreateNamespace(ctx, namespaceName, namespaceLabels, namespaceAnnotations)
 	if err != nil {
