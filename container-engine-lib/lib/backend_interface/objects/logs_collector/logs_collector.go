@@ -13,9 +13,11 @@ const (
 	ipAndPortSeparator = ":"
 )
 
+type LogsCollectorGuid string
+
 // This component is responsible for:
 // 1. collecting logs from all services within an enclave
-// 2. forwarding these lgos to the logs aggregator
+// 2. forwarding these logs to the logs aggregator
 type LogsCollector struct {
 	status container.ContainerStatus
 
@@ -65,7 +67,7 @@ func (logsCollector *LogsCollector) GetPrivateHttpPort() *port_spec.PortSpec {
 }
 
 // Returns an address string with format <ip address>:<port> of the logs collector's address within the enclave network
-// This address can by containers in the enclave to forward logs to the logs collector
+// This address can be used by containers in the enclave to forward logs to the logs collector
 func (logsCollector *LogsCollector) GetEnclaveNetworkAddressString() (string, error) {
 	if logsCollector.maybeEnclaveNetworkIpAddress == nil {
 		return "", stacktrace.NewError("It is impossible to return the logs collector private TCP address because the value of its private IP address is nil")

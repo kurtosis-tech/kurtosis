@@ -17,7 +17,6 @@ func DestroyEngines(
 	resultErroredEngineGuids map[engine.EngineGUID]error,
 	resultErr error,
 ) {
-
 	matchingEnginesByContainerId, err := getMatchingEngines(ctx, filters, dockerManager)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engines matching the following filters: %+v", filters)

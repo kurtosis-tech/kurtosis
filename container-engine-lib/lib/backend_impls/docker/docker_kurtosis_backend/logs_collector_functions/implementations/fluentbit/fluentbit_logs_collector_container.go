@@ -10,7 +10,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type fluentbitLogsCollectorContainer struct{}
+type fluentbitLogsCollectorContainer struct {
+}
 
 func NewFluentbitLogsCollectorContainer() *fluentbitLogsCollectorContainer {
 	return &fluentbitLogsCollectorContainer{}
@@ -35,7 +36,6 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 	resultRemoveLogsCollectorContainerFunc func(),
 	resultErr error,
 ) {
-
 	logsCollectorConfigurationCreator := createFluentbitConfigurationCreatorForKurtosis(logsAggregatorHost, logsAggregatorPort, tcpPortNumber, httpPortNumber)
 	logsCollectorContainerConfigProvider := createFluentbitContainerConfigProviderForKurtosis(logsAggregatorHost, logsAggregatorPort, tcpPortNumber, httpPortNumber)
 
@@ -141,4 +141,8 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 
 	shouldRemoveLogsCollectorContainer = false
 	return containerId, containerLabelStrs, hostMachinePortBindings, removeContainerFunc, nil
+}
+
+func (fluentbitContainer *fluentbitLogsCollectorContainer) GetHttpHealthCheckEndpoint() string {
+	return healthCheckEndpointPath
 }
