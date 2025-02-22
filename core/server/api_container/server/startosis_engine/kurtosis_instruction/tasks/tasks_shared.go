@@ -52,7 +52,7 @@ const (
 	runResultOutputKey   = "output"
 	runFilesArtifactsKey = "files_artifacts"
 
-	shellWrapperCommand = "bash"
+	shellWrapperCommand = "/bin/sh"
 	taskLogFilePath     = "/tmp/kurtosis-task.log"
 	noNameSet           = ""
 	uniqueNameGenErrStr = "error occurred while generating unique name for the file artifact"
@@ -71,14 +71,13 @@ var defaultAcceptableCodes = []int64{
 var runCommandToStreamTaskLogs = []string{shellWrapperCommand, "-c", fmt.Sprintf("touch %s && tail -F %s", taskLogFilePath, taskLogFilePath)}
 
 // Wraps [commandToRun] to enable streaming logs from tasks.
-// e.g. /bin/bash -c 'set -o pipefail; { <users command> ;} 2>&1 | tee /tmp/kurtosis-task.log; exit_code=$?; echo >> /tmp/kurtosis-task.log; exit $exit_code”
-// uses curly braces to execute the commandToRun in a subshell.
-// 2>&1 redirects stderr to stdout.
-// uses tee to direct output to the task log file while also streaming output to stdout.
-// uses set -o pipefail, exit_code=$?, and exit $exit_code to save and exit with the exit code from the users command
-// adds an extra echo to add newline at the end (without newline that line will be written to task file but won't be picked up by tail from `runCommandToStreamTaskLogs`)
+// This command is specially crafted to allow both streaming logs but also retaining the exit code from [commandToRun]
+// Solution is pulled from 3rd answer in this stack exchange post: https://unix.stackexchange.com/questions/14270/get-exit-status-of-process-thats-piped-to-another. Read detailed explanation of command.
 func getCommandToRunForStreamingLogs(commandToRun string) []string {
-	return []string{shellWrapperCommand, "-c", fmt.Sprintf("set -o pipefail;{ %v; } 2>&1 | tee %v; exit_code=$?; echo >> %v; exit $exit_code", commandToRun, taskLogFilePath, taskLogFilePath)}
+	// eg. { { { { <commandToRun>; exit 1; echo $? >&3; } | tee /tmp/kurtosis-task.log >&4; echo >> /tmp/kurtosis-task.log;  } 3>&1; } | { read xs; exit $xs; } } 4>&1
+	fullCmd := []string{shellWrapperCommand, "-c", fmt.Sprintf("{ { { { %v; echo $? >&3; } | tee %v >&4; echo >> %v; } 3>&1; } | { read xs; exit $xs; } } 4>&1", commandToRun, taskLogFilePath, taskLogFilePath)}
+	logrus.Debugf("Running this command: %v", fullCmd)
+	return fullCmd
 }
 
 func parseStoreFilesArg(serviceNetwork service_network.ServiceNetwork, arguments *builtin_argument.ArgumentValuesSet) ([]*store_spec.StoreSpec, *startosis_errors.InterpretationError) {
