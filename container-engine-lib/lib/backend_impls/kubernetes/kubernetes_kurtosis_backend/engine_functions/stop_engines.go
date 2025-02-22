@@ -2,9 +2,11 @@ package engine_functions
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_collector_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
 )
 
@@ -67,6 +69,12 @@ func StopEngines(
 
 		successfulEngineGuids[engineGuid] = true
 	}
+
+	// Stop centralized logging components
+	if err := logs_collector_functions.DestroyLogsCollector(ctx, kubernetesManager); err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred removing the logs collector.")
+	}
+	logrus.Debug("Successfully destroyed logs collector.")
 
 	return successfulEngineGuids, erroredEngineGuids, nil
 }

@@ -13,6 +13,7 @@ const (
 	//
 	appIdLabelValueStr                      = "kurtosis"
 	engineKurtosisResourceTypeLabelValueStr = "kurtosis-engine"
+	logsCollectorResourceTypeLabelValueStr  = "kurtosis-logs-collector"
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	enclaveKurtosisResourceTypeLabelValueStr      = "enclave"
@@ -38,3 +39,4 @@ var APIContainerKurtosisResourceTypeKubernetesLabelValue = kubernetes_label_valu
 var UserServiceKurtosisResourceTypeKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(userServiceKurtosisResourceTypeLabelValueStr)
 var EnclaveDataVolumeTypeKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(enclaveDataVolumeTypeLabelValueStr)
 var FilesArtifactsExpansionVolumeTypeKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(filesArtifactsExpansionVolumeTypeLabelValueStr)
+var LogsCollectorKurtosisResourceTypeKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(logsCollectorResourceTypeLabelValueStr)

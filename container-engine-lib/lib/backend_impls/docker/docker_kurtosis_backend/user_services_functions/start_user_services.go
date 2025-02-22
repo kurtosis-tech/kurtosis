@@ -3,6 +3,8 @@ package user_service_functions
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/availability_checker"
+	"net"
 	"strconv"
 	"strings"
 	"sync"
@@ -120,7 +122,11 @@ func StartRegisteredUserServices(
 	services map[service.ServiceUUID]*service.ServiceConfig,
 	serviceRegistrationRepository *service_registration.ServiceRegistrationRepository,
 	logsCollector *logs_collector.LogsCollector,
-	logsCollectorAvailabilityChecker logs_collector_functions.LogsCollectorAvailabilityChecker,
+	// these values will be used to conduct a health check on the fluent log collector in this enclave
+	// to ensure the services logs are captured when it starts
+	logsCollectorIpAddr net.IP,
+	logsCollectorPortNum uint16,
+	logsCollectorAvailabilityEndpoint string,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	freeIpProviderForEnclave *free_ip_addr_tracker.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
@@ -202,7 +208,7 @@ func StartRegisteredUserServices(
 	// Check if the logs collector is available
 	// As the container logs are sent asynchronously we'd not know whether they're being received by the collector and there would be no errors if the collector never comes up
 	// The least we can do is check if the collector server is healthy before starting the user service, if in case it gets shut down later we can't do much about it anyway.
-	if err = logsCollectorAvailabilityChecker.WaitForAvailability(); err != nil {
+	if err = availability_checker.WaitForAvailability(logsCollectorIpAddr, logsCollectorPortNum, logsCollectorAvailabilityEndpoint); err != nil {
 		return nil, nil,
 			stacktrace.Propagate(err, "An error occurred while waiting to see if the logs collector was available.")
 	}

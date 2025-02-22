@@ -2,6 +2,8 @@ package kubernetes_kurtosis_backend
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_collector_functions"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_collector_functions/implementations/fluentbit"
 	"io"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
@@ -458,18 +460,46 @@ func (backend *KubernetesKurtosisBackend) DestroyLogsAggregator(ctx context.Cont
 }
 
 func (backend *KubernetesKurtosisBackend) CreateLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, logsCollectorHttpPortNumber uint16, logsCollectorTcpPortNumber uint16) (*logs_collector.LogsCollector, error) {
-	// TODO IMPLEMENT
-	return nil, stacktrace.NewError("Creating the logs collector isn't yet implemented on Kubernetes")
+	// TODO: after logs aggregator is implemented, check that the logs aggregator exists before creating the logs collector
+	// TODO: this acts as a check that any logs collected by the logs collectors will successfully go to the logs aggregator (also done for DockerBackend)
+
+	//Declaring the implementation
+	logsCollectorDaemonSet := fluentbit.NewFluentbitLogsCollector()
+
+	logrus.Info("Creating logs collector...")
+	logsCollector, _, err := logs_collector_functions.CreateLogsCollector(
+		ctx,
+		logsCollectorTcpPortNumber,
+		logsCollectorHttpPortNumber,
+		logsCollectorDaemonSet,
+		nil, // TODO: provide when logs aggregator is implemented
+		backend.kubernetesManager,
+		backend.objAttrsProvider,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the logs collector using the '%v' TCP port number, the '%v' HTTP port number and the logs collector daemon set '%+v'", logsCollectorTcpPortNumber, logsCollectorHttpPortNumber, logsCollectorDaemonSet)
+	}
+
+	return logsCollector, nil
 }
 
 func (backend *KubernetesKurtosisBackend) GetLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (*logs_collector.LogsCollector, error) {
-	// TODO IMPLEMENT
-	return nil, stacktrace.NewError("Creating the logs collector isn't yet implemented on Kubernetes")
+	maybeLogsCollector, err := logs_collector_functions.GetLogsCollector(
+		ctx,
+		backend.kubernetesManager,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
+	}
+	return maybeLogsCollector, nil
 }
 
 func (backend *KubernetesKurtosisBackend) DestroyLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) error {
-	// TODO IMPLEMENT
-	return stacktrace.NewError("Destroy the logs collector for enclave isn't yet implemented on Kubernetes")
+	if err := logs_collector_functions.DestroyLogsCollector(ctx, backend.kubernetesManager); err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying logs collector.")
+	}
+	logrus.Debug("Successfully destroyed logs collector.")
+	return nil
 }
 
 func (backend *KubernetesKurtosisBackend) GetReverseProxy(
