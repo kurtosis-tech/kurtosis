@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/kurtosis-tech/kurtosis/compare/1.5.0...1.6.0) (2025-02-23)
+
+
+### Features
+
+* fluent bit logs collector in k8s backend ([#2653](https://github.com/kurtosis-tech/kurtosis/issues/2653)) ([05e3813](https://github.com/kurtosis-tech/kurtosis/commit/05e38135ce9d8ba962a9e809cc25e16f26d8077a))
+
 ## [1.5.0](https://github.com/kurtosis-tech/kurtosis/compare/1.4.4...1.5.0) (2025-02-07)
 
 
