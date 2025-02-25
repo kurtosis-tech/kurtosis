@@ -73,6 +73,7 @@ var runCommandToStreamTaskLogs = []string{shellWrapperCommand, "-c", fmt.Sprintf
 // Wraps [commandToRun] to enable streaming logs from tasks.
 // This command is crafted carefully to allow outputting logs to task log file, outputting to stdout, and retaining the exit code from [commandToRun]
 // Solution is adapted from 3rd answer in this stack exchange post: https://unix.stackexchange.com/questions/14270/get-exit-status-of-process-thats-piped-to-another. Read detailed explanation of command.
+// compared to solution in post, an extra echo >> is added to add a newline after all logs are processed, this is a hack to make sure the last log line gets processed runCommandToStreamTaskLogs
 func getCommandToRunForStreamingLogs(commandToRun string) []string {
 	fullCmd := []string{shellWrapperCommand, "-c", fmt.Sprintf("{ { { { %v; echo $? >&3; } | tee %v >&4; echo >> %v; } 3>&1; } | { read xs; exit $xs; } } 4>&1", commandToRun, taskLogFilePath, taskLogFilePath)}
 	return fullCmd
