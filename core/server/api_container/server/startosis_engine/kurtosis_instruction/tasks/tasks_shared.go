@@ -71,12 +71,10 @@ var defaultAcceptableCodes = []int64{
 var runCommandToStreamTaskLogs = []string{shellWrapperCommand, "-c", fmt.Sprintf("touch %s && tail -F %s", taskLogFilePath, taskLogFilePath)}
 
 // Wraps [commandToRun] to enable streaming logs from tasks.
-// This command is specially crafted to allow both streaming logs but also retaining the exit code from [commandToRun]
-// Solution is pulled from 3rd answer in this stack exchange post: https://unix.stackexchange.com/questions/14270/get-exit-status-of-process-thats-piped-to-another. Read detailed explanation of command.
+// This command is crafted carefully to allow outputting logs to task log file, outputting to stdout, and retaining the exit code from [commandToRun]
+// Solution is adapted from 3rd answer in this stack exchange post: https://unix.stackexchange.com/questions/14270/get-exit-status-of-process-thats-piped-to-another. Read detailed explanation of command.
 func getCommandToRunForStreamingLogs(commandToRun string) []string {
-	// eg. { { { { <commandToRun>; exit 1; echo $? >&3; } | tee /tmp/kurtosis-task.log >&4; echo >> /tmp/kurtosis-task.log;  } 3>&1; } | { read xs; exit $xs; } } 4>&1
 	fullCmd := []string{shellWrapperCommand, "-c", fmt.Sprintf("{ { { { %v; echo $? >&3; } | tee %v >&4; echo >> %v; } 3>&1; } | { read xs; exit $xs; } } 4>&1", commandToRun, taskLogFilePath, taskLogFilePath)}
-	logrus.Debugf("Running this command: %v", fullCmd)
 	return fullCmd
 }
 
