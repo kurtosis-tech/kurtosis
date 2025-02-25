@@ -22,4 +22,7 @@ type LogsCollectorContainer interface {
 		objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 		dockerManager *docker_manager.DockerManager,
 	) (string, map[string]string, map[nat.Port]*nat.PortBinding, func(), error)
+
+	// GetHttpHealthCheckEndpoint returns endpoint for verifying the availability of the logs collector application on container
+	GetHttpHealthCheckEndpoint() string
 }

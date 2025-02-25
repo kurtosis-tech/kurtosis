@@ -3,6 +3,8 @@ package engine_functions
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_collector_functions"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_collector_functions/implementations/fluentbit"
 	"time"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/consts"
@@ -28,6 +30,8 @@ const (
 	maxWaitForEngineContainerAvailabilityRetries         = 30
 	timeBetweenWaitForEngineContainerAvailabilityRetries = 1 * time.Second
 	httpApplicationProtocol                              = "http"
+	logsCollectorHttpPortNum                             = 9713
+	logsCollectorTcpPortNum                              = 9712
 )
 
 var noWait *port_spec.Wait = nil
@@ -46,7 +50,6 @@ func CreateEngine(
 	githubAuthToken string,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
-
 ) (
 	*engine.Engine,
 	error,
@@ -250,6 +253,24 @@ func CreateEngine(
 			return nil, stacktrace.Propagate(err, "An error occurred waiting for the engine grpc proxy port '%v/%v' to become available", privateGrpcProxyPortSpec.GetTransportProtocol(), privateGrpcProxyPortSpec.GetNumber())
 		}*/
 
+	logrus.Infof("Starting the centralized logs components...")
+	logsCollectorDaemonSet := fluentbit.NewFluentbitLogsCollector()
+
+	// Unlike the DockerBackend, where the log collectors are deployed by the engine during enclave creation
+	// for k8s backend, the logs collector lifecycle gets managed with the engine's and is created during engine creation
+	_, removeLogsCollectorFunc, err := logs_collector_functions.CreateLogsCollector(ctx, logsCollectorTcpPortNum, logsCollectorHttpPortNum, logsCollectorDaemonSet, nil, kubernetesManager, objAttrsProvider)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the engine logs collector")
+	}
+	var shouldRemoveLogsCollector = true
+	defer func() {
+		if shouldRemoveLogsCollector {
+			removeLogsCollectorFunc()
+		}
+	}()
+	logrus.Infof("Centralized logs components started.")
+
+	shouldRemoveLogsCollector = false
 	shouldRemoveNamespace = false
 	shouldRemoveServiceAccount = false
 	shouldRemoveClusterRole = false
@@ -351,6 +372,8 @@ func createEngineClusterRole(
 				kubernetes_manager_consts.PersistentVolumeClaimsKubernetesResource,
 				kubernetes_manager_consts.IngressesKubernetesResource,
 				kubernetes_manager_consts.JobsKubernetesResource, // Necessary so that we can give the API container the permission
+				kubernetes_manager_consts.ConfigMapsKubernetesResource,
+				kubernetes_manager_consts.DaemonSetsKubernetesResource,
 			},
 		},
 		{

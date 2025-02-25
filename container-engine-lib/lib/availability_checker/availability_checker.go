@@ -1,4 +1,4 @@
-package fluentbit
+package availability_checker
 
 import (
 	"fmt"
@@ -9,25 +9,16 @@ import (
 )
 
 const (
+	httpProtocolStr                             = "http"
 	waitForAvailabilityInitialDelayMilliseconds = 100
 	waitForAvailabilityMaxRetries               = 20
 	waitForAvailabilityRetriesDelayMilliseconds = 50
 )
 
-type fluentbitAvailabilityChecker struct {
-	ipAddr         net.IP
-	httpPortNumber uint16
-}
-
-func NewFluentbitAvailabilityChecker(ipAddr net.IP, httpPortNumber uint16) *fluentbitAvailabilityChecker {
-	return &fluentbitAvailabilityChecker{ipAddr: ipAddr, httpPortNumber: httpPortNumber}
-}
-
-func (fluent *fluentbitAvailabilityChecker) WaitForAvailability() error {
-
-	return waitForEndpointAvailability(
-		fluent.ipAddr.String(),
-		fluent.httpPortNumber,
+func WaitForAvailability(ipAddr net.IP, httpPortNumber uint16, healthCheckEndpointPath string) error {
+	return waitForHttpEndpointAvailability(
+		ipAddr.String(),
+		httpPortNumber,
 		healthCheckEndpointPath,
 		waitForAvailabilityInitialDelayMilliseconds,
 		waitForAvailabilityMaxRetries,
@@ -35,7 +26,7 @@ func (fluent *fluentbitAvailabilityChecker) WaitForAvailability() error {
 	)
 }
 
-func waitForEndpointAvailability(
+func waitForHttpEndpointAvailability(
 	host string,
 	port uint16,
 	path string,

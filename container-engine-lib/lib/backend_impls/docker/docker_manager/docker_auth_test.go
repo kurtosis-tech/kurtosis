@@ -16,10 +16,13 @@ func writeStaticConfig(t *testing.T, configContent string) string {
 		t.Fatalf("Failed to create temp directory: %v", err)
 	}
 
-	configPath := tmpDir + "/config.json"
-	err = os.WriteFile(configPath, []byte(configContent), 0600)
-	if err != nil {
-		t.Fatalf("Failed to write config.json: %v", err)
+	// only write to file if content is not empty
+	if configContent != "" {
+		configPath := tmpDir + "/config.json"
+		err = os.WriteFile(configPath, []byte(configContent), 0600)
+		if err != nil {
+			t.Fatalf("Failed to write config.json: %v", err)
+		}
 	}
 
 	// Set the DOCKER_CONFIG environment variable to the temp directory
@@ -28,6 +31,9 @@ func writeStaticConfig(t *testing.T, configContent string) string {
 }
 
 func TestGetAuthWithNoAuthSetReturnsNilAndNoError(t *testing.T) {
+	// update docker config env var
+	tmpDir := writeStaticConfig(t, "")
+	defer os.RemoveAll(tmpDir)
 	authConfig, err := GetAuthFromDockerConfig("my-repo/my-image:latest")
 	assert.NoError(t, err)
 	assert.Nil(t, authConfig, "Auth config should be nil")

@@ -23,7 +23,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
-
 	"io"
 	"net"
 	"os"
@@ -46,6 +45,7 @@ import (
 
 const (
 	netstatSuccessExitCode = 0
+	httpSuccessExitCode    = 0
 
 	// Name to give the file that we'll write for storing specs of pods, containers, etc.
 	podSpecFilename             = "spec.json"
