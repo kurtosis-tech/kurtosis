@@ -570,6 +570,15 @@ The `run_python` instruction executes a one-time execution task. It runs the Pyt
             "/coinbase/address.json"
         ],
 
+        # If the recipe returns a code that does not belong on this list, this instruction will fail.
+        # OPTIONAL (Defaults to [0])
+        acceptable_codes = [0, 0], # Here both 0 and 1 are valid codes that we want to accept and not fail the instruction
+
+        # If False, instruction will never fail based on code (acceptable_codes will be ignored).
+        # You can chain this call with assert to check codes after request is done.
+        # OPTIONAL (Defaults to False)
+        skip_code_check = False,
+  
         # The time to allow for the command to complete. If the Python script takes longer than this,
         # Kurtosis will kill the script and mark it as failed.
         # You may specify a custom wait timeout duration or disable the feature entirely.
@@ -655,6 +664,15 @@ The `run_sh` instruction executes a one-time execution task. It runs the bash co
             "/coinbase/address.json"
         ],
 
+        # If the recipe returns a code that does not belong on this list, this instruction will fail.
+        # OPTIONAL (Defaults to [0])
+        acceptable_codes = [0, 0], # Here both 0 and 1 are valid codes that we want to accept and not fail the instruction
+
+        # If False, instruction will never fail based on code (acceptable_codes will be ignored).
+        # You can chain this call with assert to check codes after request is done.
+        # OPTIONAL (Defaults to False)
+        skip_code_check = False,
+          
         # The time to allow for the command to complete. If the command takes longer than this,
         # Kurtosis will kill the command and mark it as failed.
         # You may specify a custom wait timeout duration or disable the feature entirely.
