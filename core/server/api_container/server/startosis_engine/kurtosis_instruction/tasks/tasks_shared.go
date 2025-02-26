@@ -68,6 +68,7 @@ var defaultAcceptableCodes = []int64{
 // runCommandToStreamTaskLogs sets the entrypoint of a task container with a command that creates and tails a log file for tasks run on the container
 // all tasks redirect output to the task log file (see getCommandToRunForStreamingLogs for details) where they will be picked up by the main process
 // and streamed to stdout via tail -F
+// By sending to stdout, task output get picked up by our logging infrastructure - making task logs available via kurtosis service logs
 var runCommandToStreamTaskLogs = []string{shellWrapperCommand, "-c", fmt.Sprintf("touch %s && tail -F %s", taskLogFilePath, taskLogFilePath)}
 
 // Wraps [commandToRun] to enable streaming logs from tasks.
