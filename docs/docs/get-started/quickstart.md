@@ -186,7 +186,7 @@ With a JSON (or YAML) interface to packages, developers don't have to dig throug
 
 --------
 
-Now that you've use the Kurtosis CLI to run a package, inspect the resulting environment, and then modify it by passing in a JSON config, you can take any of these next steps:
+Now that you've used the Kurtosis CLI to run a package, inspect the resulting environment, and then modify it by passing in a JSON config, you can take any of these next steps:
 
 - To continue working with Kurtosis by using packages that have already been written, take a look through our [code examples][code-examples].
 - To learn how to deploy packages over Kubernetes, instead of over your local Docker engine, take a look at our guide for [running Kurtosis over k8s][running-in-k8s]
