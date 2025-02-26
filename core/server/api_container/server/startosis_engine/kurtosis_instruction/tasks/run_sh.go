@@ -122,7 +122,7 @@ func NewRunShService(
 				description:            "",  // populated at interpretation time
 				returnValue:            nil, // populated at interpretation time
 				skipCodeCheck:          false,
-				acceptableCodes:        []int64{},
+				acceptableCodes:        nil, // populated at interpretation time
 			}
 		},
 

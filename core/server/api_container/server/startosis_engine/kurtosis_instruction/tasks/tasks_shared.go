@@ -349,12 +349,10 @@ func getTaskNameFromArgs(arguments *builtin_argument.ArgumentValuesSet) (string,
 }
 
 func isAcceptableCode(acceptableCodes []int64, recipeResult map[string]starlark.Comparable) bool {
-	isAcceptable := false
 	for _, acceptableCode := range acceptableCodes {
 		if recipeResult[runResultCodeKey] == starlark.MakeInt64(acceptableCode) {
-			isAcceptable = true
-			break
+			return true
 		}
 	}
-	return isAcceptable
+	return false
 }

@@ -284,7 +284,7 @@ result = plan.exec(
     
     # If the recipe returns a code that does not belong on this list, this instruction will fail.
     # OPTIONAL (Defaults to [0])
-    acceptable_codes = [0, 0], # Here both 0 and 1 are valid codes that we want to accept and not fail the instruction
+    acceptable_codes = [0, 1], # Here both 0 and 1 are valid codes that we want to accept and not fail the instruction
     
     # If False, instruction will never fail based on code (acceptable_codes will be ignored).
     # You can chain this call with assert to check codes after request is done.
@@ -570,9 +570,9 @@ The `run_python` instruction executes a one-time execution task. It runs the Pyt
             "/coinbase/address.json"
         ],
 
-        # If the recipe returns a code that does not belong on this list, this instruction will fail.
+        # If the script returns a code that isn't a part of this list, this instruction will fail at execution time.
         # OPTIONAL (Defaults to [0])
-        acceptable_codes = [0, 0], # Here both 0 and 1 are valid codes that we want to accept and not fail the instruction
+        acceptable_codes = [0, 1], # Here both 0 and 1 are valid codes that we want to accept and not fail the instruction
 
         # If False, instruction will never fail based on code (acceptable_codes will be ignored).
         # You can chain this call with assert to check codes after request is done.
@@ -664,9 +664,9 @@ The `run_sh` instruction executes a one-time execution task. It runs the bash co
             "/coinbase/address.json"
         ],
 
-        # If the recipe returns a code that does not belong on this list, this instruction will fail.
+        # If the script returns a code that isn't a part of this list, this instruction will fail at execution time.
         # OPTIONAL (Defaults to [0])
-        acceptable_codes = [0, 0], # Here both 0 and 1 are valid codes that we want to accept and not fail the instruction
+        acceptable_codes = [0, 1], # Here both 0 and 1 are valid codes that we want to accept and not fail the instruction
 
         # If False, instruction will never fail based on code (acceptable_codes will be ignored).
         # You can chain this call with assert to check codes after request is done.
