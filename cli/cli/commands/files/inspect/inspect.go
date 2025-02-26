@@ -3,6 +3,9 @@ package inspect
 import (
 	"context"
 	"fmt"
+	"path/filepath"
+	"strings"
+
 	"github.com/fatih/color"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
@@ -14,14 +17,12 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	"github.com/xlab/treeprint"
 	"golang.org/x/exp/slices"
-	"path/filepath"
-	"strings"
 )
 
 const (
@@ -118,7 +119,8 @@ func run(
 	fileDescriptions := filesInspectResponse.GetFileDescriptions()
 
 	if filePath == "" {
-		logrus.Infof("Artifact '%v' contents:%v", artifactIdentifierName, buildTree(fileDescriptions))
+		out.PrintErrLn(fmt.Sprintf("Artifact '%v' contents:\n", artifactIdentifierName))
+		out.PrintOutLn(buildTree(fileDescriptions))
 		return nil
 	}
 	index := slices.IndexFunc(fileDescriptions, func(desc *kurtosis_core_rpc_api_bindings.FileArtifactContentsFileDescription) bool {
@@ -127,7 +129,8 @@ func run(
 	if index == -1 {
 		return stacktrace.NewError("An error finding file '%v' on artifact identifier '%v', from '%v'", filePath, artifactIdentifierName, enclaveIdentifier)
 	}
-	logrus.Infof("File contents:\n%v", fileDescriptions[index].GetTextPreview())
+	out.PrintErrLn("File contents:")
+	out.PrintOutLn(fileDescriptions[index].GetTextPreview())
 	return nil
 }
 
