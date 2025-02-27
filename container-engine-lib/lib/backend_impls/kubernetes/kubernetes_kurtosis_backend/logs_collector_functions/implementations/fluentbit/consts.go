@@ -47,6 +47,15 @@ const (
     DB.sync           normal
     Read_from_Head    true
 
+[FILTER]
+    Name              kubernetes
+    Match             kube.*
+    Kube_URL          https://kubernetes.default.svc:443
+    Merge_log         On
+    Keep_Log          On
+    Annotations       Off
+    Labels            On
+
 [OUTPUT]
     Name              stdout
     Match             *
@@ -58,6 +67,12 @@ const (
     Path              /var/log/fluent-bit
     File              fluent-bit-output.log
     Format            plain
+
+[OUTPUT]
+    Name              forward
+    Match             *
+    Host              vector-aggregator.vector.svc.cluster.local
+    Port              24224
 
 [FILTER]
     Name              kubernetes

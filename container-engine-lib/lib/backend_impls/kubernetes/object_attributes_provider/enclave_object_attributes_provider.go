@@ -3,6 +3,7 @@ package object_attributes_provider
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"time"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key"
@@ -342,6 +343,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEncla
 	return map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
 		kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EnclaveKurtosisResourceTypeKubernetesLabelValue,
 		kubernetes_label_key.EnclaveUUIDKubernetesLabelKey:          enclaveIdLabelValue,
+		kubernetes_label_key.LogsEnclaveUUIDKubernetesLabelKey:      enclaveIdLabelValue,
 	}, nil
 }
 
@@ -354,7 +356,14 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEncla
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes label value from UUID string '%v'", uuid)
 	}
+	shortUuidStr := uuid_generator.ShortenedUUIDString(uuid)
+	shortUuidLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(shortUuidStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a short GUID Kubernetes label value from GUID string '%v'", uuid)
+	}
 	labels[kubernetes_label_key.GUIDKubernetesLabelKey] = uuidLabelValue
+	labels[kubernetes_label_key.LogsServiceUUIDKubernetesLabelKey] = uuidLabelValue
+	labels[kubernetes_label_key.LogsServiceShortUUIDKubernetesLabelKey] = shortUuidLabelValue
 	return labels, nil
 }
 
@@ -368,6 +377,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEncla
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes label value from ID string '%v'", id)
 	}
 	labels[kubernetes_label_key.IDKubernetesLabelKey] = idLabelValue
+	labels[kubernetes_label_key.LogsServiceNameKubernetesLabelKey] = idLabelValue
 	return labels, nil
 }
 

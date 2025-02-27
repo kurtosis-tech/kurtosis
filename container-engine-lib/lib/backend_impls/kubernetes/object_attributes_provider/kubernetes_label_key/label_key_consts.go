@@ -28,6 +28,14 @@ const (
 
 	// As of 2022-05-17, these get attached to files artifact expansion volumes
 	userServiceGuidKeyStr = labelKeyPrefixStr + "user-service-guid"
+
+	// We create a duplicate of the enclave uuid and service uuid label key because:
+	// the logs aggregator (vector) needs the enclave uuid and service uuid label keys to create the filepath where logs are stored in persistent volume
+	// but vectors template syntax can't interpret the "kurtosistech.com/" prefix, so we can't use the existing label keys
+	logsEnclaveUuidLabelKeyStr             = "enclave_uuid"
+	logsServiceUuidKubernetesLabelKey      = "service_uuid"
+	logsServiceShortUuidKubernetesLabelKey = "service_short_uuid"
+	logsServiceNameKubernetesLabelKey      = "service_name"
 )
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -47,3 +55,8 @@ var GUIDKubernetesLabelKey = MustCreateNewKubernetesLabelKey(guidLabelKeyStr)
 var EnclaveUUIDKubernetesLabelKey = MustCreateNewKubernetesLabelKey(enclaveIdLabelKeyStr)
 var EnclaveNameKubernetesLabelKey = MustCreateNewKubernetesLabelKey(enclaveNameLabelKeyStr)
 var UserServiceGUIDKubernetesLabelKey = MustCreateNewKubernetesLabelKey(userServiceGuidKeyStr)
+
+var LogsEnclaveUUIDKubernetesLabelKey = MustCreateNewKubernetesLabelKey(logsEnclaveUuidLabelKeyStr)
+var LogsServiceUUIDKubernetesLabelKey = MustCreateNewKubernetesLabelKey(logsServiceUuidKubernetesLabelKey)
+var LogsServiceShortUUIDKubernetesLabelKey = MustCreateNewKubernetesLabelKey(logsServiceShortUuidKubernetesLabelKey)
+var LogsServiceNameKubernetesLabelKey = MustCreateNewKubernetesLabelKey(logsServiceNameKubernetesLabelKey)
