@@ -46,12 +46,15 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 	*appsv1.DaemonSet,
 	*apiv1.ConfigMap,
 	*apiv1.Namespace,
+	*apiv1.ServiceAccount,
+	*rbacv1.ClusterRole,
+	*rbacv1.ClusterRoleBinding,
 	func(),
 	error,
 ) {
 	logsCollectorGuidStr, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
-		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating uuid for logs collector.")
+		return nil, nil, nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating uuid for logs collector.")
 	}
 
 	logsCollectorGuid := logs_collector.LogsCollectorGuid(logsCollectorGuidStr)
@@ -59,7 +62,7 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 
 	namespace, err := createLogsCollectorNamespace(ctx, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
-		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating namespace for logs collector.")
+		return nil, nil, nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating namespace for logs collector.")
 	}
 	removeNamespaceFunc := func() {
 		removeCtx := context.Background()
@@ -81,7 +84,7 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 
 	serviceAccount, err := createLogsCollectorServiceAccount(ctx, namespace.Name, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
-		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create service account for fluent bit log collector.")
+		return nil, nil, nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create service account for fluent bit log collector.")
 	}
 	removeServiceAccountFunc := func() {
 		removeCtx := context.Background()
@@ -103,7 +106,7 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 
 	clusterRole, err := createLogsCollectorClusterRole(ctx, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
-		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create cluster role for fluent bit log collector.")
+		return nil, nil, nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create cluster role for fluent bit log collector.")
 	}
 	removeClusterRoleFunc := func() {
 		removeCtx := context.Background()
@@ -125,7 +128,7 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 
 	clusterRoleBinding, err := createLogsCollectorClusterRoleBinding(ctx, serviceAccount.Name, clusterRole.Name, namespace.Name, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
-		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create cluster role binding for fluent bit log collector.")
+		return nil, nil, nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create cluster role binding for fluent bit log collector.")
 	}
 	removeClusterRoleBindingFunc := func() {
 		removeCtx := context.Background()
@@ -147,7 +150,7 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 
 	configMap, err := createLogsCollectorConfigMap(ctx, namespace.Name, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
-		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create config map for fluent bit log collector.")
+		return nil, nil, nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create config map for fluent bit log collector.")
 	}
 	removeConfigMapFunc := func() {
 		removeCtx := context.Background()
@@ -169,7 +172,7 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 
 	httpPortSpec, err := port_spec.NewPortSpec(httpPortNumber, port_spec.TransportProtocol_TCP, httpProtocolStr, noWait, emptyUrl)
 	if err != nil {
-		return nil, nil, nil, nil, stacktrace.Propagate(
+		return nil, nil, nil, nil, nil, nil, nil, stacktrace.Propagate(
 			err,
 			"An error occurred creating the log collectors HTTP port spec object using number '%v' and protocol '%v'",
 			httpPortNumber,
@@ -178,7 +181,7 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 	}
 	tcpPortSpec, err := port_spec.NewPortSpec(tcpPortNumber, port_spec.TransportProtocol_TCP, httpProtocolStr, noWait, emptyUrl)
 	if err != nil {
-		return nil, nil, nil, nil, stacktrace.Propagate(
+		return nil, nil, nil, nil, nil, nil, nil, stacktrace.Propagate(
 			err,
 			"An error occurred creating the log collectors TCP port spec object using number '%v' and protocol '%v'",
 			tcpPortNumber,
@@ -192,12 +195,12 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 
 	containerPorts, err := shared_helpers.GetKubernetesContainerPortsFromPrivatePortSpecs(privatePorts)
 	if err != nil {
-		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector fluent bit container ports from the port specs")
+		return nil, nil, nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector fluent bit container ports from the port specs")
 	}
 
 	daemonSet, err := createLogsCollectorDaemonSet(ctx, namespace.Name, configMap.Name, serviceAccount.Name, containerPorts, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
-		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create daemon set for fluent bit logs collector.")
+		return nil, nil, nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create daemon set for fluent bit logs collector.")
 	}
 	removeDaemonSetFunc := func() {
 		removeCtx := context.Background()
@@ -219,7 +222,7 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 
 	// wait until the first pod associated with this daemon set is online before returning
 	if err = waitForAtLeastOneActivePodManagedByDaemonSet(ctx, daemonSet, kubernetesManager); err != nil {
-		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred waiting for at least one active pod managed by logs collector daemon set '%v'", daemonSet.Name)
+		return nil, nil, nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred waiting for at least one active pod managed by logs collector daemon set '%v'", daemonSet.Name)
 	}
 
 	removeLogsCollectorFunc := func() {
@@ -237,7 +240,7 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 	shouldRemoveLogsCollectorNamespace = false
 	shouldRemoveLogsCollectorConfigMap = false
 	shouldRemoveLogsCollectorDaemonSet = false
-	return daemonSet, configMap, namespace, removeLogsCollectorFunc, nil
+	return daemonSet, configMap, namespace, serviceAccount, clusterRole, clusterRoleBinding, removeLogsCollectorFunc, nil
 }
 
 func (fluentbit *fluentbitLogsCollector) GetHttpHealthCheckEndpoint() string {
