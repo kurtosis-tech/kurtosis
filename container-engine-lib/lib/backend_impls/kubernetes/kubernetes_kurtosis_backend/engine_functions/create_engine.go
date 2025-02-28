@@ -484,10 +484,58 @@ func createEnginePod(
 			Image: containerImageAndTag,
 			Env:   engineContainerEnvVars,
 			Ports: containerPorts,
+			VolumeMounts: []apiv1.VolumeMount{
+				{
+					Name:             "varlogkurtosis",
+					ReadOnly:         false,
+					MountPath:        "/var/log/kurtosis/",
+					SubPath:          "",
+					MountPropagation: nil,
+					SubPathExpr:      "",
+				},
+			},
 		},
 	}
 
-	engineVolumes := []apiv1.Volume{}
+	engineVolumes := []apiv1.Volume{
+		{
+			Name: "varlogkurtosis",
+			VolumeSource: apiv1.VolumeSource{
+				HostPath: &apiv1.HostPathVolumeSource{
+					Path: "/var/log/kurtosis/",
+					Type: nil,
+				},
+				EmptyDir:              nil,
+				GCEPersistentDisk:     nil,
+				AWSElasticBlockStore:  nil,
+				GitRepo:               nil,
+				Secret:                nil,
+				NFS:                   nil,
+				ISCSI:                 nil,
+				Glusterfs:             nil,
+				PersistentVolumeClaim: nil,
+				RBD:                   nil,
+				FlexVolume:            nil,
+				Cinder:                nil,
+				CephFS:                nil,
+				Flocker:               nil,
+				DownwardAPI:           nil,
+				FC:                    nil,
+				AzureFile:             nil,
+				ConfigMap:             nil,
+				VsphereVolume:         nil,
+				Quobyte:               nil,
+				AzureDisk:             nil,
+				PhotonPersistentDisk:  nil,
+				Projected:             nil,
+				PortworxVolume:        nil,
+				ScaleIO:               nil,
+				StorageOS:             nil,
+				CSI:                   nil,
+				Ephemeral:             nil,
+			},
+		},
+	}
 	engineInitContainers := []apiv1.Container{}
 
 	// Create pods with engine containers and volumes in kubernetes
