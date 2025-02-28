@@ -56,17 +56,6 @@ const (
     Annotations       Off
     Labels            On
 
-[FILTER]
-    Name              modify
-    Match             *
-    Rename            time timestamp
-
-[FILTER]
-    Name lua
-    Match *
-    call append_tag
-    code function append_tag(tag, timestamp, record) print("process") if type(record["kubernetes"]) == "table" then for k, v in pairs(record["kubernetes"]) do record[k] = v end end return 1, timestamp, record end
-
 [OUTPUT]
     Name              stdout
     Match             *
@@ -78,20 +67,5 @@ const (
     Path              /var/log/fluent-bit
     File              fluent-bit-output.log
     Format            plain
-
-[OUTPUT]
-    Name              forward
-    Match             *
-    Host              vector-aggregator.vector.svc.cluster.local
-    Port              24224
-
-[FILTER]
-    Name              kubernetes
-    Match             kurtosis.*
-    Merge_Log         On
-    Merge_Log_Key     On
-    Labels            On
-    Annotations       On
-    Kube_Tag_Prefix   kurtosis.var.log.containers.
 `
 )
