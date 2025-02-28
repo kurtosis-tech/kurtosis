@@ -13,6 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"time"
 )
 
@@ -75,6 +76,72 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 	defer func() {
 		if shouldRemoveLogsCollectorNamespace {
 			removeNamespaceFunc()
+		}
+	}()
+
+	serviceAccount, err := createLogsCollectorServiceAccount(ctx, namespace.Name, logsCollectorAttrProvider, kubernetesManager)
+	if err != nil {
+		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create service account for fluent bit log collector.")
+	}
+	removeServiceAccountFunc := func() {
+		removeCtx := context.Background()
+		if err := kubernetesManager.RemoveServiceAccount(removeCtx, serviceAccount); err != nil {
+			logrus.Errorf(
+				"Launching the logs collector daemon set with name '%v' didn't complete successfully so we "+
+					"tried to remove the service account we started, but doing so exited with an error:\n%v",
+				serviceAccount.Name,
+				err)
+			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs collector service account with Kubernetes name '%v' in namespace '%v'!!!!!!", serviceAccount.Name, serviceAccount.Namespace)
+		}
+	}
+	shouldRemoveLogsCollectorServiceAccount := false
+	defer func() {
+		if shouldRemoveLogsCollectorServiceAccount {
+			removeServiceAccountFunc()
+		}
+	}()
+
+	clusterRole, err := createLogsCollectorClusterRole(ctx, logsCollectorAttrProvider, kubernetesManager)
+	if err != nil {
+		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create cluster role for fluent bit log collector.")
+	}
+	removeClusterRoleFunc := func() {
+		removeCtx := context.Background()
+		if err := kubernetesManager.RemoveClusterRole(removeCtx, clusterRole); err != nil {
+			logrus.Errorf(
+				"Launching the logs collector daemon set with name '%v' didn't complete successfully so we "+
+					"tried to remove the cluster role we started, but doing so exited with an error:\n%v",
+				clusterRole.Name,
+				err)
+			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs collector cluster role with Kubernetes name '%v' in namespace '%v'!!!!!!", clusterRole.Name, clusterRole.Namespace)
+		}
+	}
+	shouldRemoveLogsCollectorClusterRole := false
+	defer func() {
+		if shouldRemoveLogsCollectorClusterRole {
+			removeClusterRoleFunc()
+		}
+	}()
+
+	clusterRoleBinding, err := createLogsCollectorClusterRoleBinding(ctx, serviceAccount.Name, clusterRole.Name, namespace.Name, logsCollectorAttrProvider, kubernetesManager)
+	if err != nil {
+		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create cluster role binding for fluent bit log collector.")
+	}
+	removeClusterRoleBindingFunc := func() {
+		removeCtx := context.Background()
+		if err := kubernetesManager.RemoveClusterRoleBindings(removeCtx, clusterRoleBinding); err != nil {
+			logrus.Errorf(
+				"Launching the logs collector daemon set with name '%v' didn't complete successfully so we "+
+					"tried to remove the cluster role binding we started, but doing so exited with an error:\n%v",
+				clusterRoleBinding.Name,
+				err)
+			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs collector cluster role binding with Kubernetes name '%v' in namespace '%v'!!!!!!", clusterRoleBinding.Name, clusterRoleBinding.Namespace)
+		}
+	}
+	shouldRemoveLogsCollectorClusterRoleBinding := false
+	defer func() {
+		if shouldRemoveLogsCollectorClusterRoleBinding {
+			removeClusterRoleBindingFunc()
 		}
 	}()
 
@@ -158,9 +225,15 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 	removeLogsCollectorFunc := func() {
 		removeDaemonSetFunc()
 		removeConfigMapFunc()
+		removeClusterRoleBindingFunc()
+		removeClusterRoleFunc()
+		removeServiceAccountFunc()
 		removeNamespaceFunc()
 	}
 
+	shouldRemoveLogsCollectorClusterRoleBinding = false
+	shouldRemoveLogsCollectorClusterRole = false
+	shouldRemoveLogsCollectorServiceAccount = false
 	shouldRemoveLogsCollectorNamespace = false
 	shouldRemoveLogsCollectorConfigMap = false
 	shouldRemoveLogsCollectorDaemonSet = false
@@ -316,8 +389,6 @@ func createLogsCollectorDaemonSet(
 			VolumeSource: getVolumeSourceForHostPath(fluentBitCheckpointDbMountPath),
 		},
 	}
-
-	// this
 
 	logsCollectorDaemonSet, err := kubernetesManager.CreateDaemonSet(
 		ctx,
@@ -492,4 +563,90 @@ func getVolumeSourceForConfigMap(configMapName string) apiv1.VolumeSource {
 		CSI:                   nil,
 		Ephemeral:             nil,
 	}
+}
+
+func createLogsCollectorServiceAccount(
+	ctx context.Context,
+	namespace string,
+	objAttrProvider object_attributes_provider.KubernetesLogsCollectorObjectAttributesProvider,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+) (*apiv1.ServiceAccount, error) {
+	serviceAccountAttrProvider, err := objAttrProvider.ForLogsCollectorServiceAccount()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while getting logs collector service account attributes provider.")
+	}
+	serviceAccountName := serviceAccountAttrProvider.GetName().GetString()
+	serviceAccountLabels := shared_helpers.GetStringMapFromLabelMap(serviceAccountAttrProvider.GetLabels())
+
+	serviceAccountObj, err := kubernetesManager.CreateServiceAccount(ctx, serviceAccountName, namespace, serviceAccountLabels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating service account for logs collector with name '%s'", serviceAccountName)
+	}
+
+	return serviceAccountObj, nil
+}
+
+func createLogsCollectorClusterRole(
+	ctx context.Context,
+	objAttrProvider object_attributes_provider.KubernetesLogsCollectorObjectAttributesProvider,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+) (*rbacv1.ClusterRole, error) {
+	clusterRoleAttrProvider, err := objAttrProvider.ForLogsCollectorClusterRole()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while getting logs collector cluster role attributes provider.")
+	}
+	clusterRoleName := clusterRoleAttrProvider.GetName().GetString()
+	clusterRoleLabels := shared_helpers.GetStringMapFromLabelMap(clusterRoleAttrProvider.GetLabels())
+
+	rules := []rbacv1.PolicyRule{
+		{
+			Verbs:           []string{"get", "list"},
+			APIGroups:       []string{""},
+			Resources:       []string{"pods", "pods/logs"},
+			ResourceNames:   nil,
+			NonResourceURLs: nil,
+		},
+	}
+	clusterRoleObj, err := kubernetesManager.CreateClusterRoles(ctx, clusterRoleName, rules, clusterRoleLabels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating cluster role for logs collector with name '%s'", clusterRoleName)
+	}
+
+	return clusterRoleObj, nil
+}
+
+func createLogsCollectorClusterRoleBinding(
+	ctx context.Context,
+	serviceAccountName string,
+	clusterRoleName string,
+	namespaceName string,
+	objAttrProvider object_attributes_provider.KubernetesLogsCollectorObjectAttributesProvider,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+) (*rbacv1.ClusterRoleBinding, error) {
+	clusterRoleBindingAttrProvider, err := objAttrProvider.ForLogsCollectorClusterRoleBinding()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while getting logs collector cluster role binding attributes provider.")
+	}
+	clusterRoleBindingName := clusterRoleBindingAttrProvider.GetName().GetString()
+	clusterRoleBindingLabels := shared_helpers.GetStringMapFromLabelMap(clusterRoleBindingAttrProvider.GetLabels())
+
+	subject := []rbacv1.Subject{
+		{
+			Kind:      "ServiceAccount",
+			Name:      serviceAccountName,
+			Namespace: namespaceName,
+			APIGroup:  "",
+		},
+	}
+	ref := rbacv1.RoleRef{
+		Kind:     "ClusterRole",
+		Name:     clusterRoleName,
+		APIGroup: "rbac.authorization.k8s.io",
+	}
+	clusterRoleBindingObj, err := kubernetesManager.CreateClusterRoleBindings(ctx, clusterRoleBindingName, subject, ref, clusterRoleBindingLabels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating cluster role binding for logs collector with name '%s'", clusterRoleBindingName)
+	}
+
+	return clusterRoleBindingObj, nil
 }

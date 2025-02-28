@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	v1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"net"
 	"time"
 )
@@ -72,6 +73,88 @@ func getLogsCollectorKubernetesResourcesForCluster(ctx context.Context, kubernet
 		}, nil
 	}
 
+	logsCollectorConfigClusterRoles, err := kubernetes_resource_collectors.CollectMatchingClusterRoles(
+		ctx,
+		kubernetesManager,
+		logsCollectorDaemonSetSearchLabels,
+		resourceTypeLabelKeyStr,
+		map[string]bool{
+			logsCollectorResourceTypeLabelValStr: true,
+		})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting cluster role for logs collector in namespace '%v'", namespace.Name)
+	}
+	var clusterRole *rbacv1.ClusterRole
+	if clusterRoleForLabel, found := logsCollectorConfigClusterRoles[logsCollectorResourceTypeLabelValStr]; found {
+		if len(clusterRoleForLabel) > 1 {
+			return nil, stacktrace.NewError(
+				"Expected at most one logs collector cluster role in namespace '%v' for logs collector but found '%v'",
+				namespace.Name,
+				len(clusterRoleForLabel),
+			)
+		}
+		if len(clusterRoleForLabel) == 0 {
+			clusterRole = nil
+		} else {
+			clusterRole = clusterRoleForLabel[0]
+		}
+	}
+
+	logsCollectorConfigClusterRoleBindings, err := kubernetes_resource_collectors.CollectMatchingClusterRoleBindings(
+		ctx,
+		kubernetesManager,
+		logsCollectorDaemonSetSearchLabels,
+		resourceTypeLabelKeyStr,
+		map[string]bool{
+			logsCollectorResourceTypeLabelValStr: true,
+		})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting cluster role binding for logs collector in namespace '%v'", namespace.Name)
+	}
+	var cluseterRoleBinding *rbacv1.ClusterRoleBinding
+	if clusterRoleBindingsForLabel, found := logsCollectorConfigClusterRoleBindings[logsCollectorResourceTypeLabelValStr]; found {
+		if len(clusterRoleBindingsForLabel) > 1 {
+			return nil, stacktrace.NewError(
+				"Expected at most one logs collector cluster role bindings in namespace '%v' for logs collector but found '%v'",
+				namespace.Name,
+				len(clusterRoleBindingsForLabel),
+			)
+		}
+		if len(clusterRoleBindingsForLabel) == 0 {
+			cluseterRoleBinding = nil
+		} else {
+			cluseterRoleBinding = clusterRoleBindingsForLabel[0]
+		}
+	}
+
+	logsCollectorConfigServiceAccounts, err := kubernetes_resource_collectors.CollectMatchingServiceAccounts(
+		ctx,
+		kubernetesManager,
+		namespace.Namespace,
+		logsCollectorDaemonSetSearchLabels,
+		resourceTypeLabelKeyStr,
+		map[string]bool{
+			logsCollectorResourceTypeLabelValStr: true,
+		})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting service accounts for logs collector in namespace '%v'", namespace.Name)
+	}
+	var serviceAccount *apiv1.ServiceAccount
+	if serviceAccountForLabel, found := logsCollectorConfigServiceAccounts[logsCollectorResourceTypeLabelValStr]; found {
+		if len(serviceAccountForLabel) > 1 {
+			return nil, stacktrace.NewError(
+				"Expected at most one logs collector service account in namespace '%v' for logs collector but found '%v'",
+				namespace.Name,
+				len(serviceAccountForLabel),
+			)
+		}
+		if len(serviceAccountForLabel) == 0 {
+			serviceAccount = nil
+		} else {
+			serviceAccount = serviceAccountForLabel[0]
+		}
+	}
+
 	logsCollectorConfigConfigMaps, err := kubernetes_resource_collectors.CollectMatchingConfigMaps(
 		ctx,
 		kubernetesManager,
@@ -129,9 +212,12 @@ func getLogsCollectorKubernetesResourcesForCluster(ctx context.Context, kubernet
 	}
 
 	logsCollectorKubernetesResources := &logsCollectorKubernetesResources{
-		daemonSet: daemonSet,
-		configMap: configMap,
-		namespace: namespace,
+		daemonSet:          daemonSet,
+		configMap:          configMap,
+		namespace:          namespace,
+		clusterRole:        clusterRole,
+		clusterRoleBinding: cluseterRoleBinding,
+		serviceAccount:     serviceAccount,
 	}
 
 	return logsCollectorKubernetesResources, nil
