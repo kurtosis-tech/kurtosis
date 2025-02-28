@@ -69,7 +69,7 @@ func CreateLogsCollector(
 				logsCollectorHttpPortId,
 			)
 		}
-		shouldRemoveLogsCollector = true
+		shouldRemoveLogsCollector = false
 		defer func() {
 			if shouldRemoveLogsCollector {
 				removeLogsCollectorFunc()

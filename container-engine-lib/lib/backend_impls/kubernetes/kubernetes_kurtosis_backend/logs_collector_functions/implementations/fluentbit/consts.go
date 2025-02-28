@@ -49,12 +49,23 @@ const (
 
 [FILTER]
     Name              kubernetes
-    Match             kube.*
+    Match             *
     Kube_URL          https://kubernetes.default.svc:443
     Merge_log         On
     Keep_Log          On
     Annotations       Off
     Labels            On
+
+[FILTER]
+    Name              modify
+    Match             *
+    Rename            time timestamp
+
+[FILTER]
+    Name lua
+    Match *
+    call append_tag
+    code function append_tag(tag, timestamp, record) print("process") if type(record["kubernetes"]) == "table" then for k, v in pairs(record["kubernetes"]) do record[k] = v end end return 1, timestamp, record end
 
 [OUTPUT]
     Name              stdout

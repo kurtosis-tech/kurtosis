@@ -262,7 +262,7 @@ func CreateEngine(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the engine logs collector")
 	}
-	var shouldRemoveLogsCollector = true
+	var shouldRemoveLogsCollector = false
 	defer func() {
 		if shouldRemoveLogsCollector {
 			removeLogsCollectorFunc()
