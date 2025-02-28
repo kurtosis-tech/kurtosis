@@ -195,7 +195,7 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector fluent bit container ports from the port specs")
 	}
 
-	daemonSet, err := createLogsCollectorDaemonSet(ctx, namespace.Name, configMap.Name, containerPorts, logsCollectorAttrProvider, kubernetesManager)
+	daemonSet, err := createLogsCollectorDaemonSet(ctx, namespace.Name, configMap.Name, serviceAccount.Name, containerPorts, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
 		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create daemon set for fluent bit logs collector.")
 	}
@@ -248,6 +248,7 @@ func createLogsCollectorDaemonSet(
 	ctx context.Context,
 	namespace string,
 	fluentBitCfgConfigMapName string,
+	serviceAccountName string,
 	ports []apiv1.ContainerPort,
 	objAttrProvider object_attributes_provider.KubernetesLogsCollectorObjectAttributesProvider,
 	kubernetesManager *kubernetes_manager.KubernetesManager) (*appsv1.DaemonSet, error) {
@@ -396,7 +397,8 @@ func createLogsCollectorDaemonSet(
 		name,
 		labels,
 		annotations,
-		[]apiv1.Container{},
+		serviceAccountName,
+		[]apiv1.Container{}, // no need init containers
 		containers,
 		volumes,
 	)
