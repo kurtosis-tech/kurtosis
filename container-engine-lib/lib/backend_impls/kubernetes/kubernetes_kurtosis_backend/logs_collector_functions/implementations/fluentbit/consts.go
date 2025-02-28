@@ -50,22 +50,25 @@ const (
 [FILTER]
     Name              kubernetes
     Match             *
-    Kube_URL          https://kubernetes.default.svc:443
-    Merge_log         On
-    Keep_Log          On
-    Annotations       Off
     Labels            On
-
-[FILTER]
-    Name              modify
-    Match             *
-    Rename            time timestamp
+    Annotations       Off
+    Kube_Tag_Prefix   kurtosis.var.log.containers.
 
 [FILTER]
     Name lua
     Match *
-    call append_tag
-    code function append_tag(tag, timestamp, record) print("process") if type(record["kubernetes"]) == "table" then for k, v in pairs(record["kubernetes"]) do record[k] = v end end return 1, timestamp, record end
+    call flatten_kubernetes_labels
+    code function flatten_kubernetes_labels(tag, timestamp, record) record["enclave_uuid"] = record["kubernetes"]["labels"]["enclave_uuid"] record["service_uuid"] = record["kubernetes"]["labels"]["enclave_uuid"] record["service_short_uuid"] = record["kubernetes"]["labels"]["enclave_uuid"] record["service_name"] = record["kubernetes"]["labels"]["service_name"] return 1, timestamp, record end
+
+[FILTER]
+    Name record_modifier
+    Match *
+    Remove_key kubernetes
+
+[FILTER]
+    Name modify
+    Match *
+    Rename time timestamp
 
 [OUTPUT]
     Name              stdout
@@ -84,14 +87,5 @@ const (
     Match             *
     Host              vector-aggregator.vector.svc.cluster.local
     Port              24224
-
-[FILTER]
-    Name              kubernetes
-    Match             kurtosis.*
-    Merge_Log         On
-    Merge_Log_Key     On
-    Labels            On
-    Annotations       On
-    Kube_Tag_Prefix   kurtosis.var.log.containers.
 `
 )
