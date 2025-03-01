@@ -18,8 +18,8 @@ const (
 	fluentBitSourceType      = "\"fluent\""
 	fluentBitSourceIpAddress = "0.0.0.0"
 
-	fileSinkIdSuffix = "file"
-	fileTypeId       = "\"file\""
+	DefaultSinkId = "kurtosis_default_sink"
+	fileTypeId    = "\"file\""
 
 	// We instruct vector to store log files per-year, per-week (00-53), per-enclave, per-service
 	// To construct the filepath, we utilize vectors template syntax that allows us to reference fields in log events

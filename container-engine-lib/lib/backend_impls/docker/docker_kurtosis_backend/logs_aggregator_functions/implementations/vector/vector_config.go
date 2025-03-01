@@ -3,9 +3,10 @@ package vector
 import (
 	"bytes"
 	"fmt"
-	"github.com/kurtosis-tech/stacktrace"
 	"strconv"
 	"text/template"
+
+	"github.com/kurtosis-tech/stacktrace"
 )
 
 type VectorConfig struct {
@@ -35,7 +36,7 @@ func newDefaultVectorConfig(listeningPortNumber uint16) *VectorConfig {
 		},
 		Sinks: []*Sink{
 			{
-				Id:       "uuid_" + fileSinkIdSuffix,
+				Id:       DefaultSinkId,
 				Type:     fileTypeId,
 				Inputs:   []string{fluentBitSourceId},
 				Filepath: uuidLogsFilepath,

@@ -2,7 +2,8 @@ package resolved_config
 
 import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/config_version"
-	v2 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v2"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v3"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_aggregator_functions/implementations/vector"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
@@ -15,6 +16,7 @@ const (
 	defaultMinikubeClusterKubernetesClusterNameStr = "minikube"
 	defaultMinikubeStorageClass                    = "standard"
 	defaultMinikubeEnclaveDataVolumeMB             = uint(10)
+	defaultLogsAggregatorImage                     = "timberio/vector:0.31.0-debian"
 	DefaultCloudConfigApiUrl                       = "cloud.kurtosis.com"
 	DefaultCloudConfigPort                         = uint(8080)
 	// TODO: We'll need to pull this more dynamic. For now placing here:
@@ -37,11 +39,12 @@ the overrides on top of the default config.
 */
 type KurtosisConfig struct {
 	// Only necessary to store for when we serialize overrides
-	overrides *v2.KurtosisConfigV2
+	overrides *v3.KurtosisConfigV3
 
-	shouldSendMetrics bool
-	clusters          map[string]*KurtosisClusterConfig
-	cloudConfig       *KurtosisCloudConfig
+	shouldSendMetrics    bool
+	clusters             map[string]*KurtosisClusterConfig
+	cloudConfig          *KurtosisCloudConfig
+	logsAggregatorConfig *KurtosisLogsAggregatorConfig
 }
 
 // NewKurtosisConfigFromOverrides constructs a new KurtosisConfig that uses the given overrides
@@ -54,10 +57,11 @@ func NewKurtosisConfigFromOverrides(uncastedOverrides interface{}) (*KurtosisCon
 	}
 
 	config := &KurtosisConfig{
-		overrides:         overrides,
-		shouldSendMetrics: false,
-		clusters:          nil,
-		cloudConfig:       nil,
+		overrides:            overrides,
+		shouldSendMetrics:    false,
+		clusters:             nil,
+		cloudConfig:          nil,
+		logsAggregatorConfig: nil,
 	}
 
 	// Get latest config version
@@ -125,21 +129,52 @@ func NewKurtosisConfigFromOverrides(uncastedOverrides interface{}) (*KurtosisCon
 		}
 	}
 
+	logsAggregatorConfig := &KurtosisLogsAggregatorConfig{
+		Image: defaultLogsAggregatorImage,
+	}
+
+	if overrides.LogsAggregator != nil {
+		if overrides.LogsAggregator.Image != nil && *overrides.LogsAggregator.Image != "" {
+			logsAggregatorConfig.Image = *overrides.LogsAggregator.Image
+		}
+
+		if len(overrides.LogsAggregator.Sinks) > 0 {
+			for sinkId, sinkConfig := range overrides.LogsAggregator.Sinks {
+				// The validation logic should be independent of the aggregator library, but we are only using vector
+				// for now
+				if sinkId == vector.DefaultSinkId {
+					return nil, stacktrace.NewError("The LogsAggregator Sinks had a sink named %s which is reserved for Kurtosis default sink", vector.DefaultSinkId)
+				}
+
+				// We don't allow users to pass in sink inputs because there is only one source (fluent_bit) and source
+				// configuration is currently not supported
+				_, found := sinkConfig["inputs"]
+				if found {
+					return nil, stacktrace.NewError("The LogsAggregator Sink %s must not specify \"inputs\" field", sinkId)
+				}
+			}
+
+			logsAggregatorConfig.Sinks = overrides.LogsAggregator.Sinks
+		}
+	}
+
 	return &KurtosisConfig{
-		overrides:         overrides,
-		shouldSendMetrics: shouldSendMetrics,
-		clusters:          allClusterConfigs,
-		cloudConfig:       cloudConfig,
+		overrides:            overrides,
+		shouldSendMetrics:    shouldSendMetrics,
+		clusters:             allClusterConfigs,
+		cloudConfig:          cloudConfig,
+		logsAggregatorConfig: logsAggregatorConfig,
 	}, nil
 }
 
 // NOTE: We probably want to remove this function entirely
 func NewKurtosisConfigFromRequiredFields(shouldSendMetrics bool) (*KurtosisConfig, error) {
-	overrides := &v2.KurtosisConfigV2{
+	overrides := &v3.KurtosisConfigV3{
 		ConfigVersion:     0,
 		ShouldSendMetrics: &shouldSendMetrics,
 		KurtosisClusters:  nil,
 		CloudConfig:       nil,
+		LogsAggregator:    nil,
 	}
 	result, err := NewKurtosisConfigFromOverrides(overrides)
 	if err != nil {
@@ -167,12 +202,16 @@ func (kurtosisConfig *KurtosisConfig) GetKurtosisClusters() map[string]*Kurtosis
 	return kurtosisConfig.clusters
 }
 
-func (kurtosisConfig *KurtosisConfig) GetOverrides() *v2.KurtosisConfigV2 {
+func (kurtosisConfig *KurtosisConfig) GetOverrides() *v3.KurtosisConfigV3 {
 	return kurtosisConfig.overrides
 }
 
 func (kurtosisConfig *KurtosisConfig) GetCloudConfig() *KurtosisCloudConfig {
 	return kurtosisConfig.cloudConfig
+}
+
+func (kurtosisConfig *KurtosisConfig) GetLogsAggregatorConfig() *KurtosisLogsAggregatorConfig {
+	return kurtosisConfig.logsAggregatorConfig
 }
 
 // ====================================================================================================
@@ -181,29 +220,29 @@ func (kurtosisConfig *KurtosisConfig) GetCloudConfig() *KurtosisCloudConfig {
 //
 // ====================================================================================================
 // This is a separate helper function so that we can use it to ensure that the
-func castUncastedOverrides(uncastedOverrides interface{}) (*v2.KurtosisConfigV2, error) {
-	castedOverrides, ok := uncastedOverrides.(*v2.KurtosisConfigV2)
+func castUncastedOverrides(uncastedOverrides interface{}) (*v3.KurtosisConfigV3, error) {
+	castedOverrides, ok := uncastedOverrides.(*v3.KurtosisConfigV3)
 	if !ok {
 		return nil, stacktrace.NewError("An error occurred casting the uncasted config overrides to the right version")
 	}
 	return castedOverrides, nil
 }
 
-func getDefaultKurtosisClusterConfigOverrides() map[string]*v2.KurtosisClusterConfigV2 {
+func getDefaultKurtosisClusterConfigOverrides() map[string]*v3.KurtosisClusterConfigV3 {
 	dockerClusterType := KurtosisClusterType_Docker.String()
 	minikubeClusterType := KurtosisClusterType_Kubernetes.String()
 	minikubeKubernetesClusterName := defaultMinikubeClusterKubernetesClusterNameStr
 	minikubeStorageClass := defaultMinikubeStorageClass
 	minikubeEnclaveDataVolSizeMB := defaultMinikubeEnclaveDataVolumeMB
 
-	result := map[string]*v2.KurtosisClusterConfigV2{
+	result := map[string]*v3.KurtosisClusterConfigV3{
 		DefaultDockerClusterName: {
 			Type:   &dockerClusterType,
 			Config: nil, // Must be nil for Docker
 		},
 		defaultMinikubeClusterName: {
 			Type: &minikubeClusterType,
-			Config: &v2.KubernetesClusterConfigV2{
+			Config: &v3.KubernetesClusterConfigV3{
 				KubernetesClusterName:  &minikubeKubernetesClusterName,
 				StorageClass:           &minikubeStorageClass,
 				EnclaveSizeInMegabytes: &minikubeEnclaveDataVolSizeMB,
