@@ -20,8 +20,8 @@ func (logsAggregator *VectorLogsAggregatorDeployment) CreateAndStart(
 	objAttrProvider object_attributes_provider.KubernetesObjectAttributesProvider,
 	kubernetesManager *kubernetes_manager.KubernetesManager) (
 	*apiv1.Service,
-	*appsv1.Deployment,
 	*apiv1.Namespace,
+	*appsv1.Deployment,
 	func(),
 	error) {
 	// create namespace
@@ -34,3 +34,5 @@ func (logsAggregator *VectorLogsAggregatorDeployment) CreateAndStart(
 
 	return nil, nil, nil, nil, nil
 }
+
+func createLogsAggregatorNamespace
