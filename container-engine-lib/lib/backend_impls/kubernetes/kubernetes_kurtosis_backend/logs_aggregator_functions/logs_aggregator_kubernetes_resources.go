@@ -5,12 +5,12 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 )
 
-type LogsAggregatorKubernetesResources struct {
-	*apiv1.Service
+type logsAggregatorKubernetesResources struct {
+	service *apiv1.Service
 
-	*appsv1.Deployment
+	deployment *appsv1.Deployment
 
-	*apiv1.Namespace
+	namespace *apiv1.Namespace
 
 	// potentially service account, cluster role, cluster role binding
 }

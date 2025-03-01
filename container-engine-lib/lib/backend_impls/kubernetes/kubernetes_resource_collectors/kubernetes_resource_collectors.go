@@ -183,6 +183,24 @@ func CollectMatchingDaemonSets(
 	return postFilterKubernetesResources(getListOfPointersFromListOfElements(objects.Items), postFilterLabelKey, postFilterLabelValues)
 }
 
+func CollectMatchingDeployments(
+	ctx context.Context,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+	namespace string,
+	searchLabels map[string]string,
+	postFilterLabelKey string,
+	postFilterLabelValues map[string]bool,
+) (
+	map[string][]*v1.Deployment,
+	error,
+) {
+	objects, err := kubernetesManager.GetDeploymentsByLabels(ctx, namespace, searchLabels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes resources matching labels: %+v", searchLabels)
+	}
+	return postFilterKubernetesResources(getListOfPointersFromListOfElements(objects.Items), postFilterLabelKey, postFilterLabelValues)
+}
+
 func CollectMatchingConfigMaps(
 	ctx context.Context,
 	kubernetesManager *kubernetes_manager.KubernetesManager,

@@ -1853,6 +1853,18 @@ func (manager *KubernetesManager) GetDaemonSetsByLabels(ctx context.Context, nam
 	return daemonSets, nil
 }
 
+func (manager *KubernetesManager) GetDeploymentsByLabels(ctx context.Context, namespace string, deploymentLabels map[string]string) (*v1.DeploymentList, error) {
+	deploymentsClient := manager.kubernetesClientSet.AppsV1().Deployments(namespace)
+
+	opts := buildListOptionsFromLabels(deploymentLabels)
+	deployment, err := deploymentsClient.List(ctx, opts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get deployment with labels '%+v', instead a non-nil error was returned", deploymentLabels)
+	}
+
+	return deployment, nil
+}
+
 func (manager *KubernetesManager) GetConfigMapByLabels(ctx context.Context, namespace string, configMapLabels map[string]string) (*apiv1.ConfigMapList, error) {
 	configMapClient := manager.kubernetesClientSet.CoreV1().ConfigMaps(namespace)
 

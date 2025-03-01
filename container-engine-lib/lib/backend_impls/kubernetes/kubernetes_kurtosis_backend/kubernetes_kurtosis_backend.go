@@ -2,6 +2,8 @@ package kubernetes_kurtosis_backend
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_aggregator_functions"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_aggregator_functions/implementations/vector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_collector_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_collector_functions/implementations/fluentbit"
 	"io"
@@ -450,8 +452,18 @@ func (backend *KubernetesKurtosisBackend) GetLogsAggregator(
 }
 
 func (backend *KubernetesKurtosisBackend) CreateLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error) {
-	// TODO IMPLEMENT
-	return nil, stacktrace.NewError("Creating the logs aggregator isn't yet implemented on Kubernetes")
+	logsAggregatorDeployment := vector.NewVectorLogsAggregatorDeployment()
+
+	logsAggregator, _, err := logs_aggregator_functions.CreateLogsAggregator(
+		ctx,
+		logsAggregatorDeployment,
+		backend.objAttrsProvider,
+		backend.kubernetesManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating logs aggregator.")
+	}
+
+	return logsAggregator, nil
 }
 
 func (backend *KubernetesKurtosisBackend) DestroyLogsAggregator(ctx context.Context) error {
