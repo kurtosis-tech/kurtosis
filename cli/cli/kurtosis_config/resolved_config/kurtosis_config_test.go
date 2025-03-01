@@ -55,6 +55,7 @@ func TestNewKurtosisConfigEmptyOverrides(t *testing.T) {
 		ShouldSendMetrics: nil,
 		KurtosisClusters:  nil,
 		CloudConfig:       nil,
+		LogsAggregator:    nil,
 	})
 	// You can not initialize a Kurtosis config with empty overrides - it needs at least `ShouldSendMetrics`
 	require.Error(t, err)
@@ -68,6 +69,7 @@ func TestNewKurtosisConfigJustMetrics(t *testing.T) {
 		ShouldSendMetrics: &shouldSendMetrics,
 		KurtosisClusters:  nil,
 		CloudConfig:       nil,
+		LogsAggregator:    nil,
 	}
 	config, err := NewKurtosisConfigFromOverrides(&originalOverrides)
 	// You can not initialize a Kurtosis config with empty originalOverrides - it needs at least `ShouldSendMetrics`
@@ -91,7 +93,7 @@ func TestNewKurtosisConfigOverridesAreLatestVersion(t *testing.T) {
 }
 
 func TestCloudConfigOverridesApiUrl(t *testing.T) {
-	version := config_version.ConfigVersion_v0
+	version := config_version.ConfigVersion_v3
 	shouldSendMetrics := true
 	apiUrl := "test.com"
 	originalOverrides := v3.KurtosisConfigV3{
@@ -103,6 +105,7 @@ func TestCloudConfigOverridesApiUrl(t *testing.T) {
 			Port:             nil,
 			CertificateChain: nil,
 		},
+		LogsAggregator: nil,
 	}
 	config, err := NewKurtosisConfigFromOverrides(&originalOverrides)
 	require.NoError(t, err)
@@ -111,4 +114,85 @@ func TestCloudConfigOverridesApiUrl(t *testing.T) {
 	require.Equal(t, apiUrl, *overrides.CloudConfig.ApiUrl)
 	require.Nil(t, overrides.CloudConfig.Port)
 	require.Nil(t, overrides.CloudConfig.CertificateChain)
+}
+
+func TestCloudConfigReconciliation(t *testing.T) {
+	version := config_version.ConfigVersion_v3
+	shouldSendMetrics := true
+	apiUrl := "test.com"
+	originalOverrides := v3.KurtosisConfigV3{
+		ConfigVersion:     version,
+		ShouldSendMetrics: &shouldSendMetrics,
+		KurtosisClusters:  nil,
+		CloudConfig: &v3.KurtosisCloudConfigV3{
+			ApiUrl:           &apiUrl,
+			Port:             nil,
+			CertificateChain: nil,
+		},
+		LogsAggregator: nil,
+	}
+
+	config, err := NewKurtosisConfigFromOverrides(&originalOverrides)
+	require.NoError(t, err)
+
+	// Test reconciliation behaviour
+	require.Equal(t, shouldSendMetrics, config.GetShouldSendMetrics())
+	require.Equal(t, apiUrl, config.GetCloudConfig().ApiUrl)
+	require.Equal(t, DefaultCloudConfigPort, config.GetCloudConfig().Port)
+	require.Equal(t, DefaultCertificateChain, config.GetCloudConfig().CertificateChain)
+}
+
+func TestLogsAggregatorOverrides(t *testing.T) {
+	version := config_version.ConfigVersion_v3
+	shouldSendMetrics := true
+	vectorImage := "timberio/vector:0.45.0-debian"
+	sinks := map[string]map[string]interface{}{
+		"elasticsearch": {
+			"type": "elasticsearch",
+		},
+	}
+	originalOverrides := v3.KurtosisConfigV3{
+		ConfigVersion:     version,
+		ShouldSendMetrics: &shouldSendMetrics,
+		KurtosisClusters:  nil,
+		CloudConfig:       nil,
+		LogsAggregator: &v3.KurtosisLogsAggregatorConfigV3{
+			Image: &vectorImage,
+			Sinks: sinks,
+		},
+	}
+	config, err := NewKurtosisConfigFromOverrides(&originalOverrides)
+	require.NoError(t, err)
+
+	overrides := config.GetOverrides()
+	require.Equal(t, vectorImage, *overrides.LogsAggregator.Image)
+	require.Equal(t, sinks, overrides.LogsAggregator.Sinks)
+}
+
+func TestLogsAggregatorReconciliation(t *testing.T) {
+	version := config_version.ConfigVersion_v3
+	shouldSendMetrics := true
+	vectorImage := "timberio/vector:0.45.0-debian"
+	sinks := map[string]map[string]interface{}{
+		"elasticsearch": {
+			"type": "elasticsearch",
+		},
+	}
+	originalOverrides := v3.KurtosisConfigV3{
+		ConfigVersion:     version,
+		ShouldSendMetrics: &shouldSendMetrics,
+		KurtosisClusters:  nil,
+		CloudConfig:       nil,
+		LogsAggregator: &v3.KurtosisLogsAggregatorConfigV3{
+			Image: &vectorImage,
+			Sinks: sinks,
+		},
+	}
+	config, err := NewKurtosisConfigFromOverrides(&originalOverrides)
+	require.NoError(t, err)
+
+	// Test reconciliation behaviour
+	require.Equal(t, shouldSendMetrics, config.GetShouldSendMetrics())
+	require.Equal(t, vectorImage, config.GetLogsAggregatorConfig().Image)
+	require.Equal(t, sinks, config.GetLogsAggregatorConfig().Sinks)
 }
