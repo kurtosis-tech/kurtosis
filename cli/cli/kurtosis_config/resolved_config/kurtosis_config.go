@@ -16,7 +16,6 @@ const (
 	defaultMinikubeClusterKubernetesClusterNameStr = "minikube"
 	defaultMinikubeStorageClass                    = "standard"
 	defaultMinikubeEnclaveDataVolumeMB             = uint(10)
-	defaultLogsAggregatorImage                     = "timberio/vector:0.31.0-debian"
 	DefaultCloudConfigApiUrl                       = "cloud.kurtosis.com"
 	DefaultCloudConfigPort                         = uint(8080)
 	// TODO: We'll need to pull this more dynamic. For now placing here:
@@ -129,15 +128,9 @@ func NewKurtosisConfigFromOverrides(uncastedOverrides interface{}) (*KurtosisCon
 		}
 	}
 
-	logsAggregatorConfig := &KurtosisLogsAggregatorConfig{
-		Image: defaultLogsAggregatorImage,
-	}
+	logsAggregatorConfig := &KurtosisLogsAggregatorConfig{}
 
 	if overrides.LogsAggregator != nil {
-		if overrides.LogsAggregator.Image != nil && *overrides.LogsAggregator.Image != "" {
-			logsAggregatorConfig.Image = *overrides.LogsAggregator.Image
-		}
-
 		if len(overrides.LogsAggregator.Sinks) > 0 {
 			for sinkId, sinkConfig := range overrides.LogsAggregator.Sinks {
 				// The validation logic should be independent of the aggregator library, but we are only using vector

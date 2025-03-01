@@ -145,7 +145,6 @@ func TestCloudConfigReconciliation(t *testing.T) {
 func TestLogsAggregatorOverrides(t *testing.T) {
 	version := config_version.ConfigVersion_v3
 	shouldSendMetrics := true
-	vectorImage := "timberio/vector:0.45.0-debian"
 	sinks := map[string]map[string]interface{}{
 		"elasticsearch": {
 			"type": "elasticsearch",
@@ -157,7 +156,6 @@ func TestLogsAggregatorOverrides(t *testing.T) {
 		KurtosisClusters:  nil,
 		CloudConfig:       nil,
 		LogsAggregator: &v3.KurtosisLogsAggregatorConfigV3{
-			Image: &vectorImage,
 			Sinks: sinks,
 		},
 	}
@@ -165,14 +163,12 @@ func TestLogsAggregatorOverrides(t *testing.T) {
 	require.NoError(t, err)
 
 	overrides := config.GetOverrides()
-	require.Equal(t, vectorImage, *overrides.LogsAggregator.Image)
 	require.Equal(t, sinks, overrides.LogsAggregator.Sinks)
 }
 
 func TestLogsAggregatorReconciliation(t *testing.T) {
 	version := config_version.ConfigVersion_v3
 	shouldSendMetrics := true
-	vectorImage := "timberio/vector:0.45.0-debian"
 	sinks := map[string]map[string]interface{}{
 		"elasticsearch": {
 			"type": "elasticsearch",
@@ -184,7 +180,6 @@ func TestLogsAggregatorReconciliation(t *testing.T) {
 		KurtosisClusters:  nil,
 		CloudConfig:       nil,
 		LogsAggregator: &v3.KurtosisLogsAggregatorConfigV3{
-			Image: &vectorImage,
 			Sinks: sinks,
 		},
 	}
@@ -193,6 +188,5 @@ func TestLogsAggregatorReconciliation(t *testing.T) {
 
 	// Test reconciliation behaviour
 	require.Equal(t, shouldSendMetrics, config.GetShouldSendMetrics())
-	require.Equal(t, vectorImage, config.GetLogsAggregatorConfig().Image)
 	require.Equal(t, sinks, config.GetLogsAggregatorConfig().Sinks)
 }
