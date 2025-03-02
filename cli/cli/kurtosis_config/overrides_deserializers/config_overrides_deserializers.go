@@ -27,7 +27,6 @@ var AllConfigOverridesDeserializers = map[config_version.ConfigVersion]configOve
 			ShouldSendMetrics: nil,
 			KurtosisClusters:  nil,
 			CloudConfig:       nil,
-			LogsAggregator:    nil,
 		}
 		if err := yaml.Unmarshal(configFileBytes, overrides); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v'", string(configFileBytes))

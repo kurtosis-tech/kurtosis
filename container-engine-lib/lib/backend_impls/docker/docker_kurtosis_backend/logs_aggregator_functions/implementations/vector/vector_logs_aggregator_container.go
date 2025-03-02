@@ -2,8 +2,10 @@ package vector
 
 import (
 	"context"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -17,11 +19,12 @@ func NewVectorLogsAggregatorContainer() *vectorLogsAggregatorContainer {
 func (vectorContainer *vectorLogsAggregatorContainer) CreateAndStart(
 	ctx context.Context,
 	logsListeningPortNumber uint16,
+	sinks logs_aggregator.Sinks,
 	targetNetworkId string,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	dockerManager *docker_manager.DockerManager,
 ) (string, map[string]string, func(), error) {
-	vectorContainerConfigProviderObj := createVectorContainerConfigProvider(logsListeningPortNumber)
+	vectorContainerConfigProviderObj := createVectorContainerConfigProvider(logsListeningPortNumber, sinks)
 
 	logsAggregatorAttrs, err := objAttrsProvider.ForLogsAggregator()
 	if err != nil {

@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/configs"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/stacktrace"
@@ -24,6 +25,11 @@ type KurtosisClusterConfig struct {
 	kurtosisBackendSupplier     kurtosisBackendSupplier
 	engineBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
 	clusterType                 KurtosisClusterType
+	logsAggregator              LogsAggregatorConfig
+}
+
+type LogsAggregatorConfig struct {
+	Sinks logs_aggregator.Sinks
 }
 
 func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v3.KurtosisClusterConfigV3) (*KurtosisClusterConfig, error) {
@@ -47,10 +53,30 @@ func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v3.Kurto
 		return nil, stacktrace.Propagate(err, "An error occurred getting the suppliers that cluster '%v' will use", clusterId)
 	}
 
+	logsAggregator := LogsAggregatorConfig{
+		Sinks: nil,
+	}
+
+	if overrides.LogsAggregator != nil {
+
+		if len(overrides.LogsAggregator.Sinks) > 0 {
+			for sinkId := range overrides.LogsAggregator.Sinks {
+				// We add a default file sink as the logs database for certain log commands to work, hence this validation
+				// A potential improvement would be that all log-related commands are compatible with user-defined sinks
+				if sinkId == logs_aggregator.DefaultSinkId {
+					return nil, stacktrace.NewError("The LogsAggregator Sinks had a sink named %s which is reserved for Kurtosis default sink", logs_aggregator.DefaultSinkId)
+				}
+			}
+
+			logsAggregator.Sinks = overrides.LogsAggregator.Sinks
+		}
+	}
+
 	return &KurtosisClusterConfig{
 		kurtosisBackendSupplier:     backendSupplier,
 		engineBackendConfigSupplier: engineBackendConfigSupplier,
 		clusterType:                 clusterType,
+		logsAggregator:              logsAggregator,
 	}, nil
 }
 
@@ -68,6 +94,10 @@ func (clusterConfig *KurtosisClusterConfig) GetEngineBackendConfigSupplier() eng
 
 func (clusterConfig *KurtosisClusterConfig) GetClusterType() KurtosisClusterType {
 	return clusterConfig.clusterType
+}
+
+func (clusterConfig *KurtosisClusterConfig) GetLogsAggregatorConfig() LogsAggregatorConfig {
+	return clusterConfig.logsAggregator
 }
 
 // ====================================================================================================

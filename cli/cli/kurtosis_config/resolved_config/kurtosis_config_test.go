@@ -1,12 +1,13 @@
 package resolved_config
 
 import (
+	"sort"
+	"testing"
+
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/config_version"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v3"
 	"github.com/stretchr/testify/require"
-	"sort"
-	"testing"
 )
 
 /*
@@ -55,7 +56,6 @@ func TestNewKurtosisConfigEmptyOverrides(t *testing.T) {
 		ShouldSendMetrics: nil,
 		KurtosisClusters:  nil,
 		CloudConfig:       nil,
-		LogsAggregator:    nil,
 	})
 	// You can not initialize a Kurtosis config with empty overrides - it needs at least `ShouldSendMetrics`
 	require.Error(t, err)
@@ -69,7 +69,6 @@ func TestNewKurtosisConfigJustMetrics(t *testing.T) {
 		ShouldSendMetrics: &shouldSendMetrics,
 		KurtosisClusters:  nil,
 		CloudConfig:       nil,
-		LogsAggregator:    nil,
 	}
 	config, err := NewKurtosisConfigFromOverrides(&originalOverrides)
 	// You can not initialize a Kurtosis config with empty originalOverrides - it needs at least `ShouldSendMetrics`
@@ -105,7 +104,6 @@ func TestCloudConfigOverridesApiUrl(t *testing.T) {
 			Port:             nil,
 			CertificateChain: nil,
 		},
-		LogsAggregator: nil,
 	}
 	config, err := NewKurtosisConfigFromOverrides(&originalOverrides)
 	require.NoError(t, err)
@@ -129,7 +127,6 @@ func TestCloudConfigReconciliation(t *testing.T) {
 			Port:             nil,
 			CertificateChain: nil,
 		},
-		LogsAggregator: nil,
 	}
 
 	config, err := NewKurtosisConfigFromOverrides(&originalOverrides)
@@ -140,53 +137,4 @@ func TestCloudConfigReconciliation(t *testing.T) {
 	require.Equal(t, apiUrl, config.GetCloudConfig().ApiUrl)
 	require.Equal(t, DefaultCloudConfigPort, config.GetCloudConfig().Port)
 	require.Equal(t, DefaultCertificateChain, config.GetCloudConfig().CertificateChain)
-}
-
-func TestLogsAggregatorOverrides(t *testing.T) {
-	version := config_version.ConfigVersion_v3
-	shouldSendMetrics := true
-	sinks := map[string]map[string]interface{}{
-		"elasticsearch": {
-			"type": "elasticsearch",
-		},
-	}
-	originalOverrides := v3.KurtosisConfigV3{
-		ConfigVersion:     version,
-		ShouldSendMetrics: &shouldSendMetrics,
-		KurtosisClusters:  nil,
-		CloudConfig:       nil,
-		LogsAggregator: &v3.KurtosisLogsAggregatorConfigV3{
-			Sinks: sinks,
-		},
-	}
-	config, err := NewKurtosisConfigFromOverrides(&originalOverrides)
-	require.NoError(t, err)
-
-	overrides := config.GetOverrides()
-	require.Equal(t, sinks, overrides.LogsAggregator.Sinks)
-}
-
-func TestLogsAggregatorReconciliation(t *testing.T) {
-	version := config_version.ConfigVersion_v3
-	shouldSendMetrics := true
-	sinks := map[string]map[string]interface{}{
-		"elasticsearch": {
-			"type": "elasticsearch",
-		},
-	}
-	originalOverrides := v3.KurtosisConfigV3{
-		ConfigVersion:     version,
-		ShouldSendMetrics: &shouldSendMetrics,
-		KurtosisClusters:  nil,
-		CloudConfig:       nil,
-		LogsAggregator: &v3.KurtosisLogsAggregatorConfigV3{
-			Sinks: sinks,
-		},
-	}
-	config, err := NewKurtosisConfigFromOverrides(&originalOverrides)
-	require.NoError(t, err)
-
-	// Test reconciliation behaviour
-	require.Equal(t, shouldSendMetrics, config.GetShouldSendMetrics())
-	require.Equal(t, sinks, config.GetLogsAggregatorConfig().Sinks)
 }

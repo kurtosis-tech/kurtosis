@@ -1,72 +1,65 @@
 package vector
 
 import (
-	"bytes"
+	"encoding/json"
 	"fmt"
 	"strconv"
-	"text/template"
 
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
 type VectorConfig struct {
-	Source *Source
-	Sinks  []*Sink
+	Sources map[string]map[string]interface{} `json:"sources,omitempty"`
+	Sinks   map[string]map[string]interface{} `json:"sinks,omitempty"`
 }
 
-type Source struct {
-	Id      string
-	Type    string
-	Address string
-}
-
-type Sink struct {
-	Id       string
-	Type     string
-	Inputs   []string
-	Filepath string
-}
-
-func newDefaultVectorConfig(listeningPortNumber uint16) *VectorConfig {
-	return &VectorConfig{
-		Source: &Source{
-			Id:      fluentBitSourceId,
-			Type:    fluentBitSourceType,
-			Address: fmt.Sprintf("%s:%s", fluentBitSourceIpAddress, strconv.Itoa(int(listeningPortNumber))),
-		},
-		Sinks: []*Sink{
-			{
-				Id:       DefaultSinkId,
-				Type:     fileTypeId,
-				Inputs:   []string{fluentBitSourceId},
-				Filepath: uuidLogsFilepath,
+func newVectorConfig(
+	listeningPortNumber uint16,
+	sinks logs_aggregator.Sinks,
+) *VectorConfig {
+	reconciledSinks := map[string]map[string]interface{}{
+		logs_aggregator.DefaultSinkId: {
+			"type":   fileSinkType,
+			"inputs": []string{defaultSourceId},
+			"path":   uuidLogsFilepath,
+			"encoding": map[string]interface{}{
+				"codec": "json",
+			},
+			// Note: we set buffer to block so that we don't drop any logs, however this could apply backpressure up the topology
+			// if we start noticing slowdown due to vector buffer blocking, we might want to revisit our architecture
+			"buffer": map[string]interface{}{
+				"when_full": "block",
 			},
 		},
+	}
+
+	for sinkId, sinkConfig := range sinks {
+		reconciledSinks[sinkId] = map[string]interface{}{}
+		for key, value := range sinkConfig {
+			reconciledSinks[sinkId][key] = value
+		}
+
+		// Add inputs field to sink configuration
+		reconciledSinks[sinkId]["inputs"] = []string{defaultSourceId}
+	}
+
+	return &VectorConfig{
+		Sources: map[string]map[string]interface{}{
+			defaultSourceId: {
+				"type":    fluentBitSourceType,
+				"address": fmt.Sprintf("%s:%s", fluentBitSourceIpAddress, strconv.Itoa(int(listeningPortNumber))),
+			},
+		},
+		Sinks: reconciledSinks,
 	}
 }
 
 func (cfg *VectorConfig) getConfigFileContent() (string, error) {
-	srcCfgFileTemplate, err := template.New(sourceConfigFileTemplateName).Parse(srcConfigFileTemplate)
+	jsonBytes, err := json.Marshal(cfg)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred parsing Vector's source config template.")
-	}
-	sinkCfgFileTemplate, err := template.New(sinkConfigFileTemplateName).Parse(sinkConfigFileTemplate)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred parsing Vector's sink config template.")
+		return "", stacktrace.Propagate(err, "Error marshalling config into JSON.")
 	}
 
-	templateStrBuffer := &bytes.Buffer{}
-
-	if err := srcCfgFileTemplate.Execute(templateStrBuffer, cfg.Source); err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred executing Vector's source config file template.")
-	}
-	for _, sink := range cfg.Sinks {
-		if err := sinkCfgFileTemplate.Execute(templateStrBuffer, sink); err != nil {
-			return "", stacktrace.Propagate(err, "An error occurred executing Vector's sink config file template.")
-		}
-	}
-
-	templateStr := templateStrBuffer.String()
-
-	return templateStr, nil
+	return string(jsonBytes), nil
 }

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v3"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/stretchr/testify/require"
 )
 
@@ -75,6 +76,75 @@ func TestNewKurtosisClusterConfigKubernetesFullConfig(t *testing.T) {
 	kurtosisClusterConfigOverrides := v3.KurtosisClusterConfigV3{
 		Type:   &kubernetesType,
 		Config: &kubernetesFullConfig,
+	}
+	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
+	require.NoError(t, err)
+}
+
+func TestNewKurtosisClusterConfigLogsAggregatorNoConfig(t *testing.T) {
+	kubernetesType := KurtosisClusterType_Kubernetes.String()
+	kubernetesClusterName := "some-name"
+	kubernetesStorageClass := "some-storage-class"
+	kubernetesEnclaveSizeInMB := uint(5)
+	kubernetesFullConfig := v3.KubernetesClusterConfigV3{
+		KubernetesClusterName:  &kubernetesClusterName,
+		StorageClass:           &kubernetesStorageClass,
+		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
+	}
+	kurtosisClusterConfigOverrides := v3.KurtosisClusterConfigV3{
+		Type:           &kubernetesType,
+		Config:         &kubernetesFullConfig,
+		LogsAggregator: nil,
+	}
+	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
+	require.NoError(t, err)
+}
+
+func TestNewKurtosisClusterConfigLogsAggregatorReservedSinkId(t *testing.T) {
+	kubernetesType := KurtosisClusterType_Kubernetes.String()
+	kubernetesClusterName := "some-name"
+	kubernetesStorageClass := "some-storage-class"
+	kubernetesEnclaveSizeInMB := uint(5)
+	kubernetesFullConfig := v3.KubernetesClusterConfigV3{
+		KubernetesClusterName:  &kubernetesClusterName,
+		StorageClass:           &kubernetesStorageClass,
+		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
+	}
+	kurtosisClusterConfigOverrides := v3.KurtosisClusterConfigV3{
+		Type:   &kubernetesType,
+		Config: &kubernetesFullConfig,
+		LogsAggregator: &v3.LogsAggregatorConfigV3{
+			Sinks: map[string]map[string]interface{}{
+				logs_aggregator.DefaultSinkId: {
+					"type": "elasticsearch",
+				},
+			},
+		},
+	}
+	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
+	require.Error(t, err)
+}
+
+func TestNewKurtosisClusterConfigLogsAggregatorFullConfig(t *testing.T) {
+	kubernetesType := KurtosisClusterType_Kubernetes.String()
+	kubernetesClusterName := "some-name"
+	kubernetesStorageClass := "some-storage-class"
+	kubernetesEnclaveSizeInMB := uint(5)
+	kubernetesFullConfig := v3.KubernetesClusterConfigV3{
+		KubernetesClusterName:  &kubernetesClusterName,
+		StorageClass:           &kubernetesStorageClass,
+		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
+	}
+	kurtosisClusterConfigOverrides := v3.KurtosisClusterConfigV3{
+		Type:   &kubernetesType,
+		Config: &kubernetesFullConfig,
+		LogsAggregator: &v3.LogsAggregatorConfigV3{
+			Sinks: map[string]map[string]interface{}{
+				"elasticsearch": {
+					"type": "elasticsearch",
+				},
+			},
+		},
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)

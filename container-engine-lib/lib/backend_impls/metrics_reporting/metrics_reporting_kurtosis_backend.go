@@ -56,6 +56,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateEngine(
 	envVars map[string]string,
 	shouldStartInDebugMode bool,
 	githubAuthToken string,
+	sinks logs_aggregator.Sinks,
 ) (*engine.Engine, error) {
 	result, err := backend.underlying.CreateEngine(
 		ctx,
@@ -65,6 +66,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateEngine(
 		envVars,
 		shouldStartInDebugMode,
 		githubAuthToken,
+		sinks,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the engine using image '%v' with tag '%v' and debug mode '%v'", imageOrgAndRepo, imageVersionTag, shouldStartInDebugMode)
@@ -409,8 +411,8 @@ func (backend *MetricsReportingKurtosisBackend) DestroyUserServices(
 	return successes, failures, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) CreateLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error) {
-	return backend.underlying.CreateLogsAggregator(ctx)
+func (backend *MetricsReportingKurtosisBackend) CreateLogsAggregator(ctx context.Context, sinks logs_aggregator.Sinks) (*logs_aggregator.LogsAggregator, error) {
+	return backend.underlying.CreateLogsAggregator(ctx, sinks)
 }
 
 func (backend *MetricsReportingKurtosisBackend) GetLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error) {

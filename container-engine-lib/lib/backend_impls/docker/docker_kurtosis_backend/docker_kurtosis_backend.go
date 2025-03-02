@@ -114,6 +114,7 @@ func (backend *DockerKurtosisBackend) CreateEngine(
 	envVars map[string]string,
 	shouldStartInDebugMode bool,
 	gitAuthToken string,
+	sinks logs_aggregator.Sinks,
 ) (
 	*engine.Engine,
 	error,
@@ -126,6 +127,7 @@ func (backend *DockerKurtosisBackend) CreateEngine(
 		envVars,
 		shouldStartInDebugMode,
 		gitAuthToken,
+		sinks,
 		backend.dockerManager,
 		backend.objAttrsProvider,
 	)
@@ -375,12 +377,16 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 	return successfullyDestroyedServices, failedServices, nil
 }
 
-func (backend *DockerKurtosisBackend) CreateLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error) {
+func (backend *DockerKurtosisBackend) CreateLogsAggregator(
+	ctx context.Context,
+	sinks logs_aggregator.Sinks,
+) (*logs_aggregator.LogsAggregator, error) {
 	logsAggregatorContainer := vector.NewVectorLogsAggregatorContainer() //Declaring the implementation
 
 	logsAggregator, _, err := logs_aggregator_functions.CreateLogsAggregator(
 		ctx,
 		logsAggregatorContainer,
+		sinks,
 		backend.dockerManager,
 		backend.objAttrsProvider,
 	)

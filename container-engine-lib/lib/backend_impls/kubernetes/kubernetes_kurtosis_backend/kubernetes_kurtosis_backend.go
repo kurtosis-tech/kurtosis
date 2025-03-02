@@ -2,9 +2,10 @@ package kubernetes_kurtosis_backend
 
 import (
 	"context"
+	"io"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_collector_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_collector_functions/implementations/fluentbit"
-	"io"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
@@ -137,6 +138,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	envVars map[string]string,
 	shouldStartInDebugMode bool,
 	githubAuthToken string,
+	sinks logs_aggregator.Sinks,
 ) (
 	*engine.Engine,
 	error,
@@ -449,7 +451,7 @@ func (backend *KubernetesKurtosisBackend) GetLogsAggregator(
 	return nil, stacktrace.NewError("Getting the logs aggregator isn't yet implemented on Kubernetes")
 }
 
-func (backend *KubernetesKurtosisBackend) CreateLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error) {
+func (backend *KubernetesKurtosisBackend) CreateLogsAggregator(ctx context.Context, sinks logs_aggregator.Sinks) (*logs_aggregator.LogsAggregator, error) {
 	// TODO IMPLEMENT
 	return nil, stacktrace.NewError("Creating the logs aggregator isn't yet implemented on Kubernetes")
 }

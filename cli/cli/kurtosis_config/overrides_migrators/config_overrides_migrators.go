@@ -57,8 +57,9 @@ func migrateFromV2(uncastedConfig interface{}) (interface{}, error) {
 			}
 
 			newClusterConfig := &v3.KurtosisClusterConfigV3{
-				Type:   oldClusterConfig.Type,
-				Config: newKubernetesConfig,
+				Type:           oldClusterConfig.Type,
+				Config:         newKubernetesConfig,
+				LogsAggregator: nil,
 			}
 			newClusters[oldClusterName] = newClusterConfig
 		}
@@ -78,7 +79,6 @@ func migrateFromV2(uncastedConfig interface{}) (interface{}, error) {
 		ShouldSendMetrics: castedOldConfig.ShouldSendMetrics,
 		KurtosisClusters:  newClusters,
 		CloudConfig:       newCloudConfig,
-		LogsAggregator:    nil,
 	}
 
 	return newConfig, nil

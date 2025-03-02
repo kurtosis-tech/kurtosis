@@ -23,5 +23,4 @@ type KurtosisConfigV3 struct {
 	ShouldSendMetrics *bool                               `yaml:"should-send-metrics,omitempty"`
 	KurtosisClusters  map[string]*KurtosisClusterConfigV3 `yaml:"kurtosis-clusters,omitempty"`
 	CloudConfig       *KurtosisCloudConfigV3              `yaml:"cloud-config,omitempty"`
-	LogsAggregator    *KurtosisLogsAggregatorConfigV3     `yaml:"logs-aggregator,omitempty"`
 }

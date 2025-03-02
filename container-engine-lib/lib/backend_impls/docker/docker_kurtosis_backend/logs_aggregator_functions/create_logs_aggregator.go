@@ -2,6 +2,7 @@ package logs_aggregator_functions
 
 import (
 	"context"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
@@ -19,6 +20,7 @@ const (
 func CreateLogsAggregator(
 	ctx context.Context,
 	logsAggregatorContainer LogsAggregatorContainer,
+	sinks logs_aggregator.Sinks,
 	dockerManager *docker_manager.DockerManager,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 ) (
@@ -58,6 +60,7 @@ func CreateLogsAggregator(
 	containerId, containerLabels, removeLogsAggregatorContainerFunc, err := logsAggregatorContainer.CreateAndStart(
 		ctx,
 		defaultLogsListeningPortNum,
+		sinks,
 		targetNetworkId,
 		objAttrsProvider,
 		dockerManager)
