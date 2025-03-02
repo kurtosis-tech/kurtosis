@@ -1,17 +1,17 @@
 package vector
 
 import (
-	"encoding/json"
 	"fmt"
 	"strconv"
 
+	"github.com/go-yaml/yaml"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
 type VectorConfig struct {
-	Sources map[string]map[string]interface{} `json:"sources,omitempty"`
-	Sinks   map[string]map[string]interface{} `json:"sinks,omitempty"`
+	Sources map[string]map[string]interface{} `yaml:"sources,omitempty"`
+	Sinks   map[string]map[string]interface{} `yaml:"sinks,omitempty"`
 }
 
 func newVectorConfig(
@@ -56,10 +56,10 @@ func newVectorConfig(
 }
 
 func (cfg *VectorConfig) getConfigFileContent() (string, error) {
-	jsonBytes, err := json.Marshal(cfg)
+	yamlBytes, err := yaml.Marshal(cfg)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "Error marshalling config into JSON.")
+		return "", stacktrace.Propagate(err, "Error marshalling config into YAML.")
 	}
 
-	return string(jsonBytes), nil
+	return string(yamlBytes), nil
 }

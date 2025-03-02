@@ -6,7 +6,7 @@ const (
 	////////////////////////--VECTOR CONTAINER CONFIGURATION SECTION--/////////////////////////////
 	containerImage = "timberio/vector:0.45.0-debian"
 
-	configFilepath = configDirpath + "vector.json"
+	configFilepath = configDirpath + "vector.yaml"
 	binaryFilepath = "/usr/bin/vector"
 	configFileFlag = "-c"
 
