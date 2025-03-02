@@ -75,7 +75,7 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs collector namespace with Kubernetes name '%v'!!!!!!", namespace.Name)
 		}
 	}
-	shouldRemoveLogsCollectorNamespace := false
+	shouldRemoveLogsCollectorNamespace := true
 	defer func() {
 		if shouldRemoveLogsCollectorNamespace {
 			removeNamespaceFunc()
@@ -206,14 +206,14 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 		removeCtx := context.Background()
 		if err := kubernetesManager.RemoveDaemonSet(removeCtx, namespace.Name, daemonSet); err != nil {
 			logrus.Errorf(
-				"Launching the logs collector daemon with name '%v' didn't complete successfully so we "+
+				"Launching the logs collector daemon set with name '%v' didn't complete successfully so we "+
 					"tried to remove the daemon set we started, but doing so exited with an error:\n%v",
 				daemonSet.Name,
 				err)
 			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs collector daemon set with Kubernetes name '%v' in namespace '%v'!!!!!!", daemonSet.Name, daemonSet.Namespace)
 		}
 	}
-	shouldRemoveLogsCollectorDaemonSet := false
+	shouldRemoveLogsCollectorDaemonSet := true
 	defer func() {
 		if shouldRemoveLogsCollectorDaemonSet {
 			removeDaemonSetFunc()
@@ -258,7 +258,7 @@ func createLogsCollectorDaemonSet(
 
 	daemonSetAttrProvider, err := objAttrProvider.ForLogsCollectorDaemonSet()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while getting logs collector daemon set attributes provider.")
+		return nil, stacktrace.Propagate(err, "An error occurred getting logs collector daemon set attributes provider.")
 	}
 	name := daemonSetAttrProvider.GetName().GetString()
 	labels := shared_helpers.GetStringMapFromLabelMap(daemonSetAttrProvider.GetLabels())
@@ -275,7 +275,7 @@ func createLogsCollectorDaemonSet(
 			},
 			Args: []string{
 				"--workdir=/fluent-bit/etc",
-				"--config=/fluent-bit/etc/conf/fluent-bit.conf",
+				fmt.Sprintf("--config=%v/fluent-bit.conf", fluentBitConfigMountPath),
 			},
 			Ports:      ports,
 			WorkingDir: "",
@@ -370,27 +370,27 @@ func createLogsCollectorDaemonSet(
 	volumes := []apiv1.Volume{
 		{
 			Name:         varLogVolumeName,
-			VolumeSource: getVolumeSourceForHostPath(varLogMountPath),
+			VolumeSource: kubernetesManager.GetVolumeSourceForHostPath(varLogMountPath),
 		},
 		{
 			Name:         varLibDockerContainersVolumeName,
-			VolumeSource: getVolumeSourceForHostPath(varLibDockerContainersMountPath),
+			VolumeSource: kubernetesManager.GetVolumeSourceForHostPath(varLibDockerContainersMountPath),
 		},
 		{
 			Name:         varLogDockerContainersVolumeName,
-			VolumeSource: getVolumeSourceForHostPath(varLogDockerContainersMountPath),
+			VolumeSource: kubernetesManager.GetVolumeSourceForHostPath(varLogDockerContainersMountPath),
 		},
 		{
 			Name:         fluentBitConfigVolumeName,
-			VolumeSource: getVolumeSourceForConfigMap(fluentBitCfgConfigMapName),
+			VolumeSource: kubernetesManager.GetVolumeSourceForConfigMap(fluentBitCfgConfigMapName),
 		},
 		{
 			Name:         fluentBitHostLogsVolumeName,
-			VolumeSource: getVolumeSourceForHostPath(fluentBitHostLogsMountPath),
+			VolumeSource: kubernetesManager.GetVolumeSourceForHostPath(fluentBitHostLogsMountPath),
 		},
 		{
 			Name:         fluentBitCheckpointDbVolumeName,
-			VolumeSource: getVolumeSourceForHostPath(fluentBitCheckpointDbMountPath),
+			VolumeSource: kubernetesManager.GetVolumeSourceForHostPath(fluentBitCheckpointDbMountPath),
 		},
 	}
 
@@ -457,11 +457,10 @@ func createLogsCollectorNamespace(
 
 	namespaceObj, err := kubernetesManager.CreateNamespace(ctx, namespaceName, namespaceLabels, namespaceAnnotations)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating namepsace for logs collector with name '%s'", namespaceName)
+		return nil, stacktrace.Propagate(err, "An error occurred creating namespace for logs collector with name '%s'", namespaceName)
 	}
 
 	return namespaceObj, nil
-
 }
 
 func waitForAtLeastOneActivePodManagedByDaemonSet(ctx context.Context, logsCollectorDaemonSet *appsv1.DaemonSet, kubernetesManager *kubernetes_manager.KubernetesManager) error {
@@ -492,82 +491,6 @@ func waitForAtLeastOneActivePodManagedByDaemonSet(ctx context.Context, logsColle
 		"Exceeded max retries (%d) waiting for a pod managed by daemon set '%s' to come online",
 		maxRetries, logsCollectorDaemonSet.Name,
 	)
-}
-
-func getVolumeSourceForHostPath(mountPath string) apiv1.VolumeSource {
-	return apiv1.VolumeSource{
-		HostPath: &apiv1.HostPathVolumeSource{
-			Path: mountPath,
-			Type: nil,
-		},
-		EmptyDir:              nil,
-		GCEPersistentDisk:     nil,
-		AWSElasticBlockStore:  nil,
-		GitRepo:               nil,
-		Secret:                nil,
-		NFS:                   nil,
-		ISCSI:                 nil,
-		Glusterfs:             nil,
-		PersistentVolumeClaim: nil,
-		RBD:                   nil,
-		FlexVolume:            nil,
-		Cinder:                nil,
-		CephFS:                nil,
-		Flocker:               nil,
-		DownwardAPI:           nil,
-		FC:                    nil,
-		AzureFile:             nil,
-		ConfigMap:             nil,
-		VsphereVolume:         nil,
-		Quobyte:               nil,
-		AzureDisk:             nil,
-		PhotonPersistentDisk:  nil,
-		Projected:             nil,
-		PortworxVolume:        nil,
-		ScaleIO:               nil,
-		StorageOS:             nil,
-		CSI:                   nil,
-		Ephemeral:             nil,
-	}
-}
-
-func getVolumeSourceForConfigMap(configMapName string) apiv1.VolumeSource {
-	return apiv1.VolumeSource{
-		ConfigMap: &apiv1.ConfigMapVolumeSource{
-			LocalObjectReference: apiv1.LocalObjectReference{Name: configMapName},
-			Items:                nil,
-			DefaultMode:          nil,
-			Optional:             nil,
-		},
-		HostPath:              nil,
-		EmptyDir:              nil,
-		GCEPersistentDisk:     nil,
-		AWSElasticBlockStore:  nil,
-		GitRepo:               nil,
-		Secret:                nil,
-		NFS:                   nil,
-		ISCSI:                 nil,
-		Glusterfs:             nil,
-		PersistentVolumeClaim: nil,
-		RBD:                   nil,
-		FlexVolume:            nil,
-		Cinder:                nil,
-		CephFS:                nil,
-		Flocker:               nil,
-		DownwardAPI:           nil,
-		FC:                    nil,
-		AzureFile:             nil,
-		VsphereVolume:         nil,
-		Quobyte:               nil,
-		AzureDisk:             nil,
-		PhotonPersistentDisk:  nil,
-		Projected:             nil,
-		PortworxVolume:        nil,
-		ScaleIO:               nil,
-		StorageOS:             nil,
-		CSI:                   nil,
-		Ephemeral:             nil,
-	}
 }
 
 func createLogsCollectorServiceAccount(

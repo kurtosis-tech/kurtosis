@@ -20,6 +20,7 @@ type LogsAggregatorDeployment interface {
 		*apiv1.Service,
 		*appsv1.Deployment,
 		*apiv1.Namespace,
+		*apiv1.ConfigMap,
 		func(),
 		error)
 }

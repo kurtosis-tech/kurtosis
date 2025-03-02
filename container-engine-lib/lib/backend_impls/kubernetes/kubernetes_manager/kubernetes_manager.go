@@ -1385,6 +1385,180 @@ func (manager *KubernetesManager) GetPodsManagedByDaemonSet(ctx context.Context,
 	return podsManagedByDaemonSet, nil
 }
 
+// ---------------------------deployments---------------------------------------------------------------------------------------
+func (manager *KubernetesManager) RemoveDeployment(ctx context.Context, namespace string, deployment *v1.Deployment) error {
+	client := manager.kubernetesClientSet.AppsV1().Deployments(namespace)
+
+	if err := client.Delete(ctx, deployment.Name, globalDeleteOptions); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete deployment with name '%s' with delete options '%+v'", deployment.Name, globalDeleteOptions)
+	}
+
+	// TODO: maybe add a termination wait here?
+	return nil
+}
+
+func (manager *KubernetesManager) GetDeployment(ctx context.Context, namespace string, name string) (*v1.Deployment, error) {
+	daemonSetClient := manager.kubernetesClientSet.AppsV1().Deployments(namespace)
+
+	daemonSet, err := daemonSetClient.Get(ctx, name, metav1.GetOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		ResourceVersion: "",
+	})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to get daemon set with name '%s'", name)
+	}
+
+	return daemonSet, nil
+}
+
+func (manager *KubernetesManager) CreateDeployment(
+	ctx context.Context,
+	namespaceName string,
+	deploymentName string,
+	deploymentLabels map[string]string,
+	deploymentAnnotations map[string]string,
+	initContainers []apiv1.Container,
+	containers []apiv1.Container,
+	volumes []apiv1.Volume,
+) (*v1.Deployment, error) {
+	deploymentClient := manager.kubernetesClientSet.AppsV1().Deployments(namespaceName)
+
+	deploymentMeta := metav1.ObjectMeta{
+		Name:            deploymentName,
+		GenerateName:    "",
+		Namespace:       namespaceName,
+		SelfLink:        "",
+		UID:             "",
+		ResourceVersion: "",
+		Generation:      0,
+		CreationTimestamp: metav1.Time{
+			Time: time.Time{},
+		},
+		DeletionTimestamp:          nil,
+		DeletionGracePeriodSeconds: nil,
+		Labels:                     deploymentLabels,
+		Annotations:                deploymentAnnotations,
+		OwnerReferences:            nil,
+		Finalizers:                 nil,
+		ManagedFields:              nil,
+	}
+
+	deploymentSpec := v1.DeploymentSpec{
+		Selector: &metav1.LabelSelector{
+			MatchLabels:      deploymentLabels,
+			MatchExpressions: nil,
+		},
+		Template: apiv1.PodTemplateSpec{
+			ObjectMeta: deploymentMeta,
+			Spec: apiv1.PodSpec{
+				Volumes:                       volumes,
+				InitContainers:                initContainers,
+				Containers:                    containers,
+				EphemeralContainers:           nil,
+				RestartPolicy:                 "",
+				TerminationGracePeriodSeconds: nil,
+				ActiveDeadlineSeconds:         nil,
+				DNSPolicy:                     "",
+				NodeSelector:                  nil,
+				ServiceAccountName:            "",
+				DeprecatedServiceAccount:      "",
+				AutomountServiceAccountToken:  nil,
+				NodeName:                      "",
+				HostNetwork:                   false,
+				HostPID:                       false,
+				HostIPC:                       false,
+				ShareProcessNamespace:         nil,
+				SecurityContext:               nil,
+				ImagePullSecrets:              nil,
+				Hostname:                      "",
+				Subdomain:                     "",
+				Affinity:                      nil,
+				SchedulerName:                 "",
+				Tolerations:                   nil,
+				HostAliases:                   nil,
+				PriorityClassName:             "",
+				Priority:                      nil,
+				DNSConfig:                     nil,
+				ReadinessGates:                nil,
+				RuntimeClassName:              nil,
+				EnableServiceLinks:            nil,
+				PreemptionPolicy:              nil,
+				Overhead:                      nil,
+				TopologySpreadConstraints:     nil,
+				SetHostnameAsFQDN:             nil,
+				OS:                            nil,
+				HostUsers:                     nil,
+				SchedulingGates:               nil,
+				ResourceClaims:                nil,
+			},
+		},
+		MinReadySeconds:      0,
+		RevisionHistoryLimit: nil,
+	}
+
+	deploymentToCreate := &v1.Deployment{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		ObjectMeta: deploymentMeta,
+		Spec:       deploymentSpec,
+		Status: v1.DeploymentStatus{
+			ObservedGeneration: 0,
+			CollisionCount:     nil,
+			Conditions:         nil,
+		},
+	}
+
+	if deploymentDefinitionBytes, err := json.Marshal(deploymentToCreate); err == nil {
+		logrus.Debugf("Going to start deployment using the following JSON: %v", string(deploymentDefinitionBytes))
+	}
+
+	createdDeployment, err := deploymentClient.Create(ctx, deploymentToCreate, globalCreateOptions)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating deployment.")
+	}
+
+	return createdDeployment, nil
+}
+
+func (manager *KubernetesManager) GetPodsManagedByDeployment(ctx context.Context, deployment *v1.Deployment) ([]*apiv1.Pod, error) {
+	podsClient := manager.kubernetesClientSet.CoreV1().Pods(deployment.Namespace)
+
+	selector := metav1.FormatLabelSelector(deployment.Spec.Selector)
+
+	pods, err := podsClient.List(ctx, metav1.ListOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		LabelSelector:        selector,
+		FieldSelector:        "",
+		Watch:                false,
+		AllowWatchBookmarks:  false,
+		ResourceVersion:      "",
+		ResourceVersionMatch: "",
+		TimeoutSeconds:       nil,
+		Limit:                0,
+		Continue:             "",
+		SendInitialEvents:    nil,
+	})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred retrieving list of pods in namespace '%v' with label selectors: %v.", deployment.Namespace, selector)
+	}
+
+	var podsManagedByDeployment []*apiv1.Pod
+	for _, pod := range pods.Items {
+		podToAdd := pod
+		podsManagedByDeployment = append(podsManagedByDeployment, &podToAdd)
+	}
+
+	return podsManagedByDeployment, nil
+}
+
 // ---------------------------config map---------------------------------------------------------------------------------------
 func (manager *KubernetesManager) RemoveConfigMap(ctx context.Context, namespace string, configMap *apiv1.ConfigMap) error {
 	client := manager.kubernetesClientSet.CoreV1().ConfigMaps(namespace)
@@ -1458,6 +1632,82 @@ func (manager *KubernetesManager) CreateConfigMap(
 	}
 
 	return createdConfigMap, nil
+}
+
+func (kubernetesManager *KubernetesManager) GetVolumeSourceForHostPath(mountPath string) apiv1.VolumeSource {
+	return apiv1.VolumeSource{
+		HostPath: &apiv1.HostPathVolumeSource{
+			Path: mountPath,
+			Type: nil,
+		},
+		EmptyDir:              nil,
+		GCEPersistentDisk:     nil,
+		AWSElasticBlockStore:  nil,
+		GitRepo:               nil,
+		Secret:                nil,
+		NFS:                   nil,
+		ISCSI:                 nil,
+		Glusterfs:             nil,
+		PersistentVolumeClaim: nil,
+		RBD:                   nil,
+		FlexVolume:            nil,
+		Cinder:                nil,
+		CephFS:                nil,
+		Flocker:               nil,
+		DownwardAPI:           nil,
+		FC:                    nil,
+		AzureFile:             nil,
+		ConfigMap:             nil,
+		VsphereVolume:         nil,
+		Quobyte:               nil,
+		AzureDisk:             nil,
+		PhotonPersistentDisk:  nil,
+		Projected:             nil,
+		PortworxVolume:        nil,
+		ScaleIO:               nil,
+		StorageOS:             nil,
+		CSI:                   nil,
+		Ephemeral:             nil,
+	}
+}
+
+func (kubernetesManager *KubernetesManager) GetVolumeSourceForConfigMap(configMapName string) apiv1.VolumeSource {
+	return apiv1.VolumeSource{
+		ConfigMap: &apiv1.ConfigMapVolumeSource{
+			LocalObjectReference: apiv1.LocalObjectReference{Name: configMapName},
+			Items:                nil,
+			DefaultMode:          nil,
+			Optional:             nil,
+		},
+		HostPath:              nil,
+		EmptyDir:              nil,
+		GCEPersistentDisk:     nil,
+		AWSElasticBlockStore:  nil,
+		GitRepo:               nil,
+		Secret:                nil,
+		NFS:                   nil,
+		ISCSI:                 nil,
+		Glusterfs:             nil,
+		PersistentVolumeClaim: nil,
+		RBD:                   nil,
+		FlexVolume:            nil,
+		Cinder:                nil,
+		CephFS:                nil,
+		Flocker:               nil,
+		DownwardAPI:           nil,
+		FC:                    nil,
+		AzureFile:             nil,
+		VsphereVolume:         nil,
+		Quobyte:               nil,
+		AzureDisk:             nil,
+		PhotonPersistentDisk:  nil,
+		Projected:             nil,
+		PortworxVolume:        nil,
+		ScaleIO:               nil,
+		StorageOS:             nil,
+		CSI:                   nil,
+		Ephemeral:             nil,
+	}
 }
 
 // GetContainerLogs gets the logs for a given container running inside the given pod in the give namespace

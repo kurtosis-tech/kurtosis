@@ -21,6 +21,8 @@ type KubernetesLogsAggregatorObjectAttributesProvider interface {
 	ForLogsAggregatorNamespace() (KubernetesObjectAttributes, error)
 
 	ForLogsAggregatorService() (KubernetesObjectAttributes, error)
+
+	ForLogsAggregatorConfigMap() (KubernetesObjectAttributes, error)
 }
 
 func GetKubernetesLogsAggregatorObjectAttributesProvider(logsAggregatorGuid logs_aggregator.LogsAggregatorGuid) KubernetesLogsAggregatorObjectAttributesProvider {
@@ -81,6 +83,26 @@ func (provider *kubernetesLogsAggregatorObjectAttributesProviderImpl) ForLogsAgg
 	name, err := getCompositeKubernetesObjectName([]string{logsAggregatorNamePrefix, string(provider.logsAggregatorGuid)})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while creating a Kubernetes object name with prefix '%v' and guid '%v'.", logsAggregatorConfigNamePrefix, provider.logsAggregatorGuid)
+	}
+
+	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
+		kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.LogsAggregatorKurtosisResourceTypeKubernetesLabelValue,
+	}
+
+	annotations := make(map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue)
+
+	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
+			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
+	}
+	return objectAttributes, nil
+}
+
+func (provider *kubernetesLogsAggregatorObjectAttributesProviderImpl) ForLogsAggregatorConfigMap() (KubernetesObjectAttributes, error) {
+	name, err := getCompositeKubernetesObjectName([]string{logsAggregatorNamePrefix, string(provider.logsAggregatorGuid)})
+	if err != nil {
+		return nil, err // already wrapped with propagate
 	}
 
 	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
