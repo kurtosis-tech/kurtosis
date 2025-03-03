@@ -655,10 +655,19 @@ func (manager *DockerManager) CreateAndStartContainer(
 		}
 	}()
 
-	//Check if the container dies because sometimes users starts containers with a wrong configuration and these quickly dies
-	didContainerStartSuccessfully, err := manager.didContainerStartSuccessfully(ctx, containerId, dockerImage)
-	if err != nil {
-		return "", nil, stacktrace.Propagate(err, "An error occurred checking if container '%v' is running", containerId)
+	// The immediate start check here can be cumbersome when you need access to the containerId even if the container has failed to start.
+	// For example, we might want to perform further inspection or deletion of the container for short-lived containers.
+	// We could return the containerId when the container has been created but failed to start, but we must then do it consistently for all error branches.
+	// Also, the blast radius could be quite high.
+	// So for now, an argument can be specified to disable this check, followed by a call to WaitForExit() to handle erroneous exits
+
+	didContainerStartSuccessfully := true
+	if !args.skipSuccessfulStartCheck {
+		//Check if the container dies because sometimes users starts containers with a wrong configuration and these quickly dies
+		didContainerStartSuccessfully, err = manager.didContainerStartSuccessfully(ctx, containerId, dockerImage)
+		if err != nil {
+			return "", nil, stacktrace.Propagate(err, "An error occurred checking if container '%v' is running", containerId)
+		}
 	}
 
 	if isInteractiveMode {
@@ -842,10 +851,8 @@ func (manager *DockerManager) StartContainer(context context.Context, containerI
 	}
 	err := manager.dockerClient.ContainerStart(context, containerId, options)
 	if err != nil {
-		containerLogs := manager.getFailedContainerLogsOrErrorString(context, containerId)
-		containerLogsHeader := "\n--------------------- CONTAINER LOGS -----------------------\n"
-		containerLogsFooter := "\n------------------- END CONTAINER LOGS --------------------"
-		return stacktrace.Propagate(err, "Could not start Docker container with ID '%v'; logs are below:%v%v%v", containerId, containerLogsHeader, containerLogs, containerLogsFooter)
+		errorStr := manager.GetFormattedFailedContainerLogsOrErrorString(context, containerId)
+		return stacktrace.Propagate(err, "Could not start Docker container with ID '%v'; logs are below:%v", containerId, errorStr)
 	}
 
 	return nil
@@ -1574,6 +1581,13 @@ func (manager *DockerManager) GetAvailableCPUAndMemory(ctx context.Context) (com
 	return compute_resources.MemoryInMegaBytes(availableMemoryInBytes), compute_resources.CpuMilliCores(availableCpuInMilliCores), nil
 }
 
+func (manager *DockerManager) GetFormattedFailedContainerLogsOrErrorString(ctx context.Context, containerId string) string {
+	containerLogs := manager.getFailedContainerLogsOrErrorString(ctx, containerId)
+	containerLogsHeader := "\n--------------------- CONTAINER LOGS -----------------------\n"
+	containerLogsFooter := "\n------------------- END CONTAINER LOGS --------------------"
+	return containerLogsHeader + containerLogs + containerLogsFooter
+}
+
 // =================================================================================================================
 //
 //	INSTANCE HELPER FUNCTIONS
@@ -2085,10 +2099,8 @@ func (manager *DockerManager) didContainerStartSuccessfully(ctx context.Context,
 	}
 
 	if !isContainerRunning {
-		containerLogs := manager.getFailedContainerLogsOrErrorString(ctx, containerId)
-		containerLogsHeader := "\n--------------------- CONTAINER LOGS -----------------------\n"
-		containerLogsFooter := "\n------------------- END CONTAINER LOGS --------------------"
-		return false, stacktrace.NewError("Container '%v' (with image '%v') die with a non zero exit code rapidly after it was started. This likely indicates a misconfiguration with how the container was started. Container should either exit gracefully or keep running for Kurtosis to consider it in a good state; logs are below:%v%v%v", containerId, dockerImage, containerLogsHeader, containerLogs, containerLogsFooter)
+		errorStr := manager.GetFormattedFailedContainerLogsOrErrorString(ctx, containerId)
+		return false, stacktrace.NewError("Container '%v' (with image '%v') die with a non zero exit code rapidly after it was started. This likely indicates a misconfiguration with how the container was started. Container should either exit gracefully or keep running for Kurtosis to consider it in a good state; logs are below:%v", containerId, dockerImage, errorStr)
 	}
 
 	return true, nil

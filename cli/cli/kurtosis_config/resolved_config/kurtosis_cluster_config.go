@@ -58,10 +58,9 @@ func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v3.Kurto
 	}
 
 	if overrides.LogsAggregator != nil {
-
 		if len(overrides.LogsAggregator.Sinks) > 0 {
 			for sinkId := range overrides.LogsAggregator.Sinks {
-				// We add a default file sink as the logs database for certain log commands to work, hence this validation
+				// We add a default file sink as the logs database for certain log commands (i.e. kurtosis service logs) to work, hence this validation
 				// A potential improvement would be that all log-related commands are compatible with user-defined sinks
 				if sinkId == logs_aggregator.DefaultSinkId {
 					return nil, stacktrace.NewError("The LogsAggregator Sinks had a sink named %s which is reserved for Kurtosis default sink", logs_aggregator.DefaultSinkId)
