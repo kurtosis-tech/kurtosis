@@ -10,7 +10,7 @@ type logsAggregatorKubernetesResources struct {
 
 	deployment *appsv1.Deployment
 
-	namespace *apiv1.Namespace
+	configMap *apiv1.ConfigMap
 
-	// potentially service account, cluster role, cluster role binding
+	namespace *apiv1.Namespace
 }

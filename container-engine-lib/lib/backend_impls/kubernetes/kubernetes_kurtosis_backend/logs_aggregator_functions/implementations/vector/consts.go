@@ -24,7 +24,7 @@ const (
     path = "/var/log/kurtosis/%G/%V/{{ enclave_uuid }}/{{ service_uuid }}.json"
 
     [sinks.file_sink.encoding]
-    codec = "json
+    codec = "json"
     
     [sinks.stdout_sink]
     type = "console"

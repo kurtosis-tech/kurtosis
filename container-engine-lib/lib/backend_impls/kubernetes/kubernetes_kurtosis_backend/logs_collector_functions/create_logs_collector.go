@@ -35,7 +35,7 @@ func CreateLogsCollector(
 ) {
 	var logsCollectorObj *logs_collector.LogsCollector
 	var kubernetesResources *logsCollectorKubernetesResources
-	shouldRemoveLogsCollector := false // only gets set to true if a create logs collector is created (and might need to be removed)
+	shouldRemoveLogsCollector := false // only gets set to true if a logs collector is created (and might need to be removed)
 	var removeLogsCollectorFunc func()
 	var err error
 
@@ -50,8 +50,10 @@ func CreateLogsCollector(
 		logrus.Debug("Did not find existing log collector, creating one...")
 		daemonSet, configMap, namespace, serviceAccount, clusterRole, clusterRoleBinding, removeLogsCollectorFunc, err := logsCollectorDaemonSet.CreateAndStart(
 			ctx,
-			"", // TODO: fill these in when adding aggregator to k8s
-			0,  // TODO: fill these in when adding aggregator to k8s
+			//logsAggregator.GetMaybePrivateIpAddr().String(),
+			//logsAggregator.GetListeningPortNum(),
+			"",
+			0,
 			logsCollectorTcpPortNumber,
 			logsCollectorHttpPortNumber,
 			logsCollectorTcpPortId,

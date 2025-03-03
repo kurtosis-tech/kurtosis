@@ -447,8 +447,14 @@ func (backend *KubernetesKurtosisBackend) GetAvailableCPUAndMemory(ctx context.C
 func (backend *KubernetesKurtosisBackend) GetLogsAggregator(
 	ctx context.Context,
 ) (*logs_aggregator.LogsAggregator, error) {
-	// TODO IMPLEMENT
-	return nil, stacktrace.NewError("Getting the logs aggregator isn't yet implemented on Kubernetes")
+	maybeLogsAggregator, err := logs_aggregator_functions.GetLogsAggregator(
+		ctx,
+		backend.kubernetesManager,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator")
+	}
+	return maybeLogsAggregator, nil
 }
 
 func (backend *KubernetesKurtosisBackend) CreateLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error) {
@@ -467,8 +473,11 @@ func (backend *KubernetesKurtosisBackend) CreateLogsAggregator(ctx context.Conte
 }
 
 func (backend *KubernetesKurtosisBackend) DestroyLogsAggregator(ctx context.Context) error {
-	// TODO IMPLEMENT
-	return stacktrace.NewError("Destroying the logs aggregator isn't yet implemented on Kubernetes")
+	if err := logs_aggregator_functions.DestroyLogsAggregator(ctx, backend.kubernetesManager); err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying logs aggregator.")
+	}
+	logrus.Debug("Successfully destroyed logs aggregator.")
+	return nil
 }
 
 func (backend *KubernetesKurtosisBackend) CreateLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, logsCollectorHttpPortNumber uint16, logsCollectorTcpPortNumber uint16) (*logs_collector.LogsCollector, error) {

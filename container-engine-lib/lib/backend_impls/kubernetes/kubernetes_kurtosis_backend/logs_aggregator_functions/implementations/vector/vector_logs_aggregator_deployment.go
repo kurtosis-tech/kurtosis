@@ -29,8 +29,8 @@ func (logsAggregator *vectorLogsAggregatorDeployment) CreateAndStart(
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
 	kubernetesManager *kubernetes_manager.KubernetesManager) (
 	*apiv1.Service,
-	*apiv1.Namespace,
 	*appsv1.Deployment,
+	*apiv1.Namespace,
 	*apiv1.ConfigMap,
 	func(),
 	error) {
@@ -78,7 +78,7 @@ func (logsAggregator *vectorLogsAggregatorDeployment) CreateAndStart(
 			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs aggregator config map with Kubernetes name '%v' in namespace '%v'!!!!!!", configMap.Name, configMap.Namespace)
 		}
 	}
-	shouldRemoveLogsAggregatorConfigMap := false
+	shouldRemoveLogsAggregatorConfigMap := true
 	defer func() {
 		if shouldRemoveLogsAggregatorConfigMap {
 			removeConfigMapFunc()
@@ -136,10 +136,11 @@ func (logsAggregator *vectorLogsAggregatorDeployment) CreateAndStart(
 		removeNamespaceFunc()
 	}
 
+	shouldRemoveLogsAggregatorConfigMap = false
 	shouldRemoveLogsAggregatorDeployment = false
 	shouldRemoveLogsAggregatorService = false
 	shouldRemoveLogsAggregatorNamespace = false
-	return service, namespace, deployment, nil, removeLogsAggregatorFunc, nil
+	return service, deployment, namespace, configMap, removeLogsAggregatorFunc, nil
 }
 
 func createLogsAggregatorDeployment(
@@ -217,7 +218,7 @@ func createLogsAggregatorDeployment(
 			VolumeSource: kubernetesManager.GetVolumeSourceForConfigMap(configMapName),
 		},
 		{
-			Name:         kurtosisLogsMountPath,
+			Name:         kurtosisLogsVolumeName,
 			VolumeSource: kubernetesManager.GetVolumeSourceForHostPath(kurtosisLogsMountPath),
 		},
 	}

@@ -2,6 +2,7 @@ package engine_functions
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_aggregator_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_collector_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
@@ -71,6 +72,11 @@ func StopEngines(
 	}
 
 	// Stop centralized logging components
+	if err := logs_aggregator_functions.DestroyLogsAggregator(ctx, kubernetesManager); err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred removing the logs aggregator.")
+	}
+	logrus.Debug("Successfully destroyed logs aggregator.")
+
 	if err := logs_collector_functions.DestroyLogsCollector(ctx, kubernetesManager); err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred removing the logs collector.")
 	}
