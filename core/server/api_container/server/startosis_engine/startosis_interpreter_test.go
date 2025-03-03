@@ -28,6 +28,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"go.starlark.net/starlark"
 	"net"
 	"strings"
 	"testing"
@@ -1079,6 +1080,57 @@ def run(plan):
 
 	_, _, interpretationError := suite.interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, noPackageReplaceOptions, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, script, startosis_constants.EmptyInputArgs, defaultNonBlockingMode, emptyEnclaveComponents, emptyInstructionsPlanMask, defaultImageDownloadMode)
 	require.Nil(suite.T(), interpretationError)
+}
+
+func (suite *StartosisInterpreterTestSuite) TestStarlarkInterpreter_WithExtraPredefinedThatFails() {
+	script := `
+def run(plan):
+	yell()
+`
+
+	expectedError := startosis_errors.NewInterpretationError("do not yell() please")
+
+	processBuiltins := func(thread *starlark.Thread, predeclareds starlark.StringDict) starlark.StringDict {
+		// We'll add a new builtin called raise that should raise an evaluation error
+		predeclareds["yell"] = starlark.NewBuiltin("yell", func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+			return nil, expectedError
+		})
+
+		return predeclareds
+	}
+
+	// We'll create a new interpreter using the processBuiltins transformer above
+	interpreter := NewStartosisInterpreterWithBuiltinsProcessor(suite.serviceNetwork, suite.packageContentProvider, suite.runtimeValueStore, nil, "", suite.interpretationTimeValueStore, processBuiltins)
+
+	_, _, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, noPackageReplaceOptions, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, script, startosis_constants.EmptyInputArgs, defaultNonBlockingMode, emptyEnclaveComponents, emptyInstructionsPlanMask, defaultImageDownloadMode)
+
+	// If everything goes well we should see an error with a correct message & stack trace
+	require.NotNil(suite.T(), interpretationError)
+	require.Equal(suite.T(), fmt.Sprintf("Evaluation error: %v\n\tat [3:6]: run\n\tat [0:0]: yell", expectedError.Error()), interpretationError.GetErrorMessage())
+
+}
+
+func (suite *StartosisInterpreterTestSuite) TestStarlarkInterpreter_WithExtraPredefinedThatReturns() {
+	script := `
+def run(plan):
+	plan.print(chill())
+`
+	processBuiltins := func(thread *starlark.Thread, predeclareds starlark.StringDict) starlark.StringDict {
+		// We create a builtin that simply returns a value
+		predeclareds["chill"] = starlark.NewBuiltin("chill", func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+			return starlark.String("chillin"), nil
+		})
+
+		return predeclareds
+	}
+
+	// We'll create a new interpreter using the processBuiltins transformer above
+	interpreter := NewStartosisInterpreterWithBuiltinsProcessor(suite.serviceNetwork, suite.packageContentProvider, suite.runtimeValueStore, nil, "", suite.interpretationTimeValueStore, processBuiltins)
+
+	// If everything goes well we should see no error & message on the output
+	_, instructionsPlan, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, noPackageReplaceOptions, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, script, startosis_constants.EmptyInputArgs, defaultNonBlockingMode, emptyEnclaveComponents, emptyInstructionsPlanMask, defaultImageDownloadMode)
+	require.Nil(suite.T(), interpretationError)
+	validateScriptOutputFromPrintInstructions(suite.T(), instructionsPlan, "chillin\n")
 }
 
 func (suite *StartosisInterpreterTestSuite) TestGetModuleIdPrefix() {

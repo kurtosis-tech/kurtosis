@@ -157,6 +157,7 @@ func run(
 	if successResult.GetExitCode() != 0 {
 		return stacktrace.NewError("The command was successfully executed but returned a non-zero exit code: '%d'. Output was:\n%v", successResult.GetExitCode(), successResult.GetOutput())
 	}
-	out.PrintOutLn(fmt.Sprintf("The command was successfully executed and returned '%d'. Output was:\n%v", successResult.GetExitCode(), successResult.GetOutput()))
+	out.PrintErrLn(fmt.Sprintf("The command was successfully executed and returned '%d'.", successResult.GetExitCode()))
+	out.PrintOutLn(successResult.GetOutput())
 	return nil
 }

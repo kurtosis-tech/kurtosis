@@ -288,6 +288,7 @@ tasks:
   - uuid: "3"
     name: bye-file
   pythonPackages:
+  - bash
   - selenium
   - requests
   pythonArgs:

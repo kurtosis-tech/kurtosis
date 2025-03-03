@@ -32,13 +32,16 @@ import (
 
 // shared constants
 const (
-	ImageNameArgName  = "image"
-	TaskNameArgName   = "name"
-	RunArgName        = "run"
-	StoreFilesArgName = "store"
-	WaitArgName       = "wait"
-	FilesArgName      = "files"
-	EnvVarsArgName    = "env_vars"
+	ImageNameArgName       = "image"
+	TaskNameArgName        = "name"
+	RunArgName             = "run"
+	StoreFilesArgName      = "store"
+	WaitArgName            = "wait"
+	FilesArgName           = "files"
+	EnvVarsArgName         = "env_vars"
+	AcceptableCodesArgName = "acceptable_codes"
+	SkipCodeCheckArgName   = "skip_code_check"
+	defaultSkipCodeCheck   = false
 
 	newlineChar = "\n"
 
@@ -58,15 +61,23 @@ const (
 	tiniEnabled = true
 )
 
+var defaultAcceptableCodes = []int64{
+	0, // EXIT_SUCCESS
+}
+
+// runCommandToStreamTaskLogs sets the entrypoint of a task container with a command that creates and tails a log file for tasks run on the container
+// all tasks redirect output to the task log file (see getCommandToRunForStreamingLogs for details) where they will be picked up by the main process
+// and streamed to stdout via tail -F
+// By sending to stdout, task output get picked up by our logging infrastructure - making task logs available via kurtosis service logs
 var runCommandToStreamTaskLogs = []string{shellWrapperCommand, "-c", fmt.Sprintf("touch %s && tail -F %s", taskLogFilePath, taskLogFilePath)}
 
 // Wraps [commandToRun] to enable streaming logs from tasks.
-// Uses curly braces to execute the command(s) in the current shell.
-// Adds an extra echo to ensure each log ends with a newline.
-// Uses tee to direct output to the task log file while maintaining output to stdout.
-// Redirects stderr to stdout.
+// This command is crafted carefully to allow outputting logs to task log file, outputting to stdout, and retaining the exit code from [commandToRun]
+// Solution is adapted from 3rd answer in this stack exchange post: https://unix.stackexchange.com/questions/14270/get-exit-status-of-process-thats-piped-to-another. Read detailed explanation of command.
+// compared to solution in post, an extra echo >> is added to add a newline after all logs are processed, this is a hack to make sure the last log line gets processed runCommandToStreamTaskLogs
 func getCommandToRunForStreamingLogs(commandToRun string) []string {
-	return []string{shellWrapperCommand, "-c", fmt.Sprintf("{ %v; } %v %v %v %v %v %v %v %v", commandToRun, "2>&1", "|", "tee", taskLogFilePath, "&&", "echo", ">>", taskLogFilePath)}
+	fullCmd := []string{shellWrapperCommand, "-c", fmt.Sprintf("{ { { { %v; echo $? >&3; } | tee %v >&4; echo >> %v; } 3>&1; } | { read xs; exit $xs; } } 4>&1", commandToRun, taskLogFilePath, taskLogFilePath)}
+	return fullCmd
 }
 
 func parseStoreFilesArg(serviceNetwork service_network.ServiceNetwork, arguments *builtin_argument.ArgumentValuesSet) ([]*store_spec.StoreSpec, *startosis_errors.InterpretationError) {
@@ -336,4 +347,13 @@ func getTaskNameFromArgs(arguments *builtin_argument.ArgumentValuesSet) (string,
 		randomUuid := uuid.NewRandom()
 		return fmt.Sprintf("task-%v", randomUuid.String()), nil
 	}
+}
+
+func isAcceptableCode(acceptableCodes []int64, recipeResult map[string]starlark.Comparable) bool {
+	for _, acceptableCode := range acceptableCodes {
+		if recipeResult[runResultCodeKey] == starlark.MakeInt64(acceptableCode) {
+			return true
+		}
+	}
+	return false
 }
