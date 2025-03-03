@@ -10,8 +10,9 @@ import (
 
 func TestNewKurtosisClusterConfigEmptyOverrides(t *testing.T) {
 	kurtosisClusterConfigOverrides := v3.KurtosisClusterConfigV3{
-		Type:   nil,
-		Config: nil,
+		Type:           nil,
+		Config:         nil,
+		LogsAggregator: nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.Error(t, err)
@@ -20,8 +21,9 @@ func TestNewKurtosisClusterConfigEmptyOverrides(t *testing.T) {
 func TestNewKurtosisClusterConfigDockerType(t *testing.T) {
 	dockerType := KurtosisClusterType_Docker.String()
 	kurtosisClusterConfigOverrides := v3.KurtosisClusterConfigV3{
-		Type:   &dockerType,
-		Config: nil,
+		Type:           &dockerType,
+		Config:         nil,
+		LogsAggregator: nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)
@@ -30,8 +32,9 @@ func TestNewKurtosisClusterConfigDockerType(t *testing.T) {
 func TestNewKurtosisClusterConfigKubernetesNoConfig(t *testing.T) {
 	kubernetesType := KurtosisClusterType_Kubernetes.String()
 	kurtosisClusterConfigOverrides := v3.KurtosisClusterConfigV3{
-		Type:   &kubernetesType,
-		Config: nil,
+		Type:           &kubernetesType,
+		Config:         nil,
+		LogsAggregator: nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.Error(t, err)
@@ -40,8 +43,9 @@ func TestNewKurtosisClusterConfigKubernetesNoConfig(t *testing.T) {
 func TestNewKurtosisClusterConfigNonsenseType(t *testing.T) {
 	clusterType := "gdsfgsdfvsf"
 	kurtosisClusterConfigOverrides := v3.KurtosisClusterConfigV3{
-		Type:   &clusterType,
-		Config: nil,
+		Type:           &clusterType,
+		Config:         nil,
+		LogsAggregator: nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.Error(t, err)
@@ -56,8 +60,9 @@ func TestNewKurtosisClusterConfigKubernetesPartialConfig(t *testing.T) {
 		EnclaveSizeInMegabytes: nil,
 	}
 	kurtosisClusterConfigOverrides := v3.KurtosisClusterConfigV3{
-		Type:   &kubernetesType,
-		Config: &kubernetesPartialConfig,
+		Type:           &kubernetesType,
+		Config:         &kubernetesPartialConfig,
+		LogsAggregator: nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.Error(t, err)
@@ -74,8 +79,9 @@ func TestNewKurtosisClusterConfigKubernetesFullConfig(t *testing.T) {
 		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
 	}
 	kurtosisClusterConfigOverrides := v3.KurtosisClusterConfigV3{
-		Type:   &kubernetesType,
-		Config: &kubernetesFullConfig,
+		Type:           &kubernetesType,
+		Config:         &kubernetesFullConfig,
+		LogsAggregator: nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)
