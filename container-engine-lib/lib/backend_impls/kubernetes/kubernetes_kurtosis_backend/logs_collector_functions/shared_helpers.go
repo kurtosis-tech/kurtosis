@@ -302,7 +302,7 @@ func waitForLogsCollectorAvailability(
 		return stacktrace.Propagate(err, "An error occurred getting pods managed by logs collector daemon set '%v'", logsCollectorDaemonSet.Name)
 	}
 
-	// this port spec represents the http port that each log collector container (on each pod managed by the daemon set) wll have a port exposed on
+	// this port spec represents the http port that each log collector container (on each pod managed by the daemon set) will have a port exposed on
 	httpPortSpec, err := port_spec.NewPortSpec(logsCollectorHttpPortNumber, port_spec.TransportProtocol_TCP, httpProtocolStr, noWait, emptyUrl)
 	if err != nil {
 		return stacktrace.Propagate(

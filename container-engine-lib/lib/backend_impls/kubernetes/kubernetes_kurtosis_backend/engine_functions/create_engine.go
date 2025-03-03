@@ -500,6 +500,7 @@ func createEnginePod(
 			Env:   engineContainerEnvVars,
 			Ports: containerPorts,
 			VolumeMounts: []apiv1.VolumeMount{
+				// TODO: use logs aggregator deployment object for this
 				{
 					Name:             "varlogkurtosis",
 					ReadOnly:         false,
@@ -513,6 +514,7 @@ func createEnginePod(
 	}
 
 	engineVolumes := []apiv1.Volume{
+		// TODO: use logs aggregator deployment object for this
 		{
 			Name: "varlogkurtosis",
 			VolumeSource: apiv1.VolumeSource{
@@ -524,8 +526,6 @@ func createEnginePod(
 				GCEPersistentDisk:     nil,
 				AWSElasticBlockStore:  nil,
 				GitRepo:               nil,
-				Secret:                nil,
-				NFS:                   nil,
 				ISCSI:                 nil,
 				Glusterfs:             nil,
 				PersistentVolumeClaim: nil,

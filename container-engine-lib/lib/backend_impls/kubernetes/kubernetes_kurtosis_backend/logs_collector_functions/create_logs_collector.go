@@ -50,10 +50,8 @@ func CreateLogsCollector(
 		logrus.Debug("Did not find existing log collector, creating one...")
 		daemonSet, configMap, namespace, serviceAccount, clusterRole, clusterRoleBinding, removeLogsCollectorFunc, err := logsCollectorDaemonSet.CreateAndStart(
 			ctx,
-			//logsAggregator.GetMaybePrivateIpAddr().String(),
-			//logsAggregator.GetListeningPortNum(),
-			"",
-			0,
+			logsAggregator.GetMaybePrivateIpAddr().String(),
+			logsAggregator.GetListeningPortNum(),
 			logsCollectorTcpPortNumber,
 			logsCollectorHttpPortNumber,
 			logsCollectorTcpPortId,
