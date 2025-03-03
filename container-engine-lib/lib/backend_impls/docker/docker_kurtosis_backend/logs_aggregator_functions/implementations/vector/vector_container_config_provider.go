@@ -34,7 +34,7 @@ func (vector *vectorContainerConfigProvider) GetInitContainerArgs(
 
 	// Create cmd to
 	// 1. create config file in appropriate location in logs aggregator container
-	// 2. start the logs aggregator with the config file
+	// 2. validate this config file
 	overrideCmd := []string{
 		shCmdFlag,
 		fmt.Sprintf(
