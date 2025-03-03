@@ -6,8 +6,9 @@ import (
 
 func createVectorContainerConfigProvider(
 	portNumber uint16,
+	httpPortNumber uint16,
 	sinks logs_aggregator.Sinks,
 ) *vectorContainerConfigProvider {
-	config := newVectorConfig(portNumber, sinks)
-	return newVectorContainerConfigProvider(config)
+	config := newVectorConfig(portNumber, httpPortNumber, sinks)
+	return newVectorContainerConfigProvider(config, httpPortNumber)
 }

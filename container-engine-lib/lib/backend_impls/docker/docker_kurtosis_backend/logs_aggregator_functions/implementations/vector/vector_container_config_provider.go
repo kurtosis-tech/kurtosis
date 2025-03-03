@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
@@ -12,14 +13,32 @@ const (
 	printfCmdName    = "printf"
 	shCmdFlag        = "-c"
 	validateCmdName  = "validate"
+	httpProtocolStr  = "http"
 )
 
 type vectorContainerConfigProvider struct {
-	config *VectorConfig
+	config         *VectorConfig
+	httpPortNumber uint16
 }
 
-func newVectorContainerConfigProvider(config *VectorConfig) *vectorContainerConfigProvider {
-	return &vectorContainerConfigProvider{config: config}
+func newVectorContainerConfigProvider(config *VectorConfig, httpPortNumber uint16) *vectorContainerConfigProvider {
+	return &vectorContainerConfigProvider{
+		config:         config,
+		httpPortNumber: httpPortNumber,
+	}
+}
+
+func (vector *vectorContainerConfigProvider) GetPrivateHttpPortSpec() (*port_spec.PortSpec, error) {
+	privateHttpPortSpec, err := port_spec.NewPortSpec(vector.httpPortNumber, httpTransportProtocol, httpProtocolStr, nil, "")
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating the Fluentbit server's private HTTP port spec object using number '%v' and protocol '%v'",
+			vector.httpPortNumber,
+			httpTransportProtocol,
+		)
+	}
+	return privateHttpPortSpec, nil
 }
 
 func (vector *vectorContainerConfigProvider) GetInitContainerArgs(

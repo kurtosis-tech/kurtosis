@@ -411,8 +411,8 @@ func (backend *MetricsReportingKurtosisBackend) DestroyUserServices(
 	return successes, failures, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) CreateLogsAggregator(ctx context.Context, sinks logs_aggregator.Sinks) (*logs_aggregator.LogsAggregator, error) {
-	return backend.underlying.CreateLogsAggregator(ctx, sinks)
+func (backend *MetricsReportingKurtosisBackend) CreateLogsAggregator(ctx context.Context, httpPortNum uint16, sinks logs_aggregator.Sinks) (*logs_aggregator.LogsAggregator, error) {
+	return backend.underlying.CreateLogsAggregator(ctx, httpPortNum, sinks)
 }
 
 func (backend *MetricsReportingKurtosisBackend) GetLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error) {

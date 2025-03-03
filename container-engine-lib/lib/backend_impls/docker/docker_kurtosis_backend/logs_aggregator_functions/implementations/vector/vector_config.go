@@ -10,12 +10,19 @@ import (
 )
 
 type VectorConfig struct {
+	Api     *VectorApiConfig                  `yaml:"api"`
 	Sources map[string]map[string]interface{} `yaml:"sources,omitempty"`
 	Sinks   map[string]map[string]interface{} `yaml:"sinks,omitempty"`
 }
 
+type VectorApiConfig struct {
+	Enabled bool   `yaml:"enabled"`
+	Address string `yaml:"address"`
+}
+
 func newVectorConfig(
 	listeningPortNumber uint16,
+	httpPortNumber uint16,
 	sinks logs_aggregator.Sinks,
 ) *VectorConfig {
 	reconciledSinks := map[string]map[string]interface{}{
@@ -45,6 +52,10 @@ func newVectorConfig(
 	}
 
 	return &VectorConfig{
+		Api: &VectorApiConfig{
+			Enabled: true,
+			Address: "0.0.0.0:" + strconv.Itoa(int(httpPortNumber)),
+		},
 		Sources: map[string]map[string]interface{}{
 			defaultSourceId: {
 				"type":    fluentBitSourceType,

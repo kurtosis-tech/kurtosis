@@ -333,6 +333,7 @@ type KurtosisBackend interface {
 
 	CreateLogsAggregator(
 		ctx context.Context,
+		httpPortNum uint16,
 		sinks logs_aggregator.Sinks,
 	) (*logs_aggregator.LogsAggregator, error)
 

@@ -24,19 +24,13 @@ func (vectorContainer *vectorLogsAggregatorContainer) CreateAndStart(
 	ctx context.Context,
 	logsListeningPortNumber uint16,
 	sinks logs_aggregator.Sinks,
+	httpPortNumber uint16,
+	logsAggregatorHttpPortId string,
 	targetNetworkId string,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	dockerManager *docker_manager.DockerManager,
 ) (string, map[string]string, func(), error) {
-	vectorContainerConfigProviderObj := createVectorContainerConfigProvider(logsListeningPortNumber, sinks)
-
-	// Validate user provided sink configuration
-	// We can either spin up a separate container that runs vector validate <config_file>,
-	// or we could continuously ping the Vector /health endpoint to check if Vector was started successfully, meaning the configurations were correct
-	// We currently go with the former because:
-	// - it doesn't require us to expose a port for Vector
-	// - allows for clearer error messages because we know when Vector fails due to validation errors
-	// - it's (probably) simpler and more responsive
+	vectorContainerConfigProviderObj := createVectorContainerConfigProvider(logsListeningPortNumber, httpPortNumber, sinks)
 
 	logsAggregatorInitAttrs, err := objAttrsProvider.ForLogsAggregatorInit()
 	if err != nil {
@@ -59,7 +53,7 @@ func (vectorContainer *vectorLogsAggregatorContainer) CreateAndStart(
 		return "", nil, nil, stacktrace.Propagate(err, "An error occurred starting the logs aggregator container with these args '%+v'", initArgs)
 	}
 
-	removeInitContainerFunc := func() {
+	defer func() {
 		removeCtx := context.Background()
 		if err := dockerManager.RemoveContainer(removeCtx, initContainerId); err != nil {
 			logrus.Errorf(
@@ -68,12 +62,6 @@ func (vectorContainer *vectorLogsAggregatorContainer) CreateAndStart(
 				initContainerId,
 				err)
 			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs aggregator init container with Docker container ID '%v'!!!!!!", initContainerId)
-		}
-	}
-	shouldRemoveLogsAggregatorInitContainer := true
-	defer func() {
-		if shouldRemoveLogsAggregatorInitContainer {
-			removeInitContainerFunc()
 		}
 	}()
 
@@ -91,7 +79,12 @@ func (vectorContainer *vectorLogsAggregatorContainer) CreateAndStart(
 
 	// Start vector
 
-	logsAggregatorAttrs, err := objAttrsProvider.ForLogsAggregator()
+	privateHttpPortSpec, err := vectorContainerConfigProviderObj.GetPrivateHttpPortSpec()
+	if err != nil {
+		return "", nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector private HTTP port spec")
+	}
+
+	logsAggregatorAttrs, err := objAttrsProvider.ForLogsAggregator(logsAggregatorHttpPortId, privateHttpPortSpec)
 	if err != nil {
 		return "", nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator container attributes.")
 	}
@@ -137,12 +130,9 @@ func (vectorContainer *vectorLogsAggregatorContainer) CreateAndStart(
 	}()
 
 	shouldRemoveLogsAggregatorContainer = false
-	shouldRemoveLogsAggregatorInitContainer = false
+	return containerId, containerLabelStrs, removeContainerFunc, nil
+}
 
-	removeContainersFunc := func() {
-		removeInitContainerFunc()
-		removeContainerFunc()
-	}
-
-	return containerId, containerLabelStrs, removeContainersFunc, nil
+func (vectorContainer *vectorLogsAggregatorContainer) GetHttpHealthCheckEndpoint() string {
+	return healthCheckEndpointPath
 }

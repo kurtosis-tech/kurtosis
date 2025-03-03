@@ -379,6 +379,7 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 
 func (backend *DockerKurtosisBackend) CreateLogsAggregator(
 	ctx context.Context,
+	httpPortNum uint16,
 	sinks logs_aggregator.Sinks,
 ) (*logs_aggregator.LogsAggregator, error) {
 	logsAggregatorContainer := vector.NewVectorLogsAggregatorContainer() //Declaring the implementation
@@ -386,6 +387,7 @@ func (backend *DockerKurtosisBackend) CreateLogsAggregator(
 	logsAggregator, _, err := logs_aggregator_functions.CreateLogsAggregator(
 		ctx,
 		logsAggregatorContainer,
+		httpPortNum,
 		sinks,
 		backend.dockerManager,
 		backend.objAttrsProvider,

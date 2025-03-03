@@ -348,9 +348,9 @@ func (_c *MockKurtosisBackend_CreateEngine_Call) RunAndReturn(run func(context.C
 	return _c
 }
 
-// CreateLogsAggregator provides a mock function with given fields: ctx, sinks
-func (_m *MockKurtosisBackend) CreateLogsAggregator(ctx context.Context, sinks logs_aggregator.Sinks) (*logs_aggregator.LogsAggregator, error) {
-	ret := _m.Called(ctx, sinks)
+// CreateLogsAggregator provides a mock function with given fields: ctx, httpPortNum, sinks
+func (_m *MockKurtosisBackend) CreateLogsAggregator(ctx context.Context, httpPortNum uint16, sinks logs_aggregator.Sinks) (*logs_aggregator.LogsAggregator, error) {
+	ret := _m.Called(ctx, httpPortNum, sinks)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateLogsAggregator")
@@ -358,19 +358,19 @@ func (_m *MockKurtosisBackend) CreateLogsAggregator(ctx context.Context, sinks l
 
 	var r0 *logs_aggregator.LogsAggregator
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, logs_aggregator.Sinks) (*logs_aggregator.LogsAggregator, error)); ok {
-		return rf(ctx, sinks)
+	if rf, ok := ret.Get(0).(func(context.Context, uint16, logs_aggregator.Sinks) (*logs_aggregator.LogsAggregator, error)); ok {
+		return rf(ctx, httpPortNum, sinks)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, logs_aggregator.Sinks) *logs_aggregator.LogsAggregator); ok {
-		r0 = rf(ctx, sinks)
+	if rf, ok := ret.Get(0).(func(context.Context, uint16, logs_aggregator.Sinks) *logs_aggregator.LogsAggregator); ok {
+		r0 = rf(ctx, httpPortNum, sinks)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*logs_aggregator.LogsAggregator)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, logs_aggregator.Sinks) error); ok {
-		r1 = rf(ctx, sinks)
+	if rf, ok := ret.Get(1).(func(context.Context, uint16, logs_aggregator.Sinks) error); ok {
+		r1 = rf(ctx, httpPortNum, sinks)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -385,14 +385,15 @@ type MockKurtosisBackend_CreateLogsAggregator_Call struct {
 
 // CreateLogsAggregator is a helper method to define mock.On call
 //   - ctx context.Context
+//   - httpPortNum uint16
 //   - sinks logs_aggregator.Sinks
-func (_e *MockKurtosisBackend_Expecter) CreateLogsAggregator(ctx interface{}, sinks interface{}) *MockKurtosisBackend_CreateLogsAggregator_Call {
-	return &MockKurtosisBackend_CreateLogsAggregator_Call{Call: _e.mock.On("CreateLogsAggregator", ctx, sinks)}
+func (_e *MockKurtosisBackend_Expecter) CreateLogsAggregator(ctx interface{}, httpPortNum interface{}, sinks interface{}) *MockKurtosisBackend_CreateLogsAggregator_Call {
+	return &MockKurtosisBackend_CreateLogsAggregator_Call{Call: _e.mock.On("CreateLogsAggregator", ctx, httpPortNum, sinks)}
 }
 
-func (_c *MockKurtosisBackend_CreateLogsAggregator_Call) Run(run func(ctx context.Context, sinks logs_aggregator.Sinks)) *MockKurtosisBackend_CreateLogsAggregator_Call {
+func (_c *MockKurtosisBackend_CreateLogsAggregator_Call) Run(run func(ctx context.Context, httpPortNum uint16, sinks logs_aggregator.Sinks)) *MockKurtosisBackend_CreateLogsAggregator_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(logs_aggregator.Sinks))
+		run(args[0].(context.Context), args[1].(uint16), args[2].(logs_aggregator.Sinks))
 	})
 	return _c
 }
@@ -402,7 +403,7 @@ func (_c *MockKurtosisBackend_CreateLogsAggregator_Call) Return(_a0 *logs_aggreg
 	return _c
 }
 
-func (_c *MockKurtosisBackend_CreateLogsAggregator_Call) RunAndReturn(run func(context.Context, logs_aggregator.Sinks) (*logs_aggregator.LogsAggregator, error)) *MockKurtosisBackend_CreateLogsAggregator_Call {
+func (_c *MockKurtosisBackend_CreateLogsAggregator_Call) RunAndReturn(run func(context.Context, uint16, logs_aggregator.Sinks) (*logs_aggregator.LogsAggregator, error)) *MockKurtosisBackend_CreateLogsAggregator_Call {
 	_c.Call.Return(run)
 	return _c
 }

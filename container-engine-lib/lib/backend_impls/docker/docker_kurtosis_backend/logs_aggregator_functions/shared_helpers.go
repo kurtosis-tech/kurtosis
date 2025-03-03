@@ -2,8 +2,11 @@ package logs_aggregator_functions
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
 	"net"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_port_spec_serializer"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
@@ -17,6 +20,25 @@ import (
 const (
 	shouldShowStoppedLogsAggregatorContainers = true
 )
+
+func getLogsAggregatorPrivatePorts(containerLabels map[string]string) (*port_spec.PortSpec, error) {
+	serializedPortSpecs, found := containerLabels[docker_label_key.PortSpecsDockerLabelKey.GetString()]
+	if !found {
+		return nil, stacktrace.NewError("Expected to find port specs label '%v' but none was found", docker_label_key.PortSpecsDockerLabelKey.GetString())
+	}
+
+	portSpecs, err := docker_port_spec_serializer.DeserializePortSpecs(serializedPortSpecs)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Couldn't deserialize port spec string '%v'", serializedPortSpecs)
+	}
+
+	httpPortSpec, foundHttpPort := portSpecs[logsAggregatorHttpPortId]
+	if !foundHttpPort {
+		return nil, stacktrace.NewError("No logs aggregator HTTP port with ID '%v' found in the logs aggregator port specs", logsAggregatorHttpPortId)
+	}
+
+	return httpPortSpec, nil
+}
 
 // Returns nil [LogsAggregator] object if no container is found
 func getLogsAggregatorObjectAndContainerId(
@@ -36,6 +58,7 @@ func getLogsAggregatorObjectAndContainerId(
 	logsAggregatorObject, err := getLogsAggregatorObjectFromContainerInfo(
 		ctx,
 		logsAggregatorContainerID,
+		logsAggregatorContainer.GetLabels(),
 		logsAggregatorContainer.GetStatus(),
 		dockerManager,
 	)
@@ -70,6 +93,7 @@ func getLogsAggregatorContainer(ctx context.Context, dockerManager *docker_manag
 func getLogsAggregatorObjectFromContainerInfo(
 	ctx context.Context,
 	containerId string,
+	labels map[string]string,
 	containerStatus types.ContainerStatus,
 	dockerManager *docker_manager.DockerManager,
 ) (*logs_aggregator.LogsAggregator, error) {
@@ -79,6 +103,11 @@ func getLogsAggregatorObjectFromContainerInfo(
 	if !found {
 		// This should never happen because we enforce completeness in a unit test
 		return nil, stacktrace.NewError("No is-running designation found for logs aggregator container status '%v'; this is a bug in Kurtosis!", containerStatus.String())
+	}
+
+	privateHttpPortSpec, err := getLogsAggregatorPrivatePorts(labels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector container's private port specs from container '%v' with labels: %+v", containerId, labels)
 	}
 
 	var logsAggregatorStatus container.ContainerStatus
@@ -101,6 +130,7 @@ func getLogsAggregatorObjectFromContainerInfo(
 		logsAggregatorStatus,
 		privateIpAddr,
 		defaultLogsListeningPortNum,
+		privateHttpPortSpec,
 	)
 
 	return logsAggregatorObj, nil

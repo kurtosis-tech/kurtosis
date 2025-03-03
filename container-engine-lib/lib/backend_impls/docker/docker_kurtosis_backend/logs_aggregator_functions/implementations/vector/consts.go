@@ -1,5 +1,9 @@
 package vector
 
+import (
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
+)
+
 const (
 	configDirpath = "/etc/vector/"
 
@@ -10,7 +14,9 @@ const (
 	binaryFilepath = "/usr/bin/vector"
 	configFileFlag = "-c"
 
-	logsStorageDirpath = "/var/log/kurtosis/"
+	logsStorageDirpath      = "/var/log/kurtosis/"
+	healthCheckEndpointPath = "health"
+	httpTransportProtocol   = port_spec.TransportProtocol_TCP
 	////////////////////////--FINISH VECTOR CONTAINER CONFIGURATION SECTION--/////////////////////////////
 
 	////////////////////////--VECTOR CONFIGURATION SECTION--/////////////////////////////

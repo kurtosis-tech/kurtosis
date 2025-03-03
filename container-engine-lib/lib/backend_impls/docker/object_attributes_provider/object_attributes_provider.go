@@ -37,7 +37,7 @@ type DockerObjectAttributesProvider interface {
 	) (DockerObjectAttributes, error)
 	ForEnclave(enclaveUuid enclave.EnclaveUUID) (DockerEnclaveObjectAttributesProvider, error)
 	ForLogsAggregatorInit() (DockerObjectAttributes, error)
-	ForLogsAggregator() (DockerObjectAttributes, error)
+	ForLogsAggregator(httpPortId string, httpPortSpec *port_spec.PortSpec) (DockerObjectAttributes, error)
 	ForLogsStorageVolume() (DockerObjectAttributes, error)
 	ForReverseProxy(engineGuid engine.EngineGUID) (DockerObjectAttributes, error)
 	ForGitHubAuthStorageVolume() (DockerObjectAttributes, error)
@@ -138,14 +138,24 @@ func (provider *dockerObjectAttributesProviderImpl) ForLogsAggregatorInit() (Doc
 	return objectAttributes, nil
 }
 
-func (provider *dockerObjectAttributesProviderImpl) ForLogsAggregator() (DockerObjectAttributes, error) {
+func (provider *dockerObjectAttributesProviderImpl) ForLogsAggregator(httpPortId string, httpPortSpec *port_spec.PortSpec) (DockerObjectAttributes, error) {
 	name, err := docker_object_name.CreateNewDockerObjectName(logsAggregatorName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker object name object from string '%v'", logsAggregatorName)
 	}
 
+	usedPorts := map[string]*port_spec.PortSpec{
+		httpPortId: httpPortSpec,
+	}
+
+	serializedPortsSpec, err := docker_port_spec_serializer.SerializePortSpecs(usedPorts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred serializing the following logs-aggregator-server-ports to a string for storing in the ports label: %+v", usedPorts)
+	}
+
 	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
 		docker_label_key.ContainerTypeDockerLabelKey: label_value_consts.LogsAggregatorTypeDockerLabelValue,
+		docker_label_key.PortSpecsDockerLabelKey:     serializedPortsSpec,
 	}
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)

@@ -15,8 +15,13 @@ type LogsAggregatorContainer interface {
 		// LogsCollectors should forward logs to this port
 		logsListeningPort uint16,
 		sinks logs_aggregator.Sinks,
+		httpPortNumber uint16,
+		logsAggregatorHttpPortId string,
 		targetNetworkId string,
 		objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 		dockerManager *docker_manager.DockerManager,
 	) (string, map[string]string, func(), error)
+
+	// GetHttpHealthCheckEndpoint returns endpoint for verifying the availability of the logs aggregator application on container
+	GetHttpHealthCheckEndpoint() string
 }
