@@ -5,6 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -110,12 +111,15 @@ func TestSearchLogs(t *testing.T) {
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	require.NoError(t, err)
 
+	logrus.Info("adding services ")
 	serviceList, err := test_helpers.AddServicesWithLogLines(ctx, enclaveCtx, logLinesByService)
 	require.NoError(t, err, "An error occurred adding services with log lines '%+v'", logLinesByService)
 	require.Equal(t, len(logLinesByService), len(serviceList))
 
 	// It takes some time for logs to persist so we sleep to ensure logs have persisted
 	// Otherwise the test is flaky
+
+	logrus.Info("waiting for logs")
 	time.Sleep(secondsToWaitForLogs)
 	// ------------------------------------- TEST RUN -------------------------------------------------
 	enclaveUuid := enclaveCtx.GetEnclaveUuid()
@@ -128,6 +132,7 @@ func TestSearchLogs(t *testing.T) {
 
 	expectedLogLinesByService := map[services.ServiceUUID][]string{}
 
+	logrus.Info("getting logs")
 	for requestIndex, filter := range filtersByRequest {
 
 		for serviceUuid := range userServiceUuids {

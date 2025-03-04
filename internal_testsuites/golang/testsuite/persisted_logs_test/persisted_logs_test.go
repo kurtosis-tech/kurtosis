@@ -5,6 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -103,24 +104,29 @@ func TestPersistedLogs(t *testing.T) {
 	enclaveCtx, _, _, err := test_helpers.CreateEnclave(t, ctx, testName)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	//defer func() {
+	//	logrus.Info("destroying enclave")
 	//	err = destroyEnclaveFunc()
 	//	require.NoError(t, err, "An error occurred destroying the enclave after the test finished")
+	//	logrus.Info("destroyed enclave")
 	//}()
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	require.NoError(t, err)
 
+	logrus.Info("Adding service")
 	serviceList, err := test_helpers.AddServicesWithLogLines(ctx, enclaveCtx, logLinesByService)
 	require.NoError(t, err, "An error occurred adding services with log lines '%+v'", logLinesByService)
 	require.Equal(t, len(logLinesByService), len(serviceList))
 
 	// It takes some time for logs to persist so we sleep to ensure logs have persisted
 	// Otherwise the test is flaky
+	logrus.Info("waiting for logs")
 	time.Sleep(secondsToWaitForLogs)
 	// ------------------------------------- TEST RUN -------------------------------------------------
 	enclaveUuid := enclaveCtx.GetEnclaveUuid()
 
+	logrus.Info("removing services")
 	userServiceUuids := map[services.ServiceUUID]bool{}
 	for serviceName, serviceCtx := range serviceList {
 		serviceUuid := serviceCtx.GetServiceUUID()
@@ -133,6 +139,7 @@ func TestPersistedLogs(t *testing.T) {
 
 	expectedLogLinesByService := map[services.ServiceUUID][]string{}
 
+	logrus.Info("getting logs")
 	for requestIndex, filter := range filtersByRequest {
 
 		for serviceUuid := range userServiceUuids {
