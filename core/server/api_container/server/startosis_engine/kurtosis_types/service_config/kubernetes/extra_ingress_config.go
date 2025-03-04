@@ -405,7 +405,7 @@ func (extraIngressConfig *ExtraIngressConfig) GetIngresses() ([]*KtIngressSpec, 
 //
 //		rule := service.IngressRuleConfig{
 //			Host:  host,
-//			Paths: make([]service.IngressPathConfig, 0, len(targets)),
+//			Paths: make([]service.IngressHttpRule, 0, len(targets)),
 //		}
 //
 //		// Convert targets to paths
@@ -436,7 +436,7 @@ func (extraIngressConfig *ExtraIngressConfig) GetIngresses() ([]*KtIngressSpec, 
 //				return nil, err
 //			}
 //
-//			path := service.IngressPathConfig{
+//			path := service.IngressHttpRule{
 //				Path: prefixPath,
 //				Backend: service.IngressBackendConfig{
 //					PortName: targetPort,

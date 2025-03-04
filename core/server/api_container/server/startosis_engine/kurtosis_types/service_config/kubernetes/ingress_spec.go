@@ -11,9 +11,7 @@ import (
 
 const (
 	IngressSpecTypeName = "IngressSpec"
-	//TargetAttr            = "targetPort"
-	//PathAttr              = "path"
-	//PathTypeAttr          = "pathType"
+
 	AnnotationsAttr      = "annotations"
 	IngressClassNameAttr = "ingressClassName"
 	HostAttr             = "host"
@@ -71,7 +69,7 @@ func NewIngressTargetType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 				{
 					Name:              IngressHttpRuleAttr,
 					IsOptional:        true,
-					ZeroValueProvider: builtin_argument.ZeroValueProvider[*IngressHttpRule],
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						if _, ok := value.(*IngressHttpRule); !ok {
 							return startosis_errors.NewInterpretationError("Error expected %s to be of type IngressHttpRule", IngressHttpRuleAttr)
@@ -105,14 +103,6 @@ func (target *IngressSpec) Copy() (builtin_argument.KurtosisValueType, error) {
 		KurtosisValueTypeDefault: copiedDefault,
 	}, nil
 }
-
-//func (target *IngressSpec) GetPath() (*string, error) {
-//	return target.handleStringPtrExtraction(PathAttr)
-//}
-//
-//func (target *IngressSpec) GetPathType() (string, *startosis_errors.InterpretationError) {
-//	return target.handleStringPtrExtraction(PathTypeAttr)
-//}
 
 func (target *IngressSpec) GetTlsConfig() (*KtTlsConfig, *startosis_errors.InterpretationError) {
 	tls, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*IngressTLSConfig](
@@ -170,6 +160,36 @@ func (target *IngressSpec) GetIngressClassName() (*string, error) {
 	return target.handleStringPtrExtraction(IngressClassNameAttr)
 }
 
+func (target *IngressSpec) GetRules() ([]*KtHttpRule, error) {
+	ruleList, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.List](
+		target.KurtosisValueTypeDefault, IngressHttpRuleAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if !found {
+		return nil, nil
+	}
+
+	var rules []*KtHttpRule
+	for idx := 0; idx < ruleList.Len(); idx++ {
+		item := ruleList.Index(idx)
+		rule, ok := item.(*IngressHttpRule)
+		if !ok {
+			return nil, startosis_errors.NewInterpretationError(
+				"Item number %d in '%s' list was not of type IngressHttpRule. Expecting '%s' to be a %s",
+				idx, IngressHttpRuleAttr, ruleList.Type(),
+			)
+		}
+		r, err := rule.ToKurtosisType()
+		if err != nil {
+			return nil, err
+		}
+		rules = append(rules, r)
+	}
+
+	return rules, nil
+}
+
 func (target *IngressSpec) ToKurtosisType() (*KtIngressSpec, *startosis_errors.InterpretationError) {
 	handleError := func(err error, attr string) *startosis_errors.InterpretationError {
 		return startosis_errors.WrapWithInterpretationError(
@@ -182,14 +202,9 @@ func (target *IngressSpec) ToKurtosisType() (*KtIngressSpec, *startosis_errors.I
 		return nil, handleError(err, IngressClassNameAttr)
 	}
 
-	pathType, err := target.handleStringPtrExtraction(PathTypeAttr)
+	host, err := target.handleStringPtrExtraction(HostAttr)
 	if err != nil {
-		return nil, handleError(err, PathTypeAttr)
-	}
-
-	path, err := target.handleStringPtrExtraction(PathAttr)
-	if err != nil {
-		return nil, handleError(err, PathAttr)
+		return nil, handleError(err, HostAttr)
 	}
 
 	annotations, err := target.GetAnnotations()
@@ -197,15 +212,16 @@ func (target *IngressSpec) ToKurtosisType() (*KtIngressSpec, *startosis_errors.I
 		return nil, handleError(err, AnnotationsAttr)
 	}
 
-	rules := target.GetRules()
+	tlsConfig, err := target.GetTlsConfig()
 	if err != nil {
-		return nil, handleError(err, RulesAttr)
+		return nil, handleError(err, TLSConfigAttr)
 	}
 
-	//
-	//Path:        path,
-	//	PathType:    pathType,
-	//		Target:      target,
+	rules, err := target.GetRules()
+	if err != nil {
+		return nil, handleError(err, IngressHttpRuleAttr)
+	}
+
 	result := &KtIngressSpec{
 		Annotations:      annotations,
 		Host:             host,
@@ -215,8 +231,4 @@ func (target *IngressSpec) ToKurtosisType() (*KtIngressSpec, *startosis_errors.I
 	}
 
 	return result, nil
-}
-
-func (target *IngressSpec) GetRules() ([]*KtHttpRule, error) {
-
 }

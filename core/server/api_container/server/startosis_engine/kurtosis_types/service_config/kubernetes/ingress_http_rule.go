@@ -10,7 +10,6 @@ import (
 
 const (
 	IngressHttpRuleTypeName = "IngressHttpRule"
-	//IngressHttpRuleAttr     = "ingress_http_rule"
 
 	PathAttr     = "path"
 	PathTypeAttr = "path_type"
@@ -60,26 +59,26 @@ func instantiateIngressPathConfig(arguments *builtin_argument.ArgumentValuesSet)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
-	return &IngressPathConfig{
+	return &IngressHttpRule{
 		KurtosisValueTypeDefault: kurtosisValueType,
 	}, nil
 }
 
-type IngressPathConfig struct {
+type IngressHttpRule struct {
 	*kurtosis_type_constructor.KurtosisValueTypeDefault
 }
 
-func (config *IngressPathConfig) Copy() (builtin_argument.KurtosisValueType, error) {
+func (config *IngressHttpRule) Copy() (builtin_argument.KurtosisValueType, error) {
 	copiedValueType, err := config.KurtosisValueTypeDefault.Copy()
 	if err != nil {
 		return nil, err
 	}
-	return &IngressPathConfig{
+	return &IngressHttpRule{
 		KurtosisValueTypeDefault: copiedValueType,
 	}, nil
 }
 
-func (config *IngressPathConfig) GetPath() (string, *startosis_errors.InterpretationError) {
+func (config *IngressHttpRule) GetPath() (string, *startosis_errors.InterpretationError) {
 	path, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](
 		config.KurtosisValueTypeDefault, PathAttr)
 	if interpretationErr != nil {
@@ -92,7 +91,7 @@ func (config *IngressPathConfig) GetPath() (string, *startosis_errors.Interpreta
 	return path.GoString(), nil
 }
 
-func (config *IngressPathConfig) GetPathType() (string, *startosis_errors.InterpretationError) {
+func (config *IngressHttpRule) GetPathType() (string, *startosis_errors.InterpretationError) {
 	pathType, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](
 		config.KurtosisValueTypeDefault, PathTypeAttr)
 	if interpretationErr != nil {
@@ -105,7 +104,7 @@ func (config *IngressPathConfig) GetPathType() (string, *startosis_errors.Interp
 	return pathType.GoString(), nil
 }
 
-func (config *IngressPathConfig) GetPortConfig() (*KtPortConfig, *startosis_errors.InterpretationError) {
+func (config *IngressHttpRule) GetPortConfig() (*KtPortConfig, *startosis_errors.InterpretationError) {
 	portConfig, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*IngressPortConfig](
 		config.KurtosisValueTypeDefault, PortAttr)
 	if interpretationErr != nil {
@@ -124,7 +123,7 @@ func (config *IngressPathConfig) GetPortConfig() (*KtPortConfig, *startosis_erro
 
 }
 
-func (config *IngressPathConfig) ToKurtosisType() (*KtHttpRule, *startosis_errors.InterpretationError) {
+func (config *IngressHttpRule) ToKurtosisType() (*KtHttpRule, *startosis_errors.InterpretationError) {
 	path, interpretationErr := config.GetPath()
 	if interpretationErr != nil {
 		return nil, interpretationErr
