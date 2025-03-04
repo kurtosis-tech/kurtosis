@@ -27,6 +27,9 @@ func CreateLogsAggregator(
 	}
 
 	if logsAggregatorObj != nil {
+		removeLogsAggregatorFunc = func() {
+			return
+		}
 		logrus.Debug("Found existing logs aggregator deployment.")
 	} else {
 		logrus.Debug("Did not find existing logs aggregator, creating one...")
@@ -59,7 +62,7 @@ func CreateLogsAggregator(
 	}
 
 	logrus.Debugf("Checking for logs aggregator availability in namespace '%v'...", kubernetesResources.namespace.Name)
-	//
+
 	//if err = waitForLogsAggregatorAvailability(ctx, kubernetesResources, kubernetesManager); err != nil {
 	//	return nil, nil, stacktrace.Propagate(err, "An error occurred while waiting for the logs aggregator deployment to become available")
 	//}

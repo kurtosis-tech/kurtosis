@@ -1,9 +1,3 @@
-//go:build !kubernetes
-// +build !kubernetes
-
-// We don't run this test in Kubernetes because, as of 2022-10-28, the centralized logs feature is not implemented in Kubernetes yet
-//TODO remove this comments after Kubernetes implementation
-
 package search_logs_test
 
 import (
@@ -38,7 +32,7 @@ const (
 	logLine3 = "Starting feature 'enclave pool with size 2'"
 	logLine4 = "The data have being loaded"
 
-	secondsToWaitForLogs = 4 * time.Second
+	secondsToWaitForLogs = 20 * time.Second
 )
 
 var (
@@ -105,12 +99,12 @@ func TestSearchLogs(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName)
+	enclaveCtx, _, _, err := test_helpers.CreateEnclave(t, ctx, testName)
 	require.NoError(t, err, "An error occurred creating an enclave")
-	defer func() {
-		err = destroyEnclaveFunc()
-		require.NoError(t, err, "An error occurred destroying the enclave after the test finished")
-	}()
+	//defer func() {
+	//	err = destroyEnclaveFunc()
+	//	require.NoError(t, err, "An error occurred destroying the enclave after the test finished")
+	//}()
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()

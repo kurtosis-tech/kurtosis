@@ -546,6 +546,27 @@ func (manager *KubernetesManager) RemoveNamespace(ctx context.Context, namespace
 	return nil
 }
 
+func (manager *KubernetesManager) WaitForNamespaceRemoval(
+	ctx context.Context,
+	namespace string,
+	maxRetries uint,
+	timeToWaitBetweenChecksDuration time.Duration) error {
+	for i := uint(0); i < maxRetries; i++ {
+		_, err := manager.GetNamespace(ctx, namespace)
+		if err != nil {
+			// if err was returned, namespace doesn't exist, or it's been marked for deleted
+			return nil
+		}
+
+		// Tiny optimization to not sleep if we're not going to run the loop again
+		if i < maxRetries {
+			time.Sleep(timeToWaitBetweenChecksDuration)
+		}
+	}
+
+	return stacktrace.NewError("Attempted to wait for namespace '%v' removal or to be marked for deletion '%v' times but namespace was not removed.", namespace, maxRetries)
+}
+
 // GetNamespace returns the namespace object associated with [name] or returns err
 // - if err occurred getting namespace,
 // - the namespace doesn't exist
@@ -565,7 +586,7 @@ func (manager *KubernetesManager) GetNamespace(ctx context.Context, name string)
 	}
 	deletionTimestamp := namespace.GetObjectMeta().GetDeletionTimestamp()
 	if deletionTimestamp != nil {
-		return nil, stacktrace.Propagate(err, "Namespace with name '%s' has been marked for deletion", namespace)
+		return nil, stacktrace.NewError("Namespace with name '%s' has been marked for deletion", namespace)
 	}
 	return namespace, nil
 }
@@ -2423,7 +2444,8 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 			)
 		case apiv1.PodSucceeded:
 			podStateStr := manager.getPodInfoBlockStr(ctx, namespaceName, pod)
-			// NOTE: We'll need to change this if we ever expect to run one-off pods
+			//NOTE: We'll need to change this if we ever expect to run one-off pods
+			//return nil
 			return stacktrace.NewError(
 				"Expected state of pod '%v' to arrive at '%v' but the pod instead landed in '%v' with the following state:\n%v",
 				podName,

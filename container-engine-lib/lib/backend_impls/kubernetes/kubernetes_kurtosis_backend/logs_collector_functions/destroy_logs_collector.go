@@ -59,7 +59,7 @@ func DestroyLogsCollector(ctx context.Context, kubernetesManager *kubernetes_man
 		destroyErr = stacktrace.Propagate(err, "An error occurred removing logs collector namespace.")
 	}
 
-	if err := waitForNamespaceRemoval(ctx, logsCollectorNamespace.Name, kubernetesManager); err != nil {
+	if err := kubernetesManager.WaitForNamespaceRemoval(ctx, logsCollectorNamespace.Name, maxRetries, timeToWaitBetweenChecksDuration); err != nil {
 		destroyErr = stacktrace.Propagate(err, "An error occurred waiting for logs collector namespace to be removed.")
 	}
 

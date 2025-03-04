@@ -22,6 +22,7 @@ const (
     type = "file"
     inputs = ["fluentbit"]
     path = "%v/%%G/%%V/{{ enclave_uuid }}/{{ service_uuid }}.json"
+    buffer.when_full = "block"
 
     [sinks.file_sink.encoding]
     codec = "json"
