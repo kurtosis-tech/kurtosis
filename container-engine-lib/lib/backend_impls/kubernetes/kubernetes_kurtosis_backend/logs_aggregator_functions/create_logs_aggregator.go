@@ -11,6 +11,7 @@ import (
 
 func CreateLogsAggregator(
 	ctx context.Context,
+	engineNamespace string,
 	logsAggregatorDeployment LogsAggregatorDeployment,
 	objAttrProvider object_attributes_provider.KubernetesObjectAttributesProvider,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
@@ -34,6 +35,7 @@ func CreateLogsAggregator(
 		service, deployment, namespace, configMap, removeLogsAggregatorFunc, err := logsAggregatorDeployment.CreateAndStart(
 			ctx,
 			defaultLogsListeningPortNum,
+			engineNamespace,
 			objAttrProvider,
 			kubernetesManager)
 		if err != nil {

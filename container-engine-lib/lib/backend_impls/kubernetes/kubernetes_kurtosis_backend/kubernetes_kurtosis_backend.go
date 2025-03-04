@@ -463,6 +463,7 @@ func (backend *KubernetesKurtosisBackend) CreateLogsAggregator(ctx context.Conte
 
 	logsAggregator, _, err := logs_aggregator_functions.CreateLogsAggregator(
 		ctx,
+		"", // as of now, nothing calls this functions so its okay to leave this blank
 		logsAggregatorDeployment,
 		backend.objAttrsProvider,
 		backend.kubernetesManager)

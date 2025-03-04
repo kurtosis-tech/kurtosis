@@ -28,6 +28,7 @@ func NewVectorLogsAggregatorDeployment() *vectorLogsAggregatorDeployment {
 func (logsAggregator *vectorLogsAggregatorDeployment) CreateAndStart(
 	ctx context.Context,
 	logsListeningPortNum uint16,
+	engineNamespace string,
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
 	kubernetesManager *kubernetes_manager.KubernetesManager) (
 	*apiv1.Service,
@@ -87,7 +88,7 @@ func (logsAggregator *vectorLogsAggregatorDeployment) CreateAndStart(
 		}
 	}()
 
-	deployment, deploymentLabels, err := createLogsAggregatorDeployment(ctx, namespace.Name, logsListeningPortNum, configMap.Name, logsAggregatorAttrProvider, kubernetesManager)
+	deployment, deploymentLabels, err := createLogsAggregatorDeployment(ctx, engineNamespace, namespace.Name, logsListeningPortNum, configMap.Name, logsAggregatorAttrProvider, kubernetesManager)
 	if err != nil {
 		return nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create daemon set for fluent bit logs collector.")
 	}
@@ -147,6 +148,7 @@ func (logsAggregator *vectorLogsAggregatorDeployment) CreateAndStart(
 
 func createLogsAggregatorDeployment(
 	ctx context.Context,
+	engineNamespace string,
 	namespace string,
 	logsListeningPort uint16,
 	configMapName string,
@@ -243,7 +245,7 @@ func createLogsAggregatorDeployment(
 						},
 						MatchExpressions: nil,
 					},
-					Namespaces:        nil,
+					Namespaces:        []string{engineNamespace},
 					TopologyKey:       "kubernetes.io/hostname",
 					NamespaceSelector: nil,
 				},

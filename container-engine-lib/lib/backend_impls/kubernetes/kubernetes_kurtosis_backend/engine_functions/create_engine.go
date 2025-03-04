@@ -259,7 +259,7 @@ func CreateEngine(
 		}*/
 
 	logrus.Infof("Starting the centralized logs components...")
-	logsAggregator, removeLogsAggregatorFunc, err := logs_aggregator_functions.CreateLogsAggregator(ctx, logsAggregatorDeployment, objAttrsProvider, kubernetesManager)
+	logsAggregator, removeLogsAggregatorFunc, err := logs_aggregator_functions.CreateLogsAggregator(ctx, namespace.Name, logsAggregatorDeployment, objAttrsProvider, kubernetesManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the logs aggregator")
 	}

@@ -14,6 +14,8 @@ type LogsAggregatorDeployment interface {
 		// This is the port that this LogsAggregatorDaemonSet will listen for logs on
 		// LogsCollectors should forward logs to this port
 		logsListeningPort uint16,
+		// Provided so deployment can be scheduled on same node as engine
+		engineNamespace string,
 		objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
 		kubernetesManager *kubernetes_manager.KubernetesManager,
 	) (
