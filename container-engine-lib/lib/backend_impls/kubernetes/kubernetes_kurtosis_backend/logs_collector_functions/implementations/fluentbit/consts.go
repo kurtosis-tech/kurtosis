@@ -31,17 +31,17 @@ const (
 
 	// TODO: construct fluentbit config via go templating based on inputs
 	fluentBitConfigFileName = "fluent-bit.conf"
-	fluentBitConfigStr      = `
+	fluentBitConfigFmtStr   = `
 [SERVICE]
     HTTP_Server       On
     HTTP_Listen       0.0.0.0
-    HTTP_PORT         9713
+    HTTP_PORT         %v
     Parsers_File      /fluent-bit/etc/parsers.conf
 
 [INPUT]
     Name              tail
     Tag               kurtosis.*
-    Path              /var/log/containers/*_kt-*_user-service-container-*.log
+    Path              /var/log/containers/*_kt-*_%v-container-*.log
     Parser            docker
     DB                /var/log/fluent-bit/db/fluent-bit.db
     DB.sync           normal
@@ -85,7 +85,7 @@ const (
 [OUTPUT]
     Name              forward
     Match             *
-    Host              vector-aggregator.vector.svc.cluster.local
-    Port              24224
+    Host              %v
+    Port              %v
 `
 )

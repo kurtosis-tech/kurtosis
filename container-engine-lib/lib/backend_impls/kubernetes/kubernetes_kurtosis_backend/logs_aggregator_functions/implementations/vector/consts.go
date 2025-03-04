@@ -11,17 +11,17 @@ const (
 	kurtosisLogsMountPath  = "/var/log/kurtosis"
 
 	vectorConfigFileName = "vector.toml"
-	vectorConfigStr      = `
+	vectorConfigFmtStr   = `
     data_dir = "/vector-data-dir"
 
     [sources.fluentbit]
     type = "fluent"
-    address = "0.0.0.0:24224"
+    address = "0.0.0.0:%v"
 
     [sinks.file_sink]
     type = "file"
     inputs = ["fluentbit"]
-    path = "/var/log/kurtosis/%G/%V/{{ enclave_uuid }}/{{ service_uuid }}.json"
+    path = "%v/%%G/%%V/{{ enclave_uuid }}/{{ service_uuid }}.json"
 
     [sinks.file_sink.encoding]
     codec = "json"
@@ -29,7 +29,7 @@ const (
     [sinks.stdout_sink]
     type = "console"
     inputs = ["fluentbit"]
-    target = "stdout"  # Options: stdout, stderr
+    target = "stdout"
 
     [sinks.stdout_sink.encoding]
     codec = "json"

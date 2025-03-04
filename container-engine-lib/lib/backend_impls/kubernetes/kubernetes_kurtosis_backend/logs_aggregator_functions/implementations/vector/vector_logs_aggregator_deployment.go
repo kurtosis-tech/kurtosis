@@ -25,7 +25,7 @@ func NewVectorLogsAggregatorDeployment() *vectorLogsAggregatorDeployment {
 
 func (logsAggregator *vectorLogsAggregatorDeployment) CreateAndStart(
 	ctx context.Context,
-	logsListeningPort uint16,
+	logsListeningPortNum uint16,
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
 	kubernetesManager *kubernetes_manager.KubernetesManager) (
 	*apiv1.Service,
@@ -63,7 +63,7 @@ func (logsAggregator *vectorLogsAggregatorDeployment) CreateAndStart(
 		}
 	}()
 
-	configMap, err := createLogsAggregatorConfigMap(ctx, namespace.Name, logsAggregatorAttrProvider, kubernetesManager)
+	configMap, err := createLogsAggregatorConfigMap(ctx, namespace.Name, logsListeningPortNum, logsAggregatorAttrProvider, kubernetesManager)
 	if err != nil {
 		return nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create config map for vector logs aggregator.")
 	}
@@ -78,14 +78,14 @@ func (logsAggregator *vectorLogsAggregatorDeployment) CreateAndStart(
 			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs aggregator config map with Kubernetes name '%v' in namespace '%v'!!!!!!", configMap.Name, configMap.Namespace)
 		}
 	}
-	shouldRemoveLogsAggregatorConfigMap := true
+	shouldRemoveLogsAggregatorConfigMap := false
 	defer func() {
 		if shouldRemoveLogsAggregatorConfigMap {
 			removeConfigMapFunc()
 		}
 	}()
 
-	deployment, deploymentLabels, err := createLogsAggregatorDeployment(ctx, namespace.Name, logsListeningPort, configMap.Name, logsAggregatorAttrProvider, kubernetesManager)
+	deployment, deploymentLabels, err := createLogsAggregatorDeployment(ctx, namespace.Name, logsListeningPortNum, configMap.Name, logsAggregatorAttrProvider, kubernetesManager)
 	if err != nil {
 		return nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create daemon set for fluent bit logs collector.")
 	}
@@ -107,7 +107,7 @@ func (logsAggregator *vectorLogsAggregatorDeployment) CreateAndStart(
 		}
 	}()
 
-	service, err := createLogsAggregatorService(ctx, namespace.Name, logsListeningPort, deploymentLabels, logsAggregatorAttrProvider, kubernetesManager)
+	service, err := createLogsAggregatorService(ctx, namespace.Name, logsListeningPortNum, deploymentLabels, logsAggregatorAttrProvider, kubernetesManager)
 	if err != nil {
 		return nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating service for logs aggregator.")
 	}
@@ -303,6 +303,7 @@ func createLogsAggregatorService(
 func createLogsAggregatorConfigMap(
 	ctx context.Context,
 	namespace string,
+	logListeningPortNum uint16,
 	objAttrProvider object_attributes_provider.KubernetesLogsAggregatorObjectAttributesProvider,
 	kubernetesManager *kubernetes_manager.KubernetesManager) (*apiv1.ConfigMap, error) {
 	configMapAttrProvider, err := objAttrProvider.ForLogsAggregatorConfigMap()
@@ -320,7 +321,10 @@ func createLogsAggregatorConfigMap(
 		labels,
 		annotations,
 		map[string]string{
-			vectorConfigFileName: vectorConfigStr,
+			vectorConfigFileName: fmt.Sprintf(
+				vectorConfigFmtStr,
+				logListeningPortNum,
+				kurtosisLogsMountPath),
 		},
 	)
 	if err != nil {

@@ -257,7 +257,7 @@ func CreateEngine(
 
 	logrus.Infof("Starting the centralized logs components...")
 	logsAggregatorDeployment := vector.NewVectorLogsAggregatorDeployment()
-	_, removeLogsAggregatorFunc, err := logs_aggregator_functions.CreateLogsAggregator(ctx, logsAggregatorDeployment, objAttrsProvider, kubernetesManager)
+	logsAggregator, removeLogsAggregatorFunc, err := logs_aggregator_functions.CreateLogsAggregator(ctx, logsAggregatorDeployment, objAttrsProvider, kubernetesManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the logs aggregator")
 	}
@@ -272,7 +272,7 @@ func CreateEngine(
 
 	// Unlike the DockerBackend, where the log collectors are deployed by the engine during enclave creation
 	// for k8s backend, the logs collector lifecycle gets managed with the engine's and is created during engine creation
-	_, removeLogsCollectorFunc, err := logs_collector_functions.CreateLogsCollector(ctx, logsCollectorTcpPortNum, logsCollectorHttpPortNum, logsCollectorDaemonSet, nil, kubernetesManager, objAttrsProvider)
+	_, removeLogsCollectorFunc, err := logs_collector_functions.CreateLogsCollector(ctx, logsCollectorTcpPortNum, logsCollectorHttpPortNum, logsCollectorDaemonSet, logsAggregator, kubernetesManager, objAttrsProvider)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the logs collector")
 	}

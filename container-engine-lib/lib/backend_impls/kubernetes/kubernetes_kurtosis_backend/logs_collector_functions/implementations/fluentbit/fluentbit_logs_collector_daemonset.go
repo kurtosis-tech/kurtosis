@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
@@ -148,7 +149,7 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 		}
 	}()
 
-	configMap, err := createLogsCollectorConfigMap(ctx, namespace.Name, logsCollectorAttrProvider, kubernetesManager)
+	configMap, err := createLogsCollectorConfigMap(ctx, namespace.Name, httpPortNumber, logsAggregatorHost, logsAggregatorPort, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
 		return nil, nil, nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create config map for fluent bit log collector.")
 	}
@@ -415,6 +416,9 @@ func createLogsCollectorDaemonSet(
 func createLogsCollectorConfigMap(
 	ctx context.Context,
 	namespace string,
+	logsCollectorHttpPortNum uint16,
+	logsAggregatorHost string,
+	logsAggregatorPortNum uint16,
 	objAttrProvider object_attributes_provider.KubernetesLogsCollectorObjectAttributesProvider,
 	kubernetesManager *kubernetes_manager.KubernetesManager) (*apiv1.ConfigMap, error) {
 	configMapAttrProvider, err := objAttrProvider.ForLogsCollectorConfigMap()
@@ -432,7 +436,12 @@ func createLogsCollectorConfigMap(
 		labels,
 		annotations,
 		map[string]string{
-			fluentBitConfigFileName: fluentBitConfigStr,
+			fluentBitConfigFileName: fmt.Sprintf(
+				fluentBitConfigFmtStr,
+				logsCollectorHttpPortNum,
+				label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue.GetString(),
+				logsAggregatorHost,
+				logsAggregatorPortNum),
 		},
 	)
 	if err != nil {
