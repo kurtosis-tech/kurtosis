@@ -75,7 +75,7 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs collector namespace with Kubernetes name '%v'!!!!!!", namespace.Name)
 		}
 	}
-	shouldRemoveLogsCollectorNamespace := false
+	shouldRemoveLogsCollectorNamespace := true
 	defer func() {
 		if shouldRemoveLogsCollectorNamespace {
 			removeNamespaceFunc()
@@ -97,7 +97,7 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs collector service account with Kubernetes name '%v' in namespace '%v'!!!!!!", serviceAccount.Name, serviceAccount.Namespace)
 		}
 	}
-	shouldRemoveLogsCollectorServiceAccount := false
+	shouldRemoveLogsCollectorServiceAccount := true
 	defer func() {
 		if shouldRemoveLogsCollectorServiceAccount {
 			removeServiceAccountFunc()
@@ -119,7 +119,7 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs collector cluster role with Kubernetes name '%v' in namespace '%v'!!!!!!", clusterRole.Name, clusterRole.Namespace)
 		}
 	}
-	shouldRemoveLogsCollectorClusterRole := false
+	shouldRemoveLogsCollectorClusterRole := true
 	defer func() {
 		if shouldRemoveLogsCollectorClusterRole {
 			removeClusterRoleFunc()
@@ -141,7 +141,7 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs collector cluster role binding with Kubernetes name '%v' in namespace '%v'!!!!!!", clusterRoleBinding.Name, clusterRoleBinding.Namespace)
 		}
 	}
-	shouldRemoveLogsCollectorClusterRoleBinding := false
+	shouldRemoveLogsCollectorClusterRoleBinding := true
 	defer func() {
 		if shouldRemoveLogsCollectorClusterRoleBinding {
 			removeClusterRoleBindingFunc()
@@ -163,7 +163,7 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs collector config map with Kubernetes name '%v' in namespace '%v'!!!!!!", configMap.Name, configMap.Namespace)
 		}
 	}
-	shouldRemoveLogsCollectorConfigMap := false
+	shouldRemoveLogsCollectorConfigMap := true
 	defer func() {
 		if shouldRemoveLogsCollectorConfigMap {
 			removeConfigMapFunc()
@@ -213,7 +213,7 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs collector daemon set with Kubernetes name '%v' in namespace '%v'!!!!!!", daemonSet.Name, daemonSet.Namespace)
 		}
 	}
-	shouldRemoveLogsCollectorDaemonSet := false
+	shouldRemoveLogsCollectorDaemonSet := true
 	defer func() {
 		if shouldRemoveLogsCollectorDaemonSet {
 			removeDaemonSetFunc()
