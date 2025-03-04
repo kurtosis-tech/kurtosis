@@ -33,7 +33,6 @@ const (
 	engineDebugServerPort                       = 50102 // in ClI this is 50101 and 50103 for the APIC
 	maxWaitForEngineAvailabilityRetries         = 40
 	timeBetweenWaitForEngineAvailabilityRetries = 2 * time.Second
-	logsStorageDirPath                          = "/var/log/kurtosis/"
 )
 
 func CreateEngine(
@@ -276,7 +275,7 @@ func CreateEngine(
 	}
 
 	volumeMounts := map[string]string{
-		logsStorageVolNameStr:         logsStorageDirPath,
+		logsStorageVolNameStr:         logsAggregatorContainer.GetLogsBaseDirPath(),
 		githubAuthStorageVolNameStr:   consts.GitHubAuthStorageDirPath,
 		dockerConfigStorageVolNameStr: consts.DockerConfigStorageDirPath,
 	}

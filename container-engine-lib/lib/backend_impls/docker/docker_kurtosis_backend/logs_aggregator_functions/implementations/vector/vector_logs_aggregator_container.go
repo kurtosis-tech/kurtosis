@@ -71,3 +71,7 @@ func (vectorContainer *vectorLogsAggregatorContainer) CreateAndStart(
 	shouldRemoveLogsAggregatorContainer = false
 	return containerId, containerLabelStrs, removeContainerFunc, nil
 }
+
+func (vector *vectorLogsAggregatorContainer) GetLogsBaseDirPath() string {
+	return logsStorageDirpath
+}

@@ -16,4 +16,6 @@ type LogsAggregatorContainer interface {
 		objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 		dockerManager *docker_manager.DockerManager,
 	) (string, map[string]string, func(), error)
+
+	GetLogsBaseDirPath() string
 }
