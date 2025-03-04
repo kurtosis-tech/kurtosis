@@ -23,4 +23,7 @@ type LogsAggregatorDeployment interface {
 		*apiv1.ConfigMap,
 		func(),
 		error)
+
+	// GetLogsBaseDirPath returns a string of the base directory path logs are output to on pods associated with the deployment
+	GetLogsBaseDirPath() string
 }

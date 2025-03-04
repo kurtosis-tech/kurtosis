@@ -333,3 +333,7 @@ func createLogsAggregatorConfigMap(
 
 	return configMap, nil
 }
+
+func (vector *vectorLogsAggregatorDeployment) GetLogsBaseDirPath() string {
+	return kurtosisLogsMountPath
+}

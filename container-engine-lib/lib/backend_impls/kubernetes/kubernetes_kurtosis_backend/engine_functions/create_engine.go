@@ -34,6 +34,7 @@ const (
 	httpApplicationProtocol                              = "http"
 	logsCollectorHttpPortNum                             = 9713
 	logsCollectorTcpPortNum                              = 9712
+	logsVolumeName                                       = "logsdb"
 )
 
 var noWait *port_spec.Wait = nil
@@ -151,7 +152,9 @@ func CreateEngine(
 		}
 	}()
 
-	enginePod, enginePodLabels, err := createEnginePod(ctx, namespaceName, engineAttributesProvider, imageOrgAndRepo, imageVersionTag, envVars, privatePortSpecs, serviceAccount.Name, kubernetesManager)
+	logsAggregatorDeployment := vector.NewVectorLogsAggregatorDeployment()
+
+	enginePod, enginePodLabels, err := createEnginePod(ctx, namespaceName, engineAttributesProvider, imageOrgAndRepo, imageVersionTag, envVars, privatePortSpecs, logsAggregatorDeployment.GetLogsBaseDirPath(), serviceAccount.Name, kubernetesManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the engine pod")
 	}
@@ -256,7 +259,6 @@ func CreateEngine(
 		}*/
 
 	logrus.Infof("Starting the centralized logs components...")
-	logsAggregatorDeployment := vector.NewVectorLogsAggregatorDeployment()
 	logsAggregator, removeLogsAggregatorFunc, err := logs_aggregator_functions.CreateLogsAggregator(ctx, logsAggregatorDeployment, objAttrsProvider, kubernetesManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the logs aggregator")
@@ -455,6 +457,7 @@ func createEnginePod(
 	imageVersionTag string,
 	envVars map[string]string,
 	privatePorts map[string]*port_spec.PortSpec,
+	logsBaseDirPath string,
 	serviceAccountName string,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (*apiv1.Pod, map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue, error) {
@@ -500,11 +503,10 @@ func createEnginePod(
 			Env:   engineContainerEnvVars,
 			Ports: containerPorts,
 			VolumeMounts: []apiv1.VolumeMount{
-				// TODO: use logs aggregator deployment object for this
 				{
-					Name:             "varlogkurtosis",
+					Name:             logsVolumeName,
 					ReadOnly:         false,
-					MountPath:        "/var/log/kurtosis/",
+					MountPath:        logsBaseDirPath,
 					SubPath:          "",
 					MountPropagation: nil,
 					SubPathExpr:      "",
@@ -514,41 +516,9 @@ func createEnginePod(
 	}
 
 	engineVolumes := []apiv1.Volume{
-		// TODO: use logs aggregator deployment object for this
 		{
-			Name: "varlogkurtosis",
-			VolumeSource: apiv1.VolumeSource{
-				HostPath: &apiv1.HostPathVolumeSource{
-					Path: "/var/log/kurtosis/",
-					Type: nil,
-				},
-				EmptyDir:              nil,
-				GCEPersistentDisk:     nil,
-				AWSElasticBlockStore:  nil,
-				GitRepo:               nil,
-				ISCSI:                 nil,
-				Glusterfs:             nil,
-				PersistentVolumeClaim: nil,
-				RBD:                   nil,
-				FlexVolume:            nil,
-				Cinder:                nil,
-				CephFS:                nil,
-				Flocker:               nil,
-				DownwardAPI:           nil,
-				FC:                    nil,
-				AzureFile:             nil,
-				ConfigMap:             nil,
-				VsphereVolume:         nil,
-				Quobyte:               nil,
-				AzureDisk:             nil,
-				PhotonPersistentDisk:  nil,
-				Projected:             nil,
-				PortworxVolume:        nil,
-				ScaleIO:               nil,
-				StorageOS:             nil,
-				CSI:                   nil,
-				Ephemeral:             nil,
-			},
+			Name:         logsVolumeName,
+			VolumeSource: kubernetesManager.GetVolumeSourceForHostPath(logsBaseDirPath),
 		},
 	}
 	engineInitContainers := []apiv1.Container{}
