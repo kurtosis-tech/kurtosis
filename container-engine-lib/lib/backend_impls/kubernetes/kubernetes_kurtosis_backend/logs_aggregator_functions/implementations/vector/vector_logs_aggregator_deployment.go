@@ -234,12 +234,13 @@ func createLogsAggregatorDeployment(
 						// Always schedule the logs aggregator pods to run on the same node as the engine pods
 						// they need to share a node's filesystem because aggregator writes to log files that engine reads from
 						MatchLabels: map[string]string{
+							// use resource label to match engine pods (which should only be one at any time)
 							kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.EngineKurtosisResourceTypeKubernetesLabelValue.GetString(),
 						},
 						MatchExpressions: nil,
 					},
 					Namespaces:        nil,
-					TopologyKey:       "",
+					TopologyKey:       "kubernetes.io/hostname",
 					NamespaceSelector: nil,
 				},
 			},
