@@ -310,6 +310,7 @@ func createLogsCollectorDaemonSet(
 			Stdin:                    false,
 			StdinOnce:                false,
 			TTY:                      false,
+			TerminationMessagePath:   "",
 			VolumeMounts: []apiv1.VolumeMount{
 				// these volumes are where logs from pods on a node in a k8s cluster get stored
 				// they get mounted to the fluentbit pod so the fluentbit pod can read them via the `tail` input plugin

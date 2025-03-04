@@ -59,17 +59,23 @@ func getLogsCollectorKubernetesResourcesForCluster(ctx context.Context, kubernet
 		if len(logsCollectorNamespaceForLabel) == 0 {
 			// if no namespace for logs collector, assume it doesn't exist at all
 			return &logsCollectorKubernetesResources{
-				daemonSet: nil,
-				configMap: nil,
-				namespace: nil,
+				daemonSet:          nil,
+				configMap:          nil,
+				namespace:          nil,
+				serviceAccount:     nil,
+				clusterRoleBinding: nil,
+				clusterRole:        nil,
 			}, nil
 		}
 		namespace = logsCollectorNamespaceForLabel[0]
 	} else {
 		return &logsCollectorKubernetesResources{
-			daemonSet: nil,
-			configMap: nil,
-			namespace: nil,
+			daemonSet:          nil,
+			configMap:          nil,
+			namespace:          nil,
+			serviceAccount:     nil,
+			clusterRoleBinding: nil,
+			clusterRole:        nil,
 		}, nil
 	}
 
