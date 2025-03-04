@@ -43,7 +43,14 @@ func getLogsAggregatorKubernetesResourcesForCluster(ctx context.Context, kuberne
 		resourceTypeLabelKeyStr:                                  logsAggregatorResourceTypeLabelValStr,
 	}
 
-	logsAggregatorNamespaces, err := kubernetes_resource_collectors.CollectMatchingNamespaces(ctx, kubernetesManager, logsAggregatorDeploymentSearchLabels, resourceTypeLabelKeyStr, map[string]bool{logsAggregatorResourceTypeLabelValStr: true})
+	logsAggregatorNamespaces, err := kubernetes_resource_collectors.CollectMatchingNamespaces(
+		ctx,
+		kubernetesManager,
+		logsAggregatorDeploymentSearchLabels,
+		resourceTypeLabelKeyStr,
+		map[string]bool{
+			logsAggregatorResourceTypeLabelValStr: true,
+		})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting namespace for logs aggregator.")
 	}
@@ -60,6 +67,7 @@ func getLogsAggregatorKubernetesResourcesForCluster(ctx context.Context, kuberne
 			return &logsAggregatorKubernetesResources{
 				deployment: nil,
 				service:    nil,
+				configMap:  nil,
 				namespace:  nil,
 			}, nil
 		}
@@ -68,8 +76,37 @@ func getLogsAggregatorKubernetesResourcesForCluster(ctx context.Context, kuberne
 		return &logsAggregatorKubernetesResources{
 			deployment: nil,
 			service:    nil,
+			configMap:  nil,
 			namespace:  nil,
 		}, nil
+	}
+
+	configMaps, err := kubernetes_resource_collectors.CollectMatchingConfigMaps(
+		ctx,
+		kubernetesManager,
+		namespace.Name,
+		logsAggregatorDeploymentSearchLabels,
+		resourceTypeLabelKeyStr,
+		map[string]bool{
+			logsAggregatorResourceTypeLabelValStr: true,
+		})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting config map for logs aggregator in namespace '%v'", namespace)
+	}
+	var configMap *apiv1.ConfigMap
+	if logsAggregatorConfigMapsForLabel, found := configMaps[logsAggregatorResourceTypeLabelValStr]; found {
+		if len(logsAggregatorConfigMapsForLabel) > 1 {
+			return nil, stacktrace.NewError(
+				"Expected at most one logs aggregator config map in namespace '%v' for logs aggregator but found '%v'",
+				namespace.Name,
+				len(logsAggregatorConfigMapsForLabel),
+			)
+		}
+		if len(logsAggregatorConfigMapsForLabel) == 0 {
+			configMap = nil
+		} else {
+			configMap = logsAggregatorConfigMapsForLabel[0]
+		}
 	}
 
 	logsAggregatorConfigServices, err := kubernetes_resource_collectors.CollectMatchingServices(
@@ -131,6 +168,7 @@ func getLogsAggregatorKubernetesResourcesForCluster(ctx context.Context, kuberne
 	logsAggregatorKubernetesResources := &logsAggregatorKubernetesResources{
 		deployment: deployment,
 		service:    service,
+		configMap:  configMap,
 		namespace:  namespace,
 	}
 

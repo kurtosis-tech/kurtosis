@@ -47,9 +47,5 @@ func DestroyLogsAggregator(ctx context.Context, kubernetesManager *kubernetes_ma
 		destroyErr = stacktrace.Propagate(err, "An error occurred removing logs aggregator namespace.")
 	}
 
-	if err := kubernetesManager.WaitForNamespaceRemoval(ctx, logsAggregatorNamespace.Name, 30, timeToWaitBetweenChecksDuration); err != nil {
-		destroyErr = stacktrace.Propagate(err, "An error occurred waiting for logs aggregator namespace to be removed.")
-	}
-
 	return destroyErr
 }

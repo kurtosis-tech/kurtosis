@@ -1473,6 +1473,13 @@ func (manager *KubernetesManager) CreateDeployment(
 	}
 
 	deploymentSpec := v1.DeploymentSpec{
+		Replicas: nil,
+		Strategy: v1.DeploymentStrategy{
+			Type:          "",
+			RollingUpdate: nil,
+		},
+		Paused:                  false,
+		ProgressDeadlineSeconds: nil,
 		Selector: &metav1.LabelSelector{
 			MatchLabels:      deploymentLabels,
 			MatchExpressions: nil,
@@ -1480,6 +1487,7 @@ func (manager *KubernetesManager) CreateDeployment(
 		Template: apiv1.PodTemplateSpec{
 			ObjectMeta: deploymentMeta,
 			Spec: apiv1.PodSpec{
+				ShareProcessNamespace:         nil,
 				Volumes:                       volumes,
 				InitContainers:                initContainers,
 				Containers:                    containers,
@@ -1496,7 +1504,6 @@ func (manager *KubernetesManager) CreateDeployment(
 				HostNetwork:                   false,
 				HostPID:                       false,
 				HostIPC:                       false,
-				ShareProcessNamespace:         nil,
 				SecurityContext:               nil,
 				ImagePullSecrets:              nil,
 				Hostname:                      "",
@@ -1533,9 +1540,14 @@ func (manager *KubernetesManager) CreateDeployment(
 		ObjectMeta: deploymentMeta,
 		Spec:       deploymentSpec,
 		Status: v1.DeploymentStatus{
-			ObservedGeneration: 0,
-			CollisionCount:     nil,
-			Conditions:         nil,
+			ObservedGeneration:  0,
+			CollisionCount:      nil,
+			Conditions:          nil,
+			ReadyReplicas:       0,
+			Replicas:            0,
+			UpdatedReplicas:     0,
+			AvailableReplicas:   0,
+			UnavailableReplicas: 0,
 		},
 	}
 

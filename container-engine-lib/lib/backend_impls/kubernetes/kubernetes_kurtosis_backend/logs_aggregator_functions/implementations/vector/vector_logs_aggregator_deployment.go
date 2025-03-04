@@ -177,9 +177,13 @@ func createLogsAggregatorDeployment(
 					HostIP:        "",
 				},
 			},
-			EnvFrom:      nil,
-			Env:          nil,
-			Resources:    apiv1.ResourceRequirements{},
+			EnvFrom: nil,
+			Env:     nil,
+			Resources: apiv1.ResourceRequirements{
+				Limits:   nil,
+				Requests: nil,
+				Claims:   nil,
+			},
 			ResizePolicy: nil,
 			VolumeMounts: []apiv1.VolumeMount{
 				{
@@ -313,8 +317,12 @@ func createLogsAggregatorService(
 			Protocol:    "",
 			AppProtocol: nil,
 			Port:        int32(logListeningPort),
-			TargetPort:  intstr.IntOrString{IntVal: int32(logListeningPort)},
-			NodePort:    0,
+			TargetPort: intstr.IntOrString{
+				IntVal: int32(logListeningPort),
+				StrVal: "",
+				Type:   0,
+			},
+			NodePort: 0,
 		},
 	}
 
