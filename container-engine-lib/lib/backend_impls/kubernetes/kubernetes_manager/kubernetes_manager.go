@@ -1448,6 +1448,7 @@ func (manager *KubernetesManager) CreateDeployment(
 	initContainers []apiv1.Container,
 	containers []apiv1.Container,
 	volumes []apiv1.Volume,
+	affinity *apiv1.Affinity,
 ) (*v1.Deployment, error) {
 	deploymentClient := manager.kubernetesClientSet.AppsV1().Deployments(namespaceName)
 
@@ -1500,7 +1501,7 @@ func (manager *KubernetesManager) CreateDeployment(
 				ImagePullSecrets:              nil,
 				Hostname:                      "",
 				Subdomain:                     "",
-				Affinity:                      nil,
+				Affinity:                      affinity,
 				SchedulerName:                 "",
 				Tolerations:                   nil,
 				HostAliases:                   nil,

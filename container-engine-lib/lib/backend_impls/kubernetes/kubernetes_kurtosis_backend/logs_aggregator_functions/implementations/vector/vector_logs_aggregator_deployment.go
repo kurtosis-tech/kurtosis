@@ -8,12 +8,14 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -223,6 +225,29 @@ func createLogsAggregatorDeployment(
 		},
 	}
 
+	affinity := &apiv1.Affinity{
+		NodeAffinity: nil,
+		PodAffinity: &apiv1.PodAffinity{
+			RequiredDuringSchedulingIgnoredDuringExecution: []apiv1.PodAffinityTerm{
+				{
+					LabelSelector: &v1.LabelSelector{
+						// Always schedule the logs aggregator pods to run on the same node as the engine pods
+						// they need to share a node's filesystem because aggregator writes to log files that engine reads from
+						MatchLabels: map[string]string{
+							kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.EngineKurtosisResourceTypeKubernetesLabelValue.GetString(),
+						},
+						MatchExpressions: nil,
+					},
+					Namespaces:        nil,
+					TopologyKey:       "",
+					NamespaceSelector: nil,
+				},
+			},
+			PreferredDuringSchedulingIgnoredDuringExecution: nil,
+		},
+		PodAntiAffinity: nil,
+	}
+
 	logsAggregatorDeployment, err := kubernetesManager.CreateDeployment(
 		ctx,
 		namespace,
@@ -232,6 +257,7 @@ func createLogsAggregatorDeployment(
 		[]apiv1.Container{}, // no need init containers
 		containers,
 		volumes,
+		affinity,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred creating deployment for vector logs aggregator.")
