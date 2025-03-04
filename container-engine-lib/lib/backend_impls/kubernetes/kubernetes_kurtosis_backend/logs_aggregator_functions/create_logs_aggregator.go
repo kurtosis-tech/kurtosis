@@ -27,9 +27,7 @@ func CreateLogsAggregator(
 	}
 
 	if logsAggregatorObj != nil {
-		removeLogsAggregatorFunc = func() {
-			return
-		}
+		removeLogsAggregatorFunc = func() {} // can't create remove in this situation so jus make it a no op
 		logrus.Debug("Found existing logs aggregator deployment.")
 	} else {
 		logrus.Debug("Did not find existing logs aggregator, creating one...")

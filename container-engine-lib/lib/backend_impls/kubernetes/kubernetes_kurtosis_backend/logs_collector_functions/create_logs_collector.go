@@ -45,6 +45,7 @@ func CreateLogsCollector(
 	}
 
 	if logsCollectorObj != nil {
+		removeLogsCollectorFunc = func() {} // can't create remove in this situation so jus make it a no op
 		logrus.Debug("Found existing logs collector daemon set.")
 	} else {
 		logrus.Debug("Did not find existing log collector, creating one...")
