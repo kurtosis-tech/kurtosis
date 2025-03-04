@@ -82,7 +82,7 @@ func (config *HostConfig) GetTLSConfig() (*TLSConfig, bool, *startosis_errors.In
 	return tlsConfig, true, nil
 }
 
-func (config *HostConfig) GetIngressTargets() ([]*IngressTarget, *startosis_errors.InterpretationError) {
+func (config *HostConfig) GetIngressTargets() ([]*IngressSpec, *startosis_errors.InterpretationError) {
 	value, err := config.GetAttributeValue(Ingresses)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred getting the ingress targets")
@@ -92,12 +92,12 @@ func (config *HostConfig) GetIngressTargets() ([]*IngressTarget, *startosis_erro
 		return nil, startosis_errors.NewInterpretationError("Expected ingress targets to be a list but was '%v'", value.Type())
 	}
 
-	var result []*IngressTarget
+	var result []*IngressSpec
 	for i := 0; i < list.Len(); i++ {
 		item := list.Index(i)
-		target, ok := item.(*IngressTarget)
+		target, ok := item.(*IngressSpec)
 		if !ok {
-			return nil, startosis_errors.NewInterpretationError("Expected ingress target to be an IngressTarget but was '%v'", item.Type())
+			return nil, startosis_errors.NewInterpretationError("Expected ingress target to be an IngressSpec but was '%v'", item.Type())
 		}
 		result = append(result, target)
 	}

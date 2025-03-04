@@ -1,30 +1,30 @@
 package kubernetes
 
-type KtIngressConfig struct {
-	Target     string
-	PrefixPath string
-	Type       string
-}
-
 type KtTlsConfig struct {
 	SecretName string
 }
 
-type KtHostConfig struct {
-	Host      string
-	TlsConfig *KtTlsConfig
-	Ingresses []KtIngressConfig
+type KtPortConfig struct {
+	Name   *string
+	Number *uint16
 }
 
-type KtIngressClassConfig struct {
-	//KtIngressClassName string
-	//KtIngressConfigs []KtIngressConfig
-	KtHostConfig []KtHostConfig
+type KtHttpRule struct {
+	PortConfig *KtPortConfig
+	Path       string
+	PathType   string
 }
 
-// KtMultiClassConfig mapping of Ingress class names onto config for that ingress
-type KtMultiHostConfig map[string]KtHostConfig
-type KtMultiClassConfig map[string]KtIngressClassConfig
+type KtAnnotations = map[string]string
+
+type KtIngressSpec struct {
+	IngressClassName *string
+	Host             *string
+	TlsConfig        *KtTlsConfig
+	Annotations      *KtAnnotations
+	HttpRules        []*KtHttpRule
+}
+
 type KtExtraIngressConfig struct {
-	MultiIngressClassConfigs *KtMultiClassConfig
+	IngressSpecs []*KtIngressSpec
 }

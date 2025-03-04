@@ -11,9 +11,8 @@ import (
 
 const (
 	IngressRuleConfigTypeName = "IngressRuleConfig"
-
-	HostAttr  = "host"
-	PathsAttr = "paths"
+	HostAttr                  = "host"
+	PathsAttr                 = "paths"
 )
 
 func NewIngressRuleConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {

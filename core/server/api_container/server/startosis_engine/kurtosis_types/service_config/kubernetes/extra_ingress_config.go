@@ -1,22 +1,20 @@
 package kubernetes
 
 import (
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
-	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 )
 
 const (
 	ExtraIngressConfigTypeName = "ExtraIngressConfig"
-
-	ExtraIngressConfigAttr = "extraIngressConfig"
+	ExtraIngressConfigAttr     = "extraIngressConfig"
+	//IngressTargetsTypeName = "ingressTargets"
 	//IngressClassConfigName     = "ingress_class_name"
 	//HostConfigsAttr            = "host_configs"
+	IngressesAttr = "ingresses"
 )
 
 type ExtraIngressConfig struct {
@@ -29,12 +27,12 @@ func NewExtraIngressConfigType() *kurtosis_type_constructor.KurtosisTypeConstruc
 			Name: ExtraIngressConfigTypeName,
 			Arguments: []*builtin_argument.BuiltinArgument{
 				{
-					Name:              ExtraIngressConfigAttr,
+					Name:              IngressesAttr,
 					IsOptional:        false,
-					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						if _, ok := value.(*starlark.Dict); !ok {
-							return startosis_errors.NewInterpretationError("Expected '%s' to be a dict of host configurations", ExtraIngressConfigAttr, "reading", value.String())
+						if _, ok := value.(*starlark.List); !ok {
+							return startosis_errors.NewInterpretationError("Expected '%s' to be a list, found %s", IngressesAttr, value.String())
 						}
 						return nil
 					},
@@ -66,82 +64,108 @@ func (extraIngressConfig *ExtraIngressConfig) Copy() (builtin_argument.KurtosisV
 	}, nil
 }
 
-func (extraIngressConfig *ExtraIngressConfig) GetStarlarkMultiIngressClassConfigs() (*MultiIngressClassConfigs, *startosis_errors.InterpretationError) {
-	multiIngressClassConfigs, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*MultiIngressClassConfigs](
-		extraIngressConfig.KurtosisValueTypeDefault, MultiIngressClassConfigsTypeName)
+func (extraIngressConfig *ExtraIngressConfig) Validate() error { return nil }
 
+func (extraIngressConfig *ExtraIngressConfig) GetIngresses() ([]*KtIngressSpec, error) {
+	ingressTargetsList, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.List](
+		extraIngressConfig.KurtosisValueTypeDefault, Ingresses,
+	)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
-
-	if found && multiIngressClassConfigs == nil {
-		logrus.Debug("Ingress class configs found but were nil and without error. This should never happen.")
+	if !found {
 		return nil, nil
 	}
 
-	return multiIngressClassConfigs, nil
-}
-
-// Apparently this can't be done inline, you have to declare a method to wrap the
-// type conversion, wtf is wrong with this god forsaken language
-func castMiccToDict(ev starlark.Value) (*starlark.Dict, error) {
-	dict, ok := ev.(*starlark.Dict)
-	if !ok {
-		return nil, fmt.Errorf("Unexpected type, expected a dict")
-	}
-	return dict, nil
-}
-
-// func (extraIngressConfig *ExtraIngressConfig) GetMultiIngressClassConfigs() (*KtMultiClassConfig, *startosis_errors.InterpretationError) {
-func (extraIngressConfig *ExtraIngressConfig) GetMultiIngressClassConfigs() (*KtMultiClassConfig, error) {
-	micc, interpretationErr := extraIngressConfig.GetStarlarkMultiIngressClassConfigs()
-
-	//buildArgsStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](imageBuildSpec.KurtosisValueTypeDefault, BuildArgsAttr)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-
-	dictValue, err := castMiccToDict(micc)
-	if err != nil {
-		return nil, startosis_errors.NewInterpretationError("'%s' is not a dict", MultiIngressClassConfigsTypeName)
-	}
-
-	kmcc := KtMultiClassConfig{}
-	for _, key := range dictValue.Keys() {
-		v, found, err := dictValue.Get(key)
-		if !found {
-			return nil, fmt.Errorf("key '%v' not found in dictionary", key)
-		}
-		if err != nil {
-			return nil, fmt.Errorf("error reading ingress class config for %s", key)
-		}
-		slValues, ok := v.(IngressClassConfig)
+	var ingressTargets []*KtIngressSpec
+	for idx := 0; idx < ingressTargetsList.Len(); idx++ {
+		item := ingressTargetsList.Index(idx)
+		ingressTarget, ok := item.(*IngressSpec)
 		if !ok {
-			return nil, fmt.Errorf("error casting ingress class %s", key)
+			return nil, startosis_errors.NewInterpretationError(
+				"Item number %d in '%s' list was not a string. Expecting '%s' to be a %s",
+				idx, IngressesAttr, ingressTarget.Type(),
+			)
 		}
-		classConfig, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*IngressClassConfig](
-			slValues.KurtosisValueTypeDefault, IngressConfigTypeName)
-		if interpretationErr != nil {
-			return nil, interpretationErr
+		kit, err := ingressTarget.ToKurtosisType()
+		if err != nil {
+			return nil, err
 		}
-
-		stringKey, err := kurtosis_types.SafeCastToString(key, "Ingress class name")
-		kmcc[stringKey] = classConfig.ToKurtosisType()
+		ingressTargets = append(ingressTargets, kit)
 	}
-	return &kmcc, nil
+
+	return ingressTargets, nil
 }
 
-//	func (extraIngressConfig *ExtraIngressConfig) GetMultiIngressClassConfigs() (*KtMultiClassConfig, error) {
-//		ktExtraIngressConfig, err := extraIngressConfig.GetStarlarkMultiIngressClassConfigs()
-//		.ToKurtosisType()
-//		if err != nil {
-//			return err
-//		}
-//		return &KtMultiClassConfig{ktExtraIngressConfig
+//func (extraIngressConfig *ExtraIngressConfig) GetStarlarkMultiIngressClassConfigs() (*MultiIngressClassConfigs, *startosis_errors.InterpretationError) {
+//	multiIngressClassConfigs, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*MultiIngressClassConfigs](
+//		extraIngressConfig.KurtosisValueTypeDefault, MultiIngressClassConfigsTypeName)
+//
+//	if interpretationErr != nil {
+//		return nil, interpretationErr
 //	}
-type MultiIngressClassConfigs struct {
-	*kurtosis_type_constructor.KurtosisValueTypeDefault
-}
+//
+//	if found && multiIngressClassConfigs == nil {
+//		logrus.Debug("Ingress class configs found but were nil and without error. This should never happen.")
+//		return nil, nil
+//	}
+//
+//	return multiIngressClassConfigs, nil
+//}
+//
+//// Apparently this can't be done inline, you have to declare a method to wrap the
+//// type conversion, wtf is wrong with this god forsaken language
+//func castMiccToDict(ev starlark.Value) (*starlark.Dict, error) {
+//	dict, ok := ev.(*starlark.Dict)
+//	if !ok {
+//		return nil, fmt.Errorf("Unexpected type, expected a dict")
+//	}
+//	return dict, nil
+//}
+//
+//// func (extraIngressConfig *ExtraIngressConfig) GetMultiIngressClassConfigs() (*KtMultiClassConfig, *startosis_errors.InterpretationError) {
+//func (extraIngressConfig *ExtraIngressConfig) GetMultiIngressClassConfigs() (*KtMultiClassConfig, error) {
+//	micc, interpretationErr := extraIngressConfig.GetStarlarkMultiIngressClassConfigs()
+//
+//	//buildArgsStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](imageBuildSpec.KurtosisValueTypeDefault, BuildArgsAttr)
+//	if interpretationErr != nil {
+//		return nil, interpretationErr
+//	}
+//
+//	dictValue, err := castMiccToDict(micc)
+//	if err != nil {
+//		return nil, startosis_errors.NewInterpretationError("'%s' is not a dict", MultiIngressClassConfigsTypeName)
+//	}
+//
+//	kmcc := KtMultiClassConfig{}
+//	for _, key := range dictValue.Keys() {
+//		v, found, err := dictValue.Get(key)
+//		if !found {
+//			return nil, fmt.Errorf("key '%v' not found in dictionary", key)
+//		}
+//		if err != nil {
+//			return nil, fmt.Errorf("error reading ingress class config for %s", key)
+//		}
+//		slValues, ok := v.(IngressClassConfig)
+//		if !ok {
+//			return nil, fmt.Errorf("error casting ingress class %s", key)
+//		}
+//		classConfig, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*IngressClassConfig](
+//			slValues.KurtosisValueTypeDefault, IngressConfigTypeName)
+//		if interpretationErr != nil {
+//			return nil, interpretationErr
+//		}
+//
+//		stringKey, err := kurtosis_types.SafeCastToString(key, "Ingress class name")
+//		kmcc[stringKey] = classConfig.ToKurtosisType()
+//	}
+//	return &kmcc, nil
+//}
+//
+//
+//type MultiIngressClassConfigs struct {
+//	*kurtosis_type_constructor.KurtosisValueTypeDefault
+//}
 
 //type KtIngressConfig struct {
 //	Target     string
@@ -182,161 +206,161 @@ type MultiIngressClassConfigs struct {
 //	return extraIngressConfig, nil
 //}
 
-func (micc *MultiIngressClassConfigs) ToKurtosisType() (KtMultiClassConfig, error) {
-	value, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](
-		micc.KurtosisValueTypeDefault)
-
-	//value, ok := micc.(*starlark.Dict)
-	value, ok := micc.(*starlark.Dict)
-	if !ok {
-		return nil, error("Error reading MultiIngressClassConfigs as dict")
-	}
-
-	//value
-}
-
-const (
-	MultiIngressClassConfigsTypeName = "MultiIngressClassConfigs"
-)
-
-func NewMultiIngressClassConfig() *kurtosis_type_constructor.KurtosisTypeConstructor {
-	return &kurtosis_type_constructor.KurtosisTypeConstructor{
-		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
-			Name: MultiIngressClassConfigsTypeName,
-			Arguments: []*builtin_argument.BuiltinArgument{
-				{
-					Name:              "MultiIngressClassConfigs",
-					IsOptional:        false,
-					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
-					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						if _, ok := value.(*starlark.Dict); !ok {
-							return startosis_errors.NewInterpretationError("Expected '%s' to contain a dict of ingress class configurations reading %s", ExtraIngressConfigAttr, value.String())
-						}
-						return nil
-					},
-				},
-			},
-			Deprecation: nil,
-		},
-		Instantiate: instantiateExtraIngressConfig,
-	}
-}
-
+//func (micc *MultiIngressClassConfigs) ToKurtosisType() (KtMultiClassConfig, error) {
+//	value, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](
+//		micc.KurtosisValueTypeDefault)
+//
+//	//value, ok := micc.(*starlark.Dict)
+//	value, ok := micc.(*starlark.Dict)
+//	if !ok {
+//		return nil, error("Error reading MultiIngressClassConfigs as dict")
+//	}
+//
+//	//value
+//}
+//
 //const (
-//	IngressClassConfigAttr = ""
+//	MultiIngressClassConfigsTypeName = "MultiIngressClassConfigs"
 //)
-
-const (
-	IngressClassConfigsTypeName = "IngressClassConfig"
-	IngressItemsListFieldAttr   = "hosts"
-)
-
-type IngressClassConfig struct {
-	*kurtosis_type_constructor.KurtosisValueTypeDefault
-}
-
-//func (c *IngressClassConfig) GetIngressName() (*KtIngressClassConfig, error) {
-
-func (c *IngressClassConfig) ToKurtosisType() (*KtIngressClassConfig, error) {
-	ingressClassConfig, interpretationError := c.GetStarlarkIngressClassConfig()
-
-	if interpretationError != nil {
-		return nil, interpretationError
-	}
-	if ingressClassConfig == nil {
-		return nil, nil
-	}
-
-	//type KtIngressClassConfig struct {
-	//	KtIngressClassName string
-	//	KtIngressConfigs   []KtIngressConfig
-	//}
-
-	//c.getIngressClassName()
-	ingressClassList, interpretationError := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](
-		c.KurtosisValueTypeDefault, IngressItemsListFieldAttr
-		)
-
-	for _, ingressClass
-
-	return &KtIngressClassConfig{}, nil
-}
-
-func (c *IngressClassConfig) GetStarlarkIngressClassConfig() (*IngressClassConfig, *startosis_errors.InterpretationError) {
-	ingressClassConfig, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*IngressClassConfig](c.KurtosisValueTypeDefault, IngressClassConfigsTypeName)
-
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-	if !found || ingressClassConfig == nil {
-		return nil, nil
-	}
-	return ingressClassConfig, nil
-}
-
-func (ic *IngressClassConfig) GetIngressClassConfig() (*IngressClassConfig, error) {
-	ingressClassConfig, err := ic.GetStarlarkIngressClassConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	if interpretationErr != nil {
-		return "", false, startosis_errors.WrapWithInterpretationError(err, "An error occurred getting the ingress class name")
-	}
-	if value == nil || value == starlark.None {
-		return "", false, nil
-	}
-	strValue, ok := value.(starlark.String)
-	if !ok {
-		return "", false, startosis_errors.NewInterpretationError("Expected ingress class name to be a string but was '%v'", value.Type())
-	}
-	return strValue.GoString(), true, nil
-}
-
-func (extraIngressConfig *ExtraIngressConfig) GetHostConfigs() (map[string]*HostConfig, *startosis_errors.InterpretationError) {
-	value, err := extraIngressConfig.GetAttributeValue(HostConfigsAttr)
-	if err != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred getting the host configs")
-	}
-	dict, ok := value.(*starlark.Dict)
-	if !ok {
-		return nil, startosis_errors.NewInterpretationError("Expected host configs to be a dict but was '%v'", value.Type())
-	}
-
-	result := make(map[string]*HostConfig)
-	for _, item := range dict.Items() {
-		key, ok := item[0].(starlark.String)
-		if !ok {
-			return nil, startosis_errors.NewInterpretationError("Expected host extraIngressConfig key to be a string but was '%v'", item[0].Type())
-		}
-		value, ok := item[1].(*HostConfig)
-		if !ok {
-			return nil, startosis_errors.NewInterpretationError("Expected host extraIngressConfig value to be a HostConfig but was '%v'", item[1].Type())
-		}
-		result[key.GoString()] = value
-	}
-	return result, nil
-}
-
-
-func (extraIngressConfig *ExtraIngressConfig) ToKurtosisType() (*KtExtraIngressConfig, error) {
-	micc, err := extraIngressConfig.GetStarlarkMultiIngressClassConfigs()
-	if err != nil {
-		return nil, err
-	}
-
-	if micc == nil {
-		return nil, nil
-	}
-
-	ktMigType, err := micc.ToKurtosisType()
-	if err != nil {
-		return nil, err
-	}
-	return &KtExtraIngressConfig{
-		MultiIngressClassConfigs: ktMigType,
-	}, nil
-}
+//
+//func NewMultiIngressClassConfig() *kurtosis_type_constructor.KurtosisTypeConstructor {
+//	return &kurtosis_type_constructor.KurtosisTypeConstructor{
+//		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
+//			Name: MultiIngressClassConfigsTypeName,
+//			Arguments: []*builtin_argument.BuiltinArgument{
+//				{
+//					Name:              "MultiIngressClassConfigs",
+//					IsOptional:        false,
+//					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
+//					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+//						if _, ok := value.(*starlark.Dict); !ok {
+//							return startosis_errors.NewInterpretationError("Expected '%s' to contain a dict of ingress class configurations reading %s", ExtraIngressConfigAttr, value.String())
+//						}
+//						return nil
+//					},
+//				},
+//			},
+//			Deprecation: nil,
+//		},
+//		Instantiate: instantiateExtraIngressConfig,
+//	}
+//}
+//
+////const (
+////	IngressClassConfigAttr = ""
+////)
+//
+//const (
+//	IngressClassConfigsTypeName = "IngressClassConfig"
+//	IngressItemsListFieldAttr   = "hosts"
+//)
+//
+//type IngressClassConfig struct {
+//	*kurtosis_type_constructor.KurtosisValueTypeDefault
+//}
+//
+////func (c *IngressClassConfig) GetIngressName() (*KtIngressClassConfig, error) {
+//
+//func (c *IngressClassConfig) ToKurtosisType() (*KtIngressClassConfig, error) {
+//	ingressClassConfig, interpretationError := c.GetStarlarkIngressClassConfig()
+//
+//	if interpretationError != nil {
+//		return nil, interpretationError
+//	}
+//	if ingressClassConfig == nil {
+//		return nil, nil
+//	}
+//
+//	//type KtIngressClassConfig struct {
+//	//	KtIngressClassName string
+//	//	KtIngressConfigs   []KtIngressConfig
+//	//}
+//
+//	//c.getIngressClassName()
+//	ingressClassList, interpretationError := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](
+//		c.KurtosisValueTypeDefault, IngressItemsListFieldAttr
+//		)
+//
+//	for _, ingressClass
+//
+//	return &KtIngressClassConfig{}, nil
+//}
+//
+//func (c *IngressClassConfig) GetStarlarkIngressClassConfig() (*IngressClassConfig, *startosis_errors.InterpretationError) {
+//	ingressClassConfig, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*IngressClassConfig](c.KurtosisValueTypeDefault, IngressClassConfigsTypeName)
+//
+//	if interpretationErr != nil {
+//		return nil, interpretationErr
+//	}
+//	if !found || ingressClassConfig == nil {
+//		return nil, nil
+//	}
+//	return ingressClassConfig, nil
+//}
+//
+//func (ic *IngressClassConfig) GetIngressClassConfig() (*IngressClassConfig, error) {
+//	ingressClassConfig, err := ic.GetStarlarkIngressClassConfig()
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	if interpretationErr != nil {
+//		return "", false, startosis_errors.WrapWithInterpretationError(err, "An error occurred getting the ingress class name")
+//	}
+//	if value == nil || value == starlark.None {
+//		return "", false, nil
+//	}
+//	strValue, ok := value.(starlark.String)
+//	if !ok {
+//		return "", false, startosis_errors.NewInterpretationError("Expected ingress class name to be a string but was '%v'", value.Type())
+//	}
+//	return strValue.GoString(), true, nil
+//}
+//
+//func (extraIngressConfig *ExtraIngressConfig) GetHostConfigs() (map[string]*HostConfig, *startosis_errors.InterpretationError) {
+//	value, err := extraIngressConfig.GetAttributeValue(HostConfigsAttr)
+//	if err != nil {
+//		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred getting the host configs")
+//	}
+//	dict, ok := value.(*starlark.Dict)
+//	if !ok {
+//		return nil, startosis_errors.NewInterpretationError("Expected host configs to be a dict but was '%v'", value.Type())
+//	}
+//
+//	result := make(map[string]*HostConfig)
+//	for _, item := range dict.Items() {
+//		key, ok := item[0].(starlark.String)
+//		if !ok {
+//			return nil, startosis_errors.NewInterpretationError("Expected host extraIngressConfig key to be a string but was '%v'", item[0].Type())
+//		}
+//		value, ok := item[1].(*HostConfig)
+//		if !ok {
+//			return nil, startosis_errors.NewInterpretationError("Expected host extraIngressConfig value to be a HostConfig but was '%v'", item[1].Type())
+//		}
+//		result[key.GoString()] = value
+//	}
+//	return result, nil
+//}
+//
+//
+//func (extraIngressConfig *ExtraIngressConfig) ToKurtosisType() (*KtExtraIngressConfig, error) {
+//	micc, err := extraIngressConfig.GetStarlarkMultiIngressClassConfigs()
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	if micc == nil {
+//		return nil, nil
+//	}
+//
+//	ktMigType, err := micc.ToKurtosisType()
+//	if err != nil {
+//		return nil, err
+//	}
+//	return &KtExtraIngressConfig{
+//		MultiIngressClassConfigs: ktMigType,
+//	}, nil
+//}
 
 //
 //func (config *ExtraIngressConfig) ToKurtosisType() (*KtExtraIngressConfig, *startosis_errors.InterpretationError) {
@@ -453,7 +477,7 @@ func (extraIngressConfig *ExtraIngressConfig) ToKurtosisType() (*KtExtraIngressC
 //			})
 //		}
 //
-//		result.Rules = append(result.Rules, rule)
+//		result.HttpRules = append(result.HttpRules, rule)
 //	}
 //
 //	return result, nil
