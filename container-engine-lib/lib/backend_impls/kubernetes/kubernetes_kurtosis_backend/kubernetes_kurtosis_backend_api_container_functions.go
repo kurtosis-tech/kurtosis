@@ -205,7 +205,12 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 
 	serviceAccountName := serviceAccountAttributes.GetName().GetString()
 	serviceAccountLabels := shared_helpers.GetStringMapFromLabelMap(serviceAccountAttributes.GetLabels())
-	apiContainerServiceAccount, err := backend.kubernetesManager.CreateServiceAccount(ctx, serviceAccountName, enclaveNamespaceName, serviceAccountLabels)
+	imagePullSecrets := []apiv1.LocalObjectReference{
+		{
+			Name: "kurtosis-image",
+		},
+	}
+	apiContainerServiceAccount, err := backend.kubernetesManager.CreateServiceAccount(ctx, serviceAccountName, enclaveNamespaceName, serviceAccountLabels, imagePullSecrets)
 	if err != nil {
 		errMsg := fmt.Sprintf("An error occurred creating service account '%v' with labels '%+v' in namespace '%v'", serviceAccountName, serviceAccountLabels, enclaveNamespaceName)
 		logrus.Errorf("%s. Error was:\n%s", errMsg, err)

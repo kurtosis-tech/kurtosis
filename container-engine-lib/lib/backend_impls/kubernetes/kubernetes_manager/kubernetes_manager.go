@@ -618,7 +618,7 @@ func (manager *KubernetesManager) GetNamespacesByLabels(ctx context.Context, nam
 
 // ---------------------------service accounts------------------------------------------------------------------------------
 
-func (manager *KubernetesManager) CreateServiceAccount(ctx context.Context, name string, namespace string, labels map[string]string) (*apiv1.ServiceAccount, error) {
+func (manager *KubernetesManager) CreateServiceAccount(ctx context.Context, name string, namespace string, labels map[string]string, imagePullSecrets []apiv1.LocalObjectReference) (*apiv1.ServiceAccount, error) {
 	client := manager.kubernetesClientSet.CoreV1().ServiceAccounts(namespace)
 
 	serviceAccount := &apiv1.ServiceAccount{
@@ -645,12 +645,8 @@ func (manager *KubernetesManager) CreateServiceAccount(ctx context.Context, name
 			Finalizers:                 nil,
 			ManagedFields:              nil,
 		},
-		Secrets: nil,
-		ImagePullSecrets: []apiv1.LocalObjectReference{
-			{
-				Name: "kurtosis-image",
-			},
-		},
+		Secrets:                      nil,
+		ImagePullSecrets:             imagePullSecrets,
 		AutomountServiceAccountToken: nil,
 	}
 

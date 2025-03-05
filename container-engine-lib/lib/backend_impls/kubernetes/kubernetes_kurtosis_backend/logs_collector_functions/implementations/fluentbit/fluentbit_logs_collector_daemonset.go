@@ -441,8 +441,8 @@ func createLogsCollectorConfigMap(
 				fluentBitConfigFmtStr,
 				logsCollectorHttpPortNum,
 				label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue.GetString(),
-				logsAggregatorHost,
-				logsAggregatorPortNum),
+				"0.0.0.0",
+				"24222"),
 		},
 	)
 	if err != nil {
@@ -516,7 +516,7 @@ func createLogsCollectorServiceAccount(
 	serviceAccountName := serviceAccountAttrProvider.GetName().GetString()
 	serviceAccountLabels := shared_helpers.GetStringMapFromLabelMap(serviceAccountAttrProvider.GetLabels())
 
-	serviceAccountObj, err := kubernetesManager.CreateServiceAccount(ctx, serviceAccountName, namespace, serviceAccountLabels)
+	serviceAccountObj, err := kubernetesManager.CreateServiceAccount(ctx, serviceAccountName, namespace, serviceAccountLabels, nil)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating service account for logs collector with name '%s'", serviceAccountName)
 	}
