@@ -3,6 +3,7 @@ package engine_functions
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_aggregator_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_aggregator_functions/implementations/vector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_collector_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_collector_functions/implementations/fluentbit"
@@ -258,22 +259,22 @@ func CreateEngine(
 		}*/
 
 	logrus.Infof("Starting the centralized logs components...")
-	//logsAggregator, removeLogsAggregatorFunc, err := logs_aggregator_functions.CreateLogsAggregator(ctx, namespace.Name, logsAggregatorDeployment, objAttrsProvider, kubernetesManager)
-	//if err != nil {
-	//	return nil, stacktrace.Propagate(err, "An error occurred creating the logs aggregator")
-	//}
-	//var shouldRemoveLogsAggregator = true
-	//defer func() {
-	//	if shouldRemoveLogsAggregator {
-	//		removeLogsAggregatorFunc()
-	//	}
-	//}()
+	logsAggregator, removeLogsAggregatorFunc, err := logs_aggregator_functions.CreateLogsAggregator(ctx, namespace.Name, logsAggregatorDeployment, objAttrsProvider, kubernetesManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the logs aggregator")
+	}
+	var shouldRemoveLogsAggregator = true
+	defer func() {
+		if shouldRemoveLogsAggregator {
+			removeLogsAggregatorFunc()
+		}
+	}()
 
 	logsCollectorDaemonSet := fluentbit.NewFluentbitLogsCollector()
 
 	// Unlike the DockerBackend, where the log collectors are deployed by the engine during enclave creation
 	// for k8s backend, the logs collector lifecycle gets managed with the engine's and is created during engine creation
-	_, removeLogsCollectorFunc, err := logs_collector_functions.CreateLogsCollector(ctx, logsCollectorTcpPortNum, logsCollectorHttpPortNum, logsCollectorDaemonSet, nil, kubernetesManager, objAttrsProvider)
+	_, removeLogsCollectorFunc, err := logs_collector_functions.CreateLogsCollector(ctx, logsCollectorTcpPortNum, logsCollectorHttpPortNum, logsCollectorDaemonSet, logsAggregator, kubernetesManager, objAttrsProvider)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the logs collector")
 	}
@@ -286,7 +287,7 @@ func CreateEngine(
 	logrus.Infof("Centralized logs components started.")
 
 	shouldRemoveLogsCollector = false
-	//shouldRemoveLogsAggregator = false
+	shouldRemoveLogsAggregator = false
 	shouldRemoveNamespace = false
 	shouldRemoveServiceAccount = false
 	shouldRemoveClusterRole = false

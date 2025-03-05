@@ -441,8 +441,8 @@ func createLogsCollectorConfigMap(
 				fluentBitConfigFmtStr,
 				logsCollectorHttpPortNum,
 				label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue.GetString(),
-				"0.0.0.0",
-				"24222"),
+				logsAggregatorHost,
+				logsAggregatorPortNum),
 		},
 	)
 	if err != nil {
