@@ -9,17 +9,15 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	"net"
-	"time"
 )
 
 const (
-	maxAvailabilityCheckRetries     = 30
-	timeToWaitBetweenChecksDuration = 1 * time.Second
+// maxAvailabilityCheckRetries     = 30
+// timeToWaitBetweenChecksDuration = 1 * time.Second
 )
 
 func getLogsAggregatorObjAndResourcesForCluster(ctx context.Context, kubernetesManager *kubernetes_manager.KubernetesManager) (*logs_aggregator.LogsAggregator, *logsAggregatorKubernetesResources, error) {
@@ -229,47 +227,48 @@ func getLogsAggregatorStatus(ctx context.Context, kubernetesManager *kubernetes_
 	return podStatus, nil
 }
 
-func waitForLogsAggregatorAvailability(
-	ctx context.Context,
-	k8sResources *logsAggregatorKubernetesResources,
-	kubernetesManager *kubernetes_manager.KubernetesManager) error {
-	logsAggregatorDeployment := k8sResources.deployment
-	pods, err := kubernetesManager.GetPodsManagedByDeployment(ctx, k8sResources.deployment)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting pods managed by logs aggregator daemon set '%v'", logsAggregatorDeployment.Name)
-	}
-	if len(pods) < 1 {
-		return stacktrace.NewError("No pods managed by logs aggregator deployment were found. There should be exactly one. This is likely a bug in Kurtosis.")
-	}
-	if len(pods) > 1 {
-		return stacktrace.NewError("No pods managed by logs aggregator deployment were found. There should be exactly one. This is likely a bug in Kurtosis.")
-	}
-
-	httpPortSpec, err := port_spec.NewPortSpec(defaultLogsListeningPortNum, port_spec.TransportProtocol_TCP, "http", nil, "")
-	if err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred creating the log aggregator public HTTP port spec object using number '%v' and protocol '%v'",
-			defaultLogsListeningPortNum,
-			port_spec.TransportProtocol_TCP,
-		)
-	}
-	pod := pods[0]
-	if len(pod.Spec.Containers) < 1 {
-		return stacktrace.NewError("Pod '%v' managed by logs aggregator deployment '%v' doesn't have any containers associated with it. There should be at least one container.", pod.Name, logsAggregatorDeployment.Name)
-	}
-
-	vectorContainerName := pod.Spec.Containers[0].Name
-	if err = shared_helpers.WaitForPortAvailabilityUsingNetstat(
-		kubernetesManager,
-		k8sResources.namespace.Name,
-		pod.Name,
-		vectorContainerName,
-		httpPortSpec,
-		maxAvailabilityCheckRetries,
-		timeToWaitBetweenChecksDuration); err != nil {
-		return stacktrace.Propagate(err, "An error occurred while checking for availability of pod '%v' managed by logs aggregator deployment '%v'", pod.Name, logsAggregatorDeployment.Name)
-	}
-
-	return nil
-}
+//
+//func waitForLogsAggregatorAvailability(
+//	ctx context.Context,
+//	k8sResources *logsAggregatorKubernetesResources,
+//	kubernetesManager *kubernetes_manager.KubernetesManager) error {
+//	logsAggregatorDeployment := k8sResources.deployment
+//	pods, err := kubernetesManager.GetPodsManagedByDeployment(ctx, k8sResources.deployment)
+//	if err != nil {
+//		return stacktrace.Propagate(err, "An error occurred getting pods managed by logs aggregator daemon set '%v'", logsAggregatorDeployment.Name)
+//	}
+//	if len(pods) < 1 {
+//		return stacktrace.NewError("No pods managed by logs aggregator deployment were found. There should be exactly one. This is likely a bug in Kurtosis.")
+//	}
+//	if len(pods) > 1 {
+//		return stacktrace.NewError("No pods managed by logs aggregator deployment were found. There should be exactly one. This is likely a bug in Kurtosis.")
+//	}
+//
+//	httpPortSpec, err := port_spec.NewPortSpec(defaultLogsListeningPortNum, port_spec.TransportProtocol_TCP, "http", nil, "")
+//	if err != nil {
+//		return stacktrace.Propagate(
+//			err,
+//			"An error occurred creating the log aggregator public HTTP port spec object using number '%v' and protocol '%v'",
+//			defaultLogsListeningPortNum,
+//			port_spec.TransportProtocol_TCP,
+//		)
+//	}
+//	pod := pods[0]
+//	if len(pod.Spec.Containers) < 1 {
+//		return stacktrace.NewError("Pod '%v' managed by logs aggregator deployment '%v' doesn't have any containers associated with it. There should be at least one container.", pod.Name, logsAggregatorDeployment.Name)
+//	}
+//
+//	vectorContainerName := pod.Spec.Containers[0].Name
+//	if err = shared_helpers.WaitForPortAvailabilityUsingNetstat(
+//		kubernetesManager,
+//		k8sResources.namespace.Name,
+//		pod.Name,
+//		vectorContainerName,
+//		httpPortSpec,
+//		maxAvailabilityCheckRetries,
+//		timeToWaitBetweenChecksDuration); err != nil {
+//		return stacktrace.Propagate(err, "An error occurred while checking for availability of pod '%v' managed by logs aggregator deployment '%v'", pod.Name, logsAggregatorDeployment.Name)
+//	}
+//
+//	return nil
+//}
