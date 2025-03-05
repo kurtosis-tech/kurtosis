@@ -473,11 +473,8 @@ func GetLogsResponse(
 	defer cancelStreamUserServiceLogsFunc()
 	require.NoError(t, err, "An error occurred getting user service logs from user services with UUIDs '%+v' in enclave '%v' and with follow logs value '%v'", serviceUuids, enclaveIdentifier, shouldFollowLogs)
 
-	shouldContinueInTheLoop := true
-
 	ticker := time.NewTicker(timeout)
-
-	for shouldContinueInTheLoop {
+	for {
 		select {
 		case <-ticker.C:
 			testEvaluationErr = stacktrace.NewError("Receiving stream logs in the test has reached the '%v' time out", timeout.String())
