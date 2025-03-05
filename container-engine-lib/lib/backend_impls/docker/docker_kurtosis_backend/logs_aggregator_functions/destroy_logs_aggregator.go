@@ -33,18 +33,18 @@ func DestroyLogsAggregator(ctx context.Context, dockerManager *docker_manager.Do
 		return stacktrace.Propagate(err, "An error occurred removing the logs aggregator container with ID '%v'", maybeLogsAggregatorContainerId)
 	}
 
-	maybeLogsCollectorVolumeName, err := getLogsAggregatorVolumeName(ctx, dockerManager)
+	maybeLogsAggregatorVolumeName, err := getLogsAggregatorVolumeName(ctx, dockerManager)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while getting logs aggregator volume")
 	}
 
-	if maybeLogsCollectorVolumeName == "" {
+	if maybeLogsAggregatorVolumeName == "" {
 		return nil
 	}
 
-	err = dockerManager.RemoveVolume(ctx, maybeLogsCollectorVolumeName)
+	err = dockerManager.RemoveVolume(ctx, maybeLogsAggregatorVolumeName)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while removing the logs aggregator volume '%v'", maybeLogsCollectorVolumeName)
+		return stacktrace.Propagate(err, "An error occurred while removing the logs aggregator volume '%v'", maybeLogsAggregatorVolumeName)
 	}
 
 	return nil
