@@ -38,7 +38,6 @@ type CreateAndStartContainerArgs struct {
 	imageDownloadMode                        image_download_mode.ImageDownloadMode
 	user                                     *service_user.ServiceUser
 	imageRegistrySpec                        *image_registry_spec.ImageRegistrySpec
-	skipSuccessfulStartCheck                 bool // Please read the comments in dockerManager.CreateAndStartContainer() for why this argument exists
 }
 
 // Builder for creating CreateAndStartContainerArgs object
@@ -69,7 +68,6 @@ type CreateAndStartContainerArgsBuilder struct {
 	imageDownloadMode                        image_download_mode.ImageDownloadMode
 	user                                     *service_user.ServiceUser
 	imageRegistrySpec                        *image_registry_spec.ImageRegistrySpec
-	skipSuccessfulStartCheck                 bool
 }
 
 /*
@@ -107,7 +105,6 @@ func NewCreateAndStartContainerArgsBuilder(dockerImage string, name string, netw
 		imageDownloadMode:                        image_download_mode.ImageDownloadMode_Missing,
 		user:                                     nil,
 		imageRegistrySpec:                        nil,
-		skipSuccessfulStartCheck:                 false,
 	}
 }
 
@@ -139,7 +136,6 @@ func (builder *CreateAndStartContainerArgsBuilder) Build() *CreateAndStartContai
 		imageDownloadMode:                        builder.imageDownloadMode,
 		user:                                     builder.user,
 		imageRegistrySpec:                        builder.imageRegistrySpec,
-		skipSuccessfulStartCheck:                 builder.skipSuccessfulStartCheck,
 	}
 }
 
@@ -299,10 +295,5 @@ func (builder *CreateAndStartContainerArgsBuilder) WithUser(user *service_user.S
 
 func (builder *CreateAndStartContainerArgsBuilder) WithImageRegistrySpec(imageRegistrySpec *image_registry_spec.ImageRegistrySpec) *CreateAndStartContainerArgsBuilder {
 	builder.imageRegistrySpec = imageRegistrySpec
-	return builder
-}
-
-func (builder *CreateAndStartContainerArgsBuilder) WithSkipSuccessfulStartCheck(skipSuccessfulStartCheck bool) *CreateAndStartContainerArgsBuilder {
-	builder.skipSuccessfulStartCheck = skipSuccessfulStartCheck
 	return builder
 }

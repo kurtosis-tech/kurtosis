@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/go-yaml/yaml"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
-	"github.com/kurtosis-tech/stacktrace"
 )
 
 type VectorConfig struct {
@@ -64,13 +62,4 @@ func newVectorConfig(
 		},
 		Sinks: reconciledSinks,
 	}
-}
-
-func (cfg *VectorConfig) getConfigFileContent() (string, error) {
-	yamlBytes, err := yaml.Marshal(cfg)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "Error marshalling config into YAML.")
-	}
-
-	return string(yamlBytes), nil
 }

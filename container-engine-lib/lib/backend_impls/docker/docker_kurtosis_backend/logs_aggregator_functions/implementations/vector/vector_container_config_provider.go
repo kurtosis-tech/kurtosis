@@ -17,13 +17,11 @@ const (
 )
 
 type vectorContainerConfigProvider struct {
-	config         *VectorConfig
 	httpPortNumber uint16
 }
 
-func newVectorContainerConfigProvider(config *VectorConfig, httpPortNumber uint16) *vectorContainerConfigProvider {
+func newVectorContainerConfigProvider(httpPortNumber uint16) *vectorContainerConfigProvider {
 	return &vectorContainerConfigProvider{
-		config:         config,
 		httpPortNumber: httpPortNumber,
 	}
 }
@@ -41,64 +39,16 @@ func (vector *vectorContainerConfigProvider) GetPrivateHttpPortSpec() (*port_spe
 	return privateHttpPortSpec, nil
 }
 
-func (vector *vectorContainerConfigProvider) GetInitContainerArgs(
-	containerName string,
-	containerLabels map[string]string,
-	networkId string,
-) (*docker_manager.CreateAndStartContainerArgs, error) {
-	logsAggregatorConfigContentStr, err := vector.config.getConfigFileContent()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting logs aggregator config file content")
-	}
-
-	// Create cmd to
-	// 1. create config file in appropriate location in logs aggregator container
-	// 2. validate this config file
-	overrideCmd := []string{
-		shCmdFlag,
-		fmt.Sprintf(
-			"%v '%v' > %v && %v %v %v",
-			printfCmdName,
-			logsAggregatorConfigContentStr,
-			configFilepath,
-			binaryFilepath,
-			validateCmdName,
-			configFilepath,
-		),
-	}
-
-	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
-		containerImage,
-		containerName,
-		networkId,
-	).WithLabels(
-		containerLabels,
-	).WithEntrypointArgs(
-		[]string{
-			shBinaryFilepath,
-		},
-	).WithCmdArgs(
-		overrideCmd,
-	).WithSkipSuccessfulStartCheck(
-		true,
-	).Build()
-
-	return createAndStartArgs, nil
-}
-
 func (vector *vectorContainerConfigProvider) GetContainerArgs(
 	containerName string,
 	containerLabels map[string]string,
 	networkId string,
+	logsAggregatorVolumeName string,
 	logsStorageVolumeName string,
 ) (*docker_manager.CreateAndStartContainerArgs, error) {
 	volumeMounts := map[string]string{
-		logsStorageVolumeName: logsStorageDirpath,
-	}
-
-	logsAggregatorConfigContentStr, err := vector.config.getConfigFileContent()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting logs aggregator config file content")
+		logsStorageVolumeName:    logsStorageDirpath,
+		logsAggregatorVolumeName: configDirpath,
 	}
 
 	// Create cmd to
@@ -107,10 +57,7 @@ func (vector *vectorContainerConfigProvider) GetContainerArgs(
 	overrideCmd := []string{
 		shCmdFlag,
 		fmt.Sprintf(
-			"%v '%v' > %v && %v %v=%v",
-			printfCmdName,
-			logsAggregatorConfigContentStr,
-			configFilepath,
+			"%v %v=%v",
 			binaryFilepath,
 			configFileFlag,
 			configFilepath,

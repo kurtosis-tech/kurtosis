@@ -10,10 +10,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	validationFailedExitCode = 78
-)
-
 type vectorLogsAggregatorContainer struct{}
 
 func NewVectorLogsAggregatorContainer() *vectorLogsAggregatorContainer {
@@ -30,52 +26,8 @@ func (vectorContainer *vectorLogsAggregatorContainer) CreateAndStart(
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	dockerManager *docker_manager.DockerManager,
 ) (string, map[string]string, func(), error) {
-	vectorContainerConfigProviderObj := createVectorContainerConfigProvider(logsListeningPortNumber, httpPortNumber, sinks)
-
-	logsAggregatorInitAttrs, err := objAttrsProvider.ForLogsAggregatorInit()
-	if err != nil {
-		return "", nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator init container attributes.")
-	}
-
-	initContainerName := logsAggregatorInitAttrs.GetName().GetString()
-	initContainerLabelStrs := map[string]string{}
-	for labelKey, labelValue := range logsAggregatorInitAttrs.GetLabels() {
-		initContainerLabelStrs[labelKey.GetString()] = labelValue.GetString()
-	}
-
-	initArgs, err := vectorContainerConfigProviderObj.GetInitContainerArgs(initContainerName, initContainerLabelStrs, targetNetworkId)
-	if err != nil {
-		return "", nil, nil, err
-	}
-
-	initContainerId, _, err := dockerManager.CreateAndStartContainer(ctx, initArgs)
-	if err != nil {
-		return "", nil, nil, stacktrace.Propagate(err, "An error occurred starting the logs aggregator container with these args '%+v'", initArgs)
-	}
-
-	defer func() {
-		removeCtx := context.Background()
-		if err := dockerManager.RemoveContainer(removeCtx, initContainerId); err != nil {
-			logrus.Errorf(
-				"Launching the logs aggregator init with container ID '%v' didn't complete successfully so we "+
-					"tried to remove the container we started, but doing so exited with an error:\n%v",
-				initContainerId,
-				err)
-			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs aggregator init container with Docker container ID '%v'!!!!!!", initContainerId)
-		}
-	}()
-
-	exitCode, err := dockerManager.WaitForExit(ctx, initContainerId)
-	if err != nil {
-		return "", nil, nil, stacktrace.Propagate(err, "An error occurred validating logs aggregator configurations")
-	}
-
-	// Vector returns a specific exit code if the validation of configurations failed
-	// https://vector.dev/docs/administration/validating/#how-validation-works
-	if exitCode == validationFailedExitCode {
-		errorStr := dockerManager.GetFormattedFailedContainerLogsOrErrorString(ctx, initContainerId)
-		return "", nil, nil, stacktrace.NewError("The logs aggregator component failed validation; logs are below:%v", errorStr)
-	}
+	vectorConfigurationCreatorObj := createVectorConfigurationCreatorForKurtosis(logsListeningPortNumber, httpPortNumber, sinks)
+	vectorContainerConfigProviderObj := createVectorContainerConfigProvider(httpPortNumber)
 
 	// Start vector
 
@@ -94,6 +46,29 @@ func (vectorContainer *vectorLogsAggregatorContainer) CreateAndStart(
 		containerLabelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 
+	logsAggregatorVolumeAttrs, err := objAttrsProvider.ForLogsAggregatorVolume()
+	if err != nil {
+		return "", nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator volume attributes")
+	}
+
+	volumeName := logsAggregatorVolumeAttrs.GetName().GetString()
+	volumeLabelStrs := map[string]string{}
+	for labelKey, labelValue := range logsAggregatorVolumeAttrs.GetLabels() {
+		volumeLabelStrs[labelKey.GetString()] = labelValue.GetString()
+	}
+
+	//This method will create the volume if it doesn't exist, or it will get it if it exists
+	//From Docker docs: If you specify a volume name already in use on the current driver, Docker assumes you want to re-use the existing volume and does not return an error.
+	//https://docs.docker.com/engine/reference/commandline/volume_create/
+	if err := dockerManager.CreateVolume(ctx, volumeName, volumeLabelStrs); err != nil {
+		return "", nil, nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating logs aggregator volume with name '%v' and labels '%+v'",
+			volumeName,
+			volumeLabelStrs,
+		)
+	}
+
 	// Engine handles creating the volume, but we need to mount the aggregator can send logs to logs storage
 	logsStorageAttrs, err := objAttrsProvider.ForLogsStorageVolume()
 	if err != nil {
@@ -101,7 +76,19 @@ func (vectorContainer *vectorLogsAggregatorContainer) CreateAndStart(
 	}
 	logsStorageVolNameStr := logsStorageAttrs.GetName().GetString()
 
-	containerArgs, err := vectorContainerConfigProviderObj.GetContainerArgs(containerName, containerLabelStrs, targetNetworkId, logsStorageVolNameStr)
+	//We do not defer undo volume creation because the volume could already exist from previous executions
+	//for this reason the logs collector volume creation has to be idempotent, we ALWAYS want to create it if it doesn't exist, no matter what
+
+	if err := vectorConfigurationCreatorObj.CreateConfiguration(ctx, targetNetworkId, volumeName, dockerManager); err != nil {
+		return "", nil, nil, stacktrace.Propagate(
+			err,
+			"An error occurred running the logs aggregator configuration creator in network ID '%v' and with volume name '%+v'",
+			targetNetworkId,
+			volumeName,
+		)
+	}
+
+	containerArgs, err := vectorContainerConfigProviderObj.GetContainerArgs(containerName, containerLabelStrs, targetNetworkId, volumeName, logsStorageVolNameStr)
 	if err != nil {
 		return "", nil, nil, err
 	}
