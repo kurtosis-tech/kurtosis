@@ -4,16 +4,16 @@ import (
 	"context"
 	"net"
 
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_port_spec_serializer"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
-
+	"github.com/docker/docker/api/types/volume"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_port_spec_serializer"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
@@ -134,4 +134,33 @@ func getLogsAggregatorObjectFromContainerInfo(
 	)
 
 	return logsAggregatorObj, nil
+}
+
+// if nothing is found we return empty volume name
+func getLogsAggregatorVolumeName(
+	ctx context.Context,
+	dockerManager *docker_manager.DockerManager,
+) (string, error) {
+
+	var volumes []*volume.Volume
+
+	searchLabels := map[string]string{
+		docker_label_key.AppIDDockerLabelKey.GetString():      label_value_consts.AppIDDockerLabelValue.GetString(),
+		docker_label_key.VolumeTypeDockerLabelKey.GetString(): label_value_consts.LogsAggregatorVolumeTypeDockerLabelValue.GetString(),
+	}
+
+	volumes, err := dockerManager.GetVolumesByLabels(ctx, searchLabels)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting the volumes for logs aggregator by labels '%+v'", searchLabels)
+	}
+
+	if len(volumes) == 0 {
+		return "", nil
+	}
+
+	if len(volumes) > 1 {
+		return "", stacktrace.NewError("Attempted to get logs collector volume name for logs aggregator but got more than one matches")
+	}
+
+	return volumes[0].Name, nil
 }
