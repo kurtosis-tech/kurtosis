@@ -33,7 +33,7 @@ func (vector *vectorContainerConfigProvider) GetPrivateHttpPortSpec() (*port_spe
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred creating the Fluentbit server's private HTTP port spec object using number '%v' and protocol '%v'",
+			"An error occurred creating the Vector server's private HTTP port spec object using number '%v' and protocol '%v'",
 			vector.httpPortNumber,
 			httpTransportProtocol,
 		)
