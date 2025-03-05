@@ -46,6 +46,7 @@ const (
     DB                /var/log/fluent-bit/db/fluent-bit.db
     DB.sync           normal
     Read_from_Head    true
+    Refresh_Interval  10
 
 [FILTER]
     Name              kubernetes
