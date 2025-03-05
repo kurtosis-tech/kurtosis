@@ -48,7 +48,7 @@ func (vector *vectorContainerConfigProvider) GetInitContainerArgs(
 ) (*docker_manager.CreateAndStartContainerArgs, error) {
 	logsAggregatorConfigContentStr, err := vector.config.getConfigFileContent()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the Loki server's configuration content")
+		return nil, stacktrace.Propagate(err, "An error occurred getting logs aggregator config file content")
 	}
 
 	// Create cmd to
@@ -98,7 +98,7 @@ func (vector *vectorContainerConfigProvider) GetContainerArgs(
 
 	logsAggregatorConfigContentStr, err := vector.config.getConfigFileContent()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the Loki server's configuration content")
+		return nil, stacktrace.Propagate(err, "An error occurred getting logs aggregator config file content")
 	}
 
 	// Create cmd to
