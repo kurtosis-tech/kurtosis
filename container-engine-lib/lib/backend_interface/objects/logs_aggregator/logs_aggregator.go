@@ -23,6 +23,12 @@ type LogsAggregator struct {
 	logsListeningPortNum uint16
 }
 
+type Sinks map[string]map[string]interface{}
+
+const (
+	DefaultSinkId = "kurtosis_default_sink"
+)
+
 func NewLogsAggregator(
 	status container.ContainerStatus,
 	maybePrivateIpAddr net.IP,
