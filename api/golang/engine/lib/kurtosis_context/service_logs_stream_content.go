@@ -18,12 +18,10 @@ func newServiceLogsStreamContent(
 	}
 }
 
-// Docs available at https://docs.kurtosis.com/sdk#getservicelogsbyserviceuuids----mapserviceuuid-arrayservicelog-servicelogsbyserviceuuids
 func (streamContent *serviceLogsStreamContent) GetServiceLogsByServiceUuids() map[services.ServiceUUID][]*ServiceLog {
 	return streamContent.serviceLogsByServiceUuids
 }
 
-// Docs available at https://docs.kurtosis.com/sdk#getnotfoundserviceuuids---setserviceuuid-notfoundserviceuuids
 func (streamContent *serviceLogsStreamContent) GetNotFoundServiceUuids() map[services.ServiceUUID]bool {
 	return streamContent.notFoundServiceUuids
 }
