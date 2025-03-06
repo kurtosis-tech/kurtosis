@@ -330,9 +330,9 @@ func createLogsAggregatorService(
 			Name:        "api",
 			Protocol:    "",
 			AppProtocol: nil,
-			Port:        int32(8686),
+			Port:        int32(apiPort),
 			TargetPort: intstr.IntOrString{
-				IntVal: int32(8686),
+				IntVal: int32(apiPort),
 				StrVal: "",
 				Type:   0,
 			},
