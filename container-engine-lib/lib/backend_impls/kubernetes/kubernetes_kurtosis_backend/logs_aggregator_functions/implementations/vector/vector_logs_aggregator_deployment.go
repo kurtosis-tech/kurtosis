@@ -17,6 +17,12 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"time"
+)
+
+const (
+	retryInterval = 1 * time.Second
+	maxRetries    = 30
 )
 
 type vectorLogsAggregatorDeployment struct{}
@@ -131,6 +137,10 @@ func (logsAggregator *vectorLogsAggregatorDeployment) CreateAndStart(
 			removeServiceFunc()
 		}
 	}()
+
+	if err = waitForPodManagedByDeployment(ctx, deployment, kubernetesManager); err != nil {
+		return nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred waiting for active pod managed by logs collector deployment '%v'", deployment.Name)
+	}
 
 	removeLogsAggregatorFunc := func() {
 		removeConfigMapFunc()
@@ -382,6 +392,36 @@ func createLogsAggregatorConfigMap(
 	}
 
 	return configMap, nil
+}
+
+func waitForPodManagedByDeployment(ctx context.Context, logsAggregatorDeployment *appsv1.Deployment, kubernetesManager *kubernetes_manager.KubernetesManager) error {
+	timeoutCtx, cancel := context.WithTimeout(ctx, time.Duration(maxRetries)*retryInterval)
+	defer cancel()
+
+	ticker := time.NewTicker(retryInterval)
+	defer ticker.Stop()
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		select {
+		case <-timeoutCtx.Done():
+			return stacktrace.NewError(
+				"Timeout waiting for a pod managed by logs aggregator deployment '%s' to come online",
+				logsAggregatorDeployment.Name,
+			)
+		case <-ticker.C:
+			pods, err := kubernetesManager.GetPodsManagedByDeployment(ctx, logsAggregatorDeployment)
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred getting pods managed by logs aggregator deployment'%v'", logsAggregatorDeployment.Name)
+			}
+			if len(pods) > 0 && len(pods[0].Status.ContainerStatuses) > 0 && pods[0].Status.ContainerStatuses[0].Ready {
+				// found a pod with a running vector container
+				return nil
+			}
+		}
+	}
+	return stacktrace.NewError(
+		"Exceeded max retries (%d) waiting for a pod managed by deployment '%s' to come online",
+		maxRetries, logsAggregatorDeployment.Name,
+	)
 }
 
 func (vector *vectorLogsAggregatorDeployment) GetLogsBaseDirPath() string {
