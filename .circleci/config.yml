@@ -81,7 +81,7 @@ steps_prepare_testing_k8s_k3s: &steps_prepare_testing_k8s_k3s
     - run:
         name: Start Kurtosis engine in K8s backend
         command: |
-          ${KURTOSIS_BINPATH} engine start --enclave-pool-size 2
+          ${KURTOSIS_BINPATH} engine start --cli-log-level=debug --enclave-pool-size 2
     - run:
         name: Run Kurtosis gateway
         command: "${KURTOSIS_BINPATH} gateway"
