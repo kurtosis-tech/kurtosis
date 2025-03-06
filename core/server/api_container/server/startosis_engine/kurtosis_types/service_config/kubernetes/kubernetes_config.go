@@ -68,7 +68,8 @@ func (config *KubernetesConfig) Copy() (builtin_argument.KurtosisValueType, erro
 //	return ingressClassConfigs, nil
 //}
 
-func (config *KubernetesConfig) GetStarlarkExtraIngressConfig() (*ExtraIngressConfig, *startosis_errors.InterpretationError) {
+func (config *KubernetesConfig) GetExtraIngressConfig() (*KtExtraIngressConfig, *startosis_errors.InterpretationError) {
+	var extraIngressConfig interface{}
 	extraIngressConfig, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*ExtraIngressConfig](config.KurtosisValueTypeDefault, ExtraIngressConfigAttr)
 
 	if interpretationErr != nil {
@@ -77,7 +78,15 @@ func (config *KubernetesConfig) GetStarlarkExtraIngressConfig() (*ExtraIngressCo
 	if !found || extraIngressConfig == nil {
 		return nil, nil
 	}
-	return extraIngressConfig, nil
+
+	kteic, ok := extraIngressConfig.(*KtExtraIngressConfig)
+	if !ok {
+		return nil, startosis_errors.NewInterpretationError(
+			"Could not convert %s field extraIngressConfig Ingress Config",
+			config.Type(),
+		)
+	}
+	return kteic, nil
 }
 
 type KtKubernetesConfig struct {
@@ -85,18 +94,12 @@ type KtKubernetesConfig struct {
 }
 
 func (config *KubernetesConfig) ToKurtosisType() (*KtKubernetesConfig, error) {
-	extraIngressConfig, interpretationError := config.GetStarlarkExtraIngressConfig()
+	extraIngressConfig, interpretationError := config.GetExtraIngressConfig()
 	if interpretationError != nil {
 		return nil, interpretationError
 	}
-	if extraIngressConfig == nil {
-		return nil, nil
-	}
-	ktExtraIngressConfigType, err := extraIngressConfig.ToKurtosisType()
-	if err != nil {
-		return nil, err
-	}
-	return &KtKubernetesConfig{ExtraIngressConfig: ktExtraIngressConfigType}, nil
+
+	return &KtKubernetesConfig{ExtraIngressConfig: extraIngressConfig}, nil
 }
 
 //multiIngressClassConfig, err := extraIngressConfig.GetStarlarkMultiIngressClassConfigs()

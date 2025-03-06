@@ -56,12 +56,12 @@ func NewIngressTargetType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					},
 				},
 				{
-					Name:              TLSConfigAttr,
+					Name:              IngressTlsAttr,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*IngressTLSConfig],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						if _, ok := value.(*IngressTLSConfig); !ok {
-							return startosis_errors.NewInterpretationError("Expected %s to be of type IngressTlsConfig", TLSConfigAttr)
+							return startosis_errors.NewInterpretationError("Expected %s to be of type IngressTlsConfig", IngressTlsAttr)
 						}
 						return nil
 					},
@@ -214,7 +214,7 @@ func (target *IngressSpec) ToKurtosisType() (*KtIngressSpec, *startosis_errors.I
 
 	tlsConfig, err := target.GetTlsConfig()
 	if err != nil {
-		return nil, handleError(err, TLSConfigAttr)
+		return nil, handleError(err, IngressTlsAttr)
 	}
 
 	rules, err := target.GetRules()

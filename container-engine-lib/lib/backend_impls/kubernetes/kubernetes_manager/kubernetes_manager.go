@@ -2487,10 +2487,13 @@ func (manager *KubernetesManager) GetLabelsOnNode(ctx context.Context, nodeName 
 
 // ---------------------------Ingresses------------------------------------------------------------------------------
 
-func (manager *KubernetesManager) CreateIngress(ctx context.Context, namespace string, name string, labels map[string]string, annotations map[string]string, ingressClassName *string, rules []netv1.IngressRule) (*netv1.Ingress, error) {
-	client := manager.kubernetesClientSet.NetworkingV1().Ingresses(namespace)
-
-	ingress := &netv1.Ingress{
+func GenerateIngress(
+	name string,
+	labels map[string]string,
+	annotations map[string]string,
+	ingressClassName *string,
+	rules []netv1.IngressRule) *netv1.Ingress {
+	return &netv1.Ingress{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "",
 			APIVersion: "",
@@ -2526,6 +2529,18 @@ func (manager *KubernetesManager) CreateIngress(ctx context.Context, namespace s
 			},
 		},
 	}
+}
+
+func (manager *KubernetesManager) CreateIngress(
+	ctx context.Context,
+	namespace string,
+	name string,
+	ingress *netv1.Ingress,
+) (
+	*netv1.Ingress,
+	error,
+) {
+	client := manager.kubernetesClientSet.NetworkingV1().Ingresses(namespace)
 
 	ingressResult, err := client.Create(ctx, ingress, globalCreateOptions)
 	if err != nil {

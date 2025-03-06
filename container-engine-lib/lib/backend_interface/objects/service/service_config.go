@@ -1,9 +1,8 @@
 package service
 
 import (
-	"fmt"
-
 	"encoding/json"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config/kubernetes"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
@@ -74,26 +73,17 @@ type privateServiceConfig struct {
 
 	NodeSelectors map[string]string
 
-	// IngressAnnotations are frequently used to pass config to ingress controllers
-	IngressAnnotations map[string]string
-
-	// IngressClassName so users may specify an existing ingress controller
-	IngressClassName *string
-
-	// IngressHost specifies the hostname for external-dns and cert-manager
-	IngressHost *string
-
-	// IngressTLSHost specifies the TLS host for cert-manager
-	IngressTLSHost *string
-
 	ImageDownloadMode image_download_mode.ImageDownloadMode
 
 	FilesToBeMoved map[string]string
 
 	TiniEnabled bool
+
+	// KubernetesConfig contains Kubernetes-specific configuration for a service
+	KubernetesConfig *kubernetes.KtKubernetesConfig
 }
 
-func CreateServiceConfig(containerImageName string, imageBuildSpec *image_build_spec.ImageBuildSpec, imageRegistrySpec *image_registry_spec.ImageRegistrySpec, nixBuildSpec *nix_build_spec.NixBuildSpec, privatePorts map[string]*port_spec.PortSpec, publicPorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, envVars map[string]string, filesArtifactExpansion *service_directory.FilesArtifactsExpansion, persistentDirectories *service_directory.PersistentDirectories, cpuAllocationMillicpus uint64, memoryAllocationMegabytes uint64, privateIPAddrPlaceholder string, minCpuMilliCpus uint64, minMemoryMegaBytes uint64, labels map[string]string, ingressAnnotations map[string]string, ingressClassName *string, ingressHost *string, ingressTLSHost *string, user *service_user.ServiceUser, tolerations []v1.Toleration, nodeSelectors map[string]string, imageDownloadMode image_download_mode.ImageDownloadMode, tiniEnabled bool) (*ServiceConfig, error) {
+func CreateServiceConfig(containerImageName string, imageBuildSpec *image_build_spec.ImageBuildSpec, imageRegistrySpec *image_registry_spec.ImageRegistrySpec, nixBuildSpec *nix_build_spec.NixBuildSpec, privatePorts map[string]*port_spec.PortSpec, publicPorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, envVars map[string]string, filesArtifactExpansion *service_directory.FilesArtifactsExpansion, persistentDirectories *service_directory.PersistentDirectories, cpuAllocationMillicpus uint64, memoryAllocationMegabytes uint64, privateIPAddrPlaceholder string, minCpuMilliCpus uint64, minMemoryMegaBytes uint64, labels map[string]string, user *service_user.ServiceUser, tolerations []v1.Toleration, nodeSelectors map[string]string, imageDownloadMode image_download_mode.ImageDownloadMode, tiniEnabled bool, kubernetesConfig *kubernetes.KtKubernetesConfig) (*ServiceConfig, error) {
 
 	if err := ValidateServiceConfigLabels(labels); err != nil {
 		return nil, stacktrace.Propagate(err, "Invalid service config labels '%+v'", labels)
@@ -118,10 +108,7 @@ func CreateServiceConfig(containerImageName string, imageBuildSpec *image_build_
 		MinCpuAllocationMilliCpus:    minCpuMilliCpus,
 		MinMemoryAllocationMegabytes: minMemoryMegaBytes,
 		Labels:                       labels,
-		IngressAnnotations:           ingressAnnotations,
-		IngressClassName:             ingressClassName,
-		IngressHost:                  ingressHost,
-		IngressTLSHost:               ingressTLSHost,
+		KubernetesConfig:             kubernetesConfig,
 		User:                         user,
 		Tolerations:                  tolerations,
 		NodeSelectors:                nodeSelectors,
@@ -246,41 +233,6 @@ func (serviceConfig *ServiceConfig) SetLabels(labels map[string]string) {
 	serviceConfig.privateServiceConfig.Labels = labels
 }
 
-func (serviceConfig *ServiceConfig) GetIngressAnnotations() map[string]string {
-	return serviceConfig.privateServiceConfig.IngressAnnotations
-}
-
-func (serviceConfig *ServiceConfig) SetIngressAnnotations(annotations map[string]string) {
-	serviceConfig.privateServiceConfig.IngressAnnotations = annotations
-}
-
-func (serviceConfig *ServiceConfig) GetIngressClassName() *string {
-	return serviceConfig.privateServiceConfig.IngressClassName
-}
-
-func (serviceConfig *ServiceConfig) SetIngressClassName(className *string) {
-	serviceConfig.privateServiceConfig.IngressClassName = className
-}
-
-func (serviceConfig *ServiceConfig) GetIngressHost() *string {
-	fmt.Println("serviceConfig: ", serviceConfig)
-	fmt.Println("privateServiceConfig: ", serviceConfig.privateServiceConfig)
-	fmt.Println("ingresshost: ", serviceConfig.privateServiceConfig.IngressHost)
-	return serviceConfig.privateServiceConfig.IngressHost
-}
-
-func (serviceConfig *ServiceConfig) SetIngressHost(host *string) {
-	serviceConfig.privateServiceConfig.IngressHost = host
-}
-
-func (serviceConfig *ServiceConfig) GetIngressTLSHost() *string {
-	return serviceConfig.privateServiceConfig.IngressTLSHost
-}
-
-func (serviceConfig *ServiceConfig) SetIngressTLSHost(host *string) {
-	serviceConfig.privateServiceConfig.IngressTLSHost = host
-}
-
 func (serviceConfig *ServiceConfig) GetTolerations() []v1.Toleration {
 	return serviceConfig.privateServiceConfig.Tolerations
 }
@@ -295,10 +247,6 @@ func (serviceConfig *ServiceConfig) GetImageDownloadMode() image_download_mode.I
 
 func (serviceConfig *ServiceConfig) SetImageDownloadMode(mode image_download_mode.ImageDownloadMode) {
 	serviceConfig.privateServiceConfig.ImageDownloadMode = mode
-}
-
-func (serviceConfig *ServiceConfig) MarshalJSON() ([]byte, error) {
-	return json.Marshal(serviceConfig.privateServiceConfig)
 }
 
 func (serviceConfig *ServiceConfig) GetNodeSelectors() map[string]string {
@@ -316,6 +264,18 @@ func (serviceConfig *ServiceConfig) GetFilesToBeMoved() map[string]string {
 func (serviceConfig *ServiceConfig) GetTiniEnabled() bool {
 	return serviceConfig.privateServiceConfig.TiniEnabled
 }
+
+func (serviceConfig *ServiceConfig) GetKubernetesConfig() *kubernetes.KtKubernetesConfig {
+	return serviceConfig.privateServiceConfig.KubernetesConfig
+}
+
+func (serviceConfig *ServiceConfig) SetKubernetesConfig(config *kubernetes.KtKubernetesConfig) {
+	serviceConfig.privateServiceConfig.KubernetesConfig = config
+}
+
+//func (serviceConfig *ServiceConfig) MarshalJSON() ([]byte, error) {
+//	return json.Marshal(serviceConfig.privateServiceConfig)
+//}
 
 func (serviceConfig *ServiceConfig) UnmarshalJSON(data []byte) error {
 

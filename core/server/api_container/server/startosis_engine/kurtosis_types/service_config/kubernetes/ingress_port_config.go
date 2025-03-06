@@ -110,8 +110,17 @@ func (config *IngressPortConfig) ToKurtosisType() (*KtPortConfig, *startosis_err
 		return nil, interpretationErr
 	}
 
+	pname := ""
+	if portName != nil {
+		pname = *portName
+	}
+
+	var pnumber int32 = 0
+	if portNumber != nil {
+		pnumber = int32(*portNumber)
+	}
 	return &KtPortConfig{
-		Name:   portName,
-		Number: portNumber,
+		Name:   pname,
+		Number: pnumber,
 	}, nil
 }

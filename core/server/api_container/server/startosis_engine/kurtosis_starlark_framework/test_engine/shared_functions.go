@@ -3,6 +3,7 @@ package test_engine
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config/kubernetes"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
 )
 
@@ -43,7 +44,7 @@ func getCustomReadyConditionsScripPart(
 		fieldStr,
 		service_config.AssertionAttr,
 		assertionStr,
-		service_config.TargetAttr,
+		kubernetes.TargetAttr,
 		targetStr,
 		service_config.IntervalAttr,
 		intervalStr,

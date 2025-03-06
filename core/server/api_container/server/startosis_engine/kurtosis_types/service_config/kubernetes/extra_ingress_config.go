@@ -11,10 +11,7 @@ import (
 const (
 	ExtraIngressConfigTypeName = "ExtraIngressConfig"
 	ExtraIngressConfigAttr     = "extraIngressConfig"
-	//IngressTargetsTypeName = "ingressTargets"
-	//IngressClassConfigName     = "ingress_class_name"
-	//HostConfigsAttr            = "host_configs"
-	IngressesAttr = "ingresses"
+	IngressesAttr              = "ingresses"
 )
 
 type ExtraIngressConfig struct {
@@ -68,7 +65,7 @@ func (extraIngressConfig *ExtraIngressConfig) Validate() error { return nil }
 
 func (extraIngressConfig *ExtraIngressConfig) GetIngresses() ([]*KtIngressSpec, error) {
 	ingressTargetsList, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.List](
-		extraIngressConfig.KurtosisValueTypeDefault, Ingresses,
+		extraIngressConfig.KurtosisValueTypeDefault, IngressesAttr,
 	)
 	if interpretationErr != nil {
 		return nil, interpretationErr

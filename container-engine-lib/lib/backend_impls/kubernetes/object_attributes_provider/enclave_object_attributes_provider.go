@@ -49,8 +49,6 @@ type KubernetesEnclaveObjectAttributesProvider interface {
 		uuid service.ServiceUUID,
 		id service.ServiceName,
 		privatePorts map[string]*port_spec.PortSpec,
-		userAnnotations map[string]string,
-		ingressClassName *string,
 	) (KubernetesObjectAttributes, error)
 }
 
@@ -284,8 +282,6 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServiceIng
 	serviceUUID service.ServiceUUID,
 	serviceName service.ServiceName,
 	privatePorts map[string]*port_spec.PortSpec,
-	userAnnotations map[string]string,
-	ingressClassName *string,
 ) (KubernetesObjectAttributes, error) {
 	name, err := getKubernetesObjectName(serviceName)
 	if err != nil {
@@ -303,28 +299,12 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServiceIng
 	}
 	labels[kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey] = label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue
 
-	// Initialize annotations with the default Traefik annotation only if no ingress class is specified
-	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
-
-	if ingressClassName == nil {
-		traefikIngressRouterEntrypointsAnnotationValue, err := kubernetes_annotation_value.CreateNewKubernetesAnnotationValue(traefikIngressRouterEntrypointsValue)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred creating a new user custom Kubernetes label value '%s'", traefikIngressRouterEntrypointsValue)
-		}
-		annotations[kubernetes_annotation_key_consts.TraefikIngressRouterEntrypointsAnnotationKey] = traefikIngressRouterEntrypointsAnnotationValue
+	traefikIngressRouterEntrypointsAnnotationValue, err := kubernetes_annotation_value.CreateNewKubernetesAnnotationValue(traefikIngressRouterEntrypointsValue)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a new user custom Kubernetes label value '%s'", traefikIngressRouterEntrypointsValue)
 	}
-
-	// Add user-provided annotations
-	for key, value := range userAnnotations {
-		annotationKey, err := kubernetes_annotation_key.CreateNewKubernetesAnnotationKey(key)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Failed to create annotation key from user-provided key '%s'", key)
-		}
-		annotationValue, err := kubernetes_annotation_value.CreateNewKubernetesAnnotationValue(value)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Failed to create annotation value from user-provided value '%s'", value)
-		}
-		annotations[annotationKey] = annotationValue
+	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{
+		kubernetes_annotation_key_consts.TraefikIngressRouterEntrypointsAnnotationKey: traefikIngressRouterEntrypointsAnnotationValue,
 	}
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)

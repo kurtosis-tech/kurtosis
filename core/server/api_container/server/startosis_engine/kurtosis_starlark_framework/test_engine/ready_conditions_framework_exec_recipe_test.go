@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config/kubernetes"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,7 +34,7 @@ func (t *readyConditionsExecRecipeTestCase) GetStarlarkCode() string {
 		testReadyConditionsField,
 		service_config.AssertionAttr,
 		testReadyConditionsAssertion,
-		service_config.TargetAttr,
+		kubernetes.TargetAttr,
 		testReadyConditionsTarget,
 		service_config.IntervalAttr,
 		testReadyConditionsInterval,
