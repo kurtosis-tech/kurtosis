@@ -156,7 +156,7 @@ func TestPersistedLogs(t *testing.T) {
 
 		require.NoError(t, testEvaluationErr)
 		for serviceUuid := range userServiceUuids {
-			require.Contains(t, expectedLogLinesByRequest[requestIndex], receivedLogLinesByService[serviceUuid])
+			require.Contains(t, receivedLogLinesByService[serviceUuid], expectedLogLinesByRequest[requestIndex])
 		}
 		require.Equal(t, expectedNonExistenceServiceUuids, receivedNotFoundServiceUuids)
 	}

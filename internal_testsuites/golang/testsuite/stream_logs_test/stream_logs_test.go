@@ -121,7 +121,7 @@ func TestStreamLogs(t *testing.T) {
 
 		require.NoError(t, testEvaluationErr)
 		for userServiceUuid := range requestedServiceUuids {
-			require.Contains(t, expectedLogLines, receivedLogLinesByService[userServiceUuid])
+			require.Contains(t, receivedLogLinesByService[userServiceUuid], expectedLogLines)
 		}
 		require.Equal(t, expectedNonExistenceServiceUuids, receivedNotFoundServiceUuids)
 	}
