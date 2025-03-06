@@ -13,9 +13,13 @@ const (
 	apiPortStr = "8686"
 	apiPort    = 8686
 
+	// mount the data directory as the disk buffer for file sink is contained here and needs to be persisted onto the k8s node in case vector restarts
+	vectorDataDirVolumeName = "vectorDataDirVol"
+	vectorDataDirMountPath  = "/vector-data-dir"
+
 	vectorConfigFileName = "vector.toml"
 	vectorConfigFmtStr   = `
-    data_dir = "/vector-data-dir"
+    data_dir = "%v"
 
     [api]
     enabled = true
@@ -38,6 +42,8 @@ const (
     type = "console"
     inputs = ["fluentbit"]
     target = "stdout"
+    buffer.type = "disk"
+    buffer.when_full = "block"
 
     [sinks.stdout_sink.encoding]
     codec = "json"

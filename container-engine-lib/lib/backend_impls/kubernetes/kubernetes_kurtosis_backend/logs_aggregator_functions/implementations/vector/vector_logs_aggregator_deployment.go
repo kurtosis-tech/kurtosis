@@ -214,6 +214,14 @@ func createLogsAggregatorDeployment(
 					MountPropagation: nil,
 					SubPathExpr:      "",
 				},
+				{
+					Name:             vectorDataDirVolumeName,
+					ReadOnly:         false,
+					MountPath:        vectorConfigVolumeName,
+					SubPath:          "",
+					MountPropagation: nil,
+					SubPathExpr:      "",
+				},
 			},
 			VolumeDevices:            nil,
 			LivenessProbe:            nil,
@@ -238,6 +246,10 @@ func createLogsAggregatorDeployment(
 		{
 			Name:         kurtosisLogsVolumeName,
 			VolumeSource: kubernetesManager.GetVolumeSourceForHostPath(kurtosisLogsMountPath),
+		},
+		{
+			Name:         vectorConfigVolumeName,
+			VolumeSource: kubernetesManager.GetVolumeSourceForHostPath(vectorDataDirMountPath),
 		},
 	}
 
@@ -382,6 +394,7 @@ func createLogsAggregatorConfigMap(
 		map[string]string{
 			vectorConfigFileName: fmt.Sprintf(
 				vectorConfigFmtStr,
+				vectorDataDirMountPath,
 				apiPortStr,
 				logListeningPortNum,
 				kurtosisLogsMountPath),
