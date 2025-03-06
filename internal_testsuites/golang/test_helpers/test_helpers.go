@@ -476,7 +476,8 @@ func GetLogsResponse(
 	shouldContinueInTheLoop := true
 
 	ticker := time.NewTicker(timeout)
-	for {
+
+	for shouldContinueInTheLoop {
 		select {
 		case <-ticker.C:
 			testEvaluationErr = stacktrace.NewError("Receiving stream logs in the test has reached the '%v' time out", timeout.String())
