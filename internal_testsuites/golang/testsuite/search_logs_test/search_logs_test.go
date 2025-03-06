@@ -5,7 +5,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -130,7 +129,6 @@ func TestSearchLogs(t *testing.T) {
 
 	expectedLogLinesByService := map[services.ServiceUUID][]string{}
 
-	logrus.Info("getting logs")
 	for requestIndex, filter := range filtersByRequest {
 
 		for serviceUuid := range userServiceUuids {
@@ -153,7 +151,9 @@ func TestSearchLogs(t *testing.T) {
 
 		require.NoError(t, testEvaluationErr)
 		for serviceUuid := range userServiceUuids {
-			require.Contains(t, receivedLogLinesByService[serviceUuid], expectedLogLinesByRequest[requestIndex])
+			for logNum, expectedLogLine := range expectedLogLinesByRequest[requestIndex] {
+				require.Contains(t, receivedLogLinesByService[serviceUuid][logNum], expectedLogLine)
+			}
 		}
 		require.Equal(t, expectedNonExistenceServiceUuids, receivedNotFoundServiceUuids)
 	}
