@@ -33,6 +33,7 @@ const (
 	logLine3 = "Starting feature 'enclave pool with size 2'"
 	logLine4 = "The data have being loaded"
 
+	// wait at least one fluent bit refresh interval to ensure collector picks up new log files
 	secondsToWaitForLogs = 10 * time.Second
 )
 
@@ -100,26 +101,23 @@ func TestSearchLogs(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, _, _, err := test_helpers.CreateEnclave(t, ctx, testName)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName)
 	require.NoError(t, err, "An error occurred creating an enclave")
-	//defer func() {
-	//	err = destroyEnclaveFunc()
-	//	require.NoError(t, err, "An error occurred destroying the enclave after the test finished")
-	//}()
+	defer func() {
+		err = destroyEnclaveFunc()
+		require.NoError(t, err, "An error occurred destroying the enclave after the test finished")
+	}()
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	require.NoError(t, err)
 
-	logrus.Info("adding services ")
 	serviceList, err := test_helpers.AddServicesWithLogLines(ctx, enclaveCtx, logLinesByService)
 	require.NoError(t, err, "An error occurred adding services with log lines '%+v'", logLinesByService)
 	require.Equal(t, len(logLinesByService), len(serviceList))
 
 	// It takes some time for logs to persist so we sleep to ensure logs have persisted
 	// Otherwise the test is flaky
-
-	logrus.Info("waiting for logs")
 	time.Sleep(secondsToWaitForLogs)
 	// ------------------------------------- TEST RUN -------------------------------------------------
 	enclaveUuid := enclaveCtx.GetEnclaveUuid()
