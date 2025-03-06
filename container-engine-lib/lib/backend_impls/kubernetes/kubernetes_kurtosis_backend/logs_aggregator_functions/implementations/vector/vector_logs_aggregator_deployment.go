@@ -326,6 +326,18 @@ func createLogsAggregatorService(
 			},
 			NodePort: 0,
 		},
+		{
+			Name:        "api",
+			Protocol:    "",
+			AppProtocol: nil,
+			Port:        int32(8686),
+			TargetPort: intstr.IntOrString{
+				IntVal: int32(8686),
+				StrVal: "",
+				Type:   0,
+			},
+			NodePort: 0,
+		},
 	}
 
 	matchPodLabels := shared_helpers.GetStringMapFromLabelMap(logsAggregatorDeploymentLabels)
@@ -360,6 +372,7 @@ func createLogsAggregatorConfigMap(
 		map[string]string{
 			vectorConfigFileName: fmt.Sprintf(
 				vectorConfigFmtStr,
+				apiPortStr,
 				logListeningPortNum,
 				kurtosisLogsMountPath),
 		},
@@ -373,4 +386,8 @@ func createLogsAggregatorConfigMap(
 
 func (vector *vectorLogsAggregatorDeployment) GetLogsBaseDirPath() string {
 	return kurtosisLogsMountPath
+}
+
+func (vector *vectorLogsAggregatorDeployment) GetHTTPHealthCheckEndpointAndPort() (string, uint16) {
+	return "/health", apiPort
 }

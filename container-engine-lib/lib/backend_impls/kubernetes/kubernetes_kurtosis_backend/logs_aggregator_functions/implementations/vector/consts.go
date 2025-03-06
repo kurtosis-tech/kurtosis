@@ -10,9 +10,16 @@ const (
 	kurtosisLogsVolumeName = "varlogskurtosis"
 	kurtosisLogsMountPath  = "/var/log/kurtosis"
 
+	apiPortStr = "8686"
+	apiPort    = 8686
+
 	vectorConfigFileName = "vector.toml"
 	vectorConfigFmtStr   = `
     data_dir = "/vector-data-dir"
+
+    [api]
+    enabled = true
+    address = "0.0.0.0:%v"
 
     [sources.fluentbit]
     type = "fluent"

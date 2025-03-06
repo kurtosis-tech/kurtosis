@@ -28,4 +28,7 @@ type LogsAggregatorDeployment interface {
 
 	// GetLogsBaseDirPath returns a string of the base directory path logs are output to on pods associated with the deployment
 	GetLogsBaseDirPath() string
+
+	// GetHTTPHealthCheckEndpointAndPort returns a string and int of the http endpoint and port to request aggregator health status
+	GetHTTPHealthCheckEndpointAndPort() (string, uint16)
 }

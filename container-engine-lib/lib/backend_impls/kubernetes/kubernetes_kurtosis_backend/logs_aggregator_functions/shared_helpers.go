@@ -1,7 +1,9 @@
 package logs_aggregator_functions
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
@@ -9,15 +11,21 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	"net"
+	"strconv"
+	"time"
 )
 
 const (
-// maxAvailabilityCheckRetries     = 30
-// timeToWaitBetweenChecksDuration = 1 * time.Second
+	maxRetries                      = 30
+	curlContainerSuccessExitCode    = 0
+	successHealthCheckStatusCode    = 200
+	timeToWaitBetweenChecksDuration = 1 * time.Second
 )
 
 func getLogsAggregatorObjAndResourcesForCluster(ctx context.Context, kubernetesManager *kubernetes_manager.KubernetesManager) (*logs_aggregator.LogsAggregator, *logsAggregatorKubernetesResources, error) {
@@ -227,48 +235,121 @@ func getLogsAggregatorStatus(ctx context.Context, kubernetesManager *kubernetes_
 	return podStatus, nil
 }
 
-//
-//func waitForLogsAggregatorAvailability(
-//	ctx context.Context,
-//	k8sResources *logsAggregatorKubernetesResources,
-//	kubernetesManager *kubernetes_manager.KubernetesManager) error {
-//	logsAggregatorDeployment := k8sResources.deployment
-//	pods, err := kubernetesManager.GetPodsManagedByDeployment(ctx, k8sResources.deployment)
-//	if err != nil {
-//		return stacktrace.Propagate(err, "An error occurred getting pods managed by logs aggregator daemon set '%v'", logsAggregatorDeployment.Name)
-//	}
-//	if len(pods) < 1 {
-//		return stacktrace.NewError("No pods managed by logs aggregator deployment were found. There should be exactly one. This is likely a bug in Kurtosis.")
-//	}
-//	if len(pods) > 1 {
-//		return stacktrace.NewError("No pods managed by logs aggregator deployment were found. There should be exactly one. This is likely a bug in Kurtosis.")
-//	}
-//
-//	httpPortSpec, err := port_spec.NewPortSpec(defaultLogsListeningPortNum, port_spec.TransportProtocol_TCP, "http", nil, "")
-//	if err != nil {
-//		return stacktrace.Propagate(
-//			err,
-//			"An error occurred creating the log aggregator public HTTP port spec object using number '%v' and protocol '%v'",
-//			defaultLogsListeningPortNum,
-//			port_spec.TransportProtocol_TCP,
-//		)
-//	}
-//	pod := pods[0]
-//	if len(pod.Spec.Containers) < 1 {
-//		return stacktrace.NewError("Pod '%v' managed by logs aggregator deployment '%v' doesn't have any containers associated with it. There should be at least one container.", pod.Name, logsAggregatorDeployment.Name)
-//	}
-//
-//	vectorContainerName := pod.Spec.Containers[0].Name
-//	if err = shared_helpers.WaitForPortAvailabilityUsingNetstat(
-//		kubernetesManager,
-//		k8sResources.namespace.Name,
-//		pod.Name,
-//		vectorContainerName,
-//		httpPortSpec,
-//		maxAvailabilityCheckRetries,
-//		timeToWaitBetweenChecksDuration); err != nil {
-//		return stacktrace.Propagate(err, "An error occurred while checking for availability of pod '%v' managed by logs aggregator deployment '%v'", pod.Name, logsAggregatorDeployment.Name)
-//	}
-//
-//	return nil
-//}
+func waitForLogsAggregatorAvailability(
+	ctx context.Context,
+	healthCheckEndpoint string,
+	healthCheckPortNum uint16,
+	k8sResources *logsAggregatorKubernetesResources,
+	kubernetesManager *kubernetes_manager.KubernetesManager) error {
+	availabilityCheckerNamespace := k8sResources.namespace.Name
+	aggregatorHost := k8sResources.service.Spec.ClusterIP
+
+	availabilityCheckUrl := fmt.Sprintf("http://%v:%v%v", aggregatorHost, healthCheckPortNum, healthCheckEndpoint)
+	containerName := "availability-check-container"
+	pod, err := kubernetesManager.CreatePod(
+		ctx,
+		k8sResources.namespace.Name,
+		"availability-checker-pod",
+		nil,
+		nil,
+		nil,
+		[]apiv1.Container{
+			{
+				Name:  containerName,
+				Image: "badouralix/curl-jq",
+				Command: []string{
+					"sh",
+					"-c",
+					"sleep 10000000s",
+				},
+				Args:                     nil,
+				WorkingDir:               "",
+				Ports:                    nil,
+				EnvFrom:                  nil,
+				Env:                      nil,
+				Resources:                apiv1.ResourceRequirements{},
+				ResizePolicy:             nil,
+				VolumeMounts:             nil,
+				VolumeDevices:            nil,
+				LivenessProbe:            nil,
+				ReadinessProbe:           nil,
+				StartupProbe:             nil,
+				Lifecycle:                nil,
+				TerminationMessagePath:   "",
+				TerminationMessagePolicy: "",
+				ImagePullPolicy:          "",
+				SecurityContext:          nil,
+				Stdin:                    false,
+				StdinOnce:                false,
+				TTY:                      false,
+			},
+		},
+		nil,
+		"",
+		"",
+		nil,
+		nil)
+	defer func() {
+		err := kubernetesManager.RemovePod(ctx, pod)
+		if err != nil {
+			logrus.Warnf("Attempted to remove availability checker pod '%v' in namespace '%v' but an err occurred.", pod.Name, availabilityCheckerNamespace)
+			logrus.Warn("You may have to remove this pod manually.")
+		}
+	}()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating pod '%v' in namespace '%v'.", "availabilityChecker", availabilityCheckerNamespace)
+	}
+
+	cmdStr := []string{
+		"sh",
+		"-c",
+		fmt.Sprintf("curl -s -o /dev/null -w \"%%{http_code}\" %v", availabilityCheckUrl),
+	}
+	for i := uint(0); i < maxRetries; i++ {
+		outputBuffer := &bytes.Buffer{}
+		concurrentBuffer := concurrent_writer.NewConcurrentWriter(outputBuffer)
+		resultExitCode, err := kubernetesManager.RunExecCommand(
+			availabilityCheckerNamespace,
+			pod.Name,
+			containerName,
+			cmdStr,
+			concurrentBuffer,
+			concurrentBuffer,
+		)
+		if err == nil {
+			healthCheckStatusCode, err := strconv.Atoi(outputBuffer.String())
+			if err != nil {
+				return stacktrace.Propagate(err, "Expected to be able to convert '%v', output from '%v' to an int but was unable to.", outputBuffer.String(), cmdStr)
+			}
+			logrus.Debugf("Curl availability-waiting command '%v' returned health status code: %v", cmdStr, healthCheckStatusCode)
+			if healthCheckStatusCode == successHealthCheckStatusCode {
+				return nil
+			}
+			logrus.Debugf(
+				"Curl availability-waiting command '%v' returned without a Kubernetes error, but exited with non-%v exit code '%v' and logs:\n%v",
+				cmdStr,
+				curlContainerSuccessExitCode,
+				resultExitCode,
+				outputBuffer.String(),
+			)
+		} else {
+			logrus.Debugf(
+				"Curl availability-waiting command '%v' experienced a Kubernetes error:\n%v",
+				cmdStr,
+				err,
+			)
+		}
+
+		// Tiny optimization to not sleep if we're not going to run the loop again
+		if i < maxRetries {
+			time.Sleep(timeToWaitBetweenChecksDuration)
+		}
+	}
+
+	return stacktrace.NewError(
+		"The curl health check didn't succeed available (as measured by the command '%v') even after retrying %v times with %v between retries",
+		cmdStr,
+		maxRetries,
+		timeToWaitBetweenChecksDuration,
+	)
+}
