@@ -15,7 +15,7 @@ const (
 
 	// mount the data directory as the disk buffer for file sink is contained here and needs to be persisted onto the k8s node in case vector restarts
 	vectorDataDirVolumeName = "vectorDataDirVol"
-	vectorDataDirMountPath  = "/vector-data-dir"
+	vectorDataDirMountPath  = "/var/lib/vector"
 
 	vectorConfigFileName = "vector.toml"
 	vectorConfigFmtStr   = `
