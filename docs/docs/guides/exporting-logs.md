@@ -126,6 +126,10 @@ kurtosis run github.com/ethpandaops/ethereum-package
 Once the package has finished execution, go to  `http://localhost:5601/app/enterprise_search/content/search_indices`.
 Indices created by Kurtosis will the in the format `kt-{{ enclave_uuid }}-{{ service_name }}` (as configured above)
 
+This is what you should see if everything went correctly
+
+![elasticsearch-dashboard.png](/img/guides/elasticsearch-dashboard.jpeg)
+
 ## Configuring other sinks
 
 Kurtosis sinks configurations are one-to-one to Vector sink configurations, with the `inputs` field being injected automatically
