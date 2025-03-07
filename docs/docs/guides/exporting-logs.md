@@ -10,10 +10,11 @@ This guide assumes that you have [Kurtosis installed](../get-started/installing-
 Kurtosis comes with a logs aggregator component that aggregates logs from services across enclaves. This component uses
 Vector under the hood. Logs aggregator can be configured independently for each cluster, in the Kurtosis [config file](../cli-reference/index.md#configuration-file-path).
 
-Kurtosis uses the notion of "sinks" to describe the location where you want your logs exported. Sink configurations are
-forwarded as-is (with some exceptions, see below) to Vector, therefore Kurtosis can export to all sinks that Vector supports. 
-For a complete list of supported sinks, please refer [here](https://vector.dev/docs/reference/configuration/sinks/). Currently,
-logs exporting only works with Docker.
+Kurtosis (and Vector) uses the notion of ["sinks"](https://vector.dev/docs/about/concepts/#sinks) to describe the 
+location where you want your logs exported. Sink configurations are forwarded as-is (with some exceptions, see below) to 
+Vector, therefore Kurtosis can export to all sinks that Vector supports. For a complete list of supported sinks and their 
+configurations, please refer [here](https://vector.dev/docs/reference/configuration/sinks/). Currently, logs exporting 
+only works with Docker.
 
 The following guide walks you through the process of setting up a local Elasticsearch/Kibana instance to which Kurtosis
 will forward logs to. We also include configuration examples for common sinks, such as AWS OpenSearch, S3, etc.
