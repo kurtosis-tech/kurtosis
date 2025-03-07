@@ -1,8 +1,12 @@
 package logs_aggregator_functions
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"net"
+	"strconv"
+	"time"
 
 	"github.com/docker/docker/api/types/volume"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
@@ -14,11 +18,20 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 )
 
 const (
 	shouldShowStoppedLogsAggregatorContainers = true
+	curlContainerSuccessExitCode              = 0
+	successHealthCheckStatusCode              = 200
+	healthcheckImage                          = "badouralix/curl-jq"
+	healthcheckContainerNamePrefix            = "logs-aggregator-healthcheck"
+	healthcheckCmdMaxRetries                  = 30
+	healthcheckCmdDelayInRetries              = 200 * time.Millisecond
+	sleepSeconds                              = 1800
 )
 
 func getLogsAggregatorPrivatePorts(containerLabels map[string]string) (*port_spec.PortSpec, error) {
@@ -163,4 +176,99 @@ func getLogsAggregatorVolumeName(
 	}
 
 	return volumes[0].Name, nil
+}
+
+func waitForLogsAggregatorAvailability(
+	ctx context.Context,
+	healthcheckIpAddr net.IP,
+	healthCheckEndpoint string,
+	healthCheckPortNum uint16,
+	targetNetworkId string,
+	dockerManager *docker_manager.DockerManager,
+) error {
+	entrypointArgs := []string{
+		"/bin/sh",
+		"-c",
+		fmt.Sprintf("sleep %v", sleepSeconds),
+	}
+
+	uuid, err := uuid_generator.GenerateUUIDString()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred generating a UUID for the configurator container name")
+	}
+
+	containerName := fmt.Sprintf("%s-%s", healthcheckContainerNamePrefix, uuid)
+
+	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
+		healthcheckImage,
+		containerName,
+		targetNetworkId,
+	).WithEntrypointArgs(
+		entrypointArgs,
+	).Build()
+
+	containerId, _, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred starting the logs aggregator healthcheck container with these args '%+v'", createAndStartArgs)
+	}
+	//The killing step has to be executed always in the success and also in the failed case
+	defer func() {
+		if err = dockerManager.RemoveContainer(context.Background(), containerId); err != nil {
+			logrus.Errorf(
+				"Launching the logs aggregator healthcheck container with container ID '%v' didn't complete successfully so we "+
+					"tried to remove the container we started, but doing so exited with an error:\n%v",
+				containerId,
+				err)
+			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the container with ID '%v'!!!!!!", containerId)
+		}
+	}()
+
+	healthcheckUrl := fmt.Sprintf("http://%v:%v%v", healthcheckIpAddr, healthCheckPortNum, healthCheckEndpoint)
+	execCmd := []string{
+		"/bin/sh",
+		"-c",
+		fmt.Sprintf("curl -s -o /dev/null -w \"%%{http_code}\" %v", healthcheckUrl),
+	}
+
+	for i := uint(0); i < healthcheckCmdMaxRetries; i++ {
+		outputBuffer := &bytes.Buffer{}
+		exitCode, err := dockerManager.RunUserServiceExecCommands(ctx, containerId, "", execCmd, outputBuffer)
+		if err == nil {
+			healthCheckStatusCode, err := strconv.Atoi(outputBuffer.String())
+			if err != nil {
+				return stacktrace.Propagate(err, "Expected to be able to convert '%v', output from '%v' to an int but was unable to.", outputBuffer.String(), execCmd)
+			}
+
+			logrus.Debugf("Logs aggregator healthcheck command '%v' returned health status code: %v", execCmd, healthCheckStatusCode)
+			if healthCheckStatusCode == successHealthCheckStatusCode {
+				return nil
+			}
+
+			logrus.Debugf(
+				"Logs aggregator healthcheck command command '%v' returned without a Docker error, but exited with non-%v exit code '%v' and logs:\n%v",
+				execCmd,
+				curlContainerSuccessExitCode,
+				exitCode,
+				outputBuffer.String(),
+			)
+		} else {
+			logrus.Debugf(
+				"Logs aggregator healthcheck command '%v' experienced a Docker error:\n%v",
+				execCmd,
+				err,
+			)
+		}
+
+		// Tiny optimization to not sleep if we're not going to run the loop again
+		if i < healthcheckCmdMaxRetries-1 {
+			time.Sleep(healthcheckCmdDelayInRetries)
+		}
+	}
+
+	return stacktrace.NewError(
+		"Logs aggregator healthcheck didn't return success (as measured by the command '%v') even after retrying %v times with %v between retries",
+		execCmd,
+		healthcheckCmdMaxRetries,
+		healthcheckCmdDelayInRetries,
+	)
 }

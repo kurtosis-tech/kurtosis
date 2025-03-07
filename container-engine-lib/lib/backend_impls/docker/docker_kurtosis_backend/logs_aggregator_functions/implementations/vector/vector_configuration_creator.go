@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	configuratorContainerNamePrefix     = "kurtosis-vector-configurator"
+	configuratorContainerNamePrefix     = "logs-aggregator-configurator"
 	configFileCreationCmdMaxRetries     = 2
 	configFileCreationCmdDelayInRetries = 200 * time.Millisecond
 	validationFailedExitCode            = 78
@@ -36,7 +36,6 @@ func (vector *vectorConfigurationCreator) CreateConfiguration(
 	volumeName string,
 	dockerManager *docker_manager.DockerManager,
 ) error {
-
 	entrypointArgs := []string{
 		shBinaryFilepath,
 		shCmdFlag,
@@ -152,7 +151,7 @@ func (vector *vectorConfigurationCreator) createVectorConfigFileInVolume(
 		}
 
 		// Tiny optimization to not sleep if we're not going to run the loop again
-		if i < maxRetries {
+		if i < maxRetries-1 {
 			time.Sleep(timeBetweenRetries)
 		}
 	}

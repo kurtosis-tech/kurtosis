@@ -6,6 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net"
+	"os"
+	"path"
+	"strings"
+	"time"
+
 	"github.com/gammazero/workerpool"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
@@ -23,12 +30,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
-	"io"
-	"net"
-	"os"
-	"path"
-	"strings"
-	"time"
 
 	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
@@ -715,7 +716,7 @@ func WaitForPortAvailabilityUsingNetstat(
 		}
 
 		// Tiny optimization to not sleep if we're not going to run the loop again
-		if i < maxRetries {
+		if i < maxRetries-1 {
 			time.Sleep(timeBetweenRetries)
 		}
 	}

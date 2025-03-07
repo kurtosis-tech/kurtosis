@@ -3,7 +3,6 @@ package logs_aggregator_functions
 import (
 	"context"
 
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/availability_checker"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
@@ -95,7 +94,7 @@ func CreateLogsAggregator(
 	logrus.Debugf("Checking for logs aggregator availability...")
 
 	logsAggregatorAvailabilityEndpoint := logsAggregatorContainer.GetHttpHealthCheckEndpoint()
-	if err = availability_checker.WaitForAvailability(logsAggregator.GetMaybePrivateIpAddr(), logsAggregator.GetPrivateHttpPort().GetNumber(), logsAggregatorAvailabilityEndpoint); err != nil {
+	if err = waitForLogsAggregatorAvailability(ctx, logsAggregator.GetMaybePrivateIpAddr(), logsAggregatorAvailabilityEndpoint, logsAggregator.GetPrivateHttpPort().GetNumber(), targetNetworkId, dockerManager); err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while waiting for the log aggregator to become available")
 	}
 
