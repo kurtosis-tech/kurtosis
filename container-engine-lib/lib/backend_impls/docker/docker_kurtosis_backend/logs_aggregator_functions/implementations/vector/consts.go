@@ -15,7 +15,7 @@ const (
 	configFileFlag = "-c"
 
 	logsStorageDirpath      = "/var/log/kurtosis/"
-	healthCheckEndpointPath = "health"
+	healthCheckEndpointPath = "/health"
 	httpTransportProtocol   = port_spec.TransportProtocol_TCP
 	////////////////////////--FINISH VECTOR CONTAINER CONFIGURATION SECTION--/////////////////////////////
 
