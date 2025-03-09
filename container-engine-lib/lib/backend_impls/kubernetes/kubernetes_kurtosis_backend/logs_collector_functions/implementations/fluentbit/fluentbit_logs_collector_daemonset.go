@@ -588,3 +588,9 @@ func createLogsCollectorClusterRoleBinding(
 
 	return clusterRoleBindingObj, nil
 }
+
+func (fluentbit *fluentbitLogsCollector) Clean(
+	ctx context.Context,
+	kubernetesManager *kubernetes_manager.KubernetesManager) error {
+	return nil
+}

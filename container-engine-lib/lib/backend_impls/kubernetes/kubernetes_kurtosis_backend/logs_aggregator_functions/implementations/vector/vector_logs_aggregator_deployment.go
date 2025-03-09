@@ -444,3 +444,19 @@ func (vector *vectorLogsAggregatorDeployment) GetLogsBaseDirPath() string {
 func (vector *vectorLogsAggregatorDeployment) GetHTTPHealthCheckEndpointAndPort() (string, uint16) {
 	return "/health", apiPort
 }
+
+func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAggregatorDeployment *appsv1.Deployment, kubernetesManager *kubernetes_manager.KubernetesManager) error {
+	// run an exec on the logs aggregator daemon pod that removes
+	pods, err := kubernetesManager.GetPodsManagedByDeployment(ctx, logsAggregatorDeployment)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting pods managed by deployment '%v' in namespace '%v'.", logsAggregatorDeployment.Name, logsAggregatorDeployment.Namespace)
+	}
+	if len(pods) == 0 {
+		return stacktrace.Propagate(err, "No pods found for logs aggregator deployment ", logsAggregatorDeployment.Name, logsAggregatorDeployment.Namespace)
+	}
+	if len(pods) > 1 {
+		return stacktrace.Propagate(err, "More than one pod found for logs aggregator deployment.", logsAggregatorDeployment.Name, logsAggregatorDeployment.Namespace)
+	}
+
+	return nil
+}
