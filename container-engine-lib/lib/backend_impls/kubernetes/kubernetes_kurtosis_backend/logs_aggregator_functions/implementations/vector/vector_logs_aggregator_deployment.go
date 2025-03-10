@@ -23,8 +23,9 @@ import (
 )
 
 const (
-	retryInterval = 1 * time.Second
-	maxRetries    = 30
+	retryInterval   = 1 * time.Second
+	maxRetries      = 30
+	successExitCode = 0
 )
 
 type vectorLogsAggregatorDeployment struct{}
@@ -219,7 +220,7 @@ func createLogsAggregatorDeployment(
 				{
 					Name:             vectorDataDirVolumeName,
 					ReadOnly:         false,
-					MountPath:        vectorConfigVolumeName,
+					MountPath:        vectorDataDirMountPath,
 					SubPath:          "",
 					MountPropagation: nil,
 					SubPathExpr:      "",
@@ -250,7 +251,7 @@ func createLogsAggregatorDeployment(
 			VolumeSource: kubernetesManager.GetVolumeSourceForHostPath(kurtosisLogsMountPath),
 		},
 		{
-			Name:         vectorConfigVolumeName,
+			Name:         vectorDataDirVolumeName,
 			VolumeSource: kubernetesManager.GetVolumeSourceForHostPath(vectorDataDirMountPath),
 		},
 	}
@@ -460,7 +461,8 @@ func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAgg
 		return stacktrace.Propagate(err, "More than one pod found for logs aggregator deployment '%v' in namespace '%v'.", logsAggregatorDeployment.Name, logsAggregatorDeployment.Namespace)
 	}
 
-	cleanCmd := []string{}
+	logrus.Infof("Cleaning the vector logs aggregator deployment...")
+	cleanCmd := []string{"rm", "-rf", vectorDataDirMountPath}
 
 	pod := pods[0]
 	output := &bytes.Buffer{}
@@ -476,12 +478,15 @@ func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAgg
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred running exec command '%v' on pod '%v' in namespace '%v'.", cleanCmd, pod.Name, pod.Namespace)
 	}
-	if resultExitCode != 0 {
-		return stacktrace.NewError("Running exec command '%v' on pod '%v' in namespace '%v' returned a non-%v exit code: '%v'.", cleanCmd, pod.Name, pod.Namespace, 0, resultExitCode)
+	if resultExitCode != successExitCode {
+		logrus.Infof("output of clean: %v, exit code: %v", output.String(), resultExitCode)
+		return stacktrace.NewError("Running exec command '%v' on pod '%v' in namespace '%v' returned a non-%v exit code: '%v'.", cleanCmd, pod.Name, pod.Namespace, successExitCode, resultExitCode)
 	}
-	if output.String() == "" {
-		return stacktrace.NewError("An error msg")
+	if output.String() != "" {
+		logrus.Infof("output of clean: %v, exit code: %v", output.String(), resultExitCode)
+		return stacktrace.NewError("Expected empty output from running exec command '%v' but instead retrieved output string '%v'", cleanCmd, output.String())
 	}
+	logrus.Infof("Successfully cleaned")
 
 	return nil
 }
