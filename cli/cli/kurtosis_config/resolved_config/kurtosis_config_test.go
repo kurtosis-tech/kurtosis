@@ -1,12 +1,13 @@
 package resolved_config
 
 import (
-	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/config_version"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects"
-	v2 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v2"
-	"github.com/stretchr/testify/require"
 	"sort"
 	"testing"
+
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/config_version"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v3"
+	"github.com/stretchr/testify/require"
 )
 
 /*
@@ -50,7 +51,7 @@ func TestNewKurtosisConfigFromRequiredFields_MetricsElectionIsSent(t *testing.T)
 }
 
 func TestNewKurtosisConfigEmptyOverrides(t *testing.T) {
-	_, err := NewKurtosisConfigFromOverrides(&v2.KurtosisConfigV2{
+	_, err := NewKurtosisConfigFromOverrides(&v3.KurtosisConfigV3{
 		ConfigVersion:     0,
 		ShouldSendMetrics: nil,
 		KurtosisClusters:  nil,
@@ -63,7 +64,7 @@ func TestNewKurtosisConfigEmptyOverrides(t *testing.T) {
 func TestNewKurtosisConfigJustMetrics(t *testing.T) {
 	version := config_version.ConfigVersion_v0
 	shouldSendMetrics := true
-	originalOverrides := v2.KurtosisConfigV2{
+	originalOverrides := v3.KurtosisConfigV3{
 		ConfigVersion:     version,
 		ShouldSendMetrics: &shouldSendMetrics,
 		KurtosisClusters:  nil,
@@ -91,14 +92,14 @@ func TestNewKurtosisConfigOverridesAreLatestVersion(t *testing.T) {
 }
 
 func TestCloudConfigOverridesApiUrl(t *testing.T) {
-	version := config_version.ConfigVersion_v0
+	version := config_version.ConfigVersion_v3
 	shouldSendMetrics := true
 	apiUrl := "test.com"
-	originalOverrides := v2.KurtosisConfigV2{
+	originalOverrides := v3.KurtosisConfigV3{
 		ConfigVersion:     version,
 		ShouldSendMetrics: &shouldSendMetrics,
 		KurtosisClusters:  nil,
-		CloudConfig: &v2.KurtosisCloudConfigV2{
+		CloudConfig: &v3.KurtosisCloudConfigV3{
 			ApiUrl:           &apiUrl,
 			Port:             nil,
 			CertificateChain: nil,
@@ -111,4 +112,29 @@ func TestCloudConfigOverridesApiUrl(t *testing.T) {
 	require.Equal(t, apiUrl, *overrides.CloudConfig.ApiUrl)
 	require.Nil(t, overrides.CloudConfig.Port)
 	require.Nil(t, overrides.CloudConfig.CertificateChain)
+}
+
+func TestCloudConfigReconciliation(t *testing.T) {
+	version := config_version.ConfigVersion_v3
+	shouldSendMetrics := true
+	apiUrl := "test.com"
+	originalOverrides := v3.KurtosisConfigV3{
+		ConfigVersion:     version,
+		ShouldSendMetrics: &shouldSendMetrics,
+		KurtosisClusters:  nil,
+		CloudConfig: &v3.KurtosisCloudConfigV3{
+			ApiUrl:           &apiUrl,
+			Port:             nil,
+			CertificateChain: nil,
+		},
+	}
+
+	config, err := NewKurtosisConfigFromOverrides(&originalOverrides)
+	require.NoError(t, err)
+
+	// Test reconciliation behaviour
+	require.Equal(t, shouldSendMetrics, config.GetShouldSendMetrics())
+	require.Equal(t, apiUrl, config.GetCloudConfig().ApiUrl)
+	require.Equal(t, DefaultCloudConfigPort, config.GetCloudConfig().Port)
+	require.Equal(t, DefaultCertificateChain, config.GetCloudConfig().CertificateChain)
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/github_auth_store"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
@@ -91,6 +92,9 @@ type engineExistenceGuarantor struct {
 
 	// Length of time Kurtosis will keep logs for
 	logRetentionPeriod string
+
+	// Destinations the logs aggregator will deliver to
+	sinks logs_aggregator.Sinks
 }
 
 func newEngineExistenceGuarantorWithDefaultVersion(
@@ -111,6 +115,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 	restartAPIContainers bool,
 	domain string,
 	logRetentionPeriod string,
+	sinks logs_aggregator.Sinks,
 ) *engineExistenceGuarantor {
 	return newEngineExistenceGuarantorWithCustomVersion(
 		ctx,
@@ -131,6 +136,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 		restartAPIContainers,
 		domain,
 		logRetentionPeriod,
+		sinks,
 	)
 }
 
@@ -153,6 +159,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 	restartAPIContainers bool,
 	domain string,
 	logRetentionPeriod string,
+	sinks logs_aggregator.Sinks,
 ) *engineExistenceGuarantor {
 	return &engineExistenceGuarantor{
 		ctx:                                  ctx,
@@ -175,6 +182,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 		restartAPIContainers:                      restartAPIContainers,
 		domain:                                    domain,
 		logRetentionPeriod:                        logRetentionPeriod,
+		sinks:                                     sinks,
 	}
 }
 
@@ -236,6 +244,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.restartAPIContainers,
 			guarantor.domain,
 			guarantor.logRetentionPeriod,
+			guarantor.sinks,
 		)
 	} else {
 		_, _, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
@@ -258,6 +267,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.restartAPIContainers,
 			guarantor.domain,
 			guarantor.logRetentionPeriod,
+			guarantor.sinks,
 		)
 	}
 	if engineLaunchErr != nil {

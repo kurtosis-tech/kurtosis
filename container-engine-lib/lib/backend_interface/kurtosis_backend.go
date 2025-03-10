@@ -50,6 +50,7 @@ type KurtosisBackend interface {
 		envVars map[string]string,
 		shouldStartInDebugMode bool,
 		githubAuthToken string,
+		sinks logs_aggregator.Sinks,
 	) (
 		*engine.Engine,
 		error,
@@ -330,7 +331,11 @@ type KurtosisBackend interface {
 		resultErr error, // Represents an error with the function itself, rather than the user services
 	)
 
-	CreateLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error)
+	CreateLogsAggregator(
+		ctx context.Context,
+		httpPortNum uint16,
+		sinks logs_aggregator.Sinks,
+	) (*logs_aggregator.LogsAggregator, error)
 
 	// Returns nil if logs aggregator was not found
 	GetLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error)
