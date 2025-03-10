@@ -36,6 +36,8 @@ Because of this additional layer of abstraction, we are able to introduce severa
 - First-class plug-and-play composability; it's expected for users to import stack definitions into larger stacks, and this experience is optimized
 - The ability to get all of the above, but running over _either_ the docker engine or k8s, at your election
 
+`NOTE: we do NOT recommend using Kurtosis to deploy long term production environments at this moment. Any issues/Discords related to production usage will be closed.`
+
 How do I get going?
 ===================
 To see Kurtosis in action, first install it using the instructions [here](https://docs.kurtosis.com/install).
