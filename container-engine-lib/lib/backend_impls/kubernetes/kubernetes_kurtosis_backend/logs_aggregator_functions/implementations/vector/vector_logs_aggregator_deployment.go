@@ -1,6 +1,7 @@
 package vector
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
@@ -10,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -445,17 +447,40 @@ func (vector *vectorLogsAggregatorDeployment) GetHTTPHealthCheckEndpointAndPort(
 	return "/health", apiPort
 }
 
+// Clean run an exec on the logs aggregator daemon pod that removes the global data directory where checkpoints and buffers are stored
 func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAggregatorDeployment *appsv1.Deployment, kubernetesManager *kubernetes_manager.KubernetesManager) error {
-	// run an exec on the logs aggregator daemon pod that removes
 	pods, err := kubernetesManager.GetPodsManagedByDeployment(ctx, logsAggregatorDeployment)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting pods managed by deployment '%v' in namespace '%v'.", logsAggregatorDeployment.Name, logsAggregatorDeployment.Namespace)
 	}
 	if len(pods) == 0 {
-		return stacktrace.Propagate(err, "No pods found for logs aggregator deployment ", logsAggregatorDeployment.Name, logsAggregatorDeployment.Namespace)
+		return stacktrace.Propagate(err, "No pods found for logs aggregator deployment '%v' in namespace '%v'.", logsAggregatorDeployment.Name, logsAggregatorDeployment.Namespace)
 	}
 	if len(pods) > 1 {
-		return stacktrace.Propagate(err, "More than one pod found for logs aggregator deployment.", logsAggregatorDeployment.Name, logsAggregatorDeployment.Namespace)
+		return stacktrace.Propagate(err, "More than one pod found for logs aggregator deployment '%v' in namespace '%v'.", logsAggregatorDeployment.Name, logsAggregatorDeployment.Namespace)
+	}
+
+	cleanCmd := []string{}
+
+	pod := pods[0]
+	output := &bytes.Buffer{}
+	concurrentWriter := concurrent_writer.NewConcurrentWriter(output)
+	resultExitCode, err := kubernetesManager.RunExecCommand(
+		pod.Namespace,
+		pod.Name,
+		vectorContainerName,
+		cleanCmd,
+		concurrentWriter,
+		concurrentWriter,
+	)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred running exec command '%v' on pod '%v' in namespace '%v'.", cleanCmd, pod.Name, pod.Namespace)
+	}
+	if resultExitCode != 0 {
+		return stacktrace.NewError("Running exec command '%v' on pod '%v' in namespace '%v' returned a non-%v exit code: '%v'.", cleanCmd, pod.Name, pod.Namespace, 0, resultExitCode)
+	}
+	if output.String() == "" {
+		return stacktrace.NewError("An error msg")
 	}
 
 	return nil
