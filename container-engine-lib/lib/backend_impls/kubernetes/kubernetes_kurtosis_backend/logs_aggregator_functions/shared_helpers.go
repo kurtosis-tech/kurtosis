@@ -294,11 +294,14 @@ func waitForLogsAggregatorAvailability(
 		nil,
 		nil)
 	defer func() {
-		err := kubernetesManager.RemovePod(ctx, pod)
-		if err != nil {
-			logrus.Warnf("Attempted to remove availability checker pod '%v' in namespace '%v' but an err occurred.", pod.Name, availabilityCheckerNamespace)
-			logrus.Warn("You may have to remove this pod manually.")
-		}
+		go func() {
+			// don't wait for removing availability check pod as this can take a while in k8s
+			err := kubernetesManager.RemovePod(ctx, pod)
+			if err != nil {
+				logrus.Warnf("Attempted to remove availability checker pod '%v' in namespace '%v' but an err occurred.", pod.Name, availabilityCheckerNamespace)
+				logrus.Warn("You may have to remove this pod manually.")
+			}
+		}()
 	}()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating pod '%v' in namespace '%v'.", "availabilityChecker", availabilityCheckerNamespace)
