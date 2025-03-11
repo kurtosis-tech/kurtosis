@@ -538,7 +538,7 @@ func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAgg
 		},
 		[]apiv1.Volume{
 			{
-				Name:         vectorDataDirMountPath,
+				Name:         vectorDataDirVolumeName,
 				VolumeSource: kubernetesManager.GetVolumeSourceForHostPath(vectorDataDirMountPath),
 			},
 		},
