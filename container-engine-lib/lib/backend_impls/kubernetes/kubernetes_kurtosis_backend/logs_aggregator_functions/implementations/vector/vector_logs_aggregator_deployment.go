@@ -485,6 +485,8 @@ func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAgg
 	hasHostPidAccess := true
 	hasHostNetworkAcess := true
 	removePodName := "remove-vector-data-pod"
+	hostVolumeName := "host"
+	hostMountPath := "/host"
 	removePod, err := kubernetesManager.CreatePod(ctx,
 		logsAggregatorDeployment.Namespace,
 		removePodName,
@@ -513,9 +515,9 @@ func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAgg
 				ResizePolicy: nil,
 				VolumeMounts: []apiv1.VolumeMount{
 					{
-						Name:             "host",
+						Name:             hostVolumeName,
 						ReadOnly:         false,
-						MountPath:        "/host",
+						MountPath:        hostMountPath,
 						SubPath:          "",
 						MountPropagation: nil,
 						SubPathExpr:      "",
@@ -539,8 +541,8 @@ func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAgg
 		},
 		[]apiv1.Volume{
 			{
-				Name:         "host",
-				VolumeSource: kubernetesManager.GetVolumeSourceForHostPath("/"),
+				Name:         hostVolumeName,
+				VolumeSource: kubernetesManager.GetVolumeSourceForHostPath("/"), // mount the entire host filesystem in this volume
 			},
 		},
 		"",
@@ -569,7 +571,7 @@ func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAgg
 		return stacktrace.Propagate(err, "An error occurred creating pod '%v' in namespace '%v'.", removePodName, logsAggregatorDeployment.Namespace)
 	}
 
-	cleanCmd := []string{"rm", "-rf", fmt.Sprintf("/host%v", vectorDataDirMountPath)}
+	cleanCmd := []string{"rm", "-rf", fmt.Sprintf("%v%v", hostMountPath, vectorDataDirMountPath)}
 	output := &bytes.Buffer{}
 	concurrentWriter := concurrent_writer.NewConcurrentWriter(output)
 	resultExitCode, err := kubernetesManager.RunExecCommand(
