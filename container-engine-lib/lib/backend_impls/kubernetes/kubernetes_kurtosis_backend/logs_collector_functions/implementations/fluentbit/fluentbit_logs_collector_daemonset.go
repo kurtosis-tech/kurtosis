@@ -589,9 +589,14 @@ func createLogsCollectorClusterRoleBinding(
 	return clusterRoleBindingObj, nil
 }
 
+// Clean cleans up the checkpoint databases created by fluent bit that store locations to continue tailing from in case of restarts, to do this:
+// 1) scales down the fluent bit daemon set to remove pods from all nodes
+// 2) creates a privileged pod with access to underlying nodes filesystem
+// 3) removes fluent bit checkpoint path on each node's filesystem
 func (fluentbit *fluentbitLogsCollector) Clean(
 	ctx context.Context,
 	logsCollectorDaemonSet *appsv1.DaemonSet,
 	kubernetesManager *kubernetes_manager.KubernetesManager) error {
+	//
 	return nil
 }

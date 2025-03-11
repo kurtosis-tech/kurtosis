@@ -571,7 +571,8 @@ func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAgg
 		return stacktrace.Propagate(err, "An error occurred creating pod '%v' in namespace '%v'.", removePodName, logsAggregatorDeployment.Namespace)
 	}
 
-	cleanCmd := []string{"rm", "-rf", fmt.Sprintf("%v%v", hostMountPath, vectorDataDirMountPath)}
+	dirPathToRemoveAndEmpty := fmt.Sprintf("%v%v", hostMountPath, vectorDataDirMountPath)
+	cleanCmd := []string{"rm", "-rf", dirPathToRemoveAndEmpty, "&&", "rmdir", "-p", dirPathToRemoveAndEmpty}
 	output := &bytes.Buffer{}
 	concurrentWriter := concurrent_writer.NewConcurrentWriter(output)
 	resultExitCode, err := kubernetesManager.RunExecCommand(
