@@ -485,9 +485,10 @@ func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAgg
 	hasHostPidAccess := true
 	hasHostNetworkAcess := true
 	removePodMountPath := fmt.Sprintf("host%v", vectorDataDirMountPath)
+	removePodName := "remove-vector-data-pod"
 	removePod, err := kubernetesManager.CreatePod(ctx,
 		logsAggregatorDeployment.Namespace,
-		"remove-vector-data-pod",
+		removePodName,
 		nil,
 		nil,
 		nil,
@@ -566,7 +567,7 @@ func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAgg
 		}()
 	}()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating pod '%v' in namespace '%v'.", "availabilityChecker", removePod)
+		return stacktrace.Propagate(err, "An error occurred creating pod '%v' in namespace '%v'.", removePodName, logsAggregatorDeployment.Namespace)
 	}
 
 	cleanCmd := []string{"rm", "-rf", removePodMountPath}
@@ -582,10 +583,10 @@ func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAgg
 	)
 	logrus.Debugf("Output of clean '%v': %v, exit code: %v", cleanCmd, output.String(), resultExitCode)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred running exec command '%v' on pod '%v' in namespace '%v'.", cleanCmd, pod.Name, pod.Namespace)
+		return stacktrace.Propagate(err, "An error occurred running exec command '%v' on pod '%v' in namespace '%v' with output '%v'.", cleanCmd, removePod.Name, removePod.Namespace, output.String())
 	}
 	if resultExitCode != successExitCode {
-		return stacktrace.NewError("Running exec command '%v' on pod '%v' in namespace '%v' returned a non-%v exit code: '%v'.", cleanCmd, pod.Name, pod.Namespace, successExitCode, resultExitCode)
+		return stacktrace.NewError("Running exec command '%v' on pod '%v' in namespace '%v' returned a non-%v exit code: '%v' and output '%v'.", cleanCmd, removePod.Name, removePod.Namespace, successExitCode, resultExitCode, output.String())
 	}
 	if output.String() != "" {
 		return stacktrace.NewError("Expected empty output from running exec command '%v' but instead retrieved output string '%v'", cleanCmd, output.String())
