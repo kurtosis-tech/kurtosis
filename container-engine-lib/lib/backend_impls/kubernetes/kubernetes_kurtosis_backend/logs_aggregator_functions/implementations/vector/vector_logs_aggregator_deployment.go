@@ -483,7 +483,7 @@ func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAgg
 	// pod needs to be privileged to access host filesystem
 	isPrivileged := true
 	hasHostPidAccess := true
-	hasHostNetworkAcess := true
+	hasHostNetworkAccess := true
 	removePodName := "remove-vector-data-pod"
 	hostVolumeName := "host"
 	hostMountPath := "/host"
@@ -552,7 +552,7 @@ func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAgg
 			"kubernetes.io/hostname": nodeName,
 		},
 		hasHostPidAccess,
-		hasHostNetworkAcess,
+		hasHostNetworkAccess,
 	)
 	defer func() {
 		// Don't block on removing this remove directory pod because this can take a while sometimes in k8s
