@@ -580,8 +580,9 @@ func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAgg
 	)
 	defer func() {
 		// Don't block on removing this remove directory pod because this can take a while sometimes in k8s
+		removeCtx := context.Background()
 		go func() {
-			err := kubernetesManager.RemovePod(ctx, removePod)
+			err := kubernetesManager.RemovePod(removeCtx, removePod)
 			if err != nil {
 				logrus.Warnf("Attempted to remove pod '%v' in namespace '%v' but an error occurred:\n%v", removePod.Name, logsAggregatorDeployment.Namespace, err.Error())
 				logrus.Warn("You may have to remove this pod manually.")
@@ -592,7 +593,7 @@ func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAgg
 		return stacktrace.Propagate(err, "An error occurred creating pod '%v' in namespace '%v'.", "availabilityChecker", removePod)
 	}
 
-	cleanCmd := []string{"rm", "-rf", fmt.Sprintf("host/%v", vectorDataDirMountPath)}
+	cleanCmd := []string{"rm", "-rf", fmt.Sprintf("host%v", vectorDataDirMountPath)}
 	output := &bytes.Buffer{}
 	concurrentWriter := concurrent_writer.NewConcurrentWriter(output)
 	resultExitCode, err := kubernetesManager.RunExecCommand(
@@ -607,21 +608,21 @@ func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAgg
 		return stacktrace.Propagate(err, "An error occurred running exec command '%v' on pod '%v' in namespace '%v'.", cleanCmd, pod.Name, pod.Namespace)
 	}
 	if resultExitCode != successExitCode {
-		logrus.Infof("output of clean: %v, exit code: %v", output.String(), resultExitCode)
+		logrus.Infof("Output of clean '%v': %v, exit code: %v", cleanCmd, output.String(), resultExitCode)
 		return stacktrace.NewError("Running exec command '%v' on pod '%v' in namespace '%v' returned a non-%v exit code: '%v'.", cleanCmd, pod.Name, pod.Namespace, successExitCode, resultExitCode)
 	}
 	if output.String() != "" {
-		logrus.Infof("output of clean: %v, exit code: %v", output.String(), resultExitCode)
+		logrus.Infof("Output of clean '%v': %v, exit code: %v", cleanCmd, output.String(), resultExitCode)
 		return stacktrace.NewError("Expected empty output from running exec command '%v' but instead retrieved output string '%v'", cleanCmd, output.String())
 	}
-	logrus.Infof("output of clean '%v': %v, exit code: %v", cleanCmd, output.String(), resultExitCode)
+	logrus.Infof("Output of clean '%v': %v, exit code: %v", cleanCmd, output.String(), resultExitCode)
 
 	// scale up the deployment again
 	if err := kubernetesManager.ScaleDeployment(ctx, logsAggregatorDeployment.Namespace, logsAggregatorDeployment.Name, 1); err != nil {
 		return stacktrace.Propagate(err, "An error occurred scaling deployment '%v' in namespace '%v' to '%v'.", logsAggregatorDeployment.Name, logsAggregatorDeployment.Namespace, 1)
 	}
 
-	logrus.Infof("Successfully cleaned")
+	logrus.Infof("Successfully cleaned logs aggregator.")
 
 	return nil
 }
