@@ -448,7 +448,10 @@ func (vector *vectorLogsAggregatorDeployment) GetHTTPHealthCheckEndpointAndPort(
 	return "/health", apiPort
 }
 
-// Clean run an exec on the logs aggregator deployment pod that removes the global data directory where checkpoints and buffers are stored
+// Clean cleans up the data directory created by vector to store buffer information, to do this:
+// 1) scales down the vector logs aggregator deployment
+// 2) creates a privileged pod with access to underlying nodes filesystem
+// 3) removes vector data directory on node's filesystem
 func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAggregatorDeployment *appsv1.Deployment, kubernetesManager *kubernetes_manager.KubernetesManager) error {
 	pods, err := kubernetesManager.GetPodsManagedByDeployment(ctx, logsAggregatorDeployment)
 	if err != nil {
@@ -473,15 +476,15 @@ func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAgg
 		return stacktrace.Propagate(err, "An error occurred waiting for pod '%v' in namespace '%v' to terminate.", pod.Namespace, pod.Name)
 	}
 
-	// rm the vector directory from the node using a priveleged pod
-	removeContainerName := "remove-pod"
+	// rm the vector directory from the node using a privileged pod
+	removeContainerName := "remove-vector-data-container"
 	// pod needs to be privileged to access host filesystem
 	isPrivileged := true
 	hasHostPidAccess := true
 	hasHostNetworkAcess := true
 	removePod, err := kubernetesManager.CreatePod(ctx,
 		logsAggregatorDeployment.Namespace,
-		"remove-pod",
+		"remove-vector-data-pod",
 		nil,
 		nil,
 		nil,
@@ -507,9 +510,9 @@ func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAgg
 				ResizePolicy: nil,
 				VolumeMounts: []apiv1.VolumeMount{
 					{
-						Name:             "host-root",
+						Name:             vectorDataDirVolumeName,
 						ReadOnly:         false,
-						MountPath:        "/host",
+						MountPath:        vectorDataDirMountPath,
 						SubPath:          "",
 						MountPropagation: nil,
 						SubPathExpr:      "",
@@ -530,43 +533,11 @@ func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAgg
 				StdinOnce: false,
 				TTY:       false,
 			},
-		}, []apiv1.Volume{
+		},
+		[]apiv1.Volume{
 			{
-				Name: "host-root",
-				VolumeSource: apiv1.VolumeSource{
-					HostPath: &apiv1.HostPathVolumeSource{
-						Path: "/",
-						Type: nil,
-					},
-					EmptyDir:              nil,
-					GCEPersistentDisk:     nil,
-					AWSElasticBlockStore:  nil,
-					GitRepo:               nil,
-					Secret:                nil,
-					NFS:                   nil,
-					ISCSI:                 nil,
-					Glusterfs:             nil,
-					PersistentVolumeClaim: nil,
-					RBD:                   nil,
-					FlexVolume:            nil,
-					Cinder:                nil,
-					CephFS:                nil,
-					Flocker:               nil,
-					DownwardAPI:           nil,
-					FC:                    nil,
-					AzureFile:             nil,
-					ConfigMap:             nil,
-					VsphereVolume:         nil,
-					Quobyte:               nil,
-					AzureDisk:             nil,
-					PhotonPersistentDisk:  nil,
-					Projected:             nil,
-					PortworxVolume:        nil,
-					ScaleIO:               nil,
-					StorageOS:             nil,
-					CSI:                   nil,
-					Ephemeral:             nil,
-				},
+				Name:         vectorDataDirMountPath,
+				VolumeSource: kubernetesManager.GetVolumeSourceForHostPath(vectorDataDirMountPath),
 			},
 		},
 		"",
@@ -593,7 +564,7 @@ func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAgg
 		return stacktrace.Propagate(err, "An error occurred creating pod '%v' in namespace '%v'.", "availabilityChecker", removePod)
 	}
 
-	cleanCmd := []string{"rm", "-rf", fmt.Sprintf("host%v", vectorDataDirMountPath)}
+	cleanCmd := []string{"rm", "-rf", vectorDataDirMountPath}
 	output := &bytes.Buffer{}
 	concurrentWriter := concurrent_writer.NewConcurrentWriter(output)
 	resultExitCode, err := kubernetesManager.RunExecCommand(
@@ -604,25 +575,23 @@ func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAgg
 		concurrentWriter,
 		concurrentWriter,
 	)
+	logrus.Debugf("Output of clean '%v': %v, exit code: %v", cleanCmd, output.String(), resultExitCode)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred running exec command '%v' on pod '%v' in namespace '%v'.", cleanCmd, pod.Name, pod.Namespace)
 	}
 	if resultExitCode != successExitCode {
-		logrus.Infof("Output of clean '%v': %v, exit code: %v", cleanCmd, output.String(), resultExitCode)
 		return stacktrace.NewError("Running exec command '%v' on pod '%v' in namespace '%v' returned a non-%v exit code: '%v'.", cleanCmd, pod.Name, pod.Namespace, successExitCode, resultExitCode)
 	}
 	if output.String() != "" {
-		logrus.Infof("Output of clean '%v': %v, exit code: %v", cleanCmd, output.String(), resultExitCode)
 		return stacktrace.NewError("Expected empty output from running exec command '%v' but instead retrieved output string '%v'", cleanCmd, output.String())
 	}
-	logrus.Infof("Output of clean '%v': %v, exit code: %v", cleanCmd, output.String(), resultExitCode)
 
 	// scale up the deployment again
-	//if err := kubernetesManager.ScaleDeployment(ctx, logsAggregatorDeployment.Namespace, logsAggregatorDeployment.Name, 1); err != nil {
-	//	return stacktrace.Propagate(err, "An error occurred scaling deployment '%v' in namespace '%v' to '%v'.", logsAggregatorDeployment.Name, logsAggregatorDeployment.Namespace, 1)
-	//}
+	if err := kubernetesManager.ScaleDeployment(ctx, logsAggregatorDeployment.Namespace, logsAggregatorDeployment.Name, 1); err != nil {
+		return stacktrace.Propagate(err, "An error occurred scaling deployment '%v' in namespace '%v' to '%v'.", logsAggregatorDeployment.Name, logsAggregatorDeployment.Namespace, 1)
+	}
 
-	logrus.Infof("Successfully cleaned logs aggregator.")
+	logrus.Debugf("Successfully cleaned logs aggregator.")
 
 	return nil
 }
