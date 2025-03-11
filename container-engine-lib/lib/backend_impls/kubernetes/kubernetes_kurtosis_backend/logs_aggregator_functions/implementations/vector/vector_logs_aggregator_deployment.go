@@ -553,12 +553,14 @@ func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAgg
 	)
 	defer func() {
 		// Don't block on removing this remove directory pod because this can take a while sometimes in k8s
-		removeCtx := context.Background()
 		go func() {
-			err := kubernetesManager.RemovePod(removeCtx, removePod)
-			if err != nil {
-				logrus.Warnf("Attempted to remove pod '%v' in namespace '%v' but an error occurred:\n%v", removePod.Name, logsAggregatorDeployment.Namespace, err.Error())
-				logrus.Warn("You may have to remove this pod manually.")
+			removeCtx := context.Background()
+			if removePod != nil {
+				err := kubernetesManager.RemovePod(removeCtx, removePod)
+				if err != nil {
+					logrus.Warnf("Attempted to remove pod '%v' in namespace '%v' but an error occurred:\n%v", removePod.Name, logsAggregatorDeployment.Namespace, err.Error())
+					logrus.Warn("You may have to remove this pod manually.")
+				}
 			}
 		}()
 	}()
