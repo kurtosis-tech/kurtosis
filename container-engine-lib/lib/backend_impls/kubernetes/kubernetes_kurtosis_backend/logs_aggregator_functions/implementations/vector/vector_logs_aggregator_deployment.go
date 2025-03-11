@@ -23,9 +23,11 @@ import (
 )
 
 const (
-	retryInterval   = 1 * time.Second
-	maxRetries      = 30
-	successExitCode = 0
+	retryInterval        = 1 * time.Second
+	maxRetries           = 30
+	successExitCode      = 0
+	preCleanNumReplicas  = 0
+	postCleanNumReplicas = 1
 )
 
 type vectorLogsAggregatorDeployment struct{}
@@ -469,8 +471,8 @@ func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAgg
 	nodeName := pod.Spec.NodeName
 
 	// scale deployment down to zero in order to unmount volume
-	if err := kubernetesManager.ScaleDeployment(ctx, logsAggregatorDeployment.Namespace, logsAggregatorDeployment.Name, 0); err != nil {
-		return stacktrace.Propagate(err, "An error occurred scaling deployment '%v' in namespace '%v' to '%v'.", logsAggregatorDeployment.Name, logsAggregatorDeployment.Namespace, 0)
+	if err := kubernetesManager.ScaleDeployment(ctx, logsAggregatorDeployment.Namespace, logsAggregatorDeployment.Name, preCleanNumReplicas); err != nil {
+		return stacktrace.Propagate(err, "An error occurred scaling deployment '%v' in namespace '%v' to '%v'.", logsAggregatorDeployment.Name, logsAggregatorDeployment.Namespace, preCleanNumReplicas)
 	}
 	if err := kubernetesManager.WaitForPodTermination(ctx, pod.Namespace, pod.Name); err != nil {
 		return stacktrace.Propagate(err, "An error occurred waiting for pod '%v' in namespace '%v' to terminate.", pod.Namespace, pod.Name)
@@ -587,8 +589,8 @@ func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAgg
 	}
 
 	// scale up the deployment again
-	if err := kubernetesManager.ScaleDeployment(ctx, logsAggregatorDeployment.Namespace, logsAggregatorDeployment.Name, 1); err != nil {
-		return stacktrace.Propagate(err, "An error occurred scaling deployment '%v' in namespace '%v' to '%v'.", logsAggregatorDeployment.Name, logsAggregatorDeployment.Namespace, 1)
+	if err := kubernetesManager.ScaleDeployment(ctx, logsAggregatorDeployment.Namespace, logsAggregatorDeployment.Name, postCleanNumReplicas); err != nil {
+		return stacktrace.Propagate(err, "An error occurred scaling deployment '%v' in namespace '%v' to '%v'.", logsAggregatorDeployment.Name, logsAggregatorDeployment.Namespace, postCleanNumReplicas)
 	}
 
 	logrus.Debugf("Successfully cleaned logs aggregator.")
