@@ -41,7 +41,7 @@ func CreateLogsCollector(
 
 	logsCollectorObj, kubernetesResources, err = getLogsCollectorObjAndResourcesForCluster(ctx, kubernetesManager)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting logs collector object and resources for cluster.")
+		return nil, removeLogsCollectorFunc, stacktrace.Propagate(err, "An error occurred getting logs collector object and resources for cluster.")
 	}
 
 	if logsCollectorObj != nil {
@@ -61,7 +61,7 @@ func CreateLogsCollector(
 			kubernetesManager,
 		)
 		if err != nil {
-			return nil, nil, stacktrace.Propagate(
+			return nil, removeLogsCollectorFunc, stacktrace.Propagate(
 				err,
 				"An error occurred starting the logs collector daemon set with logs collector with '%v', HTTP port number '%v', TCP port id '%v', and HTTP port id '%v'",
 				logsCollectorTcpPortNumber,
@@ -88,14 +88,14 @@ func CreateLogsCollector(
 
 		logsCollectorObj, err = getLogsCollectorsObjectFromKubernetesResources(ctx, kubernetesManager, kubernetesResources)
 		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector object from kubernetes resources.")
+			return nil, removeLogsCollectorFunc, stacktrace.Propagate(err, "An error occurred getting the logs collector object from kubernetes resources.")
 		}
 	}
 
 	logrus.Debugf("Checking for logs collector availability in namespace '%v'...", kubernetesResources.namespace.Name)
 
 	if err = waitForLogsCollectorAvailability(ctx, logsCollectorHttpPortNumber, kubernetesResources, kubernetesManager); err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred while waiting for the logs collector daemon set to become available")
+		return nil, removeLogsCollectorFunc, stacktrace.Propagate(err, "An error occurred while waiting for the logs collector daemon set to become available")
 	}
 	logrus.Debugf("...logs collector is available in namepsace '%v'", kubernetesResources.namespace.Name)
 

@@ -397,6 +397,7 @@ func createEngineClusterRole(
 				kubernetes_manager_consts.ConfigMapsKubernetesResource,
 				kubernetes_manager_consts.DaemonSetsKubernetesResource,
 				kubernetes_manager_consts.DeploymentsKubernetesResource,
+				kubernetes_manager_consts.DeploymentsScaleKubernetesResource,
 			},
 		},
 		{

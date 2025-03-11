@@ -583,7 +583,7 @@ func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAgg
 		go func() {
 			err := kubernetesManager.RemovePod(ctx, removePod)
 			if err != nil {
-				logrus.Warnf("Attempted to remove pod '%v' in namespace '%v' but an error occurred.", removePod.Name, logsAggregatorDeployment.Namespace)
+				logrus.Warnf("Attempted to remove pod '%v' in namespace '%v' but an error occurred:\n%v", removePod.Name, logsAggregatorDeployment.Namespace, err.Error())
 				logrus.Warn("You may have to remove this pod manually.")
 			}
 		}()
@@ -614,6 +614,7 @@ func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAgg
 		logrus.Infof("output of clean: %v, exit code: %v", output.String(), resultExitCode)
 		return stacktrace.NewError("Expected empty output from running exec command '%v' but instead retrieved output string '%v'", cleanCmd, output.String())
 	}
+	logrus.Infof("output of clean '%v': %v, exit code: %v", cleanCmd, output.String(), resultExitCode)
 
 	// scale up the deployment again
 	if err := kubernetesManager.ScaleDeployment(ctx, logsAggregatorDeployment.Namespace, logsAggregatorDeployment.Name, 1); err != nil {
