@@ -1073,7 +1073,8 @@ func (manager *KubernetesManager) CreatePod(
 	restartPolicy apiv1.RestartPolicy,
 	tolerations []apiv1.Toleration,
 	nodeSelectors map[string]string,
-) (*apiv1.Pod, error) {
+	hostPid bool,
+	hostNetwork bool) (*apiv1.Pod, error) {
 	podClient := manager.kubernetesClientSet.CoreV1().Pods(namespaceName)
 
 	podMeta := metav1.ObjectMeta{
@@ -1109,8 +1110,8 @@ func (manager *KubernetesManager) CreatePod(
 		DeprecatedServiceAccount:      "",
 		AutomountServiceAccountToken:  nil,
 		NodeName:                      "",
-		HostNetwork:                   false,
-		HostPID:                       false,
+		HostNetwork:                   hostNetwork,
+		HostPID:                       hostPid,
 		HostIPC:                       false,
 		ShareProcessNamespace:         nil,
 		SecurityContext:               nil,
@@ -1196,7 +1197,7 @@ func (manager *KubernetesManager) RemovePod(ctx context.Context, pod *apiv1.Pod)
 		return stacktrace.Propagate(err, "Failed to delete pod with name '%s' with delete options '%+v'", name, globalDeleteOptions)
 	}
 
-	if err := manager.waitForPodTermination(ctx, namespace, name); err != nil {
+	if err := manager.WaitForPodTermination(ctx, namespace, name); err != nil {
 		return stacktrace.Propagate(err, "An error occurred waiting for pod '%v' to terminate", name)
 	}
 
@@ -1557,6 +1558,31 @@ func (manager *KubernetesManager) CreateDeployment(
 	}
 
 	return createdDeployment, nil
+}
+
+func (manager *KubernetesManager) ScaleDeployment(ctx context.Context, namespace, name string, replicas int32) error {
+	deploymentClient := manager.kubernetesClientSet.AppsV1().Deployments(namespace)
+
+	scale, err := deploymentClient.GetScale(ctx, name, globalGetOptions)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting scale of deployment '%v' in namespace '%v'.", name, namespace)
+	}
+
+	oldReplicas := scale.Spec.Replicas
+	scale.Spec.Replicas = replicas
+	_, err = deploymentClient.UpdateScale(ctx, name, scale, metav1.UpdateOptions{
+		TypeMeta:        metav1.TypeMeta{},
+		DryRun:          nil,
+		FieldManager:    "",
+		FieldValidation: "",
+	})
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred updating scale of deployment '%v' in namespace '%v' from '%v' to '%v'.", name, namespace, oldReplicas, replicas)
+	}
+
+	logrus.Debugf("Deployment '%s' scaled to %d\n", name, replicas)
+
+	return nil
 }
 
 func (manager *KubernetesManager) GetPodsManagedByDeployment(ctx context.Context, deployment *v1.Deployment) ([]*apiv1.Pod, error) {
@@ -2508,7 +2534,7 @@ func (manager *KubernetesManager) waitForPodDeletion(ctx context.Context, namesp
 	)
 }
 
-func (manager *KubernetesManager) waitForPodTermination(ctx context.Context, namespaceName string, podName string) error {
+func (manager *KubernetesManager) WaitForPodTermination(ctx context.Context, namespaceName string, podName string) error {
 	deadline := time.Now().Add(podWaitForTerminationTimeout)
 	var latestPodStatus *apiv1.PodStatus
 	for time.Now().Before(deadline) {

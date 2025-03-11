@@ -530,21 +530,7 @@ func createEnginePod(
 	engineInitContainers := []apiv1.Container{}
 
 	// Create pods with engine containers and volumes in kubernetes
-	pod, err := kubernetesManager.CreatePod(
-		ctx,
-		namespace,
-		enginePodName,
-		enginePodLabelStrs,
-		enginePodAnnotationStrs,
-		engineInitContainers,
-		engineContainers,
-		engineVolumes,
-		serviceAccountName,
-		// Engine doesn't auto restart
-		apiv1.RestartPolicyNever,
-		noToleration,
-		noSelectors,
-	)
+	pod, err := kubernetesManager.CreatePod(ctx, namespace, enginePodName, enginePodLabelStrs, enginePodAnnotationStrs, engineInitContainers, engineContainers, engineVolumes, serviceAccountName, apiv1.RestartPolicyNever, noToleration, noSelectors, false, false)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while creating the pod with name '%s' in namespace '%s' with image '%s'", enginePodName, namespace, containerImageAndTag)
 	}

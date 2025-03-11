@@ -2,7 +2,7 @@ package vector
 
 const (
 	vectorContainerName = "vector"
-	vectorImage         = "timberio/vector:0.31.0-debian"
+	vectorImage         = "timberio/vector:0.45.0-debian"
 
 	vectorConfigVolumeName = "vector-config"
 	vectorConfigMountPath  = "/etc/vector"
@@ -14,7 +14,7 @@ const (
 	apiPort    = 8686
 
 	// mount the data directory as the disk buffer for file sink is contained here and needs to be persisted onto the k8s node in case vector restarts
-	vectorDataDirVolumeName = "vectorDataDirVol"
+	vectorDataDirVolumeName = "varlibvector"
 	vectorDataDirMountPath  = "/var/lib/vector"
 
 	vectorConfigFileName = "vector.toml"
@@ -33,7 +33,11 @@ const (
     type = "file"
     inputs = ["fluentbit"]
     path = "%v/%%G/%%V/{{ enclave_uuid }}/{{ service_uuid }}.json"
-    buffer.when_full = "block"
+    
+	[sinks.file_sink.buffer]
+	type = "disk"
+	max_size = 268435488
+    when_full = "block"
 
     [sinks.file_sink.encoding]
     codec = "json"
@@ -42,8 +46,6 @@ const (
     type = "console"
     inputs = ["fluentbit"]
     target = "stdout"
-    buffer.type = "disk"
-    buffer.when_full = "block"
 
     [sinks.stdout_sink.encoding]
     codec = "json"

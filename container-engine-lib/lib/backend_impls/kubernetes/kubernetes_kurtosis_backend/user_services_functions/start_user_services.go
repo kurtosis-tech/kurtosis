@@ -410,20 +410,7 @@ func createStartServiceOperation(
 		}
 
 		podName := podAttributes.GetName().GetString()
-		createdPod, err := kubernetesManager.CreatePod(
-			ctx,
-			namespaceName,
-			podName,
-			podLabelsStrs,
-			podAnnotationsStrs,
-			podInitContainers,
-			podContainers,
-			podVolumes,
-			userServiceServiceAccountName,
-			restartPolicy,
-			tolerations,
-			nodeSelectors,
-		)
+		createdPod, err := kubernetesManager.CreatePod(ctx, namespaceName, podName, podLabelsStrs, podAnnotationsStrs, podInitContainers, podContainers, podVolumes, userServiceServiceAccountName, restartPolicy, tolerations, nodeSelectors, false, false)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating pod '%v' using image '%v'", podName, containerImageName)
 		}
