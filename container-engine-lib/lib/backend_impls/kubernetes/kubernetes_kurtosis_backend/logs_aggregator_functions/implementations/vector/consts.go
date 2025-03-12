@@ -33,7 +33,6 @@ const (
     type = "file"
     inputs = ["fluentbit"]
     path = "%v/%%G/%%V/{{ kurtosis_enclave_uuid }}/{{ kurtosis_service_uuid }}.json"
-    buffer.when_full = "block"
    
 	[sinks.file_sink.buffer]
 	type = "disk"
