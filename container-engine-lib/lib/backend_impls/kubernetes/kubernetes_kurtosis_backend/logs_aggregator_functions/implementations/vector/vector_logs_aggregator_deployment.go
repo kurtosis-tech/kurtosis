@@ -1,7 +1,6 @@
 package vector
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
@@ -11,7 +10,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -466,11 +464,12 @@ func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAgg
 		return stacktrace.Propagate(err, "More than one pod found for logs aggregator deployment '%v' in namespace '%v'.", logsAggregatorDeployment.Name, logsAggregatorDeployment.Namespace)
 	}
 
-	logrus.Infof("Cleaning the vector logs aggregator deployment...")
+	logrus.Debugf("Cleaning the vector logs aggregator deployment...")
 	pod := pods[0]
 	nodeName := pod.Spec.NodeName
 
 	// scale deployment down to zero in order to unmount volume
+	// need to do this in order to unmount data directory volume - otherwise removing directory from underlying nodes file system won't work since processes are accessing it
 	if err := kubernetesManager.ScaleDeployment(ctx, logsAggregatorDeployment.Namespace, logsAggregatorDeployment.Name, preCleanNumReplicas); err != nil {
 		return stacktrace.Propagate(err, "An error occurred scaling deployment '%v' in namespace '%v' to '%v'.", logsAggregatorDeployment.Name, logsAggregatorDeployment.Namespace, preCleanNumReplicas)
 	}
@@ -478,125 +477,19 @@ func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAgg
 		return stacktrace.Propagate(err, "An error occurred waiting for pod '%v' in namespace '%v' to terminate.", pod.Namespace, pod.Name)
 	}
 
-	// rm the vector directory from the node using a privileged pod
-	removeContainerName := "remove-vector-data-container"
-	// pod needs to be privileged to access host filesystem
-	isPrivileged := true
-	hasHostPidAccess := true
-	hasHostNetworkAccess := true
-	removePodName := "remove-vector-data-pod"
-	hostVolumeName := "host"
-	hostMountPath := "/host"
-	removePod, err := kubernetesManager.CreatePod(ctx,
-		logsAggregatorDeployment.Namespace,
-		removePodName,
-		nil,
-		nil,
-		nil,
-		[]apiv1.Container{
-			{
-				Name:  removeContainerName,
-				Image: "busybox",
-				Command: []string{
-					"sh",
-					"-c",
-					"sleep 10000000s",
-				},
-				Args:       nil,
-				WorkingDir: "",
-				Ports:      nil,
-				EnvFrom:    nil,
-				Env:        nil,
-				Resources: apiv1.ResourceRequirements{
-					Limits:   nil,
-					Requests: nil,
-					Claims:   nil,
-				},
-				ResizePolicy: nil,
-				VolumeMounts: []apiv1.VolumeMount{
-					{
-						Name:             hostVolumeName,
-						ReadOnly:         false,
-						MountPath:        hostMountPath,
-						SubPath:          "",
-						MountPropagation: nil,
-						SubPathExpr:      "",
-					},
-				},
-				VolumeDevices:            nil,
-				LivenessProbe:            nil,
-				ReadinessProbe:           nil,
-				StartupProbe:             nil,
-				Lifecycle:                nil,
-				TerminationMessagePath:   "",
-				TerminationMessagePolicy: "",
-				ImagePullPolicy:          "",
-				SecurityContext: &apiv1.SecurityContext{
-					Privileged: &isPrivileged,
-				},
-				Stdin:     false,
-				StdinOnce: false,
-				TTY:       false,
-			},
-		},
-		[]apiv1.Volume{
-			{
-				Name:         hostVolumeName,
-				VolumeSource: kubernetesManager.GetVolumeSourceForHostPath("/"), // mount the entire host filesystem in this volume
-			},
-		},
-		"",
-		"",
-		nil,
-		map[string]string{
-			"kubernetes.io/hostname": nodeName,
-		},
-		hasHostPidAccess,
-		hasHostNetworkAccess,
-	)
-	defer func() {
-		// Don't block on removing this remove directory pod because this can take a while sometimes in k8s
-		go func() {
-			removeCtx := context.Background()
-			if removePod != nil {
-				err := kubernetesManager.RemovePod(removeCtx, removePod)
-				if err != nil {
-					logrus.Warnf("Attempted to remove pod '%v' in namespace '%v' but an error occurred:\n%v", removePod.Name, logsAggregatorDeployment.Namespace, err.Error())
-					logrus.Warn("You may have to remove this pod manually.")
-				}
-			}
-		}()
-	}()
+	err = kubernetesManager.RemoveDirPathFromNode(ctx, logsAggregatorDeployment.Namespace, nodeName, vectorDataDirMountPath)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating pod '%v' in namespace '%v'.", removePodName, logsAggregatorDeployment.Namespace)
-	}
-
-	dirPathToRemoveAndEmpty := fmt.Sprintf("%v%v", hostMountPath, vectorDataDirMountPath)
-	cleanCmd := []string{"rm", "-rf", dirPathToRemoveAndEmpty, "&&", "rmdir", "-p", dirPathToRemoveAndEmpty}
-	output := &bytes.Buffer{}
-	concurrentWriter := concurrent_writer.NewConcurrentWriter(output)
-	resultExitCode, err := kubernetesManager.RunExecCommand(
-		removePod.Namespace,
-		removePod.Name,
-		removeContainerName,
-		cleanCmd,
-		concurrentWriter,
-		concurrentWriter,
-	)
-	logrus.Debugf("Output of clean '%v': %v, exit code: %v", cleanCmd, output.String(), resultExitCode)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred running exec command '%v' on pod '%v' in namespace '%v' with output '%v'.", cleanCmd, removePod.Name, removePod.Namespace, output.String())
-	}
-	if resultExitCode != successExitCode {
-		return stacktrace.NewError("Running exec command '%v' on pod '%v' in namespace '%v' returned a non-%v exit code: '%v' and output '%v'.", cleanCmd, removePod.Name, removePod.Namespace, successExitCode, resultExitCode, output.String())
-	}
-	if output.String() != "" {
-		return stacktrace.NewError("Expected empty output from running exec command '%v' but instead retrieved output string '%v'", cleanCmd, output.String())
+		return stacktrace.Propagate(err, "An error occurred removing dir path '%v' from node '%v' via a pod in namespace '%v'.", vectorDataDirMountPath, nodeName, logsAggregatorDeployment.Namespace)
 	}
 
 	// scale up the deployment again
 	if err := kubernetesManager.ScaleDeployment(ctx, logsAggregatorDeployment.Namespace, logsAggregatorDeployment.Name, postCleanNumReplicas); err != nil {
 		return stacktrace.Propagate(err, "An error occurred scaling deployment '%v' in namespace '%v' to '%v'.", logsAggregatorDeployment.Name, logsAggregatorDeployment.Namespace, postCleanNumReplicas)
+	}
+
+	// before continuing, ensure logs aggregator is up again
+	if err := waitForPodManagedByDeployment(ctx, logsAggregatorDeployment, kubernetesManager); err != nil {
+		return stacktrace.Propagate(err, "An error occurred waiting for a pod managed by deployment '%v' to become available.", logsAggregatorDeployment.Name)
 	}
 
 	logrus.Debugf("Successfully cleaned logs aggregator.")

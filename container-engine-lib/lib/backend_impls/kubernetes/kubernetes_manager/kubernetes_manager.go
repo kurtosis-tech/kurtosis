@@ -10,8 +10,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"io"
 	v1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"net/http"
 	"net/url"
 	"os"
@@ -1407,6 +1409,34 @@ func (manager *KubernetesManager) GetPodsManagedByDaemonSet(ctx context.Context,
 	return podsManagedByDaemonSet, nil
 }
 
+func (manager *KubernetesManager) UpdateDaemonSetWithNodeSelectors(ctx context.Context, daemonSet *v1.DaemonSet, nodeSelector map[string]string) error {
+	patchData, err := json.Marshal([]map[string]interface{}{
+		{"op": "replace", "path": "/spec/template/spec/nodeSelector", "value": nodeSelector},
+	})
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred marshaling data to patch daemon set '%v' with node selectors '%v':\n%v.", daemonSet.Name, nodeSelector, patchData)
+	}
+
+	_, err = manager.kubernetesClientSet.AppsV1().DaemonSets(daemonSet.Namespace).Patch(
+		ctx,
+		daemonSet.Name,
+		types.JSONPatchType,
+		patchData,
+		metav1.PatchOptions{
+			TypeMeta:        metav1.TypeMeta{},
+			DryRun:          nil,
+			Force:           nil,
+			FieldManager:    "",
+			FieldValidation: "",
+		},
+	)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred patching daemon set '%v' in namespace '%v' with patch data '%v'.", daemonSet.Name, daemonSet.Namespace, patchData)
+	}
+
+	return nil
+}
+
 // ---------------------------deployments---------------------------------------------------------------------------------------
 func (manager *KubernetesManager) RemoveDeployment(ctx context.Context, namespace string, deployment *v1.Deployment) error {
 	client := manager.kubernetesClientSet.AppsV1().Deployments(namespace)
@@ -2052,6 +2082,129 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 		}
 	}()
 	return execOutputChan, finalExecResultChan, nil
+}
+
+// RemoveDirPathFromNode removes the contents and path to [dirPathToRemove] by creating a pod in [namespace] with privileged access to the [nodeName]'s filesystem
+// The host filesystem is mounted onto the pod as a volume and then a rm -rf is run at the location on the pod where [dirPathToRemove] is mounted
+func (manager *KubernetesManager) RemoveDirPathFromNode(ctx context.Context, namespace string, nodeName string, dirPathToRemove string) error {
+	// rm the fluent bit directory from the node using a privileged pod
+	removeContainerName := "remove-dir-container"
+	// pod needs to be privileged to access host filesystem
+	isPrivileged := true
+	hasHostPidAccess := true
+	hasHostNetworkAccess := true
+	removeDataDirPodName := "remove-dir-pod"
+	hostVolumeName := "host"
+	hostMountPath := "/host"
+	removeDataDirPod, err := manager.CreatePod(ctx,
+		namespace,
+		removeDataDirPodName,
+		nil,
+		nil,
+		nil,
+		[]apiv1.Container{
+			{
+				Name:  removeContainerName,
+				Image: "busybox",
+				Command: []string{
+					"sh",
+					"-c",
+					"sleep 10000000s",
+				},
+				Args:       nil,
+				WorkingDir: "",
+				Ports:      nil,
+				EnvFrom:    nil,
+				Env:        nil,
+				Resources: apiv1.ResourceRequirements{
+					Limits:   nil,
+					Requests: nil,
+					Claims:   nil,
+				},
+				ResizePolicy: nil,
+				VolumeMounts: []apiv1.VolumeMount{
+					{
+						Name:             hostVolumeName,
+						ReadOnly:         false,
+						MountPath:        hostMountPath,
+						SubPath:          "",
+						MountPropagation: nil,
+						SubPathExpr:      "",
+					},
+				},
+				VolumeDevices:            nil,
+				LivenessProbe:            nil,
+				ReadinessProbe:           nil,
+				StartupProbe:             nil,
+				Lifecycle:                nil,
+				TerminationMessagePath:   "",
+				TerminationMessagePolicy: "",
+				ImagePullPolicy:          "",
+				SecurityContext: &apiv1.SecurityContext{
+					Privileged: &isPrivileged,
+				},
+				Stdin:     false,
+				StdinOnce: false,
+				TTY:       false,
+			},
+		},
+		[]apiv1.Volume{
+			{
+				Name:         hostVolumeName,
+				VolumeSource: manager.GetVolumeSourceForHostPath("/"), // mount the entire host filesystem in this volume
+			},
+		},
+		"",
+		"",
+		nil,
+		map[string]string{
+			"kubernetes.io/hostname": nodeName,
+		},
+		hasHostPidAccess,
+		hasHostNetworkAccess,
+	)
+	defer func() {
+		// Don't block on removing this remove directory pod because this can take a while sometimes in k8s
+		go func() {
+			removeCtx := context.Background()
+			if removeDataDirPod != nil {
+				err := manager.RemovePod(removeCtx, removeDataDirPod)
+				if err != nil {
+					logrus.Warnf("Attempted to remove pod '%v' in namespace '%v' but an error occurred:\n%v", removeDataDirPod.Name, namespace, err.Error())
+					logrus.Warn("You may have to remove this pod manually.")
+				}
+			}
+		}()
+	}()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating pod '%v' in namespace '%v'.", removeDataDirPodName, namespace)
+	}
+
+	removeDirSuccessExitCode := int32(0)
+	dirPathToRemoveAndEmpty := fmt.Sprintf("%v%v", hostMountPath, dirPathToRemove)
+	removeDirCmd := []string{"rm", "-rf", dirPathToRemoveAndEmpty}
+	output := &bytes.Buffer{}
+	concurrentWriter := concurrent_writer.NewConcurrentWriter(output)
+	resultExitCode, err := manager.RunExecCommand(
+		removeDataDirPod.Namespace,
+		removeDataDirPod.Name,
+		removeContainerName,
+		removeDirCmd,
+		concurrentWriter,
+		concurrentWriter,
+	)
+	logrus.Debugf("Output of clean '%v': %v, exit code: %v", removeDirCmd, output.String(), resultExitCode)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred running exec command '%v' on pod '%v' in namespace '%v' with output '%v'.", removeDirCmd, removeDataDirPod.Name, removeDataDirPod.Namespace, output.String())
+	}
+	if resultExitCode != removeDirSuccessExitCode {
+		return stacktrace.NewError("Running exec command '%v' on pod '%v' in namespace '%v' returned a non-%v exit code: '%v' and output '%v'.", removeDirCmd, removeDataDirPod.Name, removeDataDirPod.Namespace, removeDirSuccessExitCode, resultExitCode, output.String())
+	}
+	if output.String() != "" {
+		return stacktrace.NewError("Expected empty output from running exec command '%v' but instead retrieved output string '%v'", removeDirCmd, output.String())
+	}
+
+	return nil
 }
 
 func (manager *KubernetesManager) GetAllEnclaveResourcesByLabels(ctx context.Context, namespace string, labels map[string]string) (*apiv1.PodList, *apiv1.ServiceList, *rbacv1.ClusterRoleList, *rbacv1.ClusterRoleBindingList, error) {
