@@ -488,9 +488,9 @@ func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAgg
 	//}
 
 	// before continuing, ensure logs aggregator is up again
-	if err := waitForPodManagedByDeployment(ctx, logsAggregatorDeployment, kubernetesManager); err != nil {
-		return stacktrace.Propagate(err, "An error occurred waiting for a pod managed by deployment '%v' to become available.", logsAggregatorDeployment.Name)
-	}
+	//if err := waitForPodManagedByDeployment(ctx, logsAggregatorDeployment, kubernetesManager); err != nil {
+	//	return stacktrace.Propagate(err, "An error occurred waiting for a pod managed by deployment '%v' to become available.", logsAggregatorDeployment.Name)
+	//}
 
 	logrus.Debugf("Successfully cleaned logs aggregator.")
 
