@@ -183,7 +183,8 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(
 	githubAuthTokenOverride string,
 	restartAPIContainers bool,
 	domain string,
-	logRetentionPeriodStr string) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
+	logRetentionPeriodStr string,
+) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
 	status, maybeHostMachinePortBinding, engineVersion, err := manager.GetEngineStatus(ctx)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
@@ -208,6 +209,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(
 		restartAPIContainers,
 		domain,
 		logRetentionPeriodStr,
+		manager.clusterConfig.GetLogsAggregatorConfig().Sinks,
 	)
 	// TODO Need to handle the Kubernetes case, where a gateway needs to be started after the engine is started but
 	//  before we can return an EngineClient
@@ -228,7 +230,8 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(
 	githubAuthTokenOverride string,
 	restartAPIContainers bool,
 	domain string,
-	logRetentionPeriodStr string) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
+	logRetentionPeriodStr string,
+) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
 	status, maybeHostMachinePortBinding, engineVersion, err := manager.GetEngineStatus(ctx)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
@@ -254,6 +257,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(
 		restartAPIContainers,
 		domain,
 		logRetentionPeriodStr,
+		manager.clusterConfig.GetLogsAggregatorConfig().Sinks,
 	)
 	engineClient, engineClientCloseFunc, err := manager.startEngineWithGuarantor(ctx, status, engineGuarantor)
 	if err != nil {

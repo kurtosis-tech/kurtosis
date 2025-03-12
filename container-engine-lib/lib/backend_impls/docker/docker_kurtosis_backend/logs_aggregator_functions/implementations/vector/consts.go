@@ -1,25 +1,29 @@
 package vector
 
+import (
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
+)
+
 const (
 	configDirpath = "/etc/vector/"
 
 	////////////////////////--VECTOR CONTAINER CONFIGURATION SECTION--/////////////////////////////
-	containerImage = "timberio/vector:0.31.0-debian"
+	containerImage = "timberio/vector:0.45.0-debian"
 
-	configFilepath = configDirpath + "vector.toml"
+	configFilepath = configDirpath + "vector.yaml"
 	binaryFilepath = "/usr/bin/vector"
 	configFileFlag = "-c"
 
-	logsStorageDirpath = "/var/log/kurtosis/"
+	logsStorageDirpath      = "/var/log/kurtosis/"
+	healthCheckEndpointPath = "/health"
+	httpTransportProtocol   = port_spec.TransportProtocol_TCP
 	////////////////////////--FINISH VECTOR CONTAINER CONFIGURATION SECTION--/////////////////////////////
 
 	////////////////////////--VECTOR CONFIGURATION SECTION--/////////////////////////////
-	fluentBitSourceId        = "\"fluent_bit\""
-	fluentBitSourceType      = "\"fluent\""
+	defaultSourceId          = "kurtosis_default_source"
+	fluentBitSourceType      = "fluent"
 	fluentBitSourceIpAddress = "0.0.0.0"
-
-	fileSinkIdSuffix = "file"
-	fileTypeId       = "\"file\""
+	fileSinkType             = "file"
 
 	// We instruct vector to store log files per-year, per-week (00-53), per-enclave, per-service
 	// To construct the filepath, we utilize vectors template syntax that allows us to reference fields in log events
@@ -27,24 +31,5 @@ const (
 	baseLogsFilepath = "\"" + logsStorageDirpath + "%%G/%%V/"
 
 	uuidLogsFilepath = baseLogsFilepath + "{{ enclave_uuid }}/{{ service_uuid }}.json\""
-
-	sourceConfigFileTemplateName = "srcVectorConfigFileTemplate"
-	sinkConfigFileTemplateName   = "sinkVectorConfigFileTemplate"
-
-	// Note: we set buffer to block so that we don't drop any logs, however this could apply backpressure up the topology
-	// if we start noticing slowdown due to vector buffer blocking, we might want to revisit our architecture
-	srcConfigFileTemplate = `
-[sources.{{ .Id }}]
-type = {{ .Type }}
-address = "{{ .Address }}"
-`
-	sinkConfigFileTemplate = `
-[sinks.{{ .Id }}]
-type = {{ .Type }}
-inputs = {{ .Inputs }}
-path = {{ .Filepath }}	
-encoding.codec = "json"
-buffer.when_full = "block"
-`
 	////////////////////////--FINISH--VECTOR CONFIGURATION SECTION--/////////////////////////////
 )

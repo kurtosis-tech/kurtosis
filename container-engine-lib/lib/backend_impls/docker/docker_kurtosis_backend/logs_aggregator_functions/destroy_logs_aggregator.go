@@ -2,10 +2,11 @@ package logs_aggregator_functions
 
 import (
 	"context"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"time"
 )
 
 const (
@@ -30,6 +31,20 @@ func DestroyLogsAggregator(ctx context.Context, dockerManager *docker_manager.Do
 
 	if err := dockerManager.RemoveContainer(ctx, maybeLogsAggregatorContainerId); err != nil {
 		return stacktrace.Propagate(err, "An error occurred removing the logs aggregator container with ID '%v'", maybeLogsAggregatorContainerId)
+	}
+
+	maybeLogsAggregatorVolumeName, err := getLogsAggregatorVolumeName(ctx, dockerManager)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while getting logs aggregator volume")
+	}
+
+	if maybeLogsAggregatorVolumeName == "" {
+		return nil
+	}
+
+	err = dockerManager.RemoveVolume(ctx, maybeLogsAggregatorVolumeName)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while removing the logs aggregator volume '%v'", maybeLogsAggregatorVolumeName)
 	}
 
 	return nil

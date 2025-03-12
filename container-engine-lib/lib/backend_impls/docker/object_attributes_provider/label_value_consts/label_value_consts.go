@@ -25,6 +25,7 @@ const (
 	enclaveDataVolumeTypeLabelValueStr            = "enclave-data"
 	filesArtifactExpansionVolumeTypeLabelValueStr = "files-artifacts-expansion"
 	persistentDirectoryVolumeTypeLabelValueStr    = "persistent-directory"
+	logsAggregatorVolumeTypeLabelValueStr         = "logs-aggregator-data"
 	logsStorageVolumeTypeLabelValueStr            = "kurtosis-logs-storage"
 	logsCollectorVolumeTypeLabelValueStr          = "logs-collector-data"
 	githubAuthStorageVolumeTypeLabelValueStr      = "github-auth-storage"
@@ -52,6 +53,7 @@ var FilesArtifactExpanderContainerTypeDockerLabelValue = docker_label_value.Must
 var EnclaveDataVolumeTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(enclaveDataVolumeTypeLabelValueStr)
 var FilesArtifactExpansionVolumeTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(filesArtifactExpansionVolumeTypeLabelValueStr)
 var PersistentDirectoryVolumeTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(persistentDirectoryVolumeTypeLabelValueStr)
+var LogsAggregatorVolumeTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(logsAggregatorVolumeTypeLabelValueStr)
 var LogsStorageVolumeTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(logsStorageVolumeTypeLabelValueStr)
 var LogsCollectorVolumeTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(logsCollectorVolumeTypeLabelValueStr)
 var GitHubAuthStorageVolumeTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(githubAuthStorageVolumeTypeLabelValueStr)
