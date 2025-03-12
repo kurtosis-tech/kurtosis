@@ -638,20 +638,20 @@ func (fluentbit *fluentbitLogsCollector) Clean(
 		}
 	}
 
-	// patch daemon set again to have no node selectors, allowing daemon set to schedule log collector pods
-	//err = kubernetesManager.UpdateDaemonSetWithNodeSelectors(
-	//	ctx,
-	//	logsCollectorDaemonSet,
-	//	map[string]string{},
-	//)
-	//if err != nil {
-	//	return stacktrace.Propagate(err, "An error occurred updating daemon set '%v' with node selectors '%v'", logsCollectorDaemonSet.Name, evictNodeSelectors)
-	//}
+	//patch daemon set again to have no node selectors, allowing daemon set to schedule log collector pods
+	err = kubernetesManager.UpdateDaemonSetWithNodeSelectors(
+		ctx,
+		logsCollectorDaemonSet,
+		map[string]string{},
+	)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred updating daemon set '%v' with node selectors '%v'", logsCollectorDaemonSet.Name, evictNodeSelectors)
+	}
 
-	// before continuing, ensure logs collector is up again
-	//if err := waitForAtLeastOneActivePodManagedByDaemonSet(ctx, logsCollectorDaemonSet, kubernetesManager); err != nil {
-	//	return stacktrace.Propagate(err, "An error occurred waiting for at least one pod managed by daemon set '%v' has become available.", logsCollectorDaemonSet.Name)
-	//}
+	//before continuing, ensure logs collector is up again
+	if err := waitForAtLeastOneActivePodManagedByDaemonSet(ctx, logsCollectorDaemonSet, kubernetesManager); err != nil {
+		return stacktrace.Propagate(err, "An error occurred waiting for at least one pod managed by daemon set '%v' has become available.", logsCollectorDaemonSet.Name)
+	}
 
 	logrus.Infof("Successfully cleaned logs collector.")
 

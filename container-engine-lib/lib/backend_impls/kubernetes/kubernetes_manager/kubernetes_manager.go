@@ -1433,7 +1433,7 @@ func (manager *KubernetesManager) UpdateDaemonSetWithNodeSelectors(ctx context.C
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred patching daemon set '%v' in namespace '%v' with patch data '%v'.", daemonSet.Name, daemonSet.Namespace, patchData)
 	}
-	logrus.Infof("Successfully patched daemon set with node selector %v and patch data '%v'", nodeSelector, patchData)
+	logrus.Debugf("Successfully patched daemon set with node selector %v and patch data '%v'", nodeSelector, patchData)
 
 	return nil
 }
@@ -2205,8 +2205,7 @@ func (manager *KubernetesManager) RemoveDirPathFromNode(ctx context.Context, nam
 		return stacktrace.NewError("Expected empty output from running exec command '%v' but instead retrieved output string '%v'", removeDirCmd, output.String())
 	}
 
-	logrus.Infof("Output of clean '%v': %v, exit code: %v", removeDirCmd, output.String(), resultExitCode)
-	logrus.Info("Successfully removed dir path.")
+	logrus.Debugf("Successfully removed contents of dir path '%v' on node '%v'.", dirPathToRemove, nodeName)
 	return nil
 }
 
