@@ -13,13 +13,16 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	v1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"net"
 	"time"
 )
 
 const (
-	maxAvailabilityCheckRetries     = 30
-	timeToWaitBetweenChecksDuration = 1 * time.Second
+	maxAvailabilityChecksRetries                = 30
+	timeToWaitBetweenAvailabilityChecksDuration = 1 * time.Second
+	maxTriesToWaitForNamespaceRemoval           = 30
+	timeToWaitBetweenNamespaceRemovalChecks     = 1 * time.Second
 )
 
 func getLogsCollectorObjAndResourcesForCluster(ctx context.Context, kubernetesManager *kubernetes_manager.KubernetesManager) (*logs_collector.LogsCollector, *logsCollectorKubernetesResources, error) {
@@ -58,18 +61,106 @@ func getLogsCollectorKubernetesResourcesForCluster(ctx context.Context, kubernet
 		if len(logsCollectorNamespaceForLabel) == 0 {
 			// if no namespace for logs collector, assume it doesn't exist at all
 			return &logsCollectorKubernetesResources{
-				daemonSet: nil,
-				configMap: nil,
-				namespace: nil,
+				daemonSet:          nil,
+				configMap:          nil,
+				namespace:          nil,
+				serviceAccount:     nil,
+				clusterRoleBinding: nil,
+				clusterRole:        nil,
 			}, nil
 		}
 		namespace = logsCollectorNamespaceForLabel[0]
 	} else {
 		return &logsCollectorKubernetesResources{
-			daemonSet: nil,
-			configMap: nil,
-			namespace: nil,
+			daemonSet:          nil,
+			configMap:          nil,
+			namespace:          nil,
+			serviceAccount:     nil,
+			clusterRoleBinding: nil,
+			clusterRole:        nil,
 		}, nil
+	}
+
+	logsCollectorConfigClusterRoles, err := kubernetes_resource_collectors.CollectMatchingClusterRoles(
+		ctx,
+		kubernetesManager,
+		logsCollectorDaemonSetSearchLabels,
+		resourceTypeLabelKeyStr,
+		map[string]bool{
+			logsCollectorResourceTypeLabelValStr: true,
+		})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting cluster role for logs collector in namespace '%v'", namespace.Name)
+	}
+	var clusterRole *rbacv1.ClusterRole
+	if clusterRoleForLabel, found := logsCollectorConfigClusterRoles[logsCollectorResourceTypeLabelValStr]; found {
+		if len(clusterRoleForLabel) > 1 {
+			return nil, stacktrace.NewError(
+				"Expected at most one logs collector cluster role in namespace '%v' for logs collector but found '%v'",
+				namespace.Name,
+				len(clusterRoleForLabel),
+			)
+		}
+		if len(clusterRoleForLabel) == 0 {
+			clusterRole = nil
+		} else {
+			clusterRole = clusterRoleForLabel[0]
+		}
+	}
+
+	logsCollectorConfigClusterRoleBindings, err := kubernetes_resource_collectors.CollectMatchingClusterRoleBindings(
+		ctx,
+		kubernetesManager,
+		logsCollectorDaemonSetSearchLabels,
+		resourceTypeLabelKeyStr,
+		map[string]bool{
+			logsCollectorResourceTypeLabelValStr: true,
+		})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting cluster role binding for logs collector in namespace '%v'", namespace.Name)
+	}
+	var cluseterRoleBinding *rbacv1.ClusterRoleBinding
+	if clusterRoleBindingsForLabel, found := logsCollectorConfigClusterRoleBindings[logsCollectorResourceTypeLabelValStr]; found {
+		if len(clusterRoleBindingsForLabel) > 1 {
+			return nil, stacktrace.NewError(
+				"Expected at most one logs collector cluster role bindings in namespace '%v' for logs collector but found '%v'",
+				namespace.Name,
+				len(clusterRoleBindingsForLabel),
+			)
+		}
+		if len(clusterRoleBindingsForLabel) == 0 {
+			cluseterRoleBinding = nil
+		} else {
+			cluseterRoleBinding = clusterRoleBindingsForLabel[0]
+		}
+	}
+
+	logsCollectorConfigServiceAccounts, err := kubernetes_resource_collectors.CollectMatchingServiceAccounts(
+		ctx,
+		kubernetesManager,
+		namespace.Namespace,
+		logsCollectorDaemonSetSearchLabels,
+		resourceTypeLabelKeyStr,
+		map[string]bool{
+			logsCollectorResourceTypeLabelValStr: true,
+		})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting service accounts for logs collector in namespace '%v'", namespace.Name)
+	}
+	var serviceAccount *apiv1.ServiceAccount
+	if serviceAccountForLabel, found := logsCollectorConfigServiceAccounts[logsCollectorResourceTypeLabelValStr]; found {
+		if len(serviceAccountForLabel) > 1 {
+			return nil, stacktrace.NewError(
+				"Expected at most one logs collector service account in namespace '%v' for logs collector but found '%v'",
+				namespace.Name,
+				len(serviceAccountForLabel),
+			)
+		}
+		if len(serviceAccountForLabel) == 0 {
+			serviceAccount = nil
+		} else {
+			serviceAccount = serviceAccountForLabel[0]
+		}
 	}
 
 	logsCollectorConfigConfigMaps, err := kubernetes_resource_collectors.CollectMatchingConfigMaps(
@@ -129,9 +220,12 @@ func getLogsCollectorKubernetesResourcesForCluster(ctx context.Context, kubernet
 	}
 
 	logsCollectorKubernetesResources := &logsCollectorKubernetesResources{
-		daemonSet: daemonSet,
-		configMap: configMap,
-		namespace: namespace,
+		daemonSet:          daemonSet,
+		configMap:          configMap,
+		namespace:          namespace,
+		clusterRole:        clusterRole,
+		clusterRoleBinding: cluseterRoleBinding,
+		serviceAccount:     serviceAccount,
 	}
 
 	return logsCollectorKubernetesResources, nil
@@ -240,11 +334,31 @@ func waitForLogsCollectorAvailability(
 			pod.Name,
 			fluentBitContainerName,
 			httpPortSpec,
-			maxAvailabilityCheckRetries,
-			timeToWaitBetweenChecksDuration); err != nil {
+			maxAvailabilityChecksRetries,
+			timeToWaitBetweenAvailabilityChecksDuration); err != nil {
 			return stacktrace.Propagate(err, "An error occurred while checking for availability of pod '%v' managed by logs collector daemon set '%v'", pod.Name, logsCollectorDaemonSet.Name)
 		}
 	}
 
 	return nil
+}
+
+func waitForNamespaceRemoval(
+	ctx context.Context,
+	namespace string,
+	kubernetesManager *kubernetes_manager.KubernetesManager) error {
+
+	for i := uint(0); i < maxTriesToWaitForNamespaceRemoval; i++ {
+		if _, err := kubernetesManager.GetNamespace(ctx, namespace); err != nil {
+			// if err was returned, namespace doesn't exist, or it's been marked for deleted
+			return nil
+		}
+
+		// Tiny optimization to not sleep if we're not going to run the loop again
+		if i < maxTriesToWaitForNamespaceRemoval-1 {
+			time.Sleep(timeToWaitBetweenNamespaceRemovalChecks)
+		}
+	}
+
+	return stacktrace.NewError("Attempted to wait for namespace '%v' removal or to be marked for deletion '%v' times but namespace was not removed.", namespace, maxTriesToWaitForNamespaceRemoval)
 }

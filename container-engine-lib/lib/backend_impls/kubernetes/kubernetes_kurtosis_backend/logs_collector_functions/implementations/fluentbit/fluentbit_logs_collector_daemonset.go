@@ -13,6 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"time"
 )
 
@@ -45,12 +46,15 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 	*appsv1.DaemonSet,
 	*apiv1.ConfigMap,
 	*apiv1.Namespace,
+	*apiv1.ServiceAccount,
+	*rbacv1.ClusterRole,
+	*rbacv1.ClusterRoleBinding,
 	func(),
 	error,
 ) {
 	logsCollectorGuidStr, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
-		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating uuid for logs collector.")
+		return nil, nil, nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating uuid for logs collector.")
 	}
 
 	logsCollectorGuid := logs_collector.LogsCollectorGuid(logsCollectorGuidStr)
@@ -58,7 +62,7 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 
 	namespace, err := createLogsCollectorNamespace(ctx, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
-		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating namespace for logs collector.")
+		return nil, nil, nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating namespace for logs collector.")
 	}
 	removeNamespaceFunc := func() {
 		removeCtx := context.Background()
@@ -78,9 +82,75 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 		}
 	}()
 
+	serviceAccount, err := createLogsCollectorServiceAccount(ctx, namespace.Name, logsCollectorAttrProvider, kubernetesManager)
+	if err != nil {
+		return nil, nil, nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create service account for fluent bit log collector.")
+	}
+	removeServiceAccountFunc := func() {
+		removeCtx := context.Background()
+		if err := kubernetesManager.RemoveServiceAccount(removeCtx, serviceAccount); err != nil {
+			logrus.Errorf(
+				"Launching the logs collector daemon set with name '%v' didn't complete successfully so we "+
+					"tried to remove the service account we started, but doing so exited with an error:\n%v",
+				serviceAccount.Name,
+				err)
+			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs collector service account with Kubernetes name '%v' in namespace '%v'!!!!!!", serviceAccount.Name, serviceAccount.Namespace)
+		}
+	}
+	shouldRemoveLogsCollectorServiceAccount := true
+	defer func() {
+		if shouldRemoveLogsCollectorServiceAccount {
+			removeServiceAccountFunc()
+		}
+	}()
+
+	clusterRole, err := createLogsCollectorClusterRole(ctx, logsCollectorAttrProvider, kubernetesManager)
+	if err != nil {
+		return nil, nil, nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create cluster role for fluent bit log collector.")
+	}
+	removeClusterRoleFunc := func() {
+		removeCtx := context.Background()
+		if err := kubernetesManager.RemoveClusterRole(removeCtx, clusterRole); err != nil {
+			logrus.Errorf(
+				"Launching the logs collector daemon set with name '%v' didn't complete successfully so we "+
+					"tried to remove the cluster role we started, but doing so exited with an error:\n%v",
+				clusterRole.Name,
+				err)
+			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs collector cluster role with Kubernetes name '%v' in namespace '%v'!!!!!!", clusterRole.Name, clusterRole.Namespace)
+		}
+	}
+	shouldRemoveLogsCollectorClusterRole := true
+	defer func() {
+		if shouldRemoveLogsCollectorClusterRole {
+			removeClusterRoleFunc()
+		}
+	}()
+
+	clusterRoleBinding, err := createLogsCollectorClusterRoleBinding(ctx, serviceAccount.Name, clusterRole.Name, namespace.Name, logsCollectorAttrProvider, kubernetesManager)
+	if err != nil {
+		return nil, nil, nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create cluster role binding for fluent bit log collector.")
+	}
+	removeClusterRoleBindingFunc := func() {
+		removeCtx := context.Background()
+		if err := kubernetesManager.RemoveClusterRoleBindings(removeCtx, clusterRoleBinding); err != nil {
+			logrus.Errorf(
+				"Launching the logs collector daemon set with name '%v' didn't complete successfully so we "+
+					"tried to remove the cluster role binding we started, but doing so exited with an error:\n%v",
+				clusterRoleBinding.Name,
+				err)
+			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs collector cluster role binding with Kubernetes name '%v' in namespace '%v'!!!!!!", clusterRoleBinding.Name, clusterRoleBinding.Namespace)
+		}
+	}
+	shouldRemoveLogsCollectorClusterRoleBinding := true
+	defer func() {
+		if shouldRemoveLogsCollectorClusterRoleBinding {
+			removeClusterRoleBindingFunc()
+		}
+	}()
+
 	configMap, err := createLogsCollectorConfigMap(ctx, namespace.Name, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
-		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create config map for fluent bit log collector.")
+		return nil, nil, nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create config map for fluent bit log collector.")
 	}
 	removeConfigMapFunc := func() {
 		removeCtx := context.Background()
@@ -102,7 +172,7 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 
 	httpPortSpec, err := port_spec.NewPortSpec(httpPortNumber, port_spec.TransportProtocol_TCP, httpProtocolStr, noWait, emptyUrl)
 	if err != nil {
-		return nil, nil, nil, nil, stacktrace.Propagate(
+		return nil, nil, nil, nil, nil, nil, nil, stacktrace.Propagate(
 			err,
 			"An error occurred creating the log collectors HTTP port spec object using number '%v' and protocol '%v'",
 			httpPortNumber,
@@ -111,7 +181,7 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 	}
 	tcpPortSpec, err := port_spec.NewPortSpec(tcpPortNumber, port_spec.TransportProtocol_TCP, httpProtocolStr, noWait, emptyUrl)
 	if err != nil {
-		return nil, nil, nil, nil, stacktrace.Propagate(
+		return nil, nil, nil, nil, nil, nil, nil, stacktrace.Propagate(
 			err,
 			"An error occurred creating the log collectors TCP port spec object using number '%v' and protocol '%v'",
 			tcpPortNumber,
@@ -125,12 +195,12 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 
 	containerPorts, err := shared_helpers.GetKubernetesContainerPortsFromPrivatePortSpecs(privatePorts)
 	if err != nil {
-		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector fluent bit container ports from the port specs")
+		return nil, nil, nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector fluent bit container ports from the port specs")
 	}
 
-	daemonSet, err := createLogsCollectorDaemonSet(ctx, namespace.Name, configMap.Name, containerPorts, logsCollectorAttrProvider, kubernetesManager)
+	daemonSet, err := createLogsCollectorDaemonSet(ctx, namespace.Name, configMap.Name, serviceAccount.Name, containerPorts, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
-		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create daemon set for fluent bit logs collector.")
+		return nil, nil, nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create daemon set for fluent bit logs collector.")
 	}
 	removeDaemonSetFunc := func() {
 		removeCtx := context.Background()
@@ -152,19 +222,25 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 
 	// wait until the first pod associated with this daemon set is online before returning
 	if err = waitForAtLeastOneActivePodManagedByDaemonSet(ctx, daemonSet, kubernetesManager); err != nil {
-		return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred waiting for at least one active pod managed by logs collector daemon set '%v'", daemonSet.Name)
+		return nil, nil, nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred waiting for at least one active pod managed by logs collector daemon set '%v'", daemonSet.Name)
 	}
 
 	removeLogsCollectorFunc := func() {
 		removeDaemonSetFunc()
 		removeConfigMapFunc()
+		removeClusterRoleBindingFunc()
+		removeClusterRoleFunc()
+		removeServiceAccountFunc()
 		removeNamespaceFunc()
 	}
 
+	shouldRemoveLogsCollectorClusterRoleBinding = false
+	shouldRemoveLogsCollectorClusterRole = false
+	shouldRemoveLogsCollectorServiceAccount = false
 	shouldRemoveLogsCollectorNamespace = false
 	shouldRemoveLogsCollectorConfigMap = false
 	shouldRemoveLogsCollectorDaemonSet = false
-	return daemonSet, configMap, namespace, removeLogsCollectorFunc, nil
+	return daemonSet, configMap, namespace, serviceAccount, clusterRole, clusterRoleBinding, removeLogsCollectorFunc, nil
 }
 
 func (fluentbit *fluentbitLogsCollector) GetHttpHealthCheckEndpoint() string {
@@ -175,6 +251,7 @@ func createLogsCollectorDaemonSet(
 	ctx context.Context,
 	namespace string,
 	fluentBitCfgConfigMapName string,
+	serviceAccountName string,
 	ports []apiv1.ContainerPort,
 	objAttrProvider object_attributes_provider.KubernetesLogsCollectorObjectAttributesProvider,
 	kubernetesManager *kubernetes_manager.KubernetesManager) (*appsv1.DaemonSet, error) {
@@ -233,6 +310,7 @@ func createLogsCollectorDaemonSet(
 			Stdin:                    false,
 			StdinOnce:                false,
 			TTY:                      false,
+			TerminationMessagePath:   "",
 			VolumeMounts: []apiv1.VolumeMount{
 				// these volumes are where logs from pods on a node in a k8s cluster get stored
 				// they get mounted to the fluentbit pod so the fluentbit pod can read them via the `tail` input plugin
@@ -317,15 +395,14 @@ func createLogsCollectorDaemonSet(
 		},
 	}
 
-	// this
-
 	logsCollectorDaemonSet, err := kubernetesManager.CreateDaemonSet(
 		ctx,
 		namespace,
 		name,
 		labels,
 		annotations,
-		[]apiv1.Container{},
+		serviceAccountName,
+		[]apiv1.Container{}, // no need init containers
 		containers,
 		volumes,
 	)
@@ -356,7 +433,7 @@ func createLogsCollectorConfigMap(
 		labels,
 		annotations,
 		map[string]string{
-			fluentBitConfigFileName: fluentBitConfigStr,
+			fluentBitConfigFileName: fmt.Sprintf(fluentBitConfigFmtStr, k8sApiServerUrl),
 		},
 	)
 	if err != nil {
@@ -492,4 +569,90 @@ func getVolumeSourceForConfigMap(configMapName string) apiv1.VolumeSource {
 		CSI:                   nil,
 		Ephemeral:             nil,
 	}
+}
+
+func createLogsCollectorServiceAccount(
+	ctx context.Context,
+	namespace string,
+	objAttrProvider object_attributes_provider.KubernetesLogsCollectorObjectAttributesProvider,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+) (*apiv1.ServiceAccount, error) {
+	serviceAccountAttrProvider, err := objAttrProvider.ForLogsCollectorServiceAccount()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while getting logs collector service account attributes provider.")
+	}
+	serviceAccountName := serviceAccountAttrProvider.GetName().GetString()
+	serviceAccountLabels := shared_helpers.GetStringMapFromLabelMap(serviceAccountAttrProvider.GetLabels())
+
+	serviceAccountObj, err := kubernetesManager.CreateServiceAccount(ctx, serviceAccountName, namespace, serviceAccountLabels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating service account for logs collector with name '%s'", serviceAccountName)
+	}
+
+	return serviceAccountObj, nil
+}
+
+func createLogsCollectorClusterRole(
+	ctx context.Context,
+	objAttrProvider object_attributes_provider.KubernetesLogsCollectorObjectAttributesProvider,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+) (*rbacv1.ClusterRole, error) {
+	clusterRoleAttrProvider, err := objAttrProvider.ForLogsCollectorClusterRole()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while getting logs collector cluster role attributes provider.")
+	}
+	clusterRoleName := clusterRoleAttrProvider.GetName().GetString()
+	clusterRoleLabels := shared_helpers.GetStringMapFromLabelMap(clusterRoleAttrProvider.GetLabels())
+
+	rules := []rbacv1.PolicyRule{
+		{
+			Verbs:           []string{"get", "list"},
+			APIGroups:       []string{""},
+			Resources:       []string{"pods", "pods/logs"},
+			ResourceNames:   nil,
+			NonResourceURLs: nil,
+		},
+	}
+	clusterRoleObj, err := kubernetesManager.CreateClusterRoles(ctx, clusterRoleName, rules, clusterRoleLabels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating cluster role for logs collector with name '%s'", clusterRoleName)
+	}
+
+	return clusterRoleObj, nil
+}
+
+func createLogsCollectorClusterRoleBinding(
+	ctx context.Context,
+	serviceAccountName string,
+	clusterRoleName string,
+	namespaceName string,
+	objAttrProvider object_attributes_provider.KubernetesLogsCollectorObjectAttributesProvider,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+) (*rbacv1.ClusterRoleBinding, error) {
+	clusterRoleBindingAttrProvider, err := objAttrProvider.ForLogsCollectorClusterRoleBinding()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while getting logs collector cluster role binding attributes provider.")
+	}
+	clusterRoleBindingName := clusterRoleBindingAttrProvider.GetName().GetString()
+	clusterRoleBindingLabels := shared_helpers.GetStringMapFromLabelMap(clusterRoleBindingAttrProvider.GetLabels())
+
+	subject := []rbacv1.Subject{
+		{
+			Kind:      "ServiceAccount",
+			Name:      serviceAccountName,
+			Namespace: namespaceName,
+			APIGroup:  "",
+		},
+	}
+	ref := rbacv1.RoleRef{
+		Kind:     "ClusterRole",
+		Name:     clusterRoleName,
+		APIGroup: "rbac.authorization.k8s.io",
+	}
+	clusterRoleBindingObj, err := kubernetesManager.CreateClusterRoleBindings(ctx, clusterRoleBindingName, subject, ref, clusterRoleBindingLabels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating cluster role binding for logs collector with name '%s'", clusterRoleBindingName)
+	}
+
+	return clusterRoleBindingObj, nil
 }

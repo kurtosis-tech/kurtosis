@@ -546,6 +546,10 @@ func (manager *KubernetesManager) RemoveNamespace(ctx context.Context, namespace
 	return nil
 }
 
+// GetNamespace returns the namespace object associated with [name] or returns err
+// - if err occurred getting namespace,
+// - the namespace doesn't exist
+// - the namespace has been marked for deletions
 func (manager *KubernetesManager) GetNamespace(ctx context.Context, name string) (*apiv1.Namespace, error) {
 	namespaceClient := manager.kubernetesClientSet.CoreV1().Namespaces()
 
@@ -1234,6 +1238,7 @@ func (manager *KubernetesManager) CreateDaemonSet(
 	daemonSetName string,
 	daemonSetLabels map[string]string,
 	daemonSetAnnotations map[string]string,
+	daemonSetServiceAccountName string,
 	initContainers []apiv1.Container,
 	containers []apiv1.Container,
 	volumes []apiv1.Volume,
@@ -1277,7 +1282,7 @@ func (manager *KubernetesManager) CreateDaemonSet(
 				ActiveDeadlineSeconds:         nil,
 				DNSPolicy:                     "",
 				NodeSelector:                  nil,
-				ServiceAccountName:            "",
+				ServiceAccountName:            daemonSetServiceAccountName,
 				DeprecatedServiceAccount:      "",
 				AutomountServiceAccountToken:  nil,
 				NodeName:                      "",

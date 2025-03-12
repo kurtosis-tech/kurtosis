@@ -21,6 +21,12 @@ type KubernetesLogsCollectorObjectAttributesProvider interface {
 	ForLogsCollectorNamespace() (KubernetesObjectAttributes, error)
 
 	ForLogsCollectorConfigMap() (KubernetesObjectAttributes, error)
+
+	ForLogsCollectorServiceAccount() (KubernetesObjectAttributes, error)
+
+	ForLogsCollectorClusterRole() (KubernetesObjectAttributes, error)
+
+	ForLogsCollectorClusterRoleBinding() (KubernetesObjectAttributes, error)
 }
 
 func GetKubernetesLogsCollectorObjectAttributesProvider(logsCollectorGuid logs_collector.LogsCollectorGuid) KubernetesLogsCollectorObjectAttributesProvider {
@@ -78,6 +84,66 @@ func (provider *kubernetesLogsCollectorObjectAttributesProviderImpl) ForLogsColl
 }
 
 func (provider *kubernetesLogsCollectorObjectAttributesProviderImpl) ForLogsCollectorNamespace() (KubernetesObjectAttributes, error) {
+	name, err := getCompositeKubernetesObjectName([]string{logsCollectorNamePrefix, string(provider.logsCollectorGuid)})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating a Kubernetes object name with prefix '%v' and guid '%v'.", logsCollectorConfigNamePrefix, provider.logsCollectorGuid)
+	}
+
+	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
+		kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.LogsCollectorKurtosisResourceTypeKubernetesLabelValue,
+	}
+
+	annotations := make(map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue)
+
+	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
+			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
+	}
+	return objectAttributes, nil
+}
+
+func (provider *kubernetesLogsCollectorObjectAttributesProviderImpl) ForLogsCollectorServiceAccount() (KubernetesObjectAttributes, error) {
+	name, err := getCompositeKubernetesObjectName([]string{logsCollectorNamePrefix, string(provider.logsCollectorGuid)})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating a Kubernetes object name with prefix '%v' and guid '%v'.", logsCollectorConfigNamePrefix, provider.logsCollectorGuid)
+	}
+
+	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
+		kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.LogsCollectorKurtosisResourceTypeKubernetesLabelValue,
+	}
+
+	annotations := make(map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue)
+
+	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
+			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
+	}
+	return objectAttributes, nil
+}
+
+func (provider *kubernetesLogsCollectorObjectAttributesProviderImpl) ForLogsCollectorClusterRole() (KubernetesObjectAttributes, error) {
+	name, err := getCompositeKubernetesObjectName([]string{logsCollectorNamePrefix, string(provider.logsCollectorGuid)})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating a Kubernetes object name with prefix '%v' and guid '%v'.", logsCollectorConfigNamePrefix, provider.logsCollectorGuid)
+	}
+
+	labels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
+		kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.LogsCollectorKurtosisResourceTypeKubernetesLabelValue,
+	}
+
+	annotations := make(map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue)
+
+	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
+			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
+	}
+	return objectAttributes, nil
+}
+
+func (provider *kubernetesLogsCollectorObjectAttributesProviderImpl) ForLogsCollectorClusterRoleBinding() (KubernetesObjectAttributes, error) {
 	name, err := getCompositeKubernetesObjectName([]string{logsCollectorNamePrefix, string(provider.logsCollectorGuid)})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while creating a Kubernetes object name with prefix '%v' and guid '%v'.", logsCollectorConfigNamePrefix, provider.logsCollectorGuid)

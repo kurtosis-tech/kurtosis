@@ -3,6 +3,7 @@ package object_attributes_provider
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"time"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key"
@@ -182,6 +183,27 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServicePod
 	}
 	labels[kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey] = label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue
 
+	uuidLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(string(serviceUUID))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a short GUID Kubernetes label value from GUID string '%v'", string(serviceUUID))
+	}
+
+	serviceUUIDStr := string(serviceUUID)
+	shortUuidStr := uuid_generator.ShortenedUUIDString(serviceUUIDStr)
+	shortUuidLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(shortUuidStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a short GUID Kubernetes label value from GUID string '%v'", serviceUUIDStr)
+	}
+
+	serviceNameStr := string(serviceName)
+	serviceNameLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(serviceNameStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes label value from service name string '%v'", serviceNameStr)
+	}
+	labels[kubernetes_label_key.LogsServiceUUIDKubernetesLabelKey] = uuidLabelValue
+	labels[kubernetes_label_key.LogsServiceShortUUIDKubernetesLabelKey] = shortUuidLabelValue
+	labels[kubernetes_label_key.LogsServiceNameKubernetesLabelKey] = serviceNameLabelValue
+
 	// add user custom label
 	for userLabelKey, userLabelValue := range userLabels {
 		kubernetesLabelKey, err := kubernetes_label_key.CreateNewKubernetesUserCustomLabelKey(userLabelKey)
@@ -342,6 +364,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEncla
 	return map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
 		kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EnclaveKurtosisResourceTypeKubernetesLabelValue,
 		kubernetes_label_key.EnclaveUUIDKubernetesLabelKey:          enclaveIdLabelValue,
+		kubernetes_label_key.LogsEnclaveUUIDKubernetesLabelKey:      enclaveIdLabelValue,
 	}, nil
 }
 
