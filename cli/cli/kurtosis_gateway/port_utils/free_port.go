@@ -15,7 +15,7 @@ const (
 
 var noWait *port_spec.Wait = nil
 
-// GetFreePort asks the kernel for a free open port that is ready to use.
+// GetFreeTcpPort asks the kernel for a free open port that is ready to use.
 func GetFreeTcpPort(networkInterface string) (resultFreePortSpec *port_spec.PortSpec, err error) {
 	zeroPortOnNetworkInterfaceAddress := fmt.Sprintf("%v:0", networkInterface)
 	localHostPortAddress, err := net.ResolveTCPAddr(tcpProtocolStr, zeroPortOnNetworkInterfaceAddress)

@@ -98,7 +98,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsLocalFile(c
 
 	uploadedArtifacts := map[string]api_type.FileArtifactUploadResult{}
 	for {
-		// Get next part (file) from the the multipart POST request
+		// Get next part (file) from the multipart POST request
 		part, err := request.Body.NextPart()
 		if err == io.EOF {
 			break
@@ -511,7 +511,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackages(ctx
 	failedUploads := []string{}
 	successfulUploads := []string{}
 	for {
-		// Get next part (file) from the the multipart POST request
+		// Get next part (file) from the multipart POST request
 		part, err := request.Body.NextPart()
 		if err == io.EOF {
 			break
