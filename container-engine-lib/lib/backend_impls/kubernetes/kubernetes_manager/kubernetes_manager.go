@@ -1423,7 +1423,10 @@ func (manager *KubernetesManager) UpdateDaemonSetWithNodeSelectors(ctx context.C
 		types.JSONPatchType,
 		patchData,
 		metav1.PatchOptions{
-			TypeMeta:        metav1.TypeMeta{},
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "",
+				APIVersion: "",
+			},
 			DryRun:          nil,
 			Force:           nil,
 			FieldManager:    "",
@@ -1602,7 +1605,10 @@ func (manager *KubernetesManager) ScaleDeployment(ctx context.Context, namespace
 	oldReplicas := scale.Spec.Replicas
 	scale.Spec.Replicas = replicas
 	_, err = deploymentClient.UpdateScale(ctx, name, scale, metav1.UpdateOptions{
-		TypeMeta:        metav1.TypeMeta{},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
 		DryRun:          nil,
 		FieldManager:    "",
 		FieldValidation: "",
@@ -2142,7 +2148,17 @@ func (manager *KubernetesManager) RemoveDirPathFromNode(ctx context.Context, nam
 				TerminationMessagePolicy: "",
 				ImagePullPolicy:          "",
 				SecurityContext: &apiv1.SecurityContext{
-					Privileged: &isPrivileged,
+					Privileged:               &isPrivileged,
+					Capabilities:             nil,
+					SeccompProfile:           nil,
+					ProcMount:                nil,
+					ReadOnlyRootFilesystem:   nil,
+					AllowPrivilegeEscalation: nil,
+					RunAsNonRoot:             nil,
+					RunAsGroup:               nil,
+					RunAsUser:                nil,
+					SELinuxOptions:           nil,
+					WindowsOptions:           nil,
 				},
 				Stdin:     false,
 				StdinOnce: false,
