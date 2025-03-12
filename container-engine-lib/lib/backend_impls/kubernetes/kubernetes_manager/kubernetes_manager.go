@@ -546,27 +546,6 @@ func (manager *KubernetesManager) RemoveNamespace(ctx context.Context, namespace
 	return nil
 }
 
-func (manager *KubernetesManager) WaitForNamespaceRemoval(
-	ctx context.Context,
-	namespace string,
-	maxRetries uint,
-	timeToWaitBetweenChecksDuration time.Duration) error {
-	for i := uint(0); i < maxRetries; i++ {
-		_, err := manager.GetNamespace(ctx, namespace)
-		if err != nil {
-			// if err was returned, namespace doesn't exist, or it's been marked for deleted
-			return nil
-		}
-
-		// Tiny optimization to not sleep if we're not going to run the loop again
-		if i < maxRetries {
-			time.Sleep(timeToWaitBetweenChecksDuration)
-		}
-	}
-
-	return stacktrace.NewError("Attempted to wait for namespace '%v' removal or to be marked for deletion '%v' times but namespace was not removed.", namespace, maxRetries)
-}
-
 // GetNamespace returns the namespace object associated with [name] or returns err
 // - if err occurred getting namespace,
 // - the namespace doesn't exist

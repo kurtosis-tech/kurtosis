@@ -29,6 +29,10 @@ const (
 	fluentBitCheckpointDbVolumeName = "fluent-bit-db"
 	fluentBitCheckpointDbMountPath  = "/var/log/fluent-bit/db"
 
+	// assuming this as default k8s api server url - this might not be the case for very custom k8s environments so making this a variable
+	// in case it needs to be configured by the user down the line
+	k8sApiServerUrl = "https://kubernetes.default.svc:443"
+
 	// TODO: construct fluentbit config via go templating based on inputs
 	fluentBitConfigFileName = "fluent-bit.conf"
 	fluentBitConfigFmtStr   = `
@@ -71,17 +75,19 @@ const (
     Match *
     Rename time timestamp
 
+[FILTER]
+    Name              kubernetes
+    Match             *
+    Kube_URL          %v
+    Merge_log         On
+    Keep_Log          On
+    Annotations       Off
+    Labels            On
+
 [OUTPUT]
     Name              stdout
     Match             *
     Format            json_lines
-
-[OUTPUT]
-    Name              file
-    Match             *
-    Path              /var/log/fluent-bit
-    File              fluent-bit-output.log
-    Format            plain
 
 [OUTPUT]
     Name              forward

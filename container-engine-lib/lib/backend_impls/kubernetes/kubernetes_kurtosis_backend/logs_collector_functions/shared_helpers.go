@@ -19,8 +19,10 @@ import (
 )
 
 const (
-	maxRetries                      = 30
-	timeToWaitBetweenChecksDuration = 1 * time.Second
+	maxAvailabilityChecksRetries                = 30
+	timeToWaitBetweenAvailabilityChecksDuration = 1 * time.Second
+	maxTriesToWaitForNamespaceRemoval           = 30
+	timeToWaitBetweenNamespaceRemovalChecks     = 1 * time.Second
 )
 
 func getLogsCollectorObjAndResourcesForCluster(ctx context.Context, kubernetesManager *kubernetes_manager.KubernetesManager) (*logs_collector.LogsCollector, *logsCollectorKubernetesResources, error) {
@@ -332,11 +334,31 @@ func waitForLogsCollectorAvailability(
 			pod.Name,
 			fluentBitContainerName,
 			httpPortSpec,
-			maxRetries,
-			timeToWaitBetweenChecksDuration); err != nil {
+			maxAvailabilityChecksRetries,
+			timeToWaitBetweenAvailabilityChecksDuration); err != nil {
 			return stacktrace.Propagate(err, "An error occurred while checking for availability of pod '%v' managed by logs collector daemon set '%v'", pod.Name, logsCollectorDaemonSet.Name)
 		}
 	}
 
 	return nil
+}
+
+func waitForNamespaceRemoval(
+	ctx context.Context,
+	namespace string,
+	kubernetesManager *kubernetes_manager.KubernetesManager) error {
+
+	for i := uint(0); i < maxTriesToWaitForNamespaceRemoval; i++ {
+		if _, err := kubernetesManager.GetNamespace(ctx, namespace); err != nil {
+			// if err was returned, namespace doesn't exist, or it's been marked for deleted
+			return nil
+		}
+
+		// Tiny optimization to not sleep if we're not going to run the loop again
+		if i < maxTriesToWaitForNamespaceRemoval-1 {
+			time.Sleep(timeToWaitBetweenNamespaceRemovalChecks)
+		}
+	}
+
+	return stacktrace.NewError("Attempted to wait for namespace '%v' removal or to be marked for deletion '%v' times but namespace was not removed.", namespace, maxTriesToWaitForNamespaceRemoval)
 }

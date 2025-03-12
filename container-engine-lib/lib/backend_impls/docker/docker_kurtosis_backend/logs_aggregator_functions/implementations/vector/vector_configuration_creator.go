@@ -1,12 +1,12 @@
-package fluentbit
+package vector
 
 import (
 	"bytes"
 	"context"
 	"fmt"
-	"text/template"
 	"time"
 
+	"github.com/go-yaml/yaml"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
@@ -14,38 +14,28 @@ import (
 )
 
 const (
-	// We use this image and version because we already are using this in other projects so there is a high probability
-	// that the image is in the local machine's cache
-	configuratorContainerImage      = "alpine:3.17"
-	configuratorContainerNamePrefix = "kurtosis-fluentbit-configurator"
-
-	shBinaryFilepath = "/bin/sh"
-	shCmdFlag        = "-c"
-	printfCmdName    = "printf"
-
-	configFileCreationSuccessExitCode = 0
-
+	configuratorContainerNamePrefix     = "logs-aggregator-configurator"
 	configFileCreationCmdMaxRetries     = 2
 	configFileCreationCmdDelayInRetries = 200 * time.Millisecond
-
-	sleepSeconds = 1800
+	validationFailedExitCode            = 78
+	configFileCreationSuccessExitCode   = 0
+	sleepSeconds                        = 1800
 )
 
-type fluentbitConfigurationCreator struct {
-	config *FluentbitConfig
+type vectorConfigurationCreator struct {
+	config *VectorConfig
 }
 
-func newFluentbitConfigurationCreator(config *FluentbitConfig) *fluentbitConfigurationCreator {
-	return &fluentbitConfigurationCreator{config: config}
+func newVectorConfigurationCreator(config *VectorConfig) *vectorConfigurationCreator {
+	return &vectorConfigurationCreator{config: config}
 }
 
-func (fluent *fluentbitConfigurationCreator) CreateConfiguration(
+func (vector *vectorConfigurationCreator) CreateConfiguration(
 	ctx context.Context,
 	targetNetworkId string,
 	volumeName string,
 	dockerManager *docker_manager.DockerManager,
 ) error {
-
 	entrypointArgs := []string{
 		shBinaryFilepath,
 		shCmdFlag,
@@ -53,7 +43,7 @@ func (fluent *fluentbitConfigurationCreator) CreateConfiguration(
 	}
 
 	volumeMounts := map[string]string{
-		volumeName: configDirpathInContainer,
+		volumeName: configDirpath,
 	}
 
 	uuid, err := uuid_generator.GenerateUUIDString()
@@ -64,7 +54,7 @@ func (fluent *fluentbitConfigurationCreator) CreateConfiguration(
 	containerName := fmt.Sprintf("%s-%s", configuratorContainerNamePrefix, uuid)
 
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
-		configuratorContainerImage,
+		containerImage,
 		containerName,
 		targetNetworkId,
 	).WithEntrypointArgs(
@@ -75,13 +65,13 @@ func (fluent *fluentbitConfigurationCreator) CreateConfiguration(
 
 	containerId, _, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred starting the Fluentbit configurator container with these args '%+v'", createAndStartArgs)
+		return stacktrace.Propagate(err, "An error occurred starting the logs aggregator configurator container with these args '%+v'", createAndStartArgs)
 	}
 	//The killing step has to be executed always in the success and also in the failed case
 	defer func() {
 		if err = dockerManager.RemoveContainer(context.Background(), containerId); err != nil {
 			logrus.Errorf(
-				"Launching the Fluentbit configurator container with container ID '%v' didn't complete successfully so we "+
+				"Launching the logs aggregator configurator container with container ID '%v' didn't complete successfully so we "+
 					"tried to remove the container we started, but doing so exited with an error:\n%v",
 				containerId,
 				err)
@@ -89,20 +79,20 @@ func (fluent *fluentbitConfigurationCreator) CreateConfiguration(
 		}
 	}()
 
-	if err := fluent.createFluentbitConfigFileInVolume(
+	if err := vector.createVectorConfigFileInVolume(
 		ctx,
 		dockerManager,
 		containerId,
 		configFileCreationCmdMaxRetries,
 		configFileCreationCmdDelayInRetries,
 	); err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the Fluentbit config file into the volume")
+		return stacktrace.Propagate(err, "An error occurred creating the logs aggregator config file into the volume")
 	}
 
 	return nil
 }
 
-func (fluent *fluentbitConfigurationCreator) createFluentbitConfigFileInVolume(
+func (vector *vectorConfigurationCreator) createVectorConfigFileInVolume(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
 	containerId string,
@@ -110,16 +100,19 @@ func (fluent *fluentbitConfigurationCreator) createFluentbitConfigFileInVolume(
 	timeBetweenRetries time.Duration,
 ) error {
 
-	configFileContentStr, err := fluent.getConfigFileContent()
+	configFileContentStr, err := vector.getConfigFileContent()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the Fluentbit config file content")
+		return stacktrace.Propagate(err, "An error occurred getting logs aggregator config file content")
 	}
 
 	commandStr := fmt.Sprintf(
-		"%v '%v' > %v",
+		"%v '%v' > %v && %v %v %v",
 		printfCmdName,
 		configFileContentStr,
-		configFilepathInContainer,
+		configFilepath,
+		binaryFilepath,
+		validateCmdName,
+		configFilepath,
 	)
 
 	execCmd := []string{
@@ -132,11 +125,18 @@ func (fluent *fluentbitConfigurationCreator) createFluentbitConfigFileInVolume(
 		exitCode, err := dockerManager.RunUserServiceExecCommands(ctx, containerId, "", execCmd, outputBuffer)
 		if err == nil {
 			if exitCode == configFileCreationSuccessExitCode {
-				logrus.Debugf("The Fluentbit config file with content '%v' was successfully added into the volume", configFileContentStr)
+				logrus.Debugf("The logs aggregator config file with content '%v' was successfully added into the volume", configFileContentStr)
 				return nil
 			}
+
+			// Vector returns a specific exit code if the validation of configurations failed
+			// https://vector.dev/docs/administration/validating/#how-validation-works
+			if exitCode == validationFailedExitCode {
+				return stacktrace.NewError("The configuration provided to the logs aggregator component was invalid; errors are below:\n%s", outputBuffer.String())
+			}
+
 			logrus.Debugf(
-				"Fluentbit config file creation command '%v' returned without a Docker error, but exited with non-%v exit code '%v' and logs:\n%v",
+				"Logs aggregator config file creation command '%v' returned without a Docker error, but exited with non-%v exit code '%v' and logs:\n%v",
 				commandStr,
 				configFileCreationSuccessExitCode,
 				exitCode,
@@ -144,7 +144,7 @@ func (fluent *fluentbitConfigurationCreator) createFluentbitConfigFileInVolume(
 			)
 		} else {
 			logrus.Debugf(
-				"Fluentbit config file creation command '%v' experienced a Docker error:\n%v",
+				"Logs aggregator config file creation command '%v' experienced a Docker error:\n%v",
 				commandStr,
 				err,
 			)
@@ -157,27 +157,18 @@ func (fluent *fluentbitConfigurationCreator) createFluentbitConfigFileInVolume(
 	}
 
 	return stacktrace.NewError(
-		"The Fluentbit config file creation didn't return success (as measured by the command '%v') even after retrying %v times with %v between retries",
+		"The logs aggregator config file creation didn't return success (as measured by the command '%v') even after retrying %v times with %v between retries",
 		commandStr,
 		maxRetries,
 		timeBetweenRetries,
 	)
 }
 
-func (fluent *fluentbitConfigurationCreator) getConfigFileContent() (string, error) {
-
-	cngFileTemplate, err := template.New(configFileTemplateName).Parse(configFileTemplate)
+func (vector *vectorConfigurationCreator) getConfigFileContent() (string, error) {
+	yamlBytes, err := yaml.Marshal(vector.config)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred parsing Fluentbit config template '%v'", configFileTemplate)
+		return "", stacktrace.Propagate(err, "Error marshalling config into YAML.")
 	}
 
-	templateStrBuffer := &bytes.Buffer{}
-
-	if err := cngFileTemplate.Execute(templateStrBuffer, fluent.config); err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred executing the Fluentbit config file template")
-	}
-
-	templateStr := templateStrBuffer.String()
-
-	return templateStr, nil
+	return string(yamlBytes), nil
 }

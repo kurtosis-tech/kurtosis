@@ -842,10 +842,8 @@ func (manager *DockerManager) StartContainer(context context.Context, containerI
 	}
 	err := manager.dockerClient.ContainerStart(context, containerId, options)
 	if err != nil {
-		containerLogs := manager.getFailedContainerLogsOrErrorString(context, containerId)
-		containerLogsHeader := "\n--------------------- CONTAINER LOGS -----------------------\n"
-		containerLogsFooter := "\n------------------- END CONTAINER LOGS --------------------"
-		return stacktrace.Propagate(err, "Could not start Docker container with ID '%v'; logs are below:%v%v%v", containerId, containerLogsHeader, containerLogs, containerLogsFooter)
+		errorStr := manager.getFormattedFailedContainerLogsOrErrorString(context, containerId)
+		return stacktrace.Propagate(err, "Could not start Docker container with ID '%v'; logs are below:%v", containerId, errorStr)
 	}
 
 	return nil
@@ -1574,6 +1572,13 @@ func (manager *DockerManager) GetAvailableCPUAndMemory(ctx context.Context) (com
 	return compute_resources.MemoryInMegaBytes(availableMemoryInBytes), compute_resources.CpuMilliCores(availableCpuInMilliCores), nil
 }
 
+func (manager *DockerManager) getFormattedFailedContainerLogsOrErrorString(ctx context.Context, containerId string) string {
+	containerLogs := manager.getFailedContainerLogsOrErrorString(ctx, containerId)
+	containerLogsHeader := "\n--------------------- CONTAINER LOGS -----------------------\n"
+	containerLogsFooter := "\n------------------- END CONTAINER LOGS --------------------"
+	return containerLogsHeader + containerLogs + containerLogsFooter
+}
+
 // =================================================================================================================
 //
 //	INSTANCE HELPER FUNCTIONS
@@ -2085,10 +2090,8 @@ func (manager *DockerManager) didContainerStartSuccessfully(ctx context.Context,
 	}
 
 	if !isContainerRunning {
-		containerLogs := manager.getFailedContainerLogsOrErrorString(ctx, containerId)
-		containerLogsHeader := "\n--------------------- CONTAINER LOGS -----------------------\n"
-		containerLogsFooter := "\n------------------- END CONTAINER LOGS --------------------"
-		return false, stacktrace.NewError("Container '%v' (with image '%v') die with a non zero exit code rapidly after it was started. This likely indicates a misconfiguration with how the container was started. Container should either exit gracefully or keep running for Kurtosis to consider it in a good state; logs are below:%v%v%v", containerId, dockerImage, containerLogsHeader, containerLogs, containerLogsFooter)
+		errorStr := manager.getFormattedFailedContainerLogsOrErrorString(ctx, containerId)
+		return false, stacktrace.NewError("Container '%v' (with image '%v') die with a non zero exit code rapidly after it was started. This likely indicates a misconfiguration with how the container was started. Container should either exit gracefully or keep running for Kurtosis to consider it in a good state; logs are below:%v", containerId, dockerImage, errorStr)
 	}
 
 	return true, nil

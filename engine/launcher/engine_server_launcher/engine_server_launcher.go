@@ -7,14 +7,16 @@ package engine_server_launcher
 
 import (
 	"context"
+	"net"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"net"
 )
 
 const (
@@ -49,6 +51,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 	restartAPIContainers bool,
 	domain string,
 	logRetentionPeriod string,
+	sinks logs_aggregator.Sinks,
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicGrpcPortSpec *port_spec.PortSpec,
@@ -73,7 +76,9 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 		githubAuthToken,
 		restartAPIContainers,
 		domain,
-		logRetentionPeriod)
+		logRetentionPeriod,
+		sinks,
+	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", kurtosis_version.KurtosisVersion)
 	}
@@ -100,6 +105,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	restartAPIContainers bool,
 	domain string,
 	logRetentionPeriod string,
+	sinks logs_aggregator.Sinks,
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicGrpcPortSpec *port_spec.PortSpec,
@@ -143,6 +149,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 		envVars,
 		shouldStartInDebugMode,
 		githubAuthToken,
+		sinks,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred launching the engine server container")

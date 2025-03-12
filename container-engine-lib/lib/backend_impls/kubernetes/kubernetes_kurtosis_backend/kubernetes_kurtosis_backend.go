@@ -140,6 +140,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	envVars map[string]string,
 	shouldStartInDebugMode bool,
 	githubAuthToken string,
+	sinks logs_aggregator.Sinks,
 ) (
 	*engine.Engine,
 	error,
