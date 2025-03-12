@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -441,6 +442,14 @@ func createLogsCollectorConfigMap(
 				fluentBitConfigFmtStr,
 				logsCollectorHttpPortNum,
 				label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue.GetString(),
+				kubernetes_label_key.LogsEnclaveUUIDKubernetesLabelKey.GetString(),
+				kubernetes_label_key.LogsEnclaveUUIDKubernetesLabelKey.GetString(),
+				kubernetes_label_key.LogsServiceUUIDKubernetesLabelKey.GetString(),
+				kubernetes_label_key.LogsServiceUUIDKubernetesLabelKey.GetString(),
+				kubernetes_label_key.LogsServiceShortUUIDKubernetesLabelKey.GetString(),
+				kubernetes_label_key.LogsServiceShortUUIDKubernetesLabelKey.GetString(),
+				kubernetes_label_key.LogsServiceNameKubernetesLabelKey.GetString(),
+				kubernetes_label_key.LogsServiceNameKubernetesLabelKey.GetString(),
 				k8sApiServerUrl,
 				logsAggregatorHost,
 				logsAggregatorPortNum),
