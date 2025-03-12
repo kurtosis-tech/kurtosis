@@ -2,6 +2,7 @@ package logs_collector_functions
 
 import (
 	"context"
+	"errors"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -24,44 +25,49 @@ func DestroyLogsCollector(ctx context.Context, kubernetesManager *kubernetes_man
 		return nil
 	}
 
-	var destroyErr error
+	var destroyErrs []error
 	if logsCollectorResources.daemonSet != nil {
 		if err := kubernetesManager.RemoveDaemonSet(ctx, logsCollectorNamespace.Name, logsCollectorResources.daemonSet); err != nil {
-			destroyErr = stacktrace.Propagate(err, "An error occurred removing logs collector daemon set.")
+			destroyErrs = append(destroyErrs, stacktrace.Propagate(err, "An error occurred removing logs collector daemon set."))
 		}
 	}
 
 	if logsCollectorResources.configMap != nil {
 		if err := kubernetesManager.RemoveConfigMap(ctx, logsCollectorNamespace.Name, logsCollectorResources.configMap); err != nil {
-			destroyErr = stacktrace.Propagate(err, "An error occurred removing logs collector config map.")
+			destroyErrs = append(destroyErrs, stacktrace.Propagate(err, "An error occurred removing logs collector config map."))
 		}
 	}
 
 	if logsCollectorResources.serviceAccount != nil {
 		if err := kubernetesManager.RemoveServiceAccount(ctx, logsCollectorResources.serviceAccount); err != nil {
-			destroyErr = stacktrace.Propagate(err, "An error occurred removing logs collector service account.")
+			destroyErrs = append(destroyErrs, stacktrace.Propagate(err, "An error occurred removing logs collector service account."))
 		}
 	}
 
 	if logsCollectorResources.clusterRole != nil {
 		if err := kubernetesManager.RemoveClusterRole(ctx, logsCollectorResources.clusterRole); err != nil {
-			destroyErr = stacktrace.Propagate(err, "An error occurred removing logs collector cluster role.")
+			destroyErrs = append(destroyErrs, stacktrace.Propagate(err, "An error occurred removing logs collector cluster role."))
 		}
 	}
 
 	if logsCollectorResources.clusterRoleBinding != nil {
 		if err := kubernetesManager.RemoveClusterRoleBindings(ctx, logsCollectorResources.clusterRoleBinding); err != nil {
-			destroyErr = stacktrace.Propagate(err, "An error occurred removing logs collector cluster role binding.")
+			destroyErrs = append(destroyErrs, stacktrace.Propagate(err, "An error occurred removing logs collector cluster role binding."))
 		}
 	}
 
 	if err := kubernetesManager.RemoveNamespace(ctx, logsCollectorNamespace); err != nil {
-		destroyErr = stacktrace.Propagate(err, "An error occurred removing logs collector namespace.")
+		destroyErrs = append(destroyErrs, stacktrace.Propagate(err, "An error occurred removing logs collector namespace."))
 	}
 
 	if err := waitForNamespaceRemoval(ctx, logsCollectorNamespace.Name, kubernetesManager); err != nil {
-		destroyErr = stacktrace.Propagate(err, "An error occurred waiting for logs collector namespace to be removed.")
+		destroyErrs = append(destroyErrs, stacktrace.Propagate(err, "An error occurred waiting for logs collector namespace to be removed."))
 	}
 
-	return destroyErr
+	errMsg := "Following errors occurred trying to destroy logs collector:\n"
+	for _, destroyErr := range destroyErrs {
+		errMsg += destroyErr.Error() + "\n"
+	}
+
+	return errors.New(errMsg)
 }

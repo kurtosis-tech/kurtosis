@@ -31,11 +31,13 @@ const (
 
 	// We create a duplicate of the enclave uuid and service uuid label key because:
 	// the logs aggregator (vector) needs the enclave uuid and service uuid label keys to create the filepath where logs are stored in persistent volume
-	// but vectors template syntax can't interpret the "kurtosistech.com/" prefix, so we can't use the existing label keys
-	logsEnclaveUuidLabelKeyStr             = "enclave_uuid"
-	logsServiceUuidKubernetesLabelKey      = "service_uuid"
-	logsServiceShortUuidKubernetesLabelKey = "service_short_uuid"
-	logsServiceNameKubernetesLabelKey      = "service_name"
+	// but vectors template syntax can't interpret the "kurtosistech.com/" prefix, so we can't use the existing label keys or their prefix
+	// to avoid collisions with labels the user may add, kurtosis_ prefix is added
+	logsOnlyKurtosisPrefix                     = "kurtosis_"
+	logsOnlyEnclaveUuidLabelKeyStr             = logsOnlyKurtosisPrefix + "enclave_uuid"
+	logsOnlyServiceUuidKubernetesLabelKey      = logsOnlyKurtosisPrefix + "service_uuid"
+	logsOnlyServiceShortUuidKubernetesLabelKey = logsOnlyKurtosisPrefix + "service_short_uuid"
+	logsOnlyServiceNameKubernetesLabelKey      = logsOnlyKurtosisPrefix + "service_name"
 )
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -56,7 +58,7 @@ var EnclaveUUIDKubernetesLabelKey = MustCreateNewKubernetesLabelKey(enclaveIdLab
 var EnclaveNameKubernetesLabelKey = MustCreateNewKubernetesLabelKey(enclaveNameLabelKeyStr)
 var UserServiceGUIDKubernetesLabelKey = MustCreateNewKubernetesLabelKey(userServiceGuidKeyStr)
 
-var LogsEnclaveUUIDKubernetesLabelKey = MustCreateNewKubernetesLabelKey(logsEnclaveUuidLabelKeyStr)
-var LogsServiceUUIDKubernetesLabelKey = MustCreateNewKubernetesLabelKey(logsServiceUuidKubernetesLabelKey)
-var LogsServiceShortUUIDKubernetesLabelKey = MustCreateNewKubernetesLabelKey(logsServiceShortUuidKubernetesLabelKey)
-var LogsServiceNameKubernetesLabelKey = MustCreateNewKubernetesLabelKey(logsServiceNameKubernetesLabelKey)
+var LogsEnclaveUUIDKubernetesLabelKey = MustCreateNewKubernetesLabelKey(logsOnlyEnclaveUuidLabelKeyStr)
+var LogsServiceUUIDKubernetesLabelKey = MustCreateNewKubernetesLabelKey(logsOnlyServiceUuidKubernetesLabelKey)
+var LogsServiceShortUUIDKubernetesLabelKey = MustCreateNewKubernetesLabelKey(logsOnlyServiceShortUuidKubernetesLabelKey)
+var LogsServiceNameKubernetesLabelKey = MustCreateNewKubernetesLabelKey(logsOnlyServiceNameKubernetesLabelKey)

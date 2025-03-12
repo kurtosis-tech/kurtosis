@@ -28,7 +28,8 @@ type LogsCollectorDaemonSet interface {
 		*rbacv1.ClusterRole,
 		*rbacv1.ClusterRoleBinding,
 		func(),
-		error)
+		error,
+	)
 
 	// GetHttpHealthCheckEndpoint returns endpoint for verifying the availability of the logs collector application on pods managed by the daemon set
 	GetHttpHealthCheckEndpoint() string

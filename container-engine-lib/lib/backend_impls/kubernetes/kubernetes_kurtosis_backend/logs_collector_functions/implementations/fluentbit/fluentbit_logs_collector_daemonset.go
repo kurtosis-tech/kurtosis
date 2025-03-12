@@ -433,7 +433,7 @@ func createLogsCollectorConfigMap(
 		labels,
 		annotations,
 		map[string]string{
-			fluentBitConfigFileName: fluentBitConfigStr,
+			fluentBitConfigFileName: fmt.Sprintf(fluentBitConfigFmtStr, k8sApiServerUrl),
 		},
 	)
 	if err != nil {
