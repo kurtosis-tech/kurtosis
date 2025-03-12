@@ -483,9 +483,9 @@ func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAgg
 	}
 
 	// scale up the deployment again
-	if err := kubernetesManager.ScaleDeployment(ctx, logsAggregatorDeployment.Namespace, logsAggregatorDeployment.Name, postCleanNumReplicas); err != nil {
-		return stacktrace.Propagate(err, "An error occurred scaling deployment '%v' in namespace '%v' to '%v'.", logsAggregatorDeployment.Name, logsAggregatorDeployment.Namespace, postCleanNumReplicas)
-	}
+	//if err := kubernetesManager.ScaleDeployment(ctx, logsAggregatorDeployment.Namespace, logsAggregatorDeployment.Name, postCleanNumReplicas); err != nil {
+	//	return stacktrace.Propagate(err, "An error occurred scaling deployment '%v' in namespace '%v' to '%v'.", logsAggregatorDeployment.Name, logsAggregatorDeployment.Namespace, postCleanNumReplicas)
+	//}
 
 	// before continuing, ensure logs aggregator is up again
 	if err := waitForPodManagedByDeployment(ctx, logsAggregatorDeployment, kubernetesManager); err != nil {

@@ -606,7 +606,6 @@ func (fluentbit *fluentbitLogsCollector) Clean(
 	}
 	var nodeNames []string
 	for _, pod := range pods {
-		logrus.Infof("pod '%v' on node '%v'", pod.Name, pod.Spec.NodeName)
 		nodeNames = append(nodeNames, pod.Spec.NodeName)
 	}
 
@@ -640,14 +639,14 @@ func (fluentbit *fluentbitLogsCollector) Clean(
 	}
 
 	// patch daemon set again to have no node selectors, allowing daemon set to schedule log collector pods
-	err = kubernetesManager.UpdateDaemonSetWithNodeSelectors(
-		ctx,
-		logsCollectorDaemonSet,
-		map[string]string{},
-	)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred updating daemon set '%v' with node selectors '%v'", logsCollectorDaemonSet.Name, evictNodeSelectors)
-	}
+	//err = kubernetesManager.UpdateDaemonSetWithNodeSelectors(
+	//	ctx,
+	//	logsCollectorDaemonSet,
+	//	map[string]string{},
+	//)
+	//if err != nil {
+	//	return stacktrace.Propagate(err, "An error occurred updating daemon set '%v' with node selectors '%v'", logsCollectorDaemonSet.Name, evictNodeSelectors)
+	//}
 
 	// before continuing, ensure logs collector is up again
 	if err := waitForAtLeastOneActivePodManagedByDaemonSet(ctx, logsCollectorDaemonSet, kubernetesManager); err != nil {
