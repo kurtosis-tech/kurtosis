@@ -31,4 +31,11 @@ type LogsAggregatorDeployment interface {
 
 	// GetHTTPHealthCheckEndpointAndPort returns a string and int of the http endpoint and port to request aggregator health status
 	GetHTTPHealthCheckEndpointAndPort() (string, uint16)
+
+	// Clean removes any resources the logs aggregator creates for durability of logs in the case of crashes (e.g. disk buffers)
+	Clean(
+		ctx context.Context,
+		logsAggregator *appsv1.Deployment,
+		kubernetesManager *kubernetes_manager.KubernetesManager,
+	) error
 }

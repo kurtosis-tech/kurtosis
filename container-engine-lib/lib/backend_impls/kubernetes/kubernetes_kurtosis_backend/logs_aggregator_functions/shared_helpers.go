@@ -248,56 +248,44 @@ func waitForLogsAggregatorAvailability(
 
 	availabilityCheckUrl := fmt.Sprintf("http://%v:%v%v", aggregatorHost, healthCheckPortNum, healthCheckEndpoint)
 	containerName := "availability-check-container"
-	pod, err := kubernetesManager.CreatePod(
-		ctx,
-		k8sResources.namespace.Name,
-		"availability-checker-pod",
-		nil,
-		nil,
-		nil,
-		[]apiv1.Container{
-			{
-				Name:  containerName,
-				Image: "badouralix/curl-jq",
-				Command: []string{
-					"sh",
-					"-c",
-					"sleep 10000000s",
-				},
-				Args:       nil,
-				WorkingDir: "",
-				Ports:      nil,
-				EnvFrom:    nil,
-				Env:        nil,
-				Resources: apiv1.ResourceRequirements{
-					Limits:   nil,
-					Requests: nil,
-					Claims:   nil,
-				},
-				ResizePolicy:             nil,
-				VolumeMounts:             nil,
-				VolumeDevices:            nil,
-				LivenessProbe:            nil,
-				ReadinessProbe:           nil,
-				StartupProbe:             nil,
-				Lifecycle:                nil,
-				TerminationMessagePath:   "",
-				TerminationMessagePolicy: "",
-				ImagePullPolicy:          "",
-				SecurityContext:          nil,
-				Stdin:                    false,
-				StdinOnce:                false,
-				TTY:                      false,
+	pod, err := kubernetesManager.CreatePod(ctx, k8sResources.namespace.Name, "availability-checker-pod", nil, nil, nil, []apiv1.Container{
+		{
+			Name:  containerName,
+			Image: "badouralix/curl-jq",
+			Command: []string{
+				"sh",
+				"-c",
+				"sleep 10000000s",
 			},
+			Args:       nil,
+			WorkingDir: "",
+			Ports:      nil,
+			EnvFrom:    nil,
+			Env:        nil,
+			Resources: apiv1.ResourceRequirements{
+				Limits:   nil,
+				Requests: nil,
+				Claims:   nil,
+			},
+			ResizePolicy:             nil,
+			VolumeMounts:             nil,
+			VolumeDevices:            nil,
+			LivenessProbe:            nil,
+			ReadinessProbe:           nil,
+			StartupProbe:             nil,
+			Lifecycle:                nil,
+			TerminationMessagePath:   "",
+			TerminationMessagePolicy: "",
+			ImagePullPolicy:          "",
+			SecurityContext:          nil,
+			Stdin:                    false,
+			StdinOnce:                false,
+			TTY:                      false,
 		},
-		nil,
-		"",
-		"",
-		nil,
-		nil)
+	}, nil, "", "", nil, nil, false, false)
 	defer func() {
+		// Don't block on removing the availability checker pod because this can take a while sometimes in k8s
 		go func() {
-			// don't wait for removing availability check pod as this can take a while in k8s
 			err := kubernetesManager.RemovePod(ctx, pod)
 			if err != nil {
 				logrus.Warnf("Attempted to remove availability checker pod '%v' in namespace '%v' but an err occurred.", pod.Name, availabilityCheckerNamespace)

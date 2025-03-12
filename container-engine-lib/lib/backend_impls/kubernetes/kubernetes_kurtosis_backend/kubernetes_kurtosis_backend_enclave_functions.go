@@ -3,6 +3,10 @@ package kubernetes_kurtosis_backend
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_aggregator_functions"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_aggregator_functions/implementations/vector"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_collector_functions"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_collector_functions/implementations/fluentbit"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"strings"
 	"time"
@@ -327,6 +331,17 @@ func (backend *KubernetesKurtosisBackend) DestroyEnclaves(
 		}
 
 		successfulEnclaveIds[enclaveId] = true
+	}
+
+	// if destroy is deleting ALL enclaves, now's a good time to clean up log stuff
+	if filters.Statuses[enclave.EnclaveStatus_Running] {
+		if err := logs_collector_functions.CleanLogsCollector(ctx, fluentbit.NewFluentbitLogsCollector(), backend.kubernetesManager); err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error cleaning logs collector daemon set.")
+		}
+
+		if err := logs_aggregator_functions.CleanLogsAggregator(ctx, vector.NewVectorLogsAggregatorDeployment(), backend.kubernetesManager); err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error cleaning logs aggregator deployment.")
+		}
 	}
 
 	return successfulEnclaveIds, erroredEnclaveIds, nil

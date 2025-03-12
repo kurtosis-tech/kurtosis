@@ -589,3 +589,72 @@ func createLogsCollectorClusterRoleBinding(
 
 	return clusterRoleBindingObj, nil
 }
+
+// Clean cleans up the checkpoint databases created by fluent bit that store locations to continue tailing from in case of restarts, to do this:
+// 1) scales down the fluent bit daemon set to remove pods from all nodes
+// 2) creates a privileged pod with access to underlying nodes filesystem
+// 3) removes fluent bit checkpoint path on each node's filesystem
+func (fluentbit *fluentbitLogsCollector) Clean(
+	ctx context.Context,
+	logsCollectorDaemonSet *appsv1.DaemonSet,
+	kubernetesManager *kubernetes_manager.KubernetesManager) error {
+	pods, err := kubernetesManager.GetPodsManagedByDaemonSet(ctx, logsCollectorDaemonSet)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting pods managed by daemon set '%v' in namespace '%v'.", logsCollectorDaemonSet.Name, logsCollectorDaemonSet.Namespace)
+	}
+	if len(pods) == 0 {
+		return stacktrace.Propagate(err, "No pods found for logs collector daemon set '%v' in namespace '%v'.", logsCollectorDaemonSet.Name, logsCollectorDaemonSet.Namespace)
+	}
+	var nodeNames []string
+	for _, pod := range pods {
+		nodeNames = append(nodeNames, pod.Spec.NodeName)
+	}
+
+	logrus.Infof("Cleaning the fluent bit logs collector daemon set...")
+
+	// patch damon set to have node selector that evicts all pods
+	evictNodeSelectors := map[string]string{
+		"non-existent-label": "true",
+	}
+	err = kubernetesManager.UpdateDaemonSetWithNodeSelectors(
+		ctx,
+		logsCollectorDaemonSet,
+		evictNodeSelectors,
+	)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred updating daemon set '%v' with node selectors '%v'", logsCollectorDaemonSet.Name, evictNodeSelectors)
+	}
+
+	// need to wait for pods to be terminated to unmount checkpoint volumes
+	for _, pod := range pods {
+		if err := kubernetesManager.WaitForPodTermination(ctx, pod.Namespace, pod.Name); err != nil {
+			return stacktrace.Propagate(err, "An error occurred waiting for pod '%v' in namespace '%v'.", pod.Name, pod.Namespace)
+		}
+	}
+
+	// execute remove on all pods
+	for _, node := range nodeNames {
+		if err = kubernetesManager.RemoveDirPathFromNode(ctx, logsCollectorDaemonSet.Namespace, node, fluentBitCheckpointDbMountPath); err != nil {
+			return stacktrace.Propagate(err, "An error occurred removing dir path '%v' from node '%v' via a pod in namespace '%v'.", fluentBitCheckpointDbMountPath, node, logsCollectorDaemonSet.Namespace)
+		}
+	}
+
+	//patch daemon set again to have no node selectors, allowing daemon set to schedule log collector pods
+	err = kubernetesManager.UpdateDaemonSetWithNodeSelectors(
+		ctx,
+		logsCollectorDaemonSet,
+		map[string]string{},
+	)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred updating daemon set '%v' with node selectors '%v'", logsCollectorDaemonSet.Name, evictNodeSelectors)
+	}
+
+	//before continuing, ensure logs collector is up again
+	if err := waitForAtLeastOneActivePodManagedByDaemonSet(ctx, logsCollectorDaemonSet, kubernetesManager); err != nil {
+		return stacktrace.Propagate(err, "An error occurred waiting for at least one pod managed by daemon set '%v' has become available.", logsCollectorDaemonSet.Name)
+	}
+
+	logrus.Infof("Successfully cleaned logs collector.")
+
+	return nil
+}

@@ -21,8 +21,11 @@ import (
 )
 
 const (
-	retryInterval = 1 * time.Second
-	maxRetries    = 30
+	retryInterval        = 1 * time.Second
+	maxRetries           = 30
+	successExitCode      = 0
+	preCleanNumReplicas  = 0
+	postCleanNumReplicas = 1
 )
 
 type vectorLogsAggregatorDeployment struct{}
@@ -139,7 +142,7 @@ func (logsAggregator *vectorLogsAggregatorDeployment) CreateAndStart(
 	}()
 
 	if err = waitForPodManagedByDeployment(ctx, deployment, kubernetesManager); err != nil {
-		return nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred waiting for active pod managed by logs collector deployment '%v'", deployment.Name)
+		return nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred waiting for active pod managed by logs aggregator deployment '%v'", deployment.Name)
 	}
 
 	removeLogsAggregatorFunc := func() {
@@ -214,6 +217,14 @@ func createLogsAggregatorDeployment(
 					MountPropagation: nil,
 					SubPathExpr:      "",
 				},
+				{
+					Name:             vectorDataDirVolumeName,
+					ReadOnly:         false,
+					MountPath:        vectorDataDirMountPath,
+					SubPath:          "",
+					MountPropagation: nil,
+					SubPathExpr:      "",
+				},
 			},
 			VolumeDevices:            nil,
 			LivenessProbe:            nil,
@@ -238,6 +249,10 @@ func createLogsAggregatorDeployment(
 		{
 			Name:         kurtosisLogsVolumeName,
 			VolumeSource: kubernetesManager.GetVolumeSourceForHostPath(kurtosisLogsMountPath),
+		},
+		{
+			Name:         vectorDataDirVolumeName,
+			VolumeSource: kubernetesManager.GetVolumeSourceForHostPath(vectorDataDirMountPath),
 		},
 	}
 
@@ -382,6 +397,7 @@ func createLogsAggregatorConfigMap(
 		map[string]string{
 			vectorConfigFileName: fmt.Sprintf(
 				vectorConfigFmtStr,
+				vectorDataDirMountPath,
 				apiPortStr,
 				logListeningPortNum,
 				kurtosisLogsMountPath),
@@ -430,4 +446,53 @@ func (vector *vectorLogsAggregatorDeployment) GetLogsBaseDirPath() string {
 
 func (vector *vectorLogsAggregatorDeployment) GetHTTPHealthCheckEndpointAndPort() (string, uint16) {
 	return "/health", apiPort
+}
+
+// Clean cleans up the data directory created by vector to store buffer information, to do this:
+// 1) scales down the vector logs aggregator deployment
+// 2) creates a privileged pod with access to underlying nodes filesystem
+// 3) removes vector data directory on node's filesystem
+func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAggregatorDeployment *appsv1.Deployment, kubernetesManager *kubernetes_manager.KubernetesManager) error {
+	pods, err := kubernetesManager.GetPodsManagedByDeployment(ctx, logsAggregatorDeployment)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting pods managed by deployment '%v' in namespace '%v'.", logsAggregatorDeployment.Name, logsAggregatorDeployment.Namespace)
+	}
+	if len(pods) == 0 {
+		return stacktrace.Propagate(err, "No pods found for logs aggregator deployment '%v' in namespace '%v'.", logsAggregatorDeployment.Name, logsAggregatorDeployment.Namespace)
+	}
+	if len(pods) > 1 {
+		return stacktrace.Propagate(err, "More than one pod found for logs aggregator deployment '%v' in namespace '%v'.", logsAggregatorDeployment.Name, logsAggregatorDeployment.Namespace)
+	}
+
+	logrus.Debugf("Cleaning the vector logs aggregator deployment...")
+	pod := pods[0]
+	nodeName := pod.Spec.NodeName
+
+	// scale deployment down to zero in order to unmount volume
+	// need to do this in order to unmount data directory volume - otherwise removing directory from underlying nodes file system won't work since processes are accessing it
+	if err := kubernetesManager.ScaleDeployment(ctx, logsAggregatorDeployment.Namespace, logsAggregatorDeployment.Name, preCleanNumReplicas); err != nil {
+		return stacktrace.Propagate(err, "An error occurred scaling deployment '%v' in namespace '%v' to '%v'.", logsAggregatorDeployment.Name, logsAggregatorDeployment.Namespace, preCleanNumReplicas)
+	}
+	if err := kubernetesManager.WaitForPodTermination(ctx, pod.Namespace, pod.Name); err != nil {
+		return stacktrace.Propagate(err, "An error occurred waiting for pod '%v' in namespace '%v' to terminate.", pod.Namespace, pod.Name)
+	}
+
+	err = kubernetesManager.RemoveDirPathFromNode(ctx, logsAggregatorDeployment.Namespace, nodeName, vectorDataDirMountPath)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred removing dir path '%v' from node '%v' via a pod in namespace '%v'.", vectorDataDirMountPath, nodeName, logsAggregatorDeployment.Namespace)
+	}
+
+	// scale up the deployment again
+	if err := kubernetesManager.ScaleDeployment(ctx, logsAggregatorDeployment.Namespace, logsAggregatorDeployment.Name, postCleanNumReplicas); err != nil {
+		return stacktrace.Propagate(err, "An error occurred scaling deployment '%v' in namespace '%v' to '%v'.", logsAggregatorDeployment.Name, logsAggregatorDeployment.Namespace, postCleanNumReplicas)
+	}
+
+	// before continuing, ensure logs aggregator is up again
+	if err := waitForPodManagedByDeployment(ctx, logsAggregatorDeployment, kubernetesManager); err != nil {
+		return stacktrace.Propagate(err, "An error occurred waiting for a pod managed by deployment '%v' to become available.", logsAggregatorDeployment.Name)
+	}
+
+	logrus.Debugf("Successfully cleaned logs aggregator.")
+
+	return nil
 }

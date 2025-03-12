@@ -24,7 +24,7 @@ func CreateLogsAggregator(
 
 	logsAggregatorObj, kubernetesResources, err = getLogsAggregatorObjAndResourcesForCluster(ctx, kubernetesManager)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting logs aggregator object and resources for cluster.")
+		return nil, removeLogsAggregatorFunc, stacktrace.Propagate(err, "An error occurred getting logs aggregator object and resources for cluster.")
 	}
 
 	if logsAggregatorObj != nil {
@@ -39,7 +39,7 @@ func CreateLogsAggregator(
 			objAttrProvider,
 			kubernetesManager)
 		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred creating logs aggregator deployment.")
+			return nil, removeLogsAggregatorFunc, stacktrace.Propagate(err, "An error occurred creating logs aggregator deployment.")
 		}
 		shouldRemoveLogsAggregator = true
 		defer func() {
@@ -57,7 +57,7 @@ func CreateLogsAggregator(
 
 		logsAggregatorObj, err = getLogsAggregatorObjectFromKubernetesResources(ctx, kubernetesManager, kubernetesResources)
 		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator object from kubernetes resources.")
+			return nil, removeLogsAggregatorFunc, stacktrace.Propagate(err, "An error occurred getting the logs aggregator object from kubernetes resources.")
 		}
 	}
 
@@ -65,7 +65,7 @@ func CreateLogsAggregator(
 
 	healthCheckEndpoint, healthCheckPortNum := logsAggregatorDeployment.GetHTTPHealthCheckEndpointAndPort()
 	if err = waitForLogsAggregatorAvailability(ctx, healthCheckEndpoint, healthCheckPortNum, kubernetesResources, kubernetesManager); err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred while waiting for the logs aggregator deployment to become available")
+		return nil, removeLogsAggregatorFunc, stacktrace.Propagate(err, "An error occurred while waiting for the logs aggregator deployment to become available")
 	}
 	logrus.Debugf("...logs aggregator is available in namepsace '%v'", kubernetesResources.namespace.Name)
 
