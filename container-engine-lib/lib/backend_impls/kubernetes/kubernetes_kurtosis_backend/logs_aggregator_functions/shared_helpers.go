@@ -26,6 +26,7 @@ const (
 	curlContainerSuccessExitCode    = 0
 	successHealthCheckStatusCode    = 200
 	timeToWaitBetweenChecksDuration = 1 * time.Second
+	logsAggregatorHttpPortId        = "http"
 )
 
 func getLogsAggregatorObjAndResourcesForCluster(ctx context.Context, kubernetesManager *kubernetes_manager.KubernetesManager) (*logs_aggregator.LogsAggregator, *logsAggregatorKubernetesResources, error) {
@@ -207,6 +208,7 @@ func getLogsAggregatorObjectFromKubernetesResources(ctx context.Context, kuberne
 		logsAggregatorStatus,
 		privateIpAddr,
 		logsListeningPort,
+		nil,
 	), nil
 }
 

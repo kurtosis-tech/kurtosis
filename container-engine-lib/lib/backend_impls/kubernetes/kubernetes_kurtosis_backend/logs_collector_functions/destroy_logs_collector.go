@@ -56,24 +56,6 @@ func DestroyLogsCollector(ctx context.Context, kubernetesManager *kubernetes_man
 		}
 	}
 
-	if logsCollectorResources.serviceAccount != nil {
-		if err := kubernetesManager.RemoveServiceAccount(ctx, logsCollectorResources.serviceAccount); err != nil {
-			destroyErr = stacktrace.Propagate(err, "An error occurred removing logs collector service account.")
-		}
-	}
-
-	if logsCollectorResources.clusterRole != nil {
-		if err := kubernetesManager.RemoveClusterRole(ctx, logsCollectorResources.clusterRole); err != nil {
-			destroyErr = stacktrace.Propagate(err, "An error occurred removing logs collector cluster role.")
-		}
-	}
-
-	if logsCollectorResources.clusterRoleBinding != nil {
-		if err := kubernetesManager.RemoveClusterRoleBindings(ctx, logsCollectorResources.clusterRoleBinding); err != nil {
-			destroyErr = stacktrace.Propagate(err, "An error occurred removing logs collector cluster role binding.")
-		}
-	}
-
 	if err := kubernetesManager.RemoveNamespace(ctx, logsCollectorNamespace); err != nil {
 		destroyErrs = append(destroyErrs, stacktrace.Propagate(err, "An error occurred removing logs collector namespace."))
 	}

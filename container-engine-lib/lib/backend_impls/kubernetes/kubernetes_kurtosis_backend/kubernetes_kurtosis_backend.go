@@ -459,12 +459,12 @@ func (backend *KubernetesKurtosisBackend) GetLogsAggregator(
 	return maybeLogsAggregator, nil
 }
 
-func (backend *KubernetesKurtosisBackend) CreateLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error) {
+func (backend *KubernetesKurtosisBackend) CreateLogsAggregator(ctx context.Context, httpPortNum uint16, sinks logs_aggregator.Sinks) (*logs_aggregator.LogsAggregator, error) {
 	logsAggregatorDeployment := vector.NewVectorLogsAggregatorDeployment()
 
 	logsAggregator, _, err := logs_aggregator_functions.CreateLogsAggregator(
 		ctx,
-		"", // as of now, nothing calls this functions so its okay to leave this blank
+		"", // as of now, nothing calls this functions so it's okay to leave this blank
 		logsAggregatorDeployment,
 		backend.objAttrsProvider,
 		backend.kubernetesManager)
