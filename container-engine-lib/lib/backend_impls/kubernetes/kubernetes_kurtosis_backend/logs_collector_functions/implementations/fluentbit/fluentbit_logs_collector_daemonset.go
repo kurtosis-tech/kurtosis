@@ -604,8 +604,9 @@ func (fluentbit *fluentbitLogsCollector) Clean(
 	if len(pods) == 0 {
 		return stacktrace.Propagate(err, "No pods found for logs collector daemon set '%v' in namespace '%v'.", logsCollectorDaemonSet.Name, logsCollectorDaemonSet.Namespace)
 	}
-	nodeNames := make([]string, len(pods))
+	var nodeNames []string
 	for _, pod := range pods {
+		logrus.Infof("pod '%v' on node '%v'", pod.Name, pod.Spec.NodeName)
 		nodeNames = append(nodeNames, pod.Spec.NodeName)
 	}
 
@@ -642,7 +643,7 @@ func (fluentbit *fluentbitLogsCollector) Clean(
 	err = kubernetesManager.UpdateDaemonSetWithNodeSelectors(
 		ctx,
 		logsCollectorDaemonSet,
-		nil,
+		map[string]string{},
 	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred updating daemon set '%v' with node selectors '%v'", logsCollectorDaemonSet.Name, evictNodeSelectors)
