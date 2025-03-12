@@ -187,22 +187,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServicePod
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a short GUID Kubernetes label value from GUID string '%v'", string(serviceUUID))
 	}
-
-	serviceUUIDStr := string(serviceUUID)
-	shortUuidStr := uuid_generator.ShortenedUUIDString(serviceUUIDStr)
-	shortUuidLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(shortUuidStr)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a short GUID Kubernetes label value from GUID string '%v'", serviceUUIDStr)
-	}
-
-	serviceNameStr := string(serviceName)
-	serviceNameLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(serviceNameStr)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes label value from service name string '%v'", serviceNameStr)
-	}
 	labels[kubernetes_label_key.LogsServiceUUIDKubernetesLabelKey] = uuidLabelValue
-	labels[kubernetes_label_key.LogsServiceShortUUIDKubernetesLabelKey] = shortUuidLabelValue
-	labels[kubernetes_label_key.LogsServiceNameKubernetesLabelKey] = serviceNameLabelValue
 
 	// add user custom label
 	for userLabelKey, userLabelValue := range userLabels {
