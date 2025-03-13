@@ -48,7 +48,7 @@ func CreateLogsCollector(
 		logrus.Debug("Found existing logs collector daemon set.")
 	} else {
 		logrus.Debug("Did not find existing log collector, creating one...")
-		daemonSet, configMap, namespace, removeLogsCollectorFunc, err := logsCollectorDaemonSet.CreateAndStart(
+		daemonSet, configMap, namespace, serviceAccount, clusterRole, clusterRoleBinding, removeLogsCollectorFunc, err := logsCollectorDaemonSet.CreateAndStart(
 			ctx,
 			"", // TODO: fill these in when adding aggregator to k8s
 			0,  // TODO: fill these in when adding aggregator to k8s
@@ -77,9 +77,12 @@ func CreateLogsCollector(
 		}()
 
 		kubernetesResources = &logsCollectorKubernetesResources{
-			daemonSet: daemonSet,
-			configMap: configMap,
-			namespace: namespace,
+			daemonSet:          daemonSet,
+			configMap:          configMap,
+			serviceAccount:     serviceAccount,
+			clusterRoleBinding: clusterRoleBinding,
+			clusterRole:        clusterRole,
+			namespace:          namespace,
 		}
 
 		logsCollectorObj, err = getLogsCollectorsObjectFromKubernetesResources(ctx, kubernetesManager, kubernetesResources)

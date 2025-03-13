@@ -219,7 +219,7 @@ func StartRegisteredUserServices(
 	}
 
 	// The following docker labels will be added into the logs stream which is necessary for filtering, retrieving persisted logs
-	logsCollectorLabels := logs_collector_functions.GetKurtosisTrackedLogsCollectorLabels()
+	logsCollectorLabels := logs_collector_functions.GetLabelsForLogsTrackingLogsOfUserServiceContainers()
 
 	successfulStarts, failedStarts, err := runStartServiceOperationsInParallel(
 		ctx,
@@ -466,7 +466,7 @@ func runStartServiceOperationsInParallel(
 	dockerManager *docker_manager.DockerManager,
 	restartPolicy docker_manager.RestartPolicy,
 	logsCollectorAddress string,
-	logsCollectorLabels logs_collector_functions.LogsCollectorLabels,
+	logsCollectorLabels []string,
 ) (
 	map[service.ServiceUUID]*service.Service,
 	map[service.ServiceUUID]error,
@@ -529,7 +529,7 @@ func createStartServiceOperation(
 	dockerManager *docker_manager.DockerManager,
 	restartPolicy docker_manager.RestartPolicy,
 	logsCollectorAddress string,
-	logsCollectorLabels logs_collector_functions.LogsCollectorLabels,
+	logsCollectorLabels []string,
 ) operation_parallelizer.Operation {
 	id := serviceRegistration.GetName()
 	privateIpAddr := serviceRegistration.GetPrivateIP()
