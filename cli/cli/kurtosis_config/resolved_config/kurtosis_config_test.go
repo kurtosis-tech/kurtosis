@@ -1,12 +1,12 @@
 package resolved_config
 
 import (
+	v4 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v4"
 	"sort"
 	"testing"
 
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/config_version"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v3"
 	"github.com/stretchr/testify/require"
 )
 
@@ -51,7 +51,7 @@ func TestNewKurtosisConfigFromRequiredFields_MetricsElectionIsSent(t *testing.T)
 }
 
 func TestNewKurtosisConfigEmptyOverrides(t *testing.T) {
-	_, err := NewKurtosisConfigFromOverrides(&v3.KurtosisConfigV3{
+	_, err := NewKurtosisConfigFromOverrides(&v4.KurtosisConfigV4{
 		ConfigVersion:     0,
 		ShouldSendMetrics: nil,
 		KurtosisClusters:  nil,
@@ -64,7 +64,7 @@ func TestNewKurtosisConfigEmptyOverrides(t *testing.T) {
 func TestNewKurtosisConfigJustMetrics(t *testing.T) {
 	version := config_version.ConfigVersion_v0
 	shouldSendMetrics := true
-	originalOverrides := v3.KurtosisConfigV3{
+	originalOverrides := v4.KurtosisConfigV4{
 		ConfigVersion:     version,
 		ShouldSendMetrics: &shouldSendMetrics,
 		KurtosisClusters:  nil,
@@ -95,11 +95,11 @@ func TestCloudConfigOverridesApiUrl(t *testing.T) {
 	version := config_version.ConfigVersion_v3
 	shouldSendMetrics := true
 	apiUrl := "test.com"
-	originalOverrides := v3.KurtosisConfigV3{
+	originalOverrides := v4.KurtosisConfigV4{
 		ConfigVersion:     version,
 		ShouldSendMetrics: &shouldSendMetrics,
 		KurtosisClusters:  nil,
-		CloudConfig: &v3.KurtosisCloudConfigV3{
+		CloudConfig: &v4.KurtosisCloudConfigV4{
 			ApiUrl:           &apiUrl,
 			Port:             nil,
 			CertificateChain: nil,
@@ -118,11 +118,11 @@ func TestCloudConfigReconciliation(t *testing.T) {
 	version := config_version.ConfigVersion_v3
 	shouldSendMetrics := true
 	apiUrl := "test.com"
-	originalOverrides := v3.KurtosisConfigV3{
+	originalOverrides := v4.KurtosisConfigV4{
 		ConfigVersion:     version,
 		ShouldSendMetrics: &shouldSendMetrics,
 		KurtosisClusters:  nil,
-		CloudConfig: &v3.KurtosisCloudConfigV3{
+		CloudConfig: &v4.KurtosisCloudConfigV4{
 			ApiUrl:           &apiUrl,
 			Port:             nil,
 			CertificateChain: nil,
