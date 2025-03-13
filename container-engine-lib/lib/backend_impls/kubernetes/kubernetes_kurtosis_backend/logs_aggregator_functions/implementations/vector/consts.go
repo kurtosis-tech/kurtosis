@@ -17,6 +17,7 @@ const (
 	vectorDataDirVolumeName = "varlibvector"
 	vectorDataDirMountPath  = "/var/lib/vector"
 
+	bufferSizeStr        = "268435488"
 	vectorConfigFileName = "vector.toml"
 	vectorConfigFmtStr   = `
     data_dir = "%v"
@@ -32,12 +33,12 @@ const (
     [sinks.file_sink]
     type = "file"
     inputs = ["fluentbit"]
-    path = "%v/%%G/%%V/{{ kurtosis_enclave_uuid }}/{{ kurtosis_service_uuid }}.json"
+    path = "%v/%%G/%%V/{{ %v }}/{{ %v }}.json"
    
-	[sinks.file_sink.buffer]
+    [sinks.file_sink.buffer]
 	type = "disk"
-	max_size = 268435488
-    when_full = "block"
+	max_size = %v
+	when_full = "block"
 
     [sinks.file_sink.encoding]
     codec = "json"

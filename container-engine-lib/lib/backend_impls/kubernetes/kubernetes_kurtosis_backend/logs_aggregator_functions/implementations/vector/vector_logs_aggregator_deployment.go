@@ -400,7 +400,10 @@ func createLogsAggregatorConfigMap(
 				vectorDataDirMountPath,
 				apiPortStr,
 				logListeningPortNum,
-				kurtosisLogsMountPath),
+				kurtosisLogsMountPath,
+				kubernetes_label_key.LogsEnclaveUUIDKubernetesLabelKey.GetString(),
+				kubernetes_label_key.LogsServiceUUIDKubernetesLabelKey.GetString(),
+				bufferSizeStr),
 		},
 	)
 	if err != nil {
