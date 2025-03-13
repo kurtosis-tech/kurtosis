@@ -12,12 +12,10 @@ const (
 
 	defaultMinikubeClusterName = "minikube"
 
-	// leaving empty leaves the k8s scheduler to schedule engine node
-
 	defaultMinikubeClusterKubernetesClusterNameStr = "minikube"
 	defaultMinikubeStorageClass                    = "standard"
 	defaultMinikubeEnclaveDataVolumeMB             = uint(10)
-	defaultEngineNodeName                          = ""
+	defaultMinikubeEngineNodeName                  = "minikube"
 	DefaultCloudConfigApiUrl                       = "cloud.kurtosis.com"
 	DefaultCloudConfigPort                         = uint(8080)
 	// TODO: We'll need to pull this more dynamic. For now placing here:
@@ -198,7 +196,7 @@ func getDefaultKurtosisClusterConfigOverrides() map[string]*v4.KurtosisClusterCo
 	minikubeKubernetesClusterName := defaultMinikubeClusterKubernetesClusterNameStr
 	minikubeStorageClass := defaultMinikubeStorageClass
 	minikubeEnclaveDataVolSizeMB := defaultMinikubeEnclaveDataVolumeMB
-	minikubeEngineNodeName := defaultEngineNodeName
+	minikubeEngineNodeName := defaultMinikubeEngineNodeName
 
 	result := map[string]*v4.KurtosisClusterConfigV4{
 		DefaultDockerClusterName: {

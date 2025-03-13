@@ -171,18 +171,14 @@ func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesC
 		}
 		storageClass := *kubernetesConfig.StorageClass
 
-		if kubernetesConfig.EngineNodeName == nil {
-			return nil, nil, stacktrace.NewError(
-				"Type of cluster '%v' is '%v' but no engine node name was defined in the config",
-				clusterId,
-				clusterType,
-			)
-		}
-		engineNodeName := *kubernetesConfig.EngineNodeName
-
 		enclaveDataVolumeSizeInMb := defaultKubernetesEnclaveDataVolumeSizeInMegabytes
 		if kubernetesConfig.EnclaveSizeInMegabytes != nil {
 			enclaveDataVolumeSizeInMb = *kubernetesConfig.EnclaveSizeInMegabytes
+		}
+
+		engineNodeName := defaultEngineNodeName
+		if kubernetesConfig.EngineNodeName != nil {
+			engineNodeName = *kubernetesConfig.EngineNodeName
 		}
 
 		backendSupplier = func(ctx context.Context) (backend_interface.KurtosisBackend, error) {
