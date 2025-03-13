@@ -58,6 +58,7 @@ func TestNewKurtosisClusterConfigKubernetesPartialConfig(t *testing.T) {
 		KubernetesClusterName:  &kubernetesClusterName,
 		StorageClass:           nil,
 		EnclaveSizeInMegabytes: nil,
+		EngineNodeName:         nil,
 	}
 	kurtosisClusterConfigOverrides := v4.KurtosisClusterConfigV4{
 		Type:           &kubernetesType,
@@ -73,10 +74,12 @@ func TestNewKurtosisClusterConfigKubernetesFullConfig(t *testing.T) {
 	kubernetesClusterName := "some-name"
 	kubernetesStorageClass := "some-storage-class"
 	kubernetesEnclaveSizeInMB := uint(5)
+	kubernetesEngineNodeName := "some-node-name"
 	kubernetesFullConfig := v4.KubernetesClusterConfigV4{
 		KubernetesClusterName:  &kubernetesClusterName,
 		StorageClass:           &kubernetesStorageClass,
 		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
+		EngineNodeName:         &kubernetesEngineNodeName,
 	}
 	kurtosisClusterConfigOverrides := v4.KurtosisClusterConfigV4{
 		Type:           &kubernetesType,
@@ -92,10 +95,12 @@ func TestNewKurtosisClusterConfigLogsAggregatorNoConfig(t *testing.T) {
 	kubernetesClusterName := "some-name"
 	kubernetesStorageClass := "some-storage-class"
 	kubernetesEnclaveSizeInMB := uint(5)
+	kubernetesEngineNodeName := "some-node-name"
 	kubernetesFullConfig := v4.KubernetesClusterConfigV4{
 		KubernetesClusterName:  &kubernetesClusterName,
 		StorageClass:           &kubernetesStorageClass,
 		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
+		EngineNodeName:         &kubernetesEngineNodeName,
 	}
 	kurtosisClusterConfigOverrides := v4.KurtosisClusterConfigV4{
 		Type:           &kubernetesType,
@@ -111,10 +116,12 @@ func TestNewKurtosisClusterConfigLogsAggregatorReservedSinkId(t *testing.T) {
 	kubernetesClusterName := "some-name"
 	kubernetesStorageClass := "some-storage-class"
 	kubernetesEnclaveSizeInMB := uint(5)
+	kubernetesEngineNodeName := "some-node-name"
 	kubernetesFullConfig := v4.KubernetesClusterConfigV4{
 		KubernetesClusterName:  &kubernetesClusterName,
 		StorageClass:           &kubernetesStorageClass,
 		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
+		EngineNodeName:         &kubernetesEngineNodeName,
 	}
 	kurtosisClusterConfigOverrides := v4.KurtosisClusterConfigV4{
 		Type:   &kubernetesType,
@@ -136,10 +143,12 @@ func TestNewKurtosisClusterConfigLogsAggregatorFullConfig(t *testing.T) {
 	kubernetesClusterName := "some-name"
 	kubernetesStorageClass := "some-storage-class"
 	kubernetesEnclaveSizeInMB := uint(5)
+	kubernetesEngineNodeName := "some-node-name"
 	kubernetesFullConfig := v4.KubernetesClusterConfigV4{
 		KubernetesClusterName:  &kubernetesClusterName,
 		StorageClass:           &kubernetesStorageClass,
 		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
+		EngineNodeName:         &kubernetesEngineNodeName,
 	}
 	kurtosisClusterConfigOverrides := v4.KurtosisClusterConfigV4{
 		Type:   &kubernetesType,
