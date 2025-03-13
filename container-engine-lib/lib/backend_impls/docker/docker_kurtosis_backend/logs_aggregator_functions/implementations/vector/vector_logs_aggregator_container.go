@@ -120,6 +120,10 @@ func (vectorContainer *vectorLogsAggregatorContainer) CreateAndStart(
 	return containerId, containerLabelStrs, removeContainerFunc, nil
 }
 
-func (vectorContainer *vectorLogsAggregatorContainer) GetHttpHealthCheckEndpoint() string {
+func (vector *vectorLogsAggregatorContainer) GetLogsBaseDirPath() string {
+	return logsStorageDirpath
+}
+
+func (vector *vectorLogsAggregatorContainer) GetHttpHealthCheckEndpoint() string {
 	return healthCheckEndpointPath
 }

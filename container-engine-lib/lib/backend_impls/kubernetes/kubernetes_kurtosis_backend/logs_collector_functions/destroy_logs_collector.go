@@ -64,10 +64,13 @@ func DestroyLogsCollector(ctx context.Context, kubernetesManager *kubernetes_man
 		destroyErrs = append(destroyErrs, stacktrace.Propagate(err, "An error occurred waiting for logs collector namespace to be removed."))
 	}
 
-	errMsg := "Following errors occurred trying to destroy logs collector:\n"
-	for _, destroyErr := range destroyErrs {
-		errMsg += destroyErr.Error() + "\n"
+	if len(destroyErrs) > 0 {
+		errMsg := "Following errors occurred trying to destroy logs collector:\n"
+		for _, destroyErr := range destroyErrs {
+			errMsg += destroyErr.Error() + "\n"
+		}
+		return errors.New(errMsg)
 	}
 
-	return errors.New(errMsg)
+	return nil
 }

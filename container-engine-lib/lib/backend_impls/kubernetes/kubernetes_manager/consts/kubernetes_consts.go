@@ -26,6 +26,8 @@ const (
 	IngressesKubernetesResource              = "ingresses"
 	ConfigMapsKubernetesResource             = "configmaps"
 	DaemonSetsKubernetesResource             = "daemonsets"
+	DeploymentsKubernetesResource            = "deployments"
+	DeploymentsScaleKubernetesResource       = "deployments/scale"
 
 	ClusterRoleKubernetesResourceType = "ClusterRole"
 	RoleKubernetesResourceType        = "Role"

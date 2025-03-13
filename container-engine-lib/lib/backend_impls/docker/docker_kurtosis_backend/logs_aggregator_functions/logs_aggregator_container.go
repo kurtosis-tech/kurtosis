@@ -22,6 +22,9 @@ type LogsAggregatorContainer interface {
 		dockerManager *docker_manager.DockerManager,
 	) (string, map[string]string, func(), error)
 
+	// GetLogsBaseDirPath returns the base directory path where all logs will be output on its container
+	GetLogsBaseDirPath() string
+
 	// GetHttpHealthCheckEndpoint returns endpoint for verifying the availability of the logs aggregator application on container
 	GetHttpHealthCheckEndpoint() string
 }

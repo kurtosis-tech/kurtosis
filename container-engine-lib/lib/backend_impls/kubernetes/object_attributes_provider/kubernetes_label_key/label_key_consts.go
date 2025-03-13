@@ -33,11 +33,11 @@ const (
 	// the logs aggregator (vector) needs the enclave uuid and service uuid label keys to create the filepath where logs are stored in persistent volume
 	// but vectors template syntax can't interpret the "kurtosistech.com/" prefix, so we can't use the existing label keys or their prefix
 	// to avoid collisions with labels the user may add, kurtosis_ prefix is added
-	logsOnlyKurtosisPrefix                     = "kurtosis_"
-	logsOnlyEnclaveUuidLabelKeyStr             = logsOnlyKurtosisPrefix + "enclave_uuid"
-	logsOnlyServiceUuidKubernetesLabelKey      = logsOnlyKurtosisPrefix + "service_uuid"
-	logsOnlyServiceShortUuidKubernetesLabelKey = logsOnlyKurtosisPrefix + "service_short_uuid"
-	logsOnlyServiceNameKubernetesLabelKey      = logsOnlyKurtosisPrefix + "service_name"
+	logsOnlyKurtosisPrefix                = "kurtosis_"
+	logsOnlyEnclaveUuidLabelKeyStr        = logsOnlyKurtosisPrefix + "enclave_uuid"
+	logsOnlyServiceUuidKubernetesLabelKey = logsOnlyKurtosisPrefix + "service_uuid"
+
+	engineNodeLabelKeyStr = labelKeyPrefixStr + "engine-node"
 )
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -57,8 +57,7 @@ var GUIDKubernetesLabelKey = MustCreateNewKubernetesLabelKey(guidLabelKeyStr)
 var EnclaveUUIDKubernetesLabelKey = MustCreateNewKubernetesLabelKey(enclaveIdLabelKeyStr)
 var EnclaveNameKubernetesLabelKey = MustCreateNewKubernetesLabelKey(enclaveNameLabelKeyStr)
 var UserServiceGUIDKubernetesLabelKey = MustCreateNewKubernetesLabelKey(userServiceGuidKeyStr)
+var EngineNodeLabelKey = MustCreateNewKubernetesLabelKey(engineNodeLabelKeyStr)
 
 var LogsEnclaveUUIDKubernetesLabelKey = MustCreateNewKubernetesLabelKey(logsOnlyEnclaveUuidLabelKeyStr)
 var LogsServiceUUIDKubernetesLabelKey = MustCreateNewKubernetesLabelKey(logsOnlyServiceUuidKubernetesLabelKey)
-var LogsServiceShortUUIDKubernetesLabelKey = MustCreateNewKubernetesLabelKey(logsOnlyServiceShortUuidKubernetesLabelKey)
-var LogsServiceNameKubernetesLabelKey = MustCreateNewKubernetesLabelKey(logsOnlyServiceNameKubernetesLabelKey)

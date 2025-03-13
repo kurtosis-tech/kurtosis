@@ -21,14 +21,14 @@ var kubeConfigFileFilepath = filepath.Join(
 	os.Getenv("HOME"), ".kube", "config",
 )
 
-func GetCLIBackend(ctx context.Context, storageClass string) (backend_interface.KurtosisBackend, error) {
+func GetCLIBackend(ctx context.Context, storageClass string, engineNodeName string) (backend_interface.KurtosisBackend, error) {
 	kubernetesConfig, err := clientcmd.BuildConfigFromFlags(emptyMasterURL, kubeConfigFileFilepath)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating kubernetes configuration from flags in file '%v'", kubeConfigFileFilepath)
 	}
 
 	backendSupplier := func(_ context.Context, kubernetesManager *kubernetes_manager.KubernetesManager) (*KubernetesKurtosisBackend, error) {
-		return NewCLIModeKubernetesKurtosisBackend(kubernetesManager), nil
+		return NewCLIModeKubernetesKurtosisBackend(kubernetesManager, engineNodeName), nil
 	}
 
 	wrappedBackend, err := getWrappedKubernetesKurtosisBackend(

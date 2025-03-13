@@ -1,6 +1,8 @@
 package vector
 
 import (
+	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 )
 
@@ -29,7 +31,9 @@ const (
 	// To construct the filepath, we utilize vectors template syntax that allows us to reference fields in log events
 	// https://vector.dev/docs/reference/configuration/template-syntax/
 	baseLogsFilepath = "\"" + logsStorageDirpath + "%%G/%%V/"
-
-	uuidLogsFilepath = baseLogsFilepath + "{{ enclave_uuid }}/{{ service_uuid }}.json\""
 	////////////////////////--FINISH--VECTOR CONFIGURATION SECTION--/////////////////////////////
+)
+
+var (
+	uuidLogsFilepath = baseLogsFilepath + fmt.Sprintf("{{ %v }}/{{ %v }}.json\"", docker_label_key.LogsEnclaveUUIDDockerLabelKey.GetString(), docker_label_key.LogsServiceUUIDDockerLabelKey.GetString())
 )

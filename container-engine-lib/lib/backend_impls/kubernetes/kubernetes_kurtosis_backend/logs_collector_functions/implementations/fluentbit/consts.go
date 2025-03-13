@@ -39,17 +39,41 @@ const (
 [SERVICE]
     HTTP_Server       On
     HTTP_Listen       0.0.0.0
-    HTTP_PORT         9713
+    HTTP_PORT         %v
     Parsers_File      /fluent-bit/etc/parsers.conf
 
 [INPUT]
     Name              tail
     Tag               kurtosis.*
-    Path              /var/log/containers/*_kt-*_user-service-container-*.log
+    Path              /var/log/containers/*_kt-*_%v-container-*.log
     Parser            docker
     DB                /var/log/fluent-bit/db/fluent-bit.db
     DB.sync           normal
     Read_from_Head    true
+    Refresh_Interval  10
+
+[FILTER]
+    Name              kubernetes
+    Match             *
+    Labels            On
+    Annotations       Off
+    Kube_Tag_Prefix   kurtosis.var.log.containers.
+
+[FILTER]
+    Name lua
+    Match *
+    call flatten_kubernetes_labels
+    code function flatten_kubernetes_labels(tag, timestamp, record) record["%v"] = record["kubernetes"]["labels"]["%v"] record["%v"] = record["kubernetes"]["labels"]["%v"] return 1, timestamp, record end
+
+[FILTER]
+    Name record_modifier
+    Match *
+    Remove_key kubernetes
+
+[FILTER]
+    Name modify
+    Match *
+    Rename time timestamp
 
 [FILTER]
     Name              kubernetes
@@ -66,10 +90,9 @@ const (
     Format            json_lines
 
 [OUTPUT]
-    Name              file
+    Name              forward
     Match             *
-    Path              /var/log/fluent-bit
-    File              fluent-bit-output.log
-    Format            plain
+    Host              %v
+    Port              %v
 `
 )

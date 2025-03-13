@@ -1,15 +1,15 @@
 package resolved_config
 
 import (
+	v4 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v4"
 	"testing"
 
-	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v3"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNewKurtosisClusterConfigEmptyOverrides(t *testing.T) {
-	kurtosisClusterConfigOverrides := v3.KurtosisClusterConfigV3{
+	kurtosisClusterConfigOverrides := v4.KurtosisClusterConfigV4{
 		Type:           nil,
 		Config:         nil,
 		LogsAggregator: nil,
@@ -20,7 +20,7 @@ func TestNewKurtosisClusterConfigEmptyOverrides(t *testing.T) {
 
 func TestNewKurtosisClusterConfigDockerType(t *testing.T) {
 	dockerType := KurtosisClusterType_Docker.String()
-	kurtosisClusterConfigOverrides := v3.KurtosisClusterConfigV3{
+	kurtosisClusterConfigOverrides := v4.KurtosisClusterConfigV4{
 		Type:           &dockerType,
 		Config:         nil,
 		LogsAggregator: nil,
@@ -31,7 +31,7 @@ func TestNewKurtosisClusterConfigDockerType(t *testing.T) {
 
 func TestNewKurtosisClusterConfigKubernetesNoConfig(t *testing.T) {
 	kubernetesType := KurtosisClusterType_Kubernetes.String()
-	kurtosisClusterConfigOverrides := v3.KurtosisClusterConfigV3{
+	kurtosisClusterConfigOverrides := v4.KurtosisClusterConfigV4{
 		Type:           &kubernetesType,
 		Config:         nil,
 		LogsAggregator: nil,
@@ -42,7 +42,7 @@ func TestNewKurtosisClusterConfigKubernetesNoConfig(t *testing.T) {
 
 func TestNewKurtosisClusterConfigNonsenseType(t *testing.T) {
 	clusterType := "gdsfgsdfvsf"
-	kurtosisClusterConfigOverrides := v3.KurtosisClusterConfigV3{
+	kurtosisClusterConfigOverrides := v4.KurtosisClusterConfigV4{
 		Type:           &clusterType,
 		Config:         nil,
 		LogsAggregator: nil,
@@ -54,12 +54,13 @@ func TestNewKurtosisClusterConfigNonsenseType(t *testing.T) {
 func TestNewKurtosisClusterConfigKubernetesPartialConfig(t *testing.T) {
 	kubernetesType := KurtosisClusterType_Kubernetes.String()
 	kubernetesClusterName := "some-name"
-	kubernetesPartialConfig := v3.KubernetesClusterConfigV3{
+	kubernetesPartialConfig := v4.KubernetesClusterConfigV4{
 		KubernetesClusterName:  &kubernetesClusterName,
 		StorageClass:           nil,
 		EnclaveSizeInMegabytes: nil,
+		EngineNodeName:         nil,
 	}
-	kurtosisClusterConfigOverrides := v3.KurtosisClusterConfigV3{
+	kurtosisClusterConfigOverrides := v4.KurtosisClusterConfigV4{
 		Type:           &kubernetesType,
 		Config:         &kubernetesPartialConfig,
 		LogsAggregator: nil,
@@ -73,12 +74,14 @@ func TestNewKurtosisClusterConfigKubernetesFullConfig(t *testing.T) {
 	kubernetesClusterName := "some-name"
 	kubernetesStorageClass := "some-storage-class"
 	kubernetesEnclaveSizeInMB := uint(5)
-	kubernetesFullConfig := v3.KubernetesClusterConfigV3{
+	kubernetesEngineNodeName := "some-node-name"
+	kubernetesFullConfig := v4.KubernetesClusterConfigV4{
 		KubernetesClusterName:  &kubernetesClusterName,
 		StorageClass:           &kubernetesStorageClass,
 		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
+		EngineNodeName:         &kubernetesEngineNodeName,
 	}
-	kurtosisClusterConfigOverrides := v3.KurtosisClusterConfigV3{
+	kurtosisClusterConfigOverrides := v4.KurtosisClusterConfigV4{
 		Type:           &kubernetesType,
 		Config:         &kubernetesFullConfig,
 		LogsAggregator: nil,
@@ -92,12 +95,14 @@ func TestNewKurtosisClusterConfigLogsAggregatorNoConfig(t *testing.T) {
 	kubernetesClusterName := "some-name"
 	kubernetesStorageClass := "some-storage-class"
 	kubernetesEnclaveSizeInMB := uint(5)
-	kubernetesFullConfig := v3.KubernetesClusterConfigV3{
+	kubernetesEngineNodeName := "some-node-name"
+	kubernetesFullConfig := v4.KubernetesClusterConfigV4{
 		KubernetesClusterName:  &kubernetesClusterName,
 		StorageClass:           &kubernetesStorageClass,
 		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
+		EngineNodeName:         &kubernetesEngineNodeName,
 	}
-	kurtosisClusterConfigOverrides := v3.KurtosisClusterConfigV3{
+	kurtosisClusterConfigOverrides := v4.KurtosisClusterConfigV4{
 		Type:           &kubernetesType,
 		Config:         &kubernetesFullConfig,
 		LogsAggregator: nil,
@@ -111,15 +116,17 @@ func TestNewKurtosisClusterConfigLogsAggregatorReservedSinkId(t *testing.T) {
 	kubernetesClusterName := "some-name"
 	kubernetesStorageClass := "some-storage-class"
 	kubernetesEnclaveSizeInMB := uint(5)
-	kubernetesFullConfig := v3.KubernetesClusterConfigV3{
+	kubernetesEngineNodeName := "some-node-name"
+	kubernetesFullConfig := v4.KubernetesClusterConfigV4{
 		KubernetesClusterName:  &kubernetesClusterName,
 		StorageClass:           &kubernetesStorageClass,
 		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
+		EngineNodeName:         &kubernetesEngineNodeName,
 	}
-	kurtosisClusterConfigOverrides := v3.KurtosisClusterConfigV3{
+	kurtosisClusterConfigOverrides := v4.KurtosisClusterConfigV4{
 		Type:   &kubernetesType,
 		Config: &kubernetesFullConfig,
-		LogsAggregator: &v3.LogsAggregatorConfigV3{
+		LogsAggregator: &v4.LogsAggregatorConfigV4{
 			Sinks: map[string]map[string]interface{}{
 				logs_aggregator.DefaultSinkId: {
 					"type": "elasticsearch",
@@ -136,15 +143,17 @@ func TestNewKurtosisClusterConfigLogsAggregatorFullConfig(t *testing.T) {
 	kubernetesClusterName := "some-name"
 	kubernetesStorageClass := "some-storage-class"
 	kubernetesEnclaveSizeInMB := uint(5)
-	kubernetesFullConfig := v3.KubernetesClusterConfigV3{
+	kubernetesEngineNodeName := "some-node-name"
+	kubernetesFullConfig := v4.KubernetesClusterConfigV4{
 		KubernetesClusterName:  &kubernetesClusterName,
 		StorageClass:           &kubernetesStorageClass,
 		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
+		EngineNodeName:         &kubernetesEngineNodeName,
 	}
-	kurtosisClusterConfigOverrides := v3.KurtosisClusterConfigV3{
+	kurtosisClusterConfigOverrides := v4.KurtosisClusterConfigV4{
 		Type:   &kubernetesType,
 		Config: &kubernetesFullConfig,
-		LogsAggregator: &v3.LogsAggregatorConfigV3{
+		LogsAggregator: &v4.LogsAggregatorConfigV4{
 			Sinks: map[string]map[string]interface{}{
 				"elasticsearch": {
 					"type": "elasticsearch",

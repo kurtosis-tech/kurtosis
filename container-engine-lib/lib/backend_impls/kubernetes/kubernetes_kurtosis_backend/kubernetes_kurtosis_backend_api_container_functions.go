@@ -46,7 +46,7 @@ var noWait *port_spec.Wait = nil
 
 // TODO add support for passing toleration to APIC
 var noTolerations []apiv1.Toleration = nil
-var noSelectors map[string]string = nil
+var noSelectors map[string]string
 
 // TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
 
@@ -205,7 +205,12 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 
 	serviceAccountName := serviceAccountAttributes.GetName().GetString()
 	serviceAccountLabels := shared_helpers.GetStringMapFromLabelMap(serviceAccountAttributes.GetLabels())
-	apiContainerServiceAccount, err := backend.kubernetesManager.CreateServiceAccount(ctx, serviceAccountName, enclaveNamespaceName, serviceAccountLabels)
+	imagePullSecrets := []apiv1.LocalObjectReference{
+		{
+			Name: "kurtosis-image",
+		},
+	}
+	apiContainerServiceAccount, err := backend.kubernetesManager.CreateServiceAccount(ctx, serviceAccountName, enclaveNamespaceName, serviceAccountLabels, imagePullSecrets)
 	if err != nil {
 		errMsg := fmt.Sprintf("An error occurred creating service account '%v' with labels '%+v' in namespace '%v'", serviceAccountName, serviceAccountLabels, enclaveNamespaceName)
 		logrus.Errorf("%s. Error was:\n%s", errMsg, err)
@@ -476,20 +481,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	apiContainerRestartPolicy := apiv1.RestartPolicyOnFailure
 
 	// Create pods with api container containers and volumes in Kubernetes
-	apiContainerPod, err := backend.kubernetesManager.CreatePod(
-		ctx,
-		enclaveNamespaceName,
-		apiContainerPodName,
-		apiContainerPodLabels,
-		apiContainerPodAnnotations,
-		apiContainerInitContainers,
-		apiContainerContainers,
-		apiContainerVolumes,
-		apiContainerServiceAccountName,
-		apiContainerRestartPolicy,
-		noTolerations,
-		noSelectors,
-	)
+	apiContainerPod, err := backend.kubernetesManager.CreatePod(ctx, enclaveNamespaceName, apiContainerPodName, apiContainerPodLabels, apiContainerPodAnnotations, apiContainerInitContainers, apiContainerContainers, apiContainerVolumes, apiContainerServiceAccountName, apiContainerRestartPolicy, noTolerations, noSelectors, false, false)
 	if err != nil {
 		errMsg := fmt.Sprintf("An error occurred while creating the pod with name '%s' in namespace '%s' with image '%s'", apiContainerPodName, enclaveNamespaceName, image)
 		logrus.Errorf("%s. Error was:\n%s", errMsg, err)

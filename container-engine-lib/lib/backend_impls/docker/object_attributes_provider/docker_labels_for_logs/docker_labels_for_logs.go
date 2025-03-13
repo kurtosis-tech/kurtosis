@@ -10,8 +10,6 @@ var DockerLabelsForLogsStream = []*docker_label_key.DockerLabelKey{
 	docker_label_key.ContainerTypeDockerLabelKey,
 	docker_label_key.LogsEnclaveUUIDDockerLabelKey,
 	docker_label_key.LogsServiceUUIDDockerLabelKey,
-	docker_label_key.LogsServiceShortUUIDDockerLabelKey,
-	docker_label_key.LogsServiceNameDockerLabelKey,
 }
 
 func GetDockerLabelsForLogStream() []*docker_label_key.DockerLabelKey {

@@ -35,7 +35,6 @@ const (
 	defaultHttpLogsAggregatorPortNum            = 8686
 	maxWaitForEngineAvailabilityRetries         = 40
 	timeBetweenWaitForEngineAvailabilityRetries = 2 * time.Second
-	logsStorageDirPath                          = "/var/log/kurtosis/"
 )
 
 func CreateEngine(
@@ -281,7 +280,7 @@ func CreateEngine(
 	}
 
 	volumeMounts := map[string]string{
-		logsStorageVolNameStr:         logsStorageDirPath,
+		logsStorageVolNameStr:         logsAggregatorContainer.GetLogsBaseDirPath(),
 		githubAuthStorageVolNameStr:   consts.GitHubAuthStorageDirPath,
 		dockerConfigStorageVolNameStr: consts.DockerConfigStorageDirPath,
 	}

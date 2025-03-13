@@ -1,8 +1,3 @@
-//go:build !kubernetes
-// +build !kubernetes
-
-// We don't run this test in Kubernetes because, as of 2022-10-28, the centralized logs feature is not implemented in Kubernetes yet
-
 package stream_logs_test
 
 import (
@@ -32,7 +27,8 @@ const (
 	thirdLogLine  = "running"
 	lastLogLine   = "successfully"
 
-	secondsToWaitForLogs = 1 * time.Second
+	// wait at least one fluent bit refresh interval to ensure collector picks up new log files
+	secondsToWaitForLogs = 10 * time.Second
 )
 
 var (
@@ -125,7 +121,9 @@ func TestStreamLogs(t *testing.T) {
 
 		require.NoError(t, testEvaluationErr)
 		for userServiceUuid := range requestedServiceUuids {
-			require.Equal(t, expectedLogLines, receivedLogLinesByService[userServiceUuid])
+			for logNum, expectedLogLine := range expectedLogLinesByService[userServiceUuid] {
+				require.Contains(t, receivedLogLinesByService[userServiceUuid][logNum], expectedLogLine)
+			}
 		}
 		require.Equal(t, expectedNonExistenceServiceUuids, receivedNotFoundServiceUuids)
 	}

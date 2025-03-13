@@ -33,4 +33,11 @@ type LogsCollectorDaemonSet interface {
 
 	// GetHttpHealthCheckEndpoint returns endpoint for verifying the availability of the logs collector application on pods managed by the daemon set
 	GetHttpHealthCheckEndpoint() string
+
+	// Clean removes any resources the logs collector creates for durability of logs in the case of crashes (e.g. checkpoint dbs)
+	Clean(
+		ctx context.Context,
+		logsCollectorDaemonSet *appsv1.DaemonSet,
+		kubernetesManager *kubernetes_manager.KubernetesManager,
+	) error
 }

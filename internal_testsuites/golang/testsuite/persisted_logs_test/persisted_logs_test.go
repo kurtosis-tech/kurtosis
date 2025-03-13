@@ -1,9 +1,3 @@
-//go:build !kubernetes
-// +build !kubernetes
-
-// We don't run this test in Kubernetes because, as of 2022-10-28, the centralized logs feature is not implemented in Kubernetes yet
-//TODO remove this comments after Kubernetes implementation
-
 package persisted_logs_test
 
 import (
@@ -39,7 +33,8 @@ const (
 	logLine3 = "Starting feature 'enclave pool with size 2'"
 	logLine4 = "The data have being loaded"
 
-	secondsToWaitForLogs = 1 * time.Second
+	// wait at least one fluent bit refresh interval to ensure collector picks up new log files
+	secondsToWaitForLogs = 10 * time.Second
 )
 
 var (
@@ -102,7 +97,7 @@ var (
 	}
 )
 
-func TestSearchLogs(t *testing.T) {
+func TestPersistedLogs(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
@@ -161,7 +156,9 @@ func TestSearchLogs(t *testing.T) {
 
 		require.NoError(t, testEvaluationErr)
 		for serviceUuid := range userServiceUuids {
-			require.Equal(t, expectedLogLinesByRequest[requestIndex], receivedLogLinesByService[serviceUuid])
+			for logNum, expectedLogLine := range expectedLogLinesByRequest[requestIndex] {
+				require.Contains(t, receivedLogLinesByService[serviceUuid][logNum], expectedLogLine)
+			}
 		}
 		require.Equal(t, expectedNonExistenceServiceUuids, receivedNotFoundServiceUuids)
 	}

@@ -4,6 +4,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_object_name"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/stacktrace"
 	"strings"
@@ -13,6 +14,7 @@ type KubernetesObjectAttributesProvider interface {
 	ForEngine(guid engine.EngineGUID) KubernetesEngineObjectAttributesProvider
 	ForEnclave(enclaveId enclave.EnclaveUUID) KubernetesEnclaveObjectAttributesProvider
 	ForLogsCollector(guid logs_collector.LogsCollectorGuid) KubernetesLogsCollectorObjectAttributesProvider
+	ForLogsAggregator(guid logs_aggregator.LogsAggregatorGuid) KubernetesLogsAggregatorObjectAttributesProvider
 }
 
 func GetKubernetesObjectAttributesProvider() KubernetesObjectAttributesProvider {
@@ -36,6 +38,10 @@ func (provider *kubernetesObjectAttributesProviderImpl) ForEnclave(enclaveId enc
 
 func (provider *kubernetesObjectAttributesProviderImpl) ForLogsCollector(logsCollectorGuid logs_collector.LogsCollectorGuid) KubernetesLogsCollectorObjectAttributesProvider {
 	return GetKubernetesLogsCollectorObjectAttributesProvider(logsCollectorGuid)
+}
+
+func (provider *kubernetesObjectAttributesProviderImpl) ForLogsAggregator(logsAggregatorGuid logs_aggregator.LogsAggregatorGuid) KubernetesLogsAggregatorObjectAttributesProvider {
+	return GetKubernetesLogsAggregatorObjectAttributesProvider(logsAggregatorGuid)
 }
 
 // Gets the name for an enclave object, making sure to put the enclave ID first and join using the standardized separator
