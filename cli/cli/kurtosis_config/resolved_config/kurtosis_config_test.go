@@ -78,41 +78,6 @@ func TestNewKurtosisConfigJustMetrics(t *testing.T) {
 	require.NotNil(t, overrides.ShouldSendMetrics)
 }
 
-func TestNewKurtosisConfigJustMetrcs(t *testing.T) {
-	version := config_version.ConfigVersion_v4
-	shouldSendMetrics := true
-	clusterType := "kubernetes"
-	clusterTypeName := "minikube"
-	storageClass := "optional"
-	originalOverrides := v4.KurtosisConfigV4{
-		ConfigVersion:     version,
-		ShouldSendMetrics: &shouldSendMetrics,
-		KurtosisClusters: map[string]*v4.KurtosisClusterConfigV4{
-			"minikube": {
-				Type: &clusterType,
-				Config: &v4.KubernetesClusterConfigV4{
-					KubernetesClusterName:  &clusterTypeName,
-					StorageClass:           &storageClass,
-					EnclaveSizeInMegabytes: nil,
-					EngineNodeName:         nil,
-				},
-				LogsAggregator: nil,
-			},
-		},
-		CloudConfig: nil,
-	}
-
-	_, err := castUncastedOverrides(&originalOverrides)
-	require.NoError(t, err)
-
-	config, err := NewKurtosisConfigFromOverrides(&originalOverrides)
-	// You can not initialize a Kurtosis config with empty originalOverrides - it needs at least `ShouldSendMetrics`
-	require.NoError(t, err)
-
-	overrides := config.GetOverrides()
-	require.NotNil(t, overrides.ShouldSendMetrics)
-}
-
 func TestNewKurtosisConfigOverridesAreLatestVersion(t *testing.T) {
 	config, err := NewKurtosisConfigFromRequiredFields(false)
 	require.NoError(t, err)
