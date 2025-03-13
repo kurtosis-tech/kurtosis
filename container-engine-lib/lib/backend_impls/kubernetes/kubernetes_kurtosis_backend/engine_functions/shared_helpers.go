@@ -330,16 +330,19 @@ func getMatchingEngineKubernetesResources(ctx context.Context, engineGuids map[e
 		}
 
 		// node selectors
-		engineNodeSelectors, err := kubernetes_resource_collectors.CollectMatchingNodeLabels(
-			ctx,
-			kubernetesManager,
-			engineNodeName,
-			map[string]bool{
-				kurtosisEngineNodeNameKey: true,
-			},
-		)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting node labels of node '%v' engine '%v' in namespace '%v'", engineNodeName, engineGuid, namespaceName)
+		engineNodeSelectors := map[string]string{}
+		if engineNodeName != "" {
+			engineNodeSelectors, err = kubernetes_resource_collectors.CollectMatchingNodeLabels(
+				ctx,
+				kubernetesManager,
+				engineNodeName,
+				map[string]bool{
+					kurtosisEngineNodeNameKey: true,
+				},
+			)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred getting node labels of node '%v' engine '%v' in namespace '%v'", engineNodeName, engineGuid, namespaceName)
+			}
 		}
 
 		engineResources.service = service
