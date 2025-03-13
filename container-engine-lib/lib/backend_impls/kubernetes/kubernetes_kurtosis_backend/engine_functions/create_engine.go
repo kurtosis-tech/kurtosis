@@ -161,7 +161,7 @@ func CreateEngine(
 		engineNodeSelectors[kurtosisEngineNodeNameKey] = engineNodeName
 		err = kubernetesManager.AddLabelsToNode(ctx, engineNodeName, engineNodeSelectors)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred labeling node '%v' with selectors '%v'.", engineNodeSelectors)
+			return nil, stacktrace.Propagate(err, "An error occurred labeling node '%v' with selectors '%v'.", engineNodeName, engineNodeSelectors)
 		}
 		shouldRemoveEngineNodeSelectors = true
 		defer func() {

@@ -39,10 +39,6 @@ const (
 	noProductionMode              = false
 )
 
-var (
-	noEngineSelectors = map[string]string{}
-)
-
 type KubernetesKurtosisBackend struct {
 	kubernetesManager *kubernetes_manager.KubernetesManager
 

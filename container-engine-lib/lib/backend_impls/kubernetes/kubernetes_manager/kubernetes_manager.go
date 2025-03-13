@@ -2408,7 +2408,10 @@ func (manager *KubernetesManager) AddLabelsToNode(ctx context.Context, nodeName 
 	}
 
 	_, err = nodeClient.Update(ctx, node, metav1.UpdateOptions{
-		TypeMeta:        metav1.TypeMeta{},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
 		DryRun:          nil,
 		FieldManager:    "",
 		FieldValidation: "",
@@ -2434,7 +2437,10 @@ func (manager *KubernetesManager) RemoveLabelsFromNode(ctx context.Context, node
 	}
 
 	_, err = nodeClient.Update(ctx, node, metav1.UpdateOptions{
-		TypeMeta:        metav1.TypeMeta{},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
 		DryRun:          nil,
 		FieldManager:    "",
 		FieldValidation: "",

@@ -124,13 +124,15 @@ func getMatchingEngineKubernetesResources(
 		engineResources, found := result[engineGuid]
 		if !found {
 			engineResources = &engineKubernetesResources{
-				clusterRole:        nil,
-				clusterRoleBinding: nil,
-				namespace:          nil,
-				serviceAccount:     nil,
-				service:            nil,
-				pod:                nil,
-				ingress:            nil,
+				clusterRole:         nil,
+				clusterRoleBinding:  nil,
+				namespace:           nil,
+				serviceAccount:      nil,
+				service:             nil,
+				pod:                 nil,
+				ingress:             nil,
+				engineNodeName:      "",
+				engineNodeSelectors: map[string]string{},
 			}
 		}
 		engineResources.namespace = namespacesForId[0]
@@ -160,13 +162,15 @@ func getMatchingEngineKubernetesResources(
 		engineResources, found := result[engineGuid]
 		if !found {
 			engineResources = &engineKubernetesResources{
-				clusterRole:        nil,
-				clusterRoleBinding: nil,
-				namespace:          nil,
-				serviceAccount:     nil,
-				service:            nil,
-				pod:                nil,
-				ingress:            nil,
+				clusterRole:         nil,
+				clusterRoleBinding:  nil,
+				namespace:           nil,
+				serviceAccount:      nil,
+				service:             nil,
+				pod:                 nil,
+				ingress:             nil,
+				engineNodeName:      "",
+				engineNodeSelectors: map[string]string{},
 			}
 		}
 		engineResources.clusterRole = clusterRolesForId[0]
@@ -196,13 +200,15 @@ func getMatchingEngineKubernetesResources(
 		engineResources, found := result[engineGuid]
 		if !found {
 			engineResources = &engineKubernetesResources{
-				clusterRole:        nil,
-				clusterRoleBinding: nil,
-				namespace:          nil,
-				serviceAccount:     nil,
-				service:            nil,
-				pod:                nil,
-				ingress:            nil,
+				clusterRole:         nil,
+				clusterRoleBinding:  nil,
+				namespace:           nil,
+				serviceAccount:      nil,
+				service:             nil,
+				pod:                 nil,
+				ingress:             nil,
+				engineNodeName:      "",
+				engineNodeSelectors: map[string]string{},
 			}
 		}
 		engineResources.clusterRoleBinding = clusterRoleBindingsForId[0]
