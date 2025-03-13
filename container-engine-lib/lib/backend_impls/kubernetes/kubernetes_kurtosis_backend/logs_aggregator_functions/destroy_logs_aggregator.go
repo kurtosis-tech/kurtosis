@@ -2,6 +2,7 @@ package logs_aggregator_functions
 
 import (
 	"context"
+	"errors"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -24,28 +25,36 @@ func DestroyLogsAggregator(ctx context.Context, kubernetesManager *kubernetes_ma
 		return nil
 	}
 
-	var destroyErr error
+	var destroyErrs []error
 	if logsAggregatorResources.deployment != nil {
 		if err := kubernetesManager.RemoveDeployment(ctx, logsAggregatorNamespace.Name, logsAggregatorResources.deployment); err != nil {
-			destroyErr = stacktrace.Propagate(err, "An error occurred removing logs aggregator deployment.")
+			destroyErrs = append(destroyErrs, stacktrace.Propagate(err, "An error occurred removing logs aggregator deployment."))
 		}
 	}
 
 	if logsAggregatorResources.configMap != nil {
 		if err := kubernetesManager.RemoveConfigMap(ctx, logsAggregatorNamespace.Name, logsAggregatorResources.configMap); err != nil {
-			destroyErr = stacktrace.Propagate(err, "An error occurred removing logs aggregator config map.")
+			destroyErrs = append(destroyErrs, stacktrace.Propagate(err, "An error occurred removing logs aggregator config map."))
 		}
 	}
 
 	if logsAggregatorResources.service != nil {
 		if err := kubernetesManager.RemoveService(ctx, logsAggregatorResources.service); err != nil {
-			destroyErr = stacktrace.Propagate(err, "An error occurred removing logs aggregator service.")
+			destroyErrs = append(destroyErrs, stacktrace.Propagate(err, "An error occurred removing logs aggregator service."))
 		}
 	}
 
 	if err := kubernetesManager.RemoveNamespace(ctx, logsAggregatorNamespace); err != nil {
-		destroyErr = stacktrace.Propagate(err, "An error occurred removing logs aggregator namespace.")
+		destroyErrs = append(destroyErrs, stacktrace.Propagate(err, "An error occurred removing logs aggregator namespace."))
 	}
 
-	return destroyErr
+	if len(destroyErrs) > 0 {
+		errMsg := "Following errors occurred trying to destroy logs aggregator:\n"
+		for _, destroyErr := range destroyErrs {
+			errMsg += destroyErr.Error() + "\n"
+		}
+		return errors.New(errMsg)
+	}
+
+	return nil
 }

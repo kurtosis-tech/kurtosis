@@ -155,6 +155,7 @@ func CreateEngine(
 	}()
 
 	// if engine node specified, label node with engine node name so engine node gets schedule on this node via node selectors passed to create pod
+	// the engine needs to be placed on a node to have the access to the same logs database for users, if engine gets scheduled on different nodes, there will be inconsistencies in logs
 	engineNodeSelectors := map[string]string{}
 	shouldRemoveEngineNodeSelectors := false
 	if engineNodeName != "" {
