@@ -48,29 +48,29 @@ func migrateFromV3(uncastedConfig interface{}) (interface{}, error) {
 		newClusters = map[string]*v4.KurtosisClusterConfigV4{}
 		for oldClusterName, oldClusterConfig := range castedOldConfig.KurtosisClusters {
 			oldKubernetesConfig := oldClusterConfig.Config
+			oldLogsAggregatorConfig := oldClusterConfig.LogsAggregator
 
-			emptyEngineNodeName := ""
 			var newKubernetesConfig *v4.KubernetesClusterConfigV4
 			if oldKubernetesConfig != nil {
 				newKubernetesConfig = &v4.KubernetesClusterConfigV4{
 					KubernetesClusterName:  oldKubernetesConfig.KubernetesClusterName,
 					StorageClass:           oldKubernetesConfig.StorageClass,
 					EnclaveSizeInMegabytes: oldKubernetesConfig.EnclaveSizeInMegabytes,
-					EngineNodeName:         &emptyEngineNodeName,
+					EngineNodeName:         nil,
 				}
 			}
 
-			var newLogsAggregatorConfigV4 *v4.LogsAggregatorConfigV4
-			if oldClusterConfig.LogsAggregator != nil {
-				newLogsAggregatorConfigV4 = &v4.LogsAggregatorConfigV4{
-					Sinks: oldClusterConfig.LogsAggregator.Sinks,
+			var newLogsAggregator *v4.LogsAggregatorConfigV4
+			if oldLogsAggregatorConfig != nil {
+				newLogsAggregator = &v4.LogsAggregatorConfigV4{
+					Sinks: oldLogsAggregatorConfig.Sinks,
 				}
 			}
 
 			newClusterConfig := &v4.KurtosisClusterConfigV4{
 				Type:           oldClusterConfig.Type,
 				Config:         newKubernetesConfig,
-				LogsAggregator: newLogsAggregatorConfigV4,
+				LogsAggregator: newLogsAggregator,
 			}
 			newClusters[oldClusterName] = newClusterConfig
 		}
@@ -86,7 +86,7 @@ func migrateFromV3(uncastedConfig interface{}) (interface{}, error) {
 	}
 
 	newConfig := &v4.KurtosisConfigV4{
-		ConfigVersion:     config_version.ConfigVersion_v3,
+		ConfigVersion:     config_version.ConfigVersion_v4,
 		ShouldSendMetrics: castedOldConfig.ShouldSendMetrics,
 		KurtosisClusters:  newClusters,
 		CloudConfig:       newCloudConfig,

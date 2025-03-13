@@ -5,6 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/config_version"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_deserializers"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_migrators"
+	v3 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v3"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -133,6 +134,10 @@ func (configStore *kurtosisConfigStore) getKurtosisConfigFromYAMLFile() (*resolv
 		)
 	}
 
+	_, ok := kurtosisConfigOverrides.(*v3.KurtosisConfigV3)
+	if !ok {
+		logrus.Infof("Nope can't cast: \n%v", kurtosisConfigOverrides)
+	}
 	kurtosisConfig, err := resolved_config.NewKurtosisConfigFromOverrides(kurtosisConfigOverrides)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kurtosis config from overrides: %+v", kurtosisConfigOverrides)

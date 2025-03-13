@@ -28,7 +28,6 @@ type KurtosisClusterConfig struct {
 	engineBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
 	clusterType                 KurtosisClusterType
 	logsAggregator              LogsAggregatorConfig
-	engineNodeName              string
 }
 
 type LogsAggregatorConfig struct {
