@@ -37,11 +37,12 @@ const (
 	logsVolumeName                                       = "logsdb"
 )
 
-var noWait *port_spec.Wait = nil
-
-// TODO add support for passing toleration to Engine
-var noToleration []apiv1.Toleration = nil
-var noSelectors map[string]string = nil
+var (
+	noWait *port_spec.Wait = nil
+	// TODO add support for passing toleration to Engine
+	noToleration              []apiv1.Toleration = nil
+	kurtosisEngineNodeNameKey                    = kubernetes_label_key.EngineNodeLabelKey.GetString()
+)
 
 func CreateEngine(
 	ctx context.Context,
@@ -51,6 +52,7 @@ func CreateEngine(
 	envVars map[string]string,
 	_ bool, //It's not required to add extra configuration in K8S for enabling the debug server
 	githubAuthToken string,
+	engineNodeName string,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
 ) (
@@ -152,9 +154,29 @@ func CreateEngine(
 		}
 	}()
 
+	// if engine node specified, label node with engine node name so engine node gets schedule on this node via node selectors passed to create pod
+	engineNodeSelectors := map[string]string{}
+	shouldRemoveEngineNodeSelectors := false
+	if engineNodeName != "" {
+		engineNodeSelectors[kurtosisEngineNodeNameKey] = engineNodeName
+		err = kubernetesManager.AddLabelsToNode(ctx, engineNodeName, engineNodeSelectors)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred labeling node '%v' with selectors '%v'.", engineNodeSelectors)
+		}
+		shouldRemoveEngineNodeSelectors = true
+		defer func() {
+			if shouldRemoveEngineNodeSelectors {
+				if err := kubernetesManager.RemoveLabelsFromNode(ctx, engineNodeName, engineNodeSelectors); err != nil {
+					logrus.Errorf("Creating the engine didn't complete successfully, so we tried to remove engine node selectors '%v' from node '%v' that we created but an error was thrown:\n%v", engineNodeSelectors, engineNodeName, err)
+					logrus.Errorf("ACTION REQUIRED: You'll need to manually remove node selectors '%v' on node with name '%v'!!!!!!!", engineNodeSelectors, engineNodeName)
+				}
+			}
+		}()
+	}
+
 	logsAggregatorDeployment := vector.NewVectorLogsAggregatorDeployment()
 
-	enginePod, enginePodLabels, err := createEnginePod(ctx, namespaceName, engineAttributesProvider, imageOrgAndRepo, imageVersionTag, envVars, privatePortSpecs, logsAggregatorDeployment.GetLogsBaseDirPath(), serviceAccount.Name, kubernetesManager)
+	enginePod, enginePodLabels, err := createEnginePod(ctx, namespaceName, engineNodeSelectors, engineAttributesProvider, imageOrgAndRepo, imageVersionTag, envVars, privatePortSpecs, logsAggregatorDeployment.GetLogsBaseDirPath(), serviceAccount.Name, kubernetesManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the engine pod")
 	}
@@ -213,13 +235,15 @@ func CreateEngine(
 	}()
 
 	engineResources := &engineKubernetesResources{
-		clusterRole:        clusterRole,
-		clusterRoleBinding: clusterRoleBindings,
-		namespace:          namespace,
-		serviceAccount:     serviceAccount,
-		service:            engineService,
-		pod:                enginePod,
-		ingress:            engineIngress,
+		clusterRole:         clusterRole,
+		clusterRoleBinding:  clusterRoleBindings,
+		namespace:           namespace,
+		serviceAccount:      serviceAccount,
+		service:             engineService,
+		pod:                 enginePod,
+		ingress:             engineIngress,
+		engineNodeSelectors: engineNodeSelectors,
+		engineNodeName:      engineNodeName,
 	}
 	engineObjsById, err := getEngineObjectsFromKubernetesResources(map[engine.EngineGUID]*engineKubernetesResources{
 		engineGuid: engineResources,
@@ -287,6 +311,7 @@ func CreateEngine(
 	logrus.Infof("Centralized logs components started.")
 
 	shouldRemoveLogsCollector = false
+	shouldRemoveEngineNodeSelectors = false
 	shouldRemoveLogsAggregator = false
 	shouldRemoveNamespace = false
 	shouldRemoveServiceAccount = false
@@ -459,6 +484,7 @@ func createEngineClusterRoleBindings(
 func createEnginePod(
 	ctx context.Context,
 	namespace string,
+	nodeSelectors map[string]string,
 	engineAttributesProvider object_attributes_provider.KubernetesEngineObjectAttributesProvider,
 	imageOrgAndRepo string,
 	imageVersionTag string,
@@ -531,7 +557,7 @@ func createEnginePod(
 	engineInitContainers := []apiv1.Container{}
 
 	// Create pods with engine containers and volumes in kubernetes
-	pod, err := kubernetesManager.CreatePod(ctx, namespace, enginePodName, enginePodLabelStrs, enginePodAnnotationStrs, engineInitContainers, engineContainers, engineVolumes, serviceAccountName, apiv1.RestartPolicyNever, noToleration, noSelectors, false, false)
+	pod, err := kubernetesManager.CreatePod(ctx, namespace, enginePodName, enginePodLabelStrs, enginePodAnnotationStrs, engineInitContainers, engineContainers, engineVolumes, serviceAccountName, apiv1.RestartPolicyNever, noToleration, nodeSelectors, false, false)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while creating the pod with name '%s' in namespace '%s' with image '%s'", enginePodName, namespace, containerImageAndTag)
 	}

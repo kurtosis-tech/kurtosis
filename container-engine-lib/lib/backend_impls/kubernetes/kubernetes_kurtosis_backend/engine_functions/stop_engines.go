@@ -49,6 +49,22 @@ func StopEngines(
 			}
 		}
 
+		if resources.engineNodeName != "" {
+			engineNodeName := resources.engineNodeName
+			engineNodeSelectors := resources.engineNodeSelectors
+			if err := kubernetesManager.RemoveLabelsFromNode(ctx, engineNodeName, engineNodeSelectors); err != nil {
+				erroredEngineGuids[engineGuid] = stacktrace.Propagate(
+					err,
+					"An error occurred removing labels '%v' from node '%v' for engine '%v'",
+					engineNodeSelectors,
+					engineNodeName,
+					engineGuid,
+				)
+				continue
+			}
+
+		}
+
 		kubernetesService := resources.service
 		if kubernetesService != nil {
 			serviceName := kubernetesService.Name

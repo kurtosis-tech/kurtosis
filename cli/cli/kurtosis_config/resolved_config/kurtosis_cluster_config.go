@@ -167,6 +167,7 @@ func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesC
 			)
 		}
 		storageClass := *kubernetesConfig.StorageClass
+		engineNodeSelectors := map[string]string{} // TODO: add node selectors to kubernetes config
 
 		enclaveDataVolumeSizeInMb := defaultKubernetesEnclaveDataVolumeSizeInMegabytes
 		if kubernetesConfig.EnclaveSizeInMegabytes != nil {
@@ -174,7 +175,7 @@ func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesC
 		}
 
 		backendSupplier = func(ctx context.Context) (backend_interface.KurtosisBackend, error) {
-			backend, err := kubernetes_kurtosis_backend.GetCLIBackend(ctx, *kubernetesConfig.StorageClass)
+			backend, err := kubernetes_kurtosis_backend.GetCLIBackend(ctx, *kubernetesConfig.StorageClass, engineNodeSelectors)
 			if err != nil {
 				return nil, stacktrace.Propagate(
 					err,

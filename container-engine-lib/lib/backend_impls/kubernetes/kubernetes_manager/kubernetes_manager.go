@@ -2394,6 +2394,58 @@ func (manager *KubernetesManager) HasComputeNodes(ctx context.Context) (bool, er
 	return len(nodes.Items) != 0, nil
 }
 
+func (manager *KubernetesManager) AddLabelsToNode(ctx context.Context, nodeName string, labels map[string]string) error {
+	nodeClient := manager.kubernetesClientSet.CoreV1().Nodes()
+
+	node, err := nodeClient.Get(ctx, nodeName, globalGetOptions)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while trying to get node '%v'. Ensure node with name '%v' exists in cluster.", nodeName, nodeName)
+	}
+
+	// add node selectors to existing labels
+	for k, v := range labels {
+		node.Labels[k] = v
+	}
+
+	_, err = nodeClient.Update(ctx, node, metav1.UpdateOptions{
+		TypeMeta:        metav1.TypeMeta{},
+		DryRun:          nil,
+		FieldManager:    "",
+		FieldValidation: "",
+	})
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while trying to update node '%v' with labels '%v'", nodeName, labels)
+	}
+
+	return nil
+}
+
+func (manager *KubernetesManager) RemoveLabelsFromNode(ctx context.Context, nodeName string, labels map[string]string) error {
+	nodeClient := manager.kubernetesClientSet.CoreV1().Nodes()
+
+	node, err := nodeClient.Get(ctx, nodeName, globalGetOptions)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while trying to get node '%v'. Ensure node with name '%v' exists in cluster.", nodeName, nodeName)
+	}
+
+	// add node selectors to existing labels
+	for k := range labels {
+		delete(node.Labels, k)
+	}
+
+	_, err = nodeClient.Update(ctx, node, metav1.UpdateOptions{
+		TypeMeta:        metav1.TypeMeta{},
+		DryRun:          nil,
+		FieldManager:    "",
+		FieldValidation: "",
+	})
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while trying to remove labels '%v' from node '%v'", labels, nodeName)
+	}
+
+	return nil
+}
+
 // ---------------------------Ingresses------------------------------------------------------------------------------
 
 func (manager *KubernetesManager) CreateIngress(ctx context.Context, namespace string, name string, labels map[string]string, annotations map[string]string, rules []netv1.IngressRule) (*netv1.Ingress, error) {

@@ -39,6 +39,10 @@ const (
 	noProductionMode              = false
 )
 
+var (
+	noEngineSelectors = map[string]string{}
+)
+
 type KubernetesKurtosisBackend struct {
 	kubernetesManager *kubernetes_manager.KubernetesManager
 
@@ -53,6 +57,9 @@ type KubernetesKurtosisBackend struct {
 
 	// Whether services should be restarted
 	productionMode bool
+
+	// Name of node that engine will get scheduled on via a node selector
+	engineNodeName string
 }
 
 func (backend *KubernetesKurtosisBackend) DumpKurtosis(ctx context.Context, outputDirpath string) error {
@@ -67,6 +74,7 @@ func newKubernetesKurtosisBackend(
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
 	productionMoe bool,
+	engineNodeName string,
 ) *KubernetesKurtosisBackend {
 	objAttrsProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
 	return &KubernetesKurtosisBackend{
@@ -76,6 +84,7 @@ func newKubernetesKurtosisBackend(
 		engineServerModeArgs: engineServerModeArgs,
 		apiContainerModeArgs: apiContainerModeArgs,
 		productionMode:       productionMoe,
+		engineNodeName:       engineNodeName,
 	}
 }
 
@@ -93,6 +102,7 @@ func NewAPIContainerKubernetesKurtosisBackend(
 		nil,
 		modeArgs,
 		productionMode,
+		"",
 	)
 }
 
@@ -106,11 +116,13 @@ func NewEngineServerKubernetesKurtosisBackend(
 		modeArgs,
 		nil,
 		noProductionMode,
+		"",
 	)
 }
 
 func NewCLIModeKubernetesKurtosisBackend(
 	kubernetesManager *kubernetes_manager.KubernetesManager,
+	engineNodeName string,
 ) *KubernetesKurtosisBackend {
 	modeArgs := &shared_helpers.CliModeArgs{}
 	return newKubernetesKurtosisBackend(
@@ -119,6 +131,7 @@ func NewCLIModeKubernetesKurtosisBackend(
 		nil,
 		nil,
 		noProductionMode,
+		engineNodeName,
 	)
 }
 
@@ -153,6 +166,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 		envVars,
 		shouldStartInDebugMode,
 		githubAuthToken,
+		backend.engineNodeName,
 		backend.kubernetesManager,
 		backend.objAttrsProvider,
 	)
