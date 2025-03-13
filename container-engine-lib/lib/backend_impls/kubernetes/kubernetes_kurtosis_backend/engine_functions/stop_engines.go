@@ -50,7 +50,6 @@ func StopEngines(
 			}
 		}
 
-		logrus.Infof("engine node name %v", resources.engineNodeName)
 		if resources.engineNodeName != "" {
 			engineNodeName := resources.engineNodeName
 			engineNodeSelectors := resources.engineNodeSelectors

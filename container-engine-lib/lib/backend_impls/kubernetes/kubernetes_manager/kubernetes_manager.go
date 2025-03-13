@@ -2449,7 +2449,7 @@ func (manager *KubernetesManager) RemoveLabelsFromNode(ctx context.Context, node
 		return stacktrace.Propagate(err, "An error occurred while trying to remove labels '%v' from node '%v'", labels, nodeName)
 	}
 
-	logrus.Infof("Successfullly removed label %v from node %v", labels, nodeName)
+	logrus.Debugf("Successfullly removed label %v from node %v", labels, nodeName)
 
 	return nil
 }
