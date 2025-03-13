@@ -15,12 +15,13 @@ func StopEngines(
 	ctx context.Context,
 	filters *engine.EngineFilters,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
+	engineNodeName string,
 ) (
 	resultSuccessfulEngineGuids map[engine.EngineGUID]bool,
 	resultErroredEngineGuids map[engine.EngineGUID]error,
 	resultErr error,
 ) {
-	_, matchingKubernetesResources, err := getMatchingEngineObjectsAndKubernetesResources(ctx, filters, kubernetesManager)
+	_, matchingKubernetesResources, err := getMatchingEngineObjectsAndKubernetesResources(ctx, filters, kubernetesManager, engineNodeName)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engines and Kubernetes resources matching filters '%+v'", filters)
 	}
@@ -49,6 +50,7 @@ func StopEngines(
 			}
 		}
 
+		logrus.Infof("engine node name %v", resources.engineNodeName)
 		if resources.engineNodeName != "" {
 			engineNodeName := resources.engineNodeName
 			engineNodeSelectors := resources.engineNodeSelectors

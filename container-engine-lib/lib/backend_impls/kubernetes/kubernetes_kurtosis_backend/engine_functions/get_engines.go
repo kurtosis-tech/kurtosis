@@ -11,8 +11,9 @@ func GetEngines(
 	ctx context.Context,
 	filters *engine.EngineFilters,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
+	engineNodeName string,
 ) (map[engine.EngineGUID]*engine.Engine, error) {
-	matchingEngines, _, err := getMatchingEngineObjectsAndKubernetesResources(ctx, filters, kubernetesManager)
+	matchingEngines, _, err := getMatchingEngineObjectsAndKubernetesResources(ctx, filters, kubernetesManager, engineNodeName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting engines matching the following filters: %+v", filters)
 	}

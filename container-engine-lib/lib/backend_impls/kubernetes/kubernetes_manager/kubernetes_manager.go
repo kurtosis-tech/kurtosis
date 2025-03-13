@@ -2449,7 +2449,20 @@ func (manager *KubernetesManager) RemoveLabelsFromNode(ctx context.Context, node
 		return stacktrace.Propagate(err, "An error occurred while trying to remove labels '%v' from node '%v'", labels, nodeName)
 	}
 
+	logrus.Infof("Successfullly removed label %v from node %v", labels, nodeName)
+
 	return nil
+}
+
+func (manager *KubernetesManager) GetLabelsOnNode(ctx context.Context, nodeName string) (map[string]string, error) {
+	nodeClient := manager.kubernetesClientSet.CoreV1().Nodes()
+
+	node, err := nodeClient.Get(ctx, nodeName, globalGetOptions)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while trying to get node '%v'. Ensure node with name '%v' exists in cluster.", nodeName, nodeName)
+	}
+
+	return node.Labels, nil
 }
 
 // ---------------------------Ingresses------------------------------------------------------------------------------

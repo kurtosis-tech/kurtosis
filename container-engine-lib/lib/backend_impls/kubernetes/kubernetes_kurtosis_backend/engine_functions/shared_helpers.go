@@ -44,12 +44,13 @@ func getMatchingEngineObjectsAndKubernetesResources(
 	ctx context.Context,
 	filters *engine.EngineFilters,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
+	engineNodeName string,
 ) (
 	map[engine.EngineGUID]*engine.Engine,
 	map[engine.EngineGUID]*engineKubernetesResources,
 	error,
 ) {
-	matchingResources, err := getMatchingEngineKubernetesResources(ctx, filters.GUIDs, kubernetesManager)
+	matchingResources, err := getMatchingEngineKubernetesResources(ctx, filters.GUIDs, kubernetesManager, engineNodeName)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engine Kubernetes resources matching GUIDs: %+v", filters.GUIDs)
 	}
@@ -84,14 +85,7 @@ func getMatchingEngineObjectsAndKubernetesResources(
 }
 
 // Get back any and all engine's Kubernetes resources matching the given UUIDs, where a nil or empty map == "match all UUIDs"
-func getMatchingEngineKubernetesResources(
-	ctx context.Context,
-	engineGuids map[engine.EngineGUID]bool,
-	kubernetesManager *kubernetes_manager.KubernetesManager,
-) (
-	map[engine.EngineGUID]*engineKubernetesResources,
-	error,
-) {
+func getMatchingEngineKubernetesResources(ctx context.Context, engineGuids map[engine.EngineGUID]bool, kubernetesManager *kubernetes_manager.KubernetesManager, engineNodeName string) (map[engine.EngineGUID]*engineKubernetesResources, error) {
 	engineMatchLabels := getEngineMatchLabels()
 
 	result := map[engine.EngineGUID]*engineKubernetesResources{}
@@ -335,10 +329,25 @@ func getMatchingEngineKubernetesResources(
 			ingress = ingressesForId[0]
 		}
 
+		// node selectors
+		engineNodeSelectors, err := kubernetes_resource_collectors.CollectMatchingNodeLabels(
+			ctx,
+			kubernetesManager,
+			engineNodeName,
+			map[string]bool{
+				kurtosisEngineNodeNameKey: true,
+			},
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting node labels of node '%v' engine '%v' in namespace '%v'", engineNodeName, engineGuid, namespaceName)
+		}
+
 		engineResources.service = service
 		engineResources.pod = pod
 		engineResources.serviceAccount = serviceAccount
 		engineResources.ingress = ingress
+		engineResources.engineNodeSelectors = engineNodeSelectors
+		engineResources.engineNodeName = engineNodeName
 	}
 
 	return result, nil

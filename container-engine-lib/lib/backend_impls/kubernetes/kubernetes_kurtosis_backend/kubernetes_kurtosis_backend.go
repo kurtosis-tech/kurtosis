@@ -183,7 +183,7 @@ func (backend *KubernetesKurtosisBackend) GetEngines(
 	ctx context.Context,
 	filters *engine.EngineFilters,
 ) (map[engine.EngineGUID]*engine.Engine, error) {
-	engines, err := engine_functions.GetEngines(ctx, filters, backend.kubernetesManager)
+	engines, err := engine_functions.GetEngines(ctx, filters, backend.kubernetesManager, backend.engineNodeName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting engines using filters '%+v'", filters)
 	}
@@ -208,7 +208,7 @@ func (backend *KubernetesKurtosisBackend) StopEngines(
 	resultErroredEngineGuids map[engine.EngineGUID]error,
 	resultErr error,
 ) {
-	successfulEngineGuids, erroredEngineGuids, err := engine_functions.StopEngines(ctx, filters, backend.kubernetesManager)
+	successfulEngineGuids, erroredEngineGuids, err := engine_functions.StopEngines(ctx, filters, backend.kubernetesManager, backend.engineNodeName)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping engines using filters '%+v'", filters)
 	}
@@ -223,7 +223,7 @@ func (backend *KubernetesKurtosisBackend) DestroyEngines(
 	resultErroredEngineGuids map[engine.EngineGUID]error,
 	resultErr error,
 ) {
-	successfulEngineGuids, erroredEngineGuids, err := engine_functions.DestroyEngines(ctx, filters, backend.kubernetesManager)
+	successfulEngineGuids, erroredEngineGuids, err := engine_functions.DestroyEngines(ctx, filters, backend.kubernetesManager, backend.engineNodeName)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying engines using filters '%+v'", filters)
 	}

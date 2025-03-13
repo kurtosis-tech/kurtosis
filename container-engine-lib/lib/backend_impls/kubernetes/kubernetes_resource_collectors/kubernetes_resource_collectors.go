@@ -219,6 +219,28 @@ func CollectMatchingConfigMaps(
 	return postFilterKubernetesResources(getListOfPointersFromListOfElements(objects.Items), postFilterLabelKey, postFilterLabelValues)
 }
 
+func CollectMatchingNodeLabels(
+	ctx context.Context,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+	nodeName string,
+	searchLabels map[string]bool,
+) (
+	map[string]string,
+	error,
+) {
+	labels, err := kubernetesManager.GetLabelsOnNode(ctx, nodeName)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes resources matching labels: %+v", searchLabels)
+	}
+	matchingNodeLabels := map[string]string{}
+	for k, v := range labels {
+		if _, ok := searchLabels[k]; ok {
+			matchingNodeLabels[k] = v
+		}
+	}
+	return matchingNodeLabels, nil
+}
+
 func getListOfPointersFromListOfElements[T any](list []T) []*T {
 	newList := []*T{}
 	for idx := range list {
