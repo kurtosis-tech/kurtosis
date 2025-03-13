@@ -17,7 +17,8 @@ const (
 	vectorDataDirVolumeName = "varlibvector"
 	vectorDataDirMountPath  = "/var/lib/vector"
 
-	bufferSizeStr        = "268435488"
+	bufferSizeStr = "268435488" // 256 MB is min for vector
+
 	vectorConfigFileName = "vector.toml"
 	vectorConfigFmtStr   = `
     data_dir = "%v"
