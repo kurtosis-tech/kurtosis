@@ -37,7 +37,7 @@ const (
 	// We create a duplicate of the enclave uuid and service uuid label key because:
 	// the logs aggregator (vector) needs the enclave uuid and service uuid label keys to create the filepath where logs are stored in persistent volume
 	// but vectors template syntax can't interpret the "com.kurtosistech." prefix, so we can't use the existing label keys
-	logsLabelPrefixStr                = "kurtosis-"
+	logsLabelPrefixStr                = "kurtosis_"
 	logsOnlyEnclaveUuidLabelKeyStr    = logsLabelPrefixStr + "enclave_uuid"
 	logsOnlyServiceUuidDockerLabelKey = logsLabelPrefixStr + "service_uuid"
 

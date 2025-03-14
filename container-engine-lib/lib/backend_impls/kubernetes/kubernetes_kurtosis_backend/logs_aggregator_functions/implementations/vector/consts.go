@@ -10,8 +10,7 @@ const (
 	kurtosisLogsVolumeName = "varlogskurtosis"
 	kurtosisLogsMountPath  = "/var/log/kurtosis"
 
-	apiPortStr = "8686"
-	apiPort    = 8686
+	apiPort = 8686
 
 	// mount the data directory as the disk buffer for file sink is contained here and needs to be persisted onto the k8s node in case vector restarts
 	vectorDataDirVolumeName = "varlibvector"

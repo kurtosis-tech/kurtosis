@@ -17,13 +17,13 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"strconv"
 	"time"
 )
 
 const (
 	retryInterval        = 1 * time.Second
 	maxRetries           = 30
-	successExitCode      = 0
 	preCleanNumReplicas  = 0
 	postCleanNumReplicas = 1
 )
@@ -39,13 +39,15 @@ func (logsAggregator *vectorLogsAggregatorDeployment) CreateAndStart(
 	logsListeningPortNum uint16,
 	engineNamespace string,
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
-	kubernetesManager *kubernetes_manager.KubernetesManager) (
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+) (
 	*apiv1.Service,
 	*appsv1.Deployment,
 	*apiv1.Namespace,
 	*apiv1.ConfigMap,
 	func(),
-	error) {
+	error,
+) {
 	logsAggregatorGuidStr, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
 		return nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating uuid for logs collector.")
@@ -166,7 +168,12 @@ func createLogsAggregatorDeployment(
 	logsListeningPort uint16,
 	configMapName string,
 	objAttrProvider object_attributes_provider.KubernetesLogsAggregatorObjectAttributesProvider,
-	kubernetesManager *kubernetes_manager.KubernetesManager) (*appsv1.Deployment, map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue, error) {
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+) (
+	*appsv1.Deployment,
+	map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue,
+	error,
+) {
 	deploymentAttrProvider, err := objAttrProvider.ForLogsAggregatorDeployment()
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting logs aggregator deployment attributes provider.")
@@ -325,7 +332,8 @@ func createLogsAggregatorService(
 	logListeningPort uint16,
 	logsAggregatorDeploymentLabels map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue,
 	objAttrProvider object_attributes_provider.KubernetesLogsAggregatorObjectAttributesProvider,
-	kubernetesManager *kubernetes_manager.KubernetesManager) (*apiv1.Service, error) {
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+) (*apiv1.Service, error) {
 	serviceAttrProvider, err := objAttrProvider.ForLogsAggregatorNamespace()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while getting logs aggregator namespace attributes provider.")
@@ -334,7 +342,7 @@ func createLogsAggregatorService(
 	serviceLabels := shared_helpers.GetStringMapFromLabelMap(serviceAttrProvider.GetLabels())
 	serviceAnnotations := shared_helpers.GetStringMapFromAnnotationMap(serviceAttrProvider.GetAnnotations())
 
-	// for now logs aggregator will only be reachable form within the cluster
+	// for now logs aggregator will only be reachable from within the cluster
 	// this might need to changed later for exporting logs cluster
 	serviceType := apiv1.ServiceTypeClusterIP
 
@@ -379,7 +387,11 @@ func createLogsAggregatorConfigMap(
 	namespace string,
 	logListeningPortNum uint16,
 	objAttrProvider object_attributes_provider.KubernetesLogsAggregatorObjectAttributesProvider,
-	kubernetesManager *kubernetes_manager.KubernetesManager) (*apiv1.ConfigMap, error) {
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+) (
+	*apiv1.ConfigMap,
+	error,
+) {
 	configMapAttrProvider, err := objAttrProvider.ForLogsAggregatorConfigMap()
 	if err != nil {
 		return nil, err
@@ -398,7 +410,7 @@ func createLogsAggregatorConfigMap(
 			vectorConfigFileName: fmt.Sprintf(
 				vectorConfigFmtStr,
 				vectorDataDirMountPath,
-				apiPortStr,
+				strconv.Itoa(apiPort),
 				logListeningPortNum,
 				kurtosisLogsMountPath,
 				kubernetes_label_key.LogsEnclaveUUIDKubernetesLabelKey.GetString(),

@@ -38,9 +38,9 @@ const (
 )
 
 var (
-	noWait *port_spec.Wait = nil
+	engineWait *port_spec.Wait = nil
 	// TODO add support for passing toleration to Engine
-	noToleration              []apiv1.Toleration = nil
+	engineToleration          []apiv1.Toleration = nil
 	kurtosisEngineNodeNameKey                    = kubernetes_label_key.EngineNodeLabelKey.GetString()
 )
 
@@ -73,7 +73,7 @@ func CreateEngine(
 	}
 	engineGuid := engine.EngineGUID(engineGuidStr)
 
-	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, consts.KurtosisServersTransportProtocol, httpApplicationProtocol, noWait, "")
+	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, consts.KurtosisServersTransportProtocol, httpApplicationProtocol, engineWait, "")
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -82,7 +82,7 @@ func CreateEngine(
 			consts.KurtosisServersTransportProtocol.String(),
 		)
 	}
-	privateRESTAPIPortSpec, err := port_spec.NewPortSpec(engine.RESTAPIPortAddr, consts.KurtosisServersTransportProtocol, httpApplicationProtocol, noWait, "")
+	privateRESTAPIPortSpec, err := port_spec.NewPortSpec(engine.RESTAPIPortAddr, consts.KurtosisServersTransportProtocol, httpApplicationProtocol, engineWait, "")
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -160,8 +160,7 @@ func CreateEngine(
 	shouldRemoveEngineNodeSelectors := false
 	if engineNodeName != "" {
 		engineNodeSelectors[kurtosisEngineNodeNameKey] = engineNodeName
-		err = kubernetesManager.AddLabelsToNode(ctx, engineNodeName, engineNodeSelectors)
-		if err != nil {
+		if err = kubernetesManager.AddLabelsToNode(ctx, engineNodeName, engineNodeSelectors); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred labeling node '%v' with selectors '%v'.", engineNodeName, engineNodeSelectors)
 		}
 		shouldRemoveEngineNodeSelectors = true
@@ -558,7 +557,24 @@ func createEnginePod(
 	engineInitContainers := []apiv1.Container{}
 
 	// Create pods with engine containers and volumes in kubernetes
-	pod, err := kubernetesManager.CreatePod(ctx, namespace, enginePodName, enginePodLabelStrs, enginePodAnnotationStrs, engineInitContainers, engineContainers, engineVolumes, serviceAccountName, apiv1.RestartPolicyNever, noToleration, nodeSelectors, false, false)
+	hasHostPidAccess := false
+	hasHostNetworkAccess := false
+	pod, err := kubernetesManager.CreatePod(
+		ctx,
+		namespace,
+		enginePodName,
+		enginePodLabelStrs,
+		enginePodAnnotationStrs,
+		engineInitContainers,
+		engineContainers,
+		engineVolumes,
+		serviceAccountName,
+		// Engine doesn't auto restart
+		apiv1.RestartPolicyNever,
+		engineToleration,
+		nodeSelectors,
+		hasHostPidAccess,
+		hasHostNetworkAccess)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while creating the pod with name '%s' in namespace '%s' with image '%s'", enginePodName, namespace, containerImageAndTag)
 	}

@@ -37,6 +37,7 @@ import (
 const (
 	isResourceInformationComplete = false
 	noProductionMode              = false
+	anyNodeEngineNodeName         = "" // engine can be scheduled by k8s on any node
 )
 
 type KubernetesKurtosisBackend struct {
@@ -98,7 +99,7 @@ func NewAPIContainerKubernetesKurtosisBackend(
 		nil,
 		modeArgs,
 		productionMode,
-		"",
+		anyNodeEngineNodeName,
 	)
 }
 
@@ -112,7 +113,7 @@ func NewEngineServerKubernetesKurtosisBackend(
 		modeArgs,
 		nil,
 		noProductionMode,
-		"",
+		anyNodeEngineNodeName,
 	)
 }
 
@@ -501,7 +502,7 @@ func (backend *KubernetesKurtosisBackend) CreateLogsCollectorForEnclave(ctx cont
 	}
 	if maybeLogsAggregator == nil {
 		logrus.Warnf("Logs aggregator does not exist. This is unexpected as Kubernetes should have restarted the deployment automatically.")
-		logrus.Warnf("This can be fixed by restarting the engine using `kurtosis engine restart` and attempting to create the enclave again.")
+		logrus.Warnf("This can be fixed by restarting the engine using `kurto engine restart` and attempting to create the enclave again.")
 		return nil, stacktrace.NewError("No logs aggregator exists. The logs collector cannot be run without a logs aggregator.")
 	}
 	if maybeLogsAggregator.GetStatus() != container.ContainerStatus_Running {

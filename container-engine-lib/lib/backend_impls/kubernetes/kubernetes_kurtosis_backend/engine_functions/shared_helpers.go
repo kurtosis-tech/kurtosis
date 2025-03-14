@@ -85,7 +85,11 @@ func getMatchingEngineObjectsAndKubernetesResources(
 }
 
 // Get back any and all engine's Kubernetes resources matching the given UUIDs, where a nil or empty map == "match all UUIDs"
-func getMatchingEngineKubernetesResources(ctx context.Context, engineGuids map[engine.EngineGUID]bool, kubernetesManager *kubernetes_manager.KubernetesManager, engineNodeName string) (map[engine.EngineGUID]*engineKubernetesResources, error) {
+func getMatchingEngineKubernetesResources(
+	ctx context.Context,
+	engineGuids map[engine.EngineGUID]bool,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+	engineNodeName string) (map[engine.EngineGUID]*engineKubernetesResources, error) {
 	engineMatchLabels := getEngineMatchLabels()
 
 	result := map[engine.EngineGUID]*engineKubernetesResources{}
