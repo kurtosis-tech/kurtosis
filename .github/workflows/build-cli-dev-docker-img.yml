@@ -26,7 +26,7 @@ jobs:
       - name: Get docker image tag
         id: image-tag
         run: |
-          DOCKER_IMAGE_TAG=./scripts/get-docker-tag.sh
+          DOCKER_IMAGE_TAG=$(./scripts/get-docker-tag.sh)
           echo $DOCKER_IMAGE_TAG >> $GITHUB_ENV
           echo "Dev image tag: $DOCKER_IMAGE_TAG" 
 
