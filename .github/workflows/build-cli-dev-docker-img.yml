@@ -23,7 +23,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Determine Docker image tag
+      - name: Get docker image tag
         id: image-tag
         run: |
           DOCKER_IMAGE_TAG=./scripts/get-docker-tag.sh
