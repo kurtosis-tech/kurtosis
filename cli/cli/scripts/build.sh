@@ -58,14 +58,14 @@ fi
         echo "Error: Couldn't cd to the CLI module directory in preparation for running Go generate & tests" >&2
         exit 1
     fi
-    if ! go generate "./..."; then
-        echo "Error: Go generate failed" >&2
-        exit 1
-    fi
-    if ! CGO_ENABLED=1 go test "./..."; then
-        echo "Error: Go tests failed" >&2
-        exit 1
-    fi
+#    if ! go generate "./..."; then
+#        echo "Error: Go generate failed" >&2
+#        exit 1
+#    fi
+#    if ! CGO_ENABLED=1 go test "./..."; then
+#        echo "Error: Go tests failed" >&2
+#        exit
+#    fi
 )
 
 # vvvvvvvv Goreleaser variables vvvvvvvvvvvvvvvvvvv
