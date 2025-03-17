@@ -22,11 +22,14 @@ import (
 )
 
 const (
-	maxRetries                      = 30
-	curlContainerSuccessExitCode    = 0
-	successHealthCheckStatusCode    = 200
-	timeToWaitBetweenChecksDuration = 1 * time.Second
-	logsAggregatorHttpPortId        = "http"
+	maxRetries                                     = 30
+	curlContainerSuccessExitCode                   = 0
+	successHealthCheckStatusCode                   = 200
+	timeToWaitBetweenChecksDuration                = 1 * time.Second
+	availabilityCheckContainerName                 = "availability-check-container"
+	availabilityCheckPodName                       = "availability-check-pod"
+	shouldAvailabilityCheckerHaveHostPidAccess     = true
+	shouldAvailabilityCheckerHaveHostNetworkAccess = true
 )
 
 func getLogsAggregatorObjAndResourcesForCluster(ctx context.Context, kubernetesManager *kubernetes_manager.KubernetesManager) (*logs_aggregator.LogsAggregator, *logsAggregatorKubernetesResources, error) {
@@ -182,10 +185,10 @@ func getLogsAggregatorKubernetesResourcesForCluster(ctx context.Context, kuberne
 	return logsAggregatorKubernetesResources, nil
 }
 
-// getLogsAggregatorsObjectFromKubernetesResources returns a logs aggregator object if any only if all kubernetes resources required for the logs aggregator exists
+// getLogsAggregatorsObjectFromKubernetesResources returns a logs aggregator object if and only if all kubernetes resources required for the logs aggregator exists
 // otherwise returns nil object or error
 func getLogsAggregatorObjectFromKubernetesResources(ctx context.Context, kubernetesManager *kubernetes_manager.KubernetesManager, logsAggregatorKubernetesResources *logsAggregatorKubernetesResources) (*logs_aggregator.LogsAggregator, error) {
-	if logsAggregatorKubernetesResources.namespace == nil || logsAggregatorKubernetesResources.deployment == nil || logsAggregatorKubernetesResources.configMap == nil && logsAggregatorKubernetesResources.service == nil {
+	if (logsAggregatorKubernetesResources.namespace == nil) || (logsAggregatorKubernetesResources.deployment == nil) || (logsAggregatorKubernetesResources.configMap == nil) || (logsAggregatorKubernetesResources.service == nil) {
 		// if any resources not found for logs collector, don't return an object
 		return nil, nil
 	}
@@ -202,6 +205,9 @@ func getLogsAggregatorObjectFromKubernetesResources(ctx context.Context, kuberne
 	}
 
 	privateIpAddr = net.ParseIP(logsAggregatorKubernetesResources.service.Spec.ClusterIP)
+	if privateIpAddr == nil {
+		return nil, stacktrace.NewError("Logs aggregator IP address '%v' could not be parsed.", logsAggregatorKubernetesResources.service.Spec.ClusterIP)
+	}
 	logsListeningPort = defaultLogsListeningPortNum
 
 	return logs_aggregator.NewLogsAggregator(
@@ -226,7 +232,7 @@ func getLogsAggregatorStatus(ctx context.Context, kubernetesManager *kubernetes_
 	}
 	if len(logsAggregatorPods) > 1 {
 		// if there is more than one pod associated with logs aggregator deployment, assume something is wrong and err
-		return container.ContainerStatus_Stopped, stacktrace.NewError("No pods managed by logs aggregator deployment were found. There should be exactly one. This is likely a bug in Kurtosis.")
+		return container.ContainerStatus_Stopped, stacktrace.NewError("More than one pod managed by logs aggregator deployment was found. There should be exactly one. This is likely a bug in Kurtosis.")
 	}
 
 	pod := logsAggregatorPods[0]
@@ -242,15 +248,16 @@ func waitForLogsAggregatorAvailability(
 	healthCheckEndpoint string,
 	healthCheckPortNum uint16,
 	k8sResources *logsAggregatorKubernetesResources,
-	kubernetesManager *kubernetes_manager.KubernetesManager) error {
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+) error {
 	availabilityCheckerNamespace := k8sResources.namespace.Name
 	aggregatorHost := k8sResources.service.Spec.ClusterIP
 
 	availabilityCheckUrl := fmt.Sprintf("http://%v:%v%v", aggregatorHost, healthCheckPortNum, healthCheckEndpoint)
-	containerName := "availability-check-container"
-	pod, err := kubernetesManager.CreatePod(ctx, k8sResources.namespace.Name, "availability-checker-pod", nil, nil, nil, []apiv1.Container{
+
+	pod, err := kubernetesManager.CreatePod(ctx, k8sResources.namespace.Name, availabilityCheckPodName, nil, nil, nil, []apiv1.Container{
 		{
-			Name:  containerName,
+			Name:  availabilityCheckContainerName,
 			Image: "badouralix/curl-jq",
 			Command: []string{
 				"sh",
@@ -282,19 +289,26 @@ func waitForLogsAggregatorAvailability(
 			StdinOnce:                false,
 			TTY:                      false,
 		},
-	}, nil, "", "", nil, nil, false, false)
+	},
+		nil, // no pod volumes
+		"",  // no service account
+		apiv1.RestartPolicyNever,
+		nil, // no tolerations
+		nil, // no node selectors
+		shouldAvailabilityCheckerHaveHostPidAccess,
+		shouldAvailabilityCheckerHaveHostNetworkAccess)
 	defer func() {
 		// Don't block on removing the availability checker pod because this can take a while sometimes in k8s
 		go func() {
 			err := kubernetesManager.RemovePod(ctx, pod)
 			if err != nil {
-				logrus.Warnf("Attempted to remove availability checker pod '%v' in namespace '%v' but an err occurred.", pod.Name, availabilityCheckerNamespace)
+				logrus.Warnf("Attempted to remove %v '%v' in namespace '%v' but an err occurred.", availabilityCheckPodName, pod.Name, availabilityCheckerNamespace)
 				logrus.Warn("You may have to remove this pod manually.")
 			}
 		}()
 	}()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating pod '%v' in namespace '%v'.", "availabilityChecker", availabilityCheckerNamespace)
+		return stacktrace.Propagate(err, "An error occurred creating pod '%v' in namespace '%v'.", availabilityCheckPodName, availabilityCheckerNamespace)
 	}
 
 	cmdStr := []string{
@@ -308,34 +322,34 @@ func waitForLogsAggregatorAvailability(
 		resultExitCode, err := kubernetesManager.RunExecCommand(
 			availabilityCheckerNamespace,
 			pod.Name,
-			containerName,
+			availabilityCheckContainerName,
 			cmdStr,
 			concurrentBuffer,
 			concurrentBuffer,
 		)
-		if err == nil {
-			healthCheckStatusCode, err := strconv.Atoi(outputBuffer.String())
-			if err != nil {
-				return stacktrace.Propagate(err, "Expected to be able to convert '%v', output from '%v' to an int but was unable to.", outputBuffer.String(), cmdStr)
-			}
-			logrus.Debugf("Curl availability-waiting command '%v' returned health status code: %v", cmdStr, healthCheckStatusCode)
-			if healthCheckStatusCode == successHealthCheckStatusCode {
-				return nil
-			}
-			logrus.Debugf(
-				"Curl availability-waiting command '%v' returned without a Kubernetes error, but exited with non-%v exit code '%v' and logs:\n%v",
-				cmdStr,
-				curlContainerSuccessExitCode,
-				resultExitCode,
-				outputBuffer.String(),
-			)
-		} else {
+		if err != nil {
 			logrus.Debugf(
 				"Curl availability-waiting command '%v' experienced a Kubernetes error:\n%v",
 				cmdStr,
 				err,
 			)
+			continue
 		}
+		healthCheckStatusCode, err := strconv.Atoi(outputBuffer.String())
+		if err != nil {
+			return stacktrace.Propagate(err, "Expected to be able to convert '%v', output from '%v' to an int but was unable to.", outputBuffer.String(), cmdStr)
+		}
+		logrus.Debugf("Curl availability-waiting command '%v' returned health status code: %v", cmdStr, healthCheckStatusCode)
+		if healthCheckStatusCode == successHealthCheckStatusCode {
+			return nil
+		}
+		logrus.Debugf(
+			"Curl availability-waiting command '%v' returned without a Kubernetes error, but exited with non-%v exit code '%v' and logs:\n%v",
+			cmdStr,
+			curlContainerSuccessExitCode,
+			resultExitCode,
+			outputBuffer.String(),
+		)
 
 		// Tiny optimization to not sleep if we're not going to run the loop again
 		if i < maxRetries {

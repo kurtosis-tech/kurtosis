@@ -35,6 +35,9 @@ const (
 	logsCollectorHttpPortNum                             = 9713
 	logsCollectorTcpPortNum                              = 9712
 	logsVolumeName                                       = "logsdb"
+
+	shouldUseHostPidsNamespace     = false
+	shouldUseHostNetworksNamespace = false
 )
 
 var (
@@ -557,8 +560,6 @@ func createEnginePod(
 	engineInitContainers := []apiv1.Container{}
 
 	// Create pods with engine containers and volumes in kubernetes
-	hasHostPidAccess := false
-	hasHostNetworkAccess := false
 	pod, err := kubernetesManager.CreatePod(
 		ctx,
 		namespace,
@@ -573,8 +574,8 @@ func createEnginePod(
 		apiv1.RestartPolicyNever,
 		engineToleration,
 		nodeSelectors,
-		hasHostPidAccess,
-		hasHostNetworkAccess)
+		shouldUseHostPidsNamespace,
+		shouldUseHostNetworksNamespace)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while creating the pod with name '%s' in namespace '%s' with image '%s'", enginePodName, namespace, containerImageAndTag)
 	}

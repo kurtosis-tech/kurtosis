@@ -3,6 +3,7 @@ package persisted_logs_test
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
+	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/testsuite/consts"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/stretchr/testify/require"
@@ -32,9 +33,6 @@ const (
 	logLine2 = "Starting feature 'enclave pool'"
 	logLine3 = "Starting feature 'enclave pool with size 2'"
 	logLine4 = "The data have being loaded"
-
-	// wait at least one fluent bit refresh interval to ensure collector picks up new log files
-	secondsToWaitForLogs = 10 * time.Second
 )
 
 var (
@@ -118,7 +116,7 @@ func TestPersistedLogs(t *testing.T) {
 
 	// It takes some time for logs to persist so we sleep to ensure logs have persisted
 	// Otherwise the test is flaky
-	time.Sleep(secondsToWaitForLogs)
+	time.Sleep(consts.FluentbitRefreshInterval)
 	// ------------------------------------- TEST RUN -------------------------------------------------
 	enclaveUuid := enclaveCtx.GetEnclaveUuid()
 

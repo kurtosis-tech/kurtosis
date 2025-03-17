@@ -74,6 +74,9 @@ const (
 	listOptionsTimeoutSeconds      int64 = 10
 	contextDeadlineExceeded              = "context deadline exceeded"
 	expectedStatusMessageSliceSize       = 6
+
+	shouldUseHostPidsNamespace     = true
+	shouldUseHostNetworksNamespace = true
 )
 
 // We'll try to use the nicer-to-use shells first before we drop down to the lower shells
@@ -1054,8 +1057,12 @@ func (manager *KubernetesManager) CreatePod(
 	restartPolicy apiv1.RestartPolicy,
 	tolerations []apiv1.Toleration,
 	nodeSelectors map[string]string,
-	hostPid bool,
-	hostNetwork bool) (*apiv1.Pod, error) {
+	shouldUseHostPidsNamespace bool,
+	shouldUseHostNetworksNamespace bool,
+) (
+	*apiv1.Pod,
+	error,
+) {
 	podClient := manager.kubernetesClientSet.CoreV1().Pods(namespaceName)
 
 	podMeta := metav1.ObjectMeta{
@@ -1091,8 +1098,8 @@ func (manager *KubernetesManager) CreatePod(
 		DeprecatedServiceAccount:      "",
 		AutomountServiceAccountToken:  nil,
 		NodeName:                      "",
-		HostNetwork:                   hostNetwork,
-		HostPID:                       hostPid,
+		HostNetwork:                   shouldUseHostNetworksNamespace,
+		HostPID:                       shouldUseHostPidsNamespace,
 		HostIPC:                       false,
 		ShareProcessNamespace:         nil,
 		SecurityContext:               nil,
@@ -1482,8 +1489,9 @@ func (manager *KubernetesManager) CreateDeployment(
 		ManagedFields:              nil,
 	}
 
+	numReplicas := int32(1)
 	deploymentSpec := v1.DeploymentSpec{
-		Replicas: nil,
+		Replicas: &numReplicas,
 		Strategy: v1.DeploymentStrategy{
 			Type:          "",
 			RollingUpdate: nil,
@@ -2073,15 +2081,16 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 // RemoveDirPathFromNode removes the contents and path to [dirPathToRemove] by creating a pod in [namespace] with privileged access to the [nodeName]'s filesystem
 // The host filesystem is mounted onto the pod as a volume and then a rm -rf is run at the location on the pod where [dirPathToRemove] is mounted
 func (manager *KubernetesManager) RemoveDirPathFromNode(ctx context.Context, namespace string, nodeName string, dirPathToRemove string) error {
-	// rm the fluent bit directory from the node using a privileged pod
+	// rm the directory from the node using a privileged pod
 	removeContainerName := "remove-dir-container"
 	// pod needs to be privileged to access host filesystem
 	isPrivileged := true
-	hasHostPidAccess := true
-	hasHostNetworkAccess := true
 	removeDataDirPodName := "remove-dir-pod"
 	hostVolumeName := "host"
 	hostMountPath := "/host"
+	nodeSelectorsToSchedulePodOnNode := map[string]string{
+		apiv1.LabelHostname: nodeName,
+	}
 	removeDataDirPod, err := manager.CreatePod(ctx,
 		namespace,
 		removeDataDirPodName,
@@ -2153,11 +2162,9 @@ func (manager *KubernetesManager) RemoveDirPathFromNode(ctx context.Context, nam
 		"",
 		"",
 		nil,
-		map[string]string{
-			"kubernetes.io/hostname": nodeName,
-		},
-		hasHostPidAccess,
-		hasHostNetworkAccess,
+		nodeSelectorsToSchedulePodOnNode,
+		shouldUseHostPidsNamespace,
+		shouldUseHostNetworksNamespace,
 	)
 	defer func() {
 		// Don't block on removing this remove directory pod because this can take a while sometimes in k8s
@@ -2189,7 +2196,7 @@ func (manager *KubernetesManager) RemoveDirPathFromNode(ctx context.Context, nam
 		concurrentWriter,
 		concurrentWriter,
 	)
-	logrus.Debugf("Output of clean '%v': %v, exit code: %v", removeDirCmd, output.String(), resultExitCode)
+	logrus.Debugf("Output of remove directory '%v': %v, exit code: %v", removeDirCmd, output.String(), resultExitCode)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred running exec command '%v' on pod '%v' in namespace '%v' with output '%v'.", removeDirCmd, removeDataDirPod.Name, removeDataDirPod.Namespace, output.String())
 	}
@@ -2449,7 +2456,7 @@ func (manager *KubernetesManager) RemoveLabelsFromNode(ctx context.Context, node
 		return stacktrace.Propagate(err, "An error occurred while trying to remove labels '%v' from node '%v'", labels, nodeName)
 	}
 
-	logrus.Debugf("Successfullly removed label %v from node %v", labels, nodeName)
+	logrus.Debugf("Successfullly removed label '%v' from node '%v'.", labels, nodeName)
 
 	return nil
 }
@@ -2701,7 +2708,6 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 		case apiv1.PodSucceeded:
 			podStateStr := manager.getPodInfoBlockStr(ctx, namespaceName, pod)
 			//NOTE: We'll need to change this if we ever expect to run one-off pods
-			//return nil
 			return stacktrace.NewError(
 				"Expected state of pod '%v' to arrive at '%v' but the pod instead landed in '%v' with the following state:\n%v",
 				podName,

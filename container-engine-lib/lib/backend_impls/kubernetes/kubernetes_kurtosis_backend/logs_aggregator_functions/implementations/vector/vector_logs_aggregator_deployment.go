@@ -278,7 +278,7 @@ func createLogsAggregatorDeployment(
 						MatchExpressions: nil,
 					},
 					Namespaces:        []string{engineNamespace},
-					TopologyKey:       "kubernetes.io/hostname",
+					TopologyKey:       apiv1.LabelHostname,
 					NamespaceSelector: nil,
 				},
 			},
