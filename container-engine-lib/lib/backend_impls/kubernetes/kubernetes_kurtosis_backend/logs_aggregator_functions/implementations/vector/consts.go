@@ -19,36 +19,36 @@ const (
 	bufferSizeStr = "268435488" // 256 MB is min for vector
 
 	vectorConfigFileName = "vector.toml"
-	vectorConfigFmtStr   = `
-    data_dir = "%v"
+	vectorConfigTemplate = `
+	data_dir = "{{ .DataDir }}"
 
-    [api]
-    enabled = true
-    address = "0.0.0.0:%v"
+	[api]
+	enabled = true
+	address = "0.0.0.0:{{ .APIPort }}"
 
-    [sources.fluentbit]
-    type = "fluent"
-    address = "0.0.0.0:%v"
+	[sources.fluentbit]
+	type = "fluent"
+	address = "0.0.0.0:{{ .LogsListeningPort }}"
 
-    [sinks.file_sink]
-    type = "file"
-    inputs = ["fluentbit"]
-    path = "%v/%%G/%%V/{{ %v }}/{{ %v }}.json"
-   
-    [sinks.file_sink.buffer]
+	[sinks.file_sink]
+	type = "file"
+	inputs = ["fluentbit"]
+	path = "{{ .LogsPath }}/%%G/%%V/{{ .LogsEnclaveUUID }}/{{ .LogsServiceUUID }}.json"
+
+	[sinks.file_sink.buffer]
 	type = "disk"
-	max_size = %v
+	max_size = {{ .BufferSize }}
 	when_full = "block"
 
-    [sinks.file_sink.encoding]
-    codec = "json"
-    
-    [sinks.stdout_sink]
-    type = "console"
-    inputs = ["fluentbit"]
-    target = "stdout"
+	[sinks.file_sink.encoding]
+	codec = "json"
 
-    [sinks.stdout_sink.encoding]
-    codec = "json"
+	[sinks.stdout_sink]
+	type = "console"
+	inputs = ["fluentbit"]
+	target = "stdout"
+
+	[sinks.stdout_sink.encoding]
+	codec = "json"
 `
 )

@@ -1,6 +1,7 @@
 package vector
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
@@ -18,6 +19,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"strconv"
+	"text/template"
 	"time"
 )
 
@@ -400,6 +402,11 @@ func createLogsAggregatorConfigMap(
 	labels := shared_helpers.GetStringMapFromLabelMap(configMapAttrProvider.GetLabels())
 	annotations := shared_helpers.GetStringMapFromAnnotationMap(configMapAttrProvider.GetAnnotations())
 
+	vectorConfigStr, err := generateVectorConfigStr(logListeningPortNum)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred generating vector config.")
+	}
+
 	configMap, err := kubernetesManager.CreateConfigMap(
 		ctx,
 		namespace,
@@ -407,15 +414,7 @@ func createLogsAggregatorConfigMap(
 		labels,
 		annotations,
 		map[string]string{
-			vectorConfigFileName: fmt.Sprintf(
-				vectorConfigFmtStr,
-				vectorDataDirMountPath,
-				strconv.Itoa(apiPort),
-				logListeningPortNum,
-				kurtosisLogsMountPath,
-				kubernetes_label_key.LogsEnclaveUUIDKubernetesLabelKey.GetString(),
-				kubernetes_label_key.LogsServiceUUIDKubernetesLabelKey.GetString(),
-				bufferSizeStr),
+			vectorConfigFileName: vectorConfigStr,
 		},
 	)
 	if err != nil {
@@ -423,6 +422,45 @@ func createLogsAggregatorConfigMap(
 	}
 
 	return configMap, nil
+}
+
+func generateVectorConfigStr(
+	logListeningPort uint16,
+) (
+	string,
+	error,
+) {
+	type VectorConfigData struct {
+		DataDir              string
+		APIPort              string
+		LogsListeningPort    uint16
+		LogsPath             string
+		LogsEnclaveUUIDLabel string
+		LogsServiceUUIDLabel string
+		BufferSize           string
+	}
+
+	tmpl, err := template.New("vectorConfig").Parse(vectorConfigTemplate)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred parsing vector config template: %v", vectorConfigTemplate)
+	}
+
+	vectorConfigData := VectorConfigData{
+		DataDir:              vectorDataDirMountPath,
+		APIPort:              strconv.Itoa(apiPort),
+		LogsListeningPort:    logListeningPort,
+		LogsPath:             kurtosisLogsMountPath,
+		LogsEnclaveUUIDLabel: kubernetes_label_key.LogsEnclaveUUIDKubernetesLabelKey.GetString(),
+		LogsServiceUUIDLabel: kubernetes_label_key.LogsServiceUUIDKubernetesLabelKey.GetString(),
+		BufferSize:           bufferSizeStr,
+	}
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, vectorConfigData)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred generating vector config string from vector config data: %v.", vectorConfigData)
+	}
+
+	return buf.String(), nil
 }
 
 func waitForPodManagedByDeployment(ctx context.Context, logsAggregatorDeployment *appsv1.Deployment, kubernetesManager *kubernetes_manager.KubernetesManager) error {

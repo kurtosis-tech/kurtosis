@@ -508,7 +508,7 @@ func (backend *KubernetesKurtosisBackend) CreateLogsCollectorForEnclave(ctx cont
 	if maybeLogsAggregator.GetStatus() != container.ContainerStatus_Running {
 		logrus.Warnf("Logs aggregator exists but is not running. Instead status is '%v'. This is unexpected as k8s should have restarted the aggregator automatically.",
 			maybeLogsAggregator.GetStatus())
-		logrus.Warnf("This can be fixed by restarting the engine using `%v %v %v` and attempting to create the enclave again.")
+		logrus.Warnf("This can be fixed by restarting the engine using `kurtosis engine restart` and attempting to create the enclave again.")
 		return nil, stacktrace.NewError(
 			"The logs aggregator deployment exists but is not running. Instead logs aggregator status is '%v'. The logs collector cannot be run without a logs aggregator.",
 			maybeLogsAggregator.GetStatus(),

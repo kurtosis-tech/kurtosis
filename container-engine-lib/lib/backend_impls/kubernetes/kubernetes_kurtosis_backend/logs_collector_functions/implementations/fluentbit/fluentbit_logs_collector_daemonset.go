@@ -1,6 +1,7 @@
 package fluentbit
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
@@ -16,6 +17,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"text/template"
 	"time"
 )
 
@@ -425,12 +427,17 @@ func createLogsCollectorConfigMap(
 	kubernetesManager *kubernetes_manager.KubernetesManager) (*apiv1.ConfigMap, error) {
 	configMapAttrProvider, err := objAttrProvider.ForLogsCollectorConfigMap()
 	if err != nil {
-		return nil, err
+		return nil, err // already wrapped
 	}
 	name := configMapAttrProvider.GetName().GetString()
 	labels := shared_helpers.GetStringMapFromLabelMap(configMapAttrProvider.GetLabels())
 	annotations := shared_helpers.GetStringMapFromAnnotationMap(configMapAttrProvider.GetAnnotations())
 
+	fluentBitConfigStr, err := generateFluentBitConfigStr(
+		logsCollectorHttpPortNum,
+		logsAggregatorHost,
+		logsAggregatorPortNum,
+	)
 	configMap, err := kubernetesManager.CreateConfigMap(
 		ctx,
 		namespace,
@@ -438,17 +445,7 @@ func createLogsCollectorConfigMap(
 		labels,
 		annotations,
 		map[string]string{
-			fluentBitConfigFileName: fmt.Sprintf(
-				fluentBitConfigFmtStr,
-				logsCollectorHttpPortNum,
-				label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue.GetString(),
-				kubernetes_label_key.LogsEnclaveUUIDKubernetesLabelKey.GetString(),
-				kubernetes_label_key.LogsEnclaveUUIDKubernetesLabelKey.GetString(),
-				kubernetes_label_key.LogsServiceUUIDKubernetesLabelKey.GetString(),
-				kubernetes_label_key.LogsServiceUUIDKubernetesLabelKey.GetString(),
-				k8sApiServerUrl,
-				logsAggregatorHost,
-				logsAggregatorPortNum),
+			fluentBitConfigFileName: fluentBitConfigStr,
 		},
 	)
 	if err != nil {
@@ -456,6 +453,49 @@ func createLogsCollectorConfigMap(
 	}
 
 	return configMap, nil
+}
+
+func generateFluentBitConfigStr(
+	logsCollectorHttpPort uint16,
+	logsAggregatorHost string,
+	logsAggregatorPortNun uint16,
+) (
+	string,
+	error,
+) {
+	type FluentBitConfigData struct {
+		HTTPPort               uint16
+		UserServiceResourceStr string
+		CheckpointDbMountPath  string
+		LogsEnclaveUUIDLabel   string
+		LogsServiceUUIDLabel   string
+		K8sApiServerURL        string
+		LogsAggregatorHost     string
+		LogsAggregatorPortNum  uint16
+	}
+
+	tmpl, err := template.New("fluentBitConfig").Parse(fluentBitConfigTemplate)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred parsing fluent bit config template: %v", fluentBitConfigTemplate)
+	}
+
+	fluentBitConfigData := FluentBitConfigData{
+		HTTPPort:               logsCollectorHttpPort,
+		UserServiceResourceStr: label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue.GetString(),
+		CheckpointDbMountPath:  fluentBitCheckpointDbMountPath,
+		LogsEnclaveUUIDLabel:   kubernetes_label_key.LogsEnclaveUUIDKubernetesLabelKey.GetString(),
+		LogsServiceUUIDLabel:   kubernetes_label_key.LogsServiceUUIDKubernetesLabelKey.GetString(),
+		K8sApiServerURL:        k8sApiServerUrl,
+		LogsAggregatorPortNum:  logsAggregatorPortNun,
+		LogsAggregatorHost:     logsAggregatorHost,
+	}
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, fluentBitConfigData)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred generating vector config string from fluent bit config data: %v.", fluentBitConfigData)
+	}
+
+	return buf.String(), nil
 }
 
 func createLogsCollectorNamespace(
