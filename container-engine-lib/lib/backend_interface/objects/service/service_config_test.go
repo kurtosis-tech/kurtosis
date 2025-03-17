@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/kubernetes"
 	"testing"
 	"time"
 
@@ -27,7 +28,7 @@ func TestServiceConfigMarshallers(t *testing.T) {
 
 	// Suppressing exhaustruct requirement because we want an object with zero values
 	// nolint: exhaustruct
-	newServiceConfig := &ServiceConfig{}
+	newServiceConfig := &service.ServiceConfig{}
 
 	err = json.Unmarshal(marshaledServiceConfig, newServiceConfig)
 	require.NoError(t, err)
@@ -67,7 +68,7 @@ func TestServiceConfigMarshallers(t *testing.T) {
 }
 
 func TestIngressAnnotations(t *testing.T) {
-	serviceConfig, err := CreateServiceConfig(
+	serviceConfig, err := kubernetes.CreateServiceConfig(
 		"test-image",
 		nil, nil, nil,
 		map[string]*port_spec.PortSpec{},
@@ -106,7 +107,7 @@ func TestIngressAnnotations(t *testing.T) {
 
 func TestIngressClassName(t *testing.T) {
 	className := "test-class"
-	serviceConfig, err := CreateServiceConfig(
+	serviceConfig, err := kubernetes.CreateServiceConfig(
 		"test-image",
 		nil, nil, nil,
 		map[string]*port_spec.PortSpec{},
@@ -143,7 +144,7 @@ func TestIngressClassName(t *testing.T) {
 
 func TestIngressHost(t *testing.T) {
 	host := "test.example.com"
-	serviceConfig, err := CreateServiceConfig(
+	serviceConfig, err := kubernetes.CreateServiceConfig(
 		"test-image",
 		nil, nil, nil,
 		map[string]*port_spec.PortSpec{},
@@ -175,7 +176,7 @@ func TestIngressHost(t *testing.T) {
 
 func TestIngressTLS(t *testing.T) {
 	tlsHost := "test.example.com"
-	serviceConfig, err := CreateServiceConfig(
+	serviceConfig, err := kubernetes.CreateServiceConfig(
 		"test-image",
 		nil, nil, nil,
 		map[string]*port_spec.PortSpec{},
@@ -205,8 +206,8 @@ func TestIngressTLS(t *testing.T) {
 	require.Equal(t, newTLSHost, *serviceConfig.GetIngressTLSHost())
 }
 
-func getServiceConfigForTest(t *testing.T, imageName string) *ServiceConfig {
-	serviceConfig, err := CreateServiceConfig(imageName, testImageBuildSpec(), testImageRegistrySpec(), testNixBuildSpec(), testPrivatePorts(t), testPublicPorts(t), []string{"bin", "bash", "ls"}, []string{"-l", "-a"}, testEnvVars(), testFilesArtifactExpansion(), testPersistentDirectory(), 500, 1024, "IP-ADDRESS", 100, 512, map[string]string{
+func getServiceConfigForTest(t *testing.T, imageName string) *service.ServiceConfig {
+	serviceConfig, err := kubernetes.CreateServiceConfig(imageName, testImageBuildSpec(), testImageRegistrySpec(), testNixBuildSpec(), testPrivatePorts(t), testPublicPorts(t), []string{"bin", "bash", "ls"}, []string{"-l", "-a"}, testEnvVars(), testFilesArtifactExpansion(), testPersistentDirectory(), 500, 1024, "IP-ADDRESS", 100, 512, map[string]string{
 		"test-label-key":       "test-label-value",
 		"test-label-key-empty": "test-second-label-value",
 	}, testIngressAnnotations(), testIngressClassName(), testIngressHost(), testIngressTLS(), testServiceUser(), testToleration(), testNodeSelectors(), testImageDownloadMode(), true)

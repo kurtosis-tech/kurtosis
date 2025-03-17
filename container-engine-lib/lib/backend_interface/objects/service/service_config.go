@@ -2,11 +2,10 @@ package service
 
 import (
 	"encoding/json"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config/kubernetes"
-
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+	kube_config "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/kubernetes"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
@@ -80,10 +79,10 @@ type privateServiceConfig struct {
 	TiniEnabled bool
 
 	// KubernetesConfig contains Kubernetes-specific configuration for a service
-	KubernetesConfig *kubernetes.KtKubernetesConfig
+	KubernetesConfig *kube_config.Config
 }
 
-func CreateServiceConfig(containerImageName string, imageBuildSpec *image_build_spec.ImageBuildSpec, imageRegistrySpec *image_registry_spec.ImageRegistrySpec, nixBuildSpec *nix_build_spec.NixBuildSpec, privatePorts map[string]*port_spec.PortSpec, publicPorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, envVars map[string]string, filesArtifactExpansion *service_directory.FilesArtifactsExpansion, persistentDirectories *service_directory.PersistentDirectories, cpuAllocationMillicpus uint64, memoryAllocationMegabytes uint64, privateIPAddrPlaceholder string, minCpuMilliCpus uint64, minMemoryMegaBytes uint64, labels map[string]string, user *service_user.ServiceUser, tolerations []v1.Toleration, nodeSelectors map[string]string, imageDownloadMode image_download_mode.ImageDownloadMode, tiniEnabled bool, kubernetesConfig *kubernetes.KtKubernetesConfig) (*ServiceConfig, error) {
+func CreateServiceConfig(containerImageName string, imageBuildSpec *image_build_spec.ImageBuildSpec, imageRegistrySpec *image_registry_spec.ImageRegistrySpec, nixBuildSpec *nix_build_spec.NixBuildSpec, privatePorts map[string]*port_spec.PortSpec, publicPorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, envVars map[string]string, filesArtifactExpansion *service_directory.FilesArtifactsExpansion, persistentDirectories *service_directory.PersistentDirectories, cpuAllocationMillicpus uint64, memoryAllocationMegabytes uint64, privateIPAddrPlaceholder string, minCpuMilliCpus uint64, minMemoryMegaBytes uint64, labels map[string]string, user *service_user.ServiceUser, tolerations []v1.Toleration, nodeSelectors map[string]string, imageDownloadMode image_download_mode.ImageDownloadMode, tiniEnabled bool, kubernetesConfig *kube_config.Config) (*ServiceConfig, error) {
 
 	if err := ValidateServiceConfigLabels(labels); err != nil {
 		return nil, stacktrace.Propagate(err, "Invalid service config labels '%+v'", labels)
@@ -265,11 +264,11 @@ func (serviceConfig *ServiceConfig) GetTiniEnabled() bool {
 	return serviceConfig.privateServiceConfig.TiniEnabled
 }
 
-func (serviceConfig *ServiceConfig) GetKubernetesConfig() *kubernetes.KtKubernetesConfig {
+func (serviceConfig *ServiceConfig) GetKubernetesConfig() *kube_config.Config {
 	return serviceConfig.privateServiceConfig.KubernetesConfig
 }
 
-func (serviceConfig *ServiceConfig) SetKubernetesConfig(config *kubernetes.KtKubernetesConfig) {
+func (serviceConfig *ServiceConfig) SetKubernetesConfig(config *kube_config.Config) {
 	serviceConfig.privateServiceConfig.KubernetesConfig = config
 }
 
