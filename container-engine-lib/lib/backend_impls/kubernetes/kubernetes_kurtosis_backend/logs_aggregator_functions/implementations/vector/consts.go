@@ -33,7 +33,7 @@ const (
 	[sinks.file_sink]
 	type = "file"
 	inputs = ["fluentbit"]
-	path = "{{ .LogsPath }}/%%G/%%V/{{ .LogsEnclaveUUID }}/{{ .LogsServiceUUID }}.json"
+	path = "{{ .LogsPath }}/%G/%V/{{"{{"}} {{ .LogsEnclaveUUIDLabel }} {{"}}"}}/{{"{{"}} {{ .LogsServiceUUIDLabel }} {{"}}"}}.json"
 
 	[sinks.file_sink.buffer]
 	type = "disk"

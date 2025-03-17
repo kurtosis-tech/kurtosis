@@ -1404,9 +1404,14 @@ func (manager *KubernetesManager) UpdateDaemonSetWithNodeSelectors(ctx context.C
 	}
 
 	// combine  node selectors
-	mergedNodeSelectors := patch.Spec.Template.Spec.NodeSelector
-	for k, v := range nodeSelector {
-		mergedNodeSelectors[k] = v
+	mergedNodeSelectors := map[string]string{}
+	//if patch.Spec.Template.Spec.NodeSelector != nil {
+	for label, val := range patch.Spec.Template.Spec.NodeSelector {
+		mergedNodeSelectors[label] = val
+	}
+	//}
+	for label, val := range nodeSelector {
+		mergedNodeSelectors[label] = val
 	}
 
 	// update node selectors to use merged selectors
