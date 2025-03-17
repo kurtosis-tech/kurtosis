@@ -1395,20 +1395,7 @@ func (manager *KubernetesManager) GetPodsManagedByDaemonSet(ctx context.Context,
 }
 
 func (manager *KubernetesManager) UpdateDaemonSetWithNodeSelectors(ctx context.Context, daemonSet *v1.DaemonSet, nodeSelector map[string]string) error {
-	//// copy daemon set
-	//patch := &v1.DaemonSet{
-	//	Spec: v1.DaemonSetSpec{
-	//		Template: *daemonSet.Spec.Template.DeepCopy(),
-	//	},
-	//}
-
-	//patch.Spec.Template.Spec.NodeSelector = mergedNodeSelectors
-
-	// update node selectors to use merged selectors
-	for k, v := range nodeSelector {
-		daemonSet.Spec.Template.Spec.NodeSelector[k] = v
-	}
-
+	daemonSet.Spec.Template.Spec.NodeSelector = nodeSelector
 	_, err := manager.kubernetesClientSet.AppsV1().DaemonSets(daemonSet.Namespace).Update(
 		ctx,
 		daemonSet,
@@ -1423,29 +1410,6 @@ func (manager *KubernetesManager) UpdateDaemonSetWithNodeSelectors(ctx context.C
 		return stacktrace.Propagate(err, "An error occurred patching daemon set '%v' in namespace '%v'", daemonSet.Name, daemonSet.Namespace)
 	}
 	logrus.Debugf("Successfully updated daemon set '%v' with node selector '%v'", daemonSet.Name, nodeSelector)
-	//
-	//patchData, err := json.Marshal(patch)
-	//if err != nil {
-	//	return stacktrace.Propagate(err, "An error occurred marshaling patch for DaemonSet '%s'.", daemonSet.Name)
-	//}
-	//
-	//_, err = manager.kubernetesClientSet.AppsV1().DaemonSets(daemonSet.Namespace).Patch(
-	//	ctx,
-	//	daemonSet.Name,
-	//	types.StrategicMergePatchType, // TODO explain structured patch
-	//	patchData,
-	//	metav1.PatchOptions{
-	//		TypeMeta: metav1.TypeMeta{
-	//			Kind:       "",
-	//			APIVersion: "",
-	//		},
-	//		DryRun:          nil,
-	//		Force:           nil,
-	//		FieldManager:    "",
-	//		FieldValidation: "",
-	//	},
-	//)
-	//
 
 	return nil
 }
