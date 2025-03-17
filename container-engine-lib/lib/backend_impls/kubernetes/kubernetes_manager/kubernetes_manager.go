@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"io"
 	v1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -2087,7 +2088,11 @@ func (manager *KubernetesManager) RemoveDirPathFromNode(ctx context.Context, nam
 	removeContainerName := "remove-dir-container"
 	// pod needs to be privileged to access host filesystem
 	isPrivileged := true
-	removeDataDirPodName := "remove-dir-pod"
+	removeDataDirPodUUID, err := uuid_generator.GenerateUUIDString()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred generating uuid for remove data dir pod.")
+	}
+	removeDataDirPodName := fmt.Sprintf("remove-dir-pod-%v", removeDataDirPodUUID)
 	hostVolumeName := "host"
 	hostMountPath := "/host"
 	nodeSelectorsToSchedulePodOnNode := map[string]string{
