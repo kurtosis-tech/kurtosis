@@ -1,8 +1,6 @@
 package kubernetes
 
 import (
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/kubernetes"
-	//"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/kubernetes"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
@@ -65,7 +63,7 @@ func (extraIngressConfig *ExtraIngressConfig) Copy() (builtin_argument.KurtosisV
 
 func (extraIngressConfig *ExtraIngressConfig) Validate() error { return nil }
 
-func (extraIngressConfig *ExtraIngressConfig) GetIngresses() ([]*kubernetes.IngressSpec, error) {
+func (extraIngressConfig *ExtraIngressConfig) GetIngresses() ([]*IngressSpec, *startosis_errors.InterpretationError) {
 	ingressTargetsList, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.List](
 		extraIngressConfig.KurtosisValueTypeDefault, IngressesAttr,
 	)
@@ -76,21 +74,17 @@ func (extraIngressConfig *ExtraIngressConfig) GetIngresses() ([]*kubernetes.Ingr
 		return nil, nil
 	}
 
-	var ingressTargets []*kubernetes.IngressSpec
+	var ingressTargets []*IngressSpec
 	for idx := 0; idx < ingressTargetsList.Len(); idx++ {
 		item := ingressTargetsList.Index(idx)
 		ingressTarget, ok := item.(*IngressSpec)
 		if !ok {
 			return nil, startosis_errors.NewInterpretationError(
-				"Item number %d in '%s' list was not a string. Expecting '%s' to be a %s",
+				"Item number %d in '%s' list was not a string. Expecting to be a %s",
 				idx, IngressesAttr, ingressTarget.Type(),
 			)
 		}
-		kit, err := ingressTarget.ToKurtosisType()
-		if err != nil {
-			return nil, err
-		}
-		ingressTargets = append(ingressTargets, kit)
+		ingressTargets = append(ingressTargets, ingressTarget)
 	}
 
 	return ingressTargets, nil

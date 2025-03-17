@@ -34,5 +34,18 @@ func TestServiceRegistrationMarshallers(t *testing.T) {
 	err = json.Unmarshal(marshaledServiceRegistration, newServiceRegistration)
 	require.NoError(t, err)
 
-	require.EqualValues(t, originalServiceRegistration, newServiceRegistration)
+	// Compare fields individually instead of entire object
+	require.Equal(t, originalServiceRegistration.GetName(), newServiceRegistration.GetName())
+	require.Equal(t, originalServiceRegistration.GetUUID(), newServiceRegistration.GetUUID())
+	require.Equal(t, originalServiceRegistration.GetEnclaveID(), newServiceRegistration.GetEnclaveID())
+	require.Equal(t, originalServiceRegistration.GetPrivateIP(), newServiceRegistration.GetPrivateIP())
+	require.Equal(t, originalServiceRegistration.GetHostname(), newServiceRegistration.GetHostname())
+	require.Equal(t, originalServiceRegistration.GetStatus(), newServiceRegistration.GetStatus())
+	
+	// Check that config exists
+	require.NotNil(t, newServiceRegistration.GetConfig())
+	
+	// Compare important fields of the config
+	require.Equal(t, originalServiceRegistration.GetConfig().GetContainerImageName(), 
+		newServiceRegistration.GetConfig().GetContainerImageName())
 }

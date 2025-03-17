@@ -102,10 +102,9 @@ fi
     # Executing goreleaser v1.26.2 without needing to install it
     echo "pwd on a) $(pwd)"
     echo "VERSION=v1.26.2 DISTRIBUTION=oss bash -s -- ${goreleaser_verb_and_flags}"
-    VERSION=v1.26.2 DISTRIBUTION=oss goreleaser ${goreleaser_verb_and_flags}
-    exit 0
+    # VERSION=v1.26.2 DISTRIBUTION=oss goreleaser ${goreleaser_verb_and_flags}
+    # exit 0
 
-    #if ! curl -sfL https://goreleaser.com/static/run | VERSION=v1.26.2 DISTRIBUTION=oss bash -s -- ${goreleaser_verb_and_flags}; then
     if ! curl -sfL https://goreleaser.com/static/run | VERSION=v1.26.2 DISTRIBUTION=oss bash -s -- ${goreleaser_verb_and_flags}; then
         echo "Error: Couldn't build the CLI binary for the current OS/arch" >&2
         exit 1

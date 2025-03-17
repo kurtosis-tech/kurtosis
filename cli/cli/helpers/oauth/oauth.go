@@ -105,13 +105,14 @@ type cfg struct {
 	token string
 }
 
-func (c cfg) ActiveToken(hostname string) (string, string) {
+// Token implements the github.com/cli/cli/v2/api.tokenGetter interface
+func (c *cfg) Token(hostname string) (string, string) {
 	return c.token, "oauth_token"
 }
 
 func getViewer(hostname, token string, logWriter io.Writer) (string, error) {
 	opts := api.HTTPClientOptions{ // nolint: exhaustruct
-		Config: cfg{token: token},
+		Config: &cfg{token: token},
 		Log:    logWriter,
 	}
 	client, err := api.NewHTTPClient(opts)

@@ -68,31 +68,28 @@ func TestPutNewServiceConfig(t *testing.T) {
 func getTestServiceConfigForService(name service.ServiceName, imageTag string) (*service.ServiceConfig, error) {
 	return service.CreateServiceConfig(
 		fmt.Sprintf("%v-%v:%v", name, testContainerImageName, imageTag),
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		[]string{},
-		[]string{},
-		map[string]string{},
-		nil,
-		nil,
-		0,
-		0,
-		"",
-		0,
-		0,
-		map[string]string{},
-		map[string]string{}, // ingressAnnotations
-		nil,                 // ingressClassName
-		nil,                 // ingressHost
-		nil,                 // ingressTLSHost
+		nil,                 // imageBuildSpec
+		nil,                 // imageRegistrySpec
+		nil,                 // nixBuildSpec
+		nil,                 // privatePorts
+		nil,                 // publicPorts
+		[]string{},          // entrypointArgs
+		[]string{},          // cmdArgs
+		map[string]string{}, // envVars
+		nil,                 // filesArtifactExpansion
+		nil,                 // persistentDirectories
+		0,                   // cpuAllocationMillicpus
+		0,                   // memoryAllocationMegabytes
+		"",                  // privateIPAddrPlaceholder
+		0,                   // minCpuAllocationMilliCpus
+		0,                   // minMemoryAllocationMegabytes
+		map[string]string{}, // labels
 		nil,                 // user
 		nil,                 // tolerations
-		map[string]string{},
-		image_download_mode.ImageDownloadMode_Always,
-		true,
+		map[string]string{}, // nodeSelectors
+		image_download_mode.ImageDownloadMode_Always, // imageDownloadMode
+		true,                // tiniEnabled
+		nil,                 // kubernetesConfig
 	)
 }
 

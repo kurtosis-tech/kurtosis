@@ -74,6 +74,11 @@ func (registration *ServiceRegistration) GetPrivateIP() net.IP {
 	return registration.privateServiceRegistration.PrivateIp
 }
 
+// GetPrivateIPAddress is an alias for GetPrivateIP for backward compatibility
+func (registration *ServiceRegistration) GetPrivateIPAddress() net.IP {
+	return registration.GetPrivateIP()
+}
+
 func (registration *ServiceRegistration) GetHostname() string {
 	return registration.privateServiceRegistration.Hostname
 }

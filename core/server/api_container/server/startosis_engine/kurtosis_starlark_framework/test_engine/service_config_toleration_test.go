@@ -58,36 +58,34 @@ func (t *serviceConfigTolerationTest) Assert(typeValue builtin_argument.Kurtosis
 		testModuleMainFileLocator,
 		testModulePackageId,
 		t.packageContentProvider,
-		testNoPackageReplaceOptions, image_download_mode.ImageDownloadMode_Missing)
+		testNoPackageReplaceOptions,
+		image_download_mode.ImageDownloadMode_Missing)
 	require.Nil(t, interpretationErr)
 	expectedTolerations := []v1.Toleration{{Key: testTolerationKey, Operator: v1.TolerationOpEqual, Value: testTolerationValue, Effect: v1.TaintEffectNoSchedule, TolerationSeconds: &testTolerationSeconds}}
 	expectedServiceConfig, err := service.CreateServiceConfig(
 		testContainerImageName,
-		nil,
-		nil,
-		nil,
-		map[string]*port_spec.PortSpec{},
-		map[string]*port_spec.PortSpec{},
-		nil,
-		nil,
-		map[string]string{},
-		nil,
-		nil,
-		0,
-		0,
-		service_config.DefaultPrivateIPAddrPlaceholder,
-		0,
-		0,
-		map[string]string{},
-		map[string]string{},
-		nil, // ingressClassName
-		nil, // ingressHost
-		nil, // ingressTLSHost
-		nil, // user
-		expectedTolerations,
-		map[string]string{},  // nodeSelectors
-		image_download_mode.ImageDownloadMode_Missing,
-		true,
+		nil,                              // imageBuildSpec
+		nil,                              // imageRegistrySpec
+		nil,                              // nixBuildSpec
+		map[string]*port_spec.PortSpec{}, // privatePorts
+		map[string]*port_spec.PortSpec{}, // publicPorts
+		nil,                              // entrypointArgs
+		nil,                              // cmdArgs
+		map[string]string{},              // envVars
+		nil,                              // filesArtifactExpansion
+		nil,                              // persistentDirectories
+		0,                                // cpuAllocationMillicpus
+		0,                                // memoryAllocationMegabytes
+		service_config.DefaultPrivateIPAddrPlaceholder, // privateIPAddrPlaceholder
+		0,                                // minCpuAllocationMilliCpus
+		0,                                // minMemoryAllocationMegabytes
+		map[string]string{},              // labels
+		nil,                              // user
+		expectedTolerations,              // tolerations
+		map[string]string{},              // nodeSelectors
+		image_download_mode.ImageDownloadMode_Missing, // imageDownloadMode
+		true,                             // tiniEnabled
+		nil,                              // kubernetesConfig
 	)
 	require.NoError(t, err)
 	require.Equal(t, expectedServiceConfig, serviceConfig)

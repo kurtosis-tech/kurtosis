@@ -6,6 +6,7 @@ import (
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
 
@@ -16,11 +17,14 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
+)
+
+const (
+	imageName = "test-container-image"
 )
 
 type addServiceTestCase struct {
@@ -39,31 +43,28 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddService() {
 		mock.MatchedBy(func(serviceConfig *service.ServiceConfig) bool {
 			expectedServiceConfig, err := service.CreateServiceConfig(
 				testContainerImageName,
-				nil,                              // imageBuildSpec
-				nil,                              // imageRegistrySpec
-				nil,                              // nixBuildSpec
+				nil,                 // imageBuildSpec
+				nil,                 // imageRegistrySpec
+				nil,                 // nixBuildSpec
 				map[string]*port_spec.PortSpec{}, // privatePorts
 				map[string]*port_spec.PortSpec{}, // publicPorts
-				nil,                              // entrypointArgs
-				nil,                              // cmdArgs
-				map[string]string{},              // envVars
-				nil,                              // filesArtifactExpansion
-				nil,                              // persistentDirectories
-				0,                                // cpuAllocationMillicpus
-				0,                                // memoryAllocationMegabytes
-				service_config.DefaultPrivateIPAddrPlaceholder,
+				nil,                 // entrypointArgs
+				nil,                 // cmdArgs
+				map[string]string{}, // envVars
+				nil,                 // filesArtifactExpansion
+				nil,                 // persistentDirectories
+				0,                   // cpuAllocationMillicpus
+				0,                   // memoryAllocationMegabytes
+				service_config.DefaultPrivateIPAddrPlaceholder, // privateIPAddrPlaceholder
 				0,                   // minCpuAllocationMilliCpus
 				0,                   // minMemoryAllocationMegabytes
 				map[string]string{}, // labels
-				map[string]string{}, // ingressAnnotations
-				nil,                 // ingressClassName
-				nil,                 // ingressHost
-				nil,                 // ingressTLSHost
 				nil,                 // user
 				nil,                 // tolerations
 				map[string]string{}, // nodeSelectors
-				image_download_mode.ImageDownloadMode_Missing,
-				true,
+				image_download_mode.ImageDownloadMode_Missing, // imageDownloadMode
+				true,                // tiniEnabled
+				nil,                 // kubernetesConfig
 			)
 			require.NoError(suite.T(), err)
 

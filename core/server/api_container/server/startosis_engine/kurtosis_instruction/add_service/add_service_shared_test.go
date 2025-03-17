@@ -20,6 +20,7 @@ import (
 
 const (
 	testContainerImageName = "kurtosistech/example-datastore-server"
+	testEnvVarKey = "TEST_ENV_VAR"
 )
 
 func TestAddServiceShared_EntryPointArgsRuntimeValueAreReplaced(t *testing.T) {
@@ -58,15 +59,12 @@ func TestAddServiceShared_EntryPointArgsRuntimeValueAreReplaced(t *testing.T) {
 		0,                                // minCpuAllocationMilliCpus
 		0,                                // minMemoryAllocationMegabytes
 		map[string]string{},              // labels
-		map[string]string{},              // ingressAnnotations
-		nil,                              // ingressClassName
-		nil,                              // ingressHost
-		nil,                              // ingressTLSHost
 		nil,                              // user
 		[]v1.Toleration{},                // tolerations
 		map[string]string{},              // nodeSelectors
-		image_download_mode.ImageDownloadMode_Missing,
-		true,
+		image_download_mode.ImageDownloadMode_Missing, // imageDownloadMode
+		true,                             // tiniEnabled
+		nil,                              // kubernetesConfig
 	)
 	require.NoError(t, err)
 
@@ -102,24 +100,21 @@ func TestAddServiceShared_CmdArgsRuntimeValueAreReplaced(t *testing.T) {
 		map[string]*port_spec.PortSpec{}, // publicPorts
 		[]string{},                       // entrypointArgs
 		[]string{"bash", "-c", "sleep " + runtimeValue}, // cmdArgs
-		map[string]string{},                             // envVars
-		nil,                                             // filesArtifactExpansion
-		nil,                                             // persistentDirectories
-		0,                                               // cpuAllocationMillicpus
-		0,                                               // memoryAllocationMegabytes
-		"",                                              // privateIPAddrPlaceholder
-		0,                                               // minCpuAllocationMilliCpus
-		0,                                               // minMemoryAllocationMegabytes
-		map[string]string{},                             // labels
-		map[string]string{},                             // ingressAnnotations
-		nil,                                             // ingressClassName
-		nil,                                             // ingressHost
-		nil,                                             // ingressTLSHost
-		nil,                                             // user
-		[]v1.Toleration{},                               // tolerations
-		map[string]string{},                             // nodeSelectors
-		image_download_mode.ImageDownloadMode_Missing,
-		true,
+		map[string]string{},              // envVars
+		nil,                              // filesArtifactExpansion
+		nil,                              // persistentDirectories
+		0,                                // cpuAllocationMillicpus
+		0,                                // memoryAllocationMegabytes
+		"",                               // privateIPAddrPlaceholder
+		0,                                // minCpuAllocationMilliCpus
+		0,                                // minMemoryAllocationMegabytes
+		map[string]string{},              // labels
+		nil,                              // user
+		[]v1.Toleration{},                // tolerations
+		map[string]string{},              // nodeSelectors
+		image_download_mode.ImageDownloadMode_Missing, // imageDownloadMode
+		true,                             // tiniEnabled
+		nil,                              // kubernetesConfig
 	)
 	require.NoError(t, err)
 
@@ -155,26 +150,21 @@ func TestAddServiceShared_EnvVarsWithRuntimeValueAreReplaced(t *testing.T) {
 		map[string]*port_spec.PortSpec{}, // publicPorts
 		[]string{},                       // entrypointArgs
 		[]string{},                       // cmdArgs
-		map[string]string{ // envVars
-			"PORT": runtimeValue,
-		},
-		nil,                 // filesArtifactExpansion
-		nil,                 // persistentDirectories
-		0,                   // cpuAllocationMillicpus
-		0,                   // memoryAllocationMegabytes
-		"",                  // privateIPAddrPlaceholder
-		0,                   // minCpuAllocationMilliCpus
-		0,                   // minMemoryAllocationMegabytes
-		map[string]string{}, // labels
-		map[string]string{}, // ingressAnnotations
-		nil,                 // ingressClassName
-		nil,                 // ingressHost
-		nil,                 // ingressTLSHost
-		nil,                 // user
-		[]v1.Toleration{},   // tolerations
-		map[string]string{}, // nodeSelectors
-		image_download_mode.ImageDownloadMode_Missing,
-		true,
+		map[string]string{testEnvVarKey: runtimeValue}, // envVars
+		nil,                              // filesArtifactExpansion
+		nil,                              // persistentDirectories
+		0,                                // cpuAllocationMillicpus
+		0,                                // memoryAllocationMegabytes
+		"",                               // privateIPAddrPlaceholder
+		0,                                // minCpuAllocationMilliCpus
+		0,                                // minMemoryAllocationMegabytes
+		map[string]string{},              // labels
+		nil,                              // user
+		[]v1.Toleration{},                // tolerations
+		map[string]string{},              // nodeSelectors
+		image_download_mode.ImageDownloadMode_Missing, // imageDownloadMode
+		true,                             // tiniEnabled
+		nil,                              // kubernetesConfig
 	)
 	require.NoError(t, err)
 
@@ -182,7 +172,7 @@ func TestAddServiceShared_EnvVarsWithRuntimeValueAreReplaced(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, serviceName, replacedServiceName)
 	expectedEnvVars := map[string]string{
-		"PORT": "8765",
+		testEnvVarKey: "8765",
 	}
 	require.Equal(t, expectedEnvVars, replacedServiceConfig.GetEnvVars())
 }
@@ -222,15 +212,12 @@ func TestAddServiceShared_ServiceNameWithRuntimeValuesAreReplaced(t *testing.T) 
 		0,                                // minCpuAllocationMilliCpus
 		0,                                // minMemoryAllocationMegabytes
 		map[string]string{},              // labels
-		map[string]string{},              // ingressAnnotations
-		nil,                              // ingressClassName
-		nil,                              // ingressHost
-		nil,                              // ingressTLSHost
 		nil,                              // user
 		[]v1.Toleration{},                // tolerations
 		map[string]string{},              // nodeSelectors
-		image_download_mode.ImageDownloadMode_Missing,
-		true,
+		image_download_mode.ImageDownloadMode_Missing, // imageDownloadMode
+		true,                             // tiniEnabled
+		nil,                              // kubernetesConfig
 	)
 	require.NoError(t, err)
 

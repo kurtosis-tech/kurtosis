@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/kubernetes"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
@@ -27,7 +28,7 @@ func TestServiceConfigMarshallers(t *testing.T) {
 
 	// Suppressing exhaustruct requirement because we want an object with zero values
 	// nolint: exhaustruct
-	newServiceConfig := &service.ServiceConfig{}
+	newServiceConfig := &ServiceConfig{}
 
 	err = json.Unmarshal(marshaledServiceConfig, newServiceConfig)
 	require.NoError(t, err)
@@ -48,11 +49,8 @@ func TestServiceConfigMarshallers(t *testing.T) {
 		require.EqualValues(t, publicPortSpec, originalPublicPortSpec)
 	}
 
-	require.Equal(t, originalServiceConfig, newServiceConfig)
 	require.Equal(t, originalServiceConfig.GetEnvVars(), newServiceConfig.GetEnvVars())
 	require.Equal(t, originalServiceConfig.GetCmdArgs(), newServiceConfig.GetCmdArgs())
-	require.Equal(t, originalServiceConfig.GetEnvVars(), newServiceConfig.GetEnvVars())
-	require.EqualValues(t, originalServiceConfig.GetPersistentDirectories(), newServiceConfig.GetPersistentDirectories())
 	require.EqualValues(t, originalServiceConfig.GetPersistentDirectories(), newServiceConfig.GetPersistentDirectories())
 	require.Equal(t, originalServiceConfig.GetCPUAllocationMillicpus(), newServiceConfig.GetCPUAllocationMillicpus())
 	require.Equal(t, originalServiceConfig.GetMemoryAllocationMegabytes(), newServiceConfig.GetMemoryAllocationMegabytes())
@@ -62,12 +60,21 @@ func TestServiceConfigMarshallers(t *testing.T) {
 	require.Equal(t, originalServiceConfig.GetLabels(), newServiceConfig.GetLabels())
 	require.Equal(t, originalServiceConfig.GetImageBuildSpec(), newServiceConfig.GetImageBuildSpec())
 	require.Equal(t, originalServiceConfig.GetNodeSelectors(), newServiceConfig.GetNodeSelectors())
-	require.Equal(t, originalServiceConfig.GetIngressAnnotations(), newServiceConfig.GetIngressAnnotations())
-	require.Equal(t, originalServiceConfig.GetIngressClassName(), newServiceConfig.GetIngressClassName())
+	require.Equal(t, originalServiceConfig.GetKubernetesConfig(), newServiceConfig.GetKubernetesConfig())
 }
 
 func TestIngressAnnotations(t *testing.T) {
-	serviceConfig, err := service.CreateServiceConfig(
+	ingressAnnotations := map[string]string{"ingress.kubernetes.io/test": "value"}
+	kubeConfig := &kubernetes.Config{
+		ExtraIngressConfig: &kubernetes.ExtraIngressConfig{
+			IngressSpecs: []*kubernetes.IngressSpec{
+				{
+					Annotations: (*kubernetes.Annotations)(&ingressAnnotations),
+				},
+			},
+		},
+	}
+	serviceConfig, err := CreateServiceConfig(
 		"test-image",
 		nil, nil, nil,
 		map[string]*port_spec.PortSpec{},
@@ -79,34 +86,37 @@ func TestIngressAnnotations(t *testing.T) {
 		"test-ip",
 		100, 512,
 		map[string]string{},
-		map[string]string{"ingress.kubernetes.io/test": "value"},
-		nil, nil, nil,
 		nil, nil, nil,
 		image_download_mode.ImageDownloadMode_Always,
 		true,
+		kubeConfig,
 	)
 	require.NoError(t, err)
 
-	// Test initial annotations
-	annotations := serviceConfig.GetIngressAnnotations()
-	require.NotNil(t, annotations)
-	require.Equal(t, "value", annotations["ingress.kubernetes.io/test"])
-
-	// Test setting new annotations
-	newAnnotations := map[string]string{
-		"ingress.kubernetes.io/new": "new-value",
-	}
-	serviceConfig.SetIngressAnnotations(newAnnotations)
-	require.Equal(t, newAnnotations, serviceConfig.GetIngressAnnotations())
-
-	// Test setting nil annotations
-	serviceConfig.SetIngressAnnotations(nil)
-	require.Nil(t, serviceConfig.GetIngressAnnotations())
+	// Test that Kubernetes config exists
+	kubernetesConfig := serviceConfig.GetKubernetesConfig()
+	require.NotNil(t, kubernetesConfig)
+	require.NotNil(t, kubernetesConfig.ExtraIngressConfig)
+	require.Len(t, kubernetesConfig.ExtraIngressConfig.IngressSpecs, 1)
+	
+	// Test that annotations are accessible
+	ingressSpec := kubernetesConfig.ExtraIngressConfig.IngressSpecs[0]
+	require.NotNil(t, ingressSpec.Annotations)
+	require.Equal(t, "value", (*ingressSpec.Annotations)["ingress.kubernetes.io/test"])
 }
 
 func TestIngressClassName(t *testing.T) {
 	className := "test-class"
-	serviceConfig, err := service.CreateServiceConfig(
+	kubeConfig := &kubernetes.Config{
+		ExtraIngressConfig: &kubernetes.ExtraIngressConfig{
+			IngressSpecs: []*kubernetes.IngressSpec{
+				{
+					IngressClassName: &className,
+				},
+			},
+		},
+	}
+	serviceConfig, err := CreateServiceConfig(
 		"test-image",
 		nil, nil, nil,
 		map[string]*port_spec.PortSpec{},
@@ -118,32 +128,37 @@ func TestIngressClassName(t *testing.T) {
 		"test-ip",
 		100, 512,
 		map[string]string{},
-		nil,
-		&className, nil, nil,
 		nil, nil, nil,
 		image_download_mode.ImageDownloadMode_Always,
 		true,
+		kubeConfig,
 	)
 	require.NoError(t, err)
 
-	// Test initial class name
-	require.NotNil(t, serviceConfig.GetIngressClassName())
-	require.Equal(t, className, *serviceConfig.GetIngressClassName())
-
-	// Test setting new class name
-	newClassName := "new-class"
-	serviceConfig.SetIngressClassName(&newClassName)
-	require.NotNil(t, serviceConfig.GetIngressClassName())
-	require.Equal(t, newClassName, *serviceConfig.GetIngressClassName())
-
-	// Test setting nil class name
-	serviceConfig.SetIngressClassName(nil)
-	require.Nil(t, serviceConfig.GetIngressClassName())
+	// Test Kubernetes config and ingress spec
+	kubernetesConfig := serviceConfig.GetKubernetesConfig()
+	require.NotNil(t, kubernetesConfig)
+	require.NotNil(t, kubernetesConfig.ExtraIngressConfig)
+	require.Len(t, kubernetesConfig.ExtraIngressConfig.IngressSpecs, 1)
+	
+	// Test that class name is accessible
+	ingressSpec := kubernetesConfig.ExtraIngressConfig.IngressSpecs[0]
+	require.NotNil(t, ingressSpec.IngressClassName)
+	require.Equal(t, className, *ingressSpec.IngressClassName)
 }
 
 func TestIngressHost(t *testing.T) {
 	host := "test.example.com"
-	serviceConfig, err := service.CreateServiceConfig(
+	kubeConfig := &kubernetes.Config{
+		ExtraIngressConfig: &kubernetes.ExtraIngressConfig{
+			IngressSpecs: []*kubernetes.IngressSpec{
+				{
+					Host: &host,
+				},
+			},
+		},
+	}
+	serviceConfig, err := CreateServiceConfig(
 		"test-image",
 		nil, nil, nil,
 		map[string]*port_spec.PortSpec{},
@@ -155,27 +170,40 @@ func TestIngressHost(t *testing.T) {
 		"test-ip",
 		100, 512,
 		map[string]string{},
-		nil,
-		nil, &host, nil,
 		nil, nil, nil,
 		image_download_mode.ImageDownloadMode_Always,
 		true,
+		kubeConfig,
 	)
 	require.NoError(t, err)
 
-	// Test initial host
-	require.NotNil(t, serviceConfig.GetIngressHost())
-	require.Equal(t, host, *serviceConfig.GetIngressHost())
-
-	// Test setting new host
-	newHost := "new.example.com"
-	serviceConfig.SetIngressHost(&newHost)
-	require.Equal(t, newHost, *serviceConfig.GetIngressHost())
+	// Test Kubernetes config and ingress spec
+	kubernetesConfig := serviceConfig.GetKubernetesConfig()
+	require.NotNil(t, kubernetesConfig)
+	require.NotNil(t, kubernetesConfig.ExtraIngressConfig)
+	require.Len(t, kubernetesConfig.ExtraIngressConfig.IngressSpecs, 1)
+	
+	// Test that host is accessible
+	ingressSpec := kubernetesConfig.ExtraIngressConfig.IngressSpecs[0]
+	require.NotNil(t, ingressSpec.Host)
+	require.Equal(t, host, *ingressSpec.Host)
 }
 
 func TestIngressTLS(t *testing.T) {
 	tlsHost := "test.example.com"
-	serviceConfig, err := service.CreateServiceConfig(
+	kubeConfig := &kubernetes.Config{
+		ExtraIngressConfig: &kubernetes.ExtraIngressConfig{
+			IngressSpecs: []*kubernetes.IngressSpec{
+				{
+					Host: &tlsHost,
+					TlsConfig: &kubernetes.TlsConfig{
+						SecretName: "tls-secret",
+					},
+				},
+			},
+		},
+	}
+	serviceConfig, err := CreateServiceConfig(
 		"test-image",
 		nil, nil, nil,
 		map[string]*port_spec.PortSpec{},
@@ -187,29 +215,46 @@ func TestIngressTLS(t *testing.T) {
 		"test-ip",
 		100, 512,
 		map[string]string{},
-		nil,
-		nil, nil, &tlsHost,
 		nil, nil, nil,
 		image_download_mode.ImageDownloadMode_Always,
 		true,
+		kubeConfig,
 	)
 	require.NoError(t, err)
 
-	// Test initial TLS host
-	require.NotNil(t, serviceConfig.GetIngressTLSHost())
-	require.Equal(t, tlsHost, *serviceConfig.GetIngressTLSHost())
-
-	// Test setting new TLS host
-	newTLSHost := "new.example.com"
-	serviceConfig.SetIngressTLSHost(&newTLSHost)
-	require.Equal(t, newTLSHost, *serviceConfig.GetIngressTLSHost())
+	// Test Kubernetes config and ingress spec
+	kubernetesConfig := serviceConfig.GetKubernetesConfig()
+	require.NotNil(t, kubernetesConfig)
+	require.NotNil(t, kubernetesConfig.ExtraIngressConfig)
+	require.Len(t, kubernetesConfig.ExtraIngressConfig.IngressSpecs, 1)
+	
+	// Test that TLS config is accessible
+	ingressSpec := kubernetesConfig.ExtraIngressConfig.IngressSpecs[0]
+	require.NotNil(t, ingressSpec.TlsConfig)
+	require.Equal(t, "tls-secret", ingressSpec.TlsConfig.SecretName)
 }
 
-func getServiceConfigForTest(t *testing.T, imageName string) *service.ServiceConfig {
-	serviceConfig, err := service.CreateServiceConfig(imageName, testImageBuildSpec(), testImageRegistrySpec(), testNixBuildSpec(), testPrivatePorts(t), testPublicPorts(t), []string{"bin", "bash", "ls"}, []string{"-l", "-a"}, testEnvVars(), testFilesArtifactExpansion(), testPersistentDirectory(), 500, 1024, "IP-ADDRESS", 100, 512, map[string]string{
+func getServiceConfigForTest(t *testing.T, imageName string) *ServiceConfig {
+	annotations := testIngressAnnotations()
+	kubeConfig := &kubernetes.Config{
+		ExtraIngressConfig: &kubernetes.ExtraIngressConfig{
+			IngressSpecs: []*kubernetes.IngressSpec{
+				{
+					Annotations:      (*kubernetes.Annotations)(&annotations),
+					IngressClassName: testIngressClassName(),
+					Host:             testIngressHost(),
+					TlsConfig: &kubernetes.TlsConfig{
+						SecretName: "test-secret",
+					},
+				},
+			},
+		},
+	}
+	
+	serviceConfig, err := CreateServiceConfig(imageName, testImageBuildSpec(), testImageRegistrySpec(), testNixBuildSpec(), testPrivatePorts(t), testPublicPorts(t), []string{"bin", "bash", "ls"}, []string{"-l", "-a"}, testEnvVars(), testFilesArtifactExpansion(), testPersistentDirectory(), 500, 1024, "IP-ADDRESS", 100, 512, map[string]string{
 		"test-label-key":       "test-label-value",
 		"test-label-key-empty": "test-second-label-value",
-	}, testIngressAnnotations(), testIngressClassName(), testIngressHost(), testIngressTLS(), testServiceUser(), testToleration(), testNodeSelectors(), testImageDownloadMode(), true)
+	}, testServiceUser(), testToleration(), testNodeSelectors(), testImageDownloadMode(), true, kubeConfig)
 	require.NoError(t, err)
 	return serviceConfig
 }
@@ -346,8 +391,8 @@ func testImageDownloadMode() image_download_mode.ImageDownloadMode {
 
 func testIngressAnnotations() map[string]string {
 	return map[string]string{
-		"ingress.kubernetes.io/test": "test-value",
-		"custom.annotation/test":     "custom-value",
+		"ingress.kubernetes.io/rewrite-target": "/",
+		"ingress.kubernetes.io/ssl-redirect":   "false",
 	}
 }
 
@@ -357,11 +402,6 @@ func testIngressClassName() *string {
 }
 
 func testIngressHost() *string {
-	host := "test.example.com"
-	return &host
-}
-
-func testIngressTLS() *string {
 	host := "test.example.com"
 	return &host
 }

@@ -32,31 +32,28 @@ func (suite *KurtosisPlanInstructionTestSuite) TestSetService() {
 
 	testServiceConfig, err := service.CreateServiceConfig(
 		testContainerImageName,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		[]string{},
-		[]string{},
-		map[string]string{},
-		nil,
-		nil,
-		0,
-		0,
-		"",
-		0,
-		0,
-		map[string]string{},
-		map[string]string{},
-		nil, // ingressClassName
-		nil, // ingressHost
-		nil, // ingressTLSHost
-		nil, // user
-		nil, // tolerations
-		map[string]string{},
-		image_download_mode.ImageDownloadMode_Missing,
-		true,
+		nil,                              // imageBuildSpec
+		nil,                              // imageRegistrySpec
+		nil,                              // nixBuildSpec
+		nil,                              // privatePorts
+		nil,                              // publicPorts
+		[]string{},                       // entrypointArgs
+		[]string{},                       // cmdArgs
+		map[string]string{},              // envVars
+		nil,                              // filesArtifactExpansion
+		nil,                              // persistentDirectories
+		0,                                // cpuAllocationMillicpus
+		0,                                // memoryAllocationMegabytes
+		"",                               // privateIPAddrPlaceholder
+		0,                                // minCpuAllocationMilliCpus
+		0,                                // minMemoryAllocationMegabytes
+		map[string]string{},              // labels
+		nil,                              // user
+		nil,                              // tolerations
+		map[string]string{},              // nodeSelectors
+		image_download_mode.ImageDownloadMode_Missing, // imageDownloadMode
+		true,                             // tiniEnabled
+		nil,                              // kubernetesConfig
 	)
 	require.NoError(suite.T(), err)
 	suite.interpretationTimeValueStore.PutServiceConfig(testServiceName, testServiceConfig)

@@ -423,15 +423,12 @@ func replaceMagicStringsInEnvVars(runtimeValueStore *runtime_value_store.Runtime
 		serviceConfig.GetMinCPUAllocationMillicpus(),
 		serviceConfig.GetMinMemoryAllocationMegabytes(),
 		serviceConfig.GetLabels(),
-		serviceConfig.GetIngressAnnotations(),
-		serviceConfig.GetIngressClassName(),
-		serviceConfig.GetIngressHost(),
-		serviceConfig.GetIngressTLSHost(),
 		serviceConfig.GetUser(),
 		serviceConfig.GetTolerations(),
 		serviceConfig.GetNodeSelectors(),
 		serviceConfig.GetImageDownloadMode(),
 		tiniEnabled,
+		nil, // kubernetesConfig
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a service config with env var magric strings replaced.")

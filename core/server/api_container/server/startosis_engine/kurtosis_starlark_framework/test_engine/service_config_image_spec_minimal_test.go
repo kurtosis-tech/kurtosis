@@ -69,19 +69,16 @@ func (t *serviceConfigImageSpecMinimalTest) Assert(typeValue builtin_argument.Ku
 		nil,                              // persistentDirectories
 		0,                                // cpuAllocationMillicpus
 		0,                                // memoryAllocationMegabytes
-		service_config.DefaultPrivateIPAddrPlaceholder,
-		0,                   // minCpuAllocationMilliCpus
-		0,                   // minMemoryAllocationMegabytes
-		map[string]string{}, // labels
-		map[string]string{}, // ingressAnnotations
-		nil,                 // ingressClassName
-		nil,                 // ingressHost
-		nil,                 // ingressTLSHost
-		nil,                 // user
-		nil,                 // tolerations
-		map[string]string{}, // nodeSelectors
-		image_download_mode.ImageDownloadMode_Missing,
-		true, // waitForPorts
+		service_config.DefaultPrivateIPAddrPlaceholder, // privateIPAddrPlaceholder
+		0,                                // minCpuAllocationMilliCpus
+		0,                                // minMemoryAllocationMegabytes
+		map[string]string{},              // labels
+		nil,                              // user
+		nil,                              // tolerations
+		map[string]string{},              // nodeSelectors
+		image_download_mode.ImageDownloadMode_Missing, // imageDownloadMode
+		true,                             // tiniEnabled
+		nil,                              // kubernetesConfig
 	)
 	require.NoError(t, err)
 	require.Equal(t, expectedServiceConfig, serviceConfig)

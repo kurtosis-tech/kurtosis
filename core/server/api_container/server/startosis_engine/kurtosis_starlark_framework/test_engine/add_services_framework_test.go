@@ -73,18 +73,15 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 				0,                                // cpuAllocationMillicpus
 				0,                                // memoryAllocationMegabytes
 				service_config.DefaultPrivateIPAddrPlaceholder, // privateIPAddrPlaceholder
-				0,                   // minCpuAllocationMilliCpus
-				0,                   // minMemoryAllocationMegabytes
-				map[string]string{}, // labels
-				map[string]string{}, // ingressAnnotations
-				nil,                 // ingressClassName
-				nil,                 // ingressHost
-				nil,                 // ingressTLSHost
-				nil,                 // user
-				nil,                 // tolerations
-				map[string]string{}, // nodeSelectors
-				image_download_mode.ImageDownloadMode_Missing,
-				true,
+				0,                                // minCpuAllocationMilliCpus
+				0,                                // minMemoryAllocationMegabytes
+				map[string]string{},              // labels
+				nil,                              // user
+				nil,                              // tolerations
+				map[string]string{},              // nodeSelectors
+				image_download_mode.ImageDownloadMode_Missing, // imageDownloadMode
+				true,                             // tiniEnabled
+				nil,                              // kubernetesConfig
 			)
 			require.NoError(suite.T(), err)
 
@@ -106,18 +103,15 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 				testCpuAllocation,                // cpuAllocationMillicpus
 				testMemoryAllocation,             // memoryAllocationMegabytes
 				service_config.DefaultPrivateIPAddrPlaceholder, // privateIPAddrPlaceholder
-				0,                   // minCpuAllocationMilliCpus
-				0,                   // minMemoryAllocationMegabytes
-				map[string]string{}, // labels
-				map[string]string{}, // ingressAnnotations
-				nil,                 // ingressClassName
-				nil,                 // ingressHost
-				nil,                 // ingressTLSHost
-				nil,                 // user
-				nil,                 // tolerations
-				map[string]string{}, // nodeSelectors
-				image_download_mode.ImageDownloadMode_Missing,
-				true,
+				0,                                // minCpuAllocationMilliCpus
+				0,                                // minMemoryAllocationMegabytes
+				map[string]string{},              // labels
+				nil,                              // user
+				nil,                              // tolerations
+				map[string]string{},              // nodeSelectors
+				image_download_mode.ImageDownloadMode_Missing, // imageDownloadMode
+				true,                             // tiniEnabled
+				nil,                              // kubernetesConfig
 			)
 			require.NoError(suite.T(), err)
 

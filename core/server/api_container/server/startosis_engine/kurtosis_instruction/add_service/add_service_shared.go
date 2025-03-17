@@ -227,15 +227,12 @@ func replaceMagicStrings(
 		serviceConfig.GetMinCPUAllocationMillicpus(),
 		serviceConfig.GetMinMemoryAllocationMegabytes(),
 		serviceConfig.GetLabels(),
-		serviceConfig.GetIngressAnnotations(),
-		serviceConfig.GetIngressClassName(),
-		serviceConfig.GetIngressHost(),
-		serviceConfig.GetIngressTLSHost(),
 		serviceConfig.GetUser(),
 		serviceConfig.GetTolerations(),
 		serviceConfig.GetNodeSelectors(),
 		serviceConfig.GetImageDownloadMode(),
 		serviceConfig.GetTiniEnabled(),
+		nil, // kubernetesConfig
 	)
 
 	if err != nil {

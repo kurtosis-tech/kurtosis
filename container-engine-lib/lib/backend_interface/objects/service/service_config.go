@@ -276,6 +276,10 @@ func (serviceConfig *ServiceConfig) SetKubernetesConfig(config *kube_config.Conf
 //	return json.Marshal(serviceConfig.privateServiceConfig)
 //}
 
+func (serviceConfig *ServiceConfig) MarshalJSON() ([]byte, error) {
+	return json.Marshal(serviceConfig.privateServiceConfig)
+}
+
 func (serviceConfig *ServiceConfig) UnmarshalJSON(data []byte) error {
 
 	// Suppressing exhaustruct requirement because we want an object with zero values

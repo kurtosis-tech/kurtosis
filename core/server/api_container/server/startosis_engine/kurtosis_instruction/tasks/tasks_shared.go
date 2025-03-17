@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/xtgo/uuid"
 	"reflect"
 	"strings"
@@ -314,15 +315,12 @@ func getServiceConfig(
 		0,
 		0,
 		map[string]string{},
-		map[string]string{}, // ingressAnnotations
-		nil,                 // ingressClassName
-		nil,                 // ingressHost
-		nil,                 // ingressTLSHost
-		nil,                 // user
-		nil,                 // tolerations
+		nil, // user
+		nil, // tolerations
 		map[string]string{}, // nodeSelectors
 		image_download_mode.ImageDownloadMode_Missing,
 		tiniEnabled,
+		nil, // kubernetesConfig
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating service config")

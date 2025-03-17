@@ -7,6 +7,9 @@ openapi_root_dirpath="$(dirname "${script_dirpath}")"
 api_root_dirpath="$(dirname "${openapi_root_dirpath}")"
 
 echo "Generating data models for REST API "
+echo $PATH
+echo $GOBIN
+which oapi-codegen
 oapi-codegen --config="$openapi_root_dirpath/generators/api_types.cfg.yaml" "$openapi_root_dirpath/specs/kurtosis_api.yaml"
 
 echo "Generating server code for REST API "

@@ -558,29 +558,13 @@ func (config *ServiceConfig) ToKurtosisType(
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
-	//
-	//var kubernetesConfig *kubernetes.Config
-	//if found && kubernetesConfigStarlark != nil {
-	//	ingressesStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.List](config.KurtosisValueTypeDefault, IngressesAttr)
-	//	if interpretationErr != nil {
-	//		return nil, interpretationErr
-	//	}
-	//
-	//	var extraIngressConfig *service.ExtraIngressConfig
-	//	if found && ingressesStarlark != nil {
-	//		extraIngressConfig, interpretationErr = convertIngressConfig(ingressesStarlark)
-	//		if interpretationErr != nil {
-	//			return nil, interpretationErr
-	//		}
-	//	}
-	//}
 
 	kurtosisKubernetesConfig, err := convertKubeConfig(kubernetesConfigStarlark)
 	if err != nil {
 		return nil, startosis_errors.NewInterpretationError("an error occurred converting Kubernetes config to Kurtosis type: %v", err)
 	}
 
-	serviceConfig, err := service.CreateServiceConfig(
+	serviceConfig, serviceErr := service.CreateServiceConfig(
 		imageName,
 		maybeImageBuildSpec,
 		maybeImageRegistrySpec,
@@ -605,13 +589,10 @@ func (config *ServiceConfig) ToKurtosisType(
 		tiniEnabled,
 		kurtosisKubernetesConfig,
 	)
-	if err != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating a service config")
+	if serviceErr != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(serviceErr, "An error occurred creating a service config")
 	}
 
-	//if kubernetesConfig != nil {
-	//	serviceConfig.SetKubernetesConfig(kurtosisKubernetesConfig)
-	//}
 	serviceConfig.SetFilesToBeMoved(filesToBeMoved)
 	return serviceConfig, nil
 }
@@ -627,20 +608,6 @@ func (config *ServiceConfig) GetReadyCondition() (*ReadyCondition, *startosis_er
 
 	return readyConditions, nil
 }
-
-//func (config *ServiceConfig) GetKubernetesConfig() (*kubernetes.Config, *startosis_errors.InterpretationError) {
-//	kubeConfigValue, found := config.GetField(KubernetesConfigAttr)
-//	if !found || kubeConfigValue == nil || kubeConfigValue == starlark.None {
-//		return nil, nil
-//	}
-//
-//	kubeConfig, ok := kubeConfigValue.(*kubernetes.Config)
-//	if !ok {
-//		return nil, startosis_errors.NewInterpretationError("Expected value of '%v' to be a Config but was '%v'", KubernetesConfigAttr, kubeConfigValue.Type())
-//	}
-//
-//	return kubeConfig, nil
-//}
 
 func ConvertFilesArtifactsMounts(filesArtifactsMountDirpathsMap map[string][]string, serviceNetwork service_network.ServiceNetwork) (*service_directory.FilesArtifactsExpansion, *startosis_errors.InterpretationError) {
 	filesArtifactsExpansions := []args.FilesArtifactExpansion{}
@@ -808,25 +775,6 @@ func ConvertImage(
 	}
 }
 
-//
-//func convertIngressConfig(ingressConfigValue starlark.Value) (*service.IngressConfig, *startosis_errors.InterpretationError) {
-//	if ingressConfigValue == nil || ingressConfigValue == starlark.None {
-//		return nil, nil
-//	}
-//
-//	extraConfig, ok := ingressConfigValue.(*kubernetes.ExtraIngressConfig)
-//	if !ok {
-//		return nil, startosis_errors.NewInterpretationError("Expected value to be an ExtraIngressConfig but was '%v'", ingressConfigValue.Type())
-//	}
-//
-//	var ktIngress, err = extraConfig.convertTlsConfig()
-//	if err != nil {
-//		return nil, startosis_errors.NewInterpretationError("Error converting extraIngressConfig", err)
-//	}
-//
-//	ktIngress.
-//}
-
 func convertTolerations(tolerationsList *starlark.List) ([]v1.Toleration, *startosis_errors.InterpretationError) {
 	var outputValue []v1.Toleration
 	iterator := tolerationsList.Iterate()
@@ -851,12 +799,11 @@ func convertTolerations(tolerationsList *starlark.List) ([]v1.Toleration, *start
 	return outputValue, nil
 }
 
-func convertExtraIngressConfig(config *starlark_kube_config.KubernetesConfig) (*kube_config.ExtraIngressConfig, error) {
-
-}
-
 func extractExtraIngressConfig(config *starlark_kube_config.KubernetesConfig) (*kube_config.ExtraIngressConfig, *startosis_errors.InterpretationError) {
-	var extraIngressConfig interface{}
+	if config == nil {
+		return nil, nil
+	}
+	
 	extraIngressConfig, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark_kube_config.ExtraIngressConfig](
 		config.KurtosisValueTypeDefault, starlark_kube_config.ExtraIngressConfigAttr,
 	)
@@ -868,17 +815,14 @@ func extractExtraIngressConfig(config *starlark_kube_config.KubernetesConfig) (*
 		return nil, nil
 	}
 
-	kteic, ok := extraIngressConfig.(*kube_config.ExtraIngressConfig)
-	if !ok {
-		return nil, startosis_errors.NewInterpretationError(
-			"Could not convert %s field extraIngressConfig Ingress Config",
-			config.Type(),
-		)
-	}
-	return kteic, nil
+	return convertExtraIngressConfig(extraIngressConfig)
 }
 
-func convertKubeConfig(config *starlark_kube_config.KubernetesConfig) (*kube_config.Config, error) {
+func convertKubeConfig(config *starlark_kube_config.KubernetesConfig) (*kube_config.Config, *startosis_errors.InterpretationError) {
+	if config == nil {
+		return nil, nil
+	}
+	
 	extraIngressConfig, interpretationError := extractExtraIngressConfig(config)
 	if interpretationError != nil {
 		return nil, interpretationError
@@ -898,22 +842,148 @@ func convertTlsConfig(config *starlark_kube_config.IngressTLSConfig) (*kube_conf
 	}, nil
 }
 
-//func convertKubernetesConfig(kubernetesSpecificConfig starlark.Value) (*kubernetes.Config, *startosis_errors.InterpretationError) {
-//	if kubernetesSpecificConfig == nil || kubernetesSpecificConfig == starlark.None {
-//		return nil, nil
-//	}
-//
-//	kubernetesConfig, ok := kubernetesSpecificConfig.(*kubernetes.Config)
-//	if !ok {
-//		return nil, startosis_errors.NewInterpretationError("Expected value of '%v' to be a Config but was '%v'", KubernetesConfigAttr, kubernetesSpecificConfig.Type())
-//	}
-//
-//	// Convert and validate each ingress config
-//	for _, ingressConfig := range kubernetesConfig.GetIngresses() {
-//		if _, err := convertIngressConfig(ingressConfig); err != nil {
-//			return nil, err
-//		}
-//	}
-//
-//	return kubernetesConfig, nil
-//}
+func convertHttpRule(rule *starlark_kube_config.IngressHttpRule) (*kube_config.HttpRule, *startosis_errors.InterpretationError) {
+	path, interpretationErr := rule.GetPath()
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	pathType, interpretationErr := rule.GetPathType()
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	portConfig, interpretationErr := rule.GetPortConfig()
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	convertedPortConfig, interpretationErr := convertPortConfig(portConfig)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	return &kube_config.HttpRule{
+		PortConfig: convertedPortConfig,
+		Path:       path,
+		PathType:   pathType,
+	}, nil
+}
+
+func convertPortConfig(config *starlark_kube_config.IngressPortConfig) (*kube_config.PortConfig, *startosis_errors.InterpretationError) {
+	portName, interpretationErr := config.GetPortName()
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	portNumber, interpretationErr := config.GetPortNumber()
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	pname := ""
+	if portName != nil {
+		pname = *portName
+	}
+
+	var pnumber int32 = 0
+	if portNumber != nil {
+		pnumber = int32(*portNumber)
+	}
+	return &kube_config.PortConfig{
+		Name:   pname,
+		Number: pnumber,
+	}, nil
+}
+
+func convertIngressSpec(ingressSpec *starlark_kube_config.IngressSpec) (*kube_config.IngressSpec, *startosis_errors.InterpretationError) {
+	handleError := func(err error, attr string) *startosis_errors.InterpretationError {
+		return startosis_errors.WrapWithInterpretationError(
+			err, "Error interpreting %s", attr,
+		)
+	}
+
+	ingressClassName, err := ingressSpec.GetIngressClassName()
+	if err != nil {
+		return nil, handleError(err, starlark_kube_config.IngressClassNameAttr)
+	}
+
+	host, err := ingressSpec.GetHost()
+	if err != nil {
+		return nil, handleError(err, starlark_kube_config.HostAttr)
+	}
+
+	annotationsDict, err := ingressSpec.GetAnnotations()
+	if err != nil {
+		return nil, handleError(err, starlark_kube_config.AnnotationsAttr)
+	}
+	
+	var annotations *kube_config.Annotations
+	if annotationsDict != nil {
+		dict, err := kurtosis_types.SafeCastToMapStringString(annotationsDict, "ingressTargetAnnotations")
+		if err != nil {
+			return nil, handleError(err, starlark_kube_config.AnnotationsAttr)
+		}
+		annotations = &dict
+	}
+
+	tlsConfigStarlark, err := ingressSpec.GetTlsConfig()
+	if err != nil {
+		return nil, handleError(err, starlark_kube_config.IngressTlsAttr)
+	}
+	
+	var tlsConfig *kube_config.TlsConfig
+	if tlsConfigStarlark != nil {
+		tlsConfig, err = convertTlsConfig(tlsConfigStarlark)
+		if err != nil {
+			return nil, handleError(err, starlark_kube_config.IngressTlsAttr)
+		}
+	}
+
+	rulesStarlark, err := ingressSpec.GetRules()
+	if err != nil {
+		return nil, handleError(err, starlark_kube_config.IngressHttpRuleAttr)
+	}
+	
+	var rules []*kube_config.HttpRule
+	if rulesStarlark != nil {
+		for _, rule := range rulesStarlark {
+			convertedRule, err := convertHttpRule(rule)
+			if err != nil {
+				return nil, handleError(err, starlark_kube_config.IngressHttpRuleAttr)
+			}
+			rules = append(rules, convertedRule)
+		}
+	}
+
+	result := &kube_config.IngressSpec{
+		Annotations:      annotations,
+		Host:             host,
+		TlsConfig:        tlsConfig,
+		HttpRules:        rules,
+		IngressClassName: ingressClassName,
+	}
+
+	return result, nil
+}
+
+func convertExtraIngressConfig(extraIngressConfig *starlark_kube_config.ExtraIngressConfig) (*kube_config.ExtraIngressConfig, *startosis_errors.InterpretationError) {
+	ingressSpecsStarlark, interpretationErr := extraIngressConfig.GetIngresses()
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	
+	var ingressSpecs []*kube_config.IngressSpec
+	if ingressSpecsStarlark != nil {
+		for _, ingressSpec := range ingressSpecsStarlark {
+			convertedSpec, interpretationErr := convertIngressSpec(ingressSpec)
+			if interpretationErr != nil {
+				return nil, interpretationErr
+			}
+			ingressSpecs = append(ingressSpecs, convertedSpec)
+		}
+	}
+	
+	return &kube_config.ExtraIngressConfig{
+		IngressSpecs: ingressSpecs,
+	}, nil
+}
