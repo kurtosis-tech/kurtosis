@@ -684,7 +684,7 @@ func (fluentbit *fluentbitLogsCollector) Clean(
 		}
 	}
 
-	//patch daemon set again to have no node selectors, allowing daemon set to schedule log collector pods
+	// update daemon set again to have no node selectors, allowing daemon set to schedule log collector pods
 	err = kubernetesManager.UpdateDaemonSetWithNodeSelectors(
 		ctx,
 		logsCollectorDaemonSet,
