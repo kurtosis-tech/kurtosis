@@ -13,7 +13,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"io"
 	v1 "k8s.io/api/apps/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"net/http"
 	"net/url"
 	"os"
@@ -1396,52 +1395,57 @@ func (manager *KubernetesManager) GetPodsManagedByDaemonSet(ctx context.Context,
 }
 
 func (manager *KubernetesManager) UpdateDaemonSetWithNodeSelectors(ctx context.Context, daemonSet *v1.DaemonSet, nodeSelector map[string]string) error {
-	// copy daemon set
-	patch := &v1.DaemonSet{
-		Spec: v1.DaemonSetSpec{
-			Template: *daemonSet.Spec.Template.DeepCopy(),
-		},
-	}
-
-	// combine  node selectors
-	mergedNodeSelectors := map[string]string{}
-	//if patch.Spec.Template.Spec.NodeSelector != nil {
-	for label, val := range patch.Spec.Template.Spec.NodeSelector {
-		mergedNodeSelectors[label] = val
-	}
+	//// copy daemon set
+	//patch := &v1.DaemonSet{
+	//	Spec: v1.DaemonSetSpec{
+	//		Template: *daemonSet.Spec.Template.DeepCopy(),
+	//	},
 	//}
-	for label, val := range nodeSelector {
-		mergedNodeSelectors[label] = val
-	}
+
+	//patch.Spec.Template.Spec.NodeSelector = mergedNodeSelectors
 
 	// update node selectors to use merged selectors
-	patch.Spec.Template.Spec.NodeSelector = mergedNodeSelectors
-
-	patchData, err := json.Marshal(patch)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred marshaling patch for DaemonSet '%s'.", daemonSet.Name)
+	for k, v := range nodeSelector {
+		daemonSet.Spec.Template.Spec.NodeSelector[k] = v
 	}
 
-	_, err = manager.kubernetesClientSet.AppsV1().DaemonSets(daemonSet.Namespace).Patch(
+	_, err := manager.kubernetesClientSet.AppsV1().DaemonSets(daemonSet.Namespace).Update(
 		ctx,
-		daemonSet.Name,
-		types.StrategicMergePatchType, // TODO explain structured patch
-		patchData,
-		metav1.PatchOptions{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "",
-				APIVersion: "",
-			},
+		daemonSet,
+		metav1.UpdateOptions{
+			TypeMeta:        metav1.TypeMeta{},
 			DryRun:          nil,
-			Force:           nil,
 			FieldManager:    "",
 			FieldValidation: "",
 		},
 	)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred patching daemon set '%v' in namespace '%v' with patch data '%v'.", daemonSet.Name, daemonSet.Namespace, patchData)
+		return stacktrace.Propagate(err, "An error occurred patching daemon set '%v' in namespace '%v'", daemonSet.Name, daemonSet.Namespace)
 	}
-	logrus.Debugf("Successfully patched daemon set with node selector %v and patch data '%v'", nodeSelector, patchData)
+	logrus.Debugf("Successfully updated daemon set '%v' with node selector '%v'", daemonSet.Name, nodeSelector)
+	//
+	//patchData, err := json.Marshal(patch)
+	//if err != nil {
+	//	return stacktrace.Propagate(err, "An error occurred marshaling patch for DaemonSet '%s'.", daemonSet.Name)
+	//}
+	//
+	//_, err = manager.kubernetesClientSet.AppsV1().DaemonSets(daemonSet.Namespace).Patch(
+	//	ctx,
+	//	daemonSet.Name,
+	//	types.StrategicMergePatchType, // TODO explain structured patch
+	//	patchData,
+	//	metav1.PatchOptions{
+	//		TypeMeta: metav1.TypeMeta{
+	//			Kind:       "",
+	//			APIVersion: "",
+	//		},
+	//		DryRun:          nil,
+	//		Force:           nil,
+	//		FieldManager:    "",
+	//		FieldValidation: "",
+	//	},
+	//)
+	//
 
 	return nil
 }
