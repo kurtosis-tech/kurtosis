@@ -1569,7 +1569,9 @@ func (manager *KubernetesManager) CreateDeployment(
 		},
 	}
 
-	if deploymentDefinitionBytes, err := json.Marshal(deploymentToCreate); err == nil {
+	if deploymentDefinitionBytes, err := json.Marshal(deploymentToCreate); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred marshaling deployment object for '%v' into json.", deploymentName)
+	} else {
 		logrus.Debugf("Going to start deployment using the following JSON: %v", string(deploymentDefinitionBytes))
 	}
 
