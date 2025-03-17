@@ -1396,17 +1396,31 @@ func (manager *KubernetesManager) GetPodsManagedByDaemonSet(ctx context.Context,
 }
 
 func (manager *KubernetesManager) UpdateDaemonSetWithNodeSelectors(ctx context.Context, daemonSet *v1.DaemonSet, nodeSelector map[string]string) error {
-	patchData, err := json.Marshal([]map[string]interface{}{
-		{"op": "replace", "path": "/spec/template/spec/nodeSelector", "value": nodeSelector},
-	})
+	// copy daemon set
+	patch := &v1.DaemonSet{
+		Spec: v1.DaemonSetSpec{
+			Template: *daemonSet.Spec.Template.DeepCopy(),
+		},
+	}
+
+	// combine  node selectors
+	mergedNodeSelectors := patch.Spec.Template.Spec.NodeSelector
+	for k, v := range nodeSelector {
+		mergedNodeSelectors[k] = v
+	}
+
+	// update node selectors to use merged selectors
+	patch.Spec.Template.Spec.NodeSelector = mergedNodeSelectors
+
+	patchData, err := json.Marshal(patch)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred marshaling data to patch daemon set '%v' with node selectors '%v':\n%v.", daemonSet.Name, nodeSelector, patchData)
+		return stacktrace.Propagate(err, "An error occurred marshaling patch for DaemonSet '%s'.", daemonSet.Name)
 	}
 
 	_, err = manager.kubernetesClientSet.AppsV1().DaemonSets(daemonSet.Namespace).Patch(
 		ctx,
 		daemonSet.Name,
-		types.JSONPatchType,
+		types.StrategicMergePatchType, // TODO explain structured patch
 		patchData,
 		metav1.PatchOptions{
 			TypeMeta: metav1.TypeMeta{
