@@ -5,38 +5,38 @@ import (
 	"strings"
 )
 
-type KtTlsConfig struct {
+type TlsConfig struct {
 	SecretName string
 }
 
-type KtPortConfig struct {
+type PortConfig struct {
 	Name   string
 	Number int32
 }
 
-type KtHttpRule struct {
-	PortConfig *KtPortConfig
+type HttpRule struct {
+	PortConfig *PortConfig
 	Path       string
 	PathType   string
 }
 
-type KtAnnotations = map[string]string
+type Annotations = map[string]string
 
-type KtIngressSpec struct {
+type IngressSpec struct {
 	IngressClassName *string
 	Host             *string
 	IngressName      *string           // Todo: support with starlark
 	IngressLabels    map[string]string // Todo: support with starlark
-	TlsConfig        *KtTlsConfig
-	Annotations      *KtAnnotations
-	HttpRules        []*KtHttpRule
+	TlsConfig        *TlsConfig
+	Annotations      *Annotations
+	HttpRules        []*HttpRule
 }
 
-type KtExtraIngressConfig struct {
-	IngressSpecs []*KtIngressSpec
+type ExtraIngressConfig struct {
+	IngressSpecs []*IngressSpec
 }
 
-func (httpRule *KtHttpRule) ToKubernetesHttpIngressPath(serviceName string) netv1.HTTPIngressPath {
+func (httpRule *HttpRule) ToKubernetesHttpIngressPath(serviceName string) netv1.HTTPIngressPath {
 	pt := netv1.PathType(httpRule.PathType)
 	return netv1.HTTPIngressPath{
 		Path:     httpRule.Path,
@@ -53,7 +53,7 @@ func (httpRule *KtHttpRule) ToKubernetesHttpIngressPath(serviceName string) netv
 	}
 }
 
-func (ingressSpec *KtIngressSpec) GetAllKubernetesHttpIngressPaths(
+func (ingressSpec *IngressSpec) GetAllKubernetesHttpIngressPaths(
 	serviceName string,
 ) []netv1.HTTPIngressPath {
 
@@ -71,7 +71,7 @@ func (ingressSpec *KtIngressSpec) GetAllKubernetesHttpIngressPaths(
 // We avoid returning an array here due to a design decision to only support on host per
 // ingress. This simplifies the complexity of adding support for IngressController
 // specific non-http ingresses should they be desired later.
-func (ingressSpec *KtIngressSpec) GetKubernetesIngressRule(serviceName string) netv1.IngressRule {
+func (ingressSpec *IngressSpec) GetKubernetesIngressRule(serviceName string) netv1.IngressRule {
 	paths := ingressSpec.GetAllKubernetesHttpIngressPaths(serviceName)
 
 	return netv1.IngressRule{
@@ -84,7 +84,7 @@ func (ingressSpec *KtIngressSpec) GetKubernetesIngressRule(serviceName string) n
 	}
 }
 
-func (ingressSpec *KtIngressSpec) ConstructIngressName(
+func (ingressSpec *IngressSpec) ConstructIngressName(
 	kurtosisServiceName string,
 	extraIngressIdentifierSuffixOverride *string,
 ) string {
@@ -106,7 +106,7 @@ func (ingressSpec *KtIngressSpec) ConstructIngressName(
 	return strings.Join(nameParts, "-")
 }
 
-func (ingressSpec *KtIngressSpec) GetHost() string {
+func (ingressSpec *IngressSpec) GetHost() string {
 	if ingressSpec == nil {
 		return ""
 	}

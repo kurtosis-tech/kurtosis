@@ -1,6 +1,7 @@
 package kubernetes
 
 import (
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/kubernetes"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
@@ -104,7 +105,7 @@ func (config *IngressHttpRule) GetPathType() (string, *startosis_errors.Interpre
 	return pathType.GoString(), nil
 }
 
-func (config *IngressHttpRule) GetPortConfig() (*KtPortConfig, *startosis_errors.InterpretationError) {
+func (config *IngressHttpRule) GetPortConfig() (*kubernetes.PortConfig, *startosis_errors.InterpretationError) {
 	portConfig, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*IngressPortConfig](
 		config.KurtosisValueTypeDefault, PortAttr)
 	if interpretationErr != nil {
@@ -123,7 +124,7 @@ func (config *IngressHttpRule) GetPortConfig() (*KtPortConfig, *startosis_errors
 
 }
 
-func (config *IngressHttpRule) ToKurtosisType() (*KtHttpRule, *startosis_errors.InterpretationError) {
+func (config *IngressHttpRule) ToKurtosisType() (*kubernetes.HttpRule, *startosis_errors.InterpretationError) {
 	path, interpretationErr := config.GetPath()
 	if interpretationErr != nil {
 		return nil, interpretationErr
@@ -139,7 +140,7 @@ func (config *IngressHttpRule) ToKurtosisType() (*KtHttpRule, *startosis_errors.
 		return nil, interpretationErr
 	}
 
-	return &KtHttpRule{
+	return &kubernetes.HttpRule{
 		PortConfig: portConfig,
 		Path:       path,
 		PathType:   pathType,

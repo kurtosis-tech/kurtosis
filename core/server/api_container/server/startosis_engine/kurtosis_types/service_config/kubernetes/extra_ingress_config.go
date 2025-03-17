@@ -1,6 +1,8 @@
 package kubernetes
 
 import (
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/kubernetes"
+	//"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/kubernetes"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
@@ -63,7 +65,7 @@ func (extraIngressConfig *ExtraIngressConfig) Copy() (builtin_argument.KurtosisV
 
 func (extraIngressConfig *ExtraIngressConfig) Validate() error { return nil }
 
-func (extraIngressConfig *ExtraIngressConfig) GetIngresses() ([]*KtIngressSpec, error) {
+func (extraIngressConfig *ExtraIngressConfig) GetIngresses() ([]*kubernetes.IngressSpec, error) {
 	ingressTargetsList, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.List](
 		extraIngressConfig.KurtosisValueTypeDefault, IngressesAttr,
 	)
@@ -74,7 +76,7 @@ func (extraIngressConfig *ExtraIngressConfig) GetIngresses() ([]*KtIngressSpec, 
 		return nil, nil
 	}
 
-	var ingressTargets []*KtIngressSpec
+	var ingressTargets []*kubernetes.IngressSpec
 	for idx := 0; idx < ingressTargetsList.Len(); idx++ {
 		item := ingressTargetsList.Index(idx)
 		ingressTarget, ok := item.(*IngressSpec)

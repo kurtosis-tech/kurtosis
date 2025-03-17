@@ -1,6 +1,7 @@
 package kubernetes
 
 import (
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/kubernetes"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
@@ -100,7 +101,7 @@ func (config *IngressPortConfig) GetPortNumber() (*uint16, *startosis_errors.Int
 	return &uint16Port, nil
 }
 
-func (config *IngressPortConfig) ToKurtosisType() (*KtPortConfig, *startosis_errors.InterpretationError) {
+func (config *IngressPortConfig) ToKurtosisType() (*kubernetes.PortConfig, *startosis_errors.InterpretationError) {
 	portName, interpretationErr := config.GetPortName()
 	if interpretationErr != nil {
 		return nil, interpretationErr
@@ -119,7 +120,7 @@ func (config *IngressPortConfig) ToKurtosisType() (*KtPortConfig, *startosis_err
 	if portNumber != nil {
 		pnumber = int32(*portNumber)
 	}
-	return &KtPortConfig{
+	return &kubernetes.PortConfig{
 		Name:   pname,
 		Number: pnumber,
 	}, nil

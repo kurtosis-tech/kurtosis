@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/store_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -315,13 +314,13 @@ func getServiceConfig(
 		0,
 		0,
 		map[string]string{},
-		map[string]string{},  // ingressAnnotations
-		nil,                  // ingressClassName
-		nil,                  // ingressHost
-		nil,                  // ingressTLSHost
-		nil,                  // user
-		nil,                  // tolerations
-		map[string]string{},  // nodeSelectors
+		map[string]string{}, // ingressAnnotations
+		nil,                 // ingressClassName
+		nil,                 // ingressHost
+		nil,                 // ingressTLSHost
+		nil,                 // user
+		nil,                 // tolerations
+		map[string]string{}, // nodeSelectors
 		image_download_mode.ImageDownloadMode_Missing,
 		tiniEnabled,
 	)

@@ -1,6 +1,7 @@
 package kubernetes
 
 import (
+	//"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/kubernetes"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
@@ -68,15 +69,4 @@ func (config *IngressTLSConfig) GetSecretName() (string, *startosis_errors.Inter
 			SecretNameAttr, IngressHostTLSConfigTypeName)
 	}
 	return secretName.GoString(), nil
-}
-
-func (config *IngressTLSConfig) ToKurtosisType() (*KtTlsConfig, *startosis_errors.InterpretationError) {
-	secretName, interpretationErr := config.GetSecretName()
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-
-	return &KtTlsConfig{
-		SecretName: secretName,
-	}, nil
 }

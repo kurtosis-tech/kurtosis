@@ -2,7 +2,12 @@ package service_config
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config/kubernetes"
+	kube_config "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/kubernetes"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+
+	//"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	starlark_kube_config "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config/kubernetes"
+
 	"math"
 	"path"
 
@@ -11,7 +16,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
@@ -54,7 +58,7 @@ const (
 	NodeSelectorsAttr               = "node_selectors"
 	FilesToBeMovedAttr              = "files_to_be_moved"
 	TiniEnabledAttr                 = "tini_enabled"
-	KubernetesConfigAttr            = "kubernetes_config"
+	KubernetesConfigAttr            = "kube_config"
 
 	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
@@ -549,12 +553,13 @@ func (config *ServiceConfig) ToKurtosisType(
 		tiniEnabled = bool(tiniEnabledStarlark)
 	}
 
-	kubernetesConfigStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*kubernetes.KubernetesConfig](config.KurtosisValueTypeDefault, KubernetesConfigAttr)
+	var kurtosisKubernetesConfig *kube_config.Config
+	kubernetesConfigStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark_kube_config.KubernetesConfig](config.KurtosisValueTypeDefault, KubernetesConfigAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 	//
-	//var kubernetesConfig *kubernetes.KubernetesConfig
+	//var kubernetesConfig *kubernetes.Config
 	//if found && kubernetesConfigStarlark != nil {
 	//	ingressesStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.List](config.KurtosisValueTypeDefault, IngressesAttr)
 	//	if interpretationErr != nil {
@@ -570,7 +575,7 @@ func (config *ServiceConfig) ToKurtosisType(
 	//	}
 	//}
 
-	kurtosisKubernetesConfig, err := kubernetesConfigStarlark.ToKurtosisType()
+	kurtosisKubernetesConfig, err := convertKubeConfig(kubernetesConfigStarlark)
 	if err != nil {
 		return nil, startosis_errors.NewInterpretationError("an error occurred converting Kubernetes config to Kurtosis type: %v", err)
 	}
@@ -623,15 +628,15 @@ func (config *ServiceConfig) GetReadyCondition() (*ReadyCondition, *startosis_er
 	return readyConditions, nil
 }
 
-//func (config *ServiceConfig) GetKubernetesConfig() (*kubernetes.KubernetesConfig, *startosis_errors.InterpretationError) {
+//func (config *ServiceConfig) GetKubernetesConfig() (*kubernetes.Config, *startosis_errors.InterpretationError) {
 //	kubeConfigValue, found := config.GetField(KubernetesConfigAttr)
 //	if !found || kubeConfigValue == nil || kubeConfigValue == starlark.None {
 //		return nil, nil
 //	}
 //
-//	kubeConfig, ok := kubeConfigValue.(*kubernetes.KubernetesConfig)
+//	kubeConfig, ok := kubeConfigValue.(*kubernetes.Config)
 //	if !ok {
-//		return nil, startosis_errors.NewInterpretationError("Expected value of '%v' to be a KubernetesConfig but was '%v'", KubernetesConfigAttr, kubeConfigValue.Type())
+//		return nil, startosis_errors.NewInterpretationError("Expected value of '%v' to be a Config but was '%v'", KubernetesConfigAttr, kubeConfigValue.Type())
 //	}
 //
 //	return kubeConfig, nil
@@ -814,7 +819,7 @@ func ConvertImage(
 //		return nil, startosis_errors.NewInterpretationError("Expected value to be an ExtraIngressConfig but was '%v'", ingressConfigValue.Type())
 //	}
 //
-//	var ktIngress, err = extraConfig.ToKurtosisType()
+//	var ktIngress, err = extraConfig.convertTlsConfig()
 //	if err != nil {
 //		return nil, startosis_errors.NewInterpretationError("Error converting extraIngressConfig", err)
 //	}
@@ -846,14 +851,61 @@ func convertTolerations(tolerationsList *starlark.List) ([]v1.Toleration, *start
 	return outputValue, nil
 }
 
-//func convertKubernetesConfig(kubernetesSpecificConfig starlark.Value) (*kubernetes.KubernetesConfig, *startosis_errors.InterpretationError) {
+func convertExtraIngressConfig(config *starlark_kube_config.KubernetesConfig) (*kube_config.ExtraIngressConfig, error) {
+
+}
+
+func extractExtraIngressConfig(config *starlark_kube_config.KubernetesConfig) (*kube_config.ExtraIngressConfig, *startosis_errors.InterpretationError) {
+	var extraIngressConfig interface{}
+	extraIngressConfig, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark_kube_config.ExtraIngressConfig](
+		config.KurtosisValueTypeDefault, starlark_kube_config.ExtraIngressConfigAttr,
+	)
+
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if !found || extraIngressConfig == nil {
+		return nil, nil
+	}
+
+	kteic, ok := extraIngressConfig.(*kube_config.ExtraIngressConfig)
+	if !ok {
+		return nil, startosis_errors.NewInterpretationError(
+			"Could not convert %s field extraIngressConfig Ingress Config",
+			config.Type(),
+		)
+	}
+	return kteic, nil
+}
+
+func convertKubeConfig(config *starlark_kube_config.KubernetesConfig) (*kube_config.Config, error) {
+	extraIngressConfig, interpretationError := extractExtraIngressConfig(config)
+	if interpretationError != nil {
+		return nil, interpretationError
+	}
+
+	return &kube_config.Config{ExtraIngressConfig: extraIngressConfig}, nil
+}
+
+func convertTlsConfig(config *starlark_kube_config.IngressTLSConfig) (*kube_config.TlsConfig, *startosis_errors.InterpretationError) {
+	secretName, interpretationErr := config.GetSecretName()
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	return &kube_config.TlsConfig{
+		SecretName: secretName,
+	}, nil
+}
+
+//func convertKubernetesConfig(kubernetesSpecificConfig starlark.Value) (*kubernetes.Config, *startosis_errors.InterpretationError) {
 //	if kubernetesSpecificConfig == nil || kubernetesSpecificConfig == starlark.None {
 //		return nil, nil
 //	}
 //
-//	kubernetesConfig, ok := kubernetesSpecificConfig.(*kubernetes.KubernetesConfig)
+//	kubernetesConfig, ok := kubernetesSpecificConfig.(*kubernetes.Config)
 //	if !ok {
-//		return nil, startosis_errors.NewInterpretationError("Expected value of '%v' to be a KubernetesConfig but was '%v'", KubernetesConfigAttr, kubernetesSpecificConfig.Type())
+//		return nil, startosis_errors.NewInterpretationError("Expected value of '%v' to be a Config but was '%v'", KubernetesConfigAttr, kubernetesSpecificConfig.Type())
 //	}
 //
 //	// Convert and validate each ingress config

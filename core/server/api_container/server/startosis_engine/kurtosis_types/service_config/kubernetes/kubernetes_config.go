@@ -1,6 +1,8 @@
 package kubernetes
 
 import (
+	//"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/kubernetes"
+	//"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/kubernetes"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
@@ -68,45 +70,11 @@ func (config *KubernetesConfig) Copy() (builtin_argument.KurtosisValueType, erro
 //	return ingressClassConfigs, nil
 //}
 
-func (config *KubernetesConfig) GetExtraIngressConfig() (*KtExtraIngressConfig, *startosis_errors.InterpretationError) {
-	var extraIngressConfig interface{}
-	extraIngressConfig, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*ExtraIngressConfig](config.KurtosisValueTypeDefault, ExtraIngressConfigAttr)
-
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-	if !found || extraIngressConfig == nil {
-		return nil, nil
-	}
-
-	kteic, ok := extraIngressConfig.(*KtExtraIngressConfig)
-	if !ok {
-		return nil, startosis_errors.NewInterpretationError(
-			"Could not convert %s field extraIngressConfig Ingress Config",
-			config.Type(),
-		)
-	}
-	return kteic, nil
-}
-
-type KtKubernetesConfig struct {
-	ExtraIngressConfig *KtExtraIngressConfig
-}
-
-func (config *KubernetesConfig) ToKurtosisType() (*KtKubernetesConfig, error) {
-	extraIngressConfig, interpretationError := config.GetExtraIngressConfig()
-	if interpretationError != nil {
-		return nil, interpretationError
-	}
-
-	return &KtKubernetesConfig{ExtraIngressConfig: extraIngressConfig}, nil
-}
-
 //multiIngressClassConfig, err := extraIngressConfig.GetStarlarkMultiIngressClassConfigs()
 //if err != nil {
 //	return nil, err
 //}
-//mutliIngressClassConfigNative := multiIngressClassConfig.ToKurtosisType()
+//mutliIngressClassConfigNative := multiIngressClassConfig.convertTlsConfig()
 //
 //extraConfig, hasExtraConfig, err := multiIngressClassConfig.Get()
 //if err != nil {
@@ -118,7 +86,7 @@ func (config *KubernetesConfig) ToKurtosisType() (*KtKubernetesConfig, error) {
 //if hasIngresses {
 //	var convertedIngresses []*service.IngressConfig
 //	for _, ingress := range ingresses {
-//		converted, err := ingress.ToKurtosisType()
+//		converted, err := ingress.convertTlsConfig()
 //		if err != nil {
 //			return nil, err
 //		}
@@ -128,7 +96,7 @@ func (config *KubernetesConfig) ToKurtosisType() (*KtKubernetesConfig, error) {
 //}
 //
 //if hasExtraConfig {
-//	converted, err := extraConfig.ToKurtosisType()
+//	converted, err := extraConfig.convertTlsConfig()
 //	if err != nil {
 //		return nil, err
 //	}

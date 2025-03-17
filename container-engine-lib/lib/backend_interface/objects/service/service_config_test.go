@@ -2,7 +2,6 @@ package service
 
 import (
 	"encoding/json"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/kubernetes"
 	"testing"
 	"time"
 
@@ -68,7 +67,7 @@ func TestServiceConfigMarshallers(t *testing.T) {
 }
 
 func TestIngressAnnotations(t *testing.T) {
-	serviceConfig, err := kubernetes.CreateServiceConfig(
+	serviceConfig, err := service.CreateServiceConfig(
 		"test-image",
 		nil, nil, nil,
 		map[string]*port_spec.PortSpec{},
@@ -107,7 +106,7 @@ func TestIngressAnnotations(t *testing.T) {
 
 func TestIngressClassName(t *testing.T) {
 	className := "test-class"
-	serviceConfig, err := kubernetes.CreateServiceConfig(
+	serviceConfig, err := service.CreateServiceConfig(
 		"test-image",
 		nil, nil, nil,
 		map[string]*port_spec.PortSpec{},
@@ -144,7 +143,7 @@ func TestIngressClassName(t *testing.T) {
 
 func TestIngressHost(t *testing.T) {
 	host := "test.example.com"
-	serviceConfig, err := kubernetes.CreateServiceConfig(
+	serviceConfig, err := service.CreateServiceConfig(
 		"test-image",
 		nil, nil, nil,
 		map[string]*port_spec.PortSpec{},
@@ -176,7 +175,7 @@ func TestIngressHost(t *testing.T) {
 
 func TestIngressTLS(t *testing.T) {
 	tlsHost := "test.example.com"
-	serviceConfig, err := kubernetes.CreateServiceConfig(
+	serviceConfig, err := service.CreateServiceConfig(
 		"test-image",
 		nil, nil, nil,
 		map[string]*port_spec.PortSpec{},
@@ -207,7 +206,7 @@ func TestIngressTLS(t *testing.T) {
 }
 
 func getServiceConfigForTest(t *testing.T, imageName string) *service.ServiceConfig {
-	serviceConfig, err := kubernetes.CreateServiceConfig(imageName, testImageBuildSpec(), testImageRegistrySpec(), testNixBuildSpec(), testPrivatePorts(t), testPublicPorts(t), []string{"bin", "bash", "ls"}, []string{"-l", "-a"}, testEnvVars(), testFilesArtifactExpansion(), testPersistentDirectory(), 500, 1024, "IP-ADDRESS", 100, 512, map[string]string{
+	serviceConfig, err := service.CreateServiceConfig(imageName, testImageBuildSpec(), testImageRegistrySpec(), testNixBuildSpec(), testPrivatePorts(t), testPublicPorts(t), []string{"bin", "bash", "ls"}, []string{"-l", "-a"}, testEnvVars(), testFilesArtifactExpansion(), testPersistentDirectory(), 500, 1024, "IP-ADDRESS", 100, 512, map[string]string{
 		"test-label-key":       "test-label-value",
 		"test-label-key-empty": "test-second-label-value",
 	}, testIngressAnnotations(), testIngressClassName(), testIngressHost(), testIngressTLS(), testServiceUser(), testToleration(), testNodeSelectors(), testImageDownloadMode(), true)

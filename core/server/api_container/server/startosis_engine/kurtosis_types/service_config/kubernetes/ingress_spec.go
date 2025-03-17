@@ -1,6 +1,7 @@
 package kubernetes
 
 import (
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/kubernetes"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
@@ -104,7 +105,7 @@ func (target *IngressSpec) Copy() (builtin_argument.KurtosisValueType, error) {
 	}, nil
 }
 
-func (target *IngressSpec) GetTlsConfig() (*KtTlsConfig, *startosis_errors.InterpretationError) {
+func (target *IngressSpec) GetTlsConfig() (*kubernetes.TlsConfig, *startosis_errors.InterpretationError) {
 	tls, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*IngressTLSConfig](
 		target.KurtosisValueTypeDefault, IngressTlsAttr)
 	if interpretationErr != nil {
@@ -121,7 +122,7 @@ func (target *IngressSpec) GetTlsConfig() (*KtTlsConfig, *startosis_errors.Inter
 	return ktTls, nil
 }
 
-func (target *IngressSpec) GetAnnotations() (*KtAnnotations, *startosis_errors.InterpretationError) {
+func (target *IngressSpec) GetAnnotations() (*kubernetes.Annotations, *startosis_errors.InterpretationError) {
 	annotations, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](
 		target.KurtosisValueTypeDefault, AnnotationsAttr)
 
@@ -160,7 +161,7 @@ func (target *IngressSpec) GetIngressClassName() (*string, error) {
 	return target.handleStringPtrExtraction(IngressClassNameAttr)
 }
 
-func (target *IngressSpec) GetRules() ([]*KtHttpRule, error) {
+func (target *IngressSpec) GetRules() ([]*kubernetes.HttpRule, error) {
 	ruleList, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.List](
 		target.KurtosisValueTypeDefault, IngressHttpRuleAttr)
 	if interpretationErr != nil {
@@ -170,7 +171,7 @@ func (target *IngressSpec) GetRules() ([]*KtHttpRule, error) {
 		return nil, nil
 	}
 
-	var rules []*KtHttpRule
+	var rules []*kubernetes.HttpRule
 	for idx := 0; idx < ruleList.Len(); idx++ {
 		item := ruleList.Index(idx)
 		rule, ok := item.(*IngressHttpRule)
@@ -190,7 +191,7 @@ func (target *IngressSpec) GetRules() ([]*KtHttpRule, error) {
 	return rules, nil
 }
 
-func (target *IngressSpec) ToKurtosisType() (*KtIngressSpec, *startosis_errors.InterpretationError) {
+func (target *IngressSpec) ToKurtosisType() (*kubernetes.IngressSpec, *startosis_errors.InterpretationError) {
 	handleError := func(err error, attr string) *startosis_errors.InterpretationError {
 		return startosis_errors.WrapWithInterpretationError(
 			err, "Error interpreting %s", attr,
@@ -222,7 +223,7 @@ func (target *IngressSpec) ToKurtosisType() (*KtIngressSpec, *startosis_errors.I
 		return nil, handleError(err, IngressHttpRuleAttr)
 	}
 
-	result := &KtIngressSpec{
+	result := &kubernetes.IngressSpec{
 		Annotations:      annotations,
 		Host:             host,
 		TlsConfig:        tlsConfig,
