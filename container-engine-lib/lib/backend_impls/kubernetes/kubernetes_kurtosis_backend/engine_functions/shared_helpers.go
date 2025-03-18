@@ -44,12 +44,13 @@ func getMatchingEngineObjectsAndKubernetesResources(
 	ctx context.Context,
 	filters *engine.EngineFilters,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
+	engineNodeName string,
 ) (
 	map[engine.EngineGUID]*engine.Engine,
 	map[engine.EngineGUID]*engineKubernetesResources,
 	error,
 ) {
-	matchingResources, err := getMatchingEngineKubernetesResources(ctx, filters.GUIDs, kubernetesManager)
+	matchingResources, err := getMatchingEngineKubernetesResources(ctx, filters.GUIDs, kubernetesManager, engineNodeName)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engine Kubernetes resources matching GUIDs: %+v", filters.GUIDs)
 	}
@@ -88,10 +89,7 @@ func getMatchingEngineKubernetesResources(
 	ctx context.Context,
 	engineGuids map[engine.EngineGUID]bool,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
-) (
-	map[engine.EngineGUID]*engineKubernetesResources,
-	error,
-) {
+	engineNodeName string) (map[engine.EngineGUID]*engineKubernetesResources, error) {
 	engineMatchLabels := getEngineMatchLabels()
 
 	result := map[engine.EngineGUID]*engineKubernetesResources{}
@@ -124,13 +122,15 @@ func getMatchingEngineKubernetesResources(
 		engineResources, found := result[engineGuid]
 		if !found {
 			engineResources = &engineKubernetesResources{
-				clusterRole:        nil,
-				clusterRoleBinding: nil,
-				namespace:          nil,
-				serviceAccount:     nil,
-				service:            nil,
-				pod:                nil,
-				ingress:            nil,
+				clusterRole:         nil,
+				clusterRoleBinding:  nil,
+				namespace:           nil,
+				serviceAccount:      nil,
+				service:             nil,
+				pod:                 nil,
+				ingress:             nil,
+				engineNodeName:      "",
+				engineNodeSelectors: map[string]string{},
 			}
 		}
 		engineResources.namespace = namespacesForId[0]
@@ -160,13 +160,15 @@ func getMatchingEngineKubernetesResources(
 		engineResources, found := result[engineGuid]
 		if !found {
 			engineResources = &engineKubernetesResources{
-				clusterRole:        nil,
-				clusterRoleBinding: nil,
-				namespace:          nil,
-				serviceAccount:     nil,
-				service:            nil,
-				pod:                nil,
-				ingress:            nil,
+				clusterRole:         nil,
+				clusterRoleBinding:  nil,
+				namespace:           nil,
+				serviceAccount:      nil,
+				service:             nil,
+				pod:                 nil,
+				ingress:             nil,
+				engineNodeName:      "",
+				engineNodeSelectors: map[string]string{},
 			}
 		}
 		engineResources.clusterRole = clusterRolesForId[0]
@@ -196,13 +198,15 @@ func getMatchingEngineKubernetesResources(
 		engineResources, found := result[engineGuid]
 		if !found {
 			engineResources = &engineKubernetesResources{
-				clusterRole:        nil,
-				clusterRoleBinding: nil,
-				namespace:          nil,
-				serviceAccount:     nil,
-				service:            nil,
-				pod:                nil,
-				ingress:            nil,
+				clusterRole:         nil,
+				clusterRoleBinding:  nil,
+				namespace:           nil,
+				serviceAccount:      nil,
+				service:             nil,
+				pod:                 nil,
+				ingress:             nil,
+				engineNodeName:      "",
+				engineNodeSelectors: map[string]string{},
 			}
 		}
 		engineResources.clusterRoleBinding = clusterRoleBindingsForId[0]
@@ -329,10 +333,28 @@ func getMatchingEngineKubernetesResources(
 			ingress = ingressesForId[0]
 		}
 
+		// node selectors
+		engineNodeSelectors := map[string]string{}
+		if engineNodeName != "" {
+			engineNodeSelectors, err = kubernetes_resource_collectors.CollectMatchingNodeLabels(
+				ctx,
+				kubernetesManager,
+				engineNodeName,
+				map[string]bool{
+					kurtosisEngineNodeNameKey: true,
+				},
+			)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred getting node labels of node '%v' engine '%v' in namespace '%v'", engineNodeName, engineGuid, namespaceName)
+			}
+		}
+
 		engineResources.service = service
 		engineResources.pod = pod
 		engineResources.serviceAccount = serviceAccount
 		engineResources.ingress = ingress
+		engineResources.engineNodeSelectors = engineNodeSelectors
+		engineResources.engineNodeName = engineNodeName
 	}
 
 	return result, nil

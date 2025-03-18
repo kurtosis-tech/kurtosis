@@ -35,26 +35,50 @@ const (
 
 	// TODO: construct fluentbit config via go templating based on inputs
 	fluentBitConfigFileName = "fluent-bit.conf"
-	fluentBitConfigFmtStr   = `
+	fluentBitConfigTemplate = `
 [SERVICE]
     HTTP_Server       On
     HTTP_Listen       0.0.0.0
-    HTTP_PORT         9713
+    HTTP_PORT         {{ .HTTPPort }}
     Parsers_File      /fluent-bit/etc/parsers.conf
 
 [INPUT]
     Name              tail
     Tag               kurtosis.*
-    Path              /var/log/containers/*_kt-*_user-service-container-*.log
+    Path              /var/log/containers/*_kt-*_{{ .UserServiceResourceStr }}-container-*.log
     Parser            docker
-    DB                /var/log/fluent-bit/db/fluent-bit.db
+    DB                {{ .CheckpointDbMountPath }}/fluent-bit.db
     DB.sync           normal
     Read_from_Head    true
+    Refresh_Interval  10
 
 [FILTER]
     Name              kubernetes
     Match             *
-    Kube_URL          %v
+    Labels            On
+    Annotations       Off
+    Kube_Tag_Prefix   kurtosis.var.log.containers.
+
+[FILTER]
+    Name lua
+    Match *
+    call flatten_kubernetes_labels
+    code function flatten_kubernetes_labels(tag, timestamp, record) record["{{ .LogsEnclaveUUIDLabel }}"] = record["kubernetes"]["labels"]["{{ .LogsEnclaveUUIDLabel }}"] record["{{ .LogsServiceUUIDLabel }}"] = record["kubernetes"]["labels"]["{{ .LogsServiceUUIDLabel }}"] return 1, timestamp, record end
+
+[FILTER]
+    Name record_modifier
+    Match *
+    Remove_key kubernetes
+
+[FILTER]
+    Name modify
+    Match *
+    Rename time timestamp
+
+[FILTER]
+    Name              kubernetes
+    Match             *
+    Kube_URL          {{ .K8sApiServerURL }}
     Merge_log         On
     Keep_Log          On
     Annotations       Off
@@ -66,10 +90,9 @@ const (
     Format            json_lines
 
 [OUTPUT]
-    Name              file
+    Name              forward
     Match             *
-    Path              /var/log/fluent-bit
-    File              fluent-bit-output.log
-    Format            plain
+    Host              {{ .LogsAggregatorHost }}
+    Port              {{ .LogsAggregatorPortNum }}
 `
 )

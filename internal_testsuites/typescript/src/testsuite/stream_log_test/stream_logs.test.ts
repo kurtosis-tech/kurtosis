@@ -45,7 +45,7 @@ const LOG_LINES_BY_SERVICE = new Map<ServiceName, ServiceLog[]>([
 ])
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-const MILLISECONDS_TO_WAIT_FOR_LOGS = 1000
+const MILLISECONDS_TO_WAIT_FOR_LOGS = 10000
 
 class ServiceLogsRequestInfoAndExpectedResults {
     readonly requestedEnclaveUUID: EnclaveUUID;

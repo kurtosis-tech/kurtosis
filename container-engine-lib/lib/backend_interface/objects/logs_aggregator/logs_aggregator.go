@@ -7,6 +7,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 )
 
+type LogsAggregatorGuid string
+
 // This component is responsible for:
 // 1. aggregating logs from all enclaves (by listening for logs from each enclaves logs collector)
 // 2. persisting logs to persistent storage so they can be retrieved, filtered, etc.

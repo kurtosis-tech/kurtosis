@@ -1,11 +1,14 @@
 package fluentbit
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
@@ -14,6 +17,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"text/template"
 	"time"
 )
 
@@ -148,7 +152,7 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 		}
 	}()
 
-	configMap, err := createLogsCollectorConfigMap(ctx, namespace.Name, logsCollectorAttrProvider, kubernetesManager)
+	configMap, err := createLogsCollectorConfigMap(ctx, namespace.Name, httpPortNumber, logsAggregatorHost, logsAggregatorPort, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
 		return nil, nil, nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create config map for fluent bit log collector.")
 	}
@@ -206,7 +210,7 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 		removeCtx := context.Background()
 		if err := kubernetesManager.RemoveDaemonSet(removeCtx, namespace.Name, daemonSet); err != nil {
 			logrus.Errorf(
-				"Launching the logs collector daemon with name '%v' didn't complete successfully so we "+
+				"Launching the logs collector daemon set with name '%v' didn't complete successfully so we "+
 					"tried to remove the daemon set we started, but doing so exited with an error:\n%v",
 				daemonSet.Name,
 				err)
@@ -258,7 +262,7 @@ func createLogsCollectorDaemonSet(
 
 	daemonSetAttrProvider, err := objAttrProvider.ForLogsCollectorDaemonSet()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while getting logs collector daemon set attributes provider.")
+		return nil, stacktrace.Propagate(err, "An error occurred getting logs collector daemon set attributes provider.")
 	}
 	name := daemonSetAttrProvider.GetName().GetString()
 	labels := shared_helpers.GetStringMapFromLabelMap(daemonSetAttrProvider.GetLabels())
@@ -275,7 +279,7 @@ func createLogsCollectorDaemonSet(
 			},
 			Args: []string{
 				"--workdir=/fluent-bit/etc",
-				"--config=/fluent-bit/etc/conf/fluent-bit.conf",
+				fmt.Sprintf("--config=%v/fluent-bit.conf", fluentBitConfigMountPath),
 			},
 			Ports:      ports,
 			WorkingDir: "",
@@ -371,27 +375,27 @@ func createLogsCollectorDaemonSet(
 	volumes := []apiv1.Volume{
 		{
 			Name:         varLogVolumeName,
-			VolumeSource: getVolumeSourceForHostPath(varLogMountPath),
+			VolumeSource: kubernetesManager.GetVolumeSourceForHostPath(varLogMountPath),
 		},
 		{
 			Name:         varLibDockerContainersVolumeName,
-			VolumeSource: getVolumeSourceForHostPath(varLibDockerContainersMountPath),
+			VolumeSource: kubernetesManager.GetVolumeSourceForHostPath(varLibDockerContainersMountPath),
 		},
 		{
 			Name:         varLogDockerContainersVolumeName,
-			VolumeSource: getVolumeSourceForHostPath(varLogDockerContainersMountPath),
+			VolumeSource: kubernetesManager.GetVolumeSourceForHostPath(varLogDockerContainersMountPath),
 		},
 		{
 			Name:         fluentBitConfigVolumeName,
-			VolumeSource: getVolumeSourceForConfigMap(fluentBitCfgConfigMapName),
+			VolumeSource: kubernetesManager.GetVolumeSourceForConfigMap(fluentBitCfgConfigMapName),
 		},
 		{
 			Name:         fluentBitHostLogsVolumeName,
-			VolumeSource: getVolumeSourceForHostPath(fluentBitHostLogsMountPath),
+			VolumeSource: kubernetesManager.GetVolumeSourceForHostPath(fluentBitHostLogsMountPath),
 		},
 		{
 			Name:         fluentBitCheckpointDbVolumeName,
-			VolumeSource: getVolumeSourceForHostPath(fluentBitCheckpointDbMountPath),
+			VolumeSource: kubernetesManager.GetVolumeSourceForHostPath(fluentBitCheckpointDbMountPath),
 		},
 	}
 
@@ -416,16 +420,27 @@ func createLogsCollectorDaemonSet(
 func createLogsCollectorConfigMap(
 	ctx context.Context,
 	namespace string,
+	logsCollectorHttpPortNum uint16,
+	logsAggregatorHost string,
+	logsAggregatorPortNum uint16,
 	objAttrProvider object_attributes_provider.KubernetesLogsCollectorObjectAttributesProvider,
 	kubernetesManager *kubernetes_manager.KubernetesManager) (*apiv1.ConfigMap, error) {
 	configMapAttrProvider, err := objAttrProvider.ForLogsCollectorConfigMap()
 	if err != nil {
-		return nil, err
+		return nil, err // already wrapped
 	}
 	name := configMapAttrProvider.GetName().GetString()
 	labels := shared_helpers.GetStringMapFromLabelMap(configMapAttrProvider.GetLabels())
 	annotations := shared_helpers.GetStringMapFromAnnotationMap(configMapAttrProvider.GetAnnotations())
 
+	fluentBitConfigStr, err := generateFluentBitConfigStr(
+		logsCollectorHttpPortNum,
+		logsAggregatorHost,
+		logsAggregatorPortNum,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred generating fluent bit config string.")
+	}
 	configMap, err := kubernetesManager.CreateConfigMap(
 		ctx,
 		namespace,
@@ -433,7 +448,7 @@ func createLogsCollectorConfigMap(
 		labels,
 		annotations,
 		map[string]string{
-			fluentBitConfigFileName: fmt.Sprintf(fluentBitConfigFmtStr, k8sApiServerUrl),
+			fluentBitConfigFileName: fluentBitConfigStr,
 		},
 	)
 	if err != nil {
@@ -441,6 +456,49 @@ func createLogsCollectorConfigMap(
 	}
 
 	return configMap, nil
+}
+
+func generateFluentBitConfigStr(
+	logsCollectorHttpPort uint16,
+	logsAggregatorHost string,
+	logsAggregatorPortNun uint16,
+) (
+	string,
+	error,
+) {
+	type FluentBitConfigData struct {
+		HTTPPort               uint16
+		UserServiceResourceStr string
+		CheckpointDbMountPath  string
+		LogsEnclaveUUIDLabel   string
+		LogsServiceUUIDLabel   string
+		K8sApiServerURL        string
+		LogsAggregatorHost     string
+		LogsAggregatorPortNum  uint16
+	}
+
+	tmpl, err := template.New("fluentBitConfig").Parse(fluentBitConfigTemplate)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred parsing fluent bit config template: %v", fluentBitConfigTemplate)
+	}
+
+	fluentBitConfigData := FluentBitConfigData{
+		HTTPPort:               logsCollectorHttpPort,
+		UserServiceResourceStr: label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue.GetString(),
+		CheckpointDbMountPath:  fluentBitCheckpointDbMountPath,
+		LogsEnclaveUUIDLabel:   kubernetes_label_key.LogsEnclaveUUIDKubernetesLabelKey.GetString(),
+		LogsServiceUUIDLabel:   kubernetes_label_key.LogsServiceUUIDKubernetesLabelKey.GetString(),
+		K8sApiServerURL:        k8sApiServerUrl,
+		LogsAggregatorPortNum:  logsAggregatorPortNun,
+		LogsAggregatorHost:     logsAggregatorHost,
+	}
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, fluentBitConfigData)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred generating vector config string from fluent bit config data: %v.", fluentBitConfigData)
+	}
+
+	return buf.String(), nil
 }
 
 func createLogsCollectorNamespace(
@@ -458,11 +516,10 @@ func createLogsCollectorNamespace(
 
 	namespaceObj, err := kubernetesManager.CreateNamespace(ctx, namespaceName, namespaceLabels, namespaceAnnotations)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating namepsace for logs collector with name '%s'", namespaceName)
+		return nil, stacktrace.Propagate(err, "An error occurred creating namespace for logs collector with name '%s'", namespaceName)
 	}
 
 	return namespaceObj, nil
-
 }
 
 func waitForAtLeastOneActivePodManagedByDaemonSet(ctx context.Context, logsCollectorDaemonSet *appsv1.DaemonSet, kubernetesManager *kubernetes_manager.KubernetesManager) error {
@@ -495,82 +552,6 @@ func waitForAtLeastOneActivePodManagedByDaemonSet(ctx context.Context, logsColle
 	)
 }
 
-func getVolumeSourceForHostPath(mountPath string) apiv1.VolumeSource {
-	return apiv1.VolumeSource{
-		HostPath: &apiv1.HostPathVolumeSource{
-			Path: mountPath,
-			Type: nil,
-		},
-		EmptyDir:              nil,
-		GCEPersistentDisk:     nil,
-		AWSElasticBlockStore:  nil,
-		GitRepo:               nil,
-		Secret:                nil,
-		NFS:                   nil,
-		ISCSI:                 nil,
-		Glusterfs:             nil,
-		PersistentVolumeClaim: nil,
-		RBD:                   nil,
-		FlexVolume:            nil,
-		Cinder:                nil,
-		CephFS:                nil,
-		Flocker:               nil,
-		DownwardAPI:           nil,
-		FC:                    nil,
-		AzureFile:             nil,
-		ConfigMap:             nil,
-		VsphereVolume:         nil,
-		Quobyte:               nil,
-		AzureDisk:             nil,
-		PhotonPersistentDisk:  nil,
-		Projected:             nil,
-		PortworxVolume:        nil,
-		ScaleIO:               nil,
-		StorageOS:             nil,
-		CSI:                   nil,
-		Ephemeral:             nil,
-	}
-}
-
-func getVolumeSourceForConfigMap(configMapName string) apiv1.VolumeSource {
-	return apiv1.VolumeSource{
-		ConfigMap: &apiv1.ConfigMapVolumeSource{
-			LocalObjectReference: apiv1.LocalObjectReference{Name: configMapName},
-			Items:                nil,
-			DefaultMode:          nil,
-			Optional:             nil,
-		},
-		HostPath:              nil,
-		EmptyDir:              nil,
-		GCEPersistentDisk:     nil,
-		AWSElasticBlockStore:  nil,
-		GitRepo:               nil,
-		Secret:                nil,
-		NFS:                   nil,
-		ISCSI:                 nil,
-		Glusterfs:             nil,
-		PersistentVolumeClaim: nil,
-		RBD:                   nil,
-		FlexVolume:            nil,
-		Cinder:                nil,
-		CephFS:                nil,
-		Flocker:               nil,
-		DownwardAPI:           nil,
-		FC:                    nil,
-		AzureFile:             nil,
-		VsphereVolume:         nil,
-		Quobyte:               nil,
-		AzureDisk:             nil,
-		PhotonPersistentDisk:  nil,
-		Projected:             nil,
-		PortworxVolume:        nil,
-		ScaleIO:               nil,
-		StorageOS:             nil,
-		CSI:                   nil,
-		Ephemeral:             nil,
-	}
-}
-
 func createLogsCollectorServiceAccount(
 	ctx context.Context,
 	namespace string,
@@ -584,7 +565,7 @@ func createLogsCollectorServiceAccount(
 	serviceAccountName := serviceAccountAttrProvider.GetName().GetString()
 	serviceAccountLabels := shared_helpers.GetStringMapFromLabelMap(serviceAccountAttrProvider.GetLabels())
 
-	serviceAccountObj, err := kubernetesManager.CreateServiceAccount(ctx, serviceAccountName, namespace, serviceAccountLabels)
+	serviceAccountObj, err := kubernetesManager.CreateServiceAccount(ctx, serviceAccountName, namespace, serviceAccountLabels, nil)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating service account for logs collector with name '%s'", serviceAccountName)
 	}
@@ -655,4 +636,80 @@ func createLogsCollectorClusterRoleBinding(
 	}
 
 	return clusterRoleBindingObj, nil
+}
+
+// Clean cleans up the checkpoint databases created by fluent bit that store locations to continue tailing from in case of restarts, to do this:
+// 1) scales down the fluent bit daemon set to remove pods from all nodes
+// 2) creates a privileged pod with access to underlying nodes filesystem
+// 3) removes fluent bit checkpoint path on each node's filesystem
+func (fluentbit *fluentbitLogsCollector) Clean(
+	ctx context.Context,
+	logsCollectorDaemonSet *appsv1.DaemonSet,
+	kubernetesManager *kubernetes_manager.KubernetesManager) error {
+	pods, err := kubernetesManager.GetPodsManagedByDaemonSet(ctx, logsCollectorDaemonSet)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting pods managed by daemon set '%v' in namespace '%v'.", logsCollectorDaemonSet.Name, logsCollectorDaemonSet.Namespace)
+	}
+	if len(pods) == 0 {
+		return stacktrace.Propagate(err, "No pods found for logs collector daemon set '%v' in namespace '%v'.", logsCollectorDaemonSet.Name, logsCollectorDaemonSet.Namespace)
+	}
+	var nodeNames []string
+	for _, pod := range pods {
+		nodeNames = append(nodeNames, pod.Spec.NodeName)
+	}
+
+	logrus.Infof("Cleaning the fluent bit logs collector daemon set...")
+
+	logsCollectorName := logsCollectorDaemonSet.Name
+
+	// patch damon set to have node selector that evicts all pods
+	evictNodeSelectors := map[string]string{
+		"non-existent-label": "true",
+	}
+	logsCollectorDaemonSet, err = kubernetesManager.UpdateDaemonSetWithNodeSelectors(
+		ctx,
+		logsCollectorDaemonSet,
+		evictNodeSelectors,
+	)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred updating daemon set '%v' with node selectors '%v'", logsCollectorName, evictNodeSelectors)
+	}
+
+	// need to wait for pods to be terminated to unmount checkpoint volumes
+	for _, pod := range pods {
+		if err := kubernetesManager.WaitForPodTermination(ctx, pod.Namespace, pod.Name); err != nil {
+			return stacktrace.Propagate(err, "An error occurred waiting for pod '%v' in namespace '%v'.", pod.Name, pod.Namespace)
+		}
+	}
+
+	// execute remove on all pods
+	for _, node := range nodeNames {
+		if err = kubernetesManager.RemoveDirPathFromNode(ctx, logsCollectorDaemonSet.Namespace, node, fluentBitCheckpointDbMountPath); err != nil {
+			return stacktrace.Propagate(err, "An error occurred removing dir path '%v' from node '%v' via a pod in namespace '%v'.", fluentBitCheckpointDbMountPath, node, logsCollectorDaemonSet.Namespace)
+		}
+	}
+
+	latestLogsCollectorDaemonSet, err := kubernetesManager.GetDaemonSet(ctx, logsCollectorDaemonSet.Namespace, logsCollectorName)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting latest")
+	}
+
+	// update daemon set again to have no node selectors, allowing daemon set to schedule log collector pods
+	logsCollectorDaemonSet, err = kubernetesManager.UpdateDaemonSetWithNodeSelectors(
+		ctx,
+		latestLogsCollectorDaemonSet,
+		map[string]string{},
+	)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred updating daemon set '%v' with node selectors '%v'", logsCollectorName, evictNodeSelectors)
+	}
+
+	//before continuing, ensure logs collector is up again
+	if err := waitForAtLeastOneActivePodManagedByDaemonSet(ctx, logsCollectorDaemonSet, kubernetesManager); err != nil {
+		return stacktrace.Propagate(err, "An error occurred waiting for at least one pod managed by daemon set '%v' has become available.", logsCollectorName)
+	}
+
+	logrus.Infof("Successfully cleaned logs collector.")
+
+	return nil
 }

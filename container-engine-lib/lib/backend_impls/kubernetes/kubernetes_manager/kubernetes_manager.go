@@ -10,6 +10,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"io"
 	v1 "k8s.io/api/apps/v1"
 	"net/http"
@@ -565,7 +568,7 @@ func (manager *KubernetesManager) GetNamespace(ctx context.Context, name string)
 	}
 	deletionTimestamp := namespace.GetObjectMeta().GetDeletionTimestamp()
 	if deletionTimestamp != nil {
-		return nil, stacktrace.Propagate(err, "Namespace with name '%s' has been marked for deletion", namespace)
+		return nil, stacktrace.NewError("Namespace with name '%s' has been marked for deletion", namespace)
 	}
 	return namespace, nil
 }
@@ -597,7 +600,7 @@ func (manager *KubernetesManager) GetNamespacesByLabels(ctx context.Context, nam
 
 // ---------------------------service accounts------------------------------------------------------------------------------
 
-func (manager *KubernetesManager) CreateServiceAccount(ctx context.Context, name string, namespace string, labels map[string]string) (*apiv1.ServiceAccount, error) {
+func (manager *KubernetesManager) CreateServiceAccount(ctx context.Context, name string, namespace string, labels map[string]string, imagePullSecrets []apiv1.LocalObjectReference) (*apiv1.ServiceAccount, error) {
 	client := manager.kubernetesClientSet.CoreV1().ServiceAccounts(namespace)
 
 	serviceAccount := &apiv1.ServiceAccount{
@@ -624,12 +627,8 @@ func (manager *KubernetesManager) CreateServiceAccount(ctx context.Context, name
 			Finalizers:                 nil,
 			ManagedFields:              nil,
 		},
-		Secrets: nil,
-		ImagePullSecrets: []apiv1.LocalObjectReference{
-			{
-				Name: "kurtosis-image",
-			},
-		},
+		Secrets:                      nil,
+		ImagePullSecrets:             imagePullSecrets,
 		AutomountServiceAccountToken: nil,
 	}
 
@@ -1056,7 +1055,10 @@ func (manager *KubernetesManager) CreatePod(
 	restartPolicy apiv1.RestartPolicy,
 	tolerations []apiv1.Toleration,
 	nodeSelectors map[string]string,
-) (*apiv1.Pod, error) {
+) (
+	*apiv1.Pod,
+	error,
+) {
 	podClient := manager.kubernetesClientSet.CoreV1().Pods(namespaceName)
 
 	podMeta := metav1.ObjectMeta{
@@ -1179,7 +1181,7 @@ func (manager *KubernetesManager) RemovePod(ctx context.Context, pod *apiv1.Pod)
 		return stacktrace.Propagate(err, "Failed to delete pod with name '%s' with delete options '%+v'", name, globalDeleteOptions)
 	}
 
-	if err := manager.waitForPodTermination(ctx, namespace, name); err != nil {
+	if err := manager.WaitForPodTermination(ctx, namespace, name); err != nil {
 		return stacktrace.Propagate(err, "An error occurred waiting for pod '%v' to terminate", name)
 	}
 
@@ -1389,6 +1391,261 @@ func (manager *KubernetesManager) GetPodsManagedByDaemonSet(ctx context.Context,
 	return podsManagedByDaemonSet, nil
 }
 
+func (manager *KubernetesManager) UpdateDaemonSetWithNodeSelectors(ctx context.Context, daemonSet *v1.DaemonSet, nodeSelector map[string]string) (*v1.DaemonSet, error) {
+	daemonSet.Spec.Template.Spec.NodeSelector = nodeSelector
+
+	daemonSetName := daemonSet.Name
+	daemonSetNamespace := daemonSet.Namespace
+
+	daemonSet, err := manager.kubernetesClientSet.AppsV1().DaemonSets(daemonSet.Namespace).Update(
+		ctx,
+		daemonSet,
+		metav1.UpdateOptions{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "",
+				APIVersion: "",
+			},
+			DryRun:          nil,
+			FieldManager:    "",
+			FieldValidation: "",
+		},
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred updating daemon set '%v' in namespace '%v'.", daemonSetName, daemonSetNamespace)
+	}
+
+	logrus.Debugf("Successfully updated daemon set with node selector %v", nodeSelector)
+
+	updatedDaemonSet, err := manager.kubernetesClientSet.AppsV1().DaemonSets(daemonSet.Namespace).Get(
+		ctx,
+		daemonSet.Name,
+		globalGetOptions,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the updated daemon set '%v' in namespace '%v'.", daemonSet.Name, daemonSet.Namespace)
+	}
+
+	return updatedDaemonSet, nil
+}
+
+// ---------------------------deployments---------------------------------------------------------------------------------------
+func (manager *KubernetesManager) RemoveDeployment(ctx context.Context, namespace string, deployment *v1.Deployment) error {
+	client := manager.kubernetesClientSet.AppsV1().Deployments(namespace)
+
+	if err := client.Delete(ctx, deployment.Name, globalDeleteOptions); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete deployment with name '%s' with delete options '%+v'", deployment.Name, globalDeleteOptions)
+	}
+
+	// TODO: maybe add a termination wait here?
+	return nil
+}
+
+func (manager *KubernetesManager) GetDeployment(ctx context.Context, namespace string, name string) (*v1.Deployment, error) {
+	daemonSetClient := manager.kubernetesClientSet.AppsV1().Deployments(namespace)
+
+	daemonSet, err := daemonSetClient.Get(ctx, name, metav1.GetOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		ResourceVersion: "",
+	})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to get daemon set with name '%s'", name)
+	}
+
+	return daemonSet, nil
+}
+
+func (manager *KubernetesManager) CreateDeployment(
+	ctx context.Context,
+	namespaceName string,
+	deploymentName string,
+	deploymentLabels map[string]string,
+	deploymentAnnotations map[string]string,
+	initContainers []apiv1.Container,
+	containers []apiv1.Container,
+	volumes []apiv1.Volume,
+	affinity *apiv1.Affinity,
+) (*v1.Deployment, error) {
+	deploymentClient := manager.kubernetesClientSet.AppsV1().Deployments(namespaceName)
+
+	deploymentMeta := metav1.ObjectMeta{
+		Name:            deploymentName,
+		GenerateName:    "",
+		Namespace:       namespaceName,
+		SelfLink:        "",
+		UID:             "",
+		ResourceVersion: "",
+		Generation:      0,
+		CreationTimestamp: metav1.Time{
+			Time: time.Time{},
+		},
+		DeletionTimestamp:          nil,
+		DeletionGracePeriodSeconds: nil,
+		Labels:                     deploymentLabels,
+		Annotations:                deploymentAnnotations,
+		OwnerReferences:            nil,
+		Finalizers:                 nil,
+		ManagedFields:              nil,
+	}
+
+	numReplicas := int32(1)
+	deploymentSpec := v1.DeploymentSpec{
+		Replicas: &numReplicas,
+		Strategy: v1.DeploymentStrategy{
+			Type:          "",
+			RollingUpdate: nil,
+		},
+		Paused:                  false,
+		ProgressDeadlineSeconds: nil,
+		Selector: &metav1.LabelSelector{
+			MatchLabels:      deploymentLabels,
+			MatchExpressions: nil,
+		},
+		Template: apiv1.PodTemplateSpec{
+			ObjectMeta: deploymentMeta,
+			Spec: apiv1.PodSpec{
+				ShareProcessNamespace:         nil,
+				Volumes:                       volumes,
+				InitContainers:                initContainers,
+				Containers:                    containers,
+				EphemeralContainers:           nil,
+				RestartPolicy:                 "",
+				TerminationGracePeriodSeconds: nil,
+				ActiveDeadlineSeconds:         nil,
+				DNSPolicy:                     "",
+				NodeSelector:                  nil,
+				ServiceAccountName:            "",
+				DeprecatedServiceAccount:      "",
+				AutomountServiceAccountToken:  nil,
+				NodeName:                      "",
+				HostNetwork:                   false,
+				HostPID:                       false,
+				HostIPC:                       false,
+				SecurityContext:               nil,
+				ImagePullSecrets:              nil,
+				Hostname:                      "",
+				Subdomain:                     "",
+				Affinity:                      affinity,
+				SchedulerName:                 "",
+				Tolerations:                   nil,
+				HostAliases:                   nil,
+				PriorityClassName:             "",
+				Priority:                      nil,
+				DNSConfig:                     nil,
+				ReadinessGates:                nil,
+				RuntimeClassName:              nil,
+				EnableServiceLinks:            nil,
+				PreemptionPolicy:              nil,
+				Overhead:                      nil,
+				TopologySpreadConstraints:     nil,
+				SetHostnameAsFQDN:             nil,
+				OS:                            nil,
+				HostUsers:                     nil,
+				SchedulingGates:               nil,
+				ResourceClaims:                nil,
+			},
+		},
+		MinReadySeconds:      0,
+		RevisionHistoryLimit: nil,
+	}
+
+	deploymentToCreate := &v1.Deployment{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		ObjectMeta: deploymentMeta,
+		Spec:       deploymentSpec,
+		Status: v1.DeploymentStatus{
+			ObservedGeneration:  0,
+			CollisionCount:      nil,
+			Conditions:          nil,
+			ReadyReplicas:       0,
+			Replicas:            0,
+			UpdatedReplicas:     0,
+			AvailableReplicas:   0,
+			UnavailableReplicas: 0,
+		},
+	}
+
+	if deploymentDefinitionBytes, err := json.Marshal(deploymentToCreate); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred marshaling deployment object for '%v' into json.", deploymentName)
+	} else {
+		logrus.Debugf("Going to start deployment using the following JSON: %v", string(deploymentDefinitionBytes))
+	}
+
+	createdDeployment, err := deploymentClient.Create(ctx, deploymentToCreate, globalCreateOptions)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating deployment.")
+	}
+
+	return createdDeployment, nil
+}
+
+func (manager *KubernetesManager) ScaleDeployment(ctx context.Context, namespace, name string, replicas int32) error {
+	deploymentClient := manager.kubernetesClientSet.AppsV1().Deployments(namespace)
+
+	scale, err := deploymentClient.GetScale(ctx, name, globalGetOptions)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting scale of deployment '%v' in namespace '%v'.", name, namespace)
+	}
+
+	oldReplicas := scale.Spec.Replicas
+	scale.Spec.Replicas = replicas
+	_, err = deploymentClient.UpdateScale(ctx, name, scale, metav1.UpdateOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		DryRun:          nil,
+		FieldManager:    "",
+		FieldValidation: "",
+	})
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred updating scale of deployment '%v' in namespace '%v' from '%v' to '%v'.", name, namespace, oldReplicas, replicas)
+	}
+
+	logrus.Debugf("Deployment '%s' scaled to %d\n", name, replicas)
+
+	return nil
+}
+
+func (manager *KubernetesManager) GetPodsManagedByDeployment(ctx context.Context, deployment *v1.Deployment) ([]*apiv1.Pod, error) {
+	podsClient := manager.kubernetesClientSet.CoreV1().Pods(deployment.Namespace)
+
+	selector := metav1.FormatLabelSelector(deployment.Spec.Selector)
+
+	pods, err := podsClient.List(ctx, metav1.ListOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		LabelSelector:        selector,
+		FieldSelector:        "",
+		Watch:                false,
+		AllowWatchBookmarks:  false,
+		ResourceVersion:      "",
+		ResourceVersionMatch: "",
+		TimeoutSeconds:       nil,
+		Limit:                0,
+		Continue:             "",
+		SendInitialEvents:    nil,
+	})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred retrieving list of pods in namespace '%v' with label selectors: %v.", deployment.Namespace, selector)
+	}
+
+	var podsManagedByDeployment []*apiv1.Pod
+	for _, pod := range pods.Items {
+		podToAdd := pod
+		podsManagedByDeployment = append(podsManagedByDeployment, &podToAdd)
+	}
+
+	return podsManagedByDeployment, nil
+}
+
 // ---------------------------config map---------------------------------------------------------------------------------------
 func (manager *KubernetesManager) RemoveConfigMap(ctx context.Context, namespace string, configMap *apiv1.ConfigMap) error {
 	client := manager.kubernetesClientSet.CoreV1().ConfigMaps(namespace)
@@ -1462,6 +1719,82 @@ func (manager *KubernetesManager) CreateConfigMap(
 	}
 
 	return createdConfigMap, nil
+}
+
+func (kubernetesManager *KubernetesManager) GetVolumeSourceForHostPath(mountPath string) apiv1.VolumeSource {
+	return apiv1.VolumeSource{
+		HostPath: &apiv1.HostPathVolumeSource{
+			Path: mountPath,
+			Type: nil,
+		},
+		EmptyDir:              nil,
+		GCEPersistentDisk:     nil,
+		AWSElasticBlockStore:  nil,
+		GitRepo:               nil,
+		Secret:                nil,
+		NFS:                   nil,
+		ISCSI:                 nil,
+		Glusterfs:             nil,
+		PersistentVolumeClaim: nil,
+		RBD:                   nil,
+		FlexVolume:            nil,
+		Cinder:                nil,
+		CephFS:                nil,
+		Flocker:               nil,
+		DownwardAPI:           nil,
+		FC:                    nil,
+		AzureFile:             nil,
+		ConfigMap:             nil,
+		VsphereVolume:         nil,
+		Quobyte:               nil,
+		AzureDisk:             nil,
+		PhotonPersistentDisk:  nil,
+		Projected:             nil,
+		PortworxVolume:        nil,
+		ScaleIO:               nil,
+		StorageOS:             nil,
+		CSI:                   nil,
+		Ephemeral:             nil,
+	}
+}
+
+func (kubernetesManager *KubernetesManager) GetVolumeSourceForConfigMap(configMapName string) apiv1.VolumeSource {
+	return apiv1.VolumeSource{
+		ConfigMap: &apiv1.ConfigMapVolumeSource{
+			LocalObjectReference: apiv1.LocalObjectReference{Name: configMapName},
+			Items:                nil,
+			DefaultMode:          nil,
+			Optional:             nil,
+		},
+		HostPath:              nil,
+		EmptyDir:              nil,
+		GCEPersistentDisk:     nil,
+		AWSElasticBlockStore:  nil,
+		GitRepo:               nil,
+		Secret:                nil,
+		NFS:                   nil,
+		ISCSI:                 nil,
+		Glusterfs:             nil,
+		PersistentVolumeClaim: nil,
+		RBD:                   nil,
+		FlexVolume:            nil,
+		Cinder:                nil,
+		CephFS:                nil,
+		Flocker:               nil,
+		DownwardAPI:           nil,
+		FC:                    nil,
+		AzureFile:             nil,
+		VsphereVolume:         nil,
+		Quobyte:               nil,
+		AzureDisk:             nil,
+		PhotonPersistentDisk:  nil,
+		Projected:             nil,
+		PortworxVolume:        nil,
+		ScaleIO:               nil,
+		StorageOS:             nil,
+		CSI:                   nil,
+		Ephemeral:             nil,
+	}
 }
 
 // GetContainerLogs gets the logs for a given container running inside the given pod in the give namespace
@@ -1748,6 +2081,136 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 	return execOutputChan, finalExecResultChan, nil
 }
 
+// RemoveDirPathFromNode removes the contents and path to [dirPathToRemove] by creating a pod in [namespace] with privileged access to the [nodeName]'s filesystem
+// The host filesystem is mounted onto the pod as a volume and then a rm -rf is run at the location on the pod where [dirPathToRemove] is mounted
+func (manager *KubernetesManager) RemoveDirPathFromNode(ctx context.Context, namespace string, nodeName string, dirPathToRemove string) error {
+	// rm the directory from the node using a privileged pod
+	removeContainerName := "remove-dir-container"
+	// pod needs to be privileged to access host filesystem
+	isPrivileged := true
+	removeDataDirPodUUID, err := uuid_generator.GenerateUUIDString()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred generating uuid for remove data dir pod.")
+	}
+	removeDataDirPodName := fmt.Sprintf("remove-dir-pod-%v", removeDataDirPodUUID)
+	hostVolumeName := "remove-dir-vol"
+	mountPath := "/dir-to-remove"
+	nodeSelectorsToSchedulePodOnNode := map[string]string{
+		apiv1.LabelHostname: nodeName,
+	}
+	removeDataDirPod, err := manager.CreatePod(
+		ctx,
+		namespace,
+		removeDataDirPodName,
+		nil,
+		nil,
+		nil,
+		[]apiv1.Container{
+			{
+				Name:  removeContainerName,
+				Image: "busybox",
+				Command: []string{
+					"sh",
+					"-c",
+					"sleep 10000000s",
+				},
+				Args:       nil,
+				WorkingDir: "",
+				Ports:      nil,
+				EnvFrom:    nil,
+				Env:        nil,
+				Resources: apiv1.ResourceRequirements{
+					Limits:   nil,
+					Requests: nil,
+					Claims:   nil,
+				},
+				ResizePolicy: nil,
+				VolumeMounts: []apiv1.VolumeMount{
+					{
+						Name:             hostVolumeName,
+						ReadOnly:         false,
+						MountPath:        mountPath,
+						SubPath:          "",
+						MountPropagation: nil,
+						SubPathExpr:      "",
+					},
+				},
+				VolumeDevices:            nil,
+				LivenessProbe:            nil,
+				ReadinessProbe:           nil,
+				StartupProbe:             nil,
+				Lifecycle:                nil,
+				TerminationMessagePath:   "",
+				TerminationMessagePolicy: "",
+				ImagePullPolicy:          "",
+				SecurityContext: &apiv1.SecurityContext{
+					Privileged:               &isPrivileged,
+					Capabilities:             nil,
+					SeccompProfile:           nil,
+					ProcMount:                nil,
+					ReadOnlyRootFilesystem:   nil,
+					AllowPrivilegeEscalation: nil,
+					RunAsNonRoot:             nil,
+					RunAsGroup:               nil,
+					RunAsUser:                nil,
+					SELinuxOptions:           nil,
+					WindowsOptions:           nil,
+				},
+				Stdin:     false,
+				StdinOnce: false,
+				TTY:       false,
+			},
+		}, []apiv1.Volume{
+			{
+				Name:         hostVolumeName,
+				VolumeSource: manager.GetVolumeSourceForHostPath(dirPathToRemove), // mount the entire host filesystem in this volume
+			},
+		}, "", "", nil, nodeSelectorsToSchedulePodOnNode)
+	defer func() {
+		// Don't block on removing this remove directory pod because this can take a while sometimes in k8s
+		go func() {
+			removeCtx := context.Background()
+			if removeDataDirPod != nil {
+				err := manager.RemovePod(removeCtx, removeDataDirPod)
+				if err != nil {
+					logrus.Warnf("Attempted to remove pod '%v' in namespace '%v' but an error occurred:\n%v", removeDataDirPod.Name, namespace, err.Error())
+					logrus.Warn("You may have to remove this pod manually.")
+				}
+			}
+		}()
+	}()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating pod '%v' in namespace '%v'.", removeDataDirPodName, namespace)
+	}
+
+	removeDirSuccessExitCode := int32(0)
+	dirPathToRemoveAndEmpty := fmt.Sprintf("%v/*", mountPath)
+	removeDirCmd := []string{"rm", "-rf", dirPathToRemoveAndEmpty}
+	output := &bytes.Buffer{}
+	concurrentWriter := concurrent_writer.NewConcurrentWriter(output)
+	resultExitCode, err := manager.RunExecCommand(
+		removeDataDirPod.Namespace,
+		removeDataDirPod.Name,
+		removeContainerName,
+		removeDirCmd,
+		concurrentWriter,
+		concurrentWriter,
+	)
+	logrus.Debugf("Output of remove directory '%v': %v, exit code: %v", removeDirCmd, output.String(), resultExitCode)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred running exec command '%v' on pod '%v' in namespace '%v' with output '%v'.", removeDirCmd, removeDataDirPod.Name, removeDataDirPod.Namespace, output.String())
+	}
+	if resultExitCode != removeDirSuccessExitCode {
+		return stacktrace.NewError("Running exec command '%v' on pod '%v' in namespace '%v' returned a non-%v exit code: '%v' and output '%v'.", removeDirCmd, removeDataDirPod.Name, removeDataDirPod.Namespace, removeDirSuccessExitCode, resultExitCode, output.String())
+	}
+	if output.String() != "" {
+		return stacktrace.NewError("Expected empty output from running exec command '%v' but instead retrieved output string '%v'", removeDirCmd, output.String())
+	}
+
+	logrus.Debugf("Successfully removed contents of dir path '%v' on node '%v'.", dirPathToRemove, nodeName)
+	return nil
+}
+
 func (manager *KubernetesManager) GetAllEnclaveResourcesByLabels(ctx context.Context, namespace string, labels map[string]string) (*apiv1.PodList, *apiv1.ServiceList, *rbacv1.ClusterRoleList, *rbacv1.ClusterRoleBindingList, error) {
 
 	var (
@@ -1857,6 +2320,18 @@ func (manager *KubernetesManager) GetDaemonSetsByLabels(ctx context.Context, nam
 	return daemonSets, nil
 }
 
+func (manager *KubernetesManager) GetDeploymentsByLabels(ctx context.Context, namespace string, deploymentLabels map[string]string) (*v1.DeploymentList, error) {
+	deploymentsClient := manager.kubernetesClientSet.AppsV1().Deployments(namespace)
+
+	opts := buildListOptionsFromLabels(deploymentLabels)
+	deployment, err := deploymentsClient.List(ctx, opts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get deployment with labels '%+v', instead a non-nil error was returned", deploymentLabels)
+	}
+
+	return deployment, nil
+}
+
 func (manager *KubernetesManager) GetConfigMapByLabels(ctx context.Context, namespace string, configMapLabels map[string]string) (*apiv1.ConfigMapList, error) {
 	configMapClient := manager.kubernetesClientSet.CoreV1().ConfigMaps(namespace)
 
@@ -1924,6 +2399,90 @@ func (manager *KubernetesManager) HasComputeNodes(ctx context.Context) (bool, er
 		return false, stacktrace.Propagate(err, "An error occurred while checking if the Kubernetes cluster has any nodes")
 	}
 	return len(nodes.Items) != 0, nil
+}
+
+// AddLabelsToNode will add kurtosis related [labels] from [nodeName] - non Kurtosis labels will not be allowed for addition
+func (manager *KubernetesManager) AddLabelsToNode(ctx context.Context, nodeName string, labels map[string]string) error {
+	for k := range labels {
+		if !strings.HasPrefix(k, kubernetes_label_key.KurtosisDomainLabelKeyPrefix.GetString()) {
+			return stacktrace.NewError("Found label '%v' not prefixed with Kurtosis app id label '%v'. Adding non-Kurtosis label is disallowed.", k, kubernetes_label_key.AppIDKubernetesLabelKey.GetString())
+		}
+	}
+	nodeClient := manager.kubernetesClientSet.CoreV1().Nodes()
+
+	node, err := nodeClient.Get(ctx, nodeName, globalGetOptions)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while trying to get node '%v'. Ensure node with name '%v' exists in cluster.", nodeName, nodeName)
+	}
+
+	// add to existing labels
+	for k, v := range labels {
+		node.Labels[k] = v
+	}
+
+	_, err = nodeClient.Update(ctx, node, metav1.UpdateOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		DryRun:          nil,
+		FieldManager:    "",
+		FieldValidation: "",
+	})
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while trying to update node '%v' with labels '%v'", nodeName, labels)
+	}
+
+	return nil
+}
+
+// RemoveLabelsFromNode will remove kurtosis related [labels] from [nodeName] - non Kurtosis labels will not be allowed for removal
+func (manager *KubernetesManager) RemoveLabelsFromNode(ctx context.Context, nodeName string, labels map[string]bool) error {
+	for k := range labels {
+		if !strings.HasPrefix(k, kubernetes_label_key.KurtosisDomainLabelKeyPrefix.GetString()) {
+			return stacktrace.NewError("Found label '%v' not prefixed with Kurtosis domain prefix '%v'. Removing non-Kurtosis label is disallowed.", k, kubernetes_label_key.AppIDKubernetesLabelKey.GetString())
+		}
+	}
+	nodeClient := manager.kubernetesClientSet.CoreV1().Nodes()
+
+	// TODO: add check here
+	node, err := nodeClient.Get(ctx, nodeName, globalGetOptions)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while trying to get node '%v'. Ensure node with name '%v' exists in cluster.", nodeName, nodeName)
+	}
+
+	// add node selectors to existing labels
+	for k := range labels {
+		delete(node.Labels, k)
+	}
+
+	_, err = nodeClient.Update(ctx, node, metav1.UpdateOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		DryRun:          nil,
+		FieldManager:    "",
+		FieldValidation: "",
+	})
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while trying to remove labels '%v' from node '%v'", labels, nodeName)
+	}
+
+	logrus.Debugf("Successfullly removed label '%v' from node '%v'.", labels, nodeName)
+
+	return nil
+}
+
+func (manager *KubernetesManager) GetLabelsOnNode(ctx context.Context, nodeName string) (map[string]string, error) {
+	nodeClient := manager.kubernetesClientSet.CoreV1().Nodes()
+
+	node, err := nodeClient.Get(ctx, nodeName, globalGetOptions)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while trying to get node '%v'. Ensure node with name '%v' exists in cluster.", nodeName, nodeName)
+	}
+
+	return node.Labels, nil
 }
 
 // ---------------------------Ingresses------------------------------------------------------------------------------
@@ -2161,7 +2720,7 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 			)
 		case apiv1.PodSucceeded:
 			podStateStr := manager.getPodInfoBlockStr(ctx, namespaceName, pod)
-			// NOTE: We'll need to change this if we ever expect to run one-off pods
+			//NOTE: We'll need to change this if we ever expect to run one-off pods
 			return stacktrace.NewError(
 				"Expected state of pod '%v' to arrive at '%v' but the pod instead landed in '%v' with the following state:\n%v",
 				podName,
@@ -2215,7 +2774,7 @@ func (manager *KubernetesManager) waitForPodDeletion(ctx context.Context, namesp
 	)
 }
 
-func (manager *KubernetesManager) waitForPodTermination(ctx context.Context, namespaceName string, podName string) error {
+func (manager *KubernetesManager) WaitForPodTermination(ctx context.Context, namespaceName string, podName string) error {
 	deadline := time.Now().Add(podWaitForTerminationTimeout)
 	var latestPodStatus *apiv1.PodStatus
 	for time.Now().Before(deadline) {

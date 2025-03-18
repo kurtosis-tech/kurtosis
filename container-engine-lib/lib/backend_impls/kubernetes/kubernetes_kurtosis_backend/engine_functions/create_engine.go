@@ -3,6 +3,8 @@ package engine_functions
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_aggregator_functions"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_aggregator_functions/implementations/vector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_collector_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_collector_functions/implementations/fluentbit"
 	"time"
@@ -32,13 +34,15 @@ const (
 	httpApplicationProtocol                              = "http"
 	logsCollectorHttpPortNum                             = 9713
 	logsCollectorTcpPortNum                              = 9712
+	logsVolumeName                                       = "logsdb"
 )
 
-var noWait *port_spec.Wait = nil
-
-// TODO add support for passing toleration to Engine
-var noToleration []apiv1.Toleration = nil
-var noSelectors map[string]string = nil
+var (
+	engineWait *port_spec.Wait = nil
+	// TODO add support for passing toleration to Engine
+	engineToleration          []apiv1.Toleration = nil
+	kurtosisEngineNodeNameKey                    = kubernetes_label_key.EngineNodeLabelKey.GetString()
+)
 
 func CreateEngine(
 	ctx context.Context,
@@ -48,6 +52,7 @@ func CreateEngine(
 	envVars map[string]string,
 	_ bool, //It's not required to add extra configuration in K8S for enabling the debug server
 	githubAuthToken string,
+	engineNodeName string,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
 ) (
@@ -68,7 +73,7 @@ func CreateEngine(
 	}
 	engineGuid := engine.EngineGUID(engineGuidStr)
 
-	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, consts.KurtosisServersTransportProtocol, httpApplicationProtocol, noWait, "")
+	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, consts.KurtosisServersTransportProtocol, httpApplicationProtocol, engineWait, "")
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -77,7 +82,7 @@ func CreateEngine(
 			consts.KurtosisServersTransportProtocol.String(),
 		)
 	}
-	privateRESTAPIPortSpec, err := port_spec.NewPortSpec(engine.RESTAPIPortAddr, consts.KurtosisServersTransportProtocol, httpApplicationProtocol, noWait, "")
+	privateRESTAPIPortSpec, err := port_spec.NewPortSpec(engine.RESTAPIPortAddr, consts.KurtosisServersTransportProtocol, httpApplicationProtocol, engineWait, "")
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -149,7 +154,30 @@ func CreateEngine(
 		}
 	}()
 
-	enginePod, enginePodLabels, err := createEnginePod(ctx, namespaceName, engineAttributesProvider, imageOrgAndRepo, imageVersionTag, envVars, privatePortSpecs, serviceAccount.Name, kubernetesManager)
+	// if engine node specified, label node with engine node name so engine node gets schedule on this node via node selectors passed to create pod
+	// the engine needs to be placed on a node to have the access to the same logs database for users, if engine gets scheduled on different nodes, there will be inconsistencies in logs
+	engineNodeSelectors := map[string]string{}
+	shouldRemoveEngineNodeSelectors := false
+	if engineNodeName != "" {
+		engineNodeSelectors[kurtosisEngineNodeNameKey] = engineNodeName
+		if err = kubernetesManager.AddLabelsToNode(ctx, engineNodeName, engineNodeSelectors); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred labeling node '%v' with selectors '%v'.", engineNodeName, engineNodeSelectors)
+		}
+		shouldRemoveEngineNodeSelectors = true
+		defer func() {
+			if shouldRemoveEngineNodeSelectors {
+				kurtosisLabelsToRemove := map[string]bool{kurtosisEngineNodeNameKey: true}
+				if err := kubernetesManager.RemoveLabelsFromNode(ctx, engineNodeName, kurtosisLabelsToRemove); err != nil {
+					logrus.Errorf("Creating the engine didn't complete successfully, so we tried to remove engine node selectors '%v' from node '%v' that we created but an error was thrown:\n%v", engineNodeSelectors, engineNodeName, err)
+					logrus.Errorf("ACTION REQUIRED: You'll need to manually remove node selectors '%v' on node with name '%v'!!!!!!!", engineNodeSelectors, engineNodeName)
+				}
+			}
+		}()
+	}
+
+	logsAggregatorDeployment := vector.NewVectorLogsAggregatorResourcesManager()
+
+	enginePod, enginePodLabels, err := createEnginePod(ctx, namespaceName, engineNodeSelectors, engineAttributesProvider, imageOrgAndRepo, imageVersionTag, envVars, privatePortSpecs, logsAggregatorDeployment.GetLogsBaseDirPath(), serviceAccount.Name, kubernetesManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the engine pod")
 	}
@@ -208,13 +236,15 @@ func CreateEngine(
 	}()
 
 	engineResources := &engineKubernetesResources{
-		clusterRole:        clusterRole,
-		clusterRoleBinding: clusterRoleBindings,
-		namespace:          namespace,
-		serviceAccount:     serviceAccount,
-		service:            engineService,
-		pod:                enginePod,
-		ingress:            engineIngress,
+		clusterRole:         clusterRole,
+		clusterRoleBinding:  clusterRoleBindings,
+		namespace:           namespace,
+		serviceAccount:      serviceAccount,
+		service:             engineService,
+		pod:                 enginePod,
+		ingress:             engineIngress,
+		engineNodeSelectors: engineNodeSelectors,
+		engineNodeName:      engineNodeName,
 	}
 	engineObjsById, err := getEngineObjectsFromKubernetesResources(map[engine.EngineGUID]*engineKubernetesResources{
 		engineGuid: engineResources,
@@ -254,13 +284,24 @@ func CreateEngine(
 		}*/
 
 	logrus.Infof("Starting the centralized logs components...")
+	logsAggregator, removeLogsAggregatorFunc, err := logs_aggregator_functions.CreateLogsAggregator(ctx, namespace.Name, logsAggregatorDeployment, objAttrsProvider, kubernetesManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the logs aggregator")
+	}
+	var shouldRemoveLogsAggregator = true
+	defer func() {
+		if shouldRemoveLogsAggregator {
+			removeLogsAggregatorFunc()
+		}
+	}()
+
 	logsCollectorDaemonSet := fluentbit.NewFluentbitLogsCollector()
 
 	// Unlike the DockerBackend, where the log collectors are deployed by the engine during enclave creation
 	// for k8s backend, the logs collector lifecycle gets managed with the engine's and is created during engine creation
-	_, removeLogsCollectorFunc, err := logs_collector_functions.CreateLogsCollector(ctx, logsCollectorTcpPortNum, logsCollectorHttpPortNum, logsCollectorDaemonSet, nil, kubernetesManager, objAttrsProvider)
+	_, removeLogsCollectorFunc, err := logs_collector_functions.CreateLogsCollector(ctx, logsCollectorTcpPortNum, logsCollectorHttpPortNum, logsCollectorDaemonSet, logsAggregator, kubernetesManager, objAttrsProvider)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the engine logs collector")
+		return nil, stacktrace.Propagate(err, "An error occurred creating the logs collector")
 	}
 	var shouldRemoveLogsCollector = true
 	defer func() {
@@ -271,6 +312,8 @@ func CreateEngine(
 	logrus.Infof("Centralized logs components started.")
 
 	shouldRemoveLogsCollector = false
+	shouldRemoveEngineNodeSelectors = false
+	shouldRemoveLogsAggregator = false
 	shouldRemoveNamespace = false
 	shouldRemoveServiceAccount = false
 	shouldRemoveClusterRole = false
@@ -321,7 +364,12 @@ func createEngineServiceAccount(
 	}
 	serviceAccountName := serviceAccountAttributes.GetName().GetString()
 	serviceAccountLabels := shared_helpers.GetStringMapFromLabelMap(serviceAccountAttributes.GetLabels())
-	serviceAccount, err := kubernetesManager.CreateServiceAccount(ctx, serviceAccountName, namespace, serviceAccountLabels)
+	imagePullSecrets := []apiv1.LocalObjectReference{
+		{
+			Name: "kurtosis-image",
+		},
+	}
+	serviceAccount, err := kubernetesManager.CreateServiceAccount(ctx, serviceAccountName, namespace, serviceAccountLabels, imagePullSecrets)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating service account '%v' with labels '%+v' in namespace '%v'", serviceAccountName, serviceAccountLabels, namespace)
 	}
@@ -374,6 +422,8 @@ func createEngineClusterRole(
 				kubernetes_manager_consts.JobsKubernetesResource, // Necessary so that we can give the API container the permission
 				kubernetes_manager_consts.ConfigMapsKubernetesResource,
 				kubernetes_manager_consts.DaemonSetsKubernetesResource,
+				kubernetes_manager_consts.DeploymentsKubernetesResource,
+				kubernetes_manager_consts.DeploymentsScaleKubernetesResource,
 			},
 		},
 		{
@@ -435,11 +485,13 @@ func createEngineClusterRoleBindings(
 func createEnginePod(
 	ctx context.Context,
 	namespace string,
+	nodeSelectors map[string]string,
 	engineAttributesProvider object_attributes_provider.KubernetesEngineObjectAttributesProvider,
 	imageOrgAndRepo string,
 	imageVersionTag string,
 	envVars map[string]string,
 	privatePorts map[string]*port_spec.PortSpec,
+	logsBaseDirPath string,
 	serviceAccountName string,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (*apiv1.Pod, map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue, error) {
@@ -484,10 +536,25 @@ func createEnginePod(
 			Image: containerImageAndTag,
 			Env:   engineContainerEnvVars,
 			Ports: containerPorts,
+			VolumeMounts: []apiv1.VolumeMount{
+				{
+					Name:             logsVolumeName,
+					ReadOnly:         false,
+					MountPath:        logsBaseDirPath,
+					SubPath:          "",
+					MountPropagation: nil,
+					SubPathExpr:      "",
+				},
+			},
 		},
 	}
 
-	engineVolumes := []apiv1.Volume{}
+	engineVolumes := []apiv1.Volume{
+		{
+			Name:         logsVolumeName,
+			VolumeSource: kubernetesManager.GetVolumeSourceForHostPath(logsBaseDirPath),
+		},
+	}
 	engineInitContainers := []apiv1.Container{}
 
 	// Create pods with engine containers and volumes in kubernetes
@@ -501,11 +568,9 @@ func createEnginePod(
 		engineContainers,
 		engineVolumes,
 		serviceAccountName,
-		// Engine doesn't auto restart
 		apiv1.RestartPolicyNever,
-		noToleration,
-		noSelectors,
-	)
+		engineToleration,
+		nodeSelectors)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while creating the pod with name '%s' in namespace '%s' with image '%s'", enginePodName, namespace, containerImageAndTag)
 	}
