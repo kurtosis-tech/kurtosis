@@ -53,7 +53,8 @@ func StopEngines(
 		if resources.engineNodeName != "" {
 			engineNodeName := resources.engineNodeName
 			engineNodeSelectors := resources.engineNodeSelectors
-			if err := kubernetesManager.RemoveLabelsFromNode(ctx, engineNodeName, engineNodeSelectors); err != nil {
+			kurtosisLabelsToRemove := map[string]bool{kurtosisEngineNodeNameKey: true}
+			if err := kubernetesManager.RemoveLabelsFromNode(ctx, engineNodeName, kurtosisLabelsToRemove); err != nil {
 				erroredEngineGuids[engineGuid] = stacktrace.Propagate(
 					err,
 					"An error occurred removing labels '%v' from node '%v' for engine '%v'",

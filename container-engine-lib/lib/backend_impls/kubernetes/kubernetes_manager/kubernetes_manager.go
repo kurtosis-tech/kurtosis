@@ -1398,7 +1398,7 @@ func (manager *KubernetesManager) GetPodsManagedByDaemonSet(ctx context.Context,
 func (manager *KubernetesManager) UpdateDaemonSetWithNodeSelectors(ctx context.Context, daemonSet *v1.DaemonSet, nodeSelector map[string]string) error {
 	daemonSet.Spec.Template.Spec.NodeSelector = nodeSelector
 
-	_, err := manager.kubernetesClientSet.AppsV1().DaemonSets(daemonSet.Namespace).Update(
+	daemonSet, err := manager.kubernetesClientSet.AppsV1().DaemonSets(daemonSet.Namespace).Update(
 		ctx,
 		daemonSet,
 		metav1.UpdateOptions{
@@ -2428,9 +2428,12 @@ func (manager *KubernetesManager) AddLabelsToNode(ctx context.Context, nodeName 
 	return nil
 }
 
-func (manager *KubernetesManager) RemoveLabelsFromNode(ctx context.Context, nodeName string, labels map[string]string) error {
+// RemoveLabelsFromNode will remove kurtosis related [labels] from [nodeName] - non Kurtosis labels will not be allowed for removal
+func (manager *KubernetesManager) RemoveLabelsFromNode(ctx context.Context, nodeName string, labels map[string]bool) error {
+	// todo ensure
 	nodeClient := manager.kubernetesClientSet.CoreV1().Nodes()
 
+	// TODO: add check here
 	node, err := nodeClient.Get(ctx, nodeName, globalGetOptions)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while trying to get node '%v'. Ensure node with name '%v' exists in cluster.", nodeName, nodeName)

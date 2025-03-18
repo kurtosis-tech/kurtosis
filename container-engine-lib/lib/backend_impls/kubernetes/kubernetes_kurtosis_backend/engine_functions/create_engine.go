@@ -169,7 +169,8 @@ func CreateEngine(
 		shouldRemoveEngineNodeSelectors = true
 		defer func() {
 			if shouldRemoveEngineNodeSelectors {
-				if err := kubernetesManager.RemoveLabelsFromNode(ctx, engineNodeName, engineNodeSelectors); err != nil {
+				kurtosisLabelsToRemove := map[string]bool{kurtosisEngineNodeNameKey: true}
+				if err := kubernetesManager.RemoveLabelsFromNode(ctx, engineNodeName, kurtosisLabelsToRemove); err != nil {
 					logrus.Errorf("Creating the engine didn't complete successfully, so we tried to remove engine node selectors '%v' from node '%v' that we created but an error was thrown:\n%v", engineNodeSelectors, engineNodeName, err)
 					logrus.Errorf("ACTION REQUIRED: You'll need to manually remove node selectors '%v' on node with name '%v'!!!!!!!", engineNodeSelectors, engineNodeName)
 				}
