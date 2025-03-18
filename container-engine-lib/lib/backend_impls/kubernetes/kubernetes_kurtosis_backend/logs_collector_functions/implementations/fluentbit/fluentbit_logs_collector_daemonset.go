@@ -664,7 +664,7 @@ func (fluentbit *fluentbitLogsCollector) Clean(
 	evictNodeSelectors := map[string]string{
 		"non-existent-label": "true",
 	}
-	err = kubernetesManager.UpdateDaemonSetWithNodeSelectors(
+	logsCollectorDaemonSet, err = kubernetesManager.UpdateDaemonSetWithNodeSelectors(
 		ctx,
 		logsCollectorDaemonSet,
 		evictNodeSelectors,
@@ -688,7 +688,7 @@ func (fluentbit *fluentbitLogsCollector) Clean(
 	}
 
 	// update daemon set again to have no node selectors, allowing daemon set to schedule log collector pods
-	err = kubernetesManager.UpdateDaemonSetWithNodeSelectors(
+	logsCollectorDaemonSet, err = kubernetesManager.UpdateDaemonSetWithNodeSelectors(
 		ctx,
 		logsCollectorDaemonSet,
 		map[string]string{},

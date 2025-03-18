@@ -15,7 +15,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"io"
 	v1 "k8s.io/api/apps/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"net/http"
 	"net/url"
 	"os"
@@ -1397,62 +1396,72 @@ func (manager *KubernetesManager) GetPodsManagedByDaemonSet(ctx context.Context,
 	return podsManagedByDaemonSet, nil
 }
 
-//
-//func (manager *KubernetesManager) UpdateDaemonSetWithNodeSelectors(ctx context.Context, daemonSet *v1.DaemonSet, nodeSelector map[string]string) error {
-//	daemonSet.Spec.Template.Spec.NodeSelector = nodeSelector
-//
-//	daemonSet, err := manager.kubernetesClientSet.AppsV1().DaemonSets(daemonSet.Namespace).Update(
-//		ctx,
-//		daemonSet,
-//		metav1.UpdateOptions{
-//			TypeMeta: metav1.TypeMeta{
-//				Kind:       "",
-//				APIVersion: "",
-//			},
-//			DryRun:          nil,
-//			FieldManager:    "",
-//			FieldValidation: "",
-//		},
-//	)
-//	if err != nil {
-//		return stacktrace.Propagate(err, "An error occurred updating daemon set '%v' in namespace '%v'.", daemonSet.Name, daemonSet.Namespace)
-//	}
-//	logrus.Debugf("Successfully updated daemon set with node selector %v", nodeSelector)
-//
-//	return nil
-//}
+func (manager *KubernetesManager) UpdateDaemonSetWithNodeSelectors(ctx context.Context, daemonSet *v1.DaemonSet, nodeSelector map[string]string) (*v1.DaemonSet, error) {
+	daemonSet.Spec.Template.Spec.NodeSelector = nodeSelector
 
-func (manager *KubernetesManager) UpdateDaemonSetWithNodeSelectors(ctx context.Context, daemonSet *v1.DaemonSet, nodeSelector map[string]string) error {
-	patchData, err := json.Marshal([]map[string]interface{}{
-		{"op": "replace", "path": "/spec/template/spec/nodeSelector", "value": nodeSelector},
-	})
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred marshaling data to patch daemon set '%v' with node selectors '%v':\n%v.", daemonSet.Name, nodeSelector, patchData)
-	}
-
-	_, err = manager.kubernetesClientSet.AppsV1().DaemonSets(daemonSet.Namespace).Patch(
+	daemonSet, err := manager.kubernetesClientSet.AppsV1().DaemonSets(daemonSet.Namespace).Update(
 		ctx,
-		daemonSet.Name,
-		types.JSONPatchType,
-		patchData,
-		metav1.PatchOptions{
+		daemonSet,
+		metav1.UpdateOptions{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "",
 				APIVersion: "",
 			},
 			DryRun:          nil,
-			Force:           nil,
 			FieldManager:    "",
 			FieldValidation: "",
 		},
 	)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred patching daemon set '%v' in namespace '%v' with patch data '%v'.", daemonSet.Name, daemonSet.Namespace, patchData)
+		return nil, stacktrace.Propagate(err, "An error occurred updating daemon set '%v' in namespace '%v'.", daemonSet.Name, daemonSet.Namespace)
 	}
-	logrus.Debugf("Successfully patched daemon set with node selector %v and patch data '%v'", nodeSelector, patchData)
 
-	return nil
+	logrus.Debugf("Successfully updated daemon set with node selector %v", nodeSelector)
+
+	updatedDaemonSet, err := manager.kubernetesClientSet.AppsV1().DaemonSets(daemonSet.Namespace).Get(
+		ctx,
+		daemonSet.Name,
+		globalGetOptions,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the updated daemon set '%v' in namespace '%v'.", daemonSet.Name, daemonSet.Namespace)
+	}
+
+	return updatedDaemonSet, nil
 }
+
+//
+//func (manager *KubernetesManager) UpdateDaemonSetWithNodeSelectors(ctx context.Context, daemonSet *v1.DaemonSet, nodeSelector map[string]string) error {
+//	patchData, err := json.Marshal([]map[string]interface{}{
+//		{"op": "replace", "path": "/spec/template/spec/nodeSelector", "value": nodeSelector},
+//	})
+//	if err != nil {
+//		return stacktrace.Propagate(err, "An error occurred marshaling data to patch daemon set '%v' with node selectors '%v':\n%v.", daemonSet.Name, nodeSelector, patchData)
+//	}
+//
+//	_, err = manager.kubernetesClientSet.AppsV1().DaemonSets(daemonSet.Namespace).Patch(
+//		ctx,
+//		daemonSet.Name,
+//		types.JSONPatchType,
+//		patchData,
+//		metav1.PatchOptions{
+//			TypeMeta: metav1.TypeMeta{
+//				Kind:       "",
+//				APIVersion: "",
+//			},
+//			DryRun:          nil,
+//			Force:           nil,
+//			FieldManager:    "",
+//			FieldValidation: "",
+//		},
+//	)
+//	if err != nil {
+//		return stacktrace.Propagate(err, "An error occurred patching daemon set '%v' in namespace '%v' with patch data '%v'.", daemonSet.Name, daemonSet.Namespace, patchData)
+//	}
+//	logrus.Debugf("Successfully patched daemon set with node selector %v and patch data '%v'", nodeSelector, patchData)
+//
+//	return nil
+//}
 
 // ---------------------------deployments---------------------------------------------------------------------------------------
 func (manager *KubernetesManager) RemoveDeployment(ctx context.Context, namespace string, deployment *v1.Deployment) error {
