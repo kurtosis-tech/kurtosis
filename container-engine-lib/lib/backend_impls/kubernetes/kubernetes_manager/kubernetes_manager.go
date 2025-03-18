@@ -76,8 +76,8 @@ const (
 	contextDeadlineExceeded              = "context deadline exceeded"
 	expectedStatusMessageSliceSize       = 6
 
-	shouldUseHostPidsNamespace     = true
-	shouldUseHostNetworksNamespace = true
+	shouldUseHostPidsNamespace     = false
+	shouldUseHostNetworksNamespace = false
 )
 
 // We'll try to use the nicer-to-use shells first before we drop down to the lower shells
