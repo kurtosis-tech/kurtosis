@@ -10,6 +10,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"io"
@@ -2434,6 +2435,11 @@ func (manager *KubernetesManager) HasComputeNodes(ctx context.Context) (bool, er
 }
 
 func (manager *KubernetesManager) AddLabelsToNode(ctx context.Context, nodeName string, labels map[string]string) error {
+	for k := range labels {
+		if !strings.HasPrefix(k, kubernetes_label_key.KurtosisDomainLabelKeyPrefix.GetString()) {
+			return stacktrace.NewError("Found label '%v' not prefixed with Kurtosis app id label '%v'. Adding non-Kurtosis label is disallowed.", k, kubernetes_label_key.AppIDKubernetesLabelKey.GetString())
+		}
+	}
 	nodeClient := manager.kubernetesClientSet.CoreV1().Nodes()
 
 	node, err := nodeClient.Get(ctx, nodeName, globalGetOptions)
@@ -2464,7 +2470,11 @@ func (manager *KubernetesManager) AddLabelsToNode(ctx context.Context, nodeName 
 
 // RemoveLabelsFromNode will remove kurtosis related [labels] from [nodeName] - non Kurtosis labels will not be allowed for removal
 func (manager *KubernetesManager) RemoveLabelsFromNode(ctx context.Context, nodeName string, labels map[string]bool) error {
-	// todo ensure
+	for k := range labels {
+		if !strings.HasPrefix(k, kubernetes_label_key.KurtosisDomainLabelKeyPrefix.GetString()) {
+			return stacktrace.NewError("Found label '%v' not prefixed with Kurtosis domain prefix '%v'. Removing non-Kurtosis label is disallowed.", k, kubernetes_label_key.AppIDKubernetesLabelKey.GetString())
+		}
+	}
 	nodeClient := manager.kubernetesClientSet.CoreV1().Nodes()
 
 	// TODO: add check here
