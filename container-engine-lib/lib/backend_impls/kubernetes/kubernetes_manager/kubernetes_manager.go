@@ -1433,39 +1433,6 @@ func (manager *KubernetesManager) UpdateDaemonSetWithNodeSelectors(ctx context.C
 	return updatedDaemonSet, nil
 }
 
-//
-//func (manager *KubernetesManager) UpdateDaemonSetWithNodeSelectors(ctx context.Context, daemonSet *v1.DaemonSet, nodeSelector map[string]string) error {
-//	patchData, err := json.Marshal([]map[string]interface{}{
-//		{"op": "replace", "path": "/spec/template/spec/nodeSelector", "value": nodeSelector},
-//	})
-//	if err != nil {
-//		return stacktrace.Propagate(err, "An error occurred marshaling data to patch daemon set '%v' with node selectors '%v':\n%v.", daemonSet.Name, nodeSelector, patchData)
-//	}
-//
-//	_, err = manager.kubernetesClientSet.AppsV1().DaemonSets(daemonSet.Namespace).Patch(
-//		ctx,
-//		daemonSet.Name,
-//		types.JSONPatchType,
-//		patchData,
-//		metav1.PatchOptions{
-//			TypeMeta: metav1.TypeMeta{
-//				Kind:       "",
-//				APIVersion: "",
-//			},
-//			DryRun:          nil,
-//			Force:           nil,
-//			FieldManager:    "",
-//			FieldValidation: "",
-//		},
-//	)
-//	if err != nil {
-//		return stacktrace.Propagate(err, "An error occurred patching daemon set '%v' in namespace '%v' with patch data '%v'.", daemonSet.Name, daemonSet.Namespace, patchData)
-//	}
-//	logrus.Debugf("Successfully patched daemon set with node selector %v and patch data '%v'", nodeSelector, patchData)
-//
-//	return nil
-//}
-
 // ---------------------------deployments---------------------------------------------------------------------------------------
 func (manager *KubernetesManager) RemoveDeployment(ctx context.Context, namespace string, deployment *v1.Deployment) error {
 	client := manager.kubernetesClientSet.AppsV1().Deployments(namespace)
