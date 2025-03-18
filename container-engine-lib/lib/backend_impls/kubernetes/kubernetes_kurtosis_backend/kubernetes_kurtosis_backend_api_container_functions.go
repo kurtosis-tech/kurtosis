@@ -481,8 +481,6 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	apiContainerRestartPolicy := apiv1.RestartPolicyOnFailure
 
 	// Create pods with api container containers and volumes in Kubernetes
-	hasHostPid := false
-	hasHostNetworkAccess := false
 	apiContainerPod, err := backend.kubernetesManager.CreatePod(
 		ctx,
 		enclaveNamespaceName,
@@ -496,8 +494,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		apiContainerRestartPolicy,
 		noTolerations,
 		noSelectors,
-		hasHostPid,
-		hasHostNetworkAccess)
+	)
 	if err != nil {
 		errMsg := fmt.Sprintf("An error occurred while creating the pod with name '%s' in namespace '%s' with image '%s'", apiContainerPodName, enclaveNamespaceName, image)
 		logrus.Errorf("%s. Error was:\n%s", errMsg, err)

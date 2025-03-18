@@ -35,9 +35,6 @@ const (
 	logsCollectorHttpPortNum                             = 9713
 	logsCollectorTcpPortNum                              = 9712
 	logsVolumeName                                       = "logsdb"
-
-	shouldUseHostPidsNamespace     = false
-	shouldUseHostNetworksNamespace = false
 )
 
 var (
@@ -571,12 +568,9 @@ func createEnginePod(
 		engineContainers,
 		engineVolumes,
 		serviceAccountName,
-		// Engine doesn't auto restart
 		apiv1.RestartPolicyNever,
 		engineToleration,
-		nodeSelectors,
-		shouldUseHostPidsNamespace,
-		shouldUseHostNetworksNamespace)
+		nodeSelectors)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while creating the pod with name '%s' in namespace '%s' with image '%s'", enginePodName, namespace, containerImageAndTag)
 	}

@@ -75,9 +75,6 @@ const (
 	listOptionsTimeoutSeconds      int64 = 10
 	contextDeadlineExceeded              = "context deadline exceeded"
 	expectedStatusMessageSliceSize       = 6
-
-	shouldUseHostPidsNamespace     = false
-	shouldUseHostNetworksNamespace = false
 )
 
 // We'll try to use the nicer-to-use shells first before we drop down to the lower shells
@@ -1058,8 +1055,6 @@ func (manager *KubernetesManager) CreatePod(
 	restartPolicy apiv1.RestartPolicy,
 	tolerations []apiv1.Toleration,
 	nodeSelectors map[string]string,
-	shouldUseHostPidsNamespace bool,
-	shouldUseHostNetworksNamespace bool,
 ) (
 	*apiv1.Pod,
 	error,
@@ -1099,8 +1094,8 @@ func (manager *KubernetesManager) CreatePod(
 		DeprecatedServiceAccount:      "",
 		AutomountServiceAccountToken:  nil,
 		NodeName:                      "",
-		HostNetwork:                   shouldUseHostNetworksNamespace,
-		HostPID:                       shouldUseHostPidsNamespace,
+		HostNetwork:                   false,
+		HostPID:                       false,
 		HostIPC:                       false,
 		ShareProcessNamespace:         nil,
 		SecurityContext:               nil,
@@ -2103,7 +2098,8 @@ func (manager *KubernetesManager) RemoveDirPathFromNode(ctx context.Context, nam
 	nodeSelectorsToSchedulePodOnNode := map[string]string{
 		apiv1.LabelHostname: nodeName,
 	}
-	removeDataDirPod, err := manager.CreatePod(ctx,
+	removeDataDirPod, err := manager.CreatePod(
+		ctx,
 		namespace,
 		removeDataDirPodName,
 		nil,
@@ -2164,20 +2160,12 @@ func (manager *KubernetesManager) RemoveDirPathFromNode(ctx context.Context, nam
 				StdinOnce: false,
 				TTY:       false,
 			},
-		},
-		[]apiv1.Volume{
+		}, []apiv1.Volume{
 			{
 				Name:         hostVolumeName,
 				VolumeSource: manager.GetVolumeSourceForHostPath(dirPathToRemove), // mount the entire host filesystem in this volume
 			},
-		},
-		"",
-		"",
-		nil,
-		nodeSelectorsToSchedulePodOnNode,
-		shouldUseHostPidsNamespace,
-		shouldUseHostNetworksNamespace,
-	)
+		}, "", "", nil, nodeSelectorsToSchedulePodOnNode)
 	defer func() {
 		// Don't block on removing this remove directory pod because this can take a while sometimes in k8s
 		go func() {

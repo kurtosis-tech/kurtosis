@@ -22,14 +22,12 @@ import (
 )
 
 const (
-	maxRetries                                     = 30
-	curlContainerSuccessExitCode                   = 0
-	successHealthCheckStatusCode                   = 200
-	timeToWaitBetweenChecksDuration                = 1 * time.Second
-	availabilityCheckContainerName                 = "availability-check-container"
-	availabilityCheckPodName                       = "availability-check-pod"
-	shouldAvailabilityCheckerHaveHostPidAccess     = true
-	shouldAvailabilityCheckerHaveHostNetworkAccess = true
+	maxRetries                      = 30
+	curlContainerSuccessExitCode    = 0
+	successHealthCheckStatusCode    = 200
+	timeToWaitBetweenChecksDuration = 1 * time.Second
+	availabilityCheckContainerName  = "availability-check-container"
+	availabilityCheckPodName        = "availability-check-pod"
 )
 
 func getLogsAggregatorObjAndResourcesForCluster(ctx context.Context, kubernetesManager *kubernetes_manager.KubernetesManager) (*logs_aggregator.LogsAggregator, *logsAggregatorKubernetesResources, error) {
@@ -255,48 +253,48 @@ func waitForLogsAggregatorAvailability(
 
 	availabilityCheckUrl := fmt.Sprintf("http://%v:%v%v", aggregatorHost, healthCheckPortNum, healthCheckEndpoint)
 
-	pod, err := kubernetesManager.CreatePod(ctx, k8sResources.namespace.Name, availabilityCheckPodName, nil, nil, nil, []apiv1.Container{
-		{
-			Name:  availabilityCheckContainerName,
-			Image: "badouralix/curl-jq",
-			Command: []string{
-				"sh",
-				"-c",
-				"sleep 10000000s",
+	pod, err := kubernetesManager.CreatePod(
+		ctx,
+		k8sResources.namespace.Name,
+		availabilityCheckPodName,
+		nil,
+		nil,
+		nil,
+		[]apiv1.Container{
+			{
+				Name:  availabilityCheckContainerName,
+				Image: "badouralix/curl-jq",
+				Command: []string{
+					"sh",
+					"-c",
+					"sleep 10000000s",
+				},
+				Args:       nil,
+				WorkingDir: "",
+				Ports:      nil,
+				EnvFrom:    nil,
+				Env:        nil,
+				Resources: apiv1.ResourceRequirements{
+					Limits:   nil,
+					Requests: nil,
+					Claims:   nil,
+				},
+				ResizePolicy:             nil,
+				VolumeMounts:             nil,
+				VolumeDevices:            nil,
+				LivenessProbe:            nil,
+				ReadinessProbe:           nil,
+				StartupProbe:             nil,
+				Lifecycle:                nil,
+				TerminationMessagePath:   "",
+				TerminationMessagePolicy: "",
+				ImagePullPolicy:          "",
+				SecurityContext:          nil,
+				Stdin:                    false,
+				StdinOnce:                false,
+				TTY:                      false,
 			},
-			Args:       nil,
-			WorkingDir: "",
-			Ports:      nil,
-			EnvFrom:    nil,
-			Env:        nil,
-			Resources: apiv1.ResourceRequirements{
-				Limits:   nil,
-				Requests: nil,
-				Claims:   nil,
-			},
-			ResizePolicy:             nil,
-			VolumeMounts:             nil,
-			VolumeDevices:            nil,
-			LivenessProbe:            nil,
-			ReadinessProbe:           nil,
-			StartupProbe:             nil,
-			Lifecycle:                nil,
-			TerminationMessagePath:   "",
-			TerminationMessagePolicy: "",
-			ImagePullPolicy:          "",
-			SecurityContext:          nil,
-			Stdin:                    false,
-			StdinOnce:                false,
-			TTY:                      false,
-		},
-	},
-		nil, // no pod volumes
-		"",  // no service account
-		apiv1.RestartPolicyNever,
-		nil, // no tolerations
-		nil, // no node selectors
-		shouldAvailabilityCheckerHaveHostPidAccess,
-		shouldAvailabilityCheckerHaveHostNetworkAccess)
+		}, nil, "", apiv1.RestartPolicyNever, nil, nil)
 	defer func() {
 		// Don't block on removing the availability checker pod because this can take a while sometimes in k8s
 		go func() {
