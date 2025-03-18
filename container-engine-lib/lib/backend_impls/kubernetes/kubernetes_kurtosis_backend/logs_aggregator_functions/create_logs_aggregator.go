@@ -12,7 +12,7 @@ import (
 func CreateLogsAggregator(
 	ctx context.Context,
 	engineNamespace string,
-	logsAggregatorDeployment LogsAggregatorDeployment,
+	logsAggregatorResourcesManager LogsAggregatorResourcesManager,
 	objAttrProvider object_attributes_provider.KubernetesObjectAttributesProvider,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (*logs_aggregator.LogsAggregator, func(), error) {
@@ -32,7 +32,7 @@ func CreateLogsAggregator(
 		logrus.Debug("Found existing logs aggregator deployment.")
 	} else {
 		logrus.Debug("Did not find existing logs aggregator, creating one...")
-		service, deployment, namespace, configMap, removeLogsAggregatorFunc, err := logsAggregatorDeployment.CreateAndStart(
+		service, deployment, namespace, configMap, removeLogsAggregatorFunc, err := logsAggregatorResourcesManager.CreateAndStart(
 			ctx,
 			defaultLogsListeningPortNum,
 			engineNamespace,
@@ -63,7 +63,7 @@ func CreateLogsAggregator(
 
 	logrus.Debugf("Checking for logs aggregator availability in namespace '%v'...", kubernetesResources.namespace.Name)
 
-	healthCheckEndpoint, healthCheckPortNum := logsAggregatorDeployment.GetHTTPHealthCheckEndpointAndPort()
+	healthCheckEndpoint, healthCheckPortNum := logsAggregatorResourcesManager.GetHTTPHealthCheckEndpointAndPort()
 	if err = waitForLogsAggregatorAvailability(ctx, healthCheckEndpoint, healthCheckPortNum, kubernetesResources, kubernetesManager); err != nil {
 		return nil, removeLogsAggregatorFunc, stacktrace.Propagate(err, "An error occurred while waiting for the logs aggregator deployment to become available")
 	}

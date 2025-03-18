@@ -471,7 +471,7 @@ func (backend *KubernetesKurtosisBackend) GetLogsAggregator(
 }
 
 func (backend *KubernetesKurtosisBackend) CreateLogsAggregator(ctx context.Context, httpPortNum uint16, sinks logs_aggregator.Sinks) (*logs_aggregator.LogsAggregator, error) {
-	logsAggregatorDeployment := vector.NewVectorLogsAggregatorDeployment()
+	logsAggregatorDeployment := vector.NewVectorLogsAggregatorResourcesManager()
 
 	logsAggregator, _, err := logs_aggregator_functions.CreateLogsAggregator(
 		ctx,

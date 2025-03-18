@@ -339,7 +339,7 @@ func (backend *KubernetesKurtosisBackend) DestroyEnclaves(
 			return nil, nil, stacktrace.Propagate(err, "An error cleaning logs collector daemon set.")
 		}
 
-		if err := logs_aggregator_functions.CleanLogsAggregator(ctx, vector.NewVectorLogsAggregatorDeployment(), backend.kubernetesManager); err != nil {
+		if err := logs_aggregator_functions.CleanLogsAggregator(ctx, vector.NewVectorLogsAggregatorResourcesManager(), backend.kubernetesManager); err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error cleaning logs aggregator deployment.")
 		}
 	}

@@ -2434,6 +2434,7 @@ func (manager *KubernetesManager) HasComputeNodes(ctx context.Context) (bool, er
 	return len(nodes.Items) != 0, nil
 }
 
+// AddLabelsToNode will add kurtosis related [labels] from [nodeName] - non Kurtosis labels will not be allowed for addition
 func (manager *KubernetesManager) AddLabelsToNode(ctx context.Context, nodeName string, labels map[string]string) error {
 	for k := range labels {
 		if !strings.HasPrefix(k, kubernetes_label_key.KurtosisDomainLabelKeyPrefix.GetString()) {

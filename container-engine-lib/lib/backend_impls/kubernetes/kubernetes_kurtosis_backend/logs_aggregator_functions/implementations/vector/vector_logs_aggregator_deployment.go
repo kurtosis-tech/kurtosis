@@ -30,13 +30,13 @@ const (
 	postCleanNumReplicas = 1
 )
 
-type vectorLogsAggregatorDeployment struct{}
+type vectorLogsAggregatorResourcesManager struct{}
 
-func NewVectorLogsAggregatorDeployment() *vectorLogsAggregatorDeployment {
-	return &vectorLogsAggregatorDeployment{}
+func NewVectorLogsAggregatorResourcesManager() *vectorLogsAggregatorResourcesManager {
+	return &vectorLogsAggregatorResourcesManager{}
 }
 
-func (logsAggregator *vectorLogsAggregatorDeployment) CreateAndStart(
+func (logsAggregator *vectorLogsAggregatorResourcesManager) CreateAndStart(
 	ctx context.Context,
 	logsListeningPortNum uint16,
 	engineNamespace string,
@@ -493,11 +493,11 @@ func waitForPodManagedByDeployment(ctx context.Context, logsAggregatorDeployment
 	)
 }
 
-func (vector *vectorLogsAggregatorDeployment) GetLogsBaseDirPath() string {
+func (vector *vectorLogsAggregatorResourcesManager) GetLogsBaseDirPath() string {
 	return kurtosisLogsMountPath
 }
 
-func (vector *vectorLogsAggregatorDeployment) GetHTTPHealthCheckEndpointAndPort() (string, uint16) {
+func (vector *vectorLogsAggregatorResourcesManager) GetHTTPHealthCheckEndpointAndPort() (string, uint16) {
 	return "/health", apiPort
 }
 
@@ -505,7 +505,7 @@ func (vector *vectorLogsAggregatorDeployment) GetHTTPHealthCheckEndpointAndPort(
 // 1) scales down the vector logs aggregator deployment
 // 2) creates a privileged pod with access to underlying nodes filesystem
 // 3) removes vector data directory on node's filesystem
-func (vector *vectorLogsAggregatorDeployment) Clean(ctx context.Context, logsAggregatorDeployment *appsv1.Deployment, kubernetesManager *kubernetes_manager.KubernetesManager) error {
+func (vector *vectorLogsAggregatorResourcesManager) Clean(ctx context.Context, logsAggregatorDeployment *appsv1.Deployment, kubernetesManager *kubernetes_manager.KubernetesManager) error {
 	pods, err := kubernetesManager.GetPodsManagedByDeployment(ctx, logsAggregatorDeployment)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting pods managed by deployment '%v' in namespace '%v'.", logsAggregatorDeployment.Name, logsAggregatorDeployment.Namespace)

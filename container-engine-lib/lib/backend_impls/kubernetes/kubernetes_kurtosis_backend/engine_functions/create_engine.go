@@ -178,7 +178,7 @@ func CreateEngine(
 		}()
 	}
 
-	logsAggregatorDeployment := vector.NewVectorLogsAggregatorDeployment()
+	logsAggregatorDeployment := vector.NewVectorLogsAggregatorResourcesManager()
 
 	enginePod, enginePodLabels, err := createEnginePod(ctx, namespaceName, engineNodeSelectors, engineAttributesProvider, imageOrgAndRepo, imageVersionTag, envVars, privatePortSpecs, logsAggregatorDeployment.GetLogsBaseDirPath(), serviceAccount.Name, kubernetesManager)
 	if err != nil {

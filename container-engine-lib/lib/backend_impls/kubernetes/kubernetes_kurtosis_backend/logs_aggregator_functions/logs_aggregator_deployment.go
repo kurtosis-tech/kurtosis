@@ -8,7 +8,7 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 )
 
-type LogsAggregatorDeployment interface {
+type LogsAggregatorResourcesManager interface {
 	CreateAndStart(
 		ctx context.Context,
 		// This is the port that this LogsAggregatorDaemonSet will listen for logs on

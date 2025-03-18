@@ -46,7 +46,7 @@ const (
 //	which will cause a resource leak on the user's cluster!
 //
 //	 If you add new immutable values to this section, MAKE SURE TO UPDATE THE UNIT TEST!
-var KurtosisDomainLabelKeyPrefix = MustCreateNewKubernetesLabelKey(labelKeyPrefixStr)
+var KurtosisDomainLabelKeyPrefix = MustCreateNewKubernetesLabelKey(kurtosisDomain)
 var AppIDKubernetesLabelKey = MustCreateNewKubernetesLabelKey(appIdLabelKeyStr)
 var KurtosisResourceTypeKubernetesLabelKey = MustCreateNewKubernetesLabelKey(resourceTypeLabelKeyStr)
 
