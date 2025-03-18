@@ -20,6 +20,23 @@ By default, logs printed in the terminal from this command are truncated at the 
 Kurtosis will keep logs for up to 1 week before removing them to prevent logs from taking up to much storage. If you'd like to remove logs before the retention period, `kurtosis enclave rm` will remove any logs associated for service in the enclave and `kurtosis clean` will remove logs for all services in stopped enclaves.
 :::
 
+:::note Kubernetes Logging
+Kurtosis logging over the Kubernetes backend requires using kurtosis config v4. Kurtosis config v4 adds a required field to the Kubernetes cluster configuration: `engine-node-name`. `engine-node-name` instructs Kurtosis which node to schedule the engine and logs aggregator pods on. The logs aggregator will output logs onto the filesytsem of `engine-node-name` where the engine will read them from for `service logs`. Kurtosis will always attempt to schedule these pods on the `engine-node-name` and fail if unable to.
+```
+config-version: 4 # set config version to v4
+should-send-metrics: true
+kurtosis-clusters:
+    minikube:
+        type: "kubernetes"
+        config:
+        kubernetes-cluster-name: "minikube"
+        enclave-size-in-megabytes: 10
+        storage-class: "standard"
+        engine-node-name: "minikube-m02" # additional required config in v4
+...
+```
+:::
+
 The following optional arguments can be used:
 1. `-a`, `--all` can be used to retrieve all logs.
 1. `-n`, `--num=uint32` can be used to retrieve X last log lines. (eg. `-n 10` will retrieve last 10 log lines, similar to `tail -n 10`)
