@@ -660,6 +660,8 @@ func (fluentbit *fluentbitLogsCollector) Clean(
 
 	logrus.Infof("Cleaning the fluent bit logs collector daemon set...")
 
+	logsCollectorName := logsCollectorDaemonSet.Name
+
 	// patch damon set to have node selector that evicts all pods
 	evictNodeSelectors := map[string]string{
 		"non-existent-label": "true",
@@ -670,7 +672,7 @@ func (fluentbit *fluentbitLogsCollector) Clean(
 		evictNodeSelectors,
 	)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred updating daemon set '%v' with node selectors '%v'", logsCollectorDaemonSet.Name, evictNodeSelectors)
+		return stacktrace.Propagate(err, "An error occurred updating daemon set '%v' with node selectors '%v'", logsCollectorName, evictNodeSelectors)
 	}
 
 	// need to wait for pods to be terminated to unmount checkpoint volumes
@@ -687,19 +689,24 @@ func (fluentbit *fluentbitLogsCollector) Clean(
 		}
 	}
 
+	latestLogsCollectorDaemonSet, err := kubernetesManager.GetDaemonSet(ctx, logsCollectorDaemonSet.Namespace, logsCollectorName)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting latest")
+	}
+
 	// update daemon set again to have no node selectors, allowing daemon set to schedule log collector pods
 	logsCollectorDaemonSet, err = kubernetesManager.UpdateDaemonSetWithNodeSelectors(
 		ctx,
-		logsCollectorDaemonSet,
+		latestLogsCollectorDaemonSet,
 		map[string]string{},
 	)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred updating daemon set '%v' with node selectors '%v'", logsCollectorDaemonSet.Name, evictNodeSelectors)
+		return stacktrace.Propagate(err, "An error occurred updating daemon set '%v' with node selectors '%v'", logsCollectorName, evictNodeSelectors)
 	}
 
 	//before continuing, ensure logs collector is up again
 	if err := waitForAtLeastOneActivePodManagedByDaemonSet(ctx, logsCollectorDaemonSet, kubernetesManager); err != nil {
-		return stacktrace.Propagate(err, "An error occurred waiting for at least one pod managed by daemon set '%v' has become available.", logsCollectorDaemonSet.Name)
+		return stacktrace.Propagate(err, "An error occurred waiting for at least one pod managed by daemon set '%v' has become available.", logsCollectorName)
 	}
 
 	logrus.Infof("Successfully cleaned logs collector.")

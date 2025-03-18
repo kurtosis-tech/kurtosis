@@ -1399,6 +1399,9 @@ func (manager *KubernetesManager) GetPodsManagedByDaemonSet(ctx context.Context,
 func (manager *KubernetesManager) UpdateDaemonSetWithNodeSelectors(ctx context.Context, daemonSet *v1.DaemonSet, nodeSelector map[string]string) (*v1.DaemonSet, error) {
 	daemonSet.Spec.Template.Spec.NodeSelector = nodeSelector
 
+	daemonSetName := daemonSet.Name
+	daemonSetNamespace := daemonSet.Namespace
+
 	daemonSet, err := manager.kubernetesClientSet.AppsV1().DaemonSets(daemonSet.Namespace).Update(
 		ctx,
 		daemonSet,
@@ -1413,7 +1416,7 @@ func (manager *KubernetesManager) UpdateDaemonSetWithNodeSelectors(ctx context.C
 		},
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred updating daemon set '%v' in namespace '%v'.", daemonSet.Name, daemonSet.Namespace)
+		return nil, stacktrace.Propagate(err, "An error occurred updating daemon set '%v' in namespace '%v'.", daemonSetName, daemonSetNamespace)
 	}
 
 	logrus.Debugf("Successfully updated daemon set with node selector %v", nodeSelector)
