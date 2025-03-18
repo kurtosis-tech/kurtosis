@@ -438,6 +438,9 @@ func createLogsCollectorConfigMap(
 		logsAggregatorHost,
 		logsAggregatorPortNum,
 	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred generating fluent bit config string.")
+	}
 	configMap, err := kubernetesManager.CreateConfigMap(
 		ctx,
 		namespace,
