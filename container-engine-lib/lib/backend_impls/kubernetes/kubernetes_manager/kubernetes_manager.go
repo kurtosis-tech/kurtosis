@@ -2084,8 +2084,8 @@ func (manager *KubernetesManager) RemoveDirPathFromNode(ctx context.Context, nam
 		return stacktrace.Propagate(err, "An error occurred generating uuid for remove data dir pod.")
 	}
 	removeDataDirPodName := fmt.Sprintf("remove-dir-pod-%v", removeDataDirPodUUID)
-	hostVolumeName := "host"
-	hostMountPath := "/host"
+	hostVolumeName := "removeDirVol"
+	mountPath := "/dir-to-remove"
 	nodeSelectorsToSchedulePodOnNode := map[string]string{
 		apiv1.LabelHostname: nodeName,
 	}
@@ -2119,7 +2119,7 @@ func (manager *KubernetesManager) RemoveDirPathFromNode(ctx context.Context, nam
 					{
 						Name:             hostVolumeName,
 						ReadOnly:         false,
-						MountPath:        hostMountPath,
+						MountPath:        mountPath,
 						SubPath:          "",
 						MountPropagation: nil,
 						SubPathExpr:      "",
@@ -2154,7 +2154,7 @@ func (manager *KubernetesManager) RemoveDirPathFromNode(ctx context.Context, nam
 		[]apiv1.Volume{
 			{
 				Name:         hostVolumeName,
-				VolumeSource: manager.GetVolumeSourceForHostPath("/"), // mount the entire host filesystem in this volume
+				VolumeSource: manager.GetVolumeSourceForHostPath(dirPathToRemove), // mount the entire host filesystem in this volume
 			},
 		},
 		"",
@@ -2182,7 +2182,7 @@ func (manager *KubernetesManager) RemoveDirPathFromNode(ctx context.Context, nam
 	}
 
 	removeDirSuccessExitCode := int32(0)
-	dirPathToRemoveAndEmpty := fmt.Sprintf("%v%v", hostMountPath, dirPathToRemove)
+	dirPathToRemoveAndEmpty := fmt.Sprintf("%v/*", mountPath)
 	removeDirCmd := []string{"rm", "-rf", dirPathToRemoveAndEmpty}
 	output := &bytes.Buffer{}
 	concurrentWriter := concurrent_writer.NewConcurrentWriter(output)
