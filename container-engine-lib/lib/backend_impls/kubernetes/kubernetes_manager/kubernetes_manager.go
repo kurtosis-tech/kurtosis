@@ -2084,7 +2084,7 @@ func (manager *KubernetesManager) RemoveDirPathFromNode(ctx context.Context, nam
 		return stacktrace.Propagate(err, "An error occurred generating uuid for remove data dir pod.")
 	}
 	removeDataDirPodName := fmt.Sprintf("remove-dir-pod-%v", removeDataDirPodUUID)
-	hostVolumeName := "removeDirVol"
+	hostVolumeName := "remove-dir-vol"
 	mountPath := "/dir-to-remove"
 	nodeSelectorsToSchedulePodOnNode := map[string]string{
 		apiv1.LabelHostname: nodeName,
@@ -2407,7 +2407,7 @@ func (manager *KubernetesManager) AddLabelsToNode(ctx context.Context, nodeName 
 		return stacktrace.Propagate(err, "An error occurred while trying to get node '%v'. Ensure node with name '%v' exists in cluster.", nodeName, nodeName)
 	}
 
-	// add node selectors to existing labels
+	// add to existing labels
 	for k, v := range labels {
 		node.Labels[k] = v
 	}
