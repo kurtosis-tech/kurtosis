@@ -11,13 +11,21 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/clientcmd/api"
 	"os"
 )
 
 func GetCLIBackend(ctx context.Context, storageClass string, engineNodeName string) (backend_interface.KurtosisBackend, error) {
 	kubernetesConfig, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
-		clientcmd.NewDefaultClientConfigLoadingRules(), 
-		&clientcmd.ConfigOverrides{},
+		clientcmd.NewDefaultClientConfigLoadingRules(),
+		&clientcmd.ConfigOverrides{
+			AuthInfo:        api.AuthInfo{},
+			ClusterDefaults: api.Cluster{},
+			ClusterInfo:     api.Cluster{},
+			Context:         api.Context{},
+			CurrentContext:  "",
+			Timeout:         "",
+		},
 	).ClientConfig()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating kubernetes configuration")
