@@ -37,10 +37,7 @@ func GetServiceConfigStarlark(
 	memoryAllocationMegabytes int,
 	minCpuMilliCores int,
 	minMemoryMegaBytes int,
-	ingressClassName string,
-	ingressAnnotations map[string]string,
-	ingressHost string,
-	ingressTLS string,
+	kubernetesConfig *KubernetesConfig,
 ) string {
 	starlarkFields := []string{}
 
@@ -92,24 +89,8 @@ func GetServiceConfigStarlark(
 		starlarkFields = append(starlarkFields, fmt.Sprintf(`min_memory=%d`, minMemoryMegaBytes))
 	}
 
-	if ingressClassName != "" {
-		starlarkFields = append(starlarkFields, fmt.Sprintf(`ingress_class_name=%q`, ingressClassName))
-	}
-
-	if len(ingressAnnotations) > 0 {
-		ingressAnnotationStrings := []string{}
-		for key, value := range ingressAnnotations {
-			ingressAnnotationStrings = append(ingressAnnotationStrings, fmt.Sprintf("%q:%q", key, value))
-		}
-		starlarkFields = append(starlarkFields, fmt.Sprintf(`ingress_annotations={%s}`, strings.Join(ingressAnnotationStrings, ",")))
-	}
-
-	if ingressHost != "" {
-		starlarkFields = append(starlarkFields, fmt.Sprintf(`ingress_host=%q`, ingressHost))
-	}
-
-	if ingressTLS != "" {
-		starlarkFields = append(starlarkFields, fmt.Sprintf(`ingress_tls_host=%q`, ingressTLS))
+	if kubernetesConfig != nil {
+		starlarkFields = append(starlarkFields, fmt.Sprintf(`kubernetes_config=%s`, kubernetesConfig.ToStarlark()))
 	}
 
 	return fmt.Sprintf("ServiceConfig(%s)", strings.Join(starlarkFields, ","))
