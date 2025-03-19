@@ -9,7 +9,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/tools/clientcmd/api"
 )
 
 // GatewayCmd Suppressing exhaustruct requirement because this struct has ~40 properties
@@ -38,15 +37,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 	// TODO: get this from the backend's k8s manager somehow?
 	kubernetesConfig, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
-		clientcmd.NewDefaultClientConfigLoadingRules(),
-		&clientcmd.ConfigOverrides{
-			AuthInfo:        api.AuthInfo{},
-			ClusterDefaults: api.Cluster{},
-			ClusterInfo:     api.Cluster{},
-			Context:         api.Context{},
-			CurrentContext:  "",
-			Timeout:         "",
-		},
+		clientcmd.NewDefaultClientConfigLoadingRules(), nil,
 	).ClientConfig()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating Kubernetes configuration")
