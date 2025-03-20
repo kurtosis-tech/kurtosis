@@ -22,7 +22,7 @@ type IngressSpec struct {
 	*kurtosis_type_constructor.KurtosisValueTypeDefault
 }
 
-func NewIngressTargetType() *kurtosis_type_constructor.KurtosisTypeConstructor {
+func NewIngressSpecType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 	return &kurtosis_type_constructor.KurtosisTypeConstructor{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: IngressSpecTypeName,
@@ -79,11 +79,11 @@ func NewIngressTargetType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 			},
 			Deprecation: nil,
 		},
-		Instantiate: instantiateIngressTarget,
+		Instantiate: instantiateIngressSpec,
 	}
 }
 
-func instantiateIngressTarget(arguments *builtin_argument.ArgumentValuesSet) (builtin_argument.KurtosisValueType, *startosis_errors.InterpretationError) {
+func instantiateIngressSpec(arguments *builtin_argument.ArgumentValuesSet) (builtin_argument.KurtosisValueType, *startosis_errors.InterpretationError) {
 	kurtosisValueType, interpretationErr := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(IngressSpecTypeName, arguments)
 	if interpretationErr != nil {
 		return nil, interpretationErr
@@ -112,7 +112,7 @@ func (target *IngressSpec) GetTlsConfig() (*IngressTLSConfig, *startosis_errors.
 	if !found {
 		return nil, nil
 	}
-	
+
 	return tls, nil
 }
 

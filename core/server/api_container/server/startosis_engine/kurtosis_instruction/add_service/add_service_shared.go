@@ -232,7 +232,7 @@ func replaceMagicStrings(
 		serviceConfig.GetNodeSelectors(),
 		serviceConfig.GetImageDownloadMode(),
 		serviceConfig.GetTiniEnabled(),
-		nil, // kubernetesConfig
+		serviceConfig.GetKubernetesConfig(),
 	)
 
 	if err != nil {

@@ -3,6 +3,8 @@ package set_service
 import (
 	"context"
 	"fmt"
+	"reflect"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -20,7 +22,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"go.starlark.net/starlark"
-	"reflect"
 )
 
 const (
@@ -226,6 +227,10 @@ func upsertServiceConfigs(currServiceConfig, serviceConfigOverride *service.Serv
 	}
 	if tolerationsOverride := serviceConfigOverride.GetTolerations(); len(tolerationsOverride) > 0 {
 		currServiceConfig.SetTolerations(tolerationsOverride)
+	}
+
+	if kubernetesConfigOverride := serviceConfigOverride.GetKubernetesConfig(); kubernetesConfigOverride != nil {
+		currServiceConfig.SetKubernetesConfig(kubernetesConfigOverride)
 	}
 
 	// TODO: impl logic for overriding entrypoint, cmd, env vars, and ports

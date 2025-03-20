@@ -9,14 +9,14 @@ import (
 )
 
 const (
-	IngressHostTLSConfigTypeName = "IngressTLSConfig"
-	SecretNameAttr               = "secretName"
+	IngressTLSConfigTypeName = "IngressTLSConfig"
+	SecretNameAttr           = "secretName"
 )
 
 func NewIngressTLSConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 	return &kurtosis_type_constructor.KurtosisTypeConstructor{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
-			Name: IngressHostTLSConfigTypeName,
+			Name: IngressTLSConfigTypeName,
 			Arguments: []*builtin_argument.BuiltinArgument{
 				{
 					Name:              SecretNameAttr,
@@ -34,7 +34,7 @@ func NewIngressTLSConfigType() *kurtosis_type_constructor.KurtosisTypeConstructo
 }
 
 func instantiateIngressTLSConfig(arguments *builtin_argument.ArgumentValuesSet) (builtin_argument.KurtosisValueType, *startosis_errors.InterpretationError) {
-	kurtosisValueType, interpretationErr := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(IngressHostTLSConfigTypeName, arguments)
+	kurtosisValueType, interpretationErr := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(IngressTLSConfigTypeName, arguments)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -65,7 +65,7 @@ func (config *IngressTLSConfig) GetSecretName() (string, *startosis_errors.Inter
 	}
 	if !found {
 		return "", startosis_errors.NewInterpretationError("Required attribute '%v' couldn't be found on '%v' type",
-			SecretNameAttr, IngressHostTLSConfigTypeName)
+			SecretNameAttr, IngressTLSConfigTypeName)
 	}
 	return secretName.GoString(), nil
 }

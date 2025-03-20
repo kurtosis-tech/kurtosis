@@ -2,6 +2,7 @@ package service_config
 
 import (
 	"fmt"
+
 	kube_config "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/kubernetes"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 
@@ -58,7 +59,7 @@ const (
 	NodeSelectorsAttr               = "node_selectors"
 	FilesToBeMovedAttr              = "files_to_be_moved"
 	TiniEnabledAttr                 = "tini_enabled"
-	KubernetesConfigAttr            = "kube_config"
+	KubernetesConfigAttr            = "kubernetes_config"
 
 	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
@@ -237,7 +238,7 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 				{
 					Name:              KubernetesConfigAttr,
 					IsOptional:        true,
-					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark_kube_config.KubernetesConfig],
 					Validator:         nil,
 				},
 			},
@@ -803,7 +804,7 @@ func extractExtraIngressConfig(config *starlark_kube_config.KubernetesConfig) (*
 	if config == nil {
 		return nil, nil
 	}
-	
+
 	extraIngressConfig, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark_kube_config.ExtraIngressConfig](
 		config.KurtosisValueTypeDefault, starlark_kube_config.ExtraIngressConfigAttr,
 	)
@@ -822,7 +823,7 @@ func convertKubeConfig(config *starlark_kube_config.KubernetesConfig) (*kube_con
 	if config == nil {
 		return nil, nil
 	}
-	
+
 	extraIngressConfig, interpretationError := extractExtraIngressConfig(config)
 	if interpretationError != nil {
 		return nil, interpretationError
@@ -916,7 +917,7 @@ func convertIngressSpec(ingressSpec *starlark_kube_config.IngressSpec) (*kube_co
 	if err != nil {
 		return nil, handleError(err, starlark_kube_config.AnnotationsAttr)
 	}
-	
+
 	var annotations *kube_config.Annotations
 	if annotationsDict != nil {
 		dict, err := kurtosis_types.SafeCastToMapStringString(annotationsDict, "ingressTargetAnnotations")
@@ -930,7 +931,7 @@ func convertIngressSpec(ingressSpec *starlark_kube_config.IngressSpec) (*kube_co
 	if err != nil {
 		return nil, handleError(err, starlark_kube_config.IngressTlsAttr)
 	}
-	
+
 	var tlsConfig *kube_config.TlsConfig
 	if tlsConfigStarlark != nil {
 		tlsConfig, err = convertTlsConfig(tlsConfigStarlark)
@@ -943,7 +944,7 @@ func convertIngressSpec(ingressSpec *starlark_kube_config.IngressSpec) (*kube_co
 	if err != nil {
 		return nil, handleError(err, starlark_kube_config.IngressHttpRuleAttr)
 	}
-	
+
 	var rules []*kube_config.HttpRule
 	if rulesStarlark != nil {
 		for _, rule := range rulesStarlark {
@@ -971,7 +972,7 @@ func convertExtraIngressConfig(extraIngressConfig *starlark_kube_config.ExtraIng
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
-	
+
 	var ingressSpecs []*kube_config.IngressSpec
 	if ingressSpecsStarlark != nil {
 		for _, ingressSpec := range ingressSpecsStarlark {
@@ -982,7 +983,7 @@ func convertExtraIngressConfig(extraIngressConfig *starlark_kube_config.ExtraIng
 			ingressSpecs = append(ingressSpecs, convertedSpec)
 		}
 	}
-	
+
 	return &kube_config.ExtraIngressConfig{
 		IngressSpecs: ingressSpecs,
 	}, nil

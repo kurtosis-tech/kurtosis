@@ -30,6 +30,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/directory"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
+	kubernetes_config "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config/kubernetes"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/store_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
@@ -129,5 +130,13 @@ func KurtosisTypeConstructors() []*starlark.Builtin {
 		starlark.NewBuiltin(service_config.ImageSpecTypeName, service_config.NewImageSpec().CreateBuiltin()),
 		starlark.NewBuiltin(service_config.UserTypeName, service_config.NewUserType().CreateBuiltin()),
 		starlark.NewBuiltin(service_config.TolerationTypeName, service_config.NewTolerationType().CreateBuiltin()),
+
+		// Kubernetes config types
+		starlark.NewBuiltin(kubernetes_config.KubernetesConfigTypeName, kubernetes_config.NewKubernetesConfigType().CreateBuiltin()),
+		starlark.NewBuiltin(kubernetes_config.ExtraIngressConfigTypeName, kubernetes_config.NewExtraIngressConfigType().CreateBuiltin()),
+		starlark.NewBuiltin(kubernetes_config.IngressSpecTypeName, kubernetes_config.NewIngressSpecType().CreateBuiltin()),
+		starlark.NewBuiltin(kubernetes_config.IngressTLSConfigTypeName, kubernetes_config.NewIngressTLSConfigType().CreateBuiltin()),
+		starlark.NewBuiltin(kubernetes_config.IngressPortConfigTypeName, kubernetes_config.NewIngressPortConfigType().CreateBuiltin()),
+		starlark.NewBuiltin(kubernetes_config.IngressHttpRuleTypeName, kubernetes_config.NewIngressHttpRuleType().CreateBuiltin()),
 	}
 }

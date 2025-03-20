@@ -556,28 +556,122 @@
           "detail": "This field can be used to check the service's readiness after this is started to confirm that it is ready to receive connections and traffic"
         },
         {
+          "name": "kubernetes_config",
+          "type": "KubernetesConfig",
+          "content": "kubernetes_config?",
+          "detail": "Kubernetes-specific configuration for the service"
+        }
+      ]
+    },
+    {
+      "name": "KubernetesConfig",
+      "detail": "Kubernetes-specific configuration for a service",
+      "documentation": "",
+      "returnType": "KubernetesConfig",
+      "params": [
+        {
+          "name": "extra_ingress_config",
+          "type": "ExtraIngressConfig",
+          "content": "extra_ingress_config?",
+          "detail": "Additional ingress configuration for the service"
+        }
+      ]
+    },
+    {
+      "name": "ExtraIngressConfig",
+      "detail": "Additional ingress configuration for a service",
+      "documentation": "",
+      "returnType": "ExtraIngressConfig",
+      "params": [
+        {
+          "name": "ingresses",
+          "type": "list<IngressSpec>",
+          "content": "ingresses",
+          "detail": "List of ingress specifications for the service"
+        }
+      ]
+    },
+    {
+      "name": "IngressSpec",
+      "detail": "Kubernetes ingress specification",
+      "documentation": "",
+      "returnType": "IngressSpec",
+      "params": [
+        {
+          "name": "host",
+          "type": "string",
+          "content": "host?",
+          "detail": "The host for the ingress"
+        },
+        {
           "name": "ingress_class_name",
           "type": "string",
           "content": "ingress_class_name?",
-          "detail": "The Kubernetes ingress class name to use for this service. This is only applicable when running on Kubernetes and will be ignored for Docker."
+          "detail": "The Kubernetes ingress class name"
         },
         {
-          "name": "ingress_annotations",
+          "name": "annotations",
           "type": "dict<string, string>",
-          "content": "ingress_annotations?",
-          "detail": "A map of annotations to add to the Kubernetes ingress for this service. This is only applicable when running on Kubernetes and will be ignored for Docker."
+          "content": "annotations?",
+          "detail": "Annotations to add to the ingress"
         },
         {
-          "name": "ingress_host",
-          "type": "string",
-          "content": "ingress_host?",
-          "detail": "The host to use for the Kubernetes ingress for this service. This is only applicable when running on Kubernetes and will be ignored for Docker."
+          "name": "tls",
+          "type": "IngressTLSConfig",
+          "content": "tls?",
+          "detail": "TLS configuration for the ingress"
         },
         {
-          "name": "ingress_tls_host",
+          "name": "http_rules",
+          "type": "list<IngressHttpRule>",
+          "content": "http_rules?",
+          "detail": "HTTP routing rules for the ingress"
+        }
+      ]
+    },
+    {
+      "name": "IngressTLSConfig",
+      "detail": "TLS configuration for an ingress",
+      "documentation": "",
+      "returnType": "IngressTLSConfig",
+      "params": [
+        {
+          "name": "secret_name",
           "type": "string",
-          "content": "ingress_tls_host?",
-          "detail": "the host to enable tls for, should match ingress_host"
+          "content": "secret_name",
+          "detail": "The name of the Kubernetes secret containing the TLS certificate"
+        }
+      ]
+    },
+    {
+      "name": "IngressHttpRule",
+      "detail": "HTTP routing rule for an ingress",
+      "documentation": "",
+      "returnType": "IngressHttpRule",
+      "params": [
+        {
+          "name": "path",
+          "type": "string",
+          "content": "path",
+          "detail": "The path to match"
+        },
+        {
+          "name": "path_type",
+          "type": "string",
+          "content": "path_type",
+          "detail": "The type of path matching to use"
+        },
+        {
+          "name": "port_name",
+          "type": "string",
+          "content": "port_name?",
+          "detail": "The name of the service port to route to"
+        },
+        {
+          "name": "port",
+          "type": "number",
+          "content": "port?",
+          "detail": "The number of the service port to route to"
         }
       ]
     },

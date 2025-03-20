@@ -16,7 +16,7 @@ const (
 	PortAttr     = "port"
 )
 
-func NewIngressPathConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
+func NewIngressHttpRuleType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 	return &kurtosis_type_constructor.KurtosisTypeConstructor{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: IngressHttpRuleTypeName,
