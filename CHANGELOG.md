@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.6.0](https://github.com/kurtosis-tech/kurtosis/compare/1.5.0...1.6.0) (2025-03-18)
+
+
+### Features
+
+* add resources to logs collector daemonset for k8s api server access  ([#2663](https://github.com/kurtosis-tech/kurtosis/issues/2663)) ([5ae473c](https://github.com/kurtosis-tech/kurtosis/commit/5ae473cf3551bac8bbd37335551769bd03db5a65))
+* export service logs (Docker) ([#2668](https://github.com/kurtosis-tech/kurtosis/issues/2668)) ([1651249](https://github.com/kurtosis-tech/kurtosis/commit/16512491aadcc840f0c607ca57873fcd9726ed31))
+* fluent bit logs collector in k8s backend ([#2653](https://github.com/kurtosis-tech/kurtosis/issues/2653)) ([05e3813](https://github.com/kurtosis-tech/kurtosis/commit/05e38135ce9d8ba962a9e809cc25e16f26d8077a))
+* vector logs aggregator in k8s ([#2669](https://github.com/kurtosis-tech/kurtosis/issues/2669)) ([106e4a2](https://github.com/kurtosis-tech/kurtosis/commit/106e4a218fdee4ec17493a21192b38a1faec7ac6))
+
+
+### Bug Fixes
+
+* exit codes on tasks ([#2654](https://github.com/kurtosis-tech/kurtosis/issues/2654)) ([ffd86b8](https://github.com/kurtosis-tech/kurtosis/commit/ffd86b873c60acfe2a4a2d03dd1d6a1abd330cf6))
+* push ci docs ([#2680](https://github.com/kurtosis-tech/kurtosis/issues/2680)) ([61857f0](https://github.com/kurtosis-tech/kurtosis/commit/61857f07054927c6ddef53ce7a87b645d2ab6f75))
+* stdout for file inspect ([#2658](https://github.com/kurtosis-tech/kurtosis/issues/2658)) ([6ae51a3](https://github.com/kurtosis-tech/kurtosis/commit/6ae51a3216e6812179fcb0da69e69df4b7b15b73))
+
 ## [1.5.0](https://github.com/kurtosis-tech/kurtosis/compare/1.4.4...1.5.0) (2025-02-07)
 
 
