@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.1](https://github.com/kurtosis-tech/kurtosis/compare/1.6.0...1.6.1) (2025-03-21)
+
+
+### Bug Fixes
+
+* **backend/kubernetes:** use default KUBECONFIG resolution ([#2672](https://github.com/kurtosis-tech/kurtosis/issues/2672)) ([379e49b](https://github.com/kurtosis-tech/kurtosis/commit/379e49b0013a769e5f5102386d6733eafb528014))
+
 ## [1.6.0](https://github.com/kurtosis-tech/kurtosis/compare/1.5.0...1.6.0) (2025-03-18)
 
 
