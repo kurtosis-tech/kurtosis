@@ -26,7 +26,7 @@ const (
 	vectorDataDirVolumeName = "varlibvector"
 	vectorDataDirMountPath  = "/var/lib/vector"
 
-	bufferSizeStr = "268435488" // 256 MB is min for vector
+	bufferSize = 268435488 // 256 MB is min for vector
 
 	defaultSourceId          = "kurtosis_default_source"
 	fluentBitSourceType      = "fluent"

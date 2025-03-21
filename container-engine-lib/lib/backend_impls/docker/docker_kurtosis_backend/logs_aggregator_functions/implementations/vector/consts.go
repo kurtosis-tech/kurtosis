@@ -28,7 +28,7 @@ const (
 	fluentBitSourceType      = "fluent"
 	fluentBitSourceIpAddress = "0.0.0.0"
 	fileSinkType             = "file"
-	bufferSizeStr            = "268435488" // 256 MB is min for vector
+	bufferSize               = 268435488 // 256 MB is min for vector
 
 	// We instruct vector to store log files per-year, per-week (00-53), per-enclave, per-service
 	// To construct the filepath, we utilize vectors template syntax that allows us to reference fields in log events
