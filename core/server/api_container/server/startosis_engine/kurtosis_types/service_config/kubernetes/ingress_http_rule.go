@@ -46,6 +46,11 @@ func NewIngressHttpRuleType() *kurtosis_type_constructor.KurtosisTypeConstructor
 						return nil
 					},
 				},
+				{
+					Name:              PortAttr,
+					IsOptional:        false,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*IngressPortConfig],
+				},
 			},
 			Deprecation: nil,
 		},

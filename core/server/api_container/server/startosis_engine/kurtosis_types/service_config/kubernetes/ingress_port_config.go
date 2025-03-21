@@ -1,6 +1,8 @@
 package kubernetes
 
 import (
+	"math"
+
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
@@ -23,16 +25,13 @@ func NewIngressPortConfigType() *kurtosis_type_constructor.KurtosisTypeConstruct
 					Name:              PortNameAttr,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
-					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.NonEmptyString(value, SecretNameAttr)
-					},
 				},
 				{
 					Name:              PortNumberAttr,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Int],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.Int64InRange(value, PortNameAttr, 0, (2^16)-1)
+						return builtin_argument.Int64InRange(value, PortNameAttr, 0, int64(math.Pow(2, 16)-1))
 					},
 				},
 			},

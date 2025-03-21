@@ -10,7 +10,7 @@ import (
 
 const (
 	IngressTLSConfigTypeName = "IngressTLSConfig"
-	SecretNameAttr           = "secretName"
+	SecretNameAttr           = "secret_name"
 )
 
 func NewIngressTLSConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {

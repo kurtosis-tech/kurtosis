@@ -12,10 +12,10 @@ const (
 	IngressSpecTypeName = "IngressSpec"
 
 	AnnotationsAttr      = "annotations"
-	IngressClassNameAttr = "ingressClassName"
+	IngressClassNameAttr = "ingress_class_name"
 	HostAttr             = "host"
 	IngressTlsAttr       = "tls"
-	IngressHttpRuleAttr  = "httpRules"
+	IngressHttpRuleAttr  = "http_rules"
 )
 
 type IngressSpec struct {
@@ -70,8 +70,8 @@ func NewIngressSpecType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						if _, ok := value.(*IngressHttpRule); !ok {
-							return startosis_errors.NewInterpretationError("Error expected %s to be of type IngressHttpRule", IngressHttpRuleAttr)
+						if _, ok := value.(*starlark.List); !ok {
+							return startosis_errors.NewInterpretationError("Expected '%s' to be a list, found %s", IngressHttpRuleAttr, value.String())
 						}
 						return nil
 					},
