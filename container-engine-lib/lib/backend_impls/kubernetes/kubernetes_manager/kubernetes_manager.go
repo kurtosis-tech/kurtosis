@@ -10,11 +10,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"io"
-	v1 "k8s.io/api/apps/v1"
 	"net/http"
 	"net/url"
 	"os"
@@ -23,11 +19,18 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
+	v1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/channel_writer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	terminal "golang.org/x/term"
+	batchv1 "k8s.io/api/batch/v1"
 	apiv1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -2546,54 +2549,60 @@ func (manager *KubernetesManager) RemoveIngress(ctx context.Context, ingress *ne
 	return nil
 }
 
-// TODO Delete this after 2022-08-01 if we're not using Jobs
-/*
-func (manager *KubernetesManager) CreateJobWithContainerAndVolume(ctx context.Context,
+// ---------------------------Jobs------------------------------------------------------------------------------
+
+func (manager *KubernetesManager) CreateJob(
+	ctx context.Context,
 	namespaceName string,
-	jobName *kubernetes_object_name.KubernetesObjectName,
-	jobLabels map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue,
-	jobAnnotations map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue,
+	jobName string,
+	jobLabels map[string]string,
+	jobAnnotations map[string]string,
 	containers []apiv1.Container,
 	volumes []apiv1.Volume,
 	numRetries int32,
 	ttlSecondsAfterFinished uint,
-) (*v1.Job, error) {
-
+) (*batchv1.Job, error) {
 	jobsClient := manager.kubernetesClientSet.BatchV1().Jobs(namespaceName)
 	ttlSecondsAfterFinishedInt32 := int32(ttlSecondsAfterFinished)
 
-	labelStrs := transformTypedLabelsToStrs(jobLabels)
-	annotationStrs := transformTypedAnnotationsToStrs(jobAnnotations)
-
 	jobMeta := metav1.ObjectMeta{
-		Name:                       jobName.GetString(),
-		Labels:                     labelStrs,
-		Annotations:                annotationStrs,
+		Name:        jobName,
+		Labels:      jobLabels,
+		Annotations: jobAnnotations,
 	}
 
 	podSpec := apiv1.PodSpec{
 		Containers: containers,
-		Volumes: volumes,
+		Volumes:    volumes,
 		// We don't want Kubernetes automagically restarting our containers
 		RestartPolicy: apiv1.RestartPolicyNever,
 	}
 
-	jobSpec := v1.JobSpec{
+	jobSpec := batchv1.JobSpec{
 		BackoffLimit: &numRetries,
-		Template:                apiv1.PodTemplateSpec{
-			Spec: podSpec,
+		Selector: &metav1.LabelSelector{
+			MatchLabels:      jobLabels,
+			MatchExpressions: nil,
+		},
+		Template: apiv1.PodTemplateSpec{
+			ObjectMeta: jobMeta,
+			Spec:       podSpec,
 		},
 		TTLSecondsAfterFinished: &ttlSecondsAfterFinishedInt32,
 	}
 
-	jobInput := v1.Job{
+	jobToCreate := &batchv1.Job{
 		ObjectMeta: jobMeta,
 		Spec:       jobSpec,
 	}
 
-	logrus.Debugf("Job resource to create: %+v", jobInput)
+	if jobDefinitionBytes, err := json.Marshal(jobToCreate); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred marshaling job object for '%v' into json.", jobName)
+	} else {
+		logrus.Debugf("Going to start job using the following JSON: %v", string(jobDefinitionBytes))
+	}
 
-	job, err := jobsClient.Create(ctx, &jobInput, globalCreateOptions)
+	job, err := jobsClient.Create(ctx, jobToCreate, globalCreateOptions)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -2608,73 +2617,71 @@ func (manager *KubernetesManager) CreateJobWithContainerAndVolume(ctx context.Co
 	return job, nil
 }
 
-func (manager *KubernetesManager) DeleteJob(ctx context.Context, namespace string, job *v1.Job) error {
-	jobsClient := manager.kubernetesClientSet.BatchV1().Jobs(namespace)
-	if jobsClient == nil {
-		return stacktrace.NewError("Failed to create a jobs client for namespace '%v'", namespace)
-	}
-	jobName := job.Name
+func (manager *KubernetesManager) RemoveJob(ctx context.Context, job *batchv1.Job) error {
+	jobsClient := manager.kubernetesClientSet.BatchV1().Jobs(job.Namespace)
 
-	if err := jobsClient.Delete(ctx, jobName, globalDeleteOptions); err != nil {
-		return stacktrace.Propagate(err, "Failed to delete job '%v' in namespace '%v' with delete options '%+v'", jobName, namespace, globalDeleteOptions)
+	if err := jobsClient.Delete(ctx, job.Name, globalDeleteOptions); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete job '%v' in namespace '%v' with delete options '%+v'", job.Name, job.Namespace, globalDeleteOptions)
 	}
 
 	return nil
 }
 
-func (manager KubernetesManager) GetJobCompletionAndSuccessFlags(ctx context.Context, namespace string, jobName string) (hasCompleted bool, isSuccess bool, resultErr error) {
-	job, err := manager.kubernetesClientSet.BatchV1().Jobs(namespace).Get(ctx, jobName, metav1.GetOptions{})
+func (manager *KubernetesManager) GetPodsManagedByJob(ctx context.Context, job *batchv1.Job) ([]*apiv1.Pod, error) {
+	podClient := manager.kubernetesClientSet.CoreV1().Pods(job.Namespace)
+	selector := metav1.FormatLabelSelector(job.Spec.Selector)
+	pods, err := podClient.List(ctx, metav1.ListOptions{
+		LabelSelector: selector,
+	})
+
 	if err != nil {
-		return false, false, stacktrace.Propagate(err, "Failed to get job status for job name '%v' in namespace '%v'", jobName, namespace)
+		return nil, stacktrace.Propagate(err, "An error occurred retrieving list of pods in namespace '%v' with label selectors: %v.", job.Namespace, selector)
 	}
 
-	deletionTimestamp := job.GetObjectMeta().GetDeletionTimestamp()
-	if deletionTimestamp != nil {
-		return false, false, stacktrace.Propagate(err, "Job with name '%s' in namespace '%s' has been marked for deletion", job.GetName(), namespace)
+	var podsManagedByJob []*apiv1.Pod
+	for _, pod := range pods.Items {
+		podToAdd := pod
+		podsManagedByJob = append(podsManagedByJob, &podToAdd)
 	}
 
-	// LOGIC FROM https://stackoverflow.com/a/69262406
-
-	// Job hasn't spun up yet
-	if job.Status.Active == 0 && job.Status.Succeeded == 0 && job.Status.Failed == 0 {
-		return false, false, nil
-	}
-
-	// Job is active
-	if job.Status.Active > 0 {
-		return false, false, nil
-	}
-
-	// Job succeeded
-	if job.Status.Succeeded > 0 {
-		return true, true, nil // Job ran successfully
-	}
-
-	return true, false, nil
+	return podsManagedByJob, nil
 }
-*/
+
+func (manager *KubernetesManager) WaitForJobCompletion(
+	ctx context.Context,
+	job *batchv1.Job,
+	pollInterval time.Duration,
+	timeout time.Duration,
+) error {
+	jobsClient := manager.kubernetesClientSet.BatchV1().Jobs(job.Namespace)
+
+	// Wait for the Job to report completion (either failed or completed)
+
+	err := wait.PollUntilContextTimeout(ctx, pollInterval, timeout, true, func(ctx context.Context) (bool, error) {
+		job, err := jobsClient.Get(ctx, job.Name, metav1.GetOptions{})
+		if err != nil {
+			return false, err
+		}
+
+		for _, condition := range job.Status.Conditions {
+			if condition.Type == batchv1.JobComplete || condition.Type == batchv1.JobFailed {
+				return true, nil
+			}
+		}
+
+		return false, nil
+	})
+
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred waiting for job %s to complete", job.Name)
+	}
+
+	return nil
+}
 
 // ====================================================================================================
 //                                     Private Helper Methods
 // ====================================================================================================
-// TODO delete the following assuming we don't use it.
-/*
-func transformTypedLabelsToStrs(input map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue) map[string]string {
-	result := map[string]string{}
-	for key, value := range input {
-		result[key.GetString()] = value.GetString()
-	}
-	return result
-}
-
-func transformTypedAnnotationsToStrs(input map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue) map[string]string {
-	result := map[string]string{}
-	for key, value := range input {
-		result[key.GetString()] = value.GetString()
-	}
-	return result
-}
-*/
 
 func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, namespaceName string, podName string) error {
 	// Wait for the pod to start running
