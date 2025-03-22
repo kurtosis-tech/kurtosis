@@ -2625,6 +2625,7 @@ func (manager *KubernetesManager) CreateJob(
 		HostUsers:                     nil,
 		SchedulingGates:               nil,
 		ResourceClaims:                nil,
+		ShareProcessNamespace:         nil,
 	}
 
 	manualSelectors := false
@@ -2712,6 +2713,7 @@ func (manager *KubernetesManager) GetPodsManagedByJob(ctx context.Context, job *
 			APIVersion: "",
 		},
 		LabelSelector:        selector,
+		FieldSelector:        "",
 		Watch:                false,
 		AllowWatchBookmarks:  false,
 		ResourceVersion:      "",
