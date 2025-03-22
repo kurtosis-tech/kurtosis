@@ -2,6 +2,11 @@ module github.com/kurtosis-tech/kurtosis/enclave-manager/api/golang
 
 go 1.20
 
+replace (
+	github.com/kurtosis-tech/kurtosis/api/golang => ../../../api/golang
+	github.com/kurtosis-tech/kurtosis/cloud/api/golang => ../../../cloud/api/golang
+)
+
 require (
 	connectrpc.com/connect v1.11.1
 	github.com/kurtosis-tech/kurtosis/api/golang v0.81.9
@@ -11,10 +16,9 @@ require (
 )
 
 require (
-	github.com/golang/protobuf v1.5.3 // indirect
-	github.com/google/go-cmp v0.6.0 // indirect
-	golang.org/x/net v0.19.0 // indirect
-	golang.org/x/sys v0.15.0 // indirect
-	golang.org/x/text v0.14.0 // indirect
+	github.com/golang/protobuf v1.5.4 // indirect
+	golang.org/x/net v0.25.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/text v0.15.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230803162519-f966b187b2e5 // indirect
 )
