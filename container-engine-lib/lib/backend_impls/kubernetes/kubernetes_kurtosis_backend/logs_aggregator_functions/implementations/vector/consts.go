@@ -33,5 +33,5 @@ const (
 )
 
 var (
-	uuidLogsFilepath = fmt.Sprintf("\"%s/%%G/%%V/{{ %v }}/{{ %v }}.json\"", kurtosisLogsMountPath, kubernetes_label_key.LogsEnclaveUUIDKubernetesLabelKey.GetString(), kubernetes_label_key.LogsServiceUUIDKubernetesLabelKey.GetString())
+	uuidLogsFilepath = fmt.Sprintf("%s/%%G/%%V/{{ %v }}/{{ %v }}.json", kurtosisLogsMountPath, kubernetes_label_key.LogsEnclaveUUIDKubernetesLabelKey.GetString(), kubernetes_label_key.LogsServiceUUIDKubernetesLabelKey.GetString())
 )
