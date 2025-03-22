@@ -46,27 +46,24 @@ func (vectorContainer *vectorLogsAggregatorContainer) CreateAndStart(
 		containerLabelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 
-	logsAggregatorVolumeAttrs, err := objAttrsProvider.ForLogsAggregatorVolume()
+	logsAggregatorConfigVolumeAttrs, err := objAttrsProvider.ForLogsAggregatorConfigVolume()
 	if err != nil {
-		return "", nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator volume attributes")
+		return "", nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator config volume attributes")
 	}
 
-	volumeName := logsAggregatorVolumeAttrs.GetName().GetString()
-	volumeLabelStrs := map[string]string{}
-	for labelKey, labelValue := range logsAggregatorVolumeAttrs.GetLabels() {
-		volumeLabelStrs[labelKey.GetString()] = labelValue.GetString()
+	logsAggregatorDataVolumeAttrs, err := objAttrsProvider.ForLogsAggregatorDataVolume()
+	if err != nil {
+		return "", nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator data volume attributes")
 	}
 
-	//This method will create the volume if it doesn't exist, or it will get it if it exists
-	//From Docker docs: If you specify a volume name already in use on the current driver, Docker assumes you want to re-use the existing volume and does not return an error.
-	//https://docs.docker.com/engine/reference/commandline/volume_create/
-	if err := dockerManager.CreateVolume(ctx, volumeName, volumeLabelStrs); err != nil {
-		return "", nil, nil, stacktrace.Propagate(
-			err,
-			"An error occurred creating logs aggregator volume with name '%v' and labels '%+v'",
-			volumeName,
-			volumeLabelStrs,
-		)
+	configVolumeName, err := createVolume(ctx, logsAggregatorConfigVolumeAttrs, dockerManager)
+	if err != nil {
+		return "", nil, nil, err
+	}
+
+	dataVolumeName, err := createVolume(ctx, logsAggregatorDataVolumeAttrs, dockerManager)
+	if err != nil {
+		return "", nil, nil, err
 	}
 
 	// Engine handles creating the volume, but we need to mount the aggregator can send logs to logs storage
@@ -79,16 +76,16 @@ func (vectorContainer *vectorLogsAggregatorContainer) CreateAndStart(
 	//We do not defer undo volume creation because the volume could already exist from previous executions
 	//for this reason the logs collector volume creation has to be idempotent, we ALWAYS want to create it if it doesn't exist, no matter what
 
-	if err := vectorConfigurationCreatorObj.CreateConfiguration(ctx, targetNetworkId, volumeName, dockerManager); err != nil {
+	if err := vectorConfigurationCreatorObj.CreateConfiguration(ctx, targetNetworkId, configVolumeName, dockerManager); err != nil {
 		return "", nil, nil, stacktrace.Propagate(
 			err,
 			"An error occurred running the logs aggregator configuration creator in network ID '%v' and with volume name '%+v'",
 			targetNetworkId,
-			volumeName,
+			configVolumeName,
 		)
 	}
 
-	containerArgs, err := vectorContainerConfigProviderObj.GetContainerArgs(containerName, containerLabelStrs, targetNetworkId, volumeName, logsStorageVolNameStr)
+	containerArgs, err := vectorContainerConfigProviderObj.GetContainerArgs(containerName, containerLabelStrs, targetNetworkId, configVolumeName, dataVolumeName, logsStorageVolNameStr)
 	if err != nil {
 		return "", nil, nil, err
 	}
@@ -126,4 +123,26 @@ func (vector *vectorLogsAggregatorContainer) GetLogsBaseDirPath() string {
 
 func (vector *vectorLogsAggregatorContainer) GetHttpHealthCheckEndpoint() string {
 	return healthCheckEndpointPath
+}
+
+func createVolume(ctx context.Context, provider object_attributes_provider.DockerObjectAttributes, dockerManager *docker_manager.DockerManager) (string, error) {
+	volumeName := provider.GetName().GetString()
+	volumeLabelStrs := map[string]string{}
+	for labelKey, labelValue := range provider.GetLabels() {
+		volumeLabelStrs[labelKey.GetString()] = labelValue.GetString()
+	}
+
+	//This method will create the volume if it doesn't exist, or it will get it if it exists
+	//From Docker docs: If you specify a volume name already in use on the current driver, Docker assumes you want to re-use the existing volume and does not return an error.
+	//https://docs.docker.com/engine/reference/commandline/volume_create/
+	if err := dockerManager.CreateVolume(ctx, volumeName, volumeLabelStrs); err != nil {
+		return "", stacktrace.Propagate(
+			err,
+			"An error occurred creating logs aggregator volume with name '%v' and labels '%+v'",
+			volumeName,
+			volumeLabelStrs,
+		)
+	}
+
+	return volumeName, nil
 }
