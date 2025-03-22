@@ -600,13 +600,13 @@
         {
           "name": "host",
           "type": "string",
-          "content": "host?",
+          "content": "host",
           "detail": "The host for the ingress"
         },
         {
           "name": "ingress_class_name",
           "type": "string",
-          "content": "ingress_class_name?",
+          "content": "ingress_class_name",
           "detail": "The Kubernetes ingress class name"
         },
         {
@@ -670,7 +670,7 @@
         {
           "name": "port",
           "type": "number",
-          "content": "port?",
+          "content": "port",
           "detail": "The number of the service port to route to"
         }
       ]
