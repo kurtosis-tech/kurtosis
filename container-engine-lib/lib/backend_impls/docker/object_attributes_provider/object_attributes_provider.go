@@ -161,7 +161,7 @@ func (provider *dockerObjectAttributesProviderImpl) ForLogsAggregatorConfigVolum
 	}
 
 	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
-		docker_label_key.VolumeTypeDockerLabelKey: label_value_consts.LogsAggregatorVolumeTypeDockerLabelValue,
+		docker_label_key.VolumeTypeDockerLabelKey: label_value_consts.LogsAggregatorConfigVolumeTypeDockerLabelValue,
 	}
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
@@ -179,7 +179,7 @@ func (provider *dockerObjectAttributesProviderImpl) ForLogsAggregatorDataVolume(
 	}
 
 	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
-		docker_label_key.VolumeTypeDockerLabelKey: label_value_consts.LogsAggregatorVolumeTypeDockerLabelValue,
+		docker_label_key.VolumeTypeDockerLabelKey: label_value_consts.LogsAggregatorDataVolumeTypeDockerLabelValue,
 	}
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
