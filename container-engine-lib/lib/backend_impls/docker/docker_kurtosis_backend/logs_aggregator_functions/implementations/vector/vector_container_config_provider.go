@@ -10,9 +10,7 @@ import (
 
 const (
 	shBinaryFilepath = "/bin/sh"
-	echoCmdName      = "echo"
 	shCmdFlag        = "-c"
-	validateCmdName  = "validate"
 	httpProtocolStr  = "http"
 )
 

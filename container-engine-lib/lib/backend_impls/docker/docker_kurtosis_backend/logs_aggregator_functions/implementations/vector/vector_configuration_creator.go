@@ -20,6 +20,8 @@ const (
 	validationFailedExitCode            = 78
 	configFileCreationSuccessExitCode   = 0
 	sleepSeconds                        = 1800
+	printfCmdName                       = "printf"
+	validateCmdName                     = "validate"
 )
 
 type vectorConfigurationCreator struct {
@@ -107,7 +109,7 @@ func (vector *vectorConfigurationCreator) createVectorConfigFileInVolume(
 
 	commandStr := fmt.Sprintf(
 		"%v '%v' > %v && %v %v %v",
-		echoCmdName,
+		printfCmdName,
 		configFileContentStr,
 		configFilepath,
 		binaryFilepath,

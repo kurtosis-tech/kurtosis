@@ -37,5 +37,5 @@ var (
 	// We instruct vector to store log files per-year, per-week (00-53), per-enclave, per-service
 	// To construct the filepath, we utilize vectors template syntax that allows us to reference fields in log events
 	// https://vector.dev/docs/reference/configuration/template-syntax/
-	uuidLogsFilepath = fmt.Sprintf("%s/%%G/%%V/{{ %s }}/{{ %s }}.json", logsStorageDirpath, docker_label_key.LogsEnclaveUUIDDockerLabelKey.GetString(), docker_label_key.LogsServiceUUIDDockerLabelKey.GetString())
+	uuidLogsFilepath = logsStorageDirpath + "/%%G/%%V/" + fmt.Sprintf("{{ %s }}/{{ %s }}.json", docker_label_key.LogsEnclaveUUIDDockerLabelKey.GetString(), docker_label_key.LogsServiceUUIDDockerLabelKey.GetString())
 )
