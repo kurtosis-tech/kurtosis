@@ -17,12 +17,13 @@ import (
 )
 
 const (
-	configuratorContainerName           = "logs-aggregator-configurator"
-	configFileValidationCmdRetries      = 0
-	validatorJobTTLSeconds              = 5
-	validatorJobPollInterval            = 600 * time.Millisecond
-	validatorJobPollTimeout             = 30 * time.Second
-	configFileValidationSuccessExitCode = 0
+	configuratorContainerName = "logs-aggregator-configurator"
+	validationCmdRetries      = 0
+	validatorJobTTLSeconds    = 5
+	validatorJobPollInterval  = 600 * time.Millisecond
+	validatorJobPollTimeout   = 30 * time.Second
+	validationSuccessExitCode = 0
+	validationFailedExitCode  = 78
 )
 
 type vectorConfigurationCreator struct {
@@ -111,7 +112,7 @@ func (vector *vectorConfigurationCreator) CreateConfiguration(
 		nil,
 		containers,
 		volumes,
-		configFileValidationCmdRetries,
+		validationCmdRetries,
 		validatorJobTTLSeconds,
 	)
 	if err != nil {
@@ -141,7 +142,7 @@ func (vector *vectorConfigurationCreator) CreateConfiguration(
 	}
 
 	exitCode := pods[0].Status.ContainerStatuses[0].State.Terminated.ExitCode
-	if exitCode == configFileValidationSuccessExitCode {
+	if exitCode == validationSuccessExitCode {
 		shouldRemoveConfigMap = false
 		return configMap, removeConfigMapFunc, nil
 	}
@@ -169,7 +170,13 @@ func (vector *vectorConfigurationCreator) CreateConfiguration(
 		)
 	}
 
-	return nil, nil, stacktrace.NewError("The configuration provided to the logs aggregator component was invalid; errors are below:\n%s", string(outputBytes))
+	// Vector returns a specific exit code if the validation of configurations failed
+	// https://vector.dev/docs/administration/validating/#how-validation-works
+	if exitCode == validationFailedExitCode {
+		return nil, nil, stacktrace.NewError("The configuration provided to the logs aggregator component was invalid; errors are below:\n%s", string(outputBytes))
+	}
+
+	return nil, nil, stacktrace.NewError("Logs aggregator validation exited with non-zero status code; errors are below:\n%s", string(outputBytes))
 }
 
 func (vector *vectorConfigurationCreator) getConfigFileContent() (string, error) {
