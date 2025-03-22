@@ -18,7 +18,7 @@ import (
 
 const (
 	configuratorContainerName           = "logs-aggregator-configurator"
-	configFileValidationCmdRetries      = 1
+	configFileValidationCmdRetries      = 0
 	validatorJobTTLSeconds              = 5
 	validatorJobPollInterval            = 600 * time.Millisecond
 	validatorJobPollTimeout             = 30 * time.Second

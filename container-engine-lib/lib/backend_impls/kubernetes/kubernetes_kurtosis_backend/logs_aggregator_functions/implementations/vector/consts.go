@@ -10,8 +10,6 @@ const (
 	vectorContainerName = "vector"
 	vectorImage         = "timberio/vector:0.45.0-debian"
 
-	binaryFilepath = "/usr/bin/vector"
-
 	vectorConfigVolumeName = "vector-config"
 	vectorConfigMountPath  = "/etc/vector"
 	vectorConfigFileName   = "vector.yaml"

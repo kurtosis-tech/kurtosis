@@ -2566,16 +2566,65 @@ func (manager *KubernetesManager) CreateJob(
 	ttlSecondsAfterFinishedInt32 := int32(ttlSecondsAfterFinished)
 
 	jobMeta := metav1.ObjectMeta{
-		Name:        jobName,
-		Labels:      jobLabels,
-		Annotations: jobAnnotations,
+		Name:            jobName,
+		Labels:          jobLabels,
+		Annotations:     jobAnnotations,
+		Namespace:       namespaceName,
+		GenerateName:    "",
+		SelfLink:        "",
+		UID:             "",
+		ResourceVersion: "",
+		Generation:      0,
+		CreationTimestamp: metav1.Time{
+			Time: time.Time{},
+		},
+		DeletionTimestamp:          nil,
+		DeletionGracePeriodSeconds: nil,
+		OwnerReferences:            nil,
+		Finalizers:                 nil,
+		ManagedFields:              nil,
 	}
 
 	podSpec := apiv1.PodSpec{
-		Containers: containers,
-		Volumes:    volumes,
+		InitContainers: nil,
+		Containers:     containers,
+		Volumes:        volumes,
 		// We don't want Kubernetes automagically restarting our containers
-		RestartPolicy: apiv1.RestartPolicyNever,
+		RestartPolicy:                 apiv1.RestartPolicyNever,
+		EphemeralContainers:           nil,
+		TerminationGracePeriodSeconds: nil,
+		ActiveDeadlineSeconds:         nil,
+		DNSPolicy:                     "",
+		NodeSelector:                  nil,
+		ServiceAccountName:            "",
+		DeprecatedServiceAccount:      "",
+		AutomountServiceAccountToken:  nil,
+		NodeName:                      "",
+		HostNetwork:                   false,
+		HostPID:                       false,
+		HostIPC:                       false,
+		SecurityContext:               nil,
+		ImagePullSecrets:              nil,
+		Hostname:                      "",
+		Subdomain:                     "",
+		Affinity:                      nil,
+		SchedulerName:                 "",
+		Tolerations:                   nil,
+		HostAliases:                   nil,
+		PriorityClassName:             "",
+		Priority:                      nil,
+		DNSConfig:                     nil,
+		ReadinessGates:                nil,
+		RuntimeClassName:              nil,
+		EnableServiceLinks:            nil,
+		PreemptionPolicy:              nil,
+		Overhead:                      nil,
+		TopologySpreadConstraints:     nil,
+		SetHostnameAsFQDN:             nil,
+		OS:                            nil,
+		HostUsers:                     nil,
+		SchedulingGates:               nil,
+		ResourceClaims:                nil,
 	}
 
 	manualSelectors := false
@@ -2595,11 +2644,32 @@ func (manager *KubernetesManager) CreateJob(
 			Spec:       podSpec,
 		},
 		TTLSecondsAfterFinished: &ttlSecondsAfterFinishedInt32,
+		Parallelism:             nil,
+		Completions:             nil,
+		ActiveDeadlineSeconds:   nil,
+		PodFailurePolicy:        nil,
+		CompletionMode:          nil,
+		Suspend:                 nil,
 	}
 
 	jobToCreate := &batchv1.Job{
 		ObjectMeta: jobMeta,
 		Spec:       jobSpec,
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		Status: batchv1.JobStatus{
+			Conditions:              nil,
+			StartTime:               nil,
+			CompletionTime:          nil,
+			Active:                  0,
+			Succeeded:               0,
+			Failed:                  0,
+			CompletedIndexes:        "",
+			Ready:                   nil,
+			UncountedTerminatedPods: nil,
+		},
 	}
 
 	if jobDefinitionBytes, err := json.Marshal(jobToCreate); err != nil {
@@ -2637,7 +2707,19 @@ func (manager *KubernetesManager) GetPodsManagedByJob(ctx context.Context, job *
 	podClient := manager.kubernetesClientSet.CoreV1().Pods(job.Namespace)
 	selector := metav1.FormatLabelSelector(job.Spec.Selector)
 	pods, err := podClient.List(ctx, metav1.ListOptions{
-		LabelSelector: selector,
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		LabelSelector:        selector,
+		Watch:                false,
+		AllowWatchBookmarks:  false,
+		ResourceVersion:      "",
+		ResourceVersionMatch: "",
+		TimeoutSeconds:       nil,
+		Limit:                0,
+		Continue:             "",
+		SendInitialEvents:    nil,
 	})
 
 	if err != nil {
@@ -2664,7 +2746,13 @@ func (manager *KubernetesManager) WaitForJobCompletion(
 	// Wait for the Job to report completion (either failed or completed)
 
 	err := wait.PollUntilContextTimeout(ctx, pollInterval, timeout, true, func(ctx context.Context) (bool, error) {
-		job, err := jobsClient.Get(ctx, job.Name, metav1.GetOptions{})
+		job, err := jobsClient.Get(ctx, job.Name, metav1.GetOptions{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "",
+				APIVersion: "",
+			},
+			ResourceVersion: "",
+		})
 		if err != nil {
 			return false, err
 		}
