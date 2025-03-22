@@ -22,8 +22,8 @@ func NewIngressPortConfigType() *kurtosis_type_constructor.KurtosisTypeConstruct
 			Name: IngressPortConfigTypeName,
 			Arguments: []*builtin_argument.BuiltinArgument{
 				{
-					Name:              PortNameAttr,
-					IsOptional:        true,
+					Name: PortNameAttr,
+					// IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 				},
 				{
@@ -65,36 +65,36 @@ func (config *IngressPortConfig) Copy() (builtin_argument.KurtosisValueType, err
 	}, nil
 }
 
-func (config *IngressPortConfig) GetPortName() (*string, *startosis_errors.InterpretationError) {
-	portName, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.String](
+func (config *IngressPortConfig) GetPortName() (string, *startosis_errors.InterpretationError) {
+	portName, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](
 		config.KurtosisValueTypeDefault, PortNameAttr)
 	if interpretationErr != nil {
-		return nil, interpretationErr
+		return "", interpretationErr
 	}
-	if !found || portName == nil {
-		return nil, nil
+	if !found {
+		return "", nil
 	}
 	s := portName.GoString()
-	return &s, nil
+	return s, nil
 }
 
-func (config *IngressPortConfig) GetPortNumber() (*uint16, *startosis_errors.InterpretationError) {
-	portNumber, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Int](
+func (config *IngressPortConfig) GetPortNumber() (uint16, *startosis_errors.InterpretationError) {
+	portNumber, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Int](
 		config.KurtosisValueTypeDefault, PortNumberAttr)
 	if interpretationErr != nil {
-		return nil, interpretationErr
+		return 0, interpretationErr
 	}
-	if !found || portNumber == nil {
-		return nil, nil
+	if !found {
+		return 0, nil
 	}
 	var uint16Port uint16
 	err := starlark.AsInt(portNumber, &uint16Port)
 	if err != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(
+		return 0, startosis_errors.WrapWithInterpretationError(
 			err,
 			"Error interpreting port number %s as uint16",
 			portNumber,
 		)
 	}
-	return &uint16Port, nil
+	return uint16Port, nil
 }

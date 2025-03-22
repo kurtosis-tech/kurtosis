@@ -32,7 +32,7 @@ func NewIngressHttpRuleType() *kurtosis_type_constructor.KurtosisTypeConstructor
 				},
 				{
 					Name:              PathTypeAttr,
-					IsOptional:        true,
+					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						str, ok := value.(starlark.String)
@@ -50,6 +50,16 @@ func NewIngressHttpRuleType() *kurtosis_type_constructor.KurtosisTypeConstructor
 					Name:              PortAttr,
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*IngressPortConfig],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						portConfig, ok := value.(*IngressPortConfig)
+						if !ok {
+							return startosis_errors.NewInterpretationError("Expected '%s' to be an IngressPortConfig", PortAttr)
+						}
+						if portConfig == nil {
+							return startosis_errors.NewInterpretationError("Expected '%s' to be an IngressPortConfig", PortAttr)
+						}
+						return nil
+					},
 				},
 			},
 			Deprecation: nil,

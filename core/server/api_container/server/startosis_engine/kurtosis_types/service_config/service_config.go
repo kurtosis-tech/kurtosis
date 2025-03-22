@@ -881,18 +881,9 @@ func convertPortConfig(config *starlark_kube_config.IngressPortConfig) (*kube_co
 		return nil, interpretationErr
 	}
 
-	pname := ""
-	if portName != nil {
-		pname = *portName
-	}
-
-	var pnumber int32 = 0
-	if portNumber != nil {
-		pnumber = int32(*portNumber)
-	}
 	return &kube_config.PortConfig{
-		Name:   pname,
-		Number: pnumber,
+		Name:   portName,
+		Number: int32(portNumber),
 	}, nil
 }
 
@@ -913,30 +904,30 @@ func convertIngressSpec(ingressSpec *starlark_kube_config.IngressSpec) (*kube_co
 		return nil, handleError(err, starlark_kube_config.HostAttr)
 	}
 
-	annotationsDict, err := ingressSpec.GetAnnotations()
-	if err != nil {
-		return nil, handleError(err, starlark_kube_config.AnnotationsAttr)
+	annotationsDict, interpretationErr := ingressSpec.GetAnnotations()
+	if interpretationErr != nil {
+		return nil, handleError(interpretationErr, starlark_kube_config.AnnotationsAttr)
 	}
 
 	var annotations *kube_config.Annotations
 	if annotationsDict != nil {
-		dict, err := kurtosis_types.SafeCastToMapStringString(annotationsDict, "ingressTargetAnnotations")
+		dict, err := kurtosis_types.SafeCastToMapStringString(annotationsDict, "ingressSpecAnnotations")
 		if err != nil {
 			return nil, handleError(err, starlark_kube_config.AnnotationsAttr)
 		}
 		annotations = &dict
 	}
 
-	tlsConfigStarlark, err := ingressSpec.GetTlsConfig()
-	if err != nil {
-		return nil, handleError(err, starlark_kube_config.IngressTlsAttr)
+	tlsConfigStarlark, interpretationErr := ingressSpec.GetTlsConfig()
+	if interpretationErr != nil {
+		return nil, handleError(interpretationErr, starlark_kube_config.IngressTlsAttr)
 	}
 
 	var tlsConfig *kube_config.TlsConfig
 	if tlsConfigStarlark != nil {
-		tlsConfig, err = convertTlsConfig(tlsConfigStarlark)
-		if err != nil {
-			return nil, handleError(err, starlark_kube_config.IngressTlsAttr)
+		tlsConfig, interpretationErr = convertTlsConfig(tlsConfigStarlark)
+		if interpretationErr != nil {
+			return nil, handleError(interpretationErr, starlark_kube_config.IngressTlsAttr)
 		}
 	}
 
@@ -948,9 +939,9 @@ func convertIngressSpec(ingressSpec *starlark_kube_config.IngressSpec) (*kube_co
 	var rules []*kube_config.HttpRule
 	if rulesStarlark != nil {
 		for _, rule := range rulesStarlark {
-			convertedRule, err := convertHttpRule(rule)
-			if err != nil {
-				return nil, handleError(err, starlark_kube_config.IngressHttpRuleAttr)
+			convertedRule, interpretationErr := convertHttpRule(rule)
+			if interpretationErr != nil {
+				return nil, handleError(interpretationErr, starlark_kube_config.IngressHttpRuleAttr)
 			}
 			rules = append(rules, convertedRule)
 		}

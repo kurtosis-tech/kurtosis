@@ -24,9 +24,9 @@ type HttpRule struct {
 type Annotations = map[string]string
 
 type IngressSpec struct {
-	IngressClassName *string
-	Host             *string
-	IngressName      *string           // Todo: support with starlark
+	IngressClassName string
+	Host             string
+	IngressName      string            // Todo: support with starlark
 	IngressLabels    map[string]string // Todo: support with starlark
 	TlsConfig        *TlsConfig
 	Annotations      *Annotations
@@ -90,9 +90,7 @@ func (ingressSpec *IngressSpec) ConstructIngressName(
 	extraIngressIdentifierSuffixOverride *string,
 ) string {
 	var nameParts []string
-	if ingressSpec.IngressClassName != nil {
-		nameParts = append(nameParts, *ingressSpec.IngressClassName)
-	}
+	nameParts = append(nameParts, ingressSpec.IngressClassName)
 	//if ingressSpec.IngressName != nil {
 	//	nameParts = append(nameParts, *ingressSpec.IngressName)
 	//}
@@ -111,5 +109,5 @@ func (ingressSpec *IngressSpec) GetHost() string {
 	if ingressSpec == nil {
 		return ""
 	}
-	return *ingressSpec.Host
+	return ingressSpec.Host
 }

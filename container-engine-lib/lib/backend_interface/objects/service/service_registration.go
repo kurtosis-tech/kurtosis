@@ -2,7 +2,6 @@ package service
 
 import (
 	"encoding/json"
-	"fmt"
 	"net"
 
 	"github.com/kurtosis-tech/stacktrace"
@@ -92,10 +91,6 @@ func (registration *ServiceRegistration) SetStatus(status ServiceStatus) {
 }
 
 func (registration *ServiceRegistration) GetConfig() *ServiceConfig {
-	fmt.Println("GetConfig() call")
-	fmt.Println("reg: ", registration)
-	fmt.Println("svcr: ", registration.privateServiceRegistration)
-	fmt.Println("Config: ", registration.privateServiceRegistration.Config)
 	return registration.privateServiceRegistration.Config
 }
 

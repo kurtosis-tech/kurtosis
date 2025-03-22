@@ -3,6 +3,7 @@ package user_services_functions
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
@@ -484,17 +485,20 @@ func createStartServiceOperation(
 			}()
 		}
 
-		var ingressesToCleanupOnFailure map[string]*netv1.Ingress
+		ingressesToCleanupOnFailure := make(map[string]*netv1.Ingress)
 		if kubernetesConfig != nil &&
 			kubernetesConfig.ExtraIngressConfig != nil &&
 			kubernetesConfig.ExtraIngressConfig.IngressSpecs != nil &&
 			len(kubernetesConfig.ExtraIngressConfig.IngressSpecs) > 0 {
 
-			for _, ingressSpec := range kubernetesConfig.ExtraIngressConfig.IngressSpecs {
+			for index, ingressSpec := range kubernetesConfig.ExtraIngressConfig.IngressSpecs {
 				kurtosisSvcName := string(serviceRegistrationObj.GetName())
+
+				indexStr := strconv.Itoa(index)
+				// TODO: Add support for custom suffix I really cba anymore
 				extraIngressName := ingressSpec.ConstructIngressName(
 					kurtosisSvcName,
-					nil,
+					&indexStr,
 				)
 				if _, exists := ingressesToCleanupOnFailure[extraIngressName]; exists {
 					logrus.Errorf(
@@ -503,11 +507,15 @@ func createStartServiceOperation(
 							"ingresses which isn't supported, ignoring this entry", extraIngressName)
 					continue
 				}
+
+				ingressLabelsStrs[kubernetes_label_key.MustCreateNewKubernetesLabelKey("extra-ingress").GetString()] =
+					kubernetes_label_value.MustCreateNewKubernetesLabelValue("true").GetString()
+
 				extraIngress := kubernetes_manager.GenerateIngress(
 					extraIngressName,
 					ingressLabelsStrs,
 					ingressAnnotationsStrs,
-					nil,
+					&ingressSpec.IngressClassName,
 					[]netv1.IngressRule{ingressSpec.GetKubernetesIngressRule(kurtosisSvcName)},
 				)
 

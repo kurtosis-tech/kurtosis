@@ -29,15 +29,15 @@ func ingressToStarlark(i *kubernetes.IngressSpec) string {
 
 	starlarkFields := []string{}
 
-	if i.Host != nil {
-		starlarkFields = append(starlarkFields, fmt.Sprintf(`host=%q`, *i.Host))
+	if i.Host != "" {
+		starlarkFields = append(starlarkFields, fmt.Sprintf(`host=%q`, i.Host))
 	}
 
-	if i.IngressClassName != nil {
-		starlarkFields = append(starlarkFields, fmt.Sprintf(`ingress_class_name=%q`, *i.IngressClassName))
+	if i.IngressClassName != "" {
+		starlarkFields = append(starlarkFields, fmt.Sprintf(`ingress_class_name=%q`, i.IngressClassName))
 	}
 
-	if i.Annotations != nil {
+	if i.Annotations != nil && len(*i.Annotations) > 0 {
 		annotationStrings := []string{}
 		for key, value := range *i.Annotations {
 			annotationStrings = append(annotationStrings, fmt.Sprintf("%q:%q", key, value))

@@ -2,8 +2,9 @@ package test_engine
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"testing"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -77,15 +78,15 @@ func (t *serviceConfigTolerationTest) Assert(typeValue builtin_argument.Kurtosis
 		0,                                // cpuAllocationMillicpus
 		0,                                // memoryAllocationMegabytes
 		service_config.DefaultPrivateIPAddrPlaceholder, // privateIPAddrPlaceholder
-		0,                                // minCpuAllocationMilliCpus
-		0,                                // minMemoryAllocationMegabytes
-		map[string]string{},              // labels
-		nil,                              // user
-		expectedTolerations,              // tolerations
-		map[string]string{},              // nodeSelectors
+		0,                   // minCpuAllocationMilliCpus
+		0,                   // minMemoryAllocationMegabytes
+		map[string]string{}, // labels
+		nil,                 // user
+		expectedTolerations, // tolerations
+		map[string]string{}, // nodeSelectors
 		image_download_mode.ImageDownloadMode_Missing, // imageDownloadMode
-		true,                             // tiniEnabled
-		nil,                              // kubernetesConfig
+		true, // tiniEnabled
+		nil,  // kubernetesConfig
 	)
 	require.NoError(t, err)
 	require.Equal(t, expectedServiceConfig, serviceConfig)

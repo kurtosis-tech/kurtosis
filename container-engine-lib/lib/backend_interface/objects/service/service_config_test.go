@@ -17,6 +17,12 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
+const (
+	ingressClassName = "test-ingress-class"
+	ingressHost      = "test.example.com"
+	ingressTLSHost   = "test.example.com"
+)
+
 func TestServiceConfigMarshallers(t *testing.T) {
 
 	imageName := "imageNameTest"
@@ -98,7 +104,7 @@ func TestIngressAnnotations(t *testing.T) {
 	require.NotNil(t, kubernetesConfig)
 	require.NotNil(t, kubernetesConfig.ExtraIngressConfig)
 	require.Len(t, kubernetesConfig.ExtraIngressConfig.IngressSpecs, 1)
-	
+
 	// Test that annotations are accessible
 	ingressSpec := kubernetesConfig.ExtraIngressConfig.IngressSpecs[0]
 	require.NotNil(t, ingressSpec.Annotations)
@@ -111,7 +117,7 @@ func TestIngressClassName(t *testing.T) {
 		ExtraIngressConfig: &kubernetes.ExtraIngressConfig{
 			IngressSpecs: []*kubernetes.IngressSpec{
 				{
-					IngressClassName: &className,
+					IngressClassName: className,
 				},
 			},
 		},
@@ -140,11 +146,11 @@ func TestIngressClassName(t *testing.T) {
 	require.NotNil(t, kubernetesConfig)
 	require.NotNil(t, kubernetesConfig.ExtraIngressConfig)
 	require.Len(t, kubernetesConfig.ExtraIngressConfig.IngressSpecs, 1)
-	
+
 	// Test that class name is accessible
 	ingressSpec := kubernetesConfig.ExtraIngressConfig.IngressSpecs[0]
 	require.NotNil(t, ingressSpec.IngressClassName)
-	require.Equal(t, className, *ingressSpec.IngressClassName)
+	require.Equal(t, className, ingressSpec.IngressClassName)
 }
 
 func TestIngressHost(t *testing.T) {
@@ -153,7 +159,7 @@ func TestIngressHost(t *testing.T) {
 		ExtraIngressConfig: &kubernetes.ExtraIngressConfig{
 			IngressSpecs: []*kubernetes.IngressSpec{
 				{
-					Host: &host,
+					Host: host,
 				},
 			},
 		},
@@ -182,20 +188,19 @@ func TestIngressHost(t *testing.T) {
 	require.NotNil(t, kubernetesConfig)
 	require.NotNil(t, kubernetesConfig.ExtraIngressConfig)
 	require.Len(t, kubernetesConfig.ExtraIngressConfig.IngressSpecs, 1)
-	
+
 	// Test that host is accessible
 	ingressSpec := kubernetesConfig.ExtraIngressConfig.IngressSpecs[0]
 	require.NotNil(t, ingressSpec.Host)
-	require.Equal(t, host, *ingressSpec.Host)
+	require.Equal(t, host, ingressSpec.Host)
 }
 
 func TestIngressTLS(t *testing.T) {
-	tlsHost := "test.example.com"
 	kubeConfig := &kubernetes.Config{
 		ExtraIngressConfig: &kubernetes.ExtraIngressConfig{
 			IngressSpecs: []*kubernetes.IngressSpec{
 				{
-					Host: &tlsHost,
+					Host: ingressHost,
 					TlsConfig: &kubernetes.TlsConfig{
 						SecretName: "tls-secret",
 					},
@@ -227,7 +232,7 @@ func TestIngressTLS(t *testing.T) {
 	require.NotNil(t, kubernetesConfig)
 	require.NotNil(t, kubernetesConfig.ExtraIngressConfig)
 	require.Len(t, kubernetesConfig.ExtraIngressConfig.IngressSpecs, 1)
-	
+
 	// Test that TLS config is accessible
 	ingressSpec := kubernetesConfig.ExtraIngressConfig.IngressSpecs[0]
 	require.NotNil(t, ingressSpec.TlsConfig)
@@ -241,8 +246,8 @@ func getServiceConfigForTest(t *testing.T, imageName string) *ServiceConfig {
 			IngressSpecs: []*kubernetes.IngressSpec{
 				{
 					Annotations:      (*kubernetes.Annotations)(&annotations),
-					IngressClassName: testIngressClassName(),
-					Host:             testIngressHost(),
+					IngressClassName: ingressClassName,
+					Host:             ingressHost,
 					TlsConfig: &kubernetes.TlsConfig{
 						SecretName: "test-secret",
 					},
@@ -250,7 +255,7 @@ func getServiceConfigForTest(t *testing.T, imageName string) *ServiceConfig {
 			},
 		},
 	}
-	
+
 	serviceConfig, err := CreateServiceConfig(imageName, testImageBuildSpec(), testImageRegistrySpec(), testNixBuildSpec(), testPrivatePorts(t), testPublicPorts(t), []string{"bin", "bash", "ls"}, []string{"-l", "-a"}, testEnvVars(), testFilesArtifactExpansion(), testPersistentDirectory(), 500, 1024, "IP-ADDRESS", 100, 512, map[string]string{
 		"test-label-key":       "test-label-value",
 		"test-label-key-empty": "test-second-label-value",
@@ -396,12 +401,12 @@ func testIngressAnnotations() map[string]string {
 	}
 }
 
-func testIngressClassName() *string {
-	className := "test-ingress-class"
-	return &className
-}
+// func testIngressClassName() string {
+// 	className := "test-ingress-class"
+// 	return &className
+// }
 
-func testIngressHost() *string {
-	host := "test.example.com"
-	return &host
-}
+// func testIngressHost() *string {
+// 	host := "test.example.com"
+// 	return &host
+// }

@@ -28,16 +28,16 @@ func NewIngressSpecType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 			Name: IngressSpecTypeName,
 			Arguments: []*builtin_argument.BuiltinArgument{
 				{
-					Name:              HostAttr,
-					IsOptional:        true,
+					Name: HostAttr,
+					// IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.NonEmptyString(value, HostAttr)
 					},
 				},
 				{
-					Name:              IngressClassNameAttr,
-					IsOptional:        true,
+					Name: IngressClassNameAttr,
+					// IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.NonEmptyString(value, IngressClassNameAttr)
@@ -129,26 +129,47 @@ func (target *IngressSpec) GetAnnotations() (*starlark.Dict, *startosis_errors.I
 	return annotations, nil
 }
 
-func (target *IngressSpec) handleStringPtrExtraction(attrName string) (*string, error) {
-	value, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.String](
+func (target *IngressSpec) handleStringExtraction(attrName string) (string, error) {
+	value, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](
 		target.KurtosisValueTypeDefault, attrName)
 
 	if interpretationErr != nil {
-		return nil, interpretationErr
+		return "", interpretationErr
 	}
-	if !found || value == nil {
-		return nil, nil
+	if !found {
+		return "", nil
 	}
-	goValue := value.GoString()
-	return &goValue, nil
+	return value.GoString(), nil
 }
 
-func (target *IngressSpec) GetHost() (*string, error) {
-	return target.handleStringPtrExtraction(HostAttr)
+// func (target *IngressSpec) handleStringPtrExtraction(attrName string) (*string, error) {
+// 	value, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.String](
+// 		target.KurtosisValueTypeDefault, attrName)
+
+// 	if interpretationErr != nil {
+// 		return nil, interpretationErr
+// 	}
+// 	if !found || value == nil {
+// 		return nil, nil
+// 	}
+// 	goValue := value.GoString()
+// 	return &goValue, nil
+// }
+
+func (target *IngressSpec) GetHost() (string, error) {
+	value, err := target.handleStringExtraction(HostAttr)
+	if err != nil {
+		return "", err
+	}
+	return value, err
 }
 
-func (target *IngressSpec) GetIngressClassName() (*string, error) {
-	return target.handleStringPtrExtraction(IngressClassNameAttr)
+func (target *IngressSpec) GetIngressClassName() (string, error) {
+	value, err := target.handleStringExtraction(IngressClassNameAttr)
+	if err != nil {
+		return "", err
+	}
+	return value, err
 }
 
 func (target *IngressSpec) GetRules() ([]*IngressHttpRule, error) {
