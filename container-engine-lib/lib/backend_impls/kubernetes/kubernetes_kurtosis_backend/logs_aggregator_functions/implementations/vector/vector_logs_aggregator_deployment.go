@@ -2,7 +2,6 @@ package vector
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
@@ -181,7 +180,7 @@ func createLogsAggregatorDeployment(
 			Name:       vectorContainerName,
 			Image:      vectorImage,
 			Command:    nil,
-			Args:       []string{"--config", fmt.Sprintf("%s/vector.toml", vectorConfigMountPath)},
+			Args:       []string{"--config", vectorConfigFilePath},
 			WorkingDir: "",
 			Ports: []apiv1.ContainerPort{
 				{

@@ -2578,8 +2578,14 @@ func (manager *KubernetesManager) CreateJob(
 		RestartPolicy: apiv1.RestartPolicyNever,
 	}
 
+	manualSelectors := false
+	if jobLabels != nil {
+		manualSelectors = true
+	}
+
 	jobSpec := batchv1.JobSpec{
-		BackoffLimit: &numRetries,
+		ManualSelector: &manualSelectors,
+		BackoffLimit:   &numRetries,
 		Selector: &metav1.LabelSelector{
 			MatchLabels:      jobLabels,
 			MatchExpressions: nil,
@@ -2664,7 +2670,8 @@ func (manager *KubernetesManager) WaitForJobCompletion(
 		}
 
 		for _, condition := range job.Status.Conditions {
-			if condition.Type == batchv1.JobComplete || condition.Type == batchv1.JobFailed {
+			if (condition.Type == batchv1.JobComplete && condition.Status == apiv1.ConditionTrue) ||
+				(condition.Type == batchv1.JobFailed && condition.Status == apiv1.ConditionTrue) {
 				return true, nil
 			}
 		}

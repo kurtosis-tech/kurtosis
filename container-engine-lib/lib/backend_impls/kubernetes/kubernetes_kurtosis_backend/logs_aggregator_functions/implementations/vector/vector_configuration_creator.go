@@ -10,7 +10,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -21,8 +20,8 @@ const (
 	configuratorContainerName           = "logs-aggregator-configurator"
 	configFileValidationCmdRetries      = 1
 	validatorJobTTLSeconds              = 5
-	validatorJobPollInterval            = 200 * time.Millisecond
-	validatorJobPollTimeout             = 3 * time.Second
+	validatorJobPollInterval            = 600 * time.Millisecond
+	validatorJobPollTimeout             = 30 * time.Second
 	configFileValidationSuccessExitCode = 0
 )
 
@@ -70,19 +69,12 @@ func (vector *vectorConfigurationCreator) CreateConfiguration(
 
 	configuratorJobName := fmt.Sprintf("%s-%s", configuratorContainerName, uuid)
 
-	jobLabels := map[string]string{
-		kubernetes_label_key.IDKubernetesLabelKey.GetString(): uuid,
-	}
-
 	containers := []apiv1.Container{
 		{
-			Name:  configuratorContainerName,
-			Image: vectorImage,
-			Command: []string{
-				binaryFilepath,
-				"-c",
-				vectorConfigFilePath,
-			},
+			Name:    configuratorContainerName,
+			Image:   vectorImage,
+			Command: nil,
+			Args:    []string{"validate", vectorConfigFilePath},
 			VolumeMounts: []apiv1.VolumeMount{
 				{
 					Name:             vectorConfigVolumeName,
@@ -115,7 +107,7 @@ func (vector *vectorConfigurationCreator) CreateConfiguration(
 		ctx,
 		namespaceName,
 		configuratorJobName,
-		jobLabels,
+		nil,
 		nil,
 		containers,
 		volumes,
