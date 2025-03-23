@@ -15,10 +15,12 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/add"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/inspect"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"strings"
 )
 
@@ -312,11 +314,8 @@ func run(
 
 	// merge
 	var mergedImage string
-	var mergedPorts map[string]*kurtosis_core_rpc_api_bindings.Port
-	var mergedFilesArtifactsMountpoint map[string]string
 	var mergedEntrypoint []string
 	var mergedCmd []string
-	var mergedEnvVarsMap map[string]string
 
 	// if override image was provided, use that as the image, otherwise keep curr
 	if overrideImage != "" {
@@ -340,6 +339,7 @@ func run(
 	}
 
 	// combine current ports with override ports
+	mergedPorts := map[string]*kurtosis_core_rpc_api_bindings.Port{}
 	for portId, port := range overridePorts {
 		mergedPorts[portId] = port
 	}
@@ -348,6 +348,7 @@ func run(
 	}
 
 	// combine current env vars with override env vars
+	mergedEnvVarsMap := map[string]string{}
 	for key, val := range overrideEnvVars {
 		mergedEnvVarsMap[key] = val
 	}
@@ -356,6 +357,7 @@ func run(
 	}
 
 	// combine current files artifacts mount points with override mount points
+	mergedFilesArtifactsMountpoint := map[string]string{}
 	for key, val := range overrideFilesArtifactsMountpoint {
 		mergedFilesArtifactsMountpoint[key] = val
 	}
@@ -392,10 +394,13 @@ func run(
 	// call run add service starlark script
 	addServiceStarlarkStr := add.GetAddServiceStarlarkScript(serviceName, serviceConfigStr)
 
-	err = add.RunAddServiceStarlarkScript(ctx, serviceName, enclaveIdentifier, addServiceStarlarkStr, enclaveCtx)
+	logrus.Info("Running update service starlark for service '%v' in enclave '%v'...", serviceName, enclaveIdentifier)
+	starlarkRunResult, err := add.RunAddServiceStarlarkScript(ctx, serviceName, enclaveIdentifier, addServiceStarlarkStr, enclaveCtx)
 	if err != nil {
 		return err //already wrapped
 	}
+
+	out.PrintOutLn(string(starlarkRunResult.RunOutput))
 
 	return nil
 }

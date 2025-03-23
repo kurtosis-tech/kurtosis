@@ -286,7 +286,7 @@ func run(
 		)
 	}
 
-	err = RunAddServiceStarlarkScript(ctx, serviceName, enclaveIdentifier, GetAddServiceStarlarkScript(serviceName, serviceConfigStarlark), enclaveCtx)
+	_, err = RunAddServiceStarlarkScript(ctx, serviceName, enclaveIdentifier, GetAddServiceStarlarkScript(serviceName, serviceConfigStarlark), enclaveCtx)
 	if err != nil {
 		return err // already wrapped
 	}
@@ -385,21 +385,21 @@ func GetAddServiceStarlarkScript(serviceName string, serviceConfigStarlark strin
 `, serviceName, serviceConfigStarlark)
 }
 
-func RunAddServiceStarlarkScript(ctx context.Context, serviceName, enclaveIdentifier string, starlarkScript string, enclaveCtx *enclaves.EnclaveContext) error {
+func RunAddServiceStarlarkScript(ctx context.Context, serviceName, enclaveIdentifier, starlarkScript string, enclaveCtx *enclaves.EnclaveContext) (*enclaves.StarlarkRunResult, error) {
 	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, starlark_run_config.NewRunStarlarkConfig())
 	if err != nil {
-		return stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
+		return nil, stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
 	}
 	if starlarkRunResult.InterpretationError != nil {
-		return stacktrace.NewError("An error has occurred when adding service: %s\nThis is a bug in Kurtosis, please report.", starlarkRunResult.InterpretationError)
+		return nil, stacktrace.NewError("An error has occurred when adding service: %s\nThis is a bug in Kurtosis, please report.", starlarkRunResult.InterpretationError)
 	}
 	if len(starlarkRunResult.ValidationErrors) > 0 {
-		return stacktrace.NewError("An error occurred when validating add service '%v' to enclave '%v': %s", serviceName, enclaveIdentifier, starlarkRunResult.ValidationErrors)
+		return nil, stacktrace.NewError("An error occurred when validating add service '%v' to enclave '%v': %s", serviceName, enclaveIdentifier, starlarkRunResult.ValidationErrors)
 	}
 	if starlarkRunResult.ExecutionError != nil {
-		return stacktrace.NewError("An error occurred adding service '%v' to enclave '%v': %s", serviceName, enclaveIdentifier, starlarkRunResult.ExecutionError)
+		return nil, stacktrace.NewError("An error occurred adding service '%v' to enclave '%v': %s", serviceName, enclaveIdentifier, starlarkRunResult.ExecutionError)
 	}
-	return nil
+	return starlarkRunResult, nil
 }
 
 // GetServiceConfigStarlark TODO(victor.colombo): Extract this to a more reasonable place

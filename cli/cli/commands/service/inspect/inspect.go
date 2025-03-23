@@ -150,7 +150,7 @@ func run(
 }
 
 func PrintServiceInspect(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, kurtosisCtx *kurtosis_context.KurtosisContext, enclaveIdentifier string, serviceIdentifier string, showFullUuid bool, outputFormat string) (map[string]interface{}, error) {
-	var jsonMap map[string]interface{}
+	jsonMap := map[string]interface{}{}
 	enclaveInfo, err := kurtosisCtx.GetEnclave(ctx, enclaveIdentifier)
 	if err != nil {
 		return jsonMap, stacktrace.Propagate(err, "An error occurred getting the enclave for identifier '%v'", enclaveIdentifier)
@@ -183,9 +183,9 @@ func PrintServiceInspect(ctx context.Context, kurtosisBackend backend_interface.
 		jsonMap[ServiceEntrypointArgsTitleName] = userService.GetContainer().GetEntrypointArgs()
 		jsonMap[ServiceEnvVarsTitleName] = userService.GetContainer().GetEnvVars()
 		jsonMap[ServicePortsTitleName] = userService.GetPrivatePorts()
-		jsonMap["Files"] = ""
-		// TODO: add support for files
-		// How would we get files information?
+
+		// TODO: add support for files artifacts entrypoint
+
 		var marshaled []byte
 		var err error
 		switch outputFormat {
