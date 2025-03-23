@@ -20,6 +20,7 @@ const (
 	// Increase this to the minimum required for hyperdisk storage controllers
 	// XXX: This should be configurable in cluster config and/or env/cli
 	defaultKubernetesEnclaveDataVolumeSizeInMegabytes = 4 * uint(1024)
+	defaultEngineNodeName                             = ""
 )
 
 type kurtosisBackendSupplier func(ctx context.Context) (backend_interface.KurtosisBackend, error)
