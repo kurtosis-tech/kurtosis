@@ -7,7 +7,10 @@ package inspect
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"gopkg.in/yaml.v3"
+	"strings"
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
@@ -38,14 +41,26 @@ const (
 	fullUuidFlagKey        = "full-uuid"
 	fullUuidFlagKeyDefault = "false"
 
-	serviceNameTitleName           = "Name"
-	serviceUUIDTitleName           = "UUID"
-	serviceStatusTitleName         = "Status"
-	serviceImageTitleName          = "Image"
-	servicePortsTitleName          = "Ports"
-	serviceEntrypointArgsTitleName = "ENTRYPOINT"
-	serviceCmdArgsTitleName        = "CMD"
-	serviceEnvVarsTitleName        = "ENV"
+	outputFormatKey          = "output"
+	outputFormatKeyShorthand = "o"
+	outputFormatKeyDefault   = ""
+	yamlOutputFormat         = "yaml"
+
+	jsonOutputFormat = "json"
+
+	ServiceNameTitleName                = "Name"
+	ServiceUUIDTitleName                = "UUID"
+	ServiceStatusTitleName              = "Status"
+	ServiceImageTitleName               = "Image"
+	ServicePortsTitleName               = "Ports"
+	ServiceEntrypointArgsTitleName      = "ENTRYPOINT"
+	ServiceCmdArgsTitleName             = "CMD"
+	ServiceEnvVarsTitleName             = "ENV"
+	ServiceFilesTitleName               = "Files"
+	ServiceMaxCpuAllocationTitleName    = "MaxCpu"
+	ServiceMinCpuAllocationTitleName    = "MinCpu"
+	ServiceMemoryAllocationTitleName    = "MaxMemory"
+	ServiceMinMemoryAllocationTitleName = "MinMemory"
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
@@ -63,6 +78,13 @@ var ServiceInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtos
 			Usage:   "If true then Kurtosis prints the service full UUID instead of the shortened UUID. Default false.",
 			Type:    flags.FlagType_Bool,
 			Default: fullUuidFlagKeyDefault,
+		},
+		{
+			Key:       outputFormatKey,
+			Shorthand: outputFormatKeyShorthand,
+			Usage:     "Format to output the result (yaml or json)",
+			Type:      flags.FlagType_String,
+			Default:   outputFormatKeyDefault,
 		},
 	},
 	Args: []*args.ArgConfig{
@@ -97,7 +119,7 @@ func run(
 
 	serviceIdentifier, err := args.GetNonGreedyArg(serviceIdentifierArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "Expected a value for non-greedy enclave identifier arg '%v' but none was found; this is a bug in the Kurtosis CLI!", enclaveIdentifierArgKey)
+		return stacktrace.Propagate(err, "Expected a value for non-greedy enclave identifier arg '%v' but none was found; this is a bug in the Kurtosis CLI!", serviceIdentifier)
 	}
 
 	showFullUuid, err := flags.GetBool(fullUuidFlagKey)
@@ -105,22 +127,33 @@ func run(
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", fullUuidFlagKey)
 	}
 
+	outputFormat, err := flags.GetString(outputFormatKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", outputFormatKey)
+	}
+
+	outputFormat = strings.ToLower(strings.TrimSpace(outputFormat))
+	if outputFormat != "" && outputFormat != jsonOutputFormat && outputFormat != yamlOutputFormat {
+		return stacktrace.NewError("Invalid output format '%s'; must be '%v' or '%v'", outputFormat, jsonOutputFormat, yamlOutputFormat)
+	}
+
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating Kurtosis Context from local engine")
 	}
 
-	if err = PrintServiceInspect(ctx, kurtosisBackend, kurtosisCtx, enclaveIdentifier, serviceIdentifier, showFullUuid); err != nil {
+	if _, err = PrintServiceInspect(ctx, kurtosisBackend, kurtosisCtx, enclaveIdentifier, serviceIdentifier, showFullUuid, outputFormat); err != nil {
 		// this is already wrapped up
 		return err
 	}
 	return nil
 }
 
-func PrintServiceInspect(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, kurtosisCtx *kurtosis_context.KurtosisContext, enclaveIdentifier string, serviceIdentifier string, showFullUuid bool) error {
+func PrintServiceInspect(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, kurtosisCtx *kurtosis_context.KurtosisContext, enclaveIdentifier string, serviceIdentifier string, showFullUuid bool, outputFormat string) (map[string]interface{}, error) {
+	var jsonMap map[string]interface{}
 	enclaveInfo, err := kurtosisCtx.GetEnclave(ctx, enclaveIdentifier)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the enclave for identifier '%v'", enclaveIdentifier)
+		return jsonMap, stacktrace.Propagate(err, "An error occurred getting the enclave for identifier '%v'", enclaveIdentifier)
 	}
 
 	enclaveApiContainerStatus := enclaveInfo.ApiContainerStatus
@@ -134,7 +167,7 @@ func PrintServiceInspect(ctx context.Context, kurtosisBackend backend_interface.
 		}
 		userServices, err = user_services.GetUserServiceInfoMapFromAPIContainer(ctx, enclaveInfo, serviceMap)
 		if err != nil {
-			return stacktrace.Propagate(err, "Failed to get service info from API container in enclave '%v'", enclaveInfo.GetEnclaveUuid())
+			return jsonMap, stacktrace.Propagate(err, "Failed to get service info from API container in enclave '%v'", enclaveInfo.GetEnclaveUuid())
 		}
 	}
 
@@ -143,43 +176,68 @@ func PrintServiceInspect(ctx context.Context, kurtosisBackend backend_interface.
 		userService = userServiceInfo
 		break
 	}
-	out.PrintOutLn(fmt.Sprintf("%s: %s", serviceNameTitleName, userService.GetName()))
+
+	if outputFormat != "" {
+		jsonMap[ServiceImageTitleName] = userService.GetContainer().GetImageName()
+		jsonMap[ServiceCmdArgsTitleName] = userService.GetContainer().GetCmdArgs()
+		jsonMap[ServiceEntrypointArgsTitleName] = userService.GetContainer().GetEntrypointArgs()
+		jsonMap[ServiceEnvVarsTitleName] = userService.GetContainer().GetEnvVars()
+		jsonMap[ServicePortsTitleName] = userService.GetPrivatePorts()
+		jsonMap["Files"] = ""
+		// TODO: add support for files
+		// How would we get files information?
+		var marshaled []byte
+		var err error
+		switch outputFormat {
+		case jsonOutputFormat:
+			marshaled, err = json.MarshalIndent(jsonMap, "", "")
+		case yamlOutputFormat:
+			marshaled, err = yaml.Marshal(jsonMap)
+		}
+		if err != nil {
+			return jsonMap, stacktrace.Propagate(err, "Failed to marshal service info to %s", outputFormat)
+		}
+		out.PrintOutLn(string(marshaled))
+		return jsonMap, nil
+	}
+
+	out.PrintOutLn(fmt.Sprintf("%s: %s", ServiceNameTitleName, userService.GetName()))
 
 	uuidStr := userService.GetShortenedUuid()
 	if showFullUuid {
 		uuidStr = userService.GetServiceUuid()
 	}
-	out.PrintOutLn(fmt.Sprintf("%s: %s", serviceUUIDTitleName, uuidStr))
+	out.PrintOutLn(fmt.Sprintf("%s: %s", ServiceUUIDTitleName, uuidStr))
 
 	serviceStatus := userService.GetServiceStatus()
 	serviceStatusStr := service_status_stringifier.ServiceStatusStringifier(serviceStatus)
-	out.PrintOutLn(fmt.Sprintf("%s: %s", serviceStatusTitleName, serviceStatusStr))
+	out.PrintOutLn(fmt.Sprintf("%s: %s", ServiceStatusTitleName, serviceStatusStr))
 
-	out.PrintOutLn(fmt.Sprintf("%s: %s", serviceImageTitleName, userService.GetContainer().GetImageName()))
+	out.PrintOutLn(fmt.Sprintf("%s: %s", ServiceImageTitleName, userService.GetContainer().GetImageName()))
 
-	out.PrintOutLn(fmt.Sprintf("%s:", servicePortsTitleName))
+	out.PrintOutLn(fmt.Sprintf("%s:", ServicePortsTitleName))
 	portBindingLines, err := user_services.GetUserServicePortBindingStrings(userService)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the port binding strings")
+		return jsonMap, stacktrace.Propagate(err, "An error occurred getting the port binding strings")
 	}
 	for _, portBindingLine := range portBindingLines {
 		out.PrintOutLn(fmt.Sprintf("  %s", portBindingLine))
 	}
 
-	out.PrintOutLn(fmt.Sprintf("%s:", serviceEntrypointArgsTitleName))
+	out.PrintOutLn(fmt.Sprintf("%s:", ServiceEntrypointArgsTitleName))
 	for _, entrypointArg := range userService.GetContainer().GetEntrypointArgs() {
 		out.PrintOutLn(fmt.Sprintf("  %s", entrypointArg))
 	}
 
-	out.PrintOutLn(fmt.Sprintf("%s:", serviceCmdArgsTitleName))
+	out.PrintOutLn(fmt.Sprintf("%s:", ServiceCmdArgsTitleName))
 	for _, cmdArg := range userService.GetContainer().GetCmdArgs() {
 		out.PrintOutLn(fmt.Sprintf("  %s", cmdArg))
 	}
 
-	out.PrintOutLn(fmt.Sprintf("%s:", serviceEnvVarsTitleName))
+	out.PrintOutLn(fmt.Sprintf("%s:", ServiceEnvVarsTitleName))
 	for envVarKey, envVarVal := range userService.GetContainer().GetEnvVars() {
 		out.PrintOutLn(fmt.Sprintf("  %s: %s", envVarKey, envVarVal))
 	}
 
-	return nil
+	return jsonMap, nil
 }

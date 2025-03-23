@@ -3,6 +3,7 @@ package add
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 	"strconv"
 	"strings"
@@ -285,21 +286,9 @@ func run(
 		)
 	}
 
-	starlarkScript := fmt.Sprintf(`def run(plan):
-	plan.add_service(name = "%s", config = %s)
-`, serviceName, serviceConfigStarlark)
-	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, starlark_run_config.NewRunStarlarkConfig())
+	err = RunAddServiceStarlarkScript(ctx, serviceName, enclaveIdentifier, GetAddServiceStarlarkScript(serviceName, serviceConfigStarlark), enclaveCtx)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
-	}
-	if starlarkRunResult.InterpretationError != nil {
-		return stacktrace.NewError("An error has occurred when adding service: %s\nThis is a bug in Kurtosis, please report.", starlarkRunResult.InterpretationError)
-	}
-	if len(starlarkRunResult.ValidationErrors) > 0 {
-		return stacktrace.NewError("An error occurred when validating add service '%v' to enclave '%v': %s", serviceName, enclaveIdentifier, starlarkRunResult.ValidationErrors)
-	}
-	if starlarkRunResult.ExecutionError != nil {
-		return stacktrace.NewError("An error occurred adding service '%v' to enclave '%v': %s", serviceName, enclaveIdentifier, starlarkRunResult.ExecutionError)
+		return err // already wrapped
 	}
 	serviceCtx, err := enclaveCtx.GetServiceContext(serviceName)
 	if err != nil {
@@ -390,6 +379,29 @@ func run(
 	return nil
 }
 
+func GetAddServiceStarlarkScript(serviceName string, serviceConfigStarlark string) string {
+	return fmt.Sprintf(`def run(plan):
+	plan.add_service(name = "%s", config = %s)
+`, serviceName, serviceConfigStarlark)
+}
+
+func RunAddServiceStarlarkScript(ctx context.Context, serviceName, enclaveIdentifier string, starlarkScript string, enclaveCtx *enclaves.EnclaveContext) error {
+	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, starlark_run_config.NewRunStarlarkConfig())
+	if err != nil {
+		return stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
+	}
+	if starlarkRunResult.InterpretationError != nil {
+		return stacktrace.NewError("An error has occurred when adding service: %s\nThis is a bug in Kurtosis, please report.", starlarkRunResult.InterpretationError)
+	}
+	if len(starlarkRunResult.ValidationErrors) > 0 {
+		return stacktrace.NewError("An error occurred when validating add service '%v' to enclave '%v': %s", serviceName, enclaveIdentifier, starlarkRunResult.ValidationErrors)
+	}
+	if starlarkRunResult.ExecutionError != nil {
+		return stacktrace.NewError("An error occurred adding service '%v' to enclave '%v': %s", serviceName, enclaveIdentifier, starlarkRunResult.ExecutionError)
+	}
+	return nil
+}
+
 // GetServiceConfigStarlark TODO(victor.colombo): Extract this to a more reasonable place
 func GetServiceConfigStarlark(
 	image string,
@@ -404,17 +416,17 @@ func GetServiceConfigStarlark(
 	minMemoryMegaBytes int,
 	privateIPAddressPlaceholder string,
 ) (string, error) {
-	envvarsMap, err := parseEnvVarsStr(envvarsStr)
+	envvarsMap, err := ParseEnvVarsStr(envvarsStr)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred parsing environment variables string '%v'", envvarsStr)
 	}
 
-	ports, err := parsePortsStr(portsStr)
+	ports, err := ParsePortsStr(portsStr)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred parsing ports string '%v'", portsStr)
 	}
 
-	filesArtifactMounts, err := parseFilesArtifactMountsStr(filesArtifactMountsStr)
+	filesArtifactMounts, err := ParseFilesArtifactMountsStr(filesArtifactMountsStr)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred parsing files artifact mounts string '%v'", filesArtifactMountsStr)
 	}
@@ -424,7 +436,7 @@ func GetServiceConfigStarlark(
 // Parses a string in the form KEY1=VALUE1,KEY2=VALUE2 into a map of strings
 // An empty string will result in an empty map
 // Empty strings will be skipped (e.g. ',,,' will result in an empty map)
-func parseEnvVarsStr(envvarsStr string) (map[string]string, error) {
+func ParseEnvVarsStr(envvarsStr string) (map[string]string, error) {
 	result := map[string]string{}
 	if envvarsStr == "" {
 		return result, nil
@@ -462,7 +474,7 @@ func parseEnvVarsStr(envvarsStr string) (map[string]string, error) {
 // Parses a string in the form PORTID1=1234,PORTID2=5678/udp
 // An empty string will result in an empty map
 // Empty strings will be skipped (e.g. ',,,' will result in an empty map)
-func parsePortsStr(portsStr string) (map[string]*kurtosis_core_rpc_api_bindings.Port, error) {
+func ParsePortsStr(portsStr string) (map[string]*kurtosis_core_rpc_api_bindings.Port, error) {
 	result := map[string]*kurtosis_core_rpc_api_bindings.Port{}
 	if strings.TrimSpace(portsStr) == "" {
 		return result, nil
@@ -591,7 +603,7 @@ func getTransportProtocolFromPortSpecString(portSpec string) (kurtosis_core_rpc_
 	return kurtosis_core_rpc_api_bindings.Port_TransportProtocol(transportProtocolEnumInt), nil
 }
 
-func parseFilesArtifactMountsStr(filesArtifactMountsStr string) (map[string]string, error) {
+func ParseFilesArtifactMountsStr(filesArtifactMountsStr string) (map[string]string, error) {
 	result := map[string]string{}
 	if strings.TrimSpace(filesArtifactMountsStr) == "" {
 		return result, nil
