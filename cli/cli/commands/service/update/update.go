@@ -260,7 +260,7 @@ func run(
 		}
 	}
 
-	serviceInspectOutputMap, err := inspect.PrintServiceInspect(ctx, kurtosisBackend, kurtosisCtx, enclaveIdentifier, serviceName, false, "json")
+	serviceInspectOutputMap, err := inspect.PrintServiceInspect(ctx, kurtosisBackend, kurtosisCtx, enclaveIdentifier, serviceName, false, "json", false)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting")
 	}

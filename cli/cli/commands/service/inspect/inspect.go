@@ -142,14 +142,14 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred creating Kurtosis Context from local engine")
 	}
 
-	if _, err = PrintServiceInspect(ctx, kurtosisBackend, kurtosisCtx, enclaveIdentifier, serviceIdentifier, showFullUuid, outputFormat); err != nil {
+	if _, err = PrintServiceInspect(ctx, kurtosisBackend, kurtosisCtx, enclaveIdentifier, serviceIdentifier, showFullUuid, outputFormat, true); err != nil {
 		// this is already wrapped up
 		return err
 	}
 	return nil
 }
 
-func PrintServiceInspect(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, kurtosisCtx *kurtosis_context.KurtosisContext, enclaveIdentifier string, serviceIdentifier string, showFullUuid bool, outputFormat string) (map[string]interface{}, error) {
+func PrintServiceInspect(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, kurtosisCtx *kurtosis_context.KurtosisContext, enclaveIdentifier string, serviceIdentifier string, showFullUuid bool, outputFormat string, shouldPrintOutputFormat bool) (map[string]interface{}, error) {
 	jsonMap := map[string]interface{}{}
 	enclaveInfo, err := kurtosisCtx.GetEnclave(ctx, enclaveIdentifier)
 	if err != nil {
@@ -197,7 +197,9 @@ func PrintServiceInspect(ctx context.Context, kurtosisBackend backend_interface.
 		if err != nil {
 			return jsonMap, stacktrace.Propagate(err, "Failed to marshal service info to %s", outputFormat)
 		}
-		out.PrintOutLn(string(marshaled))
+		if shouldPrintOutputFormat {
+			out.PrintOutLn(string(marshaled))
+		}
 		return jsonMap, nil
 	}
 
