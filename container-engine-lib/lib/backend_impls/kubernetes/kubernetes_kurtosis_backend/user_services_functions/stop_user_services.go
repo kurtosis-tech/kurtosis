@@ -2,6 +2,7 @@ package user_services_functions
 
 import (
 	"context"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -32,6 +33,25 @@ func StopUserServices(
 	for serviceUuid, serviceObjsAndResources := range allObjectsAndResources {
 		resources := serviceObjsAndResources.KubernetesResources
 
+		// Check for deployment first - if we have a deployment, we'll remove it instead of the pod
+		deployment := resources.Deployment
+		if deployment != nil {
+			if err := kubernetesManager.RemoveDeployment(ctx, deployment.Namespace, deployment); err != nil {
+				erroredUuids[serviceUuid] = stacktrace.Propagate(
+					err,
+					"An error occurred removing Kubernetes deployment '%v' in namespace '%v'",
+					deployment.Name,
+					namespaceName,
+				)
+				continue
+			}
+
+			// Successfully removed the deployment
+			successfulUuids[serviceUuid] = true
+			continue
+		}
+
+		// If no deployment, fall back to removing the pod directly
 		pod := resources.Pod
 		if pod != nil {
 			if err := kubernetesManager.RemovePod(ctx, pod); err != nil {
@@ -45,6 +65,14 @@ func StopUserServices(
 			}
 		}
 
+		extraIngresses := resources.ExtraIngresses
+		if extraIngresses != nil {
+			for _, ingress := range *extraIngresses {
+				if err := kubernetesManager.RemoveIngress(ctx, &ingress); err != nil {
+					erroredUuids[serviceUuid] = stacktrace.Propagate(err, "An error occurred removing Kubernetes ingress '%v' in namespace '%v'", ingress.Name, namespaceName)
+				}
+			}
+		}
 		successfulUuids[serviceUuid] = true
 	}
 	return successfulUuids, erroredUuids, nil

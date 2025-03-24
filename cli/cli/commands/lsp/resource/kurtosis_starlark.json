@@ -574,6 +574,12 @@
           "type": "ExtraIngressConfig",
           "content": "extra_ingress_config?",
           "detail": "Additional ingress configuration for the service"
+        },
+        {
+          "name": "workload_type",
+          "type": "string",
+          "content": "workload_type?",
+          "detail": "Controls the type of Kubernetes workload to create. Valid values are: \"\" (defaults to \"pod\"), \"pod\", or \"deployment\". When \"deployment\" is used, creates a Deployment with a single replica to recover from eviction"
         }
       ]
     },

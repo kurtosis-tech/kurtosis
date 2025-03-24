@@ -10,11 +10,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"io"
-	v1 "k8s.io/api/apps/v1"
 	"net/http"
 	"net/url"
 	"os"
@@ -22,6 +18,11 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
+	v1 "k8s.io/api/apps/v1"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/channel_writer"
@@ -1467,6 +1468,8 @@ func (manager *KubernetesManager) CreateDeployment(
 	containers []apiv1.Container,
 	volumes []apiv1.Volume,
 	affinity *apiv1.Affinity,
+	tolerations []apiv1.Toleration,
+	nodeSelectors map[string]string,
 ) (*v1.Deployment, error) {
 	deploymentClient := manager.kubernetesClientSet.AppsV1().Deployments(namespaceName)
 
@@ -1506,16 +1509,18 @@ func (manager *KubernetesManager) CreateDeployment(
 		Template: apiv1.PodTemplateSpec{
 			ObjectMeta: deploymentMeta,
 			Spec: apiv1.PodSpec{
-				ShareProcessNamespace:         nil,
-				Volumes:                       volumes,
-				InitContainers:                initContainers,
-				Containers:                    containers,
-				EphemeralContainers:           nil,
+				ShareProcessNamespace: nil,
+				Volumes:               volumes,
+				InitContainers:        initContainers,
+				Containers:            containers,
+				EphemeralContainers:   nil,
+				// Only RestartPolicy "Always" is supported by deployments
+				// see: https://github.com/kubernetes/kubernetes/issues/24725
 				RestartPolicy:                 "",
 				TerminationGracePeriodSeconds: nil,
 				ActiveDeadlineSeconds:         nil,
 				DNSPolicy:                     "",
-				NodeSelector:                  nil,
+				NodeSelector:                  nodeSelectors,
 				ServiceAccountName:            "",
 				DeprecatedServiceAccount:      "",
 				AutomountServiceAccountToken:  nil,
@@ -1529,7 +1534,7 @@ func (manager *KubernetesManager) CreateDeployment(
 				Subdomain:                     "",
 				Affinity:                      affinity,
 				SchedulerName:                 "",
-				Tolerations:                   nil,
+				Tolerations:                   tolerations,
 				HostAliases:                   nil,
 				PriorityClassName:             "",
 				Priority:                      nil,

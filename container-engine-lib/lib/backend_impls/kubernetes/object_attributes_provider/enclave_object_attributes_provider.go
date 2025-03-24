@@ -42,6 +42,12 @@ type KubernetesEnclaveObjectAttributesProvider interface {
 		privatePorts map[string]*port_spec.PortSpec,
 		userLabels map[string]string,
 	) (KubernetesObjectAttributes, error)
+	ForUserServiceDeployment(
+		uuid service.ServiceUUID,
+		id service.ServiceName,
+		privatePorts map[string]*port_spec.PortSpec,
+		userLabels map[string]string,
+	) (KubernetesObjectAttributes, error)
 	ForSinglePersistentDirectoryVolume(
 		persistentKey service_directory.DirectoryPersistentKey,
 	) (KubernetesObjectAttributes, error)
@@ -211,6 +217,21 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServicePod
 	}
 
 	return objectAttributes, nil
+}
+
+// ForUserServiceDeployment returns the attributes for a user service deployment
+// ATM this is just a wrapper around ForUserServicePod that returns a deployment object attributes instead of a pod object attributes
+func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServiceDeployment(
+	serviceUUID service.ServiceUUID,
+	serviceName service.ServiceName,
+	privatePorts map[string]*port_spec.PortSpec,
+	userLabels map[string]string,
+) (KubernetesObjectAttributes, error) {
+	userServicePodAttributes, err := provider.ForUserServicePod(serviceUUID, serviceName, privatePorts, userLabels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to get user service pod attributes")
+	}
+	return userServicePodAttributes, nil
 }
 
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveDataDirVolume() (KubernetesObjectAttributes, error) {

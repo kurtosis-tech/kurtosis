@@ -5,11 +5,17 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"go.starlark.net/starlark"
 )
 
 const (
 	KubernetesConfigTypeName       = "KubernetesConfig"
 	ExtraIngressConfigAttrTypeName = "extraIngressConfig"
+	WorkloadTypeAttrTypeName       = "workload_type"
+
+	// Kubernetes workload types
+	WorkloadTypePod        = "pod"
+	WorkloadTypeDeployment = "deployment"
 )
 
 func NewKubernetesConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
@@ -21,6 +27,30 @@ func NewKubernetesConfigType() *kurtosis_type_constructor.KurtosisTypeConstructo
 					Name:              ExtraIngressConfigAttrTypeName,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*ExtraIngressConfig],
+				},
+				{
+					Name:       WorkloadTypeAttrTypeName,
+					IsOptional: true,
+					ZeroValueProvider: func() starlark.Value {
+						// For api backwards compatibility, and forward type consistency,
+						// we'll convert unspecified values to an explicit pod request
+						return starlark.String(WorkloadTypePod)
+					},
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						if value == nil {
+							// Treat no value as pod for backwards compatibility
+							return nil
+						}
+						workloadType, ok := value.(starlark.String)
+						if !ok {
+							return startosis_errors.NewInterpretationError("Expected a string value for workload_type")
+						}
+						if workloadType != WorkloadTypePod && workloadType != WorkloadTypeDeployment {
+							return startosis_errors.NewInterpretationError("Invalid workload type '%s'. Allowed values are '%s' or '%s'",
+								workloadType, WorkloadTypePod, WorkloadTypeDeployment)
+						}
+						return nil
+					},
 				},
 			},
 			Deprecation: nil,
@@ -53,53 +83,31 @@ func (config *KubernetesConfig) Copy() (builtin_argument.KurtosisValueType, erro
 	}, nil
 }
 
-//func (config *KubernetesConfig) GetStarlarkMultiIngressClassConfigs() (*MultiIngressClassConfigs, *startosis_errors.InterpretationError) {
-//	ingressClassConfigs, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*MultiIngressClassConfigs](config.KurtosisValueTypeDefault, ExtraIngressConfigAttr)
-//
-//	if interpretationErr != nil {
-//		return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "An error occurred getting the multi ingress class configs")
-//	}
-//
-//	if found && ingressClassConfigs == nil {
-//		logrus.Debug("Ingress class configs found but were nil and withour error. This should never happen.")
-//		return nil, nil
-//	}
-//
-//	return ingressClassConfigs, nil
-//}
+// GetWorkloadType returns the type of Kubernetes workload to use for this service
+// Valid values are "", "pod", or "deployment"
+// Empty string defaults to "pod"
+func (config *KubernetesConfig) GetWorkloadType() (string, *startosis_errors.InterpretationError) {
+	workloadTypeStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](
+		config.KurtosisValueTypeDefault, WorkloadTypeAttrTypeName)
 
-//multiIngressClassConfig, err := extraIngressConfig.GetStarlarkMultiIngressClassConfigs()
-//if err != nil {
-//	return nil, err
-//}
-//mutliIngressClassConfigNative := multiIngressClassConfig.convertTlsConfig()
-//
-//extraConfig, hasExtraConfig, err := multiIngressClassConfig.Get()
-//if err != nil {
-//	return nil, err
-//}
-//
-//result := &service.KubernetesConfig{}
-//
-//if hasIngresses {
-//	var convertedIngresses []*service.IngressConfig
-//	for _, ingress := range ingresses {
-//		converted, err := ingress.convertTlsConfig()
-//		if err != nil {
-//			return nil, err
-//		}
-//		convertedIngresses = append(convertedIngresses, converted)
-//	}
-//	result.Ingresses = convertedIngresses
-//}
-//
-//if hasExtraConfig {
-//	converted, err := extraConfig.convertTlsConfig()
-//	if err != nil {
-//		return nil, err
-//	}
-//	result.ExtraIngressConfig = converted
-//}
-//
-//return result, nil
-//}
+	if interpretationErr != nil {
+		return "", startosis_errors.WrapWithInterpretationError(interpretationErr, "An error occurred getting the workload_type field")
+	}
+
+	// Backwards compatibility support for not specified results in a "raw" pod
+	if !found {
+		return WorkloadTypePod, nil
+	}
+	workloadType := string(workloadTypeStarlark)
+	if workloadType == "" {
+		workloadType = WorkloadTypePod
+	}
+
+	// Validate the workload type
+	if workloadType != WorkloadTypePod && workloadType != WorkloadTypeDeployment {
+		return "", startosis_errors.NewInterpretationError("Invalid workload type '%s'. Allowed values are empty string, '%s', or '%s'",
+			workloadType, WorkloadTypePod, WorkloadTypeDeployment)
+	}
+
+	return workloadType, nil
+}

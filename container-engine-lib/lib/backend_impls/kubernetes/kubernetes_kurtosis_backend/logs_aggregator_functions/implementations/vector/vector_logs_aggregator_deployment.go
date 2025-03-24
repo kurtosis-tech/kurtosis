@@ -4,6 +4,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strconv"
+	"text/template"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
@@ -18,9 +22,6 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"strconv"
-	"text/template"
-	"time"
 )
 
 const (
@@ -299,6 +300,8 @@ func createLogsAggregatorDeployment(
 		containers,
 		volumes,
 		affinity,
+		[]apiv1.Toleration{},
+		map[string]string{},
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred creating deployment for vector logs aggregator.")

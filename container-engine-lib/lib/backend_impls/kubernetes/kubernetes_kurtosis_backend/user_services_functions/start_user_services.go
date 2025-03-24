@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
-
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/consts"
@@ -20,12 +19,14 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_port_spec_serializer"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	kube_config "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/kubernetes"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/operation_parallelizer"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -289,6 +290,78 @@ func runStartServiceOperationsInParallel(
 	return successfulServices, failedServices, nil
 }
 
+func handlePodCreation(
+	ctx context.Context,
+	namespaceName string,
+	podVolumes []apiv1.Volume,
+	podAttributes *object_attributes_provider.KubernetesObjectAttributes,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+	podInitContainers []apiv1.Container,
+	userServiceServiceAccountName string,
+	restartPolicy apiv1.RestartPolicy,
+	tolerations []apiv1.Toleration,
+	nodeSelectors map[string]string,
+	podContainers []apiv1.Container,
+) (*apiv1.Pod, error) {
+
+	podLabelsStrs := shared_helpers.GetStringMapFromLabelMap((*podAttributes).GetLabels())
+	podAnnotationsStrs := shared_helpers.GetStringMapFromAnnotationMap((*podAttributes).GetAnnotations())
+
+	podName := (*podAttributes).GetName().GetString()
+	createdPod, err := kubernetesManager.CreatePod(
+		ctx,
+		namespaceName,
+		podName,
+		podLabelsStrs,
+		podAnnotationsStrs,
+		podInitContainers,
+		podContainers,
+		podVolumes,
+		userServiceServiceAccountName,
+		restartPolicy,
+		tolerations, nodeSelectors)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating pod '%v' using image '%v'", podName, podContainers[0].Image)
+	}
+	return createdPod, nil
+}
+
+func handleDeploymentCreation(
+	ctx context.Context,
+	namespaceName string,
+	deploymentAttributes *object_attributes_provider.KubernetesObjectAttributes,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+	initContainers []apiv1.Container,
+	tolerations []apiv1.Toleration,
+	nodeSelectors map[string]string,
+	containers []apiv1.Container,
+	volumes []apiv1.Volume,
+	affinity *apiv1.Affinity,
+) (*appsv1.Deployment, error) {
+	deploymentLabelsStrs := shared_helpers.GetStringMapFromLabelMap((*deploymentAttributes).GetLabels())
+	deploymentAnnotationsStrs := shared_helpers.GetStringMapFromAnnotationMap((*deploymentAttributes).GetAnnotations())
+
+	deploymentName := (*deploymentAttributes).GetName().GetString()
+	createdDeployment, err := kubernetesManager.CreateDeployment(
+		ctx,
+		namespaceName,
+		deploymentName,
+		deploymentLabelsStrs,
+		deploymentAnnotationsStrs,
+		initContainers,
+		containers,
+		volumes,
+		affinity,
+		tolerations,
+		nodeSelectors,
+	)
+
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating deployment '%v' using image '%v'", deploymentName, containers[0].Image)
+	}
+	return createdDeployment, nil
+}
+
 func createStartServiceOperation(
 	ctx context.Context,
 	serviceUuid service.ServiceUUID,
@@ -316,6 +389,7 @@ func createStartServiceOperation(
 		nodeSelectors := serviceConfig.GetNodeSelectors()
 		imageDownloadMode := serviceConfig.GetImageDownloadMode()
 		kubernetesConfig := serviceConfig.GetKubernetesConfig()
+		workloadType := serviceConfig.GetWorkloadType()
 
 		matchingObjectAndResources, found := servicesObjectsAndResources[serviceUuid]
 		if !found {
@@ -342,12 +416,12 @@ func createStartServiceOperation(
 		objectAttributesProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
 		enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveUuid)
 
-		var podInitContainers []apiv1.Container
+		var initContainers []apiv1.Container
 		var podVolumes []apiv1.Volume
 		var err error
 		var userServiceContainerVolumeMounts []apiv1.VolumeMount
 		if filesArtifactsExpansion != nil {
-			podVolumes, userServiceContainerVolumeMounts, podInitContainers, err = prepareFilesArtifactsExpansionResources(
+			podVolumes, userServiceContainerVolumeMounts, initContainers, err = prepareFilesArtifactsExpansionResources(
 				filesArtifactsExpansion.ExpanderImage,
 				filesArtifactsExpansion.ExpanderEnvVars,
 				filesArtifactsExpansion.ExpanderDirpathsToServiceDirpaths,
@@ -387,14 +461,6 @@ func createStartServiceOperation(
 			}
 		}()
 
-		// Create the pod
-		podAttributes, err := enclaveObjAttributesProvider.ForUserServicePod(serviceUuid, serviceName, privatePorts, serviceConfig.GetLabels())
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting attributes for new pod for service with UUID '%v'", serviceUuid)
-		}
-		podLabelsStrs := shared_helpers.GetStringMapFromLabelMap(podAttributes.GetLabels())
-		podAnnotationsStrs := shared_helpers.GetStringMapFromAnnotationMap(podAttributes.GetAnnotations())
-
 		podContainers, err := getUserServicePodContainerSpecs(
 			containerImageName,
 			entrypointArgs,
@@ -412,32 +478,75 @@ func createStartServiceOperation(
 			return nil, stacktrace.Propagate(err, "An error occurred creating the container specs for the user service pod with image '%v'", containerImageName)
 		}
 
-		podName := podAttributes.GetName().GetString()
-		createdPod, err := kubernetesManager.CreatePod(
-			ctx,
-			namespaceName,
-			podName,
-			podLabelsStrs,
-			podAnnotationsStrs,
-			podInitContainers,
-			podContainers,
-			podVolumes,
-			userServiceServiceAccountName,
-			restartPolicy,
-			tolerations, nodeSelectors)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred creating pod '%v' using image '%v'", podName, containerImageName)
+		var createdPod *apiv1.Pod
+		var createdDeployment *appsv1.Deployment
+		var shouldDestroyPod bool
+		var shouldDestroyDeployment bool
+		// Create the pod or deployment based on workloadType
+		if workloadType == kube_config.WorkloadTypePod {
+			attributes, err := enclaveObjAttributesProvider.ForUserServicePod(serviceUuid, serviceName, privatePorts, serviceConfig.GetLabels())
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred getting attributes for new pod for service with UUID '%v'", serviceUuid)
+			}
+			createdPod, err = handlePodCreation(
+				ctx,
+				namespaceName,
+				podVolumes,
+				&attributes,
+				kubernetesManager,
+				initContainers,
+				userServiceServiceAccountName,
+				restartPolicy,
+				tolerations,
+				nodeSelectors,
+				podContainers,
+			)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred creating pod for service '%s'", serviceName)
+			}
+			shouldDestroyPod = true
+			defer func() {
+				if !shouldDestroyPod {
+					return
+				}
+				if err := kubernetesManager.RemovePod(ctx, createdPod); err != nil {
+					logrus.Errorf("Starting service didn't complete successfully so we tried to remove the pod we created but doing so threw an error:\n%v", err)
+					logrus.Errorf("ACTION REQUIRED: You'll need to remove pod '%v' in '%v' manually!!!", createdPod.GetName(), namespaceName)
+				}
+			}()
+		} else if workloadType == kube_config.WorkloadTypeDeployment {
+			attributes, err := enclaveObjAttributesProvider.ForUserServiceDeployment(serviceUuid, serviceName, privatePorts, serviceConfig.GetLabels())
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred getting attributes for new pod for service with UUID '%v'", serviceUuid)
+			}
+			createdDeployment, err := handleDeploymentCreation(
+				ctx,
+				namespaceName,
+				&attributes,
+				kubernetesManager,
+				initContainers,
+				tolerations,
+				nodeSelectors,
+				podContainers,
+				podVolumes,
+				nil, // affinity
+			)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred creating deployment for service '%s'", serviceName)
+			}
+			shouldDestroyDeployment = true
+			defer func() {
+				if !shouldDestroyDeployment {
+					return
+				}
+				if err := kubernetesManager.RemoveDeployment(ctx, namespaceName, createdDeployment); err != nil {
+					logrus.Errorf("Starting service didn't complete successfully so we tried to remove the deployment we created but doing so threw an error:\n%v", err)
+					logrus.Errorf("ACTION REQUIRED: You'll need to remove deployment '%v' in '%v' manually!!!", createdDeployment.GetName(), namespaceName)
+				}
+			}()
+		} else {
+			return nil, stacktrace.NewError("Invalid workload type: %v !! Kurtosis bug: (should have been caught during validation)", workloadType)
 		}
-		shouldDestroyPod := true
-		defer func() {
-			if !shouldDestroyPod {
-				return
-			}
-			if err := kubernetesManager.RemovePod(ctx, createdPod); err != nil {
-				logrus.Errorf("Starting service didn't complete successfully so we tried to remove the pod we created but doing so threw an error:\n%v", err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to remove pod '%v' in '%v' manually!!!", podName, namespaceName)
-			}
-		}()
 
 		// Create the ingress for the reverse proxy
 		ingressAttributes, err := enclaveObjAttributesProvider.ForUserServiceIngress(serviceUuid, serviceName, privatePorts)
@@ -485,7 +594,7 @@ func createStartServiceOperation(
 			}()
 		}
 
-		ingressesToCleanupOnFailure := make(map[string]*netv1.Ingress)
+		extraUserIngresses := make(map[string]*netv1.Ingress)
 		if kubernetesConfig != nil &&
 			kubernetesConfig.ExtraIngressConfig != nil &&
 			kubernetesConfig.ExtraIngressConfig.IngressSpecs != nil &&
@@ -500,7 +609,7 @@ func createStartServiceOperation(
 					kurtosisSvcName,
 					&indexStr,
 				)
-				if _, exists := ingressesToCleanupOnFailure[extraIngressName]; exists {
+				if _, exists := extraUserIngresses[extraIngressName]; exists {
 					logrus.Errorf(
 						"Found a duplicate ingressname %s when registering extra ingresses. "+
 							"This can only happen if the user is intentionally defining two identical "+
@@ -523,7 +632,7 @@ func createStartServiceOperation(
 					ctx, namespaceName, extraIngressName, extraIngress,
 				)
 				if createdExtraIngress != nil {
-					ingressesToCleanupOnFailure[extraIngressName] = createdExtraIngress
+					extraUserIngresses[extraIngressName] = createdExtraIngress
 				}
 				if err != nil {
 					// Extra ingresses are not on our critical path, we won't derail the deployment for user errors
@@ -536,7 +645,7 @@ func createStartServiceOperation(
 					return
 				}
 
-				for recordedName, extraIngress := range ingressesToCleanupOnFailure {
+				for recordedName, extraIngress := range extraUserIngresses {
 					if err := kubernetesManager.RemoveIngress(ctx, extraIngress); err != nil {
 						logrus.Errorf("Starting service didn't complete successfully so we tried to remove the ingress we created but doing so threw an error:\n%v", err)
 						logrus.Errorf("ACTION REQUIRED: You'll need to remove ingress '%v' in '%v' manually!!!", recordedName, namespaceName)
@@ -556,10 +665,16 @@ func createStartServiceOperation(
 			}
 		}()
 
+		var extraIngresses []netv1.Ingress
+		for _, extraIngress := range extraUserIngresses {
+			extraIngresses = append(extraIngresses, *extraIngress)
+		}
 		kubernetesResources := map[service.ServiceUUID]*shared_helpers.UserServiceKubernetesResources{
 			serviceUuid: {
-				Service: updatedService,
-				Pod:     createdPod,
+				Service:        updatedService,
+				Pod:            createdPod,
+				Deployment:     createdDeployment,
+				ExtraIngresses: &extraIngresses,
 			},
 		}
 
@@ -576,6 +691,8 @@ func createStartServiceOperation(
 			)
 		}
 
+		// Disable clean-up functions to prevent resources from being destroyed when function returns
+		shouldDestroyDeployment = false
 		shouldDestroyPod = false
 		shouldDestroyIngress = false
 		shouldUndoServiceUpdate = false

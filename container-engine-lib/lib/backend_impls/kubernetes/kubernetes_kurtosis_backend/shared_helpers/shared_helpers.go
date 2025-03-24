@@ -32,6 +32,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 
 	"github.com/sirupsen/logrus"
+	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -143,8 +144,15 @@ type UserServiceKubernetesResources struct {
 	// This can be nil if the user hasn't started a pod for the service yet, or if the pod was deleted
 	Pod *apiv1.Pod
 
+	// This can be nil if the user hasn't started the service yet with useDeployment=true, or if the deployment was deleted
+	Deployment *appsv1.Deployment
+
 	// This can be nil if the user hasn't started the service yet, or if the ingress was deleted
 	Ingress *netv1.Ingress
+
+	// This can be nil if the user hasn't started the service yet, or if the ingress was deleted, or if the user didn't
+	// specify any extra ingresses
+	ExtraIngresses *[]netv1.Ingress
 }
 
 func GetEnclaveNamespaceName(
@@ -326,9 +334,10 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 		resultObj, found := results[serviceUuid]
 		if !found {
 			resultObj = &UserServiceKubernetesResources{
-				Service: nil,
-				Pod:     nil,
-				Ingress: nil,
+				Service:    nil,
+				Pod:        nil,
+				Deployment: nil,
+				Ingress:    nil,
 			}
 		}
 		resultObj.Service = kubernetesService
@@ -365,14 +374,57 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 			resultObj, found := results[serviceUuid]
 			if !found {
 				resultObj = &UserServiceKubernetesResources{
-					Service: nil,
-					Pod:     nil,
-					Ingress: nil,
+					Service:    nil,
+					Pod:        nil,
+					Deployment: nil,
+					Ingress:    nil,
 				}
 			}
 			resultObj.Pod = kubernetesPod
 			results[serviceUuid] = resultObj
 		}
+	}
+
+	// Get k8s deployments
+	matchingKubernetesDeployments, err := kubernetes_resource_collectors.CollectMatchingDeployments(
+		ctx,
+		kubernetesManager,
+		namespaceName,
+		kubernetesResourceSearchLabels,
+		kubernetes_label_key.GUIDKubernetesLabelKey.GetString(),
+		postFilterLabelValues,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes deployments matching service UUIDs: %+v", serviceUuids)
+	}
+	for serviceGuidStr, kubernetesDeploymentsForGuid := range matchingKubernetesDeployments {
+		logrus.Tracef("Found Kubernetes deployments for GUID '%v': %+v", serviceGuidStr, kubernetesDeploymentsForGuid)
+		serviceUuid := service.ServiceUUID(serviceGuidStr)
+
+		numDeploymentsForGuid := len(kubernetesDeploymentsForGuid)
+		nonUserDeployments := 0
+		for _, deployment := range kubernetesDeploymentsForGuid {
+			if _, found := deployment.Labels[kubernetes_label_key.MustCreateNewKubernetesLabelKey("extra-deployment").GetString()]; !found {
+				nonUserDeployments++
+			}
+		}
+
+		if nonUserDeployments != 1 {
+			return nil, stacktrace.NewError("Found %v Kubernetes deployments associated with service GUID '%v', but number of deployments should be exactly 1; this is a bug in Kurtosis", numDeploymentsForGuid, serviceUuid)
+		}
+		kubernetesDeployment := kubernetesDeploymentsForGuid[0]
+
+		resultObj, found := results[serviceUuid]
+		if !found {
+			resultObj = &UserServiceKubernetesResources{
+				Service:    nil,
+				Pod:        nil,
+				Deployment: nil,
+				Ingress:    nil,
+			}
+		}
+		resultObj.Deployment = kubernetesDeployment
+		results[serviceUuid] = resultObj
 	}
 
 	// Get k8s ingresses
@@ -408,9 +460,10 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 		resultObj, found := results[serviceUuid]
 		if !found {
 			resultObj = &UserServiceKubernetesResources{
-				Service: nil,
-				Pod:     nil,
-				Ingress: nil,
+				Service:    nil,
+				Pod:        nil,
+				Deployment: nil,
+				Ingress:    nil,
 			}
 		}
 		resultObj.Ingress = kubernetesIngress
@@ -964,4 +1017,173 @@ func dumpPodInfo(
 	}
 
 	return nil
+}
+
+func GetKubernetesResourcesForUserServices(
+	ctx context.Context,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+	namespaceName string,
+	serviceUuids []service.ServiceUUID,
+) (map[service.ServiceUUID]*UserServiceKubernetesResources, error) {
+	if len(serviceUuids) == 0 {
+		return map[service.ServiceUUID]*UserServiceKubernetesResources{}, nil
+	}
+
+	kubernetesResourceSearchLabels := map[string]string{}
+
+	// Now create the post-filter map, which we'll use to filter the results from Kubernetes
+	postFilterLabelValues := map[string]bool{}
+	for _, serviceUuid := range serviceUuids {
+		serviceUuidStr := string(serviceUuid)
+		postFilterLabelValues[serviceUuidStr] = true
+	}
+
+	// Get k8s pods
+	matchingKubernetesPods, err := kubernetes_resource_collectors.CollectMatchingPods(
+		ctx,
+		kubernetesManager,
+		namespaceName,
+		kubernetesResourceSearchLabels,
+		kubernetes_label_key.GUIDKubernetesLabelKey.GetString(),
+		postFilterLabelValues,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes pods matching service UUIDs: %+v", serviceUuids)
+	}
+
+	// Get k8s deployments
+	matchingKubernetesDeployments, err := kubernetes_resource_collectors.CollectMatchingDeployments(
+		ctx,
+		kubernetesManager,
+		namespaceName,
+		kubernetesResourceSearchLabels,
+		kubernetes_label_key.GUIDKubernetesLabelKey.GetString(),
+		postFilterLabelValues,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes deployments matching service UUIDs: %+v", serviceUuids)
+	}
+
+	// Get k8s services
+	matchingKubernetesServices, err := kubernetes_resource_collectors.CollectMatchingServices(
+		ctx,
+		kubernetesManager,
+		namespaceName,
+		kubernetesResourceSearchLabels,
+		kubernetes_label_key.GUIDKubernetesLabelKey.GetString(),
+		postFilterLabelValues,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes services matching service UUIDs: %+v", serviceUuids)
+	}
+
+	// Get k8s ingresses
+	matchingKubernetesIngresses, err := kubernetes_resource_collectors.CollectMatchingIngresses(
+		ctx,
+		kubernetesManager,
+		namespaceName,
+		kubernetesResourceSearchLabels,
+		kubernetes_label_key.GUIDKubernetesLabelKey.GetString(),
+		postFilterLabelValues,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes ingresses matching service UUIDs: %+v", serviceUuids)
+	}
+
+	// Build up results
+	results := map[service.ServiceUUID]*UserServiceKubernetesResources{}
+
+	// Add K8s services
+	for serviceGuidStr, kubernetesServicesForGuid := range matchingKubernetesServices {
+		serviceUuid := service.ServiceUUID(serviceGuidStr)
+
+		// There should be exactly one Kubernetes service for one Kurtosis service
+		numServicesForGuid := len(kubernetesServicesForGuid)
+		if numServicesForGuid != 1 {
+			return nil, stacktrace.NewError("Found %v Kubernetes services associated with service GUID '%v', but number of services should be exactly 1; this is a bug in Kurtosis", numServicesForGuid, serviceUuid)
+		}
+		kubernetesService := kubernetesServicesForGuid[0]
+
+		resultObj := &UserServiceKubernetesResources{
+			Service:    kubernetesService,
+			Pod:        nil,
+			Deployment: nil,
+			Ingress:    nil,
+		}
+		results[serviceUuid] = resultObj
+	}
+
+	// Add k8s pods
+	for serviceGuidStr, kubernetesPodsForGuid := range matchingKubernetesPods {
+		logrus.Tracef("Found Kubernetes pods for GUID '%v': %+v", serviceGuidStr, kubernetesPodsForGuid)
+		serviceUuid := service.ServiceUUID(serviceGuidStr)
+
+		numPodsForGuid := len(kubernetesPodsForGuid)
+		if numPodsForGuid != 1 {
+			return nil, stacktrace.NewError("Found %v Kubernetes pods associated with service GUID '%v', but number of pods should be exactly 1; this is a bug in Kurtosis", numPodsForGuid, serviceUuid)
+		}
+		kubernetesPod := kubernetesPodsForGuid[0]
+
+		resultObj, found := results[serviceUuid]
+		if !found {
+			resultObj = &UserServiceKubernetesResources{
+				Service:    nil,
+				Pod:        nil,
+				Deployment: nil,
+				Ingress:    nil,
+			}
+		}
+		resultObj.Pod = kubernetesPod
+		results[serviceUuid] = resultObj
+	}
+
+	// Add k8s deployments
+	for serviceGuidStr, kubernetesDeploymentsForGuid := range matchingKubernetesDeployments {
+		logrus.Tracef("Found Kubernetes deployments for GUID '%v': %+v", serviceGuidStr, kubernetesDeploymentsForGuid)
+		serviceUuid := service.ServiceUUID(serviceGuidStr)
+
+		numDeploymentsForGuid := len(kubernetesDeploymentsForGuid)
+		if numDeploymentsForGuid != 1 {
+			return nil, stacktrace.NewError("Found %v Kubernetes deployments associated with service GUID '%v', but number of deployments should be exactly 1; this is a bug in Kurtosis", numDeploymentsForGuid, serviceUuid)
+		}
+		kubernetesDeployment := kubernetesDeploymentsForGuid[0]
+
+		resultObj, found := results[serviceUuid]
+		if !found {
+			resultObj = &UserServiceKubernetesResources{
+				Service:    nil,
+				Pod:        nil,
+				Deployment: nil,
+				Ingress:    nil,
+			}
+		}
+		resultObj.Deployment = kubernetesDeployment
+		results[serviceUuid] = resultObj
+	}
+
+	// Add k8s ingresses
+	for serviceGuidStr, kubernetesIngressesForGuid := range matchingKubernetesIngresses {
+		logrus.Tracef("Found Kubernetes ingresses for GUID '%v': %+v", serviceGuidStr, kubernetesIngressesForGuid)
+		serviceUuid := service.ServiceUUID(serviceGuidStr)
+
+		numIngressesForGuid := len(kubernetesIngressesForGuid)
+		if numIngressesForGuid > 1 {
+			return nil, stacktrace.NewError("Found %v Kubernetes ingresses associated with service GUID '%v', but number of ingresses should be 0 or 1; this is a bug in Kurtosis", numIngressesForGuid, serviceUuid)
+		}
+
+		resultObj, found := results[serviceUuid]
+		if !found {
+			resultObj = &UserServiceKubernetesResources{
+				Service:    nil,
+				Pod:        nil,
+				Deployment: nil,
+				Ingress:    nil,
+			}
+		}
+
+		kubernetesIngress := kubernetesIngressesForGuid[0]
+		resultObj.Ingress = kubernetesIngress
+		results[serviceUuid] = resultObj
+	}
+	return results, nil
 }

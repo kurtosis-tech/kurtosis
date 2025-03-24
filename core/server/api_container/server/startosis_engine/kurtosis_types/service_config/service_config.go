@@ -5,6 +5,7 @@ import (
 
 	kube_config "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/kubernetes"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/sirupsen/logrus"
 
 	//"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	starlark_kube_config "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config/kubernetes"
@@ -65,7 +66,7 @@ const (
 
 	filesArtifactExpansionDirsParentDirpath string = "/files-artifacts"
 	// TODO This should be populated from the build flow that builds the files-artifacts-expander Docker image
-	filesArtifactsExpanderImage string = "europe-west1-docker.pkg.dev/randamu-prod/infra/kurtosistech/files-artifacts-expander"
+	filesArtifactsExpanderImage string = "k3d-registry:5000/kurtosistech/files-artifacts-expander"
 
 	minimumMemoryAllocationMegabytes = 6
 )
@@ -829,7 +830,17 @@ func convertKubeConfig(config *starlark_kube_config.KubernetesConfig) (*kube_con
 		return nil, interpretationError
 	}
 
-	return &kube_config.Config{ExtraIngressConfig: extraIngressConfig}, nil
+	// Extract the workload_type property
+	workloadType, interpretationError := config.GetWorkloadType()
+	if interpretationError != nil {
+		return nil, interpretationError
+	}
+	logrus.Debugf("convertKubeConfig workloadType: %s", workloadType)
+
+	return &kube_config.Config{
+		ExtraIngressConfig: extraIngressConfig,
+		WorkloadType:       workloadType,
+	}, nil
 }
 
 func convertTlsConfig(config *starlark_kube_config.IngressTLSConfig) (*kube_config.TlsConfig, *startosis_errors.InterpretationError) {

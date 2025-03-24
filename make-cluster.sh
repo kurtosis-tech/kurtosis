@@ -4,7 +4,8 @@ CLUSTER_NAME=${CLUSTER_NAME:-kurtosis}
 REGISTRY_NAME=${REGISTRY_NAME:-registry} # k3d adds the "k3d-" prefix so yeah don't bother
 REGISTRY_DOCKER_NETWORK_PORT=${REGISTRY_DOCKER_NETWORK_PORT:-5000}
 REGISTRY_HOST_PORT=${REGISTRY_HOST_PORT:-5151}
-REGISTRY_BIND_ADDR=${REGISTRY_BIND_ADDR:-127.0.0.0:$REGISTRY_HOST_PORT}
+#REGISTRY_BIND_ADDR=${REGISTRY_BIND_ADDR:-127.0.0.0:$REGISTRY_HOST_PORT}
+REGISTRY_BIND_ADDR=${REGISTRY_BIND_ADDR:-0.0.0.0:$REGISTRY_HOST_PORT}
 
 if ! k3d registry list -ojson | jq -e --arg name "k3d-${REGISTRY_NAME}" 'any(.[]; .name == $name)'; then
 	# Yep, you also use port if you specify the bind addr ;)

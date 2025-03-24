@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
@@ -270,6 +271,46 @@ func (serviceConfig *ServiceConfig) GetKubernetesConfig() *kube_config.Config {
 
 func (serviceConfig *ServiceConfig) SetKubernetesConfig(config *kube_config.Config) {
 	serviceConfig.privateServiceConfig.KubernetesConfig = config
+}
+
+// GetWorkloadType returns the type of Kubernetes workload to create for a service.
+// Valid values are "", "pod", or "deployment". Empty string defaults to "pod".
+func (serviceConfig *ServiceConfig) GetWorkloadType() string {
+	kubeConfig := serviceConfig.GetKubernetesConfig()
+	if kubeConfig == nil {
+		return kube_config.WorkloadTypePod
+	}
+	return kubeConfig.WorkloadType
+}
+
+// SetWorkloadType sets the type of Kubernetes workload to create.
+// Valid values are "", "pod", or "deployment". Empty string defaults to "pod".
+func (serviceConfig *ServiceConfig) SetWorkloadType(workloadType string) error {
+	// Set the default workload type if not specified for backwards compatibility
+	if workloadType == "" {
+		workloadType = kube_config.WorkloadTypePod
+	}
+
+	allowedWorkloadTypes := map[string]struct{}{
+		kube_config.WorkloadTypePod:        {},
+		kube_config.WorkloadTypeDeployment: {},
+	}
+	if _, exists := allowedWorkloadTypes[workloadType]; !exists {
+		return stacktrace.NewError("Invalid workload type '%s'. Allowed values are empty string, '%s', or '%s'",
+			workloadType, kube_config.WorkloadTypePod, kube_config.WorkloadTypeDeployment)
+	}
+
+	// If there's no KubernetesConfig, create one
+	if serviceConfig.privateServiceConfig.KubernetesConfig == nil {
+		serviceConfig.privateServiceConfig.KubernetesConfig = &kube_config.Config{
+			WorkloadType: workloadType,
+		}
+		return nil
+	}
+
+	// Otherwise, set it on the existing config
+	serviceConfig.privateServiceConfig.KubernetesConfig.WorkloadType = workloadType
+	return nil
 }
 
 //func (serviceConfig *ServiceConfig) MarshalJSON() ([]byte, error) {

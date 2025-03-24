@@ -362,6 +362,8 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 				kubernetes_manager_consts.PodsKubernetesResource,
 				kubernetes_manager_consts.PodExecsKubernetesResource,
 				kubernetes_manager_consts.PodLogsKubernetesResource,
+				kubernetes_manager_consts.DeploymentsKubernetesResource,
+				kubernetes_manager_consts.DeploymentsScaleKubernetesResource,
 				kubernetes_manager_consts.ServicesKubernetesResource,
 				kubernetes_manager_consts.JobsKubernetesResource,
 				kubernetes_manager_consts.PersistentVolumeClaimsKubernetesResource,

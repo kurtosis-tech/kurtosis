@@ -202,12 +202,14 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Type:    flags.FlagType_Bool,
 			Default: fullUuidFlagKeyDefault,
 		},
-		{
-			Key:     kubernetesConfigFlagKey,
-			Usage:   "Kubernetes config for the service",
-			Type:    kubernetesConfigFlagType,
-			Default: kubernetesFlagConfigDefault,
-		},
+		// TODO: Add this back in case there's anyone troubled enough to try to specify
+		// and ingress on the cli
+		// {
+		// 	Key:     kubernetesConfigFlagKey,
+		// 	Usage:   "Kubernetes config for the service",
+		// 	Type:    kubernetesConfigFlagType,
+		// 	Default: kubernetesFlagConfigDefault,
+		// },
 	},
 	RunFunc: run,
 }
@@ -270,17 +272,16 @@ func run(
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", fullUuidsFlagKey)
 	}
 
-	kubernetesConfigStr, err := flags.GetString(kubernetesConfigFlagKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the Kubernetes config using key '%v'", kubernetesConfigFlagKey)
-	}
+	// TODO: add cli support?
+	// kubernetesConfigStr, err := flags.GetString(kubernetesConfigFlagKey)
+	// if err != nil {
+	// 	return stacktrace.Propagate(err, "An error occurred getting the Kubernetes config using key '%v'", kubernetesConfigFlagKey)
+	// }
 
 	var kubernetesConfig *services.KubernetesConfig
-	if kubernetesConfigStr != "" {
-		// Here you would parse the kubernetesConfigStr into a KubernetesConfig object
-		// For now we'll just create an empty one
-		kubernetesConfig = &services.KubernetesConfig{}
-	}
+	// if kubernetesConfigStr != "" {
+	// 	kubernetesConfig = &services.KubernetesConfig{}
+	// }
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
