@@ -10,19 +10,20 @@ This guide assumes that you have [Kurtosis installed](../get-started/installing-
 Kurtosis comes with a logs aggregator component that aggregates logs from services across enclaves. This component uses
 Vector under the hood. Logs aggregator can be configured independently for each cluster, in the Kurtosis [config file](../cli-reference/index.md#configuration-file-path).
 
-Kurtosis (and Vector) uses the notion of ["sinks"](https://vector.dev/docs/about/concepts/#sinks) to describe the 
-location where you want your logs exported. Sink configurations are forwarded as-is (with some exceptions, see below) to 
-Vector, therefore Kurtosis can export to all sinks that Vector supports. For a complete list of supported sinks and their 
+Kurtosis (and Vector) uses the notion of ["sinks"](https://vector.dev/docs/about/concepts/#sinks) to describe the
+location where you want your logs exported. Sink configurations are forwarded as-is (with some exceptions, see below) to
+Vector, therefore Kurtosis can export to all sinks that Vector supports. For a complete list of supported sinks and their
 configurations, please refer [here](https://vector.dev/docs/reference/configuration/sinks/).
 
 The following guide walks you through the process of setting up a local Elasticsearch/Kibana instance to which Kurtosis
 will forward logs to. We also include configuration examples for common sinks, such as AWS OpenSearch, S3, etc.
 
-## Setting up Kurtosis
+## Prerequisites
 
 Before you proceed, make sure you have:
-- [Installed and started the Docker engine](https://docs.kurtosis.com/next/install#i-install--start-docker) on your local machine
-- [Installed the Kurtosis CLI](https://docs.kurtosis.com/next/install#ii-install-the-cli) (or upgraded it to the latest release, if you already have the CLI installed)
+- [Installed the Kurtosis CLI](https://docs.kurtosis.com/install) (or upgraded it to the latest release, if you already have the CLI installed)
+- [Installed and started the Docker engine](https://docs.kurtosis.com/next/install#i-install--start-docker) on your local machine, if you are using Docker, or,
+- Have a local or remote Kubernetes cluster, installed [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl) and [configured](https://docs.kurtosis.com/k8s) Kurtosis to work with this cluster, if you are using Kubernetes. For the purpose of this guide, we will be using [Minikube](https://minikube.sigs.k8s.io)
 
 ## Guide for Docker
 
@@ -82,13 +83,13 @@ Open the configuration file and paste the following content, replacing `<PASSWOR
 in the previous section and `<ELASTICSEARCH_IP_ADDRESS>` with the IP address of your Elasticsearch container:
 
 ```yaml
-config-version: 3
+config-version: 4
 should-send-metrics: true
 kurtosis-clusters:
   docker:
     type: "docker"
-    logs-aggregator: 
-      sinks: 
+    logs-aggregator:
+      sinks:
         elasticsearch:
           type: "elasticsearch"
           bulk:
@@ -103,7 +104,7 @@ kurtosis-clusters:
             - "https://<ELASTICSEARCH_IP_ADDRESS>:9200"
 ```
 :::info
-`config-version` must be set to the minimum version of 3 for logs aggregator configurations to apply
+`config-version` must be set to the minimum version of 3 for logs aggregator configurations to apply for Docker
 :::
 
 :::danger
@@ -117,10 +118,6 @@ kurtosis engine restart
 ```
 
 ## Guide for Kubernetes
-
-For the purpose of this guide, we will use a [Minikube](https://minikube.sigs.k8s.io), which provisions a 
-local Kubernetes cluster. However, you are free to use other Kubernetes solutions, such as cloud managed clusters. The
-following instructions assume you use `kubectl` to interact with your Kubernetes cluster.
 
 ### Setting up Minikube
 
@@ -252,8 +249,8 @@ kurtosis config path
 ```
 
 To allow the logs aggregator to connect to Elasticsearch, you would need either the DNS name of the service or its IP address.
-For cluster with CoreDNS, the DNS name is in the format `<service_name>.<namespace>.svc.cluster.local`, which resolves 
-to `elasticsearch.default.svc.cluster.local` (using the manifest above). For cluster without CoreDNS, you may get the 
+For cluster with CoreDNS, the DNS name is in the format `<service_name>.<namespace>.svc.cluster.local`, which resolves
+to `elasticsearch.default.svc.cluster.local` (using the manifest above). For cluster without CoreDNS, you may get the
 service IP address with the following command:
 
 ```bash
@@ -267,13 +264,15 @@ generated in the previous section and `<ELASTICSEARCH_ADDRESS>` with the DNS nam
 config-version: 4
 should-send-metrics: true
 kurtosis-clusters:
+  docker:
+    type: "docker"
   kube:
     type: "kubernetes"
-    logs-aggregator: 
-      sinks: 
+    logs-aggregator:
+      sinks:
         elasticsearch:
           type: "elasticsearch"
-          bulk: 
+          bulk:
             index: "kt-{{ kurtosis_enclave_uuid }}-{{ kurtosis_service_uuid }}"
           auth:
             strategy: "basic"
@@ -288,8 +287,26 @@ kurtosis-clusters:
       storage-class: "standard"
 ```
 
+Stop the current Kurtosis engine, if you had started one, using the following command:
+
+```bash
+kurtosis engine stop
+```
+
+Start the Kurtosis [gateway](https://docs.kurtosis.com/gateway) with the following command:
+
+```bash
+kurtosis gateway
+```
+
+Switch to the `kube` cluster, which automatically starts a new engine, with the following command:
+
+```bash
+kurtosis cluster set kube
+```
+
 :::info
-`config-version` must be set to the minimum version of 4 for logs aggregator configurations to apply
+`config-version` must be set to the minimum version of 4 for logs aggregator configurations to apply for Kubernetes
 :::
 
 ## Verify logs delivery
@@ -302,7 +319,7 @@ kurtosis run github.com/ethpandaops/ethereum-package
 ```
 
 Once the package has finished execution, go to  `http://<KIBANA_ADDRESS>/app/enterprise_search/content/search_indices`,
-where `<KIBANA_ADDRESS>` depends on whether you use Docker or Kubernetes. Indices created by Kurtosis will the in the 
+where `<KIBANA_ADDRESS>` depends on whether you use Docker or Kubernetes. Indices created by Kurtosis will the in the
 format `kt-{{ kurtosis_enclave_uuid }}-{{ kurtosis_service_uuid }}` (as configured above)
 
 This is what you should see if everything went correctly
@@ -321,17 +338,17 @@ Below are examples of some common configurations that serve as good starting poi
 ### AWS OpenSearch Serverless
 
 ```yaml
-config-version: 3
+config-version: 4
 should-send-metrics: true
 kurtosis-clusters:
-  docker:
-    type: "docker"
-    logs-aggregator: 
-      sinks: 
+  cluster-name:
+    type: "<CLUSTER_TYPE>"
+    logs-aggregator:
+      sinks:
         elasticsearch:
           type: "elasticsearch"
           opensearch_service_type: "serverless"
-          bulk: 
+          bulk:
             index: "kt-{{ enclave_uuid }}-{{ service_name }}"
           aws:
             region: "<AWS_REGION>"
@@ -346,11 +363,11 @@ kurtosis-clusters:
 ### AWS CloudWatch
 
 ```yaml
-config-version: 3
+config-version: 4
 should-send-metrics: true
 kurtosis-clusters:
-  docker:
-    type: "docker"
+  cluster-name:
+    type: "<CLUSTER_TYPE>"
     logs-aggregator:
       sinks:
         cloudwatch:
@@ -368,13 +385,13 @@ kurtosis-clusters:
 ### AWS S3
 
 ```yaml
-config-version: 3
+config-version: 4
 should-send-metrics: true
 kurtosis-clusters:
-  docker:
-    type: "docker"
-    logs-aggregator: 
-      sinks: 
+  cluster-name:
+    type: "<CLUSTER_TYPE>"
+    logs-aggregator:
+      sinks:
         s3:
           type: "aws_s3"
           region: "<AWS_REGION>"
