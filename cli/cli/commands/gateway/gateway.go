@@ -9,12 +9,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/tools/clientcmd"
-	"os"
-	"path"
-)
-
-const (
-	emptyConfigMasterUrl = ""
 )
 
 // GatewayCmd Suppressing exhaustruct requirement because this struct has ~40 properties
@@ -41,12 +35,12 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "Expected to be able to get a Kurtosis backend connected to the cluster, instead a non-nil error was returned")
 	}
 
-	// TODO Store kube config path in configuration and read from there
-	kubeConfigPath := path.Join(os.Getenv("HOME"), ".kube", "config")
-
-	kubernetesConfig, err := clientcmd.BuildConfigFromFlags(emptyConfigMasterUrl, kubeConfigPath)
+	// TODO: get this from the backend's k8s manager somehow?
+	kubernetesConfig, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
+		clientcmd.NewDefaultClientConfigLoadingRules(), nil,
+	).ClientConfig()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating Kubernetes configuration from flags in file '%v'", kubeConfigPath)
+		return stacktrace.Propagate(err, "An error occurred creating Kubernetes configuration")
 	}
 
 	connectionProvider, err := connection.NewGatewayConnectionProvider(ctx, kubernetesConfig)
