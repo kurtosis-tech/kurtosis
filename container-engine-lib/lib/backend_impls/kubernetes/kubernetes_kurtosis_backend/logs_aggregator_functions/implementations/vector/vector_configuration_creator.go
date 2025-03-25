@@ -96,12 +96,15 @@ func (vector *vectorConfigurationCreator) CreateConfiguration(
 		},
 	}
 
+	var emptyJobLabels map[string]string
+	var emptyJobAnnotations map[string]string
+
 	job, err := kubernetesManager.CreateJob(
 		ctx,
 		namespaceName,
 		validatorJobName,
-		nil,
-		nil,
+		emptyJobLabels,
+		emptyJobAnnotations,
 		containers,
 		volumes,
 		validationCmdRetries,
