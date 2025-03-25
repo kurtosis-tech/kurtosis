@@ -359,6 +359,13 @@ func handleDeploymentCreation(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating deployment '%v' using image '%v'", deploymentName, containers[0].Image)
 	}
+	err = kubernetesManager.WaitForDeploymentPodsAvailability(
+		ctx,
+		createdDeployment,
+	)
+	if err != nil {
+		return createdDeployment, err
+	}
 	return createdDeployment, nil
 }
 
