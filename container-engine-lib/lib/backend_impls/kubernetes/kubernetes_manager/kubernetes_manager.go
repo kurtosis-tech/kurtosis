@@ -10,6 +10,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	terminal "golang.org/x/term"
 	"io"
 	"net/http"
 	"net/url"
@@ -21,14 +22,15 @@ import (
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/operation_parallelizer"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
-	v1 "k8s.io/api/apps/v1"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/channel_writer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	terminal "golang.org/x/term"
+
+	v1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -1649,6 +1651,60 @@ func (manager *KubernetesManager) GetPodsManagedByDeployment(ctx context.Context
 	}
 
 	return podsManagedByDeployment, nil
+}
+
+// WaitForDeploymentAvailability Wait for deployment availability by searching for managed pods and
+// checking that they're all available.
+// NOTE: I think it would be better to check deployment.Status.AvailableReplicas, but
+// I'm not sure what the intention is regarding treating non-pod resources as "first class"
+// kurtosis resources, so this seems like a "safer" strategy
+func (manager *KubernetesManager) WaitForDeploymentAvailability(
+	ctx context.Context,
+	deployment *v1.Deployment,
+) error {
+	pods, err := manager.GetPodsManagedByDeployment(
+		ctx,
+		deployment,
+	)
+	if err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred getting pods managed by deployment '%v'",
+			deployment.Name,
+		)
+	}
+
+	waitForPodsAvailabilityOperations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{}
+
+	for _, pod := range pods {
+		p := pod
+		waitForPodsAvailabilityOperations[operation_parallelizer.OperationID(p.Name)] = func() (interface{}, error) {
+			// check comments about lambdas in loop
+			err := manager.waitForPodAvailability(
+				ctx,
+				p.Namespace,
+				p.Name,
+			)
+			if err != nil {
+				logrus.Errorf(
+					"Error waiting for pod '%v' to be available: %v",
+					p.Name,
+					err,
+				)
+			}
+			return nil, err
+		}
+	}
+	_, errors := operation_parallelizer.RunOperationsInParallel(waitForPodsAvailabilityOperations)
+	if len(errors) > 0 {
+		return stacktrace.Propagate(
+			err,
+			"Deployment failed to be available, %v of %v pods failed to be available",
+			len(errors),
+			len(pods),
+		)
+	}
+	return nil
 }
 
 // ---------------------------config map---------------------------------------------------------------------------------------

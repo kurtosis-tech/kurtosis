@@ -128,9 +128,18 @@ func runExecOperationsInParallel(
 			continue
 		}
 
-		pod, err := getPodForService(ctx, userServiceKubernetesResource, kubernetesManager)
+		pod, err := getPodForService(
+			ctx,
+			userServiceKubernetesResource,
+			kubernetesManager,
+		)
 		if err != nil {
-			failedExecs[serviceUuid] = stacktrace.Propagate(err, "Cannot execute command '%+v' on service because we can't find the pod for service '%v'", commandArg, serviceUuid)
+			failedExecs[serviceUuid] = stacktrace.Propagate(
+				err,
+				"Cannot execute command '%+v' on service because we can't find the pod for service '%v'",
+				commandArg,
+				serviceUuid,
+			)
 			continue
 		}
 
