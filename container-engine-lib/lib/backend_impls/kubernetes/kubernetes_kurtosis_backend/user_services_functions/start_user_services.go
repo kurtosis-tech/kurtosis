@@ -519,7 +519,7 @@ func createStartServiceOperation(
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "An error occurred getting attributes for new pod for service with UUID '%v'", serviceUuid)
 			}
-			createdDeployment, err := handleDeploymentCreation(
+			createdDeployment, err = handleDeploymentCreation(
 				ctx,
 				namespaceName,
 				&attributes,

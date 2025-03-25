@@ -63,12 +63,25 @@ func RunUserServiceExecCommandWithStreamedOutput(
 			userServiceKubernetesService.GetContainer().GetStatus().String())
 	}
 
-	userServiceKubernetesPod := userServiceKubernetesResource.KubernetesResources.Pod
+	var podName string
+	if userServiceKubernetesResource.KubernetesResources.Deployment != nil {
+		pods, err := kubernetesManager.GetPodsManagedByDeployment(ctx, userServiceKubernetesResource.KubernetesResources.Deployment)
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred getting pods managed by deployment '%v'", userServiceKubernetesResource.KubernetesResources.Deployment.Name)
+		}
+		podName = pods[0].Name
+	} else if userServiceKubernetesResource.KubernetesResources.Pod != nil {
+		podName = userServiceKubernetesResource.KubernetesResources.Pod.Name
+	} else {
+		return nil, nil, stacktrace.NewError("Cannot execute command '%+v' on service '%v' because no Kubernetes resources were found for it",
+			cmd,
+			serviceUuid)
+	}
 
 	execOutputLinesChan, finalResultChan, err := kubernetesManager.RunExecCommandWithStreamedOutput(
 		ctx,
 		namespaceName,
-		userServiceKubernetesPod.Name,
+		podName,
 		userServiceContainerName,
 		cmd)
 	if err != nil {

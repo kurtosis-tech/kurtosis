@@ -17,6 +17,36 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
+func getPodForService(
+	ctx context.Context,
+	userServiceKubernetesResource *shared_helpers.UserServiceObjectsAndKubernetesResources,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+) (*v1.Pod, error) {
+	var pod *v1.Pod
+	if userServiceKubernetesResource.KubernetesResources.Deployment != nil {
+		pods, err := kubernetesManager.GetPodsManagedByDeployment(
+			ctx,
+			userServiceKubernetesResource.KubernetesResources.Deployment,
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(
+				err,
+				"An error occurred getting pods managed by deployment '%v'",
+				userServiceKubernetesResource.KubernetesResources.Deployment.Name,
+			)
+		}
+		pod = pods[0]
+	} else if userServiceKubernetesResource.KubernetesResources.Pod != nil {
+		pod = userServiceKubernetesResource.KubernetesResources.Pod
+	} else {
+		return nil, stacktrace.NewError(
+			"No pod found for service '%v'",
+			userServiceKubernetesResource.Service.GetRegistration().GetUUID(),
+		)
+	}
+	return pod, nil
+}
+
 // TODO Switch these to streaming methods, so that huge command outputs don't blow up the memory of the API container
 func RunUserServiceExecCommands(
 	ctx context.Context,
@@ -57,7 +87,13 @@ func RunUserServiceExecCommands(
 	return successfulExecs, failedExecs, nil
 }
 
-func runExecOperationsInParallel(namespaceName string, commandArgs map[service.ServiceUUID][]string, userServiceKubernetesResources map[service.ServiceUUID]*shared_helpers.UserServiceObjectsAndKubernetesResources, kubernetesManager *kubernetes_manager.KubernetesManager, ctx context.Context) (map[service.ServiceUUID]*exec_result.ExecResult, map[service.ServiceUUID]error, error) {
+func runExecOperationsInParallel(
+	namespaceName string,
+	commandArgs map[service.ServiceUUID][]string,
+	userServiceKubernetesResources map[service.ServiceUUID]*shared_helpers.UserServiceObjectsAndKubernetesResources,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+	ctx context.Context,
+) (map[service.ServiceUUID]*exec_result.ExecResult, map[service.ServiceUUID]error, error) {
 	successfulExecs := map[service.ServiceUUID]*exec_result.ExecResult{}
 	failedExecs := map[service.ServiceUUID]error{}
 
@@ -92,10 +128,21 @@ func runExecOperationsInParallel(namespaceName string, commandArgs map[service.S
 			continue
 		}
 
-		userServiceKubernetesPod := userServiceKubernetesResource.KubernetesResources.Pod
+		pod, err := getPodForService(ctx, userServiceKubernetesResource, kubernetesManager)
+		if err != nil {
+			failedExecs[serviceUuid] = stacktrace.Propagate(err, "Cannot execute command '%+v' on service because we can't find the pod for service '%v'", commandArg, serviceUuid)
+			continue
+		}
 
 		execOperationId := operation_parallelizer.OperationID(serviceUuid)
-		execOperation := createExecOperation(namespaceName, serviceUuid, userServiceKubernetesPod, commandArg, kubernetesManager, ctx)
+		execOperation := createExecOperation(
+			namespaceName,
+			serviceUuid,
+			pod,
+			commandArg,
+			kubernetesManager,
+			ctx,
+		)
 		execOperations[execOperationId] = execOperation
 	}
 
