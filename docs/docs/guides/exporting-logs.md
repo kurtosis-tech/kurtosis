@@ -13,8 +13,7 @@ Vector under the hood. Logs aggregator can be configured independently for each 
 Kurtosis (and Vector) uses the notion of ["sinks"](https://vector.dev/docs/about/concepts/#sinks) to describe the 
 location where you want your logs exported. Sink configurations are forwarded as-is (with some exceptions, see below) to 
 Vector, therefore Kurtosis can export to all sinks that Vector supports. For a complete list of supported sinks and their 
-configurations, please refer [here](https://vector.dev/docs/reference/configuration/sinks/). Currently, logs exporting 
-only works with Docker.
+configurations, please refer [here](https://vector.dev/docs/reference/configuration/sinks/).
 
 The following guide walks you through the process of setting up a local Elasticsearch/Kibana instance to which Kurtosis
 will forward logs to. We also include configuration examples for common sinks, such as AWS OpenSearch, S3, etc.
@@ -25,7 +24,9 @@ Before you proceed, make sure you have:
 - [Installed and started the Docker engine](https://docs.kurtosis.com/next/install#i-install--start-docker) on your local machine
 - [Installed the Kurtosis CLI](https://docs.kurtosis.com/next/install#ii-install-the-cli) (or upgraded it to the latest release, if you already have the CLI installed)
 
-## Starting a local Elasticsearch/Kibana instance
+## Guide for Docker
+
+### Starting a local Elasticsearch/Kibana instance
 
 Start an Elasticsearch container with the following command:
 
@@ -63,7 +64,7 @@ docker exec -it es01 /usr/share/elasticsearch/bin/elasticsearch-reset-password -
 
 You have now successfully started an Elasticsearch instance.
 
-## Configuring Kurtosis to send logs to Elasticsearch
+### Configuring Kurtosis to send logs to Elasticsearch
 
 Locate your Kurtosis configuration file with the following command:
 
@@ -90,8 +91,8 @@ kurtosis-clusters:
       sinks: 
         elasticsearch:
           type: "elasticsearch"
-          bulk: 
-            index: "kt-{{ enclave_uuid }}-{{ service_name }}"
+          bulk:
+            index: "kt-{{ kurtosis_enclave_uuid }}-{{ kurtosis_service_uuid }}"
           auth:
             strategy: "basic"
             user: "elastic"
@@ -102,7 +103,7 @@ kurtosis-clusters:
             - "https://<ELASTICSEARCH_IP_ADDRESS>:9200"
 ```
 :::info
-`config-version` must be set to 3 for logs aggregator configurations to apply
+`config-version` must be set to the minimum version of 3 for logs aggregator configurations to apply
 :::
 
 :::danger
@@ -115,6 +116,182 @@ Finally, restart Kurtosis engine to apply the changes:
 kurtosis engine restart
 ```
 
+## Guide for Kubernetes
+
+For the purpose of this guide, we will use a [Minikube](https://minikube.sigs.k8s.io), which provisions a 
+local Kubernetes cluster. However, you are free to use other Kubernetes solutions, such as cloud managed clusters. The
+following instructions assume you use `kubectl` to interact with your Kubernetes cluster.
+
+### Setting up Minikube
+
+Follow Minikube's official get started [guide](https://minikube.sigs.k8s.io/docs/start) to download and start a Minikube cluster.
+
+### Starting a local Elasticsearch/Kibana instance
+
+Create a Kubernetes manifest with the following configurations:
+
+```yaml
+# elasticsearch.yaml
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elasticsearch
+  labels:
+    app: elasticsearch
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      containers:
+        - name: elasticsearch
+          image: elasticsearch:8.17.3
+          env:
+            - name: discovery.type
+              value: "single-node"
+            - name: ES_JAVA_OPTS
+              value: "-Xms1g -Xmx1g"
+          ports:
+            - containerPort: 9200
+              name: rest
+            - containerPort: 9300
+              name: inter-node
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "1"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch
+spec:
+  selector:
+    app: elasticsearch
+  ports:
+    - protocol: TCP
+      port: 9200
+      targetPort: 9200
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kibana
+  labels:
+    app: kibana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kibana
+  template:
+    metadata:
+      labels:
+        app: kibana
+    spec:
+      containers:
+        - name: kibana
+          image: kibana:8.17.3
+          ports:
+            - containerPort: 5601
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kibana
+spec:
+  selector:
+    app: kibana
+  ports:
+    - protocol: TCP
+      port: 5601
+      targetPort: 5601
+```
+
+Apply the manifest with the following command:
+
+```bash
+kubectl apply -f elasticsearch.yaml
+```
+
+Generate an Elasticsearch enrollment token with the following command:
+
+```bash
+kubectl exec -it elasticsearch -- /usr/share/elasticsearch/bin/elasticsearch-create-enrollment-token -s kibana
+```
+
+Access the Kibana dashboard with the following command, and paste the enrollment generated above:
+
+```bash
+minikube service kibana
+```
+
+Next, Kibana will ask you to sign in. The username for the local Elasticsearch instance is `elastic`, and you can generate the password with:
+
+```bash
+kubectl exec -it elasticsearch -- /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic
+```
+
+You have now successfully started an Elasticsearch instance.
+
+### Configuring Kurtosis to send logs to Elasticsearch
+
+Locate your Kurtosis configuration file with the following command:
+
+```bash
+kurtosis config path
+```
+
+To allow the logs aggregator to connect to Elasticsearch, you would need either the DNS name of the service or its IP address.
+For cluster with CoreDNS, the DNS name is in the format `<service_name>.<namespace>.svc.cluster.local`, which resolves 
+to `elasticsearch.default.svc.cluster.local` (using the manifest above). For cluster without CoreDNS, you may get the 
+service IP address with the following command:
+
+```bash
+kubectl get svc elasticsearch
+```
+
+Open the Kurtosis configuration file and paste the following content, replacing `<PASSWORD>` with the Elasticsearch password
+generated in the previous section and `<ELASTICSEARCH_ADDRESS>` with the DNS name or IP address of the Elasticsearch service:
+
+```yaml
+config-version: 4
+should-send-metrics: true
+kurtosis-clusters:
+  kube:
+    type: "kubernetes"
+    logs-aggregator: 
+      sinks: 
+        elasticsearch:
+          type: "elasticsearch"
+          bulk: 
+            index: "kt-{{ kurtosis_enclave_uuid }}-{{ kurtosis_service_uuid }}"
+          auth:
+            strategy: "basic"
+            user: "elastic"
+            password: "<PASSWORD>"
+          tls:
+            verify_certificate: false
+          endpoints:
+            - "https://<ELASTICSEARCH_ADDRESS>:9200"
+    config:
+      kubernetes-cluster-name: "minikube"
+      storage-class: "standard"
+```
+
+:::info
+`config-version` must be set to the minimum version of 4 for logs aggregator configurations to apply
+:::
+
 ## Verify logs delivery
 
 To verify that Kurtosis are actually exporting logs to Elasticsearch, start by running a package. In this guide, we use
@@ -124,12 +301,14 @@ To verify that Kurtosis are actually exporting logs to Elasticsearch, start by r
 kurtosis run github.com/ethpandaops/ethereum-package
 ```
 
-Once the package has finished execution, go to  `http://localhost:5601/app/enterprise_search/content/search_indices`.
-Indices created by Kurtosis will the in the format `kt-{{ enclave_uuid }}-{{ service_name }}` (as configured above)
+Once the package has finished execution, go to  `http://<KIBANA_ADDRESS>/app/enterprise_search/content/search_indices`,
+where `<KIBANA_ADDRESS>` depends on whether you use Docker or Kubernetes. Indices created by Kurtosis will the in the 
+format `kt-{{ kurtosis_enclave_uuid }}-{{ kurtosis_service_uuid }}` (as configured above)
 
 This is what you should see if everything went correctly
 
 ![elasticsearch-dashboard.png](/img/guides/elasticsearch-dashboard.jpeg)
+
 
 ## Configuring other sinks
 
