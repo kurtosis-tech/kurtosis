@@ -164,7 +164,7 @@ On MacOS:
 brew install docker
 ```
 
-#### Go (1.20 or above)
+#### Go (1.23 or above)
 
 On MacOS:
 ```bash
