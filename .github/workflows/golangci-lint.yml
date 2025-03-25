@@ -68,7 +68,7 @@ jobs:
         if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
       - name: lint ${{ matrix.directory }}
         if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
-        uses: golangci/golangci-lint-action@v4
+        uses: golangci/golangci-lint-action@v7
         with:
           version: ${{ env.GOLINT_VERSION }}
           working-directory: ${{ matrix.directory }}
