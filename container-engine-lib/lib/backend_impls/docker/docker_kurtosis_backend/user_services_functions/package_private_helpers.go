@@ -37,13 +37,13 @@ func destroyUserServicesUnlocked(
 	}
 
 	for uuid, registration := range serviceRegistrationsForEnclave {
-		if filters.UUIDs != nil && len(filters.UUIDs) > 0 {
+		if len(filters.UUIDs) > 0 {
 			if _, found := filters.UUIDs[registration.GetUUID()]; !found {
 				continue
 			}
 		}
 
-		if filters.Names != nil && len(filters.Names) > 0 {
+		if len(filters.Names) > 0 {
 			if _, found := filters.Names[registration.GetName()]; !found {
 				continue
 			}
@@ -92,7 +92,7 @@ func destroyUserServicesUnlocked(
 		}
 
 		// If the status filter is specified, don't deregister any registrations-without-resources
-		if filters.Statuses != nil && len(filters.Statuses) > 0 {
+		if len(filters.Statuses) > 0 {
 			continue
 		}
 

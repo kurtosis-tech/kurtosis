@@ -374,13 +374,13 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaveObjectsAndKubernetes
 	resultEnclaveObjs := map[enclave.EnclaveUUID]*enclave.Enclave{}
 	resultKubernetesResources := map[enclave.EnclaveUUID]*enclaveKubernetesResources{}
 	for enclaveId, enclaveObj := range enclaveObjects {
-		if filters.UUIDs != nil && len(filters.UUIDs) > 0 {
+		if len(filters.UUIDs) > 0 {
 			if _, found := filters.UUIDs[enclaveObj.GetUUID()]; !found {
 				continue
 			}
 		}
 
-		if filters.Statuses != nil && len(filters.Statuses) > 0 {
+		if len(filters.Statuses) > 0 {
 			if _, found := filters.Statuses[enclaveObj.GetStatus()]; !found {
 				continue
 			}
