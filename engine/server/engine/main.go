@@ -33,7 +33,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
-	restApi "github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/streaming"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/utils"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/analytics_logger"
@@ -41,7 +40,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/source"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 	echomiddleware "github.com/labstack/echo/v4/middleware"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
@@ -458,13 +456,13 @@ func restApiServer(
 	logrus.Infof("Setting-up CORS policy to accept requests from origins: %v", allowOrigins)
 
 	// nolint:exhaustruct
-	echoApiRouter.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+	echoApiRouter.Use(echomiddleware.CORSWithConfig(echomiddleware.CORSConfig{
 		AllowOrigins: allowOrigins,
 		AllowHeaders: defaultCORSHeaders,
 	}))
 
 	// ============================== Engine Management API ======================================
-	engineRuntime := restApi.EngineRuntime{
+	engineRuntime := server.EngineRuntime{
 		ImageVersionTag: serverArgs.ImageVersionTag,
 		EnclaveManager:  enclave_manager,
 		LogsDbClient:    logsDatabaseClient,
@@ -478,7 +476,7 @@ func restApiServer(
 		AllowedOrigins: allowOrigins,
 		AllowedMethods: defaultCORSHeaders,
 	})
-	webSocketRuntime := restApi.WebSocketRuntime{
+	webSocketRuntime := server.WebSocketRuntime{
 		ImageVersionTag:             serverArgs.ImageVersionTag,
 		EnclaveManager:              enclave_manager,
 		MetricsUserID:               serverArgs.MetricsUserID,
@@ -491,7 +489,7 @@ func restApiServer(
 	loggingApi.RegisterHandlers(echoApiRouter, webSocketRuntime)
 
 	// ============================== Engine Management API ======================================
-	enclaveRuntime, err := restApi.NewEnclaveRuntime(ctx, *enclave_manager, asyncStarlarkLogs, false)
+	enclaveRuntime, err := server.NewEnclaveRuntime(ctx, *enclave_manager, asyncStarlarkLogs, false)
 	if err != nil {
 		newErr := stacktrace.Propagate(err, "Failed to initialize %T", enclaveRuntime)
 		return newErr

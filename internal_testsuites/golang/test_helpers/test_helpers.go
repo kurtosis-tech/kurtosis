@@ -456,13 +456,12 @@ func GetLogsResponse(
 	shouldFollowLogs bool,
 	logLineFilter *kurtosis_context.LogLineFilter,
 ) (
-	error,
 	map[services.ServiceUUID][]string,
 	map[services.ServiceUUID]bool,
+	error,
 ) {
-
 	if expectedLogLinesByService == nil {
-		return stacktrace.NewError("The 'expectedLogLinesByService' can't be nil because it is needed for handling the retry strategy"), nil, nil
+		return nil, nil, stacktrace.NewError("The 'expectedLogLinesByService' can't be nil because it is needed for handling the retry strategy")
 	}
 
 	receivedLogLinesByService := map[services.ServiceUUID][]string{}
@@ -509,7 +508,7 @@ func GetLogsResponse(
 				if len(expectedLogLines) == noExpectedLogLines && !found {
 					receivedLogLines = []string{}
 				} else if !found {
-					return stacktrace.NewError("Expected to receive log lines for service with UUID '%v' but none was found in the received log lines by service map '%+v'", serviceUuid, receivedLogLinesByService), nil, nil
+					return nil, nil, stacktrace.NewError("Expected to receive log lines for service with UUID '%v' but none was found in the received log lines by service map '%+v'", serviceUuid, receivedLogLinesByService)
 				}
 				if len(receivedLogLines) != len(expectedLogLines) {
 					break
@@ -523,7 +522,7 @@ func GetLogsResponse(
 		}
 	}
 
-	return testEvaluationErr, receivedLogLinesByService, receivedNotFoundServiceGuids
+	return receivedLogLinesByService, receivedNotFoundServiceGuids, testEvaluationErr
 }
 
 func AddServicesWithLogLines(

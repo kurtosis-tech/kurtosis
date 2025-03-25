@@ -859,12 +859,13 @@ func makeHttpRequest(httpMethod string, url string, body string) (*http.Response
 		err  error
 	)
 
-	if httpMethod == http.MethodPost {
+	switch httpMethod {
+	case http.MethodPost:
 		var bodyByte = []byte(body)
 		resp, err = http.Post(url, "application/json", bytes.NewBuffer(bodyByte))
-	} else if httpMethod == http.MethodGet {
+	case http.MethodGet:
 		resp, err = http.Get(url)
-	} else {
+	default:
 		return nil, stacktrace.NewError("HTTP method '%v' not allowed", httpMethod)
 	}
 

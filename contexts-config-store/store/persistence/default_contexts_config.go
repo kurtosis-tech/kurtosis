@@ -20,7 +20,7 @@ func NewDefaultContextsConfig() (*generated.KurtosisContextsConfig, error) {
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to generate a random UUID for the default context")
 	}
-	newContextUuidStr := strings.Replace(randomUuid.String(), "-", "", -1)
+	newContextUuidStr := strings.ReplaceAll(randomUuid.String(), "-", "")
 
 	defaultContextUuid := api.NewContextUuid(newContextUuidStr)
 	defaultContext := api.NewLocalOnlyContext(defaultContextUuid, DefaultContextName)

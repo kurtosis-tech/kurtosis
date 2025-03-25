@@ -70,13 +70,14 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	// We get validation for free by virtue of the KurtosisCommand framework
 	var didUserAcceptSendingMetrics bool
 	justPrintMetricsId := false
-	if didUserAcceptSendingMetricsStr == enableSendingMetrics {
+	switch didUserAcceptSendingMetricsStr {
+	case enableSendingMetrics:
 		didUserAcceptSendingMetrics = true
-	} else if didUserAcceptSendingMetricsStr == disableSendingMetrics {
+	case disableSendingMetrics:
 		didUserAcceptSendingMetrics = false
-	} else if didUserAcceptSendingMetricsStr == printMetricsId {
+	case printMetricsId:
 		justPrintMetricsId = true
-	} else {
+	default:
 		// If this happens, there's something wrong with the validation being done via KurtosisCommand
 		return stacktrace.NewError(
 			"Encountered an unrecognized '%v' input string '%v', which should never happen; this is a bug in Kurtosis!",
