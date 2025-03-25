@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	configuratorContainerName = "logs-aggregator-configurator"
+	validatorContainerName    = "logs-aggregator-validator"
 	validationCmdRetries      = 0
 	validatorJobTTLSeconds    = 5
 	validatorJobPollInterval  = 600 * time.Millisecond
@@ -65,14 +65,14 @@ func (vector *vectorConfigurationCreator) CreateConfiguration(
 
 	uuid, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred generating a UUID for the configurator container name")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred generating a UUID for the validator container name")
 	}
 
-	configuratorJobName := fmt.Sprintf("%s-%s", configuratorContainerName, uuid)
+	validatorJobName := fmt.Sprintf("%s-%s", validatorContainerName, uuid)
 
 	containers := []apiv1.Container{
 		{
-			Name:    configuratorContainerName,
+			Name:    validatorContainerName,
 			Image:   vectorImage,
 			Command: nil,
 			Args:    []string{"validate", vectorConfigFilePath},
@@ -94,20 +94,12 @@ func (vector *vectorConfigurationCreator) CreateConfiguration(
 			Name:         vectorConfigVolumeName,
 			VolumeSource: kubernetesManager.GetVolumeSourceForConfigMap(configMap.Name),
 		},
-		{
-			Name:         kurtosisLogsVolumeName,
-			VolumeSource: kubernetesManager.GetVolumeSourceForHostPath(kurtosisLogsMountPath),
-		},
-		{
-			Name:         vectorDataDirVolumeName,
-			VolumeSource: kubernetesManager.GetVolumeSourceForHostPath(vectorDataDirMountPath),
-		},
 	}
 
 	job, err := kubernetesManager.CreateJob(
 		ctx,
 		namespaceName,
-		configuratorJobName,
+		validatorJobName,
 		nil,
 		nil,
 		containers,
@@ -149,7 +141,7 @@ func (vector *vectorConfigurationCreator) CreateConfiguration(
 
 	podName := pods[0].Name
 
-	containerLogStream, err := kubernetesManager.GetContainerLogs(ctx, namespaceName, podName, configuratorContainerName, false, false)
+	containerLogStream, err := kubernetesManager.GetContainerLogs(ctx, namespaceName, podName, validatorContainerName, false, false)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(
 			err,
