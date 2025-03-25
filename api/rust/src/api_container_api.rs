@@ -159,6 +159,20 @@ pub struct ServiceInfo {
     /// Docker container or Kubernetes pod container
     #[prost(message, optional, tag = "9")]
     pub container: ::core::option::Option<Container>,
+    /// Mapping of directory paths on service to names of files artifacts that are mounted to that directory
+    #[prost(map = "string, string", tag = "10")]
+    pub service_dir_paths_to_files_artifacts_identifiers: ::std::collections::HashMap<
+        ::prost::alloc::string::String,
+        ::prost::alloc::string::String,
+    >,
+    #[prost(uint32, tag = "11")]
+    pub max_millicpus: u32,
+    #[prost(uint32, tag = "12")]
+    pub min_millicpus: u32,
+    #[prost(uint32, tag = "13")]
+    pub max_memory_megabytes: u32,
+    #[prost(uint32, tag = "14")]
+    pub min_memory_megabytes: u32,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]

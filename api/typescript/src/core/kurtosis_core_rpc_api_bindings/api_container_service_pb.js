@@ -1695,7 +1695,12 @@ proto.api_container_api.ServiceInfo.toObject = function(includeInstance, msg) {
     name: jspb.Message.getFieldWithDefault(msg, 6, ""),
     shortenedUuid: jspb.Message.getFieldWithDefault(msg, 7, ""),
     serviceStatus: jspb.Message.getFieldWithDefault(msg, 8, 0),
-    container: (f = msg.getContainer()) && proto.api_container_api.Container.toObject(includeInstance, f)
+    container: (f = msg.getContainer()) && proto.api_container_api.Container.toObject(includeInstance, f),
+    serviceDirPathsToFilesArtifactsIdentifiersMap: (f = msg.getServiceDirPathsToFilesArtifactsIdentifiersMap()) ? f.toObject(includeInstance, undefined) : [],
+    maxMillicpus: jspb.Message.getFieldWithDefault(msg, 11, 0),
+    minMillicpus: jspb.Message.getFieldWithDefault(msg, 12, 0),
+    maxMemoryMegabytes: jspb.Message.getFieldWithDefault(msg, 13, 0),
+    minMemoryMegabytes: jspb.Message.getFieldWithDefault(msg, 14, 0)
   };
 
   if (includeInstance) {
@@ -1772,6 +1777,28 @@ proto.api_container_api.ServiceInfo.deserializeBinaryFromReader = function(msg, 
       var value = new proto.api_container_api.Container;
       reader.readMessage(value,proto.api_container_api.Container.deserializeBinaryFromReader);
       msg.setContainer(value);
+      break;
+    case 10:
+      var value = msg.getServiceDirPathsToFilesArtifactsIdentifiersMap();
+      reader.readMessage(value, function(message, reader) {
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readString, null, "", "");
+         });
+      break;
+    case 11:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setMaxMillicpus(value);
+      break;
+    case 12:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setMinMillicpus(value);
+      break;
+    case 13:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setMaxMemoryMegabytes(value);
+      break;
+    case 14:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setMinMemoryMegabytes(value);
       break;
     default:
       reader.skipField();
@@ -1858,6 +1885,38 @@ proto.api_container_api.ServiceInfo.serializeBinaryToWriter = function(message, 
       9,
       f,
       proto.api_container_api.Container.serializeBinaryToWriter
+    );
+  }
+  f = message.getServiceDirPathsToFilesArtifactsIdentifiersMap(true);
+  if (f && f.getLength() > 0) {
+    f.serializeBinary(10, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeString);
+  }
+  f = message.getMaxMillicpus();
+  if (f !== 0) {
+    writer.writeUint32(
+      11,
+      f
+    );
+  }
+  f = message.getMinMillicpus();
+  if (f !== 0) {
+    writer.writeUint32(
+      12,
+      f
+    );
+  }
+  f = message.getMaxMemoryMegabytes();
+  if (f !== 0) {
+    writer.writeUint32(
+      13,
+      f
+    );
+  }
+  f = message.getMinMemoryMegabytes();
+  if (f !== 0) {
+    writer.writeUint32(
+      14,
+      f
     );
   }
 };
@@ -2049,6 +2108,100 @@ proto.api_container_api.ServiceInfo.prototype.clearContainer = function() {
  */
 proto.api_container_api.ServiceInfo.prototype.hasContainer = function() {
   return jspb.Message.getField(this, 9) != null;
+};
+
+
+/**
+ * map<string, string> service_dir_paths_to_files_artifacts_identifiers = 10;
+ * @param {boolean=} opt_noLazyCreate Do not create the map if
+ * empty, instead returning `undefined`
+ * @return {!jspb.Map<string,string>}
+ */
+proto.api_container_api.ServiceInfo.prototype.getServiceDirPathsToFilesArtifactsIdentifiersMap = function(opt_noLazyCreate) {
+  return /** @type {!jspb.Map<string,string>} */ (
+      jspb.Message.getMapField(this, 10, opt_noLazyCreate,
+      null));
+};
+
+
+/**
+ * Clears values from the map. The map will be non-null.
+ * @return {!proto.api_container_api.ServiceInfo} returns this
+ */
+proto.api_container_api.ServiceInfo.prototype.clearServiceDirPathsToFilesArtifactsIdentifiersMap = function() {
+  this.getServiceDirPathsToFilesArtifactsIdentifiersMap().clear();
+  return this;};
+
+
+/**
+ * optional uint32 max_millicpus = 11;
+ * @return {number}
+ */
+proto.api_container_api.ServiceInfo.prototype.getMaxMillicpus = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 11, 0));
+};
+
+
+/**
+ * @param {number} value
+ * @return {!proto.api_container_api.ServiceInfo} returns this
+ */
+proto.api_container_api.ServiceInfo.prototype.setMaxMillicpus = function(value) {
+  return jspb.Message.setProto3IntField(this, 11, value);
+};
+
+
+/**
+ * optional uint32 min_millicpus = 12;
+ * @return {number}
+ */
+proto.api_container_api.ServiceInfo.prototype.getMinMillicpus = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 12, 0));
+};
+
+
+/**
+ * @param {number} value
+ * @return {!proto.api_container_api.ServiceInfo} returns this
+ */
+proto.api_container_api.ServiceInfo.prototype.setMinMillicpus = function(value) {
+  return jspb.Message.setProto3IntField(this, 12, value);
+};
+
+
+/**
+ * optional uint32 max_memory_megabytes = 13;
+ * @return {number}
+ */
+proto.api_container_api.ServiceInfo.prototype.getMaxMemoryMegabytes = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 13, 0));
+};
+
+
+/**
+ * @param {number} value
+ * @return {!proto.api_container_api.ServiceInfo} returns this
+ */
+proto.api_container_api.ServiceInfo.prototype.setMaxMemoryMegabytes = function(value) {
+  return jspb.Message.setProto3IntField(this, 13, value);
+};
+
+
+/**
+ * optional uint32 min_memory_megabytes = 14;
+ * @return {number}
+ */
+proto.api_container_api.ServiceInfo.prototype.getMinMemoryMegabytes = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 14, 0));
+};
+
+
+/**
+ * @param {number} value
+ * @return {!proto.api_container_api.ServiceInfo} returns this
+ */
+proto.api_container_api.ServiceInfo.prototype.setMinMemoryMegabytes = function(value) {
+  return jspb.Message.setProto3IntField(this, 14, value);
 };
 
 

@@ -306,6 +306,33 @@ export declare class ServiceInfo extends Message<ServiceInfo> {
    */
   container?: Container;
 
+  /**
+   * Mapping of directory paths on service to names of files artifacts that are mounted to that directory
+   *
+   * @generated from field: map<string, string> service_dir_paths_to_files_artifacts_identifiers = 10;
+   */
+  serviceDirPathsToFilesArtifactsIdentifiers: { [key: string]: string };
+
+  /**
+   * @generated from field: uint32 max_millicpus = 11;
+   */
+  maxMillicpus: number;
+
+  /**
+   * @generated from field: uint32 min_millicpus = 12;
+   */
+  minMillicpus: number;
+
+  /**
+   * @generated from field: uint32 max_memory_megabytes = 13;
+   */
+  maxMemoryMegabytes: number;
+
+  /**
+   * @generated from field: uint32 min_memory_megabytes = 14;
+   */
+  minMemoryMegabytes: number;
+
   constructor(data?: PartialMessage<ServiceInfo>);
 
   static readonly runtime: typeof proto3;

@@ -142,6 +142,17 @@ message ServiceInfo {
 
   // Docker container or Kubernetes pod container
   Container container = 9;
+
+  // Mapping of directory paths on service to names of files artifacts that are mounted to that directory
+  map<string, string> service_dir_paths_to_files_artifacts_identifiers = 10;
+
+  uint32 max_millicpus = 11;
+
+  uint32 min_millicpus = 12;
+
+  uint32 max_memory_megabytes = 13;
+
+  uint32 min_memory_megabytes = 14;
 }
 
 // ==============================================================================================

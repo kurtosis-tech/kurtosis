@@ -185,6 +185,7 @@ func PrintServiceInspect(ctx context.Context, kurtosisBackend backend_interface.
 		jsonMap[ServicePortsTitleName] = userService.GetPrivatePorts()
 
 		// TODO: add support for files artifacts entrypoint
+		// TODO: add support for cpu min max memory
 
 		var marshaled []byte
 		var err error

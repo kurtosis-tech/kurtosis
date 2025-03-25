@@ -394,7 +394,7 @@ func run(
 	// call run add service starlark script
 	addServiceStarlarkStr := add.GetAddServiceStarlarkScript(serviceName, serviceConfigStr)
 
-	logrus.Info("Running update service starlark for service '%v' in enclave '%v'...", serviceName, enclaveIdentifier)
+	logrus.Infof("Running update service starlark for service '%v' in enclave '%v'...", serviceName, enclaveIdentifier)
 	starlarkRunResult, err := add.RunAddServiceStarlarkScript(ctx, serviceName, enclaveIdentifier, addServiceStarlarkStr, enclaveCtx)
 	if err != nil {
 		return err //already wrapped

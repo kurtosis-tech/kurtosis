@@ -362,6 +362,11 @@ func NewServiceInfo(
 	maybePublicPorts map[string]*kurtosis_core_rpc_api_bindings.Port,
 	serviceStatus kurtosis_core_rpc_api_bindings.ServiceStatus,
 	container *kurtosis_core_rpc_api_bindings.Container,
+	serviceDirPathsToFilesArtifactsIdentifiers map[string]string,
+	minMillicpus uint32,
+	maxMillicpus uint32,
+	minMemoryMegabytes uint32,
+	maxMemoryMegabytes uint32,
 ) *kurtosis_core_rpc_api_bindings.ServiceInfo {
 	return &kurtosis_core_rpc_api_bindings.ServiceInfo{
 		ServiceUuid:       uuid,
@@ -373,6 +378,11 @@ func NewServiceInfo(
 		MaybePublicPorts:  maybePublicPorts,
 		ServiceStatus:     serviceStatus,
 		Container:         container,
+		ServiceDirPathsToFilesArtifactsIdentifiers: serviceDirPathsToFilesArtifactsIdentifiers,
+		MaxMillicpus:       maxMillicpus,
+		MinMillicpus:       minMillicpus,
+		MaxMemoryMegabytes: maxMemoryMegabytes,
+		MinMemoryMegabytes: minMemoryMegabytes,
 	}
 }
 

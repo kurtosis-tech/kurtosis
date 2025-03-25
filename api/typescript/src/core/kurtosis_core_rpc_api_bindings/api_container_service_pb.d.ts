@@ -135,6 +135,21 @@ export class ServiceInfo extends jspb.Message {
   hasContainer(): boolean;
   clearContainer(): ServiceInfo;
 
+  getServiceDirPathsToFilesArtifactsIdentifiersMap(): jspb.Map<string, string>;
+  clearServiceDirPathsToFilesArtifactsIdentifiersMap(): ServiceInfo;
+
+  getMaxMillicpus(): number;
+  setMaxMillicpus(value: number): ServiceInfo;
+
+  getMinMillicpus(): number;
+  setMinMillicpus(value: number): ServiceInfo;
+
+  getMaxMemoryMegabytes(): number;
+  setMaxMemoryMegabytes(value: number): ServiceInfo;
+
+  getMinMemoryMegabytes(): number;
+  setMinMemoryMegabytes(value: number): ServiceInfo;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServiceInfo.AsObject;
   static toObject(includeInstance: boolean, msg: ServiceInfo): ServiceInfo.AsObject;
@@ -154,6 +169,11 @@ export namespace ServiceInfo {
     shortenedUuid: string,
     serviceStatus: ServiceStatus,
     container?: Container.AsObject,
+    serviceDirPathsToFilesArtifactsIdentifiersMap: Array<[string, string]>,
+    maxMillicpus: number,
+    minMillicpus: number,
+    maxMemoryMegabytes: number,
+    minMemoryMegabytes: number,
   }
 }
 

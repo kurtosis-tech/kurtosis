@@ -16,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/docker_compose_transpiler"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_run"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/git_package_content_provider"
@@ -101,6 +102,8 @@ type ApiContainerService struct {
 	metricsClient metrics_client.MetricsClient
 
 	githubAuthProvider *git_package_content_provider.GitHubPackageAuthProvider
+
+	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore
 }
 
 func NewApiContainerService(
@@ -113,6 +116,7 @@ func NewApiContainerService(
 	metricsClient metrics_client.MetricsClient,
 	githubAuthProvider *git_package_content_provider.GitHubPackageAuthProvider,
 	starlarkRunRepository *starlark_run.StarlarkRunRepository,
+	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore,
 ) (*ApiContainerService, error) {
 
 	if err := initStarlarkRun(starlarkRunRepository, restartPolicy); err != nil {
@@ -120,14 +124,15 @@ func NewApiContainerService(
 	}
 
 	service := &ApiContainerService{
-		filesArtifactStore:     filesArtifactStore,
-		serviceNetwork:         serviceNetwork,
-		startosisRunner:        startosisRunner,
-		startosisInterpreter:   startosisInterpreter,
-		packageContentProvider: startosisModuleContentProvider,
-		starlarkRunRepository:  starlarkRunRepository,
-		metricsClient:          metricsClient,
-		githubAuthProvider:     githubAuthProvider,
+		filesArtifactStore:           filesArtifactStore,
+		serviceNetwork:               serviceNetwork,
+		startosisRunner:              startosisRunner,
+		startosisInterpreter:         startosisInterpreter,
+		packageContentProvider:       startosisModuleContentProvider,
+		starlarkRunRepository:        starlarkRunRepository,
+		metricsClient:                metricsClient,
+		githubAuthProvider:           githubAuthProvider,
+		interpretationTimeValueStore: interpretationTimeValueStore,
 	}
 
 	return service, nil
@@ -885,6 +890,10 @@ func (apicService *ApiContainerService) getServiceInfoForIdentifier(ctx context.
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting info for service '%v'", serviceIdentifier)
 	}
+	serviceConfig, err := apicService.interpretationTimeValueStore.GetServiceConfig(serviceObj.GetRegistration().GetName())
+	if err != nil {
+
+	}
 	serviceInfo, err := getServiceInfoFromServiceObj(serviceObj)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "an error occurred while converting service obj for service with id '%v' to service info", serviceIdentifier)
@@ -1085,6 +1094,13 @@ func getServiceInfoFromServiceObj(serviceObj *service.Service) (*kurtosis_core_r
 		EnvVars:        serviceContainer.GetEnvVars(),
 	}
 
+	serviceDirPathsToFilesArtifactsIdentifiers := map[string]string{}
+
+	maxMillicpus := uint32(0)
+	minMillicpus := uint32(0)
+	maxMemoryMegabytes := uint32(0)
+	minMemoryMegabytes := uint32(0)
+
 	serviceInfoResponse := binding_constructors.NewServiceInfo(
 		serviceUuidStr,
 		serviceNameStr,
@@ -1095,7 +1111,13 @@ func getServiceInfoFromServiceObj(serviceObj *service.Service) (*kurtosis_core_r
 		publicApiPorts,
 		serviceStatus,
 		serviceInfoContainer,
+		serviceDirPathsToFilesArtifactsIdentifiers,
+		maxMillicpus,
+		minMillicpus,
+		maxMemoryMegabytes,
+		minMemoryMegabytes,
 	)
+
 	return serviceInfoResponse, nil
 }
 

@@ -173,7 +173,18 @@ func runMain() error {
 		return stacktrace.NewError("Backend type '%v' was not recognized by API container.", serverArgs.KurtosisBackendType.String())
 	}
 
-	serviceNetwork, err := createServiceNetwork(kurtosisBackend, enclaveDataDir, serverArgs, ownIpAddress, enclaveDb)
+	starlarkValueSerde := createStarlarkValueSerde()
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(starlarkValueSerde, enclaveDb)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating the runtime value store")
+	}
+
+	interpretationTimeValueStore, err := interpretation_time_value_store.CreateInterpretationTimeValueStore(enclaveDb, starlarkValueSerde)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while creating the interpretation time value store")
+	}
+
+	serviceNetwork, err := createServiceNetwork(kurtosisBackend, enclaveDataDir, serverArgs, ownIpAddress, enclaveDb, interpretationTimeValueStore)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the service network")
 	}
@@ -202,17 +213,6 @@ func runMain() error {
 			logrus.Warnf("We tried to close the metrics client, but doing so threw an error:\n%v", err)
 		}
 	}()
-
-	starlarkValueSerde := createStarlarkValueSerde()
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(starlarkValueSerde, enclaveDb)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the runtime value store")
-	}
-
-	interpretationTimeValueStore, err := interpretation_time_value_store.CreateInterpretationTimeValueStore(enclaveDb, starlarkValueSerde)
-	if err != nil {
-		return stacktrace.Propagate(err, "an error occurred while creating the interpretation time value store")
-	}
 
 	// Load the current enclave plan, in case the enclave is being restarted
 	enclavePlan, err := enclave_plan_persistence.Load(enclaveDb)
@@ -247,6 +247,7 @@ func runMain() error {
 		metricsClient,
 		githubAuthProvider,
 		starlarkRunRepository,
+		interpretationTimeValueStore,
 	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the API container service")
@@ -277,6 +278,7 @@ func createServiceNetwork(
 	args *args.APIContainerArgs,
 	ownIpAddress net.IP,
 	enclaveDb *enclave_db.EnclaveDB,
+	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore,
 ) (service_network.ServiceNetwork, error) {
 	enclaveIdStr := args.EnclaveUUID
 	enclaveUuid := enclave.EnclaveUUID(enclaveIdStr)
@@ -287,13 +289,7 @@ func createServiceNetwork(
 		args.Version,
 	)
 
-	serviceNetwork, err := service_network.NewDefaultServiceNetwork(
-		enclaveUuid,
-		apiContainerInfo,
-		kurtosisBackend,
-		enclaveDataDir,
-		enclaveDb,
-	)
+	serviceNetwork, err := service_network.NewDefaultServiceNetwork(enclaveUuid, apiContainerInfo, kurtosisBackend, enclaveDataDir, enclaveDb, interpretationTimeValueStore)
 
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while creating the default service network")

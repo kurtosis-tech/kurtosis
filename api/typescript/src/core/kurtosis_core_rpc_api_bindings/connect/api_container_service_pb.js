@@ -134,6 +134,11 @@ export const ServiceInfo = proto3.makeMessageType(
     { no: 7, name: "shortened_uuid", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 8, name: "service_status", kind: "enum", T: proto3.getEnumType(ServiceStatus) },
     { no: 9, name: "container", kind: "message", T: Container },
+    { no: 10, name: "service_dir_paths_to_files_artifacts_identifiers", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "scalar", T: 9 /* ScalarType.STRING */} },
+    { no: 11, name: "max_millicpus", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
+    { no: 12, name: "min_millicpus", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
+    { no: 13, name: "max_memory_megabytes", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
+    { no: 14, name: "min_memory_megabytes", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
   ],
 );
 
