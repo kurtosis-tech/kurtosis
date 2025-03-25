@@ -225,7 +225,12 @@ func GetMatchingUserServiceObjectsAndKubernetesResources(
 		logrus.Tracef("Found resources for service '%v': %+v", serviceUuid, serviceResources)
 	}
 
-	allObjectsAndResources, err := GetUserServiceObjectsFromKubernetesResources(enclaveId, allResources)
+	allObjectsAndResources, err := GetUserServiceObjectsFromKubernetesResources(
+		enclaveId,
+		allResources,
+		kubernetesManager,
+		ctx,
+	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting user service objects from Kubernetes resources")
 	}
@@ -476,6 +481,8 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 func GetUserServiceObjectsFromKubernetesResources(
 	enclaveId enclave.EnclaveUUID,
 	allKubernetesResources map[service.ServiceUUID]*UserServiceKubernetesResources,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+	ctx context.Context,
 ) (map[service.ServiceUUID]*UserServiceObjectsAndKubernetesResources, error) {
 	results := map[service.ServiceUUID]*UserServiceObjectsAndKubernetesResources{}
 	for serviceUuid, resources := range allKubernetesResources {
@@ -490,6 +497,7 @@ func GetUserServiceObjectsFromKubernetesResources(
 		resourcesToParse := resultObj.KubernetesResources
 		kubernetesService := resourcesToParse.Service
 		kubernetesPod := resourcesToParse.Pod
+		kubernetesDeployment := resourcesToParse.Deployment
 
 		if kubernetesService == nil {
 			return nil, stacktrace.NewError(
@@ -537,7 +545,7 @@ func GetUserServiceObjectsFromKubernetesResources(
 			return nil, stacktrace.Propagate(err, "An error occurred deserializing private ports from the user service's Kubernetes service")
 		}
 
-		if kubernetesPod == nil {
+		if kubernetesPod == nil && kubernetesDeployment == nil {
 			// No pod here means that a) a Service had private ports but b) now has no Pod
 			// This means that there  used to be a Pod but it was stopped/removed
 			resultObj.Service = service.NewService(
@@ -555,12 +563,38 @@ func GetUserServiceObjectsFromKubernetesResources(
 			continue
 		}
 
-		containerStatus, err := GetContainerStatusFromPod(resourcesToParse.Pod)
+		// By supporting deployments we're acknowledging that the pod name will change
+		// due to cluster upgrades etc, so support backwards compatibility by first
+		// respecting the OG pod field, but the default new flow should be catering
+		// to re-resolving the pod name. This should ideally be handled by the
+		// engine watching for events and updating the service spec
+		var pod *apiv1.Pod
+		if kubernetesPod != nil {
+			pod = kubernetesPod
+		} else if kubernetesDeployment != nil {
+			pods, err := kubernetesManager.GetPodsManagedByDeployment(
+				ctx,
+				resourcesToParse.Deployment,
+			)
+			if err != nil {
+				return nil, stacktrace.Propagate(
+					err,
+					"An error occurred getting pods managed by deployment '%v'",
+					resourcesToParse.Deployment.Name,
+				)
+			}
+			pod = pods[0]
+		}
+		containerStatus, err := GetContainerStatusFromPod(pod)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting container status from Kubernetes pod '%+v'", resourcesToParse.Pod)
+			return nil, stacktrace.Propagate(
+				err,
+				"An error occurred getting container status from Kubernetes pod '%+v'",
+				resourcesToParse.Pod,
+			)
 		}
 
-		podContainer := resourcesToParse.Pod.Spec.Containers[0]
+		podContainer := pod.Spec.Containers[0]
 		podContainerEnvVars := map[string]string{}
 		for _, env := range podContainer.Env {
 			podContainerEnvVars[env.Name] = env.Value

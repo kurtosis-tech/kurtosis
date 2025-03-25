@@ -18,29 +18,30 @@ show_helptext_and_exit() {
     exit 1  # Exit with an error so that if this is accidentally called by CI, the script will fail
 }
 
+# temporary to make this publish to our cloud registry
 REGISTRY_NAME=k3d-registry
-REGISTRY_CONTAINER_NAME=$REGISTRY_NAME
-REGISTRY_PREFIX=""
-# XXX: This is a bit of a hack to compensate for the image name being erroneously hardcoded
-# otherwise this could all use the same variable. Hopefully I can ditch the TOML in a minute
-TOML_REGISTRY_NAME=""
-registry_internal_port=$(docker inspect $REGISTRY_CONTAINER_NAME | jq -r '.[0].Config.Labels."k3s.registry.port.internal"')
-if [ $? -eq 0 ]; then
-  REGISTRY_PREFIX="${REGISTRY_NAME}:${registry_internal_port}"
-  TOML_REGISTRY_NAME="${REGISTRY_NAME}:${registry_internal_port}"
-fi
-echo "IGNORING REG NAME FOR DEBUGGING REASONS"
-REGISTRY_PREFIX=""
+# REGISTRY_CONTAINER_NAME=$REGISTRY_NAME
+# REGISTRY_PREFIX=""
+# # XXX: This is a bit of a hack to compensate for the image name being erroneously hardcoded
+# # otherwise this could all use the same variable. Hopefully I can ditch the TOML in a minute
+# TOML_REGISTRY_NAME=""
+# registry_internal_port=$(docker inspect $REGISTRY_CONTAINER_NAME | jq -r '.[0].Config.Labels."k3s.registry.port.internal"')
+# if [ $? -eq 0 ]; then
+#   REGISTRY_PREFIX="${REGISTRY_NAME}:${registry_internal_port}"
+#   TOML_REGISTRY_NAME="${REGISTRY_NAME}:${registry_internal_port}"
+# fi
+# echo "IGNORING REG NAME FOR DEBUGGING REASONS"
+# REGISTRY_PREFIX=""
 
-#[registry."$REGISTRY_PREFIX"]
-BUILDKITD_TOML=buildkitd.toml
-cat > "./$BUILDKITD_TOML" <<EOF
-insecure-entitlements = [ "network.host", "security.insecure" ]
-[registry."$TOML_REGISTRY_NAME"]
-http = true
-insecure = true
+# #[registry."$REGISTRY_PREFIX"]
+# BUILDKITD_TOML=buildkitd.toml
+# cat > "./$BUILDKITD_TOML" <<EOF
+# insecure-entitlements = [ "network.host", "security.insecure" ]
+# [registry."$TOML_REGISTRY_NAME"]
+# http = true
+# insecure = true
 
-EOF
+# EOF
 
 # Raw parsing of the arguments
 push_to_registry_container="${1:-}"
@@ -131,31 +132,33 @@ elif ! docker network create "${network_name}" &>/dev/null; then
   exit 1
 fi
 
-# If the network already exists, check if the containers are already connected and if not, connect them
-if [ "${NETWORK_ALREADY_EXISTS}" == "true" ]; then
-  network_containers=$(docker network inspect "${network_name}" --format='{{range .Containers}}{{printf "%s\n" .Name}}{{end}}')
-  for container_name in ${REGISTRY_CONTAINER_NAME}; do
-    if ! echo "${network_containers}" | grep -qw "${container_name}"; then
-      echo "Container ${container_name} is not connected to network ${network_name}, connecting it now"
-      docker network connect "${network_name}" "${container_name}"
-      continue
-    fi
-    echo "Container ${container_name} is already connected to network ${network_name}"
-  done
-fi
+# # If the network already exists, check if the containers are already connected and if not, connect them
+# if [ "${NETWORK_ALREADY_EXISTS}" == "true" ]; then
+#   network_containers=$(docker network inspect "${network_name}" --format='{{range .Containers}}{{printf "%s\n" .Name}}{{end}}')
+#   for container_name in ${REGISTRY_CONTAINER_NAME}; do
+#     if ! echo "${network_containers}" | grep -qw "${container_name}"; then
+#       echo "Container ${container_name} is not connected to network ${network_name}, connecting it now"
+#       docker network connect "${network_name}" "${container_name}"
+#       continue
+#     fi
+#     echo "Container ${container_name} is already connected to network ${network_name}"
+#   done
+# fi
 
 ## Create Docker context and buildx builder
 if ! docker context create "${docker_buildx_context}" &>/dev/null; then
   echo "Error: Docker context creation for buildx failed" >&2
   exit 1
 fi
-if ! docker buildx create --driver-opt network=${network_name} --config ./${BUILDKITD_TOML} --use --name "${kurtosis_docker_builder}" "${docker_buildx_context}" ; then
+# if ! docker buildx create --driver-opt network=${network_name} --config ./${BUILDKITD_TOML} --use --name "${kurtosis_docker_builder}" "${docker_buildx_context}" ; then
+if ! docker buildx create --driver-opt network=${network_name} --use --name "${kurtosis_docker_builder}" "${docker_buildx_context}" ; then
   echo "Error: Docker context switch for buildx failed" >&2d
   exit 1
 fi
 
 ## Actually build the Docker image
-docker_buildx_cmd="docker buildx build --allow security.insecure ${push_flag} --platform ${buildx_platform_arg} ${image_tags_concatenated} -f ${dockerfile_filepath} ${dockerfile_dirpath}"
+#docker_buildx_cmd="docker buildx build --allow security.insecure ${push_flag} --platform ${buildx_platform_arg} ${image_tags_concatenated} -f ${dockerfile_filepath} ${dockerfile_dirpath}"
+docker_buildx_cmd="docker buildx build ${push_flag} --platform ${buildx_platform_arg} ${image_tags_concatenated} -f ${dockerfile_filepath} ${dockerfile_dirpath}"
 echo "Running the following docker buildx command:"
 echo "${docker_buildx_cmd}"
 if ! eval "${docker_buildx_cmd}"; then

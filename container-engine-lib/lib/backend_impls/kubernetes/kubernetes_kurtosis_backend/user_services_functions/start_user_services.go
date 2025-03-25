@@ -678,7 +678,12 @@ func createStartServiceOperation(
 			},
 		}
 
-		convertedObjects, err := shared_helpers.GetUserServiceObjectsFromKubernetesResources(enclaveUuid, kubernetesResources)
+		convertedObjects, err := shared_helpers.GetUserServiceObjectsFromKubernetesResources(
+			enclaveUuid,
+			kubernetesResources,
+			kubernetesManager,
+			ctx,
+		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting a service object from the Kubernetes service and newly-created pod")
 		}
@@ -1106,7 +1111,12 @@ func createRegisterUserServiceOperation(
 			},
 		}
 
-		convertedObjects, err := shared_helpers.GetUserServiceObjectsFromKubernetesResources(enclaveID, kubernetesResources)
+		convertedObjects, err := shared_helpers.GetUserServiceObjectsFromKubernetesResources(
+			enclaveID,
+			kubernetesResources,
+			kubernetesManager,
+			ctx,
+		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting a service registration object from Kubernetes service")
 		}
