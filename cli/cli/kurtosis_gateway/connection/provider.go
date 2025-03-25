@@ -2,6 +2,7 @@ package connection
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"net/url"
 
@@ -99,15 +100,26 @@ func (provider *GatewayConnectionProvider) ForEnclaveApiContainer(enclaveInfo *k
 	return apiContainerConnection, nil
 }
 
-func (provider *GatewayConnectionProvider) ForUserServiceIfRunning(enclaveId string, serviceName string, servicePortSpecs map[string]*port_spec.PortSpec) (GatewayConnectionToKurtosis, error) {
+func (provider *GatewayConnectionProvider) ForUserServiceIfRunning(
+	enclaveId string,
+	serviceInfo *kurtosis_core_rpc_api_bindings.ServiceInfo,
+	servicePortSpecs map[string]*port_spec.PortSpec,
+) (GatewayConnectionToKurtosis, error) {
 	enclaveNamespaceName, err := provider.getEnclaveNamespaceNameForEnclaveId(enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "an error occurred while getting the enclave namespace name")
 	}
-	podPortforwardEndpoint := provider.getUserServicePortForwardEndpoint(enclaveNamespaceName, serviceName)
+	podPortforwardEndpoint := provider.getUserServicePortForwardEndpoint(
+		enclaveNamespaceName,
+		serviceInfo.GetName(),
+	)
 	userServiceConnection, err := newLocalPortToPodPortConnection(provider.config, podPortforwardEndpoint, servicePortSpecs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to connect to user service with name '%v', instead a non-nil error was returned", serviceName)
+		return nil, stacktrace.Propagate(
+			err,
+			"Expected to be able to connect to user service with name '%v', instead a non-nil error was returned",
+			serviceInfo.GetName(),
+		)
 	}
 	return userServiceConnection, nil
 }

@@ -267,7 +267,10 @@ func (service *ApiContainerGatewayServiceServer) writeOverServiceInfoFieldsWithL
 	cleanUpConnection := true
 	runningLocalConnection, isFound := service.userServiceNameToLocalConnectionMap[serviceName]
 	if !isFound {
-		runningLocalConnection, localConnErr = service.startRunningConnectionForKurtosisServiceIfRunning(serviceName, serviceInfo.PrivatePorts)
+		runningLocalConnection, localConnErr = service.startRunningConnectionForKurtosisServiceIfRunning(
+			serviceInfo,
+			serviceInfo.PrivatePorts,
+		)
 		if localConnErr != nil {
 			return stacktrace.Propagate(localConnErr, "Expected to be able to start a local connection to Kurtosis service '%v', instead a non-nil error was returned", serviceName)
 		} else if runningLocalConnection == nil {
@@ -288,7 +291,10 @@ func (service *ApiContainerGatewayServiceServer) writeOverServiceInfoFieldsWithL
 
 // startRunningConnectionForKurtosisServiceIfRunning starts a port forwarding process from kernel assigned local ports to the remote service ports specified
 // If privatePortsFromApi is empty, an error is thrown
-func (service *ApiContainerGatewayServiceServer) startRunningConnectionForKurtosisServiceIfRunning(serviceName string, privatePortsFromApi map[string]*kurtosis_core_rpc_api_bindings.Port) (*runningLocalServiceConnection, error) {
+func (service *ApiContainerGatewayServiceServer) startRunningConnectionForKurtosisServiceIfRunning(
+	serviceInfo *kurtosis_core_rpc_api_bindings.ServiceInfo,
+	privatePortsFromApi map[string]*kurtosis_core_rpc_api_bindings.Port,
+) (*runningLocalServiceConnection, error) {
 	if len(privatePortsFromApi) == 0 {
 		return nil, stacktrace.NewError("Expected Kurtosis service to have private ports specified for port forwarding, instead no ports were provided")
 	}
@@ -299,7 +305,7 @@ func (service *ApiContainerGatewayServiceServer) startRunningConnectionForKurtos
 				"Will not be able to forward service port with id '%v' for service with name '%v' in enclave '%v'. "+
 					"The protocol of this port is '%v', but only '%v' is supported",
 				portSpecId,
-				serviceName,
+				serviceInfo.GetName(),
 				service.enclaveId,
 				coreApiPort.GetTransportProtocol(),
 				kurtosis_core_rpc_api_bindings.Port_TCP.String(),
@@ -315,9 +321,18 @@ func (service *ApiContainerGatewayServiceServer) startRunningConnectionForKurtos
 	}
 
 	// Start listening
-	serviceConnection, err := service.connectionProvider.ForUserServiceIfRunning(service.enclaveId, serviceName, remotePrivatePortSpecs)
+	serviceConnection, err := service.connectionProvider.ForUserServiceIfRunning(
+		service.enclaveId,
+		serviceInfo,
+		remotePrivatePortSpecs,
+	)
 	if err != nil {
-		logrus.Errorf("Tried forwarding ports for user service '%v' in enclave '%v' but failed with error:\n%v", serviceName, service.enclaveId, err)
+		logrus.Errorf(
+			"Tried forwarding ports for user service '%v' in enclave '%v' but failed with error:\n%v",
+			serviceInfo.GetName(),
+			service.enclaveId,
+			err,
+		)
 		return nil, nil
 	} else if serviceConnection == nil {
 		return nil, nil
@@ -353,11 +368,14 @@ func (service *ApiContainerGatewayServiceServer) startRunningConnectionForKurtos
 	}
 
 	// Store information about our running gateway
-	service.userServiceNameToLocalConnectionMap[serviceName] = runingLocalServiceConnection
+	service.userServiceNameToLocalConnectionMap[serviceInfo.GetName()] = runingLocalServiceConnection
 	cleanUpMapEntry := true
 	defer func() {
 		if cleanUpMapEntry {
-			delete(service.userServiceNameToLocalConnectionMap, serviceName)
+			delete(
+				service.userServiceNameToLocalConnectionMap,
+				serviceInfo.GetName(),
+			)
 		}
 	}()
 
