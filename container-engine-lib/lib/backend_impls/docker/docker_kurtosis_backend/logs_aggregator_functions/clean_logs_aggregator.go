@@ -3,6 +3,7 @@ package logs_aggregator_functions
 import (
 	"context"
 
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
 	"github.com/kurtosis-tech/stacktrace"
@@ -24,7 +25,13 @@ func CleanLogsAggregator(
 		return nil
 	}
 
-	if err := logsAggregatorContainer.Clean(ctx, logsAggregator, objAttrsProvider, dockerManager); err != nil {
+	logsAggregatorNetwork, err := shared_helpers.GetEngineAndLogsComponentsNetwork(ctx, dockerManager)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the logs aggregator network.")
+	}
+	targetNetworkId := logsAggregatorNetwork.GetId()
+
+	if err := logsAggregatorContainer.Clean(ctx, logsAggregator, targetNetworkId, objAttrsProvider, dockerManager); err != nil {
 		return stacktrace.Propagate(err, "An error occurred cleaning logs aggregator container")
 	}
 

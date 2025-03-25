@@ -140,6 +140,7 @@ func (vector *vectorLogsAggregatorContainer) GetHttpHealthCheckEndpoint() string
 func (vector *vectorLogsAggregatorContainer) Clean(
 	ctx context.Context,
 	logsAggregator *types.Container,
+	targetNetworkId string,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	dockerManager *docker_manager.DockerManager,
 ) error {
@@ -152,7 +153,7 @@ func (vector *vectorLogsAggregatorContainer) Clean(
 		return stacktrace.Propagate(err, "An error occurred getting the logs aggregator data volume attributes")
 	}
 
-	if err := emptyVolume(ctx, logsAggregatorDataDirVolumeAttrs.GetName().GetString(), dockerManager); err != nil {
+	if err := emptyVolume(ctx, logsAggregatorDataDirVolumeAttrs.GetName().GetString(), targetNetworkId, dockerManager); err != nil {
 		return stacktrace.Propagate(err, "An error occurred emptying the logs aggregator data volume")
 	}
 
@@ -163,7 +164,7 @@ func (vector *vectorLogsAggregatorContainer) Clean(
 	return nil
 }
 
-func emptyVolume(ctx context.Context, volumeName string, dockerManager *docker_manager.DockerManager) error {
+func emptyVolume(ctx context.Context, volumeName string, targetNetworkId string, dockerManager *docker_manager.DockerManager) error {
 	entrypointArgs := []string{
 		shBinaryFilepath,
 		shCmdFlag,
@@ -182,12 +183,11 @@ func emptyVolume(ctx context.Context, volumeName string, dockerManager *docker_m
 	}
 
 	containerName := fmt.Sprintf("%s-%s", "remove-dir-container", uuid)
-	noNetworkId := ""
 
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		"busybox",
 		containerName,
-		noNetworkId,
+		targetNetworkId,
 	).WithEntrypointArgs(
 		entrypointArgs,
 	).WithVolumeMounts(

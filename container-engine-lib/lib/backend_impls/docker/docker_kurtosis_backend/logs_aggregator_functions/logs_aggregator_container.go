@@ -33,6 +33,7 @@ type LogsAggregatorContainer interface {
 	Clean(
 		ctx context.Context,
 		logsAggregator *types.Container,
+		targetNetworkId string,
 		objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 		dockerManager *docker_manager.DockerManager,
 	) error
