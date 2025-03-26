@@ -1672,26 +1672,55 @@ func (manager *KubernetesManager) WaitForDeploymentPodsAvailability(
 		"Waiting for deployment '%v' to be available",
 		deployment.Name,
 	)
-	deadline := time.Now().Add(podWaitForAvailabilityTimeout)
 
 	var pods []*apiv1.Pod
 	var err error
-	for time.Now().Before(deadline) && deployment.Status.Replicas != int32(len(pods)) {
+	//&& int32(len(pods)) < deployment.Status.ReadyReplicas
+
+	deadline := time.Now().Add(podWaitForAvailabilityTimeout)
+	for time.Now().Before(deadline) {
 		logrus.Debugf(
-			"Waiting for deployment '%v' to be available",
+			"Waiting for deployment '%v' replicase %v to equal ready replicas %v",
+			deployment.Name,
+			deployment.Status.Replicas,
+			deployment.Status.ReadyReplicas,
+		)
+		if deployment.Status.Replicas != deployment.Status.ReadyReplicas {
+			return stacktrace.NewError(
+				"Deployment '%v' is not available",
+				deployment.Name,
+			)
+		}
+	}
+
+	deadline = time.Now().Add(podWaitForAvailabilityTimeout)
+	for time.Now().Before(deadline) {
+		logrus.Debugf(
+			"Getting podsfor deployment '%v'",
 			deployment.Name,
 		)
 		pods, err = manager.GetPodsManagedByDeployment(
 			ctx,
 			deployment,
 		)
-		if err != nil || len(pods) == 0 {
+		if err != nil {
 			logrus.Warnf(
 				"Error getting pods managed by deployment... '%v': %v",
 				deployment.Name,
 				err,
 			)
 		}
+		if len(pods) == 0 {
+			logrus.Warnf(
+				"No pods found for deployment... '%v'",
+				deployment.Name,
+			)
+		}
+		logrus.Debugf(
+			"Found %v pods for deployment '%v'",
+			len(pods),
+			deployment.Name,
+		)
 		time.Sleep(podWaitForAvailabilityTimeBetweenPolls)
 	}
 	if err != nil {
@@ -1707,7 +1736,10 @@ func (manager *KubernetesManager) WaitForDeploymentPodsAvailability(
 	for _, pod := range pods {
 		p := pod
 		waitForPodsAvailabilityOperations[operation_parallelizer.OperationID(p.Name)] = func() (interface{}, error) {
-			// check comments about lambdas in loop
+			logrus.Debugf(
+				"Waiting for pod '%v' to be available",
+				p.Name,
+			)
 			err := manager.waitForPodAvailability(
 				ctx,
 				p.Namespace,
