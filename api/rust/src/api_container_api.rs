@@ -124,6 +124,14 @@ pub mod container {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct FilesArtifactsList {
+    #[prost(string, repeated, tag = "1")]
+    pub files_artifacts_identifiers: ::prost::alloc::vec::Vec<
+        ::prost::alloc::string::String,
+    >,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ServiceInfo {
     /// UUID of the service
     #[prost(string, tag = "1")]
@@ -160,10 +168,10 @@ pub struct ServiceInfo {
     #[prost(message, optional, tag = "9")]
     pub container: ::core::option::Option<Container>,
     /// Mapping of directory paths on service to names of files artifacts that are mounted to that directory
-    #[prost(map = "string, string", tag = "10")]
+    #[prost(map = "string, message", tag = "10")]
     pub service_dir_paths_to_files_artifacts_identifiers: ::std::collections::HashMap<
         ::prost::alloc::string::String,
-        ::prost::alloc::string::String,
+        FilesArtifactsList,
     >,
     #[prost(uint32, tag = "11")]
     pub max_millicpus: u32,

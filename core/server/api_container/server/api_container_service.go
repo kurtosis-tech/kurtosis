@@ -892,11 +892,16 @@ func (apicService *ApiContainerService) getServiceInfoForIdentifier(ctx context.
 	}
 	serviceConfig, err := apicService.interpretationTimeValueStore.GetServiceConfig(serviceObj.GetRegistration().GetName())
 	if err != nil {
-
+		return nil, stacktrace.Propagate(err, "An error occurred getting service config from interpretation time value store.")
 	}
-	serviceInfo, err := getServiceInfoFromServiceObj(serviceObj)
+
+	filesArtifactsExpansions := serviceConfig.GetFilesArtifactsExpansion()
+	serviceDirPathsToFilesArtifactsMounts := filesArtifactsExpansions.ServiceDirpathsToArtifactIdentifiers
+	logrus.Infof("SERVICE DIR PATHS TO FILES ARTIFACTS IDENTIFIERS: %v", serviceDirPathsToFilesArtifactsMounts)
+
+	serviceInfo, err := getServiceInfoFromServiceObj(serviceObj, serviceDirPathsToFilesArtifactsMounts)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "an error occurred while converting service obj for service with id '%v' to service info", serviceIdentifier)
+		return nil, stacktrace.Propagate(err, "A error occurred while converting service obj for service with id '%v' to service info", serviceIdentifier)
 	}
 	return serviceInfo, nil
 }
@@ -1045,7 +1050,7 @@ func (apicService *ApiContainerService) runStarlark(
 func getServiceInfosFromServiceObjs(services map[service.ServiceUUID]*service.Service) (map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo, error) {
 	serviceInfos := map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo{}
 	for uuid, serviceObj := range services {
-		serviceInfo, err := getServiceInfoFromServiceObj(serviceObj)
+		serviceInfo, err := getServiceInfoFromServiceObj(serviceObj, nil)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "there was an error converting the service obj for service with uuid '%v' and name '%v' to service info", uuid, serviceObj.GetRegistration().GetName())
 		}
@@ -1054,7 +1059,7 @@ func getServiceInfosFromServiceObjs(services map[service.ServiceUUID]*service.Se
 	return serviceInfos, nil
 }
 
-func getServiceInfoFromServiceObj(serviceObj *service.Service) (*kurtosis_core_rpc_api_bindings.ServiceInfo, error) {
+func getServiceInfoFromServiceObj(serviceObj *service.Service, serviceDirPathsToFilesArtifactsIdentifiers map[string][]string) (*kurtosis_core_rpc_api_bindings.ServiceInfo, error) {
 	privatePorts := serviceObj.GetPrivatePorts()
 	privateIp := serviceObj.GetRegistration().GetPrivateIP()
 	maybePublicIp := serviceObj.GetMaybePublicIP()
@@ -1093,8 +1098,6 @@ func getServiceInfoFromServiceObj(serviceObj *service.Service) (*kurtosis_core_r
 		CmdArgs:        serviceContainer.GetCmdArgs(),
 		EnvVars:        serviceContainer.GetEnvVars(),
 	}
-
-	serviceDirPathsToFilesArtifactsIdentifiers := map[string]string{}
 
 	maxMillicpus := uint32(0)
 	minMillicpus := uint32(0)

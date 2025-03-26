@@ -275,9 +275,12 @@ func run(
 		currPorts = ports.(map[string]*kurtosis_core_rpc_api_bindings.Port)
 	}
 
-	var currFilesArtifactsMountpoint map[string]string
+	currFilesArtifactsMountpoint := map[string]string{}
 	if filesArtifactsMountpoints, ok := serviceInspectOutputMap[inspect.ServiceFilesTitleName]; ok {
-		currFilesArtifactsMountpoint = filesArtifactsMountpoints.(map[string]string)
+		currFilesArtifactsMountpointWithMultipleMounts := filesArtifactsMountpoints.(map[string][]string)
+		for svcName, mountpoints := range currFilesArtifactsMountpointWithMultipleMounts {
+			currFilesArtifactsMountpoint[svcName] = mountpoints[0]
+		}
 	}
 
 	var currEntrypoint []string
@@ -390,6 +393,7 @@ func run(
 		mergedMemoryMegabytes,        // TODO: get in svc inspect
 		mergedMinCpuMillicores,       // TODO: get in svc inspect
 		mergedMinMemoryBytes)         // TODO: get in service inspect
+	//logrus.Infof("SERVICE CONFIG STRING: %v", serviceConfigStr)
 
 	// call run add service starlark script
 	addServiceStarlarkStr := add.GetAddServiceStarlarkScript(serviceName, serviceConfigStr)

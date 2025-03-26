@@ -184,7 +184,7 @@ func runMain() error {
 		return stacktrace.Propagate(err, "An error occurred while creating the interpretation time value store")
 	}
 
-	serviceNetwork, err := createServiceNetwork(kurtosisBackend, enclaveDataDir, serverArgs, ownIpAddress, enclaveDb, interpretationTimeValueStore)
+	serviceNetwork, err := createServiceNetwork(kurtosisBackend, enclaveDataDir, serverArgs, ownIpAddress, enclaveDb)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the service network")
 	}
@@ -278,7 +278,6 @@ func createServiceNetwork(
 	args *args.APIContainerArgs,
 	ownIpAddress net.IP,
 	enclaveDb *enclave_db.EnclaveDB,
-	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore,
 ) (service_network.ServiceNetwork, error) {
 	enclaveIdStr := args.EnclaveUUID
 	enclaveUuid := enclave.EnclaveUUID(enclaveIdStr)
@@ -289,7 +288,7 @@ func createServiceNetwork(
 		args.Version,
 	)
 
-	serviceNetwork, err := service_network.NewDefaultServiceNetwork(enclaveUuid, apiContainerInfo, kurtosisBackend, enclaveDataDir, enclaveDb, interpretationTimeValueStore)
+	serviceNetwork, err := service_network.NewDefaultServiceNetwork(enclaveUuid, apiContainerInfo, kurtosisBackend, enclaveDataDir, enclaveDb)
 
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while creating the default service network")

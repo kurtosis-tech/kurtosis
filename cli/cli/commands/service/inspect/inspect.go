@@ -184,7 +184,13 @@ func PrintServiceInspect(ctx context.Context, kurtosisBackend backend_interface.
 		jsonMap[ServiceEnvVarsTitleName] = userService.GetContainer().GetEnvVars()
 		jsonMap[ServicePortsTitleName] = userService.GetPrivatePorts()
 
-		// TODO: add support for files artifacts entrypoint
+		serviceDirPathsToFilesArtifactsLists := userService.GetServiceDirPathsToFilesArtifactsIdentifiers()
+		serviceDirPathsToFilesArtifactsIdentifiers := map[string][]string{}
+		for serviceName, filesArtifactsList := range serviceDirPathsToFilesArtifactsLists {
+			serviceDirPathsToFilesArtifactsIdentifiers[serviceName] = filesArtifactsList.FilesArtifactsIdentifiers
+		}
+
+		jsonMap[ServiceFilesTitleName] = serviceDirPathsToFilesArtifactsIdentifiers
 		// TODO: add support for cpu min max memory
 
 		var marshaled []byte

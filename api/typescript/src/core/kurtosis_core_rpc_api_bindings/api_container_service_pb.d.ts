@@ -105,6 +105,26 @@ export namespace Container {
   }
 }
 
+export class FilesArtifactsList extends jspb.Message {
+  getFilesArtifactsIdentifiersList(): Array<string>;
+  setFilesArtifactsIdentifiersList(value: Array<string>): FilesArtifactsList;
+  clearFilesArtifactsIdentifiersList(): FilesArtifactsList;
+  addFilesArtifactsIdentifiers(value: string, index?: number): FilesArtifactsList;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): FilesArtifactsList.AsObject;
+  static toObject(includeInstance: boolean, msg: FilesArtifactsList): FilesArtifactsList.AsObject;
+  static serializeBinaryToWriter(message: FilesArtifactsList, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): FilesArtifactsList;
+  static deserializeBinaryFromReader(message: FilesArtifactsList, reader: jspb.BinaryReader): FilesArtifactsList;
+}
+
+export namespace FilesArtifactsList {
+  export type AsObject = {
+    filesArtifactsIdentifiersList: Array<string>,
+  }
+}
+
 export class ServiceInfo extends jspb.Message {
   getServiceUuid(): string;
   setServiceUuid(value: string): ServiceInfo;
@@ -135,7 +155,7 @@ export class ServiceInfo extends jspb.Message {
   hasContainer(): boolean;
   clearContainer(): ServiceInfo;
 
-  getServiceDirPathsToFilesArtifactsIdentifiersMap(): jspb.Map<string, string>;
+  getServiceDirPathsToFilesArtifactsIdentifiersMap(): jspb.Map<string, FilesArtifactsList>;
   clearServiceDirPathsToFilesArtifactsIdentifiersMap(): ServiceInfo;
 
   getMaxMillicpus(): number;
@@ -169,7 +189,7 @@ export namespace ServiceInfo {
     shortenedUuid: string,
     serviceStatus: ServiceStatus,
     container?: Container.AsObject,
-    serviceDirPathsToFilesArtifactsIdentifiersMap: Array<[string, string]>,
+    serviceDirPathsToFilesArtifactsIdentifiersMap: Array<[string, FilesArtifactsList.AsObject]>,
     maxMillicpus: number,
     minMillicpus: number,
     maxMemoryMegabytes: number,
