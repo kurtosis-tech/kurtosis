@@ -109,10 +109,18 @@ func (provider *GatewayConnectionProvider) ForUserServiceIfRunning(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "an error occurred while getting the enclave namespace name")
 	}
-	podPortforwardEndpoint := provider.getUserServicePortForwardEndpoint(
+
+	podPortforwardEndpoint, err := provider.getUserServicePortForwardEndpoint(
 		enclaveNamespaceName,
 		serviceInfo.GetName(),
 	)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"Expected to be able to get an endpoint for portforwarding to the user service with name '%v', instead a non-nil error was returned",
+			serviceInfo.GetName(),
+		)
+	}
 	userServiceConnection, err := newLocalPortToPodPortConnection(provider.config, podPortforwardEndpoint, servicePortSpecs)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -176,8 +184,66 @@ func (provider *GatewayConnectionProvider) getApiContainerPodPortforwardEndpoint
 	return provider.kubernetesManager.GetPodPortforwardEndpointUrl(enclaveNamespaceName, apiContainerPodName), nil
 }
 
-func (provider *GatewayConnectionProvider) getUserServicePortForwardEndpoint(enclaveNamespaceName string, serviceName string) *url.URL {
-	return provider.kubernetesManager.GetPodPortforwardEndpointUrl(enclaveNamespaceName, serviceName)
+func (provider *GatewayConnectionProvider) getUserServicePortForwardEndpoint(
+	enclaveNamespaceName string,
+	serviceName string,
+) (*url.URL, error) {
+	// XXX: Maybe it's better to do a GetMatchingUserServiceObjectsAndKubernetesResources call instead,\
+	// but it seems cheaper to do this than to get everything and filter it ourselves
+	// First try to find a deployment with this name
+	deploymentLabels := map[string]string{
+		kubernetes_label_key.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
+		kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue.GetString(),
+	}
+	deploymentList, err := provider.kubernetesManager.GetDeploymentsByLabels(
+		provider.providerContext,
+		enclaveNamespaceName,
+		deploymentLabels,
+	)
+	if err != nil || len(deploymentList.Items) == 0 {
+		// If we can't get deployments, fall back to pod
+		return provider.kubernetesManager.GetPodPortforwardEndpointUrl(
+			enclaveNamespaceName,
+			serviceName,
+		), nil
+	}
+
+	// Look for a deployment with matching name
+	for _, deployment := range deploymentList.Items {
+		if deployment.Name == serviceName {
+			// Get pods managed by this deployment
+			pods, err := provider.kubernetesManager.GetPodsManagedByDeployment(
+				provider.providerContext,
+				&deployment,
+			)
+			if err != nil {
+				return nil, stacktrace.Propagate(
+					err,
+					"Expected to be able to get pods managed by deployment '%v', instead a non-nil error was returned",
+					deployment.Name,
+				)
+			}
+			if len(pods) == 0 {
+				return nil, stacktrace.NewError(
+					"Expected to find at least 1 pod managed by deployment '%v', instead found '%v'",
+					deployment.Name,
+					len(pods),
+				)
+			}
+
+			// Use the first pod from the deployment
+			return provider.kubernetesManager.GetPodPortforwardEndpointUrl(
+				enclaveNamespaceName,
+				pods[0].Name,
+			), nil
+		}
+	}
+
+	// If no matching deployment found, fall back to pod
+	return provider.kubernetesManager.GetPodPortforwardEndpointUrl(
+		enclaveNamespaceName,
+		serviceName,
+	), nil
 }
 
 func (provider *GatewayConnectionProvider) getRunningPodNamesByLabels(namespace string, podLabels map[string]string) ([]string, error) {
