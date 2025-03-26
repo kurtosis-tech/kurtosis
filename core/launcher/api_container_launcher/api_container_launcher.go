@@ -22,7 +22,7 @@ const (
 	enclaveDataVolumeDirpath = "/kurtosis-data"
 
 	// TODO This should come from the same logic that builds the server image!!!!!
-	containerImage = "europe-west1-docker.pkg.dev/randamu-prod/infra/kurtosistech/core"
+	containerImage = "kurtosistech/core"
 )
 
 type ApiContainerLauncher struct {

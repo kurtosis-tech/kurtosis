@@ -21,7 +21,7 @@ import (
 
 const (
 	// TODO This should come from the same logic that builds the server image!!!!!
-	containerImage = "europe-west1-docker.pkg.dev/randamu-prod/infra/kurtosistech/engine"
+	containerImage = "kurtosistech/engine"
 )
 
 type EngineServerLauncher struct {
