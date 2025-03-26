@@ -10,6 +10,7 @@ require (
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.5.0
 	github.com/gammazero/workerpool v1.1.2
+	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/google/uuid v1.4.0
 	github.com/kurtosis-tech/kurtosis/api/golang v0.84.10
 	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0-20231024185242-de10c7bab36c
