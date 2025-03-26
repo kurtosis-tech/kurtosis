@@ -1675,30 +1675,8 @@ func (manager *KubernetesManager) WaitForDeploymentPodsAvailability(
 
 	var pods []*apiv1.Pod
 	var err error
-	//&& int32(len(pods)) < deployment.Status.ReadyReplicas
-
 	deadline := time.Now().Add(podWaitForAvailabilityTimeout)
 	for time.Now().Before(deadline) {
-		logrus.Debugf(
-			"Waiting for deployment '%v' replicase %v to equal ready replicas %v",
-			deployment.Name,
-			deployment.Status.Replicas,
-			deployment.Status.ReadyReplicas,
-		)
-		if deployment.Status.Replicas != deployment.Status.ReadyReplicas {
-			return stacktrace.NewError(
-				"Deployment '%v' is not available",
-				deployment.Name,
-			)
-		}
-	}
-
-	deadline = time.Now().Add(podWaitForAvailabilityTimeout)
-	for time.Now().Before(deadline) {
-		logrus.Debugf(
-			"Getting podsfor deployment '%v'",
-			deployment.Name,
-		)
 		pods, err = manager.GetPodsManagedByDeployment(
 			ctx,
 			deployment,
@@ -1709,16 +1687,17 @@ func (manager *KubernetesManager) WaitForDeploymentPodsAvailability(
 				deployment.Name,
 				err,
 			)
+			continue
 		}
-		if len(pods) == 0 {
-			logrus.Warnf(
-				"No pods found for deployment... '%v'",
-				deployment.Name,
-			)
+		if len(pods) == int(*deployment.Spec.Replicas) {
+			logrus.Infof("Deployment '%v' has created all pods", deployment.Name)
+			break
 		}
+
 		logrus.Debugf(
-			"Found %v pods for deployment '%v'",
+			"Only found %v pods out of %v for deployment '%v'",
 			len(pods),
+			*deployment.Spec.Replicas,
 			deployment.Name,
 		)
 		time.Sleep(podWaitForAvailabilityTimeBetweenPolls)
@@ -1732,7 +1711,6 @@ func (manager *KubernetesManager) WaitForDeploymentPodsAvailability(
 	}
 
 	waitForPodsAvailabilityOperations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{}
-
 	for _, pod := range pods {
 		p := pod
 		waitForPodsAvailabilityOperations[operation_parallelizer.OperationID(p.Name)] = func() (interface{}, error) {
