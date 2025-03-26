@@ -10,7 +10,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	terminal "golang.org/x/term"
 	"io"
 	"net/http"
 	"net/url"
@@ -19,6 +18,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	terminal "golang.org/x/term"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
@@ -1656,27 +1657,35 @@ func (manager *KubernetesManager) GetPodsManagedByDeployment(ctx context.Context
 // WaitForDeploymentAvailability Wait for deployment availability by searching for managed pods and
 // checking that they're all available.
 // NOTE: I think it would be better to check deployment.Status.AvailableReplicas, but:
-// 1. I'm not sure what the intention is regarding treating non-pod resources as "first class"
-//    kurtosis resources, so this seems like a "safer" strategy
-// 2. There's comprehensive logging in the pod method that I imagine is desired to retain
-//    in case of any errors, and since this changeset is catering for "wrapping" existing
-//    service pods in deployments, there should only be one pod per deployment anyway, this
-//    implementation is make it more correct and spare future implementors unnecessary rage.
+//  1. I'm not sure what the intention is regarding treating non-pod resources as "first class"
+//     kurtosis resources, so this seems like a "safer" strategy
+//  2. There's comprehensive logging in the pod method that I imagine is desired to retain
+//     in case of any errors, and since this changeset is catering for "wrapping" existing
+//     service pods in deployments, there should only be one pod per deployment anyway, this
+//     implementation is make it more correct and spare future implementors unnecessary rage.
 func (manager *KubernetesManager) WaitForDeploymentPodsAvailability(
 	ctx context.Context,
 	deployment *v1.Deployment,
 ) error {
 	// Give the pods a chance to be created
+	logrus.Debugf(
+		"Waiting for deployment '%v' to be available",
+		deployment.Name,
+	)
 	deadline := time.Now().Add(podWaitForAvailabilityTimeout)
 
 	var pods []*apiv1.Pod
 	var err error
 	for time.Now().Before(deadline) && deployment.Status.Replicas != int32(len(pods)) {
+		logrus.Debugf(
+			"Waiting for deployment '%v' to be available",
+			deployment.Name,
+		)
 		pods, err = manager.GetPodsManagedByDeployment(
 			ctx,
 			deployment,
 		)
-		if err != nil {
+		if err != nil || len(pods) == 0 {
 			logrus.Warnf(
 				"Error getting pods managed by deployment... '%v': %v",
 				deployment.Name,
