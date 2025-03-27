@@ -130,7 +130,8 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Key:   service_helpers.EntrypointFlagKey,
 			Usage: "ENTRYPOINT binary that will be used when running the container, overriding the image's default ENTRYPOINT",
 			// TODO Make this a string list
-			Type: flags.FlagType_String,
+			Type:    flags.FlagType_String,
+			Default: "",
 		},
 		{
 			// TODO We currently can't handle commas, so allow users to set the flag multiple times to set multiple envvars
@@ -142,7 +143,8 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 				envvarDeclarationsDelimiter,
 				envvarKeyValueDelimiter,
 			),
-			Type: flags.FlagType_String,
+			Type:    flags.FlagType_String,
+			Default: "",
 		},
 		{
 			Key: service_helpers.PortsFlagKey,
@@ -159,7 +161,8 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 				maybeApplicationProtocolSpecForHelp,
 				generateExampleForPortFlag(),
 			),
-			Type: flags.FlagType_String,
+			Type:    flags.FlagType_String,
+			Default: "",
 		},
 		{
 			Key: service_helpers.FilesFlagKey,
@@ -173,7 +176,8 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 				command_str_consts.FilesCmdStr,
 				command_str_consts.FilesUploadCmdStr,
 			),
-			Type: flags.FlagType_String,
+			Type:    flags.FlagType_String,
+			Default: "",
 		},
 		{
 			Key:     privateIPAddressPlaceholderKey,
@@ -273,24 +277,12 @@ func run(
 	var serviceConfigStarlarkStr string
 	if jsonServiceConfigStr != "" {
 		var serviceConfigJson services.ServiceConfig
-		if err = json.Unmarshal([]byte(jsonServiceConfigStr), serviceConfigJson); err != nil {
-			return stacktrace.Propagate(err, "An error occurred unmarhsaling json service config string '%v'.", jsonServiceConfigStr)
-		}
-		ports
-		for portId, port := range currServiceConfig.PrivatePorts {
-			apiPort := &kurtosis_core_rpc_api_bindings.Port{
-				Number:                   port.Number,
-				TransportProtocol:        kurtosis_core_rpc_api_bindings.Port_TransportProtocol(port.Transport),
-				MaybeApplicationProtocol: port.MaybeApplicationProtocol,
-				MaybeWaitTimeout:         port.Wait,
-				Locked:                   nil,
-				Alias:                    nil,
-			}
-			mergedPorts[portId] = apiPort
+		if err = json.Unmarshal([]byte(jsonServiceConfigStr), &serviceConfigJson); err != nil {
+			return stacktrace.Propagate(err, "An error occurred unmarshalling json service config string '%v'.", jsonServiceConfigStr)
 		}
 		serviceConfigStarlarkStr = services.GetFullServiceConfigStarlark(
 			serviceConfigJson.Image,
-			serviceConfigJson.PrivatePorts,
+			services.ConvertJsonPortToApiPort(serviceConfigJson.PrivatePorts),
 			serviceConfigJson.Files,
 			serviceConfigJson.Entrypoint,
 			serviceConfigJson.Cmd,
@@ -306,7 +298,6 @@ func run(
 			serviceConfigJson.TiniEnabled,
 			serviceConfigJson.PrivateIPAddressPlaceholder,
 		)
-
 	} else {
 		entrypoint := []string{}
 		if entrypointStr != "" {
