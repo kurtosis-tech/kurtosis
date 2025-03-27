@@ -37,7 +37,7 @@ const (
 
 	serviceImageArgKey = "image"
 
-	cmdArgsArgKey = "cmd-arg"
+	cmdArgsFlagsKey = "cmd-arg"
 
 	entrypointBinaryFlagKey = "entrypoint"
 
@@ -126,6 +126,12 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 		},
 	},
 	Flags: []*flags.FlagConfig{
+		{
+			Key:     service_helpers.CmdKey,
+			Usage:   "CMD binary that will be used when running the container",
+			Type:    flags.FlagType_String,
+			Default: "",
+		},
 		{
 			Key:   service_helpers.EntrypointFlagKey,
 			Usage: "ENTRYPOINT binary that will be used when running the container, overriding the image's default ENTRYPOINT",
@@ -224,10 +230,10 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the service image value using key '%v'", serviceImageArgKey)
 	}
 
-	cmdArgs, err := args.GetGreedyArg(cmdArgsArgKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the CMD args using key '%v'", cmdArgsArgKey)
-	}
+	//cmdArgs, err := flags.GetString(cmdArgsFlagsKey)
+	//if err != nil {
+	//	return stacktrace.Propagate(err, "An error occurred getting the CMD flag using key '%v'", cmdArgsFlagsKey)
+	//}
 
 	entrypointStr, err := flags.GetString(entrypointBinaryFlagKey)
 	if err != nil {
@@ -303,13 +309,13 @@ func run(
 		if entrypointStr != "" {
 			entrypoint = append(entrypoint, entrypointStr)
 		}
-		serviceConfigStarlarkStr, err = GetServiceConfigStarlark(image, portsStr, cmdArgs, entrypoint, envvarsStr, filesArtifactMountsStr, defaultLimits, defaultLimits, defaultLimits, defaultLimits, privateIPAddressPlaceholder)
+		serviceConfigStarlarkStr, err = GetServiceConfigStarlark(image, portsStr, strings.Split(" ", " "), entrypoint, envvarsStr, filesArtifactMountsStr, defaultLimits, defaultLimits, defaultLimits, defaultLimits, privateIPAddressPlaceholder)
 		if err != nil {
 			return stacktrace.Propagate(
 				err,
 				"An error occurred getting the container config to start image '%v' with CMD '%+v', ENTRYPOINT '%v',  envvars '%v' and private IP address placeholder '%v'",
 				image,
-				cmdArgs,
+				" ",
 				entrypointStr,
 				envvarsStr,
 				privateIPAddressPlaceholder,
