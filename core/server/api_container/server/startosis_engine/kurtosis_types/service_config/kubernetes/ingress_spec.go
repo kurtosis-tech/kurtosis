@@ -1,6 +1,8 @@
 package kubernetes
 
 import (
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_value"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
@@ -10,7 +12,6 @@ import (
 
 const (
 	IngressSpecTypeName = "IngressSpec"
-
 	AnnotationsAttr      = "annotations"
 	IngressClassNameAttr = "ingress_class_name"
 	HostAttr             = "host"
@@ -29,7 +30,6 @@ func NewIngressSpecType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 			Arguments: []*builtin_argument.BuiltinArgument{
 				{
 					Name: HostAttr,
-					// IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.NonEmptyString(value, HostAttr)
@@ -37,7 +37,7 @@ func NewIngressSpecType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 				},
 				{
 					Name: IngressClassNameAttr,
-					// IsOptional:        true,
+					IsOptional: true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.NonEmptyString(value, IngressClassNameAttr)
@@ -50,6 +50,40 @@ func NewIngressSpecType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						if _, ok := value.(*starlark.Dict); !ok {
 							return startosis_errors.NewInterpretationError("Expected '%s' to be a dict of string annotations", AnnotationsAttr)
+						}
+						for index, t := range value.(*starlark.Dict).Items() {
+							key, ok := t[0].(starlark.String)
+							if !ok {
+								return startosis_errors.NewInterpretationError(
+									"Expected key at index %d of '%s' to be a string",
+									index,
+									AnnotationsAttr,
+								)
+							}
+							_, err := kubernetes_annotation_key.CreateNewKubernetesAnnotationKey(key.String())
+							if err != nil {
+								return startosis_errors.WrapWithInterpretationError(
+									err,
+									"Error occurred while creating annotation key '%v'",
+									key,
+								)
+							}
+
+							if _, ok := t[1].(starlark.String); !ok {
+								return startosis_errors.NewInterpretationError(
+									"Expected value at index %d of '%s' to be a string",
+									index,
+									AnnotationsAttr,
+								)
+							}
+							_, err = kubernetes_annotation_value.CreateNewKubernetesAnnotationValue(value.String())
+							if err != nil {
+								return startosis_errors.WrapWithInterpretationError(
+									err,
+									"Error occurred while creating annotation value '%v'",
+									value,
+								)
+							}
 						}
 						return nil
 					},

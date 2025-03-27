@@ -575,8 +575,9 @@ func createStartServiceOperation(
 				ingressName,
 				ingressLabelsStrs,
 				ingressAnnotationsStrs,
-				nil,
+				nil, // ingressClassName
 				ingressRules,
+				nil, // tls
 			)
 
 			createdIngress, err := kubernetesManager.CreateIngress(
@@ -611,7 +612,7 @@ func createStartServiceOperation(
 				kurtosisSvcName := string(serviceRegistrationObj.GetName())
 
 				indexStr := strconv.Itoa(index)
-				// TODO: Add support for custom suffix I really cba anymore
+				// TODO: Add support for custom suffix and/or full name override
 				extraIngressName := ingressSpec.ConstructIngressName(
 					kurtosisSvcName,
 					&indexStr,
@@ -627,12 +628,19 @@ func createStartServiceOperation(
 				ingressLabelsStrs[kubernetes_label_key.MustCreateNewKubernetesLabelKey("extra-ingress").GetString()] =
 					kubernetes_label_value.MustCreateNewKubernetesLabelValue("true").GetString()
 
+				if *ingressSpec.Annotations != nil {
+					for key, value := range *ingressSpec.Annotations {
+						ingressAnnotationsStrs[key] = value
+					}
+				}
+
 				extraIngress := kubernetes_manager.GenerateIngress(
 					extraIngressName,
 					ingressLabelsStrs,
 					ingressAnnotationsStrs,
 					&ingressSpec.IngressClassName,
 					[]netv1.IngressRule{ingressSpec.GetKubernetesIngressRule(kurtosisSvcName)},
+					[]netv1.IngressTLS{*ingressSpec.GetTlsConfig()},
 				)
 
 				createdExtraIngress, err := kubernetesManager.CreateIngress(

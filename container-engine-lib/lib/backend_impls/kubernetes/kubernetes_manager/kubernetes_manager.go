@@ -2591,7 +2591,9 @@ func GenerateIngress(
 	labels map[string]string,
 	annotations map[string]string,
 	ingressClassName *string,
-	rules []netv1.IngressRule) *netv1.Ingress {
+	rules []netv1.IngressRule,
+	tls []netv1.IngressTLS,
+) *netv1.Ingress {
 	return &netv1.Ingress{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "",
@@ -2619,7 +2621,7 @@ func GenerateIngress(
 		Spec: netv1.IngressSpec{
 			IngressClassName: ingressClassName,
 			DefaultBackend:   nil,
-			TLS:              nil,
+			TLS: tls,
 			Rules:            rules,
 		},
 		Status: netv1.IngressStatus{
