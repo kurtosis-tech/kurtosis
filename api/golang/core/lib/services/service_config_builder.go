@@ -9,6 +9,46 @@ import (
 type FilesArtifactUUID string
 type FileArtifactName string
 
+type Port struct {
+	Number                   uint32 `json:"number" yaml:"number"`
+	Transport                int    `json:"transport" yaml:"transport"` // e.g. "TCP", "UDP"
+	MaybeApplicationProtocol string `json:"maybe_application_protocol,omitempty" yaml:"maybe_application_protocol,omitempty"`
+	Wait                     string `json:"wait,omitempty" yaml:"wait,omitempty"`
+}
+
+type User struct {
+	UID int `json:"uid" yaml:"uid"`
+	GID int `json:"gid,omitempty" yaml:"gid,omitempty"`
+}
+
+type Toleration struct {
+	Key               string `json:"key" yaml:"key"`
+	Value             string `json:"value" yaml:"value"`
+	Operator          string `json:"operator" yaml:"operator"`
+	Effect            string `json:"effect" yaml:"effect"`
+	TolerationSeconds int64  `json:"toleration_seconds" yaml:"toleration_seconds"`
+}
+
+type ServiceConfig struct {
+	Image                       string            `json:"image" yaml:"image"`
+	PrivatePorts                map[string]Port   `json:"ports,omitempty" yaml:"ports,omitempty"`
+	PublicPorts                 map[string]Port   `json:"public_ports,omitempty" yaml:"public_ports,omitempty"`
+	Files                       map[string]string `json:"files,omitempty" yaml:"files,omitempty"`
+	Entrypoint                  []string          `json:"entrypoint,omitempty" yaml:"entrypoint,omitempty"`
+	Cmd                         []string          `json:"cmd,omitempty" yaml:"cmd,omitempty"`
+	EnvVars                     map[string]string `json:"env_vars,omitempty" yaml:"env_vars,omitempty"`
+	PrivateIPAddressPlaceholder string            `json:"private_ip_address_placeholder,omitempty" yaml:"private_ip_address_placeholder,omitempty"`
+	MaxMillicpus                uint32            `json:"max_cpu,omitempty" yaml:"max_cpu,omitempty"`
+	MinMillicpus                uint32            `json:"min_cpu,omitempty" yaml:"min_cpu,omitempty"`
+	MaxMemory                   uint32            `json:"max_memory,omitempty" yaml:"max_memory,omitempty"`
+	MinMemory                   uint32            `json:"min_memory,omitempty" yaml:"min_memory,omitempty"`
+	User                        *User             `json:"user,omitempty" yaml:"user,omitempty"`
+	Tolerations                 []Toleration      `json:"tolerations,omitempty" yaml:"tolerations,omitempty"`
+	Labels                      map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`
+	NodeSelectors               map[string]string `json:"node_selectors,omitempty" yaml:"node_selectors,omitempty"`
+	TiniEnabled                 *bool             `json:"tini_enabled,omitempty" yaml:"tini_enabled,omitempty"`
+}
+
 func portToStarlark(port *kurtosis_core_rpc_api_bindings.Port) string {
 	starlarkFields := []string{}
 	starlarkFields = append(starlarkFields, fmt.Sprintf(`number=%d`, port.GetNumber()))
@@ -24,7 +64,7 @@ func portToStarlark(port *kurtosis_core_rpc_api_bindings.Port) string {
 	return fmt.Sprintf("PortSpec(%s)", strings.Join(starlarkFields, ","))
 }
 
-func GetServiceConfigStarlark(
+func GetSimpleServiceConfigStarlark(
 	containerImageName string,
 	privatePorts map[string]*kurtosis_core_rpc_api_bindings.Port,
 	fileArtifactMountPoints map[string]string,
@@ -88,4 +128,131 @@ func GetServiceConfigStarlark(
 	}
 
 	return fmt.Sprintf("ServiceConfig(%s)", strings.Join(starlarkFields, ","))
+}
+
+func GetFullServiceConfigStarlark(
+	containerImageName string,
+	privatePorts map[string]*kurtosis_core_rpc_api_bindings.Port,
+	fileArtifactMountPoints map[string]string,
+	entrypointArgs []string,
+	cmdArgs []string,
+	envVars map[string]string,
+	cpuAllocationMillicpus uint32,
+	memoryAllocationMegabytes uint32,
+	minCpuMilliCores uint32,
+	minMemoryMegaBytes uint32,
+	user *User,
+	tolerations []Toleration,
+	nodeSelectors map[string]string,
+	labels map[string]string,
+	tiniEnabled *bool,
+) string {
+	starlarkFields := []string{}
+	starlarkFields = append(starlarkFields, fmt.Sprintf(`image=%q`, containerImageName))
+
+	// Ports
+	portStrings := []string{}
+	for portId, port := range privatePorts {
+		portStrings = append(portStrings, fmt.Sprintf(`%q: %s`, portId, portToStarlark(port)))
+	}
+	if len(portStrings) > 0 {
+		starlarkFields = append(starlarkFields, fmt.Sprintf(`ports={%s}`, strings.Join(portStrings, ",")))
+	}
+
+	// Files
+	fileStrings := []string{}
+	for filePath, artifactName := range fileArtifactMountPoints {
+		fileStrings = append(fileStrings, fmt.Sprintf(`%q: %q`, filePath, artifactName))
+	}
+	if len(fileStrings) > 0 {
+		starlarkFields = append(starlarkFields, fmt.Sprintf(`files={%s}`, strings.Join(fileStrings, ",")))
+	}
+
+	// Entrypoint
+	if len(entrypointArgs) > 0 {
+		quotedEntrypointArgs := []string{}
+		for _, arg := range entrypointArgs {
+			quotedEntrypointArgs = append(quotedEntrypointArgs, fmt.Sprintf(`%q`, arg))
+		}
+		starlarkFields = append(starlarkFields, fmt.Sprintf(`entrypoint=[%s]`, strings.Join(quotedEntrypointArgs, ", ")))
+	}
+
+	// Cmd
+	if len(cmdArgs) > 0 {
+		quotedCmdArgs := []string{}
+		for _, arg := range cmdArgs {
+			quotedCmdArgs = append(quotedCmdArgs, fmt.Sprintf(`%q`, arg))
+		}
+		starlarkFields = append(starlarkFields, fmt.Sprintf(`cmd=[%s]`, strings.Join(quotedCmdArgs, ", ")))
+	}
+
+	// Env Vars
+	if len(envVars) > 0 {
+		envVarStrings := []string{}
+		for k, v := range envVars {
+			envVarStrings = append(envVarStrings, fmt.Sprintf(`%q: %q`, k, v))
+		}
+		starlarkFields = append(starlarkFields, fmt.Sprintf(`env_vars={%s}`, strings.Join(envVarStrings, ",")))
+	}
+
+	// Optional simple fields
+	if cpuAllocationMillicpus != 0 {
+		starlarkFields = append(starlarkFields, fmt.Sprintf(`max_cpu=%d`, cpuAllocationMillicpus))
+	}
+	if memoryAllocationMegabytes != 0 {
+		starlarkFields = append(starlarkFields, fmt.Sprintf(`max_memory=%d`, memoryAllocationMegabytes))
+	}
+	if minCpuMilliCores != 0 {
+		starlarkFields = append(starlarkFields, fmt.Sprintf(`min_cpu=%d`, minCpuMilliCores))
+	}
+	if minMemoryMegaBytes != 0 {
+		starlarkFields = append(starlarkFields, fmt.Sprintf(`min_memory=%d`, minMemoryMegaBytes))
+	}
+
+	// User
+	if user != nil {
+		userStr := fmt.Sprintf("User(uid=%d", user.UID)
+		if user.GID != 0 {
+			userStr += fmt.Sprintf(", gid=%d", user.GID)
+		}
+		userStr += ")"
+		starlarkFields = append(starlarkFields, fmt.Sprintf(`user=%s`, userStr))
+	}
+
+	// Tolerations
+	if len(tolerations) > 0 {
+		tolerationStrs := []string{}
+		for _, t := range tolerations {
+			tolerationStrs = append(tolerationStrs, fmt.Sprintf(
+				`Toleration(key=%q, value=%q, operator=%q, effect=%q, toleration_seconds=%d)`,
+				t.Key, t.Value, t.Operator, t.Effect, t.TolerationSeconds,
+			))
+		}
+		starlarkFields = append(starlarkFields, fmt.Sprintf(`tolerations=[%s]`, strings.Join(tolerationStrs, ", ")))
+	}
+
+	// Node selectors
+	if len(nodeSelectors) > 0 {
+		selectorStrs := []string{}
+		for k, v := range nodeSelectors {
+			selectorStrs = append(selectorStrs, fmt.Sprintf(`%q: %q`, k, v))
+		}
+		starlarkFields = append(starlarkFields, fmt.Sprintf(`node_selectors={%s}`, strings.Join(selectorStrs, ", ")))
+	}
+
+	// Labels
+	if len(labels) > 0 {
+		labelStrs := []string{}
+		for k, v := range labels {
+			labelStrs = append(labelStrs, fmt.Sprintf(`%q: %q`, k, v))
+		}
+		starlarkFields = append(starlarkFields, fmt.Sprintf(`labels={%s}`, strings.Join(labelStrs, ", ")))
+	}
+
+	// Tini
+	if tiniEnabled != nil {
+		starlarkFields = append(starlarkFields, fmt.Sprintf(`tini_enabled=%t`, *tiniEnabled))
+	}
+
+	return fmt.Sprintf("ServiceConfig(%s)", strings.Join(starlarkFields, ", "))
 }

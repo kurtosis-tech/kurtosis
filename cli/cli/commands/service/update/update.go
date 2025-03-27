@@ -13,11 +13,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/add"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/inspect"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -86,20 +84,20 @@ var ServiceUpdateCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosi
 	EngineClientContextKey:    engineClientCtxKey,
 	Flags: []*flags.FlagConfig{
 		{
-			Key:     serviceImageFlagKey,
+			Key:     service.ImageKey,
 			Usage:   "image",
 			Type:    flags.FlagType_String,
 			Default: "",
 		},
 		{
-			Key:   cmdArgsFlagKey,
+			Key:   service.CmdKey,
 			Usage: "cmd",
 			// TODO Make this a string list
 			Type:    flags.FlagType_String,
 			Default: "",
 		},
 		{
-			Key:   entrypointBinaryFlagKey,
+			Key:   service.EntrypointFlagKey,
 			Usage: "ENTRYPOINT binary that will be used when running the container, overriding the image's default ENTRYPOINT",
 			// TODO Make this a string list
 			Type:    flags.FlagType_String,
@@ -107,7 +105,7 @@ var ServiceUpdateCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosi
 		},
 		{
 			// TODO We currently can't handle commas, so allow users to set the flag multiple times to set multiple envvars
-			Key: envvarsFlagKey,
+			Key: service.EnvvarsFlagKey,
 			Usage: fmt.Sprintf(
 				"String containing environment variables that will be set when running the container, in "+
 					"the form \"KEY1%vVALUE1%vKEY2%vVALUE2\"",
@@ -119,7 +117,7 @@ var ServiceUpdateCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosi
 			Default: "",
 		},
 		{
-			Key: portsFlagKey,
+			Key: service.PortsFlagKey,
 			Usage: fmt.Sprintf(`String containing declarations of ports that the container will listen on, in the form, %q`+
 				` where %q is a user friendly string for identifying the port, %q is required field, %q is an optional field which must be either`+
 				` '%v' or '%v' and defaults to '%v' if omitted and %q is user defined optional value. %v`,
@@ -137,7 +135,7 @@ var ServiceUpdateCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosi
 			Default: "",
 		},
 		{
-			Key: filesFlagKey,
+			Key: service.FilesFlagKey,
 			Usage: fmt.Sprintf(
 				"String containing declarations of files paths on the container -> artifact name  where the contents of those "+
 					"files artifacts should be mounted, in the form \"MOUNTPATH1%vARTIFACTNAME1%vMOUNTPATH2%vARTIFACTNAME2\" where "+
@@ -232,7 +230,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the env vars string using key '%v'", envvarsFlagKey)
 	}
 	if envVarsStr != "" {
-		overrideEnvVars, err = add.ParseEnvVarsStr(envVarsStr)
+		overrideEnvVars, err = service.ParseEnvVarsStr(envVarsStr)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred parsing env vars string: %v", envVarsStr)
 		}
@@ -243,7 +241,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the ports string using key '%v'", portsFlagKey)
 	}
 	if portsStr != "" {
-		overridePorts, err = add.ParsePortsStr(portsStr)
+		overridePorts, err = service.ParsePortsStr(portsStr)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred parsing ports string: %v", portsStr)
 		}
@@ -254,91 +252,40 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the files artifact mounts string using key '%v'", filesFlagKey)
 	}
 	if filesArtifactMountsStr != "" {
-		overrideFilesArtifactsMountpoint, err = add.ParseFilesArtifactMountsStr(filesArtifactMountsStr)
+		overrideFilesArtifactsMountpoint, err = service.ParseFilesArtifactMountsStr(filesArtifactMountsStr)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred parsing files artifacts mount points string: %v", filesArtifactMountsStr)
 		}
 	}
 
-	serviceInspectOutputMap, err := inspect.PrintServiceInspect(ctx, kurtosisBackend, kurtosisCtx, enclaveIdentifier, serviceName, false, "json", false)
+	_, currServiceConfig, err := service.GetServiceInfo(ctx, kurtosisCtx, enclaveIdentifier, serviceName)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting")
+		return stacktrace.Propagate(err, "An error occurred getting service info of service '%v' in enclave '%v'.", serviceName, enclaveIdentifier)
 	}
 
-	var currImage string
-	if img, ok := serviceInspectOutputMap[inspect.ServiceImageTitleName]; ok {
-		currImage = img.(string)
-	}
-
-	var currPorts map[string]*kurtosis_core_rpc_api_bindings.Port
-	if ports, ok := serviceInspectOutputMap[inspect.ServicePortsTitleName]; ok {
-		currPorts = ports.(map[string]*kurtosis_core_rpc_api_bindings.Port)
-	}
-
-	currFilesArtifactsMountpoint := map[string]string{}
-	if filesArtifactsMountpoints, ok := serviceInspectOutputMap[inspect.ServiceFilesTitleName]; ok {
-		currFilesArtifactsMountpointWithMultipleMounts := filesArtifactsMountpoints.(map[string][]string)
-		for svcName, mountpoints := range currFilesArtifactsMountpointWithMultipleMounts {
-			currFilesArtifactsMountpoint[svcName] = mountpoints[0]
-		}
-	}
-
-	var currEntrypoint []string
-	if entrypoint, ok := serviceInspectOutputMap[inspect.ServiceEntrypointArgsTitleName]; ok {
-		currEntrypoint = entrypoint.([]string)
-	}
-
-	var currCmd []string
-	if cmd, ok := serviceInspectOutputMap[inspect.ServiceCmdArgsTitleName]; ok {
-		currCmd = cmd.([]string)
-	}
-
-	var currEnvVarsMap map[string]string
-	if cmd, ok := serviceInspectOutputMap[inspect.ServiceEnvVarsTitleName]; ok {
-		currEnvVarsMap = cmd.(map[string]string)
-	}
-
-	var currCpuAllocationMillicpus int
-	if cpuAlloc, ok := serviceInspectOutputMap[inspect.ServiceMaxCpuAllocationTitleName]; ok {
-		currCpuAllocationMillicpus = cpuAlloc.(int)
-	}
-	var currMemoryMegabytes int
-	if memoryAlloc, ok := serviceInspectOutputMap[inspect.ServiceMemoryAllocationTitleName]; ok {
-		currMemoryMegabytes = memoryAlloc.(int)
-	}
-	var currMinCpuMillicores int
-	if minCpuMillis, ok := serviceInspectOutputMap[inspect.ServiceMinCpuAllocationTitleName]; ok {
-		currMinCpuMillicores = minCpuMillis.(int)
-	}
-	var currMinMemoryBytes int
-	if minMem, ok := serviceInspectOutputMap[inspect.ServiceMinMemoryAllocationTitleName]; ok {
-		currMinMemoryBytes = minMem.(int)
-	}
-
-	// merge
-	var mergedImage string
-	var mergedEntrypoint []string
-	var mergedCmd []string
-
+	// merge overrides with existing service config
 	// if override image was provided, use that as the image, otherwise keep curr
+	var mergedImage string
 	if overrideImage != "" {
 		mergedImage = overrideImage
 	} else {
-		mergedImage = currImage
+		mergedImage = currServiceConfig.Image
 	}
 
 	// if override entrypoint was provided, use that as the entrypoint, otherwise keep curr
+	var mergedEntrypoint []string
 	if len(overrideEntrypoint) > 0 {
 		mergedEntrypoint = overrideEntrypoint
 	} else {
-		mergedEntrypoint = currEntrypoint
+		mergedEntrypoint = currServiceConfig.Entrypoint
 	}
 
 	// if override cmd was provided, use that as the cmd, otherwise keep curr
+	var mergedCmd []string
 	if len(overrideCmd) > 0 {
 		mergedCmd = overrideCmd
 	} else {
-		mergedCmd = currCmd
+		mergedCmd = currServiceConfig.Cmd
 	}
 
 	// combine current ports with override ports
@@ -346,8 +293,16 @@ func run(
 	for portId, port := range overridePorts {
 		mergedPorts[portId] = port
 	}
-	for portId, port := range currPorts {
-		mergedPorts[portId] = port
+	for portId, port := range currServiceConfig.PrivatePorts {
+		apiPort := &kurtosis_core_rpc_api_bindings.Port{
+			Number:                   port.Number,
+			TransportProtocol:        kurtosis_core_rpc_api_bindings.Port_TransportProtocol(port.Transport),
+			MaybeApplicationProtocol: port.MaybeApplicationProtocol,
+			MaybeWaitTimeout:         port.Wait,
+			Locked:                   nil,
+			Alias:                    nil,
+		}
+		mergedPorts[portId] = apiPort
 	}
 
 	// combine current env vars with override env vars
@@ -355,7 +310,7 @@ func run(
 	for key, val := range overrideEnvVars {
 		mergedEnvVarsMap[key] = val
 	}
-	for key, val := range currEnvVarsMap {
+	for key, val := range currServiceConfig.EnvVars {
 		mergedEnvVarsMap[key] = val
 	}
 
@@ -364,42 +319,34 @@ func run(
 	for key, val := range overrideFilesArtifactsMountpoint {
 		mergedFilesArtifactsMountpoint[key] = val
 	}
-	for key, val := range currFilesArtifactsMountpoint {
+	for key, val := range currServiceConfig.Files {
 		mergedFilesArtifactsMountpoint[key] = val
 	}
 
-	var mergedCpuAllocationMillicpus int
-	mergedCpuAllocationMillicpus = currCpuAllocationMillicpus
-
-	var mergedMemoryMegabytes int
-	mergedMemoryMegabytes = currMemoryMegabytes
-
-	var mergedMinCpuMillicores int
-	mergedMinCpuMillicores = currMinCpuMillicores
-
-	var mergedMinMemoryBytes int
-	mergedMinMemoryBytes = currMinMemoryBytes
-
 	// call getServiceConfig
-	serviceConfigStr := services.GetServiceConfigStarlark(
+	serviceConfigStr := services.GetFullServiceConfigStarlark(
 		mergedImage,
 		mergedPorts,
-		mergedFilesArtifactsMountpoint, // TODO: get in svc inspect
+		mergedFilesArtifactsMountpoint,
 		mergedEntrypoint,
 		mergedCmd,
 		mergedEnvVarsMap,
-		service_config.PrivateIpAddressPlaceholderAttr,
-		mergedCpuAllocationMillicpus, // TODO: get in svc inspect
-		mergedMemoryMegabytes,        // TODO: get in svc inspect
-		mergedMinCpuMillicores,       // TODO: get in svc inspect
-		mergedMinMemoryBytes)         // TODO: get in service inspect
+		currServiceConfig.MaxMillicpus,
+		currServiceConfig.MaxMemory,
+		currServiceConfig.MinMillicpus,
+		currServiceConfig.MinMemory,
+		currServiceConfig.User,
+		currServiceConfig.Tolerations,
+		currServiceConfig.NodeSelectors,
+		currServiceConfig.Labels,
+		currServiceConfig.TiniEnabled,
+	)
 	//logrus.Infof("SERVICE CONFIG STRING: %v", serviceConfigStr)
 
-	// call run add service starlark script
-	addServiceStarlarkStr := add.GetAddServiceStarlarkScript(serviceName, serviceConfigStr)
+	addServiceStarlarkStr := service.GetAddServiceStarlarkScript(serviceName, serviceConfigStr)
 
 	logrus.Infof("Running update service starlark for service '%v' in enclave '%v'...", serviceName, enclaveIdentifier)
-	starlarkRunResult, err := add.RunAddServiceStarlarkScript(ctx, serviceName, enclaveIdentifier, addServiceStarlarkStr, enclaveCtx)
+	starlarkRunResult, err := service.RunAddServiceStarlarkScript(ctx, serviceName, enclaveIdentifier, addServiceStarlarkStr, enclaveCtx)
 	if err != nil {
 		return err //already wrapped
 	}

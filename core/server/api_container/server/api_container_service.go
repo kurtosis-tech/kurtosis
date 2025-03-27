@@ -103,6 +103,11 @@ type ApiContainerService struct {
 
 	githubAuthProvider *git_package_content_provider.GitHubPackageAuthProvider
 
+	// NOTE: interpretationTimeValueStore is modified by the StarlarkInterpreter - allowing this object to have access to it
+	// allows retrieving service configs of running services but it is NOT mutex protected, thus this object should never modify
+	// the interpretationTimeValueStore or it could mess with interpretation
+	// TODO: Either mutex protect the interpretationTimeValueStore OR compose the interpretationTimeValueStore of a separate mutex protected `serviceConfigRepository` object
+	// and allow both ApiContainerService and interpretationTimeValueStore to have access to that
 	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore
 }
 
@@ -786,6 +791,17 @@ func transformPortSpecMapToApiPortsMap(apiPorts map[string]*port_spec.PortSpec) 
 	return result, nil
 }
 
+func transformServiceDirPathsToFileArtifactsToApiPortsFilesArtifactsList(serviceDirPathsToFilesArtifactsIdentifiers map[string][]string) map[string]*kurtosis_core_rpc_api_bindings.FilesArtifactsList {
+	result := map[string]*kurtosis_core_rpc_api_bindings.FilesArtifactsList{}
+	for svcName, filesArtifactsIdentifiers := range serviceDirPathsToFilesArtifactsIdentifiers {
+		filesArtifactsList := &kurtosis_core_rpc_api_bindings.FilesArtifactsList{
+			FilesArtifactsIdentifiers: filesArtifactsIdentifiers,
+		}
+		result[svcName] = filesArtifactsList
+	}
+	return result
+}
+
 func (apicService *ApiContainerService) waitForEndpointAvailability(
 	ctx context.Context,
 	serviceIdStr string,
@@ -890,6 +906,8 @@ func (apicService *ApiContainerService) getServiceInfoForIdentifier(ctx context.
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting info for service '%v'", serviceIdentifier)
 	}
+
+	//
 	serviceConfig, err := apicService.interpretationTimeValueStore.GetServiceConfig(serviceObj.GetRegistration().GetName())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting service config from interpretation time value store.")
@@ -1104,6 +1122,8 @@ func getServiceInfoFromServiceObj(serviceObj *service.Service, serviceDirPathsTo
 	maxMemoryMegabytes := uint32(0)
 	minMemoryMegabytes := uint32(0)
 
+	serviceDirPathsToFilesArtifactsList := transformServiceDirPathsToFileArtifactsToApiPortsFilesArtifactsList(serviceDirPathsToFilesArtifactsIdentifiers)
+
 	serviceInfoResponse := binding_constructors.NewServiceInfo(
 		serviceUuidStr,
 		serviceNameStr,
@@ -1114,7 +1134,7 @@ func getServiceInfoFromServiceObj(serviceObj *service.Service, serviceDirPathsTo
 		publicApiPorts,
 		serviceStatus,
 		serviceInfoContainer,
-		serviceDirPathsToFilesArtifactsIdentifiers,
+		serviceDirPathsToFilesArtifactsList,
 		maxMillicpus,
 		minMillicpus,
 		maxMemoryMegabytes,

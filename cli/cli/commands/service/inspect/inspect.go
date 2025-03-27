@@ -9,6 +9,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service"
 	"gopkg.in/yaml.v3"
 	"strings"
 
@@ -48,19 +50,14 @@ const (
 
 	jsonOutputFormat = "json"
 
-	ServiceNameTitleName                = "Name"
-	ServiceUUIDTitleName                = "UUID"
-	ServiceStatusTitleName              = "Status"
-	ServiceImageTitleName               = "Image"
-	ServicePortsTitleName               = "Ports"
-	ServiceEntrypointArgsTitleName      = "ENTRYPOINT"
-	ServiceCmdArgsTitleName             = "CMD"
-	ServiceEnvVarsTitleName             = "ENV"
-	ServiceFilesTitleName               = "Files"
-	ServiceMaxCpuAllocationTitleName    = "MaxCpu"
-	ServiceMinCpuAllocationTitleName    = "MinCpu"
-	ServiceMemoryAllocationTitleName    = "MaxMemory"
-	ServiceMinMemoryAllocationTitleName = "MinMemory"
+	ServiceNameTitleName           = "Name"
+	ServiceUUIDTitleName           = "UUID"
+	ServiceStatusTitleName         = "Status"
+	ServiceImageTitleName          = "Image"
+	ServicePortsTitleName          = "Ports"
+	ServiceEntrypointArgsTitleName = "ENTRYPOINT"
+	ServiceCmdArgsTitleName        = "CMD"
+	ServiceEnvVarsTitleName        = "ENV"
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
@@ -142,72 +139,33 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred creating Kurtosis Context from local engine")
 	}
 
-	if _, err = PrintServiceInspect(ctx, kurtosisBackend, kurtosisCtx, enclaveIdentifier, serviceIdentifier, showFullUuid, outputFormat, true); err != nil {
+	serviceInfo, serviceConfig, err := service.GetServiceInfo(ctx, kurtosisCtx, enclaveIdentifier, serviceIdentifier)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting service info of '%v' from '%v'.", enclaveIdentifier, serviceIdentifier)
+	}
+
+	if err = PrintServiceInspect(serviceInfo, serviceConfig, showFullUuid, outputFormat); err != nil {
 		// this is already wrapped up
 		return err
 	}
 	return nil
 }
 
-func PrintServiceInspect(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, kurtosisCtx *kurtosis_context.KurtosisContext, enclaveIdentifier string, serviceIdentifier string, showFullUuid bool, outputFormat string, shouldPrintOutputFormat bool) (map[string]interface{}, error) {
-	jsonMap := map[string]interface{}{}
-	enclaveInfo, err := kurtosisCtx.GetEnclave(ctx, enclaveIdentifier)
-	if err != nil {
-		return jsonMap, stacktrace.Propagate(err, "An error occurred getting the enclave for identifier '%v'", enclaveIdentifier)
-	}
-
-	enclaveApiContainerStatus := enclaveInfo.ApiContainerStatus
-	isApiContainerRunning := enclaveApiContainerStatus == kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING
-
-	userServices := map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo{}
-	if isApiContainerRunning {
-		var err error
-		serviceMap := map[string]bool{
-			serviceIdentifier: true,
-		}
-		userServices, err = user_services.GetUserServiceInfoMapFromAPIContainer(ctx, enclaveInfo, serviceMap)
-		if err != nil {
-			return jsonMap, stacktrace.Propagate(err, "Failed to get service info from API container in enclave '%v'", enclaveInfo.GetEnclaveUuid())
-		}
-	}
-
-	var userService *kurtosis_core_rpc_api_bindings.ServiceInfo
-	for _, userServiceInfo := range userServices {
-		userService = userServiceInfo
-		break
-	}
-
+func PrintServiceInspect(userService *kurtosis_core_rpc_api_bindings.ServiceInfo, userServiceConfig *services.ServiceConfig, showFullUuid bool, outputFormat string) error {
 	if outputFormat != "" {
-		jsonMap[ServiceImageTitleName] = userService.GetContainer().GetImageName()
-		jsonMap[ServiceCmdArgsTitleName] = userService.GetContainer().GetCmdArgs()
-		jsonMap[ServiceEntrypointArgsTitleName] = userService.GetContainer().GetEntrypointArgs()
-		jsonMap[ServiceEnvVarsTitleName] = userService.GetContainer().GetEnvVars()
-		jsonMap[ServicePortsTitleName] = userService.GetPrivatePorts()
-
-		serviceDirPathsToFilesArtifactsLists := userService.GetServiceDirPathsToFilesArtifactsIdentifiers()
-		serviceDirPathsToFilesArtifactsIdentifiers := map[string][]string{}
-		for serviceName, filesArtifactsList := range serviceDirPathsToFilesArtifactsLists {
-			serviceDirPathsToFilesArtifactsIdentifiers[serviceName] = filesArtifactsList.FilesArtifactsIdentifiers
-		}
-
-		jsonMap[ServiceFilesTitleName] = serviceDirPathsToFilesArtifactsIdentifiers
-		// TODO: add support for cpu min max memory
-
 		var marshaled []byte
 		var err error
 		switch outputFormat {
 		case jsonOutputFormat:
-			marshaled, err = json.MarshalIndent(jsonMap, "", "")
+			marshaled, err = json.MarshalIndent(userServiceConfig, "", "  ")
 		case yamlOutputFormat:
-			marshaled, err = yaml.Marshal(jsonMap)
+			marshaled, err = yaml.Marshal(userServiceConfig)
 		}
 		if err != nil {
-			return jsonMap, stacktrace.Propagate(err, "Failed to marshal service info to %s", outputFormat)
+			return stacktrace.Propagate(err, "Failed to marshal service info to %s", outputFormat)
 		}
-		if shouldPrintOutputFormat {
-			out.PrintOutLn(string(marshaled))
-		}
-		return jsonMap, nil
+		out.PrintOutLn(string(marshaled))
+		return nil
 	}
 
 	out.PrintOutLn(fmt.Sprintf("%s: %s", ServiceNameTitleName, userService.GetName()))
@@ -227,7 +185,7 @@ func PrintServiceInspect(ctx context.Context, kurtosisBackend backend_interface.
 	out.PrintOutLn(fmt.Sprintf("%s:", ServicePortsTitleName))
 	portBindingLines, err := user_services.GetUserServicePortBindingStrings(userService)
 	if err != nil {
-		return jsonMap, stacktrace.Propagate(err, "An error occurred getting the port binding strings")
+		return stacktrace.Propagate(err, "An error occurred getting the port binding strings")
 	}
 	for _, portBindingLine := range portBindingLines {
 		out.PrintOutLn(fmt.Sprintf("  %s", portBindingLine))
@@ -248,5 +206,5 @@ func PrintServiceInspect(ctx context.Context, kurtosisBackend backend_interface.
 		out.PrintOutLn(fmt.Sprintf("  %s: %s", envVarKey, envVarVal))
 	}
 
-	return jsonMap, nil
+	return nil
 }
