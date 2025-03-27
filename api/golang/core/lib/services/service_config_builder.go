@@ -146,6 +146,7 @@ func GetFullServiceConfigStarlark(
 	nodeSelectors map[string]string,
 	labels map[string]string,
 	tiniEnabled *bool,
+	privateIpAddrPlaceholder string,
 ) string {
 	starlarkFields := []string{}
 	starlarkFields = append(starlarkFields, fmt.Sprintf(`image=%q`, containerImageName))
@@ -207,6 +208,10 @@ func GetFullServiceConfigStarlark(
 	}
 	if minMemoryMegaBytes != 0 {
 		starlarkFields = append(starlarkFields, fmt.Sprintf(`min_memory=%d`, minMemoryMegaBytes))
+	}
+
+	if privateIpAddrPlaceholder != "" {
+		starlarkFields = append(starlarkFields, fmt.Sprintf(`private_ip_address_placeholder=%q`, privateIpAddrPlaceholder))
 	}
 
 	// User
