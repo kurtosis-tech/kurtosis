@@ -290,36 +290,29 @@ func run(
 
 	// combine current ports with override ports
 	mergedPorts := map[string]*kurtosis_core_rpc_api_bindings.Port{}
-	for portId, port := range overridePorts {
+	currApiPorts := services.ConvertJsonPortToApiPort(currServiceConfig.PrivatePorts)
+	for portId, port := range currApiPorts {
 		mergedPorts[portId] = port
 	}
-	for portId, port := range currServiceConfig.PrivatePorts {
-		apiPort := &kurtosis_core_rpc_api_bindings.Port{
-			Number:                   port.Number,
-			TransportProtocol:        kurtosis_core_rpc_api_bindings.Port_TransportProtocol(port.Transport),
-			MaybeApplicationProtocol: port.MaybeApplicationProtocol,
-			MaybeWaitTimeout:         port.Wait,
-			Locked:                   nil,
-			Alias:                    nil,
-		}
-		mergedPorts[portId] = apiPort
+	for portId, port := range overridePorts {
+		mergedPorts[portId] = port
 	}
 
 	// combine current env vars with override env vars
 	mergedEnvVarsMap := map[string]string{}
-	for key, val := range overrideEnvVars {
+	for key, val := range currServiceConfig.EnvVars {
 		mergedEnvVarsMap[key] = val
 	}
-	for key, val := range currServiceConfig.EnvVars {
+	for key, val := range overrideEnvVars {
 		mergedEnvVarsMap[key] = val
 	}
 
 	// combine current files artifacts mount points with override mount points
 	mergedFilesArtifactsMountpoint := map[string]string{}
-	for key, val := range overrideFilesArtifactsMountpoint {
+	for key, val := range currServiceConfig.Files {
 		mergedFilesArtifactsMountpoint[key] = val
 	}
-	for key, val := range currServiceConfig.Files {
+	for key, val := range overrideFilesArtifactsMountpoint {
 		mergedFilesArtifactsMountpoint[key] = val
 	}
 
@@ -340,6 +333,7 @@ func run(
 		currServiceConfig.NodeSelectors,
 		currServiceConfig.Labels,
 		currServiceConfig.TiniEnabled,
+		currServiceConfig.PrivateIPAddressPlaceholder,
 	)
 	//logrus.Infof("SERVICE CONFIG STRING: %v", serviceConfigStr)
 

@@ -2,6 +2,7 @@ package add
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/service_helpers"
 	"strings"
@@ -71,6 +72,9 @@ const (
 
 	fullUuidsFlagKey       = "full-uuids"
 	fullUuidFlagKeyDefault = "false"
+
+	JsonConfigFlagKey        = "json-service-config"
+	JsonConfigFlagKeyDefault = ""
 
 	portMappingSeparatorForLogs = ", "
 
@@ -183,6 +187,12 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Type:    flags.FlagType_Bool,
 			Default: fullUuidFlagKeyDefault,
 		},
+		{
+			Key:     JsonConfigFlagKey,
+			Usage:   "If a json formatted service config string is provided via this flag, service add will parse the values in the json for the service. The format is identical to the json output format from kurtosis service inspect -o json.",
+			Type:    flags.FlagType_String,
+			Default: JsonConfigFlagKeyDefault,
+		},
 	},
 	RunFunc: run,
 }
@@ -245,6 +255,11 @@ func run(
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", fullUuidsFlagKey)
 	}
 
+	jsonServiceConfigStr, err := flags.GetString(JsonConfigFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the json service config string using key '%v'.", JsonConfigFlagKey)
+	}
+
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
@@ -255,24 +270,63 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting an enclave context from enclave info for enclave '%v'", enclaveIdentifier)
 	}
 
-	entrypoint := []string{}
-	if entrypointStr != "" {
-		entrypoint = append(entrypoint, entrypointStr)
-	}
-	serviceConfigStarlark, err := GetServiceConfigStarlark(image, portsStr, cmdArgs, entrypoint, envvarsStr, filesArtifactMountsStr, defaultLimits, defaultLimits, defaultLimits, defaultLimits, privateIPAddressPlaceholder)
-	if err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred getting the container config to start image '%v' with CMD '%+v', ENTRYPOINT '%v',  envvars '%v' and private IP address placeholder '%v'",
-			image,
-			cmdArgs,
-			entrypointStr,
-			envvarsStr,
-			privateIPAddressPlaceholder,
+	var serviceConfigStarlarkStr string
+	if jsonServiceConfigStr != "" {
+		var serviceConfigJson services.ServiceConfig
+		if err = json.Unmarshal([]byte(jsonServiceConfigStr), serviceConfigJson); err != nil {
+			return stacktrace.Propagate(err, "An error occurred unmarhsaling json service config string '%v'.", jsonServiceConfigStr)
+		}
+		ports
+		for portId, port := range currServiceConfig.PrivatePorts {
+			apiPort := &kurtosis_core_rpc_api_bindings.Port{
+				Number:                   port.Number,
+				TransportProtocol:        kurtosis_core_rpc_api_bindings.Port_TransportProtocol(port.Transport),
+				MaybeApplicationProtocol: port.MaybeApplicationProtocol,
+				MaybeWaitTimeout:         port.Wait,
+				Locked:                   nil,
+				Alias:                    nil,
+			}
+			mergedPorts[portId] = apiPort
+		}
+		serviceConfigStarlarkStr = services.GetFullServiceConfigStarlark(
+			serviceConfigJson.Image,
+			serviceConfigJson.PrivatePorts,
+			serviceConfigJson.Files,
+			serviceConfigJson.Entrypoint,
+			serviceConfigJson.Cmd,
+			serviceConfigJson.EnvVars,
+			serviceConfigJson.MaxMillicpus,
+			serviceConfigJson.MaxMemory,
+			serviceConfigJson.MaxMemory,
+			serviceConfigJson.MinMemory,
+			serviceConfigJson.User,
+			serviceConfigJson.Tolerations,
+			serviceConfigJson.NodeSelectors,
+			serviceConfigJson.Labels,
+			serviceConfigJson.TiniEnabled,
+			serviceConfigJson.PrivateIPAddressPlaceholder,
 		)
+
+	} else {
+		entrypoint := []string{}
+		if entrypointStr != "" {
+			entrypoint = append(entrypoint, entrypointStr)
+		}
+		serviceConfigStarlarkStr, err = GetServiceConfigStarlark(image, portsStr, cmdArgs, entrypoint, envvarsStr, filesArtifactMountsStr, defaultLimits, defaultLimits, defaultLimits, defaultLimits, privateIPAddressPlaceholder)
+		if err != nil {
+			return stacktrace.Propagate(
+				err,
+				"An error occurred getting the container config to start image '%v' with CMD '%+v', ENTRYPOINT '%v',  envvars '%v' and private IP address placeholder '%v'",
+				image,
+				cmdArgs,
+				entrypointStr,
+				envvarsStr,
+				privateIPAddressPlaceholder,
+			)
+		}
 	}
 
-	_, err = service_helpers.RunAddServiceStarlarkScript(ctx, serviceName, enclaveIdentifier, service_helpers.GetAddServiceStarlarkScript(serviceName, serviceConfigStarlark), enclaveCtx)
+	_, err = service_helpers.RunAddServiceStarlarkScript(ctx, serviceName, enclaveIdentifier, service_helpers.GetAddServiceStarlarkScript(serviceName, serviceConfigStarlarkStr), enclaveCtx)
 	if err != nil {
 		return err // already wrapped
 	}
@@ -393,7 +447,28 @@ func GetServiceConfigStarlark(
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred parsing files artifact mounts string '%v'", filesArtifactMountsStr)
 	}
-	return services.GetSimpleServiceConfigStarlark(image, ports, filesArtifactMounts, entrypoint, cmdArgs, envvarsMap, privateIPAddressPlaceholder, cpuAllocationMillicpus, memoryAllocationMegabytes, minCpuMilliCores, minMemoryMegaBytes), nil
+	tiniEnabled := false
+
+	emptyNodeSelecors := map[string]string{}
+	emptyLabels := map[string]string{}
+	emptyPrivateIpAddrPlaceholder := ""
+	return services.GetFullServiceConfigStarlark(
+		image,
+		ports,
+		filesArtifactMounts,
+		entrypoint,
+		cmdArgs,
+		envvarsMap,
+		uint32(cpuAllocationMillicpus),
+		uint32(memoryAllocationMegabytes),
+		uint32(minCpuMilliCores),
+		uint32(minMemoryMegaBytes),
+		nil, //empty user
+		nil, //empty tolerations
+		emptyNodeSelecors,
+		emptyLabels,
+		&tiniEnabled,
+		emptyPrivateIpAddrPlaceholder), nil
 }
 
 func generateExampleForPortFlag() string {

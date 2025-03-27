@@ -261,3 +261,19 @@ func GetFullServiceConfigStarlark(
 
 	return fmt.Sprintf("ServiceConfig(%s)", strings.Join(starlarkFields, ", "))
 }
+
+func ConvertJsonPortToApiPort(jsonPorts map[string]Port) map[string]*kurtosis_core_rpc_api_bindings.Port {
+	apiPorts := map[string]*kurtosis_core_rpc_api_bindings.Port{}
+	for portId, port := range jsonPorts {
+		apiPort := &kurtosis_core_rpc_api_bindings.Port{
+			Number:                   port.Number,
+			TransportProtocol:        kurtosis_core_rpc_api_bindings.Port_TransportProtocol(port.Transport),
+			MaybeApplicationProtocol: port.MaybeApplicationProtocol,
+			MaybeWaitTimeout:         port.Wait,
+			Locked:                   nil,
+			Alias:                    nil,
+		}
+		apiPorts[portId] = apiPort
+	}
+	return apiPorts
+}
