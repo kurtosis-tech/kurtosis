@@ -54,6 +54,13 @@ func (httpRule *HttpRule) ToKubernetesHttpIngressPath(serviceName string) netv1.
 	}
 }
 
+func (ingressSpec *IngressSpec) GetTlsConfig() *netv1.IngressTLS {
+	return &netv1.IngressTLS{
+		SecretName: ingressSpec.TlsConfig.SecretName,
+		Hosts:      []string{ingressSpec.GetHost()},
+	}
+}
+
 func (ingressSpec *IngressSpec) GetAllKubernetesHttpIngressPaths(
 	serviceName string,
 ) []netv1.HTTPIngressPath {

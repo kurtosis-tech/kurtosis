@@ -922,7 +922,10 @@ func convertIngressSpec(ingressSpec *starlark_kube_config.IngressSpec) (*kube_co
 
 	var annotations *kube_config.Annotations
 	if annotationsDict != nil {
-		dict, err := kurtosis_types.SafeCastToMapStringString(annotationsDict, "ingressSpecAnnotations")
+		dict, err := kurtosis_types.SafeCastToMapStringString(
+			annotationsDict,
+			"annotations",
+		)
 		if err != nil {
 			return nil, handleError(err, starlark_kube_config.AnnotationsAttr)
 		}
