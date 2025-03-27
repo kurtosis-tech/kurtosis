@@ -10,7 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/service_helpers"
 	"gopkg.in/yaml.v3"
 	"strings"
 
@@ -139,7 +139,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred creating Kurtosis Context from local engine")
 	}
 
-	serviceInfo, serviceConfig, err := service.GetServiceInfo(ctx, kurtosisCtx, enclaveIdentifier, serviceIdentifier)
+	serviceInfo, serviceConfig, err := service_helpers.GetServiceInfo(ctx, kurtosisCtx, enclaveIdentifier, serviceIdentifier)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting service info of '%v' from '%v'.", enclaveIdentifier, serviceIdentifier)
 	}

@@ -3,7 +3,7 @@ package add
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/service_helpers"
 	"strings"
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
@@ -112,10 +112,10 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Key: serviceNameArgKey,
 		},
 		{
-			Key: service.ImageKey,
+			Key: service_helpers.ImageKey,
 		},
 		{
-			Key:          service.CmdKey,
+			Key:          service_helpers.CmdKey,
 			IsOptional:   true,
 			IsGreedy:     true,
 			DefaultValue: []string{},
@@ -123,14 +123,14 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 	},
 	Flags: []*flags.FlagConfig{
 		{
-			Key:   service.EntrypointFlagKey,
+			Key:   service_helpers.EntrypointFlagKey,
 			Usage: "ENTRYPOINT binary that will be used when running the container, overriding the image's default ENTRYPOINT",
 			// TODO Make this a string list
 			Type: flags.FlagType_String,
 		},
 		{
 			// TODO We currently can't handle commas, so allow users to set the flag multiple times to set multiple envvars
-			Key: service.EnvvarsFlagKey,
+			Key: service_helpers.EnvvarsFlagKey,
 			Usage: fmt.Sprintf(
 				"String containing environment variables that will be set when running the container, in "+
 					"the form \"KEY1%vVALUE1%vKEY2%vVALUE2\"",
@@ -141,7 +141,7 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Type: flags.FlagType_String,
 		},
 		{
-			Key: service.PortsFlagKey,
+			Key: service_helpers.PortsFlagKey,
 			Usage: fmt.Sprintf(`String containing declarations of ports that the container will listen on, in the form, %q`+
 				` where %q is a user friendly string for identifying the port, %q is required field, %q is an optional field which must be either`+
 				` '%v' or '%v' and defaults to '%v' if omitted and %q is user defined optional value. %v`,
@@ -158,7 +158,7 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Type: flags.FlagType_String,
 		},
 		{
-			Key: service.FilesFlagKey,
+			Key: service_helpers.FilesFlagKey,
 			Usage: fmt.Sprintf(
 				"String containing declarations of files paths on the container -> artifact name  where the contents of those "+
 					"files artifacts should be mounted, in the form \"MOUNTPATH1%vARTIFACTNAME1%vMOUNTPATH2%vARTIFACTNAME2\" where "+
@@ -272,7 +272,7 @@ func run(
 		)
 	}
 
-	_, err = service.RunAddServiceStarlarkScript(ctx, serviceName, enclaveIdentifier, service.GetAddServiceStarlarkScript(serviceName, serviceConfigStarlark), enclaveCtx)
+	_, err = service_helpers.RunAddServiceStarlarkScript(ctx, serviceName, enclaveIdentifier, service_helpers.GetAddServiceStarlarkScript(serviceName, serviceConfigStarlark), enclaveCtx)
 	if err != nil {
 		return err // already wrapped
 	}
@@ -379,17 +379,17 @@ func GetServiceConfigStarlark(
 	minMemoryMegaBytes int,
 	privateIPAddressPlaceholder string,
 ) (string, error) {
-	envvarsMap, err := service.ParseEnvVarsStr(envvarsStr)
+	envvarsMap, err := service_helpers.ParseEnvVarsStr(envvarsStr)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred parsing environment variables string '%v'", envvarsStr)
 	}
 
-	ports, err := service.ParsePortsStr(portsStr)
+	ports, err := service_helpers.ParsePortsStr(portsStr)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred parsing ports string '%v'", portsStr)
 	}
 
-	filesArtifactMounts, err := service.ParseFilesArtifactMountsStr(filesArtifactMountsStr)
+	filesArtifactMounts, err := service_helpers.ParseFilesArtifactMountsStr(filesArtifactMountsStr)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred parsing files artifact mounts string '%v'", filesArtifactMountsStr)
 	}
