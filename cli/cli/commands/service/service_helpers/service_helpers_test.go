@@ -1,4 +1,4 @@
-package add
+package service_helpers
 
 import (
 	"fmt"
