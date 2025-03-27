@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	IngressSpecTypeName = "IngressSpec"
+	IngressSpecTypeName  = "IngressSpec"
 	AnnotationsAttr      = "annotations"
 	IngressClassNameAttr = "ingress_class_name"
 	HostAttr             = "host"
@@ -29,15 +29,15 @@ func NewIngressSpecType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 			Name: IngressSpecTypeName,
 			Arguments: []*builtin_argument.BuiltinArgument{
 				{
-					Name: HostAttr,
+					Name:              HostAttr,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.NonEmptyString(value, HostAttr)
 					},
 				},
 				{
-					Name: IngressClassNameAttr,
-					IsOptional: true,
+					Name:              IngressClassNameAttr,
+					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.NonEmptyString(value, IngressClassNameAttr)
@@ -60,7 +60,7 @@ func NewIngressSpecType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 									AnnotationsAttr,
 								)
 							}
-							_, err := kubernetes_annotation_key.CreateNewKubernetesAnnotationKey(key.String())
+							_, err := kubernetes_annotation_key.CreateNewKubernetesAnnotationKey(key.GoString())
 							if err != nil {
 								return startosis_errors.WrapWithInterpretationError(
 									err,
@@ -69,14 +69,15 @@ func NewIngressSpecType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 								)
 							}
 
-							if _, ok := t[1].(starlark.String); !ok {
+							value, ok := t[1].(starlark.String)
+							if !ok {
 								return startosis_errors.NewInterpretationError(
 									"Expected value at index %d of '%s' to be a string",
 									index,
 									AnnotationsAttr,
 								)
 							}
-							_, err = kubernetes_annotation_value.CreateNewKubernetesAnnotationValue(value.String())
+							_, err = kubernetes_annotation_value.CreateNewKubernetesAnnotationValue(value.GoString())
 							if err != nil {
 								return startosis_errors.WrapWithInterpretationError(
 									err,
