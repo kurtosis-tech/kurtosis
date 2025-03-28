@@ -318,7 +318,7 @@ func run(
 			)
 		}
 	}
-	logrus.Infof("SERVICE CONFIG STARLARK: ")
+	logrus.Infof("SERVICE CONFIG STARLARK: %v", serviceConfigStarlarkStr)
 
 	_, err = service_helpers.RunAddServiceStarlarkScript(ctx, serviceName, enclaveIdentifier, service_helpers.GetAddServiceStarlarkScript(serviceName, serviceConfigStarlarkStr), enclaveCtx)
 	if err != nil {
