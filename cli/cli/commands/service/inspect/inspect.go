@@ -45,10 +45,9 @@ const (
 
 	outputFormatKey          = "output"
 	outputFormatKeyShorthand = "o"
-	outputFormatKeyDefault   = ""
+	stdoutOutputFormat       = ""
 	yamlOutputFormat         = "yaml"
-
-	jsonOutputFormat = "json"
+	jsonOutputFormat         = "json"
 
 	ServiceNameTitleName           = "Name"
 	ServiceUUIDTitleName           = "UUID"
@@ -61,8 +60,6 @@ const (
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
-
-	stdoutOutputFormat = ""
 )
 
 var ServiceInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -83,7 +80,7 @@ var ServiceInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtos
 			Shorthand: outputFormatKeyShorthand,
 			Usage:     "Format to output the result (yaml or json)",
 			Type:      flags.FlagType_String,
-			Default:   outputFormatKeyDefault,
+			Default:   stdoutOutputFormat,
 		},
 	},
 	Args: []*args.ArgConfig{
@@ -130,7 +127,6 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", outputFormatKey)
 	}
-
 	outputFormat = strings.ToLower(strings.TrimSpace(outputFormat))
 	if outputFormat != "" && outputFormat != jsonOutputFormat && outputFormat != yamlOutputFormat {
 		return stacktrace.NewError("Invalid output format '%s'; must be '%v' or '%v'", outputFormat, jsonOutputFormat, yamlOutputFormat)
