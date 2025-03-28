@@ -16,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/docker_compose_transpiler"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_run"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/git_package_content_provider"
@@ -101,6 +102,13 @@ type ApiContainerService struct {
 	metricsClient metrics_client.MetricsClient
 
 	githubAuthProvider *git_package_content_provider.GitHubPackageAuthProvider
+
+	// NOTE: interpretationTimeValueStore is modified by the StarlarkInterpreter - allowing this object to have access to it
+	// allows retrieving service configs of running services but it is NOT mutex protected, thus this object should never modify
+	// the interpretationTimeValueStore or it could mess with interpretation
+	// TODO: Either mutex protect the interpretationTimeValueStore OR compose the interpretationTimeValueStore of a separate mutex protected `serviceConfigRepository` object
+	// and allow both ApiContainerService and interpretationTimeValueStore to have access to that
+	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore
 }
 
 func NewApiContainerService(
@@ -113,6 +121,7 @@ func NewApiContainerService(
 	metricsClient metrics_client.MetricsClient,
 	githubAuthProvider *git_package_content_provider.GitHubPackageAuthProvider,
 	starlarkRunRepository *starlark_run.StarlarkRunRepository,
+	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore,
 ) (*ApiContainerService, error) {
 
 	if err := initStarlarkRun(starlarkRunRepository, restartPolicy); err != nil {
@@ -120,14 +129,15 @@ func NewApiContainerService(
 	}
 
 	service := &ApiContainerService{
-		filesArtifactStore:     filesArtifactStore,
-		serviceNetwork:         serviceNetwork,
-		startosisRunner:        startosisRunner,
-		startosisInterpreter:   startosisInterpreter,
-		packageContentProvider: startosisModuleContentProvider,
-		starlarkRunRepository:  starlarkRunRepository,
-		metricsClient:          metricsClient,
-		githubAuthProvider:     githubAuthProvider,
+		filesArtifactStore:           filesArtifactStore,
+		serviceNetwork:               serviceNetwork,
+		startosisRunner:              startosisRunner,
+		startosisInterpreter:         startosisInterpreter,
+		packageContentProvider:       startosisModuleContentProvider,
+		starlarkRunRepository:        starlarkRunRepository,
+		metricsClient:                metricsClient,
+		githubAuthProvider:           githubAuthProvider,
+		interpretationTimeValueStore: interpretationTimeValueStore,
 	}
 
 	return service, nil
@@ -781,6 +791,17 @@ func transformPortSpecMapToApiPortsMap(apiPorts map[string]*port_spec.PortSpec) 
 	return result, nil
 }
 
+func transformServiceDirPathsToFileArtifactsToApiPortsFilesArtifactsList(serviceDirPathsToFilesArtifactsIdentifiers map[string][]string) map[string]*kurtosis_core_rpc_api_bindings.FilesArtifactsList {
+	result := map[string]*kurtosis_core_rpc_api_bindings.FilesArtifactsList{}
+	for svcName, filesArtifactsIdentifiers := range serviceDirPathsToFilesArtifactsIdentifiers {
+		filesArtifactsList := &kurtosis_core_rpc_api_bindings.FilesArtifactsList{
+			FilesArtifactsIdentifiers: filesArtifactsIdentifiers,
+		}
+		result[svcName] = filesArtifactsList
+	}
+	return result
+}
+
 func (apicService *ApiContainerService) waitForEndpointAvailability(
 	ctx context.Context,
 	serviceIdStr string,
@@ -886,9 +907,15 @@ func (apicService *ApiContainerService) getServiceInfoForIdentifier(ctx context.
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting info for service '%v'", serviceIdentifier)
 	}
-	serviceInfo, err := getServiceInfoFromServiceObj(serviceObj)
+
+	serviceConfig, err := apicService.interpretationTimeValueStore.GetServiceConfig(serviceObj.GetRegistration().GetName())
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "an error occurred while converting service obj for service with id '%v' to service info", serviceIdentifier)
+		return nil, stacktrace.Propagate(err, "An error occurred getting service config from interpretation time value store.")
+	}
+
+	serviceInfo, err := getServiceInfoFromServiceObj(serviceObj, serviceConfig)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "A error occurred while converting service obj for service with id '%v' to service info", serviceIdentifier)
 	}
 	return serviceInfo, nil
 }
@@ -1037,7 +1064,7 @@ func (apicService *ApiContainerService) runStarlark(
 func getServiceInfosFromServiceObjs(services map[service.ServiceUUID]*service.Service) (map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo, error) {
 	serviceInfos := map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo{}
 	for uuid, serviceObj := range services {
-		serviceInfo, err := getServiceInfoFromServiceObj(serviceObj)
+		serviceInfo, err := getServiceInfoFromServiceObj(serviceObj, nil)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "there was an error converting the service obj for service with uuid '%v' and name '%v' to service info", uuid, serviceObj.GetRegistration().GetName())
 		}
@@ -1046,7 +1073,7 @@ func getServiceInfosFromServiceObjs(services map[service.ServiceUUID]*service.Se
 	return serviceInfos, nil
 }
 
-func getServiceInfoFromServiceObj(serviceObj *service.Service) (*kurtosis_core_rpc_api_bindings.ServiceInfo, error) {
+func getServiceInfoFromServiceObj(serviceObj *service.Service, serviceConfig *service.ServiceConfig) (*kurtosis_core_rpc_api_bindings.ServiceInfo, error) {
 	privatePorts := serviceObj.GetPrivatePorts()
 	privateIp := serviceObj.GetRegistration().GetPrivateIP()
 	maybePublicIp := serviceObj.GetMaybePublicIP()
@@ -1086,6 +1113,36 @@ func getServiceInfoFromServiceObj(serviceObj *service.Service) (*kurtosis_core_r
 		EnvVars:        serviceContainer.GetEnvVars(),
 	}
 
+	maxMillicpus := uint32(0)
+	minMillicpus := uint32(0)
+	maxMemoryMegabytes := uint32(0)
+	minMemoryMegabytes := uint32(0)
+
+	serviceDirPathsToFilesArtifactsList := transformServiceDirPathsToFileArtifactsToApiPortsFilesArtifactsList(serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers)
+
+	user := serviceConfig.GetUser()
+	var gid uint32 = 0
+	userGid, existsGuid := user.GetGID()
+	if existsGuid {
+		gid = uint32(userGid)
+	}
+	apiUser := &kurtosis_core_rpc_api_bindings.User{
+		Uid: uint32(user.GetUID()),
+		Gid: gid,
+	}
+
+	tolerations := serviceConfig.GetTolerations()
+	apiTolerations := []*kurtosis_core_rpc_api_bindings.Toleration{}
+	for _, toleration := range tolerations {
+		apiTolerations = append(apiTolerations, &kurtosis_core_rpc_api_bindings.Toleration{
+			Key:               toleration.Key,
+			Operator:          string(toleration.Operator),
+			Value:             toleration.Value,
+			Effect:            string(toleration.Effect),
+			TolerationSeconds: *toleration.TolerationSeconds,
+		})
+	}
+
 	serviceInfoResponse := binding_constructors.NewServiceInfo(
 		serviceUuidStr,
 		serviceNameStr,
@@ -1096,7 +1153,18 @@ func getServiceInfoFromServiceObj(serviceObj *service.Service) (*kurtosis_core_r
 		publicApiPorts,
 		serviceStatus,
 		serviceInfoContainer,
+		serviceDirPathsToFilesArtifactsList,
+		maxMillicpus,
+		minMillicpus,
+		maxMemoryMegabytes,
+		minMemoryMegabytes,
+		apiUser,
+		apiTolerations,
+		serviceConfig.GetNodeSelectors(),
+		serviceConfig.GetLabels(),
+		serviceConfig.GetTiniEnabled(),
 	)
+
 	return serviceInfoResponse, nil
 }
 
