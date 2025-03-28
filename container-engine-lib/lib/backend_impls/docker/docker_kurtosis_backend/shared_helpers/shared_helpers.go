@@ -325,19 +325,19 @@ func GetMatchingUserServiceObjsAndDockerResourcesNoMutex(
 	resultServiceObjs := map[service.ServiceUUID]*service.Service{}
 	resultDockerResources := map[service.ServiceUUID]*UserServiceDockerResources{}
 	for uuid, serviceObj := range matchingServiceObjs {
-		if filters.UUIDs != nil && len(filters.UUIDs) > 0 {
+		if len(filters.UUIDs) > 0 {
 			if _, found := filters.UUIDs[serviceObj.GetRegistration().GetUUID()]; !found {
 				continue
 			}
 		}
 
-		if filters.Names != nil && len(filters.Names) > 0 {
+		if len(filters.Names) > 0 {
 			if _, found := filters.Names[serviceObj.GetRegistration().GetName()]; !found {
 				continue
 			}
 		}
 
-		if filters.Statuses != nil && len(filters.Statuses) > 0 {
+		if len(filters.Statuses) > 0 {
 			if _, found := filters.Statuses[serviceObj.GetContainer().GetStatus()]; !found {
 				continue
 			}
@@ -494,7 +494,7 @@ func DumpContainers(ctx context.Context, dockerManager *docker_manager.DockerMan
 		}
 
 		// NOTE: We don't use stacktrace here because the actual stacktraces we care about are the ones from the threads!
-		return fmt.Errorf("The following errors occurred when trying to dump information :\n%v",
+		return fmt.Errorf("the following errors occurred when trying to dump information :\n%v",
 			strings.Join(allIndexedResultErrStrs, "\n\n"))
 	}
 

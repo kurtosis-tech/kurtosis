@@ -60,27 +60,27 @@ var (
 	testRegistryPassword = "password"
 
 	testPrivatePortId              = "grpc"
-	testPrivatePortNumber          = uint16(1323)
+	testPrivatePortNumber          = uint16(1323) //nolint:mnd
 	testPrivatePortProtocolStr     = "TCP"
 	testPrivatePortProtocol        = port_spec.TransportProtocol_TCP
 	testPrivateApplicationProtocol = "https"
 	testWaitConfiguration          = "2s"
 	testWaitDefaultValue           = "2m"
 
-	testPublicPortId              = "endpoints"
-	testPublicPortNumber          = uint16(80)
-	testPublicPortProtocolStr     = "TCP"
-	testPublicPortProtocol        = port_spec.TransportProtocol_TCP
-	testPublicApplicationProtocol = "https"
+	testPublicPortId                     = "endpoints"
+	testPublicPortNumber          uint16 = 80
+	testPublicPortProtocolStr            = "TCP"
+	testPublicPortProtocol               = port_spec.TransportProtocol_TCP
+	testPublicApplicationProtocol        = "https"
 
-	testFilesArtifactPath1             = "path/to/file/1"
-	testFilesArtifactName1             = "file_1"
-	testFilesArtifactPath2             = "path/to/file/2"
-	testFilesArtifactName2             = "file_2"
-	testPersistentDirectoryPath        = "path/to/persistent/dir"
-	testPersistentDirectoryKey         = "persistent-dir-test"
-	testPersistentDirectorySize        = int64(30)
-	testPersistentDirectorySizeInBytes = testPersistentDirectorySize * 1024 * 1024
+	testFilesArtifactPath1                   = "path/to/file/1"
+	testFilesArtifactName1                   = "file_1"
+	testFilesArtifactPath2                   = "path/to/file/2"
+	testFilesArtifactName2                   = "file_2"
+	testPersistentDirectoryPath              = "path/to/persistent/dir"
+	testPersistentDirectoryKey               = "persistent-dir-test"
+	testPersistentDirectorySize        int64 = 30
+	testPersistentDirectorySizeInBytes       = testPersistentDirectorySize * 1024 * 1024
 
 	testEntryPointSlice = []string{
 		"127.0.0.0",
@@ -100,11 +100,11 @@ var (
 
 	testPrivateIPAddressPlaceholder = "<IP_ADDRESS>"
 
-	testCpuAllocation    = uint64(2000)
-	testMemoryAllocation = uint64(1024)
+	testCpuAllocation    = uint64(2000) //nolint:mnd
+	testMemoryAllocation = uint64(1024) //nolint:mnd
 
-	testMinCpuMilliCores   = uint64(1000)
-	testMinMemoryMegabytes = uint64(512)
+	testMinCpuMilliCores   = uint64(1000) //nolint:mnd
+	testMinMemoryMegabytes = uint64(512)  //nolint:mnd
 
 	testReadyConditionsRecipePortId   = "http"
 	testReadyConditionsRecipeEndpoint = "/endpoint?input=data"
@@ -148,7 +148,7 @@ var (
 
 	testTolerationKey     = "test-key"
 	testTolerationValue   = "test-value"
-	testTolerationSeconds = int64(64)
+	testTolerationSeconds = int64(64) //nolint:mnd
 
 	testFilesToBeMoved = "test.txt"
 )
