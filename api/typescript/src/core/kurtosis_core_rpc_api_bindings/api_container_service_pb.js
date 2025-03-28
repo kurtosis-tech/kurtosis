@@ -1909,9 +1909,8 @@ proto.api_container_api.User.prototype.toObject = function(opt_includeInstance) 
  */
 proto.api_container_api.User.toObject = function(includeInstance, msg) {
   var f, obj = {
-    username: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    uid: jspb.Message.getFieldWithDefault(msg, 2, 0),
-    gid: jspb.Message.getFieldWithDefault(msg, 3, 0)
+    uid: jspb.Message.getFieldWithDefault(msg, 1, 0),
+    gid: jspb.Message.getFieldWithDefault(msg, 2, 0)
   };
 
   if (includeInstance) {
@@ -1949,14 +1948,10 @@ proto.api_container_api.User.deserializeBinaryFromReader = function(msg, reader)
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
-      msg.setUsername(value);
-      break;
-    case 2:
       var value = /** @type {number} */ (reader.readUint32());
       msg.setUid(value);
       break;
-    case 3:
+    case 2:
       var value = /** @type {number} */ (reader.readUint32());
       msg.setGid(value);
       break;
@@ -1989,24 +1984,17 @@ proto.api_container_api.User.prototype.serializeBinary = function() {
  */
 proto.api_container_api.User.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getUsername();
-  if (f.length > 0) {
-    writer.writeString(
-      1,
-      f
-    );
-  }
   f = message.getUid();
   if (f !== 0) {
     writer.writeUint32(
-      2,
+      1,
       f
     );
   }
   f = message.getGid();
   if (f !== 0) {
     writer.writeUint32(
-      3,
+      2,
       f
     );
   }
@@ -2014,29 +2002,11 @@ proto.api_container_api.User.serializeBinaryToWriter = function(message, writer)
 
 
 /**
- * optional string username = 1;
- * @return {string}
- */
-proto.api_container_api.User.prototype.getUsername = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
-};
-
-
-/**
- * @param {string} value
- * @return {!proto.api_container_api.User} returns this
- */
-proto.api_container_api.User.prototype.setUsername = function(value) {
-  return jspb.Message.setProto3StringField(this, 1, value);
-};
-
-
-/**
- * optional uint32 uid = 2;
+ * optional uint32 uid = 1;
  * @return {number}
  */
 proto.api_container_api.User.prototype.getUid = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
 };
 
 
@@ -2045,16 +2015,16 @@ proto.api_container_api.User.prototype.getUid = function() {
  * @return {!proto.api_container_api.User} returns this
  */
 proto.api_container_api.User.prototype.setUid = function(value) {
-  return jspb.Message.setProto3IntField(this, 2, value);
+  return jspb.Message.setProto3IntField(this, 1, value);
 };
 
 
 /**
- * optional uint32 gid = 3;
+ * optional uint32 gid = 2;
  * @return {number}
  */
 proto.api_container_api.User.prototype.getGid = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 3, 0));
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
 };
 
 
@@ -2063,7 +2033,7 @@ proto.api_container_api.User.prototype.getGid = function() {
  * @return {!proto.api_container_api.User} returns this
  */
 proto.api_container_api.User.prototype.setGid = function(value) {
-  return jspb.Message.setProto3IntField(this, 3, value);
+  return jspb.Message.setProto3IntField(this, 2, value);
 };
 
 

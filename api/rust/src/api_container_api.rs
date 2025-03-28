@@ -134,11 +134,9 @@ pub struct FilesArtifactsList {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct User {
-    #[prost(string, tag = "1")]
-    pub username: ::prost::alloc::string::String,
-    #[prost(uint32, tag = "2")]
+    #[prost(uint32, tag = "1")]
     pub uid: u32,
-    #[prost(uint32, tag = "3")]
+    #[prost(uint32, tag = "2")]
     pub gid: u32,
 }
 /// Equivalent of tolerations on ServiceConfig

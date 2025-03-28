@@ -137,9 +137,8 @@ export const FilesArtifactsList = proto3.makeMessageType(
 export const User = proto3.makeMessageType(
   "api_container_api.User",
   () => [
-    { no: 1, name: "username", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "uid", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
-    { no: 3, name: "gid", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
+    { no: 1, name: "uid", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
+    { no: 2, name: "gid", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
   ],
 );
 

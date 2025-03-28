@@ -367,8 +367,12 @@ func NewServiceInfo(
 	maxMillicpus uint32,
 	minMemoryMegabytes uint32,
 	maxMemoryMegabytes uint32,
+	user *kurtosis_core_rpc_api_bindings.User,
+	tolerations []*kurtosis_core_rpc_api_bindings.Toleration,
+	nodeSelectors map[string]string,
+	labels map[string]string,
+	tiniEnabled bool,
 ) *kurtosis_core_rpc_api_bindings.ServiceInfo {
-
 	return &kurtosis_core_rpc_api_bindings.ServiceInfo{
 		ServiceUuid:                         uuid,
 		Name:                                name,
@@ -384,7 +388,11 @@ func NewServiceInfo(
 		MinMillicpus:                        minMillicpus,
 		MaxMemoryMegabytes:                  maxMemoryMegabytes,
 		MinMemoryMegabytes:                  minMemoryMegabytes,
-		User:                                nil,
+		User:                                user,
+		Tolerations:                         tolerations,
+		NodeSelectors:                       nodeSelectors,
+		Labels:                              labels,
+		TiniEnabled:                         &tiniEnabled,
 	}
 }
 

@@ -126,9 +126,6 @@ export namespace FilesArtifactsList {
 }
 
 export class User extends jspb.Message {
-  getUsername(): string;
-  setUsername(value: string): User;
-
   getUid(): number;
   setUid(value: number): User;
 
@@ -145,7 +142,6 @@ export class User extends jspb.Message {
 
 export namespace User {
   export type AsObject = {
-    username: string,
     uid: number,
     gid: number,
   }

@@ -908,17 +908,12 @@ func (apicService *ApiContainerService) getServiceInfoForIdentifier(ctx context.
 		return nil, stacktrace.Propagate(err, "An error occurred getting info for service '%v'", serviceIdentifier)
 	}
 
-	//
 	serviceConfig, err := apicService.interpretationTimeValueStore.GetServiceConfig(serviceObj.GetRegistration().GetName())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting service config from interpretation time value store.")
 	}
 
-	filesArtifactsExpansions := serviceConfig.GetFilesArtifactsExpansion()
-	serviceDirPathsToFilesArtifactsMounts := filesArtifactsExpansions.ServiceDirpathsToArtifactIdentifiers
-	logrus.Infof("SERVICE DIR PATHS TO FILES ARTIFACTS IDENTIFIERS: %v", serviceDirPathsToFilesArtifactsMounts)
-
-	serviceInfo, err := getServiceInfoFromServiceObj(serviceObj, serviceDirPathsToFilesArtifactsMounts)
+	serviceInfo, err := getServiceInfoFromServiceObj(serviceObj, serviceConfig)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "A error occurred while converting service obj for service with id '%v' to service info", serviceIdentifier)
 	}
@@ -1078,7 +1073,7 @@ func getServiceInfosFromServiceObjs(services map[service.ServiceUUID]*service.Se
 	return serviceInfos, nil
 }
 
-func getServiceInfoFromServiceObj(serviceObj *service.Service, serviceDirPathsToFilesArtifactsIdentifiers map[string][]string) (*kurtosis_core_rpc_api_bindings.ServiceInfo, error) {
+func getServiceInfoFromServiceObj(serviceObj *service.Service, serviceConfig *service.ServiceConfig) (*kurtosis_core_rpc_api_bindings.ServiceInfo, error) {
 	privatePorts := serviceObj.GetPrivatePorts()
 	privateIp := serviceObj.GetRegistration().GetPrivateIP()
 	maybePublicIp := serviceObj.GetMaybePublicIP()
@@ -1123,7 +1118,30 @@ func getServiceInfoFromServiceObj(serviceObj *service.Service, serviceDirPathsTo
 	maxMemoryMegabytes := uint32(0)
 	minMemoryMegabytes := uint32(0)
 
-	serviceDirPathsToFilesArtifactsList := transformServiceDirPathsToFileArtifactsToApiPortsFilesArtifactsList(serviceDirPathsToFilesArtifactsIdentifiers)
+	serviceDirPathsToFilesArtifactsList := transformServiceDirPathsToFileArtifactsToApiPortsFilesArtifactsList(serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers)
+
+	user := serviceConfig.GetUser()
+	var gid uint32 = 0
+	userGid, existsGuid := user.GetGID()
+	if existsGuid {
+		gid = uint32(userGid)
+	}
+	apiUser := &kurtosis_core_rpc_api_bindings.User{
+		Uid: uint32(user.GetUID()),
+		Gid: gid,
+	}
+
+	tolerations := serviceConfig.GetTolerations()
+	apiTolerations := []*kurtosis_core_rpc_api_bindings.Toleration{}
+	for _, toleration := range tolerations {
+		apiTolerations = append(apiTolerations, &kurtosis_core_rpc_api_bindings.Toleration{
+			Key:               toleration.Key,
+			Operator:          string(toleration.Operator),
+			Value:             toleration.Value,
+			Effect:            string(toleration.Effect),
+			TolerationSeconds: *toleration.TolerationSeconds,
+		})
+	}
 
 	serviceInfoResponse := binding_constructors.NewServiceInfo(
 		serviceUuidStr,
@@ -1140,6 +1158,11 @@ func getServiceInfoFromServiceObj(serviceObj *service.Service, serviceDirPathsTo
 		minMillicpus,
 		maxMemoryMegabytes,
 		minMemoryMegabytes,
+		apiUser,
+		apiTolerations,
+		serviceConfig.GetNodeSelectors(),
+		serviceConfig.GetLabels(),
+		serviceConfig.GetTiniEnabled(),
 	)
 
 	return serviceInfoResponse, nil

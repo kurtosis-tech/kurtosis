@@ -266,17 +266,12 @@ export declare class FilesArtifactsList extends Message<FilesArtifactsList> {
  */
 export declare class User extends Message<User> {
   /**
-   * @generated from field: string username = 1;
-   */
-  username: string;
-
-  /**
-   * @generated from field: uint32 uid = 2;
+   * @generated from field: uint32 uid = 1;
    */
   uid: number;
 
   /**
-   * @generated from field: uint32 gid = 3;
+   * @generated from field: uint32 gid = 2;
    */
   gid: number;
 
