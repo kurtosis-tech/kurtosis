@@ -53,7 +53,7 @@ func newVectorConfig(
 	}
 
 	return &VectorConfig{
-		DataDir: dataDirPath,
+		DataDir: vectorDataDirMountPath,
 		Api: &VectorApiConfig{
 			Enabled: true,
 			Address: "0.0.0.0:" + strconv.Itoa(int(httpPortNumber)),

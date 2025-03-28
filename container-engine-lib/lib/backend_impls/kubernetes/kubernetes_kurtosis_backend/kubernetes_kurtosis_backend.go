@@ -2,12 +2,13 @@ package kubernetes_kurtosis_backend
 
 import (
 	"context"
+	"io"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_aggregator_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_aggregator_functions/implementations/vector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_collector_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_collector_functions/implementations/fluentbit"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
-	"io"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
@@ -163,6 +164,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 		envVars,
 		shouldStartInDebugMode,
 		githubAuthToken,
+		sinks,
 		backend.engineNodeName,
 		backend.kubernetesManager,
 		backend.objAttrsProvider,
@@ -477,6 +479,8 @@ func (backend *KubernetesKurtosisBackend) CreateLogsAggregator(ctx context.Conte
 		ctx,
 		"", // as of now, nothing calls this functions so it's okay to leave namespace blank
 		logsAggregatorDeployment,
+		httpPortNum,
+		sinks,
 		backend.objAttrsProvider,
 		backend.kubernetesManager)
 	if err != nil {

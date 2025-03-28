@@ -7,6 +7,8 @@ import (
 
 	"github.com/docker/docker/api/types/volume"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_aggregator_functions"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_aggregator_functions/implementations/vector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
@@ -400,6 +402,15 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 	}
 	for enclaveUuid, networkRemovalErr := range erroredNetworkRemovalEnclaveUuids {
 		erroredEnclaveUuids[enclaveUuid] = networkRemovalErr
+	}
+
+	// if destroy is deleting ALL enclaves, now's a good time to clean up log stuff
+	if filters.Statuses[enclave.EnclaveStatus_Running] {
+		// TODO: Potentially clean logs collector as well, similar to Kubernetes backend
+
+		if err := logs_aggregator_functions.CleanLogsAggregator(ctx, vector.NewVectorLogsAggregatorContainer(), backend.objAttrsProvider, backend.dockerManager); err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred cleaning logs aggregator container.")
+		}
 	}
 
 	return successfulNetworkRemovalEnclaveUuids, erroredEnclaveUuids, nil

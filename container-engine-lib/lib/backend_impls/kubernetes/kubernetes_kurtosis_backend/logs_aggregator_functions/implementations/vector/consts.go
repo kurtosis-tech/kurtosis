@@ -1,11 +1,19 @@
 package vector
 
+import (
+	"fmt"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
+)
+
 const (
 	vectorContainerName = "vector"
 	vectorImage         = "timberio/vector:0.45.0-debian"
 
 	vectorConfigVolumeName = "vector-config"
 	vectorConfigMountPath  = "/etc/vector"
+	vectorConfigFileName   = "vector.yaml"
+	vectorConfigFilePath   = vectorConfigMountPath + "/" + vectorConfigFileName
 
 	kurtosisLogsVolumeName = "varlogskurtosis"
 	kurtosisLogsMountPath  = "/var/log/kurtosis"
@@ -16,39 +24,14 @@ const (
 	vectorDataDirVolumeName = "varlibvector"
 	vectorDataDirMountPath  = "/var/lib/vector"
 
-	bufferSizeStr = "268435488" // 256 MB is min for vector
+	bufferSize = 268435488 // 256 MB is min for vector
 
-	vectorConfigFileName = "vector.toml"
-	vectorConfigTemplate = `
-	data_dir = "{{ .DataDir }}"
+	defaultSourceId          = "kurtosis_default_source"
+	fluentBitSourceType      = "fluent"
+	fluentBitSourceIpAddress = "0.0.0.0"
+	fileSinkType             = "file"
+)
 
-	[api]
-	enabled = true
-	address = "0.0.0.0:{{ .APIPort }}"
-
-	[sources.fluentbit]
-	type = "fluent"
-	address = "0.0.0.0:{{ .LogsListeningPort }}"
-
-	[sinks.file_sink]
-	type = "file"
-	inputs = ["fluentbit"]
-	path = "{{ .LogsPath }}/%G/%V/{{"{{"}} {{ .LogsEnclaveUUIDLabel }} {{"}}"}}/{{"{{"}} {{ .LogsServiceUUIDLabel }} {{"}}"}}.json"
-
-	[sinks.file_sink.buffer]
-	type = "disk"
-	max_size = {{ .BufferSize }}
-	when_full = "block"
-
-	[sinks.file_sink.encoding]
-	codec = "json"
-
-	[sinks.stdout_sink]
-	type = "console"
-	inputs = ["fluentbit"]
-	target = "stdout"
-
-	[sinks.stdout_sink.encoding]
-	codec = "json"
-`
+var (
+	uuidLogsFilepath = fmt.Sprintf("%s/%%G/%%V/{{ %v }}/{{ %v }}.json", kurtosisLogsMountPath, kubernetes_label_key.LogsEnclaveUUIDKubernetesLabelKey.GetString(), kubernetes_label_key.LogsServiceUUIDKubernetesLabelKey.GetString())
 )
