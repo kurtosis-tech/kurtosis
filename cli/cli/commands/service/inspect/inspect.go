@@ -61,6 +61,8 @@ const (
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
+
+	stdoutOutputFormat = ""
 )
 
 var ServiceInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -152,26 +154,35 @@ func run(
 }
 
 func PrintServiceInspect(userService *kurtosis_core_rpc_api_bindings.ServiceInfo, userServiceConfig *services.ServiceConfig, showFullUuid bool, outputFormat string) error {
-	if outputFormat != "" {
-		var marshaled []byte
-		var err error
-		switch outputFormat {
-		case jsonOutputFormat:
-			marshaled, err = json.MarshalIndent(userServiceConfig, "", "  ")
-		case yamlOutputFormat:
-			marshaled, err = yaml.Marshal(userServiceConfig)
-		}
+	switch outputFormat {
+	case jsonOutputFormat:
+		marshaled, err := json.MarshalIndent(userServiceConfig, "", "  ")
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to marshal service info to %s", outputFormat)
 		}
 		out.PrintOutLn(string(marshaled))
-		return nil
+	case yamlOutputFormat:
+		marshaled, err := yaml.Marshal(userServiceConfig)
+		if err != nil {
+			return stacktrace.Propagate(err, "Failed to marshal service info to %s", outputFormat)
+		}
+		out.PrintOutLn(string(marshaled))
+	case stdoutOutputFormat:
+		err := printlnServiceInfo(userService, showFullUuid)
+		if err != nil {
+			return stacktrace.Propagate(err, "Failed to print service info to stdout.")
+		}
+	default:
+		return stacktrace.NewError("Unsupported output format '%v'", outputFormat)
 	}
+	return nil
+}
 
+func printlnServiceInfo(userService *kurtosis_core_rpc_api_bindings.ServiceInfo, shouldShowFullUuid bool) error {
 	out.PrintOutLn(fmt.Sprintf("%s: %s", ServiceNameTitleName, userService.GetName()))
 
 	uuidStr := userService.GetShortenedUuid()
-	if showFullUuid {
+	if shouldShowFullUuid {
 		uuidStr = userService.GetServiceUuid()
 	}
 	out.PrintOutLn(fmt.Sprintf("%s: %s", ServiceUUIDTitleName, uuidStr))
@@ -205,6 +216,5 @@ func PrintServiceInspect(userService *kurtosis_core_rpc_api_bindings.ServiceInfo
 	for envVarKey, envVarVal := range userService.GetContainer().GetEnvVars() {
 		out.PrintOutLn(fmt.Sprintf("  %s: %s", envVarKey, envVarVal))
 	}
-
 	return nil
 }
