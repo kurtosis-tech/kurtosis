@@ -68,22 +68,9 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	}()
 
 	// We get validation for free by virtue of the KurtosisCommand framework
-	var didUserAcceptSendingMetrics bool
-	justPrintMetricsId := false
-	switch didUserAcceptSendingMetricsStr {
-	case enableSendingMetrics:
-		didUserAcceptSendingMetrics = true
-	case disableSendingMetrics:
-		didUserAcceptSendingMetrics = false
-	case printMetricsId:
-		justPrintMetricsId = true
-	default:
-		// If this happens, there's something wrong with the validation being done via KurtosisCommand
-		return stacktrace.NewError(
-			"Encountered an unrecognized '%v' input string '%v', which should never happen; this is a bug in Kurtosis!",
-			enableDisableStatus,
-			didUserAcceptSendingMetricsStr,
-		)
+	didUserAcceptSendingMetrics, justPrintMetricsId, err := didUserAcceptSendingMetricsFunc(didUserAcceptSendingMetricsStr)
+	if err != nil {
+		return err // already wrapped
 	}
 
 	if justPrintMetricsId {
@@ -128,4 +115,25 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	logrus.Infof("Analytics tracking is now %vd", didUserAcceptSendingMetricsStr)
 
 	return nil
+}
+
+func didUserAcceptSendingMetricsFunc(didUserAcceptSendingMetricsStr string) (bool, bool, error) {
+	var didUserAcceptSendingMetricsBool bool
+	justPrintMetricsId := false
+	switch didUserAcceptSendingMetricsStr {
+	case enableSendingMetrics:
+		didUserAcceptSendingMetricsBool = true
+	case disableSendingMetrics:
+		didUserAcceptSendingMetricsBool = false
+	case printMetricsId:
+		justPrintMetricsId = true
+	default:
+		// If this happens, there's something wrong with the validation being done via KurtosisCommand
+		return false, false, stacktrace.NewError(
+			"Encountered an unrecognized '%v' input string '%v', which should never happen; this is a bug in Kurtosis!",
+			enableDisableStatus,
+			didUserAcceptSendingMetricsStr,
+		)
+	}
+	return didUserAcceptSendingMetricsBool, justPrintMetricsId, nil
 }

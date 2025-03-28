@@ -67,20 +67,20 @@ var (
 	testWaitConfiguration          = "2s"
 	testWaitDefaultValue           = "2m"
 
-	testPublicPortId              = "endpoints"
-	testPublicPortNumber          = uint16(80) //nolint:mnd
-	testPublicPortProtocolStr     = "TCP"
-	testPublicPortProtocol        = port_spec.TransportProtocol_TCP
-	testPublicApplicationProtocol = "https"
+	testPublicPortId                     = "endpoints"
+	testPublicPortNumber          uint16 = 80
+	testPublicPortProtocolStr            = "TCP"
+	testPublicPortProtocol               = port_spec.TransportProtocol_TCP
+	testPublicApplicationProtocol        = "https"
 
-	testFilesArtifactPath1             = "path/to/file/1"
-	testFilesArtifactName1             = "file_1"
-	testFilesArtifactPath2             = "path/to/file/2"
-	testFilesArtifactName2             = "file_2"
-	testPersistentDirectoryPath        = "path/to/persistent/dir"
-	testPersistentDirectoryKey         = "persistent-dir-test"
-	testPersistentDirectorySize        = int64(30) //nolint:mnd
-	testPersistentDirectorySizeInBytes = testPersistentDirectorySize * 1024 * 1024
+	testFilesArtifactPath1                   = "path/to/file/1"
+	testFilesArtifactName1                   = "file_1"
+	testFilesArtifactPath2                   = "path/to/file/2"
+	testFilesArtifactName2                   = "file_2"
+	testPersistentDirectoryPath              = "path/to/persistent/dir"
+	testPersistentDirectoryKey               = "persistent-dir-test"
+	testPersistentDirectorySize        int64 = 30
+	testPersistentDirectorySizeInBytes       = testPersistentDirectorySize * 1024 * 1024
 
 	testEntryPointSlice = []string{
 		"127.0.0.0",
