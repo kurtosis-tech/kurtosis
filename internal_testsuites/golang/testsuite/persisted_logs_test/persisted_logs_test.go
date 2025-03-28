@@ -140,7 +140,7 @@ func TestPersistedLogs(t *testing.T) {
 
 		shouldFollowLogsOption := shouldFollowLogsValueByRequest[requestIndex]
 
-		testEvaluationErr, receivedLogLinesByService, receivedNotFoundServiceUuids := test_helpers.GetLogsResponse(
+		receivedLogLinesByService, receivedNotFoundServiceUuids, testEvaluationErr := test_helpers.GetLogsResponse(
 			t,
 			ctx,
 			testTimeOut,

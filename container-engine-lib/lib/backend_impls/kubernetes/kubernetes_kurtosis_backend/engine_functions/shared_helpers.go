@@ -64,13 +64,13 @@ func getMatchingEngineObjectsAndKubernetesResources(
 	resultEngineObjs := map[engine.EngineGUID]*engine.Engine{}
 	resultKubernetesResources := map[engine.EngineGUID]*engineKubernetesResources{}
 	for engineGuid, engineObj := range engineObjects {
-		if filters.GUIDs != nil && len(filters.GUIDs) > 0 {
+		if len(filters.GUIDs) > 0 {
 			if _, found := filters.GUIDs[engineObj.GetGUID()]; !found {
 				continue
 			}
 		}
 
-		if filters.Statuses != nil && len(filters.Statuses) > 0 {
+		if len(filters.Statuses) > 0 {
 			if _, found := filters.Statuses[engineObj.GetStatus()]; !found {
 				continue
 			}

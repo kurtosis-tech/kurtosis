@@ -445,7 +445,7 @@ func (backend *DockerKurtosisBackend) getMatchingEnclaveNetworkInfo(
 			return nil, stacktrace.Propagate(err, "An error occurred getting enclave ID from network '%+v'; this is a bug in Kurtosis", kurtosisNetwork)
 		}
 
-		if filters.UUIDs != nil && len(filters.UUIDs) > 0 {
+		if len(filters.UUIDs) > 0 {
 			if _, found := filters.UUIDs[enclaveUuid]; !found {
 				continue
 			}
@@ -462,7 +462,7 @@ func (backend *DockerKurtosisBackend) getMatchingEnclaveNetworkInfo(
 			return nil, stacktrace.Propagate(err, "An error occurred getting enclave status and containers from network for enclave '%v'", enclaveUuid)
 		}
 
-		if filters.Statuses != nil && len(filters.Statuses) > 0 {
+		if len(filters.Statuses) > 0 {
 			if _, found := filters.Statuses[status]; !found {
 				continue
 			}

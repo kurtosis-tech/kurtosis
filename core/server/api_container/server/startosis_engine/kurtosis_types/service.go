@@ -85,7 +85,7 @@ func CreateService(serviceName starlark.String, hostname starlark.String, ipAddr
 		ports,
 	}
 
-	argumentDefinitions := NewServiceType().KurtosisBaseBuiltin.Arguments
+	argumentDefinitions := NewServiceType().Arguments
 	argumentValuesSet := builtin_argument.NewArgumentValuesSet(argumentDefinitions, args)
 	kurtosisDefaultValue, interpretationErr := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(ServiceTypeName, argumentValuesSet)
 	if interpretationErr != nil {
