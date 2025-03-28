@@ -35,6 +35,7 @@ const (
 	FilesFlagKey                     = "files"
 	filesArtifactMountsDelimiter     = ","
 	filesArtifactMountpointDelimiter = ":"
+	multipleFilesArtifactsDelimiter  = "|"
 
 	emptyApplicationProtocol = ""
 
@@ -318,8 +319,8 @@ func getTransportProtocolFromPortSpecString(portSpec string) (kurtosis_core_rpc_
 	return kurtosis_core_rpc_api_bindings.Port_TransportProtocol(transportProtocolEnumInt), nil
 }
 
-func ParseFilesArtifactMountsStr(filesArtifactMountsStr string) (map[string]string, error) {
-	result := map[string]string{}
+func ParseFilesArtifactMountsStr(filesArtifactMountsStr string) (map[string][]string, error) {
+	result := map[string][]string{}
 	if strings.TrimSpace(filesArtifactMountsStr) == "" {
 		return result, nil
 	}
@@ -342,18 +343,17 @@ func ParseFilesArtifactMountsStr(filesArtifactMountsStr string) (map[string]stri
 			)
 		}
 		mountpoint := mountFragments[0]
-		filesArtifactName := mountFragments[1]
-
-		if existingName, found := result[mountpoint]; found {
+		filesArtifactNamesStr := mountFragments[1]
+		if existingNames, found := result[mountpoint]; found {
 			return nil, stacktrace.NewError(
 				"Mountpoint '%v' is declared twice; once to artifact name '%v' and again to artifact name '%v'",
 				mountpoint,
-				existingName,
-				filesArtifactName,
+				existingNames,
+				filesArtifactNamesStr,
 			)
 		}
 
-		result[mountpoint] = filesArtifactName
+		result[mountpoint] = strings.Split(filesArtifactNamesStr, multipleFilesArtifactsDelimiter)
 	}
 
 	return result, nil

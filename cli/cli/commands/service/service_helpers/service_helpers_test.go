@@ -216,13 +216,13 @@ func TestParseFilesArtifactMountStr_ValidParse(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 2, len(result))
 
-	parsedArtifactUuid1, found := result[mountpoint1]
+	parsedArtifactsUuid1, found := result[mountpoint1]
 	require.True(t, found)
-	require.Equal(t, artifactUuid1, parsedArtifactUuid1)
+	require.Equal(t, artifactUuid1, parsedArtifactsUuid1[0])
 
-	parsedArtifactUuid2, found := result[mountpoint2]
+	parsedArtifactsUuid2, found := result[mountpoint2]
 	require.True(t, found)
-	require.Equal(t, artifactUuid2, parsedArtifactUuid2)
+	require.Equal(t, artifactUuid2, parsedArtifactsUuid2[0])
 }
 
 func TestParseFilesArtifactMountStr_EmptyDeclarationsAreSkipped(t *testing.T) {
@@ -241,13 +241,13 @@ func TestParseFilesArtifactMountStr_EmptyDeclarationsAreSkipped(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 2, len(result))
 
-	parsedArtifactUuid1, found := result[mountpoint1]
+	parsedArtifactsUuid1, found := result[mountpoint1]
 	require.True(t, found)
-	require.Equal(t, artifactUuid1, parsedArtifactUuid1)
+	require.Equal(t, artifactUuid1, parsedArtifactsUuid1[0])
 
-	parsedArtifactUuid2, found := result[mountpoint2]
+	parsedArtifactsUuid2, found := result[mountpoint2]
 	require.True(t, found)
-	require.Equal(t, artifactUuid2, parsedArtifactUuid2)
+	require.Equal(t, artifactUuid2, parsedArtifactsUuid2[0])
 }
 
 func TestParseFilesArtifactMountStr_TooManyArtifactUuidMountpointDelimitersIsError(t *testing.T) {
@@ -287,4 +287,25 @@ func TestParseFilesArtifactMountStr_DuplicateArtifactUuids(t *testing.T) {
 		mountpoint2,
 	))
 	require.Error(t, err)
+}
+
+func TestParseMultipleFilesArtifactMountAtOneDirPathStr_ValidParse(t *testing.T) {
+	mountpoint1 := "/dest1"
+	artifactUuid1 := "1234"
+	artifactUuid2 := "4567"
+
+	result, err := ParseFilesArtifactMountsStr(fmt.Sprintf(
+		"%v:%v|%v",
+		mountpoint1,
+		artifactUuid1,
+		artifactUuid2,
+	))
+	require.NoError(t, err)
+	require.Equal(t, 1, len(result))
+
+	parsedArtifacts, found := result[mountpoint1]
+	require.True(t, found)
+	require.Len(t, parsedArtifacts, 2)
+	require.Equal(t, artifactUuid1, parsedArtifacts[0])
+	require.Equal(t, artifactUuid2, parsedArtifacts[1])
 }

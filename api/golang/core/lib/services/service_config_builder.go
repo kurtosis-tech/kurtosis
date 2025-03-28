@@ -30,23 +30,23 @@ type Toleration struct {
 }
 
 type ServiceConfig struct {
-	Image                       string            `json:"image" yaml:"image"`
-	PrivatePorts                map[string]Port   `json:"ports,omitempty" yaml:"ports,omitempty"`
-	PublicPorts                 map[string]Port   `json:"public_ports,omitempty" yaml:"public_ports,omitempty"`
-	Files                       map[string]string `json:"files,omitempty" yaml:"files,omitempty"`
-	Entrypoint                  []string          `json:"entrypoint,omitempty" yaml:"entrypoint,omitempty"`
-	Cmd                         []string          `json:"cmd,omitempty" yaml:"cmd,omitempty"`
-	EnvVars                     map[string]string `json:"env_vars,omitempty" yaml:"env_vars,omitempty"`
-	PrivateIPAddressPlaceholder string            `json:"private_ip_address_placeholder,omitempty" yaml:"private_ip_address_placeholder,omitempty"`
-	MaxMillicpus                uint32            `json:"max_cpu,omitempty" yaml:"max_cpu,omitempty"`
-	MinMillicpus                uint32            `json:"min_cpu,omitempty" yaml:"min_cpu,omitempty"`
-	MaxMemory                   uint32            `json:"max_memory,omitempty" yaml:"max_memory,omitempty"`
-	MinMemory                   uint32            `json:"min_memory,omitempty" yaml:"min_memory,omitempty"`
-	User                        *User             `json:"user,omitempty" yaml:"user,omitempty"`
-	Tolerations                 []Toleration      `json:"tolerations,omitempty" yaml:"tolerations,omitempty"`
-	Labels                      map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`
-	NodeSelectors               map[string]string `json:"node_selectors,omitempty" yaml:"node_selectors,omitempty"`
-	TiniEnabled                 *bool             `json:"tini_enabled,omitempty" yaml:"tini_enabled,omitempty"`
+	Image                       string              `json:"image" yaml:"image"`
+	PrivatePorts                map[string]Port     `json:"ports,omitempty" yaml:"ports,omitempty"`
+	PublicPorts                 map[string]Port     `json:"public_ports,omitempty" yaml:"public_ports,omitempty"`
+	Files                       map[string][]string `json:"files,omitempty" yaml:"files,omitempty"`
+	Entrypoint                  []string            `json:"entrypoint,omitempty" yaml:"entrypoint,omitempty"`
+	Cmd                         []string            `json:"cmd,omitempty" yaml:"cmd,omitempty"`
+	EnvVars                     map[string]string   `json:"env_vars,omitempty" yaml:"env_vars,omitempty"`
+	PrivateIPAddressPlaceholder string              `json:"private_ip_address_placeholder,omitempty" yaml:"private_ip_address_placeholder,omitempty"`
+	MaxMillicpus                uint32              `json:"max_cpu,omitempty" yaml:"max_cpu,omitempty"`
+	MinMillicpus                uint32              `json:"min_cpu,omitempty" yaml:"min_cpu,omitempty"`
+	MaxMemory                   uint32              `json:"max_memory,omitempty" yaml:"max_memory,omitempty"`
+	MinMemory                   uint32              `json:"min_memory,omitempty" yaml:"min_memory,omitempty"`
+	User                        *User               `json:"user,omitempty" yaml:"user,omitempty"`
+	Tolerations                 []Toleration        `json:"tolerations,omitempty" yaml:"tolerations,omitempty"`
+	Labels                      map[string]string   `json:"labels,omitempty" yaml:"labels,omitempty"`
+	NodeSelectors               map[string]string   `json:"node_selectors,omitempty" yaml:"node_selectors,omitempty"`
+	TiniEnabled                 *bool               `json:"tini_enabled,omitempty" yaml:"tini_enabled,omitempty"`
 }
 
 func portToStarlark(port *kurtosis_core_rpc_api_bindings.Port) string {
@@ -67,7 +67,7 @@ func portToStarlark(port *kurtosis_core_rpc_api_bindings.Port) string {
 func GetSimpleServiceConfigStarlark(
 	containerImageName string,
 	privatePorts map[string]*kurtosis_core_rpc_api_bindings.Port,
-	fileArtifactMountPoints map[string]string,
+	fileArtifactMountPoints map[string][]string,
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
@@ -88,10 +88,16 @@ func GetSimpleServiceConfigStarlark(
 	starlarkFields = append(starlarkFields, fmt.Sprintf(`ports={%s}`, strings.Join(portStrings, ",")))
 
 	fileStrings := []string{}
-	for filePath, artifactName := range fileArtifactMountPoints {
-		fileStrings = append(fileStrings, fmt.Sprintf(`%q: %q`, filePath, artifactName))
+	for filePath, artifactNames := range fileArtifactMountPoints {
+		if len(artifactNames) > 1 { // if multiple files artifacts mounted, create a Directory
+			fileStrings = append(fileStrings, fmt.Sprintf(`%q: %q`, filePath, createDirectoryStarlarkStr(artifactNames)))
+		} else {
+			fileStrings = append(fileStrings, fmt.Sprintf(`%q: %q`, filePath, artifactNames[0]))
+		}
 	}
-	starlarkFields = append(starlarkFields, fmt.Sprintf(`files={%s}`, strings.Join(fileStrings, ",")))
+	if len(fileStrings) > 0 {
+		starlarkFields = append(starlarkFields, fmt.Sprintf(`files={%s}`, strings.Join(fileStrings, ",")))
+	}
 
 	quotedEntrypointArgs := []string{}
 	for _, entrypointArg := range entrypointArgs {
@@ -133,7 +139,7 @@ func GetSimpleServiceConfigStarlark(
 func GetFullServiceConfigStarlark(
 	containerImageName string,
 	privatePorts map[string]*kurtosis_core_rpc_api_bindings.Port,
-	fileArtifactMountPoints map[string]string,
+	fileArtifactMountPoints map[string][]string,
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
@@ -162,8 +168,12 @@ func GetFullServiceConfigStarlark(
 
 	// Files
 	fileStrings := []string{}
-	for filePath, artifactName := range fileArtifactMountPoints {
-		fileStrings = append(fileStrings, fmt.Sprintf(`%q: %q`, filePath, artifactName))
+	for filePath, artifactNames := range fileArtifactMountPoints {
+		if len(artifactNames) > 1 { // if multiple files artifacts mounted, create a Directory
+			fileStrings = append(fileStrings, fmt.Sprintf(`%q: %q`, filePath, createDirectoryStarlarkStr(artifactNames)))
+		} else {
+			fileStrings = append(fileStrings, fmt.Sprintf(`%q: %q`, filePath, artifactNames[0]))
+		}
 	}
 	if len(fileStrings) > 0 {
 		starlarkFields = append(starlarkFields, fmt.Sprintf(`files={%s}`, strings.Join(fileStrings, ",")))
@@ -292,11 +302,11 @@ func ConvertApiPortToJsonPort(apiPorts map[string]*kurtosis_core_rpc_api_binding
 	return jsonPorts
 }
 
-func ConvertApiFilesArtifactsToJsonFiles(serviceDirPathsToFilesArtifactsList map[string]*kurtosis_core_rpc_api_bindings.FilesArtifactsList) map[string]string {
-	serviceDirPathsToFilesArtifacts := map[string]string{}
+func ConvertApiFilesArtifactsToJsonFiles(serviceDirPathsToFilesArtifactsList map[string]*kurtosis_core_rpc_api_bindings.FilesArtifactsList) map[string][]string {
+	serviceDirPathsToFilesArtifacts := map[string][]string{}
 	for serviceDirPath, filesArtifactsList := range serviceDirPathsToFilesArtifactsList {
-		filesArtifactsIdentifers := filesArtifactsList.GetFilesArtifactsIdentifiers()
-		serviceDirPathsToFilesArtifacts[serviceDirPath] = filesArtifactsIdentifers[0]
+		filesArtifactsIdentifiers := filesArtifactsList.GetFilesArtifactsIdentifiers()
+		serviceDirPathsToFilesArtifacts[serviceDirPath] = filesArtifactsIdentifiers
 	}
 	return serviceDirPathsToFilesArtifacts
 }
@@ -320,4 +330,8 @@ func ConvertApiTolerationsToJsonTolerations(tolerations []*kurtosis_core_rpc_api
 		})
 	}
 	return jsonTolerations
+}
+
+func createDirectoryStarlarkStr(artifactNames []string) string {
+	return fmt.Sprintf(`Directory(artifact_names=[%s])`, strings.Join(artifactNames, ", "))
 }

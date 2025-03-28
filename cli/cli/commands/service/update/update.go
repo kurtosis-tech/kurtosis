@@ -85,13 +85,13 @@ var ServiceUpdateCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosi
 	Flags: []*flags.FlagConfig{
 		{
 			Key:     service_helpers.ImageKey,
-			Usage:   "image",
+			Usage:   "Image to use for the service being updated.",
 			Type:    flags.FlagType_String,
 			Default: "",
 		},
 		{
 			Key:   service_helpers.CmdKey,
-			Usage: "cmd",
+			Usage: "CMD to run on the service once it is restarted by the update.",
 			// TODO Make this a string list
 			Type:    flags.FlagType_String,
 			Default: "",
@@ -198,7 +198,7 @@ func run(
 
 	var overrideImage string
 	var overridePorts map[string]*kurtosis_core_rpc_api_bindings.Port
-	var overrideFilesArtifactsMountpoint map[string]string
+	var overrideFilesArtifactsMountpoint map[string][]string
 	var overrideEntrypoint []string
 	var overrideCmd []string
 	var overrideEnvVars map[string]string
@@ -308,7 +308,7 @@ func run(
 	}
 
 	// combine current files artifacts mount points with override mount points
-	mergedFilesArtifactsMountpoint := map[string]string{}
+	mergedFilesArtifactsMountpoint := map[string][]string{}
 	for key, val := range currServiceConfig.Files {
 		mergedFilesArtifactsMountpoint[key] = val
 	}
