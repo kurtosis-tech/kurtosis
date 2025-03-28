@@ -384,6 +384,7 @@ func NewServiceInfo(
 		MinMillicpus:                        minMillicpus,
 		MaxMemoryMegabytes:                  maxMemoryMegabytes,
 		MinMemoryMegabytes:                  minMemoryMegabytes,
+		User:                                nil,
 	}
 }
 

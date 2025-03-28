@@ -37,8 +37,6 @@ const (
 
 	serviceImageArgKey = "image"
 
-	cmdArgsFlagsKey = "cmd-arg"
-
 	entrypointBinaryFlagKey = "entrypoint"
 
 	envvarsFlagKey              = "env"
@@ -77,8 +75,6 @@ const (
 	JsonConfigFlagKeyDefault = ""
 
 	portMappingSeparatorForLogs = ", "
-
-	defaultPortWaitTimeoutStr = "30s"
 )
 
 var (

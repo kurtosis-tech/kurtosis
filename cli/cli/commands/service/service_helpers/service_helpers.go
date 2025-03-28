@@ -67,12 +67,6 @@ var (
 		portNumberProtocolDelimiter,
 		transportProtocolSpecForHelp,
 	)
-	serviceAddSpecWithPortId = fmt.Sprintf(
-		`%v%v%v`,
-		portIdSpecForHelp,
-		portIdSpecDelimiter,
-		serviceAddSpec,
-	)
 )
 
 // Helpers
@@ -120,6 +114,7 @@ func GetServiceInfo(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisC
 		User:                        services.ConvertApiUserToJsonUser(service.GetUser()),
 		Tolerations:                 services.ConvertApiTolerationsToJsonTolerations(service.GetTolerations()),
 		NodeSelectors:               service.GetNodeSelectors(),
+		Labels:                      service.GetLabels(),
 		TiniEnabled:                 &isTiniEnabled,
 	}
 
