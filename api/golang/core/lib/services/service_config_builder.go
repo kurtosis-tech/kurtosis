@@ -17,8 +17,8 @@ type Port struct {
 }
 
 type User struct {
-	UID int `json:"uid" yaml:"uid"`
-	GID int `json:"gid,omitempty" yaml:"gid,omitempty"`
+	UID uint32 `json:"uid" yaml:"uid"`
+	GID uint32 `json:"gid,omitempty" yaml:"gid,omitempty"`
 }
 
 type Toleration struct {
@@ -276,4 +276,48 @@ func ConvertJsonPortToApiPort(jsonPorts map[string]Port) map[string]*kurtosis_co
 		apiPorts[portId] = apiPort
 	}
 	return apiPorts
+}
+
+func ConvertApiPortToJsonPort(apiPorts map[string]*kurtosis_core_rpc_api_bindings.Port) map[string]Port {
+	jsonPorts := map[string]Port{}
+	for portId, apiPort := range apiPorts {
+		jsonPort := Port{
+			Number:                   apiPort.GetNumber(),
+			Transport:                int(apiPort.TransportProtocol),
+			MaybeApplicationProtocol: apiPort.GetMaybeApplicationProtocol(),
+			Wait:                     apiPort.GetMaybeWaitTimeout(),
+		}
+		jsonPorts[portId] = jsonPort
+	}
+	return jsonPorts
+}
+
+func ConvertApiFilesArtifactsToJsonFiles(serviceDirPathsToFilesArtifactsList map[string]*kurtosis_core_rpc_api_bindings.FilesArtifactsList) map[string]string {
+	serviceDirPathsToFilesArtifacts := map[string]string{}
+	for serviceDirPath, filesArtifactsList := range serviceDirPathsToFilesArtifactsList {
+		filesArtifactsIdentifers := filesArtifactsList.GetFilesArtifactsIdentifiers()
+		serviceDirPathsToFilesArtifacts[serviceDirPath] = filesArtifactsIdentifers[0]
+	}
+	return serviceDirPathsToFilesArtifacts
+}
+
+func ConvertApiUserToJsonUser(user *kurtosis_core_rpc_api_bindings.User) *User {
+	return &User{
+		UID: user.GetUid(),
+		GID: user.GetGid(),
+	}
+}
+
+func ConvertApiTolerationsToJsonTolerations(tolerations []*kurtosis_core_rpc_api_bindings.Toleration) []Toleration {
+	jsonTolerations := []Toleration{}
+	for _, apiToleration := range tolerations {
+		jsonTolerations = append(jsonTolerations, Toleration{
+			Key:               apiToleration.GetKey(),
+			Value:             apiToleration.GetValue(),
+			Operator:          apiToleration.GetOperator(),
+			Effect:            apiToleration.GetEffect(),
+			TolerationSeconds: apiToleration.GetTolerationSeconds(),
+		})
+	}
+	return jsonTolerations
 }

@@ -102,23 +102,24 @@ func GetServiceInfo(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisC
 		break
 	}
 
+	isTiniEnabled := service.GetTiniEnabled()
 	serviceConfig := &services.ServiceConfig{
 		Image:                       service.GetContainer().GetImageName(),
-		PrivatePorts:                nil,
-		PublicPorts:                 nil,
-		Files:                       nil,
+		PrivatePorts:                services.ConvertApiPortToJsonPort(service.GetPrivatePorts()),
+		PublicPorts:                 services.ConvertApiPortToJsonPort(service.GetMaybePublicPorts()),
+		Files:                       services.ConvertApiFilesArtifactsToJsonFiles(service.GetServiceDirPathsToFilesArtifactsList()),
 		Entrypoint:                  service.GetContainer().GetEntrypointArgs(),
 		Cmd:                         service.GetContainer().GetCmdArgs(),
 		EnvVars:                     service.GetContainer().GetEnvVars(),
-		PrivateIPAddressPlaceholder: "",
+		PrivateIPAddressPlaceholder: service.GetPrivateIpAddr(),
 		MaxMillicpus:                service.GetMaxMillicpus(),
 		MinMillicpus:                service.GetMinMillicpus(),
 		MaxMemory:                   service.GetMaxMemoryMegabytes(),
 		MinMemory:                   service.GetMinMemoryMegabytes(),
-		User:                        nil,
-		Tolerations:                 nil,
-		NodeSelectors:               nil,
-		TiniEnabled:                 nil,
+		User:                        services.ConvertApiUserToJsonUser(service.GetUser()),
+		Tolerations:                 services.ConvertApiTolerationsToJsonTolerations(service.GetTolerations()),
+		NodeSelectors:               service.GetNodeSelectors(),
+		TiniEnabled:                 &isTiniEnabled,
 	}
 
 	return service, serviceConfig, nil

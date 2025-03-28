@@ -370,20 +370,20 @@ func NewServiceInfo(
 ) *kurtosis_core_rpc_api_bindings.ServiceInfo {
 
 	return &kurtosis_core_rpc_api_bindings.ServiceInfo{
-		ServiceUuid:       uuid,
-		Name:              name,
-		ShortenedUuid:     shortenedUuid,
-		PrivateIpAddr:     privateIpAddr,
-		PrivatePorts:      privatePorts,
-		MaybePublicIpAddr: maybePublicIpAddr,
-		MaybePublicPorts:  maybePublicPorts,
-		ServiceStatus:     serviceStatus,
-		Container:         container,
-		ServiceDirPathsToFilesArtifactsIdentifiers: serviceDirPathsToFilesArtifactsList,
-		MaxMillicpus:       maxMillicpus,
-		MinMillicpus:       minMillicpus,
-		MaxMemoryMegabytes: maxMemoryMegabytes,
-		MinMemoryMegabytes: minMemoryMegabytes,
+		ServiceUuid:                         uuid,
+		Name:                                name,
+		ShortenedUuid:                       shortenedUuid,
+		PrivateIpAddr:                       privateIpAddr,
+		PrivatePorts:                        privatePorts,
+		MaybePublicIpAddr:                   maybePublicIpAddr,
+		MaybePublicPorts:                    maybePublicPorts,
+		ServiceStatus:                       serviceStatus,
+		Container:                           container,
+		ServiceDirPathsToFilesArtifactsList: serviceDirPathsToFilesArtifactsList,
+		MaxMillicpus:                        maxMillicpus,
+		MinMillicpus:                        minMillicpus,
+		MaxMemoryMegabytes:                  maxMemoryMegabytes,
+		MinMemoryMegabytes:                  minMemoryMegabytes,
 	}
 }
 

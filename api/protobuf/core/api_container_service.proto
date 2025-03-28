@@ -118,7 +118,9 @@ message FilesArtifactsList {
 // Equivalent of user on ServiceConfig
 message User {
   string username = 1;
+
   uint32 uid = 2;
+
   uint32 gid = 3;
 }
 

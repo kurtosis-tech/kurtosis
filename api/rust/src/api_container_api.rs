@@ -130,6 +130,32 @@ pub struct FilesArtifactsList {
         ::prost::alloc::string::String,
     >,
 }
+/// Equivalent of user on ServiceConfig
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct User {
+    #[prost(string, tag = "1")]
+    pub username: ::prost::alloc::string::String,
+    #[prost(uint32, tag = "2")]
+    pub uid: u32,
+    #[prost(uint32, tag = "3")]
+    pub gid: u32,
+}
+/// Equivalent of tolerations on ServiceConfig
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Toleration {
+    #[prost(string, tag = "1")]
+    pub key: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub operator: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub value: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
+    pub effect: ::prost::alloc::string::String,
+    #[prost(int64, tag = "5")]
+    pub toleration_seconds: i64,
+}
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ServiceInfo {
@@ -169,7 +195,7 @@ pub struct ServiceInfo {
     pub container: ::core::option::Option<Container>,
     /// Mapping of directory paths on service to names of files artifacts that are mounted to that directory
     #[prost(map = "string, message", tag = "10")]
-    pub service_dir_paths_to_files_artifacts_identifiers: ::std::collections::HashMap<
+    pub service_dir_paths_to_files_artifacts_list: ::std::collections::HashMap<
         ::prost::alloc::string::String,
         FilesArtifactsList,
     >,
@@ -181,6 +207,27 @@ pub struct ServiceInfo {
     pub max_memory_megabytes: u32,
     #[prost(uint32, tag = "14")]
     pub min_memory_megabytes: u32,
+    /// Optional user identity for the service
+    #[prost(message, optional, tag = "15")]
+    pub user: ::core::option::Option<User>,
+    /// Optional list of Kubernetes tolerations
+    #[prost(message, repeated, tag = "16")]
+    pub tolerations: ::prost::alloc::vec::Vec<Toleration>,
+    /// Optional node selectors for pod placement
+    #[prost(map = "string, string", tag = "17")]
+    pub node_selectors: ::std::collections::HashMap<
+        ::prost::alloc::string::String,
+        ::prost::alloc::string::String,
+    >,
+    /// Optional labels
+    #[prost(map = "string, string", tag = "18")]
+    pub labels: ::std::collections::HashMap<
+        ::prost::alloc::string::String,
+        ::prost::alloc::string::String,
+    >,
+    /// Whether Tini is enabled
+    #[prost(bool, optional, tag = "19")]
+    pub tini_enabled: ::core::option::Option<bool>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
