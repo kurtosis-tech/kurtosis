@@ -318,6 +318,7 @@ func run(
 			)
 		}
 	}
+	logrus.Infof("SERVICE CONFIG STARLARK: ")
 
 	_, err = service_helpers.RunAddServiceStarlarkScript(ctx, serviceName, enclaveIdentifier, service_helpers.GetAddServiceStarlarkScript(serviceName, serviceConfigStarlarkStr), enclaveCtx)
 	if err != nil {
@@ -444,7 +445,6 @@ func GetServiceConfigStarlark(
 
 	emptyNodeSelecors := map[string]string{}
 	emptyLabels := map[string]string{}
-	emptyPrivateIpAddrPlaceholder := ""
 	return services.GetFullServiceConfigStarlark(
 		image,
 		ports,
@@ -461,7 +461,7 @@ func GetServiceConfigStarlark(
 		emptyNodeSelecors,
 		emptyLabels,
 		&tiniEnabled,
-		emptyPrivateIpAddrPlaceholder), nil
+		privateIPAddressPlaceholder), nil
 }
 
 func generateExampleForPortFlag() string {
