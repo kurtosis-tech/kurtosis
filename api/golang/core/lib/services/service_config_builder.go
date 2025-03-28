@@ -6,6 +6,10 @@ import (
 	"strings"
 )
 
+const (
+	tiniEnabledStr = "True"
+)
+
 type FilesArtifactUUID string
 type FileArtifactName string
 
@@ -265,8 +269,8 @@ func GetFullServiceConfigStarlark(
 	}
 
 	// Tini
-	if tiniEnabled != nil {
-		starlarkFields = append(starlarkFields, fmt.Sprintf(`tini_enabled=%t`, *tiniEnabled))
+	if *tiniEnabled {
+		starlarkFields = append(starlarkFields, fmt.Sprintf(`tini_enabled=%s`, tiniEnabledStr))
 	}
 
 	return fmt.Sprintf("ServiceConfig(%s)", strings.Join(starlarkFields, ", "))

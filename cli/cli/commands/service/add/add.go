@@ -305,7 +305,7 @@ func run(
 		if entrypointStr != "" {
 			entrypoint = append(entrypoint, entrypointStr)
 		}
-		serviceConfigStarlarkStr, err = GetServiceConfigStarlark(image, portsStr, strings.Split(" ", " "), entrypoint, envvarsStr, filesArtifactMountsStr, defaultLimits, defaultLimits, defaultLimits, defaultLimits, privateIPAddressPlaceholder)
+		serviceConfigStarlarkStr, err = GetServiceConfigStarlark(image, portsStr, []string{}, entrypoint, envvarsStr, filesArtifactMountsStr, defaultLimits, defaultLimits, defaultLimits, defaultLimits, privateIPAddressPlaceholder)
 		if err != nil {
 			return stacktrace.Propagate(
 				err,
@@ -320,7 +320,9 @@ func run(
 	}
 	logrus.Infof("SERVICE CONFIG STARLARK: %v", serviceConfigStarlarkStr)
 
-	_, err = service_helpers.RunAddServiceStarlarkScript(ctx, serviceName, enclaveIdentifier, service_helpers.GetAddServiceStarlarkScript(serviceName, serviceConfigStarlarkStr), enclaveCtx)
+	addServiceStarlark := service_helpers.GetAddServiceStarlarkScript(serviceName, serviceConfigStarlarkStr)
+	logrus.Infof("ADD SERVICE STARLARK SCRIPT: %v", addServiceStarlark)
+	_, err = service_helpers.RunAddServiceStarlarkScript(ctx, serviceName, enclaveIdentifier, addServiceStarlark, enclaveCtx)
 	if err != nil {
 		return err // already wrapped
 	}
