@@ -487,10 +487,10 @@ func generateExampleForPortFlag() string {
 func processJsonServiceConfigFlagInput(jsonServiceConfigFlagInput string) (string, error) {
 	var configBytes []byte
 	var err error
-	switch {
-	case jsonServiceConfigFlagInput == JsonConfigFlagKeyDefault:
+	switch jsonServiceConfigFlagInput {
+	case JsonConfigFlagKeyDefault:
 		return JsonConfigFlagKeyDefault, nil
-	case jsonServiceConfigFlagInput == readJsonConfigFromStdinInput:
+	case readJsonConfigFromStdinInput:
 		configBytes, err = io.ReadAll(os.Stdin)
 		if err != nil {
 			return "", stacktrace.Propagate(err, "An error occurred reading json service config from stdin.")
