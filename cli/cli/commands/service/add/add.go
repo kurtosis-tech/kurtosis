@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/service_helpers"
+	"io"
+	"os"
 	"strings"
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
@@ -71,8 +73,9 @@ const (
 	fullUuidsFlagKey       = "full-uuids"
 	fullUuidFlagKeyDefault = "false"
 
-	JsonConfigFlagKey        = "json-service-config"
-	JsonConfigFlagKeyDefault = ""
+	JsonConfigFlagKey            = "json-service-config"
+	JsonConfigFlagKeyDefault     = ""
+	readJsonConfigFromStdinInput = "-"
 
 	portMappingSeparatorForLogs = ", "
 )
@@ -112,13 +115,9 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Key: serviceNameArgKey,
 		},
 		{
-			Key: service_helpers.ImageKey,
-		},
-		{
-			Key:          service_helpers.CmdKey,
+			Key:          service_helpers.ImageKey,
 			IsOptional:   true,
-			IsGreedy:     true,
-			DefaultValue: []string{},
+			DefaultValue: "",
 		},
 	},
 	Flags: []*flags.FlagConfig{
@@ -261,9 +260,13 @@ func run(
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", fullUuidsFlagKey)
 	}
 
-	jsonServiceConfigStr, err := flags.GetString(JsonConfigFlagKey)
+	jsonServiceConfigFlagValue, err := flags.GetString(JsonConfigFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the json service config string using key '%v'.", JsonConfigFlagKey)
+	}
+	jsonServiceConfigStr, err := processJsonServiceConfigFlagInput(jsonServiceConfigFlagValue)
+	if err != nil {
+		return err // already wrapped
 	}
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
@@ -280,7 +283,7 @@ func run(
 	if jsonServiceConfigStr != "" {
 		var serviceConfigJson services.ServiceConfig
 		if err = json.Unmarshal([]byte(jsonServiceConfigStr), &serviceConfigJson); err != nil {
-			return stacktrace.Propagate(err, "An error occurred unmarshalling json service config string '%v'.", jsonServiceConfigStr)
+			return stacktrace.Propagate(err, "An error occurred unmarshalling json service config string:\n '%v'.", jsonServiceConfigStr)
 		}
 		serviceConfigStarlarkStr = services.GetFullServiceConfigStarlark(
 			serviceConfigJson.Image,
@@ -479,4 +482,25 @@ func generateExampleForPortFlag() string {
 		portApplicationProtocolDelimiter,
 		portNumberProtocolDelimiter,
 	)
+}
+
+func processJsonServiceConfigFlagInput(jsonServiceConfigFlagInput string) (string, error) {
+	var configBytes []byte
+	var err error
+	switch {
+	case jsonServiceConfigFlagInput == JsonConfigFlagKeyDefault:
+		return JsonConfigFlagKeyDefault, nil
+	case jsonServiceConfigFlagInput == readJsonConfigFromStdinInput:
+		configBytes, err = io.ReadAll(os.Stdin)
+		if err != nil {
+			return "", stacktrace.Propagate(err, "An error occurred reading json service config from stdin.")
+		}
+	default:
+		configBytes, err = os.ReadFile(jsonServiceConfigFlagInput)
+		if err != nil {
+			logrus.Warnf("Received err when attempting to read service config as string: %v", err)
+			logrus.Warn("Attempting to read json service config input as a string instead.")
+		}
+	}
+	return string(configBytes), nil
 }
