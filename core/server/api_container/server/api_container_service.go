@@ -1120,6 +1120,7 @@ func getServiceInfoFromServiceObj(serviceObj *service.Service, serviceConfig *se
 	minMemoryMegabytes := uint32(0)
 
 	serviceDirPathsToFilesArtifactsList := map[string]*kurtosis_core_rpc_api_bindings.FilesArtifactsList{}
+
 	svcFilesArtifactsExpansions := serviceConfig.GetFilesArtifactsExpansion()
 
 	logrus.Infof("GET FILES ARTIFACTS EXPANSION: %v", svcFilesArtifactsExpansions)

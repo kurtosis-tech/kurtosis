@@ -166,7 +166,8 @@ func (serviceConfig *ServiceConfig) GetEnvVars() map[string]string {
 }
 
 func (serviceConfig *ServiceConfig) GetFilesArtifactsExpansion() *service_directory.FilesArtifactsExpansion {
-	return serviceConfig.privateServiceConfig.FilesArtifactExpansion
+	privateServiceCfg := serviceConfig.privateServiceConfig
+	return privateServiceCfg.FilesArtifactExpansion
 }
 
 func (serviceConfig *ServiceConfig) GetPersistentDirectories() *service_directory.PersistentDirectories {
