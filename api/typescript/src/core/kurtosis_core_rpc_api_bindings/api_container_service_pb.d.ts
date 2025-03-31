@@ -105,6 +105,82 @@ export namespace Container {
   }
 }
 
+export class FilesArtifactsList extends jspb.Message {
+  getFilesArtifactsIdentifiersList(): Array<string>;
+  setFilesArtifactsIdentifiersList(value: Array<string>): FilesArtifactsList;
+  clearFilesArtifactsIdentifiersList(): FilesArtifactsList;
+  addFilesArtifactsIdentifiers(value: string, index?: number): FilesArtifactsList;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): FilesArtifactsList.AsObject;
+  static toObject(includeInstance: boolean, msg: FilesArtifactsList): FilesArtifactsList.AsObject;
+  static serializeBinaryToWriter(message: FilesArtifactsList, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): FilesArtifactsList;
+  static deserializeBinaryFromReader(message: FilesArtifactsList, reader: jspb.BinaryReader): FilesArtifactsList;
+}
+
+export namespace FilesArtifactsList {
+  export type AsObject = {
+    filesArtifactsIdentifiersList: Array<string>,
+  }
+}
+
+export class User extends jspb.Message {
+  getUid(): number;
+  setUid(value: number): User;
+
+  getGid(): number;
+  setGid(value: number): User;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): User.AsObject;
+  static toObject(includeInstance: boolean, msg: User): User.AsObject;
+  static serializeBinaryToWriter(message: User, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): User;
+  static deserializeBinaryFromReader(message: User, reader: jspb.BinaryReader): User;
+}
+
+export namespace User {
+  export type AsObject = {
+    uid: number,
+    gid: number,
+  }
+}
+
+export class Toleration extends jspb.Message {
+  getKey(): string;
+  setKey(value: string): Toleration;
+
+  getOperator(): string;
+  setOperator(value: string): Toleration;
+
+  getValue(): string;
+  setValue(value: string): Toleration;
+
+  getEffect(): string;
+  setEffect(value: string): Toleration;
+
+  getTolerationSeconds(): number;
+  setTolerationSeconds(value: number): Toleration;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): Toleration.AsObject;
+  static toObject(includeInstance: boolean, msg: Toleration): Toleration.AsObject;
+  static serializeBinaryToWriter(message: Toleration, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): Toleration;
+  static deserializeBinaryFromReader(message: Toleration, reader: jspb.BinaryReader): Toleration;
+}
+
+export namespace Toleration {
+  export type AsObject = {
+    key: string,
+    operator: string,
+    value: string,
+    effect: string,
+    tolerationSeconds: number,
+  }
+}
+
 export class ServiceInfo extends jspb.Message {
   getServiceUuid(): string;
   setServiceUuid(value: string): ServiceInfo;
@@ -135,6 +211,42 @@ export class ServiceInfo extends jspb.Message {
   hasContainer(): boolean;
   clearContainer(): ServiceInfo;
 
+  getServiceDirPathsToFilesArtifactsListMap(): jspb.Map<string, FilesArtifactsList>;
+  clearServiceDirPathsToFilesArtifactsListMap(): ServiceInfo;
+
+  getMaxMillicpus(): number;
+  setMaxMillicpus(value: number): ServiceInfo;
+
+  getMinMillicpus(): number;
+  setMinMillicpus(value: number): ServiceInfo;
+
+  getMaxMemoryMegabytes(): number;
+  setMaxMemoryMegabytes(value: number): ServiceInfo;
+
+  getMinMemoryMegabytes(): number;
+  setMinMemoryMegabytes(value: number): ServiceInfo;
+
+  getUser(): User | undefined;
+  setUser(value?: User): ServiceInfo;
+  hasUser(): boolean;
+  clearUser(): ServiceInfo;
+
+  getTolerationsList(): Array<Toleration>;
+  setTolerationsList(value: Array<Toleration>): ServiceInfo;
+  clearTolerationsList(): ServiceInfo;
+  addTolerations(value?: Toleration, index?: number): Toleration;
+
+  getNodeSelectorsMap(): jspb.Map<string, string>;
+  clearNodeSelectorsMap(): ServiceInfo;
+
+  getLabelsMap(): jspb.Map<string, string>;
+  clearLabelsMap(): ServiceInfo;
+
+  getTiniEnabled(): boolean;
+  setTiniEnabled(value: boolean): ServiceInfo;
+  hasTiniEnabled(): boolean;
+  clearTiniEnabled(): ServiceInfo;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServiceInfo.AsObject;
   static toObject(includeInstance: boolean, msg: ServiceInfo): ServiceInfo.AsObject;
@@ -154,6 +266,26 @@ export namespace ServiceInfo {
     shortenedUuid: string,
     serviceStatus: ServiceStatus,
     container?: Container.AsObject,
+    serviceDirPathsToFilesArtifactsListMap: Array<[string, FilesArtifactsList.AsObject]>,
+    maxMillicpus: number,
+    minMillicpus: number,
+    maxMemoryMegabytes: number,
+    minMemoryMegabytes: number,
+    user?: User.AsObject,
+    tolerationsList: Array<Toleration.AsObject>,
+    nodeSelectorsMap: Array<[string, string]>,
+    labelsMap: Array<[string, string]>,
+    tiniEnabled?: boolean,
+  }
+
+  export enum UserCase { 
+    _USER_NOT_SET = 0,
+    USER = 15,
+  }
+
+  export enum TiniEnabledCase { 
+    _TINI_ENABLED_NOT_SET = 0,
+    TINI_ENABLED = 19,
   }
 }
 

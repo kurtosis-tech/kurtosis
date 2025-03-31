@@ -120,6 +120,45 @@ export const Container_Status = proto3.makeEnum(
 );
 
 /**
+ * @generated from message api_container_api.FilesArtifactsList
+ */
+export const FilesArtifactsList = proto3.makeMessageType(
+  "api_container_api.FilesArtifactsList",
+  () => [
+    { no: 1, name: "files_artifacts_identifiers", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+  ],
+);
+
+/**
+ * Equivalent of user on ServiceConfig
+ *
+ * @generated from message api_container_api.User
+ */
+export const User = proto3.makeMessageType(
+  "api_container_api.User",
+  () => [
+    { no: 1, name: "uid", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
+    { no: 2, name: "gid", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
+  ],
+);
+
+/**
+ * Equivalent of tolerations on ServiceConfig
+ *
+ * @generated from message api_container_api.Toleration
+ */
+export const Toleration = proto3.makeMessageType(
+  "api_container_api.Toleration",
+  () => [
+    { no: 1, name: "key", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "operator", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "value", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: "effect", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 5, name: "toleration_seconds", kind: "scalar", T: 3 /* ScalarType.INT64 */ },
+  ],
+);
+
+/**
  * @generated from message api_container_api.ServiceInfo
  */
 export const ServiceInfo = proto3.makeMessageType(
@@ -134,6 +173,16 @@ export const ServiceInfo = proto3.makeMessageType(
     { no: 7, name: "shortened_uuid", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 8, name: "service_status", kind: "enum", T: proto3.getEnumType(ServiceStatus) },
     { no: 9, name: "container", kind: "message", T: Container },
+    { no: 10, name: "service_dir_paths_to_files_artifacts_list", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "message", T: FilesArtifactsList} },
+    { no: 11, name: "max_millicpus", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
+    { no: 12, name: "min_millicpus", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
+    { no: 13, name: "max_memory_megabytes", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
+    { no: 14, name: "min_memory_megabytes", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
+    { no: 15, name: "user", kind: "message", T: User, opt: true },
+    { no: 16, name: "tolerations", kind: "message", T: Toleration, repeated: true },
+    { no: 17, name: "node_selectors", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "scalar", T: 9 /* ScalarType.STRING */} },
+    { no: 18, name: "labels", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "scalar", T: 9 /* ScalarType.STRING */} },
+    { no: 19, name: "tini_enabled", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
   ],
 );
 
