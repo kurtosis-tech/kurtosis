@@ -10,7 +10,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -166,16 +165,8 @@ func (serviceConfig *ServiceConfig) GetEnvVars() map[string]string {
 	return serviceConfig.privateServiceConfig.EnvVars
 }
 
-func (serviceConfig *ServiceConfig) ExistsPrivateServiceConfig() bool {
-	logrus.Infof("CHECKING")
-	return serviceConfig.privateServiceConfig == nil
-}
-
 func (serviceConfig *ServiceConfig) GetFilesArtifactsExpansion() *service_directory.FilesArtifactsExpansion {
-	logrus.Infof("GETTING SERVICE CONFIG")
-	logrus.Infof("IS SERVICE CONFIG EMPTY: %v", serviceConfig.privateServiceConfig == nil)
-	privateServiceCfg := serviceConfig.privateServiceConfig
-	return privateServiceCfg.FilesArtifactExpansion
+	return serviceConfig.privateServiceConfig.FilesArtifactExpansion
 }
 
 func (serviceConfig *ServiceConfig) GetPersistentDirectories() *service_directory.PersistentDirectories {

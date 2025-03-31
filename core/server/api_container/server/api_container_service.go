@@ -464,7 +464,8 @@ func (apicService *ApiContainerService) GetServices(ctx context.Context, args *k
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "an error occurred while fetching all services from the backend")
 	}
-	serviceInfos, err = getServiceInfosFromServiceObjs(allServices)
+
+	serviceInfos, err = apicService.getServiceInfosFromServiceObjs(allServices)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "an error occurred while converting the service obj into service info")
 	}
@@ -1062,12 +1063,16 @@ func (apicService *ApiContainerService) runStarlark(
 	}
 }
 
-func getServiceInfosFromServiceObjs(services map[service.ServiceUUID]*service.Service) (map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo, error) {
+func (apicService *ApiContainerService) getServiceInfosFromServiceObjs(services map[service.ServiceUUID]*service.Service) (map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo, error) {
 	serviceInfos := map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo{}
 	for uuid, serviceObj := range services {
-		serviceInfo, err := getServiceInfoFromServiceObj(serviceObj, nil)
+		serviceConfig, err := apicService.interpretationTimeValueStore.GetServiceConfig(serviceObj.GetRegistration().GetName())
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "there was an error converting the service obj for service with uuid '%v' and name '%v' to service info", uuid, serviceObj.GetRegistration().GetName())
+			return nil, stacktrace.Propagate(err, "An error occurred getting service config from interpretation time value store.")
+		}
+		serviceInfo, err := getServiceInfoFromServiceObj(serviceObj, serviceConfig)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "There was an error converting the service obj for service with uuid '%v' and name '%v' to service info", uuid, serviceObj.GetRegistration().GetName())
 		}
 		serviceInfos[serviceInfo.Name] = serviceInfo
 	}
