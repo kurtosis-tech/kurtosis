@@ -58,7 +58,7 @@ const (
 	engineClientCtxKey    = "engine-client"
 
 	privateIPAddressPlaceholderKey     = "ip-address-placeholder"
-	privateIPAddressPlaceholderDefault = "KURTOSIS_IP_ADDR_PLACEHOLDER"
+	privateIPAddressPlaceholderDefault = ""
 
 	emptyApplicationProtocol = ""
 	linkDelimiter            = "://"

@@ -12,6 +12,7 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/docker_compose_transpiler"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
@@ -1118,17 +1119,24 @@ func getServiceInfoFromServiceObj(serviceObj *service.Service, serviceConfig *se
 	maxMemoryMegabytes := uint32(0)
 	minMemoryMegabytes := uint32(0)
 
-	serviceDirPathsToFilesArtifactsList := transformServiceDirPathsToFileArtifactsToApiPortsFilesArtifactsList(serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers)
-
-	user := serviceConfig.GetUser()
-	var gid uint32 = 0
-	userGid, existsGuid := user.GetGID()
-	if existsGuid {
-		gid = uint32(userGid)
+	serviceDirPathsToFilesArtifactsList := map[string]*kurtosis_core_rpc_api_bindings.FilesArtifactsList{}
+	if serviceConfig.GetFilesArtifactsExpansion() != nil {
+		serviceDirPathsToFilesArtifactsList = transformServiceDirPathsToFileArtifactsToApiPortsFilesArtifactsList(serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers)
 	}
-	apiUser := &kurtosis_core_rpc_api_bindings.User{
-		Uid: uint32(user.GetUID()),
-		Gid: gid,
+
+	var user *service_user.ServiceUser
+	var apiUser *kurtosis_core_rpc_api_bindings.User
+	if serviceConfig.GetUser() != nil {
+		user = serviceConfig.GetUser()
+		var gid uint32 = 0
+		userGid, existsGuid := user.GetGID()
+		if existsGuid {
+			gid = uint32(userGid)
+		}
+		apiUser = &kurtosis_core_rpc_api_bindings.User{
+			Uid: uint32(user.GetUID()),
+			Gid: gid,
+		}
 	}
 
 	tolerations := serviceConfig.GetTolerations()
