@@ -120,7 +120,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 		ProtoMajor: 1,
 		ProtoMinor: 1,
 		Header:     http.Header{},
-		Request: &http.Request{
+		Request: &http.Request{ //nolint:exhaustruct
 			Method: testGetRequestMethod,
 			URL: &url.URL{ //nolint:exhaustruct
 				Path:        "",

@@ -472,7 +472,7 @@ func (planYaml *PlanYamlGenerator) storeFutureReference(uuid, futureReference, f
 func (planYaml *PlanYamlGenerator) swapFutureReference(s string) string {
 	swappedString := s
 	for futureRef, yamlFutureRef := range planYaml.futureReferenceIndex {
-		swappedString = strings.Replace(swappedString, futureRef, yamlFutureRef, -1) // -1 to swap all instances of [futureRef]
+		swappedString = strings.ReplaceAll(swappedString, futureRef, yamlFutureRef)
 	}
 	return swappedString
 }

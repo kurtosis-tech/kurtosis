@@ -744,13 +744,13 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerObjectsAndKuber
 	resultApiContainerObjs := map[enclave.EnclaveUUID]*api_container.APIContainer{}
 	resultKubernetesResources := map[enclave.EnclaveUUID]*apiContainerKubernetesResources{}
 	for enclaveId, apiContainerObj := range apiContainerObjects {
-		if filters.EnclaveIDs != nil && len(filters.EnclaveIDs) > 0 {
+		if len(filters.EnclaveIDs) > 0 {
 			if _, found := filters.EnclaveIDs[apiContainerObj.GetEnclaveID()]; !found {
 				continue
 			}
 		}
 
-		if filters.Statuses != nil && len(filters.Statuses) > 0 {
+		if len(filters.Statuses) > 0 {
 			if _, found := filters.Statuses[apiContainerObj.GetStatus()]; !found {
 				continue
 			}

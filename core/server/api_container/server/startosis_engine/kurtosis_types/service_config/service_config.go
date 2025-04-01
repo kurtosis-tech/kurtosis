@@ -127,7 +127,7 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					},
 					Deprecation: starlark_warning.Deprecation(
 						starlark_warning.DeprecationDate{
-							Day: 25, Year: 2023, Month: 6, //nolint:gomnd
+							Day: 25, Year: 2023, Month: 6, //nolint:mnd
 						},
 						"This field is being deprecated in favour of `max_cpu` to set a maximum cpu a container can use",
 						nil,
@@ -142,7 +142,7 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					},
 					Deprecation: starlark_warning.Deprecation(
 						starlark_warning.DeprecationDate{
-							Day: 25, Year: 2023, Month: 6, //nolint:gomnd
+							Day: 25, Year: 2023, Month: 6, //nolint:mnd
 						},
 						"This field is being deprecated in favour of `max_memory` to set maximum memory a container can use",
 						nil,
