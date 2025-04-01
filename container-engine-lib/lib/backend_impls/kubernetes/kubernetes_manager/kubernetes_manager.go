@@ -2628,10 +2628,7 @@ func (manager *KubernetesManager) CreateJob(
 		ShareProcessNamespace:         nil,
 	}
 
-	manualSelectors := false
-	if jobLabels != nil {
-		manualSelectors = true
-	}
+	manualSelectors := jobLabels != nil
 
 	jobSpec := batchv1.JobSpec{
 		ManualSelector: &manualSelectors,
