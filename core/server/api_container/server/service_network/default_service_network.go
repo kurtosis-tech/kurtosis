@@ -665,28 +665,54 @@ func (network *DefaultServiceNetwork) GetServices(ctx context.Context) (map[serv
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "an error occurred getting registered services from the repository")
 	}
+	logrus.Debugf(
+		"Found registered services: %v",
+		registeredServices,
+	)
 	registeredServiceNames := map[service.ServiceName]bool{}
 	for name := range registeredServices {
 		registeredServiceNames[name] = true
 	}
 
+	logrus.Debugf(
+		"Registered service names: %v",
+		registeredServiceNames,
+	)
 	registeredServiceUuidsFilters := &service.ServiceFilters{
 		Names:    registeredServiceNames,
 		UUIDs:    nil,
 		Statuses: nil,
 	}
 
+	logrus.Debugf(
+		"Querying backend for services with filters: %v",
+		registeredServiceUuidsFilters,
+	)
 	allServices, err := network.kurtosisBackend.GetUserServices(ctx, network.enclaveUuid, registeredServiceUuidsFilters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "an error occurred while fetching services from the backend")
 	}
 
+	logrus.Debugf(
+		"Got back services: %v",
+		allServices,
+	)
 	filteredServicesToRegisteredServices := map[service.ServiceUUID]*service.Service{}
 
 	for name, registration := range registeredServices {
 		uuid := registration.GetUUID()
+		logrus.Debugf(
+			"Looking for service with uuid '%v' and name '%v' in backend",
+			uuid,
+			name,
+		)
 		serviceObj, found := allServices[uuid]
 		if !found {
+			logrus.Debugf(
+				"Did not find service with uuid '%v' and name '%v' in backend",
+				uuid,
+				name,
+			)
 			return nil, stacktrace.NewError("couldn't find service with uuid '%v' and name '%v' in backend", uuid, name)
 		}
 		serviceObj.GetRegistration().SetStatus(registration.GetStatus())
