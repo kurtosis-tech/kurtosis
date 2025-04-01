@@ -311,6 +311,11 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 	results := map[service.ServiceUUID]*UserServiceKubernetesResources{}
 
 	// Get k8s services
+	logrus.Debugf(
+		"Getting Kubernetes services matching service UUIDs: %+v with search labels: %+v",
+		serviceUuids,
+		kubernetesResourceSearchLabels,
+	)
 	matchingKubernetesServices, err := kubernetes_resource_collectors.CollectMatchingServices(
 		ctx,
 		kubernetesManager,
@@ -322,6 +327,10 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes services matching service UUIDs: %+v", serviceUuids)
 	}
+	logrus.Debugf(
+		"Found matching Kubernetes services: %+v",
+		matchingKubernetesServices,
+	)
 	for serviceGuidStr, kubernetesServicesForGuid := range matchingKubernetesServices {
 		logrus.Tracef("Found Kubernetes services for GUID '%v': %+v", serviceGuidStr, kubernetesServicesForGuid)
 		serviceUuid := service.ServiceUUID(serviceGuidStr)
