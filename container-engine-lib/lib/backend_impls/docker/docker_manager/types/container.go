@@ -14,6 +14,7 @@ type Container struct {
 	entrypointArgs   []string
 	cmdArgs          []string
 	envVars          map[string]string
+	defaultIpAddress string
 }
 
 func NewContainer(
@@ -26,6 +27,7 @@ func NewContainer(
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
+	defaultIpAddress string,
 ) *Container {
 	return &Container{
 		id:               id,
@@ -37,6 +39,7 @@ func NewContainer(
 		entrypointArgs:   entrypointArgs,
 		cmdArgs:          cmdArgs,
 		envVars:          envVars,
+		defaultIpAddress: defaultIpAddress,
 	}
 }
 
@@ -66,6 +69,10 @@ func (c *Container) GetImageName() string {
 
 func (c *Container) GetEntrypointArgs() []string {
 	return c.entrypointArgs
+}
+
+func (c *Container) GetDefaultIpAddress() string {
+	return c.defaultIpAddress
 }
 
 func (c *Container) GetCmdArgs() []string {

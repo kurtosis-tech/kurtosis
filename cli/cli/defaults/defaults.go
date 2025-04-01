@@ -6,6 +6,7 @@
 package defaults
 
 import (
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/sirupsen/logrus"
 )
 
@@ -30,5 +31,6 @@ const (
 	DefaultLogRetentionPeriod = "168h"
 )
 
+var DefaultSinks = logs_aggregator.Sinks{}
 var DefaultApiContainerLogLevel = logrus.DebugLevel
 var DefaultEngineLogLevel = logrus.DebugLevel

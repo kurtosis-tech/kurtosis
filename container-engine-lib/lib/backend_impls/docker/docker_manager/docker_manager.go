@@ -543,17 +543,19 @@ func (manager *DockerManager) CreateAndStartContainer(
 		Key:   networkIdSearchFilterKey,
 		Value: args.networkId,
 	})
-	networks, err := manager.getNetworksByFilterArgs(ctx, idFilterArgs)
-	if err != nil {
-		return "", nil, stacktrace.Propagate(err, "An error occurred checking for the existence of network with ID %v", args.networkId)
-	}
-	if len(networks) == 0 {
-		return "", nil, stacktrace.NewError(
-			"Kurtosis Docker network with ID %v was never created before trying to launch containers. Please call DockerManager.CreateNetwork first.",
-			args.networkId,
-		)
-	} else if len(networks) > 1 {
-		return "", nil, stacktrace.NewError("Kurtosis Docker network with ID %v matches several networks!", args.networkId)
+	if args.networkId != dockerNetworkDriver {
+		networks, err := manager.getNetworksByFilterArgs(ctx, idFilterArgs)
+		if err != nil {
+			return "", nil, stacktrace.Propagate(err, "An error occurred checking for the existence of network with ID %v", args.networkId)
+		}
+		if len(networks) == 0 {
+			return "", nil, stacktrace.NewError(
+				"Kurtosis Docker network with ID %v was never created before trying to launch containers. Please call DockerManager.CreateNetwork first.",
+				args.networkId,
+			)
+		} else if len(networks) > 1 {
+			return "", nil, stacktrace.NewError("Kurtosis Docker network with ID %v matches several networks!", args.networkId)
+		}
 	}
 
 	isInteractiveMode := args.interactiveModeTtySize != nil
@@ -2131,6 +2133,7 @@ func newContainerFromDockerContainer(dockerContainer types.ContainerJSON) (*dock
 		dockerContainer.Config.Entrypoint,
 		dockerContainer.Config.Cmd,
 		containerEnvArgs,
+		dockerContainer.NetworkSettings.IPAddress,
 	)
 
 	return newContainer, nil
