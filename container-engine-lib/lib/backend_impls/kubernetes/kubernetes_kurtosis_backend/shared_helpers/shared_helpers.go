@@ -249,6 +249,11 @@ func GetMatchingUserServiceObjectsAndKubernetesResources(
 	for serviceUuid, objectsAndResources := range allObjectsAndResources {
 		if filters.UUIDs != nil && len(filters.UUIDs) > 0 {
 			if _, found := filters.UUIDs[serviceUuid]; !found {
+				logrus.Debugf(
+					"Skipping service with UUID '%v' because it doesn't match the requested UUIDs: %+v",
+					serviceUuid,
+					filters.UUIDs,
+				)
 				continue
 			}
 		}
@@ -256,6 +261,11 @@ func GetMatchingUserServiceObjectsAndKubernetesResources(
 		registration := objectsAndResources.ServiceRegistration
 		if filters.Names != nil && len(filters.Names) > 0 {
 			if _, found := filters.Names[registration.GetName()]; !found {
+				logrus.Debugf(
+					"Skipping service with name '%v' because it doesn't match the requested names: %+v",
+					registration.GetName(),
+					filters.Names,
+				)
 				continue
 			}
 		}
@@ -265,10 +275,19 @@ func GetMatchingUserServiceObjectsAndKubernetesResources(
 
 			// If status isn't specified, return registered-only objects; if not, remove them all
 			if kubernetesService == nil {
+				logrus.Debugf(
+					"Skipping service with UUID '%v' because it doesn't have a Kubernetes service",
+					serviceUuid,
+				)
 				continue
 			}
 
 			if _, found := filters.Statuses[kubernetesService.GetContainer().GetStatus()]; !found {
+				logrus.Debugf(
+					"Skipping service with UUID '%v' because it doesn't match the requested statuses: %+v",
+					serviceUuid,
+					filters.Statuses,
+				)
 				continue
 			}
 		}
