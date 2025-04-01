@@ -234,20 +234,20 @@ func GetMatchingUserServiceObjectsAndKubernetesResources(
 	// Filter the results down to the requested filters
 	results := map[service.ServiceUUID]*UserServiceObjectsAndKubernetesResources{}
 	for serviceUuid, objectsAndResources := range allObjectsAndResources {
-		if filters.UUIDs != nil && len(filters.UUIDs) > 0 {
+		if len(filters.UUIDs) > 0 {
 			if _, found := filters.UUIDs[serviceUuid]; !found {
 				continue
 			}
 		}
 
 		registration := objectsAndResources.ServiceRegistration
-		if filters.Names != nil && len(filters.Names) > 0 {
+		if len(filters.Names) > 0 {
 			if _, found := filters.Names[registration.GetName()]; !found {
 				continue
 			}
 		}
 
-		if filters.Statuses != nil && len(filters.Statuses) > 0 {
+		if len(filters.Statuses) > 0 {
 			kubernetesService := objectsAndResources.Service
 
 			// If status isn't specified, return registered-only objects; if not, remove them all

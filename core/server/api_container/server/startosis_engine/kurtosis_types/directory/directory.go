@@ -84,7 +84,7 @@ func CreateDirectoryFromFilesArtifact(
 		nil,
 	}
 
-	argumentDefinitions := NewDirectoryType().KurtosisBaseBuiltin.Arguments
+	argumentDefinitions := NewDirectoryType().Arguments
 	argumentValuesSet := builtin_argument.NewArgumentValuesSet(argumentDefinitions, args)
 	kurtosisDefaultValue, interpretationErr := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(ArtifactNamesAttr, argumentValuesSet)
 	if interpretationErr != nil {

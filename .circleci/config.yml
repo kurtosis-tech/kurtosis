@@ -159,7 +159,7 @@ executors:
 parameters:
   go-version:
     type: string
-    default: "1.20.11"
+    default: "1.23.7"
   container-engine-lib-build-cache-key-prefix:
     type: string
     default: "go-mod-v1" # Can bump this version to bust the cache
@@ -169,7 +169,7 @@ parameters:
     default: default
   api-go-version:
     type: string
-    default: "1.20.11"
+    default: "1.23.7"
   # Separate (and newer) than the API version because we want lots of people to be able to use the Kurtosis API and the API doesn't need to be
   # the same version as the server
   rust-version:
@@ -253,7 +253,7 @@ parameters:
     default: "9730"
   tilt-releaser-version:
     type: string
-    default: "31e51c6441faa5021a20ebe84cf974145d2975f792dd880a5d1c2fa578818458"
+    default: "9d05f87976ccdf8a3434443fac2b867ca99a81c8423008437c767c04784969e4"
 
 # NOTE: Because CircleCI jobs run on separate machines from each other, we duplicate steps (like checkout) between jobs. This is because doing the "correct" DRY
 #  refactoring of, "one job for checkout, one job for build Docker image, etc." would require a) persisting files between jobs and b) persisting Docker images between

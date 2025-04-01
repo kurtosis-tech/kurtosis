@@ -95,10 +95,7 @@ func (engine EngineRuntime) PostEnclaves(ctx context.Context, request api.PostEn
 		}, nil
 	}
 
-	isProduction := false
-	if enclaveMode == api_type.PRODUCTION {
-		isProduction = true
-	}
+	isProduction := enclaveMode == api_type.PRODUCTION
 
 	enclaveInfo, err := engine.EnclaveManager.CreateEnclave(
 		ctx,

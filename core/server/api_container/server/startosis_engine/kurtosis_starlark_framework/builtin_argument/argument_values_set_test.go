@@ -41,7 +41,7 @@ func TestParseArguments_SingleRequiredArgument_FromArgs_TypeMismatch(t *testing.
 
 	values, err := parseArguments(argumentDefinitions, builtinName, args, kwargs)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "The following argument(s) could not be parsed or did not pass validation:")
+	require.Contains(t, err.Error(), "the following argument(s) could not be parsed or did not pass validation:")
 	require.Contains(t, err.Error(), "{\"service_name\":\"For 'service_name', expected 'starlark.String', got 'starlark.Int'\"}")
 	require.Empty(t, values)
 }
@@ -99,7 +99,7 @@ func TestParseArguments_SingleRequiredArgument_FromKwargs_TypeMismatch(t *testin
 
 	values, err := parseArguments(argumentDefinitions, builtinName, args, kwargs)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "The following argument(s) could not be parsed or did not pass validation:")
+	require.Contains(t, err.Error(), "the following argument(s) could not be parsed or did not pass validation:")
 	require.Contains(t, err.Error(), "{\"service_name\":\"For 'service_name', expected 'starlark.String', got 'starlark.Int'\"}")
 	require.Empty(t, values)
 }
@@ -116,7 +116,7 @@ func TestParseArguments_SingleRequiredArgument_FromKwargs_FailsValidation(t *tes
 
 	values, err := parseArguments(argumentDefinitions, builtinName, args, kwargs)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "The following argument(s) could not be parsed or did not pass validation:")
+	require.Contains(t, err.Error(), "the following argument(s) could not be parsed or did not pass validation:")
 	require.Contains(t, err.Error(), `{"service_name":"'service_name' should not be empty"}`)
 	require.Empty(t, values)
 }
@@ -220,7 +220,7 @@ func TestParseArguments_ArgumentWithOptional_FromArgs_FailureTypeMismatch(t *tes
 
 	values, err := parseArguments(argumentDefinitions, builtinName, args, kwargs)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "The following argument(s) could not be parsed or did not pass validation:")
+	require.Contains(t, err.Error(), "the following argument(s) could not be parsed or did not pass validation:")
 	require.Contains(t, err.Error(), "the argument 'service_name' could not be parsed because their type ('starlark.Bool') did not match the expected ('starlark.String')")
 	require.Contains(t, err.Error(), "the argument 'should_start' could not be parsed because their type ('starlark.String') did not match the expected ('starlark.Bool')")
 	require.Nil(t, values)
@@ -271,7 +271,7 @@ func TestExtractArgumentValue_Failure_ArgumentNotFound(t *testing.T) {
 	var serviceNameValue starlark.Int // expecting a string here
 	err := argumentValuesSet.ExtractArgumentValue("unknown_argument", &serviceNameValue)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "Argument 'unknown_argument' could not be found in schema")
+	require.Contains(t, err.Error(), "argument 'unknown_argument' could not be found in schema")
 }
 
 func TestExtractArgumentValue_Failure_TypeMismatch(t *testing.T) {
@@ -284,7 +284,7 @@ func TestExtractArgumentValue_Failure_TypeMismatch(t *testing.T) {
 	var serviceNameValue starlark.Int // expecting a string here
 	err := argumentValuesSet.ExtractArgumentValue(serviceNameArgName, &serviceNameValue)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "Unable to extract value for argument 'service_name'. Types were not assignable (got 'starlark.Int', expecting 'starlark.String')")
+	require.Contains(t, err.Error(), "unable to extract value for argument 'service_name'. Types were not assignable (got 'starlark.Int', expecting 'starlark.String')")
 }
 
 func TestExtractArgumentValueStatic_Success(t *testing.T) {
@@ -308,7 +308,7 @@ func TestExtractArgumentValueStatic_Failure_TypeMismatch(t *testing.T) {
 	argumentValuesSet := NewArgumentValuesSet(argumentDefinitions, values)
 	_, err := ExtractArgumentValue[starlark.Int](argumentValuesSet, serviceNameArgName)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "Unable to extract value for argument 'service_name'. Types were not assignable (got 'starlark.Int', expecting 'starlark.String')")
+	require.Contains(t, err.Error(), "unable to extract value for argument 'service_name'. Types were not assignable (got 'starlark.Int', expecting 'starlark.String')")
 }
 
 func TestString(t *testing.T) {

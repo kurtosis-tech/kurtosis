@@ -144,7 +144,7 @@ func TestGetAuthTokenReturnsNoTokenFoundIfUserExistsWithNoToken(t *testing.T) {
 	// run test
 	store := newGitHubAuthStoreForTesting(tempUsernameFile.Name(), tempAuthTokenFile.Name())
 	_, err = store.GetAuthToken()
-	require.ErrorIs(t, err, NoTokenFound)
+	require.ErrorIs(t, err, ErrNoTokenFound)
 }
 
 func TestSetUser(t *testing.T) {
