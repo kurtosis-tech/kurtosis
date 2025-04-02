@@ -12,6 +12,7 @@ import (
 
 type kubernetesVolumeWithClaim struct {
 	VolumeClaimName string
+	UsedPreExistingPVC bool
 }
 
 func (volumeAndClaim *kubernetesVolumeWithClaim) GetVolume() *apiv1.Volume {
@@ -93,7 +94,9 @@ func preparePersistentDirectoriesResources(
 
 		// This claim works with a dynamic driver - it will spin up its own volume - the volume will get deleted when said claims is deleted
 		var persistentVolumeClaim *apiv1.PersistentVolumeClaim
+		foundExisting := true
 		if persistentVolumeClaim, err = kubernetesManager.GetPersistentVolumeClaim(ctx, namespace, volumeName); err != nil {
+			foundExisting = false
 			persistentVolumeClaim, err = kubernetesManager.CreatePersistentVolumeClaim(ctx, namespace, volumeName, volumeLabelsStrs, persistentVolumeSize)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "An error occurred creating the persistent volume claim for '%s'", persistentDirectory.PersistentKey)
@@ -103,6 +106,7 @@ func preparePersistentDirectoriesResources(
 
 		persistentVolumesAndClaims[dirPath] = &kubernetesVolumeWithClaim{
 			VolumeClaimName: persistentVolumeClaim.Name,
+			UsedPreExistingPVC: foundExisting,
 		}
 	}
 
