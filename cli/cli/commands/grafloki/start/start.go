@@ -87,7 +87,17 @@ func RestartEngineWithLogsSink(ctx context.Context, sink logs_aggregator.Sinks) 
 	var engineClientCloseFunc func() error
 	var restartEngineErr error
 	dontRestartAPIContainers := false
-	_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotently(ctx, defaults.DefaultEngineLogLevel, defaultEngineVersion, restartEngineOnSameVersionIfAnyRunning, defaults.DefaultEngineEnclavePoolSize, defaults.DefaultEnableDebugMode, defaults.DefaultGitHubAuthTokenOverride, dontRestartAPIContainers, defaults.DefaultDomain, defaults.DefaultLogRetentionPeriod, sink)
+	_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotently(ctx,
+		defaults.DefaultEngineLogLevel,
+		defaultEngineVersion,
+		restartEngineOnSameVersionIfAnyRunning,
+		defaults.DefaultEngineEnclavePoolSize,
+		defaults.DefaultEnableDebugMode,
+		defaults.DefaultGitHubAuthTokenOverride,
+		dontRestartAPIContainers,
+		defaults.DefaultDomain,
+		defaults.DefaultLogRetentionPeriod,
+		sink)
 	if restartEngineErr != nil {
 		return stacktrace.Propagate(restartEngineErr, "An error occurred restarting the Kurtosis engine")
 	}

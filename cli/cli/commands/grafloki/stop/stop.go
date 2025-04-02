@@ -7,7 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
-	grafloki "github.com/kurtosis-tech/kurtosis/cli/cli/commands/grafloki/start"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/grafloki"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/stacktrace"
 )
