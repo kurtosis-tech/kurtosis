@@ -63,7 +63,7 @@ func run(
 	}
 
 	var lokiBridgeNetworkIpAddress string
-	doesGrafanaAndLokiExist, lokiBridgeNetworkIpAddress, err := existsGrafanaAndLoki(ctx, dockerManager, lokiContainerLabels, grafanaContainerLabels)
+	doesGrafanaAndLokiExist, lokiBridgeNetworkIpAddress := existsGrafanaAndLoki(ctx, dockerManager, lokiContainerLabels, grafanaContainerLabels)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred checking if Grafana and Loki exist.")
 	}
@@ -172,6 +172,7 @@ datasources:
 		WithFetchingLatestImageIfMissing().
 		WithRestartPolicy(docker_manager.RestartOnFailure).
 		WithNetworkMode(bridgeNetworkId).
+		WithLabels(grafanaContainerLabels).
 		Build()
 	grafanaContainerId, _, err := dockerManager.CreateAndStartContainer(ctx, grafanaArgs)
 	if err != nil {
@@ -220,11 +221,8 @@ func waitForLokiReadiness(lokiHost string) error {
 		retryDelay  = 1 * time.Second
 		maxAttempts = 30
 	)
-
 	url := lokiHost + readyPath
-
 	for i := 0; i < maxAttempts; i++ {
-		logrus.Infof("Requesting %v...", url)
 		resp, err := http.Get(url)
 		if err == nil {
 			resp.Body.Close()
@@ -232,29 +230,27 @@ func waitForLokiReadiness(lokiHost string) error {
 				return nil
 			}
 		}
-
 		time.Sleep(retryDelay)
 	}
-
 	return stacktrace.NewError("Loki did not become ready after 30 attempts")
 }
 
-func existsGrafanaAndLoki(ctx context.Context, dockerManager *docker_manager.DockerManager, lokiContainerLabels map[string]string, grafanaContainerLabels map[string]string) (bool, string, error) {
+func existsGrafanaAndLoki(ctx context.Context, dockerManager *docker_manager.DockerManager, lokiContainerLabels map[string]string, grafanaContainerLabels map[string]string) (bool, string) {
 	existsLoki := false
 	existsGrafana := false
+	var lokiBridgeNetworIpAddress string
 	lokiContainer, err := getContainerByLabel(ctx, dockerManager, lokiContainerLabels)
-	if err != nil && lokiContainer == nil {
-		return false, "", stacktrace.Propagate(err, "An error occurred verifying if Loki container exists.")
+	if err == nil && lokiContainer != nil {
+		existsLoki = true
+		lokiBridgeNetworIpAddress = lokiContainer.GetDefaultIpAddress()
 	}
-	existsLoki = true
 
-	grafanaContainer, err := getContainerByLabel(ctx, dockerManager, grafanaContainerLabels)
-	if err != nil && grafanaContainer == nil {
-		return false, "", stacktrace.Propagate(err, "An error occurred verifying if Grafana container exists.")
+	_, err = getContainerByLabel(ctx, dockerManager, grafanaContainerLabels)
+	if err == nil {
+		existsGrafana = true
 	}
-	existsGrafana = true
 
-	return existsLoki && existsGrafana, lokiContainer.GetDefaultIpAddress(), nil
+	return existsLoki && existsGrafana, fmt.Sprintf("http://%v:%v", lokiBridgeNetworIpAddress, lokiPort)
 }
 
 func getContainerByLabel(ctx context.Context, dockerManager *docker_manager.DockerManager, containerLabels map[string]string) (*types.Container, error) {
@@ -263,10 +259,10 @@ func getContainerByLabel(ctx context.Context, dockerManager *docker_manager.Dock
 		return nil, stacktrace.Propagate(err, "An error occurred getting container by labels '%v'.", containerLabels)
 	}
 	if len(containers) == 0 {
-		return nil, stacktrace.Propagate(err, "No containers with labels '%v' found.", containerLabels)
+		return nil, stacktrace.NewError("No containers with labels '%v' found.", containerLabels)
 	}
 	if len(containers) > 1 {
-		return nil, stacktrace.Propagate(err, "More than one container with labels '%v' found.", containerLabels)
+		return nil, stacktrace.NewError("More than one container with labels '%v' found.", containerLabels)
 	}
 	return containers[0], nil
 }
