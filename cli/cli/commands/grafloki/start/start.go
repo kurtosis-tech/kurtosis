@@ -42,13 +42,14 @@ func run(
 	}
 
 	var lokiHost string
+	var grafanaUrl string
 	if clusterConfig.GetClusterType() == resolved_config.KurtosisClusterType_Docker {
-		lokiHost, err = grafloki.StartGrafLokiInDocker(ctx)
+		lokiHost, grafanaUrl, err = grafloki.StartGrafLokiInDocker(ctx)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred starting Grafana and Loki in Docker.")
 		}
 	} else if clusterConfig.GetClusterType() == resolved_config.KurtosisClusterType_Kubernetes {
-		lokiHost, err = grafloki.StartGrafLokiInKubernetes(ctx)
+		lokiHost, grafanaUrl, err = grafloki.StartGrafLokiInKubernetes(ctx)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred starting Grafana and Loki in Kubernetes.")
 		}
@@ -75,7 +76,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred restarting engine to be configured to send logs to Loki.")
 	}
 
-	out.PrintOutLn(fmt.Sprintf("Grafana running at http://localhost:%v", ""))
+	out.PrintOutLn(fmt.Sprintf("Grafana running at %v", grafanaUrl))
 	return nil
 }
 
