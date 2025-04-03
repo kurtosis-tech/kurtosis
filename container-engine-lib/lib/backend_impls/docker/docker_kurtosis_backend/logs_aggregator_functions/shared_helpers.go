@@ -150,7 +150,7 @@ func getLogsAggregatorObjectFromContainerInfo(
 }
 
 // if nothing is found we return empty volume name
-func getLogsAggregatorVolumeName(
+func getLogsAggregatorConfigVolumeName(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
 ) (string, error) {
@@ -159,12 +159,12 @@ func getLogsAggregatorVolumeName(
 
 	searchLabels := map[string]string{
 		docker_label_key.AppIDDockerLabelKey.GetString():      label_value_consts.AppIDDockerLabelValue.GetString(),
-		docker_label_key.VolumeTypeDockerLabelKey.GetString(): label_value_consts.LogsAggregatorVolumeTypeDockerLabelValue.GetString(),
+		docker_label_key.VolumeTypeDockerLabelKey.GetString(): label_value_consts.LogsAggregatorConfigVolumeTypeDockerLabelValue.GetString(),
 	}
 
 	volumes, err := dockerManager.GetVolumesByLabels(ctx, searchLabels)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting the volumes for logs aggregator by labels '%+v'", searchLabels)
+		return "", stacktrace.Propagate(err, "An error occurred getting the config volumes for logs aggregator by labels '%+v'", searchLabels)
 	}
 
 	if len(volumes) == 0 {
@@ -172,7 +172,7 @@ func getLogsAggregatorVolumeName(
 	}
 
 	if len(volumes) > 1 {
-		return "", stacktrace.NewError("Attempted to get logs collector volume name for logs aggregator but got more than one matches")
+		return "", stacktrace.NewError("Attempted to get logs collector config volume name for logs aggregator but got more than one matches")
 	}
 
 	return volumes[0].Name, nil

@@ -17,14 +17,15 @@ import (
 )
 
 const (
-	engineServerNamePrefix        = "kurtosis-engine"
-	logsAggregatorName            = "kurtosis-logs-aggregator"
-	logsStorageVolumeName         = "kurtosis-logs-storage"
-	logsAggregatorVolumeName      = logsAggregatorName + "-vol"
-	githubAuthStorageVolumeName   = "kurtosis-github-auth-storage"
-	dockerConfigStorageVolumeName = "kurtosis-docker-config-storage"
-	engineRESTAPIPortStr          = "engine-rest-api"
-	reverseProxyNamePrefix        = "kurtosis-reverse-proxy"
+	engineServerNamePrefix         = "kurtosis-engine"
+	logsAggregatorName             = "kurtosis-logs-aggregator"
+	logsStorageVolumeName          = "kurtosis-logs-storage"
+	logsAggregatorDataVolumeName   = logsAggregatorName + "-data"
+	logsAggregatorConfigVolumeName = logsAggregatorName + "-config"
+	githubAuthStorageVolumeName    = "kurtosis-github-auth-storage"
+	dockerConfigStorageVolumeName  = "kurtosis-docker-config-storage"
+	engineRESTAPIPortStr           = "engine-rest-api"
+	reverseProxyNamePrefix         = "kurtosis-reverse-proxy"
 )
 
 type DockerObjectAttributesProvider interface {
@@ -37,7 +38,8 @@ type DockerObjectAttributesProvider interface {
 	) (DockerObjectAttributes, error)
 	ForEnclave(enclaveUuid enclave.EnclaveUUID) (DockerEnclaveObjectAttributesProvider, error)
 	ForLogsAggregator(httpPortId string, httpPortSpec *port_spec.PortSpec) (DockerObjectAttributes, error)
-	ForLogsAggregatorVolume() (DockerObjectAttributes, error)
+	ForLogsAggregatorConfigVolume() (DockerObjectAttributes, error)
+	ForLogsAggregatorDataVolume() (DockerObjectAttributes, error)
 	ForLogsStorageVolume() (DockerObjectAttributes, error)
 	ForReverseProxy(engineGuid engine.EngineGUID) (DockerObjectAttributes, error)
 	ForGitHubAuthStorageVolume() (DockerObjectAttributes, error)
@@ -152,14 +154,32 @@ func (provider *dockerObjectAttributesProviderImpl) ForLogsAggregator(httpPortId
 	return objectAttributes, nil
 }
 
-func (provider *dockerObjectAttributesProviderImpl) ForLogsAggregatorVolume() (DockerObjectAttributes, error) {
-	name, err := docker_object_name.CreateNewDockerObjectName(logsAggregatorVolumeName)
+func (provider *dockerObjectAttributesProviderImpl) ForLogsAggregatorConfigVolume() (DockerObjectAttributes, error) {
+	name, err := docker_object_name.CreateNewDockerObjectName(logsAggregatorConfigVolumeName)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker object name object from string '%v'", logsAggregatorVolumeName)
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker object name object from string '%v'", logsAggregatorConfigVolumeName)
 	}
 
 	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
-		docker_label_key.VolumeTypeDockerLabelKey: label_value_consts.LogsAggregatorVolumeTypeDockerLabelValue,
+		docker_label_key.VolumeTypeDockerLabelKey: label_value_consts.LogsAggregatorConfigVolumeTypeDockerLabelValue,
+	}
+
+	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels '%+v'", name, labels)
+	}
+
+	return objectAttributes, nil
+}
+
+func (provider *dockerObjectAttributesProviderImpl) ForLogsAggregatorDataVolume() (DockerObjectAttributes, error) {
+	name, err := docker_object_name.CreateNewDockerObjectName(logsAggregatorDataVolumeName)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker object name object from string '%v'", logsAggregatorDataVolumeName)
+	}
+
+	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
+		docker_label_key.VolumeTypeDockerLabelKey: label_value_consts.LogsAggregatorDataVolumeTypeDockerLabelValue,
 	}
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
