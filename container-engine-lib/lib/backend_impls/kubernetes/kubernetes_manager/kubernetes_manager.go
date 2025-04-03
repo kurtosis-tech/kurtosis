@@ -1587,6 +1587,36 @@ func (manager *KubernetesManager) CreateDeployment(
 	return createdDeployment, nil
 }
 
+func (manager *KubernetesManager) WaitForPodManagedByDeployment(ctx context.Context, deployment *v1.Deployment, maxRetries int, retryInterval time.Duration) error {
+	timeoutCtx, cancel := context.WithTimeout(ctx, time.Duration(maxRetries)*retryInterval)
+	defer cancel()
+
+	ticker := time.NewTicker(retryInterval)
+	defer ticker.Stop()
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		select {
+		case <-timeoutCtx.Done():
+			return stacktrace.NewError(
+				"Timeout waiting for a pod managed by deployment '%s' to come online",
+				deployment.Name,
+			)
+		case <-ticker.C:
+			pods, err := manager.GetPodsManagedByDeployment(ctx, deployment)
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred getting pods managed by deployment'%v'", deployment.Name)
+			}
+			if len(pods) > 0 && len(pods[0].Status.ContainerStatuses) > 0 && pods[0].Status.ContainerStatuses[0].Ready {
+				// found a pod with a running container
+				return nil
+			}
+		}
+	}
+	return stacktrace.NewError(
+		"Exceeded max retries (%d) waiting for a pod managed by deployment '%s' to come online",
+		maxRetries, deployment.Name,
+	)
+}
+
 func (manager *KubernetesManager) ScaleDeployment(ctx context.Context, namespace, name string, replicas int32) error {
 	deploymentClient := manager.kubernetesClientSet.AppsV1().Deployments(namespace)
 

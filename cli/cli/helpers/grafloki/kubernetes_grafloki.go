@@ -25,6 +25,10 @@ const (
 	lokiProbInitialDelaySeconds          = 5
 	lokiProbePeriodSeconds               = 10
 	lokiProbeTimeoutSeconds              = 10
+
+	// takes around 30 seconds for loki pod to become ready
+	lokiDeploymentMaxRetires    = 40
+	lokiDeploymentRetryInterval = 1 * time.Second
 )
 
 var lokiLabels = map[string]string{
@@ -157,6 +161,10 @@ func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes
 			}
 		}
 	}()
+	logrus.Infof("Waiting for Loki deployment to come online (can take around 30s)... ")
+	if err := k8sManager.WaitForPodManagedByDeployment(ctx, lokiDeployment, lokiDeploymentMaxRetires, lokiDeploymentRetryInterval); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while waiting for pod managed by Loki deployment '%v' to come online.", lokiDeploymentName)
+	}
 
 	lokiService, err := k8sManager.CreateService(ctx,
 		graflokiNamespace,
