@@ -18,6 +18,7 @@ import (
 const (
 	LokiContainerName    = "kurtosis-loki"
 	GrafanaContainerName = "kurtosis-grafana"
+	lokiReadinessPath    = "/ready"
 
 	bridgeNetworkId = "bridge"
 )
@@ -90,7 +91,7 @@ func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_m
 
 	lokiBridgeNetworkIpAddress := fmt.Sprintf("http://%v:%v", lokiContainer.GetDefaultIpAddress(), lokiPort)
 	lokiHostNetworkIpAddress := fmt.Sprintf("http://localhost:%v", lokiPort)
-	if err := waitForLokiReadiness(lokiHostNetworkIpAddress); err != nil {
+	if err := waitForLokiReadiness(lokiHostNetworkIpAddress, lokiReadinessPath); err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred waiting for Loki container to become ready.")
 	}
 
@@ -150,9 +151,8 @@ datasources:
 	return lokiBridgeNetworkIpAddress, nil
 }
 
-func waitForLokiReadiness(lokiHost string) error {
+func waitForLokiReadiness(lokiHost string, readyPath string) error {
 	const (
-		readyPath   = "/ready"
 		retryDelay  = 1 * time.Second
 		maxAttempts = 30
 	)
