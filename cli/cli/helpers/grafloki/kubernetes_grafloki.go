@@ -29,6 +29,8 @@ var grafanaLabels = map[string]string{
 	grafanaDeploymentName: "true",
 }
 
+var httpApplicationProtocol = "http"
+
 func StartGrafLokiInKubernetes(ctx context.Context) (string, string, error) {
 	k8sManager, err := getKubernetesManager()
 	if err != nil {
@@ -65,13 +67,51 @@ func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes
 		lokiLabels,
 		map[string]string{},
 		[]apiv1.Container{}, // no init containers
-		[]apiv1.Container{{
-			Name:  "loki",
-			Image: lokiImage,
-			Ports: []apiv1.ContainerPort{{ContainerPort: lokiPort}},
-		}},
+		[]apiv1.Container{
+			{
+				Name:  "loki",
+				Image: lokiImage,
+				Ports: []apiv1.ContainerPort{
+					{
+						Name:          "",
+						HostPort:      0,
+						ContainerPort: lokiPort,
+						Protocol:      "",
+						HostIP:        "",
+					},
+				},
+				Command:    nil,
+				Args:       nil,
+				WorkingDir: "",
+				EnvFrom:    nil,
+				Env:        nil,
+				Resources: apiv1.ResourceRequirements{
+					Limits:   nil,
+					Requests: nil,
+					Claims:   nil,
+				},
+				ResizePolicy:             nil,
+				VolumeMounts:             nil,
+				VolumeDevices:            nil,
+				LivenessProbe:            nil,
+				ReadinessProbe:           nil,
+				StartupProbe:             nil,
+				Lifecycle:                nil,
+				TerminationMessagePath:   "",
+				TerminationMessagePolicy: "",
+				ImagePullPolicy:          "",
+				SecurityContext:          nil,
+				Stdin:                    false,
+				StdinOnce:                false,
+				TTY:                      false,
+			},
+		},
 		[]apiv1.Volume{},
-		&apiv1.Affinity{})
+		&apiv1.Affinity{
+			NodeAffinity:    nil,
+			PodAffinity:     nil,
+			PodAntiAffinity: nil,
+		})
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred creating Loki deployment.")
 	}
@@ -92,10 +132,12 @@ func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes
 		lokiLabels,          // match loki deployment pod labels
 		apiv1.ServiceTypeNodePort,
 		[]apiv1.ServicePort{{
-			Port:       lokiPort,
-			TargetPort: intstr.FromInt(lokiPort),
-			Protocol:   apiv1.ProtocolTCP,
-			NodePort:   30030,
+			Name:        "logs-listening",
+			Port:        lokiPort,
+			TargetPort:  intstr.FromInt(lokiPort),
+			Protocol:    apiv1.ProtocolTCP,
+			NodePort:    lokiPort,
+			AppProtocol: &httpApplicationProtocol,
 		}})
 	shouldRemoveLokiService := true
 	defer func() {
@@ -151,41 +193,116 @@ spec:
 		grafanaLabels,
 		map[string]string{}, // empty annotations
 		[]apiv1.Container{}, // no init containers
-		[]apiv1.Container{{
-			Name:  "grafana",
-			Image: grafanaImage,
-			Ports: []apiv1.ContainerPort{{ContainerPort: grafanaPort}},
-			VolumeMounts: []apiv1.VolumeMount{{
-				Name:      "datasources",
-				MountPath: "/etc/grafana/provisioning/datasources",
-			}},
-			Env: []apiv1.EnvVar{
-				{
-					Name:      "GF_AUTH_ANONYMOUS_ENABLED",
-					Value:     "true",
-					ValueFrom: nil,
+		[]apiv1.Container{
+			{
+				Name:  "grafana",
+				Image: grafanaImage,
+				Ports: []apiv1.ContainerPort{
+					{
+						Name:          "",
+						ContainerPort: grafanaPort,
+						HostPort:      0,
+						Protocol:      "",
+						HostIP:        "",
+					},
 				},
-				{
-					Name:      "GF_AUTH_ANONYMOUS_ORG_ROLE",
-					Value:     "Admin",
-					ValueFrom: nil,
+				Env: []apiv1.EnvVar{
+					{
+						Name:      "GF_AUTH_ANONYMOUS_ENABLED",
+						Value:     "true",
+						ValueFrom: nil,
+					},
+					{
+						Name:      "GF_AUTH_ANONYMOUS_ORG_ROLE",
+						Value:     "Admin",
+						ValueFrom: nil,
+					},
+					{
+						Name:      "GF_SECURITY_ALLOW_EMBEDDING",
+						Value:     "true",
+						ValueFrom: nil,
+					},
 				},
-				{
-					Name:      "GF_SECURITY_ALLOW_EMBEDDING",
-					Value:     "true",
-					ValueFrom: nil,
+				VolumeMounts: []apiv1.VolumeMount{
+					{
+						Name:             "datasources",
+						MountPath:        "/etc/grafana/provisioning/datasources",
+						ReadOnly:         false,
+						SubPath:          "",
+						MountPropagation: nil,
+						SubPathExpr:      "",
+					},
 				},
+				Command:    nil,
+				Args:       nil,
+				WorkingDir: "",
+				EnvFrom:    nil,
+				Resources: apiv1.ResourceRequirements{
+					Limits:   nil,
+					Requests: nil,
+					Claims:   nil,
+				},
+				ResizePolicy:             nil,
+				VolumeDevices:            nil,
+				LivenessProbe:            nil,
+				ReadinessProbe:           nil,
+				StartupProbe:             nil,
+				Lifecycle:                nil,
+				TerminationMessagePath:   "",
+				TerminationMessagePolicy: "",
+				ImagePullPolicy:          "",
+				SecurityContext:          nil,
+				Stdin:                    false,
+				StdinOnce:                false,
+				TTY:                      false,
 			},
-		}},
+		},
 		[]apiv1.Volume{{
 			Name: "datasources",
 			VolumeSource: apiv1.VolumeSource{
 				ConfigMap: &apiv1.ConfigMapVolumeSource{
-					LocalObjectReference: apiv1.LocalObjectReference{Name: grafanaDatasourceConfigMapName},
+					LocalObjectReference: apiv1.LocalObjectReference{
+						Name: grafanaDatasourceConfigMapName,
+					},
+					Items:       nil,
+					DefaultMode: nil,
+					Optional:    nil,
 				},
+				HostPath:              nil,
+				EmptyDir:              nil,
+				GCEPersistentDisk:     nil,
+				AWSElasticBlockStore:  nil,
+				GitRepo:               nil,
+				Secret:                nil,
+				NFS:                   nil,
+				ISCSI:                 nil,
+				Glusterfs:             nil,
+				PersistentVolumeClaim: nil,
+				RBD:                   nil,
+				FlexVolume:            nil,
+				Cinder:                nil,
+				CephFS:                nil,
+				Flocker:               nil,
+				DownwardAPI:           nil,
+				FC:                    nil,
+				AzureFile:             nil,
+				VsphereVolume:         nil,
+				Quobyte:               nil,
+				AzureDisk:             nil,
+				PhotonPersistentDisk:  nil,
+				Projected:             nil,
+				PortworxVolume:        nil,
+				ScaleIO:               nil,
+				StorageOS:             nil,
+				CSI:                   nil,
+				Ephemeral:             nil,
 			},
 		}},
-		&apiv1.Affinity{})
+		&apiv1.Affinity{
+			NodeAffinity:    nil,
+			PodAffinity:     nil,
+			PodAntiAffinity: nil,
+		})
 	shouldRemoveGrafanaDeployment := true
 	defer func() {
 		if shouldRemoveGrafanaDeployment {
@@ -207,10 +324,12 @@ spec:
 		grafanaLabels,       // match grafana deployment pod labels
 		apiv1.ServiceTypeNodePort,
 		[]apiv1.ServicePort{{
-			Port:       grafanaPort,
-			TargetPort: intstr.FromInt(grafanaPort),
-			Protocol:   apiv1.ProtocolTCP,
-			NodePort:   30030,
+			Name:        "grafana-dashboard",
+			Port:        grafanaPort,
+			TargetPort:  intstr.FromInt(grafanaPort),
+			Protocol:    apiv1.ProtocolTCP,
+			NodePort:    grafanaPort,
+			AppProtocol: &httpApplicationProtocol,
 		}})
 	shouldRemoveGrafanaService := true
 	defer func() {

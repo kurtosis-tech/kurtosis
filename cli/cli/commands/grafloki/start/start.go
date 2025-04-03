@@ -24,10 +24,14 @@ const (
 )
 
 var GraflokiStartCmd = &lowlevel.LowlevelKurtosisCommand{
-	CommandStr:       command_str_consts.GraflokiStartCmdStr,
-	ShortDescription: "Starts a grafana/loki instance.",
-	LongDescription:  "Starts a grafana/loki instance that the kurtosis engine will be configured to send logs to.",
-	RunFunc:          run,
+	CommandStr:               command_str_consts.GraflokiStartCmdStr,
+	ShortDescription:         "Starts a grafana/loki instance.",
+	LongDescription:          "Starts a grafana/loki instance that the kurtosis engine will be configured to send logs to.",
+	RunFunc:                  run,
+	Flags:                    nil,
+	Args:                     nil,
+	PostValidationAndRunFunc: nil,
+	PreValidationAndRunFunc:  nil,
 }
 
 func run(

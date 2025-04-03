@@ -51,6 +51,8 @@ require (
 	github.com/cli/go-gh/v2 v2.4.1-0.20231120145612-d32c104a9a25
 	github.com/cli/oauth v1.0.1
 	github.com/compose-spec/compose-go v1.17.0
+	github.com/docker/docker v24.0.9+incompatible
+	github.com/docker/go-connections v0.4.0
 	github.com/fatih/color v1.13.0
 	github.com/go-git/go-git/v5 v5.14.0
 	github.com/google/go-github/v50 v50.2.0
@@ -95,8 +97,6 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/distribution/distribution/v3 v3.0.0-20230214150026-36d8c594d7aa // indirect
-	github.com/docker/docker v24.0.9+incompatible // indirect
-	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-metrics v0.0.1 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect

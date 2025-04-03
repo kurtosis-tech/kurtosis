@@ -14,10 +14,14 @@ import (
 )
 
 var GraflokiStopCmd = &lowlevel.LowlevelKurtosisCommand{
-	CommandStr:       command_str_consts.GraflokiStopCmdStr,
-	ShortDescription: "Stops a grafana/loki instance.",
-	LongDescription:  "Stop a grafana/loki instance if one already exists.",
-	RunFunc:          run,
+	CommandStr:               command_str_consts.GraflokiStopCmdStr,
+	ShortDescription:         "Stops a grafana/loki instance.",
+	LongDescription:          "Stop a grafana/loki instance if one already exists.",
+	RunFunc:                  run,
+	Flags:                    nil,
+	Args:                     nil,
+	PreValidationAndRunFunc:  nil,
+	PostValidationAndRunFunc: nil,
 }
 
 func run(
