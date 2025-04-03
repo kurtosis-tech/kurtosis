@@ -34,17 +34,18 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting Kurtosis cluster config.")
 	}
 
-	if clusterConfig.GetClusterType() == resolved_config.KurtosisClusterType_Docker {
+	switch clusterConfig.GetClusterType() {
+	case resolved_config.KurtosisClusterType_Docker:
 		err := grafloki.StopGrafLokiInDocker(ctx)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred stopping Grafana and Loki containers in Docker.")
 		}
-	} else if clusterConfig.GetClusterType() == resolved_config.KurtosisClusterType_Kubernetes {
+	case resolved_config.KurtosisClusterType_Kubernetes:
 		err := grafloki.StopGrafLokiInKubernetes(ctx)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred stopping Grafana and Loki containers in Kubernetes.")
 		}
-	} else {
+	default:
 		return stacktrace.NewError("Unsupported cluster type: %v", clusterConfig.GetClusterType().String())
 	}
 

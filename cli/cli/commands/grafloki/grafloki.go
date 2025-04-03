@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// ServiceCmd Suppressing exhaustruct requirement because this struct has ~40 properties
+// GraflokiCmd suppressing exhaustruct requirement because this struct has ~40 properties
 // nolint: exhaustruct
 var GraflokiCmd = &cobra.Command{
 	Use:   command_str_consts.GraflokiCmdStr,

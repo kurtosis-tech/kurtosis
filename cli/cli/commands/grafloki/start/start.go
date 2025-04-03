@@ -25,8 +25,8 @@ const (
 
 var GraflokiStartCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:               command_str_consts.GraflokiStartCmdStr,
-	ShortDescription:         "Starts a grafana/loki instance.",
-	LongDescription:          "Starts a grafana/loki instance that the kurtosis engine will be configured to send logs to.",
+	ShortDescription:         "Starts a Grafana/Loki instance.",
+	LongDescription:          "Starts a Grafana/Loki instance and configures Kurtosis engine to send logs to it.",
 	RunFunc:                  run,
 	Flags:                    nil,
 	Args:                     nil,
@@ -47,17 +47,18 @@ func run(
 
 	var lokiHost string
 	var grafanaUrl string
-	if clusterConfig.GetClusterType() == resolved_config.KurtosisClusterType_Docker {
+	switch clusterConfig.GetClusterType() {
+	case resolved_config.KurtosisClusterType_Docker:
 		lokiHost, grafanaUrl, err = grafloki.StartGrafLokiInDocker(ctx)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred starting Grafana and Loki in Docker.")
 		}
-	} else if clusterConfig.GetClusterType() == resolved_config.KurtosisClusterType_Kubernetes {
+	case resolved_config.KurtosisClusterType_Kubernetes:
 		lokiHost, grafanaUrl, err = grafloki.StartGrafLokiInKubernetes(ctx)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred starting Grafana and Loki in Kubernetes.")
 		}
-	} else {
+	default:
 		return stacktrace.NewError("Unsupported cluster type: %v", clusterConfig.GetClusterType().String())
 	}
 
