@@ -393,6 +393,22 @@ func (manager *DockerManager) GetContainerIdsConnectedToNetwork(context context.
 	return result, nil
 }
 
+func (manager *DockerManager) GetContainerIPOnNetwork(context context.Context, containerId string, networkId string) (string, error) {
+	inspectResponse, err := manager.dockerClient.NetworkInspect(context, networkId, types.NetworkInspectOptions{
+		Scope:   "",
+		Verbose: false,
+	})
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Failed to get network information for network with ID '%v'", networkId)
+	}
+	for id, c := range inspectResponse.Containers {
+		if id == containerId {
+			return c.IPv4Address, nil
+		}
+	}
+	return "", stacktrace.NewError("Could not find container '%v' IP on network '%v'.", containerId, networkId)
+}
+
 /*
 RemoveNetwork
 Removes the Docker network with the given id
@@ -2131,6 +2147,7 @@ func newContainerFromDockerContainer(dockerContainer types.ContainerJSON) (*dock
 		dockerContainer.Config.Entrypoint,
 		dockerContainer.Config.Cmd,
 		containerEnvArgs,
+		dockerContainer.NetworkSettings.IPAddress,
 	)
 
 	return newContainer, nil

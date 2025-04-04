@@ -8,6 +8,7 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/grafloki"
 	"io"
 	"net/http"
 	"os"
@@ -141,6 +142,7 @@ func init() {
 	RootCmd.AddCommand(web.WebCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(_package.PackageCmd)
 	RootCmd.AddCommand(github.GitHubCmd)
+	RootCmd.AddCommand(grafloki.GraflokiCmd)
 }
 
 // ====================================================================================================
