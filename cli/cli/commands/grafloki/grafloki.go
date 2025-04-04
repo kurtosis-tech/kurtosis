@@ -11,7 +11,7 @@ import (
 // nolint: exhaustruct
 var GraflokiCmd = &cobra.Command{
 	Use:   command_str_consts.GraflokiCmdStr,
-	Short: "Start Grafana/Loki command for log collection",
+	Short: "Start Grafana/Loki for log collection",
 	RunE:  nil,
 }
 

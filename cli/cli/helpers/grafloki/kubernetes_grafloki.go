@@ -47,7 +47,7 @@ func StartGrafLokiInKubernetes(ctx context.Context) (string, string, error) {
 	}
 
 	var lokiHost string
-	doesGrafanaAndLokiExist, lokiHost := existsGrafanaAndLokiDeployments(ctx, k8sManager)
+	doesGrafanaAndLokiExist, lokiHost := checkGrafanaAndLokiDeploymentExistence(ctx, k8sManager)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error occurred checking if Grafana and Loki exist.")
 	}
@@ -391,7 +391,7 @@ datasources:
 	return lokiHost, nil
 }
 
-func existsGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes_manager.KubernetesManager) (bool, string) {
+func checkGrafanaAndLokiDeploymentExistence(ctx context.Context, k8sManager *kubernetes_manager.KubernetesManager) (bool, string) {
 	existsLoki := false
 	existsGrafana := false
 	var lokiHost string
@@ -473,5 +473,5 @@ func getLokiHost(lokiServiceName, namespace string, lokiPort int32) string {
 }
 
 func getGrafanaUrl(grafanaPort int) string {
-	return fmt.Sprintf("https://localhost:%v", grafanaPort)
+	return fmt.Sprintf("https://127.0.0.1:%v", grafanaPort)
 }

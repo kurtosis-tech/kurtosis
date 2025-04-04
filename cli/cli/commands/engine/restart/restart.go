@@ -178,7 +178,7 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 
 	var engineClientCloseFunc func() error
 	var restartEngineErr error
-	_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotently(ctx, logLevel, engineVersion, restartEngineOnSameVersionIfAnyRunning, enclavePoolSize, shouldStartInDebugMode, githubAuthTokenOverride, shouldRestartAPIContainers, domain, logRetentionPeriodStr, defaults.DefaultSinks)
+	_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotently(ctx, logLevel, engineVersion, restartEngineOnSameVersionIfAnyRunning, enclavePoolSize, shouldStartInDebugMode, githubAuthTokenOverride, shouldRestartAPIContainers, domain, logRetentionPeriodStr, defaults.DefaultLogsSinks)
 	if restartEngineErr != nil {
 		return stacktrace.Propagate(restartEngineErr, "An error occurred restarting the Kurtosis engine")
 	}

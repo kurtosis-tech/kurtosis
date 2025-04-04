@@ -528,6 +528,8 @@ func (manager *EngineManager) waitUntilEngineStoppedOrError(ctx context.Context)
 	return stacktrace.NewError("Engine did not report stopped status, last status reported was '%v'", status)
 }
 
+// combineAdditionalSinksAndConfigSinks will combine additionalSinks and configSinks
+// note: additionalSinks will override configSinks in case of an id clash
 func combineAdditionalSinksAndConfigSinks(additionalSinks logs_aggregator.Sinks, configSinks logs_aggregator.Sinks) logs_aggregator.Sinks {
 	combinedSinks := logs_aggregator.Sinks{}
 	for sinkId, sink := range configSinks {

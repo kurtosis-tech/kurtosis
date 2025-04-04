@@ -404,4 +404,12 @@ kurtosis-clusters:
             codec: "json"
 ```
 
+### Grafloki
+
+For ease of setup, Kurtosis CLI comes with a feature to start a local Grafana and Loki instance that the engine gets configured to sends logs to. See [grafloki start][grafloki-start] for more info.
+
+<!-------------------- ONLY LINKS BELOW THIS POINT ----------------------->
+[grafloki-start]: ../cli-reference/grafloki-start.md
+
+
 

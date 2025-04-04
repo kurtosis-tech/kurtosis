@@ -31,6 +31,6 @@ const (
 	DefaultLogRetentionPeriod = "168h"
 )
 
-var DefaultSinks = logs_aggregator.Sinks{}
+var DefaultLogsSinks = logs_aggregator.Sinks{}
 var DefaultApiContainerLogLevel = logrus.DebugLevel
 var DefaultEngineLogLevel = logrus.DebugLevel

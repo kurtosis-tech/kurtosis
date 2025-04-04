@@ -46,9 +46,14 @@ func run(
 	}
 
 	// NOTE(tedi  04/03/25): If you're wondering why the grafana / loki instance is being started by the CLI (and not in container-engine-lib via KurtosisBackend as with LogsCollector and LogsAggregator), here's why:
-	// 1. now that Kurtosis is purely OSS, it's important to reduce maintenance surface / complexity inside Kurtosis core. wherever possible infra not essential to Kurtosis core should be built outside of it or at the edges (e.g. client)
+	// 1. now that Kurtosis is purely OSS, it's important to reduce maintenance surface / complexity inside Kurtosis core (Engine, APIContainer, KurtosisBackend, Starlark Engine)
+	// 	  wherever possible infra not essential to Kurtosis core should be built outside of it or at the edges (e.g. client)
 	// 2. the export logs feature was built in service of leveraging existing logging solutions/not rebuilding logging in Kurtosis
 	// 3. having grafloki started/managed by the CLI lets us build on the export logs feature
+	// In other words
+	// putting it in the CLI is saying - “You could set up Grafana and Loki yourself, and then restart the engine to point to it, Kurtosis CLI will do that for you to save you a step”
+	// putting it in Kurtosis core is saying - “Grafana and Loki are core a necessary part of the Kurtosis platform and supports the Kurtosis abstraction/value prop" - which is not the case
+	// https://drawpaintacademy.com/the-bull/
 	var lokiHost string
 	var grafanaUrl string
 	switch clusterConfig.GetClusterType() {
@@ -66,6 +71,7 @@ func run(
 		return stacktrace.NewError("Unsupported cluster type: %v", clusterConfig.GetClusterType().String())
 	}
 
+	// This matches the exact configurations here: https://vector.dev/docs/reference/configuration/sinks/loki/
 	lokiSink := map[string]map[string]interface{}{
 		"loki": {
 			"type":     "loki",
@@ -80,7 +86,7 @@ func run(
 	}
 
 	logrus.Infof("Configuring engine to send logs to Loki...")
-	err = RestartEngineWithLogsSink(ctx, lokiSink)
+	err = restartEngineWithLogsSink(ctx, lokiSink)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred restarting engine to be configured to send logs to Loki.")
 	}
@@ -89,15 +95,13 @@ func run(
 	return nil
 }
 
-func RestartEngineWithLogsSink(ctx context.Context, sink logs_aggregator.Sinks) error {
+func restartEngineWithLogsSink(ctx context.Context, sink logs_aggregator.Sinks) error {
 	engineManager, err := engine_manager.NewEngineManager(ctx)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
 	}
-	var engineClientCloseFunc func() error
-	var restartEngineErr error
 	dontRestartAPIContainers := false
-	_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotently(ctx,
+	_, engineClientCloseFunc, restartEngineErr := engineManager.RestartEngineIdempotently(ctx,
 		defaults.DefaultEngineLogLevel,
 		defaultEngineVersion,
 		restartEngineOnSameVersionIfAnyRunning,

@@ -71,7 +71,7 @@ func RestartEngineAfterGitHubAuth(ctx context.Context) error {
 	var engineClientCloseFunc func() error
 	var restartEngineErr error
 	dontRestartAPIContainers := false
-	_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotently(ctx, defaults.DefaultEngineLogLevel, defaultEngineVersion, restartEngineOnSameVersionIfAnyRunning, defaults.DefaultEngineEnclavePoolSize, defaults.DefaultEnableDebugMode, defaults.DefaultGitHubAuthTokenOverride, dontRestartAPIContainers, defaults.DefaultDomain, defaults.DefaultLogRetentionPeriod, defaults.DefaultSinks)
+	_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotently(ctx, defaults.DefaultEngineLogLevel, defaultEngineVersion, restartEngineOnSameVersionIfAnyRunning, defaults.DefaultEngineEnclavePoolSize, defaults.DefaultEnableDebugMode, defaults.DefaultGitHubAuthTokenOverride, dontRestartAPIContainers, defaults.DefaultDomain, defaults.DefaultLogRetentionPeriod, defaults.DefaultLogsSinks)
 	if restartEngineErr != nil {
 		return stacktrace.Propagate(restartEngineErr, "An error occurred restarting the Kurtosis engine")
 	}
