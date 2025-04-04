@@ -71,10 +71,6 @@ func (c *Container) GetEntrypointArgs() []string {
 	return c.entrypointArgs
 }
 
-func (c *Container) GetDefaultIpAddress() string {
-	return c.defaultIpAddress
-}
-
 func (c *Container) GetCmdArgs() []string {
 	return c.cmdArgs
 }

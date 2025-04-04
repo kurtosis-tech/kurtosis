@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
@@ -22,20 +23,20 @@ const (
 	graflokiNamespace                    = "kurtosis-grafloki"
 	grafanaNodePort                int32 = 30030
 	lokiNodePort                   int32 = 30031
-	lokiProbInitialDelaySeconds          = 5
+	lokiProbeInitialDelaySeconds         = 5
 	lokiProbePeriodSeconds               = 10
 	lokiProbeTimeoutSeconds              = 10
 
 	// takes around 30 seconds for loki pod to become ready
-	lokiDeploymentMaxRetires    = 40
+	lokiDeploymentMaxRetries    = 40
 	lokiDeploymentRetryInterval = 1 * time.Second
 )
 
 var lokiLabels = map[string]string{
-	lokiDeploymentName: "true",
+	kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey.GetString(): lokiDeploymentName,
 }
 var grafanaLabels = map[string]string{
-	grafanaDeploymentName: "true",
+	kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey.GetString(): grafanaDeploymentName,
 }
 
 var httpApplicationProtocol = "http"
@@ -125,7 +126,7 @@ func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes
 						TCPSocket: nil,
 						GRPC:      nil,
 					},
-					InitialDelaySeconds:           lokiProbInitialDelaySeconds,
+					InitialDelaySeconds:           lokiProbeInitialDelaySeconds,
 					TimeoutSeconds:                lokiProbeTimeoutSeconds,
 					PeriodSeconds:                 lokiProbePeriodSeconds,
 					SuccessThreshold:              0,
@@ -162,7 +163,7 @@ func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes
 		}
 	}()
 	logrus.Infof("Waiting for Loki deployment to come online (can take around 30s)... ")
-	if err := k8sManager.WaitForPodManagedByDeployment(ctx, lokiDeployment, lokiDeploymentMaxRetires, lokiDeploymentRetryInterval); err != nil {
+	if err := k8sManager.WaitForPodManagedByDeployment(ctx, lokiDeployment, lokiDeploymentMaxRetries, lokiDeploymentRetryInterval); err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while waiting for pod managed by Loki deployment '%v' to come online.", lokiDeploymentName)
 	}
 

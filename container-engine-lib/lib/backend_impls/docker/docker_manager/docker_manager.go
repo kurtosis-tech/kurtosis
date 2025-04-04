@@ -393,6 +393,22 @@ func (manager *DockerManager) GetContainerIdsConnectedToNetwork(context context.
 	return result, nil
 }
 
+func (manager *DockerManager) GetContainerIPOnNetwork(context context.Context, containerId string, networkId string) (string, error) {
+	inspectResponse, err := manager.dockerClient.NetworkInspect(context, networkId, types.NetworkInspectOptions{
+		Scope:   "",
+		Verbose: false,
+	})
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Failed to get network information for network with ID '%v'", networkId)
+	}
+	for id, c := range inspectResponse.Containers {
+		if id == containerId {
+			return c.IPv4Address, nil
+		}
+	}
+	return "", stacktrace.NewError("Could not find container '%v' IP on network '%v'.", containerId, networkId)
+}
+
 /*
 RemoveNetwork
 Removes the Docker network with the given id
@@ -543,19 +559,17 @@ func (manager *DockerManager) CreateAndStartContainer(
 		Key:   networkIdSearchFilterKey,
 		Value: args.networkId,
 	})
-	if args.networkId != dockerNetworkDriver {
-		networks, err := manager.getNetworksByFilterArgs(ctx, idFilterArgs)
-		if err != nil {
-			return "", nil, stacktrace.Propagate(err, "An error occurred checking for the existence of network with ID %v", args.networkId)
-		}
-		if len(networks) == 0 {
-			return "", nil, stacktrace.NewError(
-				"Kurtosis Docker network with ID %v was never created before trying to launch containers. Please call DockerManager.CreateNetwork first.",
-				args.networkId,
-			)
-		} else if len(networks) > 1 {
-			return "", nil, stacktrace.NewError("Kurtosis Docker network with ID %v matches several networks!", args.networkId)
-		}
+	networks, err := manager.getNetworksByFilterArgs(ctx, idFilterArgs)
+	if err != nil {
+		return "", nil, stacktrace.Propagate(err, "An error occurred checking for the existence of network with ID %v", args.networkId)
+	}
+	if len(networks) == 0 {
+		return "", nil, stacktrace.NewError(
+			"Kurtosis Docker network with ID %v was never created before trying to launch containers. Please call DockerManager.CreateNetwork first.",
+			args.networkId,
+		)
+	} else if len(networks) > 1 {
+		return "", nil, stacktrace.NewError("Kurtosis Docker network with ID %v matches several networks!", args.networkId)
 	}
 
 	isInteractiveMode := args.interactiveModeTtySize != nil
