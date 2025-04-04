@@ -473,7 +473,7 @@ func waitForNamespaceRemoval(
 		}
 	}
 
-	return stacktrace.NewError("Attempted to wait for namespace '%v' removal or to be marked for deletion '%v' times but '%v' was not removed.", namespace, namespace, maxTriesToWaitForNamespaceRemoval)
+	return stacktrace.NewError("Attempted to wait for namespace '%v' removal or to be marked for deletion '%v' times but '%v' was not removed.", namespace, maxTriesToWaitForNamespaceRemoval, namespace)
 }
 
 func getLokiHost(lokiServiceName, namespace string, lokiPort int32) string {
