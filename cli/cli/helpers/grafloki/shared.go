@@ -6,6 +6,15 @@ const (
 
 	grafanaImage = "grafana/grafana:11.6.0"
 	grafanaPort  = 3000
+
+	grafanaAuthAnonymousEnabledEnvVarKey   = "GF_AUTH_ANONYMOUS_ENABLED"
+	grafanaAuthAnonymousEnabledEnvVarVal   = "true"
+	grafanaAuthAnonymousOrgRoleEnvVarKey   = "GF_AUTH_ANONYMOUS_ORG_ROLE"
+	grafanaAuthAnonymousOrgRoleEnvVarVal   = "Admin"
+	grafanaSecurityAllowEmbeddingEnvVarKey = "GF_SECURITY_ALLOW_EMBEDDING"
+	grafanaSecurityAllowEmbeddingEnvVarVal = "true"
+
+	grafanaDatasourcesKey = "datasources"
 )
 
 type GrafanaDatasource struct {

@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v3"
 	apiv1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
@@ -49,10 +50,6 @@ func StartGrafLokiInKubernetes(ctx context.Context) (string, string, error) {
 
 	var lokiHost string
 	doesGrafanaAndLokiExist, lokiHost := checkGrafanaAndLokiDeploymentExistence(ctx, k8sManager)
-	if err != nil {
-		return "", "", stacktrace.Propagate(err, "An error occurred checking if Grafana and Loki exist.")
-	}
-
 	if !doesGrafanaAndLokiExist {
 		lokiHost, err = createGrafanaAndLokiDeployments(ctx, k8sManager)
 		if err != nil {
@@ -65,13 +62,13 @@ func StartGrafLokiInKubernetes(ctx context.Context) (string, string, error) {
 }
 
 func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes_manager.KubernetesManager) (string, error) {
-	glNamespace, err := k8sManager.CreateNamespace(ctx, graflokiNamespace, map[string]string{}, map[string]string{})
+	graflokilNamespaceObj, err := k8sManager.CreateNamespace(ctx, graflokiNamespace, map[string]string{}, map[string]string{})
 	shouldRemoveNamespace := false
 	defer func() {
 		if shouldRemoveNamespace {
-			if err := k8sManager.RemoveNamespace(ctx, glNamespace); err != nil {
+			if err := k8sManager.RemoveNamespace(ctx, graflokilNamespaceObj); err != nil {
 				logrus.Warnf("Attempted to remove namespace '%v' after an error occurred creating it but an error occurred removing it.", graflokiNamespace)
-				logrus.Warnf("Manually remove namepsace with name: %v", glNamespace.Name)
+				logrus.Warnf("!! ACTION REQUIRED !! Manually remove namespace with name: %v", graflokilNamespaceObj.Name)
 			}
 		}
 	}()
@@ -158,7 +155,7 @@ func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes
 		if shouldRemoveLokiDeployment {
 			if err := k8sManager.RemoveDeployment(ctx, graflokiNamespace, lokiDeployment); err != nil {
 				logrus.Warnf("Attempted to remove Loki deployment after an error occurred creating it but an error occurred removing it.")
-				logrus.Warnf("Manually remove Loki deployment with name: %v", lokiDeployment.Name)
+				logrus.Warnf("!! ACTION REQUIRED !! Manually remove Loki deployment with name: %v", lokiDeployment.Name)
 			}
 		}
 	}()
@@ -187,7 +184,7 @@ func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes
 		if shouldRemoveLokiService {
 			if err := k8sManager.RemoveService(ctx, lokiService); err != nil {
 				logrus.Warnf("Attempted to remove Loki service after an error occurred creating it but an error occurred removing it.")
-				logrus.Warnf("Manually remove Loki service with name: %v", lokiService.Name)
+				logrus.Warnf("!! ACTION REQUIRED !! Manually remove Loki service with name: %v", lokiService.Name)
 			}
 		}
 	}()
@@ -196,15 +193,25 @@ func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes
 	}
 	lokiHost := getLokiHost(lokiServiceName, graflokiNamespace, lokiNodePort)
 
+	grafanaDatasource := GrafanaDatasources{
+		apiVersion: "1",
+		datasources: []GrafanaDatasource{
+			{
+				name:      lokiServiceName,
+				type_:     "loki",
+				access:    "proxy",
+				url:       lokiHost,
+				isDefault: true,
+				editable:  true,
+			},
+		}}
+	grafanaDatasourceYaml, err := yaml.Marshal(grafanaDatasource)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred serializing Grafana datasource to yaml: %v", grafanaDatasourceYaml)
+	}
+
 	configMapData := map[string]string{
-		"loki-datasource.yaml": fmt.Sprintf(`apiVersion: 1
-datasources:
-  - name: %v
-    type: loki
-    access: proxy
-    url: %v
-    isDefault: true
-    editable: true`, lokiServiceName, lokiHost),
+		"loki-datasource.yaml": string(grafanaDatasourceYaml),
 	}
 	grafanaConfigMap, err := k8sManager.CreateConfigMap(ctx,
 		graflokiNamespace,
@@ -217,7 +224,7 @@ datasources:
 		if shouldRemoveGrafanaConfigMap {
 			if err := k8sManager.RemoveConfigMap(ctx, graflokiNamespace, grafanaConfigMap); err != nil {
 				logrus.Warnf("Attempted to remove Grafana datasource config map after an error occurred creating it but an error occurred removing it.")
-				logrus.Warnf("Manually remove Grafana datasource config map with name: %v", grafanaConfigMap.Name)
+				logrus.Warnf("!! ACTION REQUIRED !! Manually remove Grafana datasource config map with name: %v", grafanaConfigMap.Name)
 			}
 		}
 	}()
@@ -247,24 +254,24 @@ datasources:
 				},
 				Env: []apiv1.EnvVar{
 					{
-						Name:      "GF_AUTH_ANONYMOUS_ENABLED",
-						Value:     "true",
+						Name:      grafanaAuthAnonymousEnabledEnvVarKey,
+						Value:     grafanaAuthAnonymousEnabledEnvVarVal,
 						ValueFrom: nil,
 					},
 					{
-						Name:      "GF_AUTH_ANONYMOUS_ORG_ROLE",
-						Value:     "Admin",
+						Name:      grafanaAuthAnonymousOrgRoleEnvVarKey,
+						Value:     grafanaAuthAnonymousOrgRoleEnvVarVal,
 						ValueFrom: nil,
 					},
 					{
-						Name:      "GF_SECURITY_ALLOW_EMBEDDING",
-						Value:     "true",
+						Name:      grafanaSecurityAllowEmbeddingEnvVarKey,
+						Value:     grafanaSecurityAllowEmbeddingEnvVarVal,
 						ValueFrom: nil,
 					},
 				},
 				VolumeMounts: []apiv1.VolumeMount{
 					{
-						Name:             "datasources",
+						Name:             grafanaDatasourcesKey,
 						MountPath:        "/etc/grafana/provisioning/datasources",
 						ReadOnly:         false,
 						SubPath:          "",
@@ -297,7 +304,7 @@ datasources:
 			},
 		},
 		[]apiv1.Volume{{
-			Name: "datasources",
+			Name: grafanaDatasourcesKey,
 			VolumeSource: apiv1.VolumeSource{
 				ConfigMap: &apiv1.ConfigMapVolumeSource{
 					LocalObjectReference: apiv1.LocalObjectReference{
@@ -347,7 +354,7 @@ datasources:
 		if shouldRemoveGrafanaDeployment {
 			if err := k8sManager.RemoveDeployment(ctx, graflokiNamespace, grafanaDeployment); err != nil {
 				logrus.Warnf("Attempted to remove Loki deployment after an error occurred creating it but an error occurred removing it.")
-				logrus.Warnf("Manually remove Loki deployment with name: %v", lokiDeployment.Name)
+				logrus.Warnf("!! ACTION REQUIRED !! Manually remove Loki deployment with name: %v", lokiDeployment.Name)
 			}
 		}
 	}()
@@ -375,7 +382,7 @@ datasources:
 		if shouldRemoveGrafanaService {
 			if err := k8sManager.RemoveService(ctx, grafanaService); err != nil {
 				logrus.Warnf("Attempted to remove Grafana service after an error occurred creating it but an error occurred removing it.")
-				logrus.Warnf("Manually remove Grafana service with name: %v", grafanaService.Name)
+				logrus.Warnf("!! ACTION REQUIRED !! Manually remove Grafana service with name: %v", grafanaService.Name)
 			}
 		}
 	}()
@@ -415,11 +422,11 @@ func StopGrafLokiInKubernetes(ctx context.Context) error {
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting Kubernetes Manager.")
 	}
-	ns, err := k8sManager.GetNamespace(ctx, graflokiNamespace)
+	graflokiNamespaceObj, err := k8sManager.GetNamespace(ctx, graflokiNamespace)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting graflokiNamespace '%v'.", graflokiNamespace)
 	}
-	err = k8sManager.RemoveNamespace(ctx, ns)
+	err = k8sManager.RemoveNamespace(ctx, graflokiNamespaceObj)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred removing graflokiNamespace '%v'.", graflokiNamespace)
 	}

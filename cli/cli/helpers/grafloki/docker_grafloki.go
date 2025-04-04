@@ -101,7 +101,7 @@ func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_m
 		apiVersion: "1",
 		datasources: []GrafanaDatasource{
 			{
-				name:      lokiDeploymentName,
+				name:      LokiContainerName,
 				type_:     "loki",
 				access:    "proxy",
 				url:       lokiBridgeNetworkIpAddress,
@@ -128,9 +128,9 @@ func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_m
 			grafanaNatPort: docker_manager.NewManualPublishingSpec(grafanaPort),
 		}).
 		WithEnvironmentVariables(map[string]string{
-			"GF_SECURITY_ALLOW_EMBEDDING": "true",
-			"GF_AUTH_ANONYMOUS_ENABLED":   "true",
-			"GF_AUTH_ANONYMOUS_ORG_ROLE":  "Admin",
+			grafanaAuthAnonymousEnabledEnvVarVal:   grafanaAuthAnonymousEnabledEnvVarVal,
+			grafanaSecurityAllowEmbeddingEnvVarKey: grafanaSecurityAllowEmbeddingEnvVarVal,
+			grafanaAuthAnonymousOrgRoleEnvVarKey:   grafanaAuthAnonymousOrgRoleEnvVarVal,
 		}).
 		WithBindMounts(map[string]string{
 			tmpFile.Name(): "/etc/grafana/provisioning/datasources/loki.yaml",
