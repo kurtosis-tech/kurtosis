@@ -269,6 +269,7 @@ func CreateEngine(
 	if err = dockerManager.CreateVolume(ctx, dockerConfigStorageVolNameStr, dockerConfigStorageVolLabelStrs); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating Docker config storage volume.")
 	}
+	logrus.Tracef("Creating Docker config storage")
 	err = docker_config_storage_creator.CreateDockerConfigStorage(ctx, targetNetworkId, dockerConfigStorageVolNameStr, consts.DockerConfigStorageDirPath, dockerManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating Docker config storage.")
