@@ -72,8 +72,6 @@ func run(
 	}
 
 	// This matches the exact configurations here: https://vector.dev/docs/reference/configuration/sinks/loki/
-	logrus.Infof("Loki host: %v", lokiHost)
-
 	lokiSink := map[string]map[string]interface{}{
 		"loki": {
 			"type":     "loki",
