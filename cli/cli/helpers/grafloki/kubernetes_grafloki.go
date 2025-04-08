@@ -433,7 +433,7 @@ func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes
 	shouldRemoveGrafanaService = false
 	shouldRemoveNamespace = false
 	shouldRemoveLokiService = false
-	return lokiHost, nil, nil
+	return lokiHost, removeGrafanaAndLokiDeploymentsFunc, nil
 }
 
 func checkGrafanaAndLokiDeploymentExistence(ctx context.Context, k8sManager *kubernetes_manager.KubernetesManager) (bool, string) {
