@@ -189,7 +189,7 @@ func checkGrafanaAndLokiContainerExistence(ctx context.Context, dockerManager *d
 		existsLoki = true
 		lokiBridgeNetworkIpAddress, err = dockerManager.GetContainerIPOnNetwork(ctx, lokiContainer.GetId(), bridgeNetworkId)
 		if err != nil {
-			//return "", stacktrace.Propagate(err, "An error occurred getting container '%v' ip address on network '%v'.", lokiContainer.GetId(), bridgeNetworkId)
+			return false, ""
 		}
 	}
 
