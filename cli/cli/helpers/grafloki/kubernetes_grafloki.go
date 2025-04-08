@@ -52,7 +52,10 @@ func StartGrafLokiInKubernetes(ctx context.Context) (string, string, error) {
 	var lokiHost string
 	var removeGrafanaAndLokiFunc func()
 	shouldRemoveGrafanaAndLoki := false
-	doesGrafanaAndLokiExist, lokiHost := checkGrafanaAndLokiDeploymentExistence(ctx, k8sManager)
+	doesGrafanaAndLokiExist, lokiHost, err := checkGrafanaAndLokiDeploymentExistence(ctx, k8sManager)
+	if err != nil {
+		return "", "", stacktrace.Propagate(err, "An error occurred checking if Grafana and Loki deployments exist.")
+	}
 	if !doesGrafanaAndLokiExist {
 		lokiHost, removeGrafanaAndLokiFunc, err = createGrafanaAndLokiDeployments(ctx, k8sManager)
 		if err != nil {
@@ -68,7 +71,7 @@ func StartGrafLokiInKubernetes(ctx context.Context) (string, string, error) {
 
 	logrus.Infof("Run `kubectl port-forward -n %v svc/%v %v:%v` to access Grafana service.", graflokiNamespace, grafanaServiceName, grafanaPort, grafanaNodePort)
 	shouldRemoveGrafanaAndLoki = false
-	return lokiHost, getGrafanaUrl(grafanaPort), nil
+	return lokiHost, getGrafanaUrlOnHostMachine(grafanaPort), nil
 }
 
 func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes_manager.KubernetesManager) (string, func(), error) {
@@ -210,7 +213,7 @@ func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes
 			removeLokiServiceFunc()
 		}
 	}()
-	lokiHost := getLokiHost(lokiServiceName, graflokiNamespace, lokiNodePort)
+	lokiHost := getLokiUrlInsideK8sCluster(lokiServiceName, graflokiNamespace, lokiNodePort)
 
 	grafanaDatasource := GrafanaDatasources{
 		apiVersion: "1",
@@ -436,22 +439,31 @@ func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes
 	return lokiHost, removeGrafanaAndLokiDeploymentsFunc, nil
 }
 
-func checkGrafanaAndLokiDeploymentExistence(ctx context.Context, k8sManager *kubernetes_manager.KubernetesManager) (bool, string) {
+func checkGrafanaAndLokiDeploymentExistence(ctx context.Context, k8sManager *kubernetes_manager.KubernetesManager) (bool, string, error) {
 	existsLoki := false
 	existsGrafana := false
 	var lokiHost string
+
 	lokiDeployment, err := k8sManager.GetDeployment(ctx, graflokiNamespace, lokiDeploymentName)
-	if err == nil && lokiDeployment != nil {
+	if err != nil {
+		return false, "", stacktrace.Propagate(err, "An error occurred getting deployment '%v' in namespace '%v'.", lokiDeploymentName, graflokiNamespace)
+	}
+	if lokiDeployment != nil {
 		existsLoki = true
-		lokiHost = getLokiHost(lokiServiceName, graflokiNamespace, lokiNodePort)
+		lokiHost = getLokiUrlInsideK8sCluster(lokiServiceName, graflokiNamespace, lokiNodePort)
+	} else {
+		return existsLoki, "", nil // loki doesn't in this case so eject early
 	}
 
 	grafanaDeployment, err := k8sManager.GetDeployment(ctx, graflokiNamespace, grafanaDeploymentName)
-	if err == nil && grafanaDeployment != nil {
+	if err != nil {
+		return false, "", stacktrace.Propagate(err, "An error occurred getting deployment '%v' in namespace '%v'.", grafanaDeploymentName, graflokiNamespace)
+	}
+	if grafanaDeployment != nil {
 		existsGrafana = true
 	}
 
-	return existsLoki && existsGrafana, lokiHost
+	return existsLoki && existsGrafana, lokiHost, nil
 }
 
 func StopGrafLokiInKubernetes(ctx context.Context) error {
@@ -502,6 +514,7 @@ func waitForNamespaceRemoval(
 	for i := uint(0); i < maxTriesToWaitForNamespaceRemoval; i++ {
 		if _, err := kubernetesManager.GetNamespace(ctx, namespace); err != nil {
 			// if err was returned, graflokiNamespace doesn't exist, or it's been marked for deleted
+			logrus.Debugf("Error retrieved from getting namespace '%v'. If the error is a timeout, the namespace could still exist.\n%v", namespace, err.Error())
 			return nil
 		}
 
@@ -514,10 +527,10 @@ func waitForNamespaceRemoval(
 	return stacktrace.NewError("Attempted to wait for namespace '%v' removal or to be marked for deletion '%v' times but '%v' was not removed.", namespace, maxTriesToWaitForNamespaceRemoval, namespace)
 }
 
-func getLokiHost(lokiServiceName, namespace string, lokiPort int32) string {
+func getLokiUrlInsideK8sCluster(lokiServiceName, namespace string, lokiPort int32) string {
 	return fmt.Sprintf("http://%v.%v.svc.cluster.local:%v", lokiServiceName, namespace, lokiPort)
 }
 
-func getGrafanaUrl(grafanaPort int) string {
+func getGrafanaUrlOnHostMachine(grafanaPort int) string {
 	return fmt.Sprintf("https://127.0.0.1:%v", grafanaPort)
 }

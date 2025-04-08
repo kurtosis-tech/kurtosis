@@ -23,6 +23,7 @@ const (
 	lokiReadinessPath    = "/ready"
 
 	bridgeNetworkId = "bridge"
+	localhostAddr   = "127.0.0.1"
 )
 
 var EmptyDockerClientOpts = []client.Opt{}
@@ -40,7 +41,7 @@ func StartGrafLokiInDocker(ctx context.Context) (string, string, error) {
 	}
 
 	var lokiHost string
-	doesGrafanaAndLokiExist, lokiHost := checkGrafanaAndLokiContainerExistence(ctx, dockerManager, lokiContainerLabels, grafanaContainerLabels)
+	doesGrafanaAndLokiExist, lokiHost, err := checkGrafanaAndLokiContainerExistence(ctx, dockerManager, lokiContainerLabels, grafanaContainerLabels)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error occurred checking if Grafana and Loki exist.")
 	}
@@ -53,7 +54,7 @@ func StartGrafLokiInDocker(ctx context.Context) (string, string, error) {
 		}
 	}
 
-	grafanaUrl := fmt.Sprintf("http://127.0.0.1:%v", grafanaPort)
+	grafanaUrl := fmt.Sprintf("http://%v:%v", localhostAddr, grafanaPort)
 	return lokiHost, grafanaUrl, nil
 }
 
@@ -92,7 +93,7 @@ func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_m
 	}
 
 	lokiBridgeNetworkIpAddress := fmt.Sprintf("http://%v:%v", lokiBridgeNetworkIpAddr, lokiPort)
-	lokiHostNetworkIpAddress := fmt.Sprintf("http://127.0.0.1:%v", lokiPort)
+	lokiHostNetworkIpAddress := fmt.Sprintf("http://%v:%v", localhostAddr, lokiPort)
 	if err := waitForLokiReadiness(lokiHostNetworkIpAddress, lokiReadinessPath); err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred waiting for Loki container to become ready.")
 	}
@@ -180,25 +181,32 @@ func waitForLokiReadiness(lokiHost string, readyPath string) error {
 	return stacktrace.NewError("%v did not become ready after %v attempts", lokiHost, maxAttempts)
 }
 
-func checkGrafanaAndLokiContainerExistence(ctx context.Context, dockerManager *docker_manager.DockerManager, lokiContainerLabels map[string]string, grafanaContainerLabels map[string]string) (bool, string) {
+func checkGrafanaAndLokiContainerExistence(ctx context.Context, dockerManager *docker_manager.DockerManager, lokiContainerLabels map[string]string, grafanaContainerLabels map[string]string) (bool, string, error) {
 	existsLoki := false
 	existsGrafana := false
 	var lokiBridgeNetworkIpAddress string
+
 	lokiContainer, err := getContainerByLabel(ctx, dockerManager, lokiContainerLabels)
-	if err == nil && lokiContainer != nil {
+	if err != nil {
+		return false, "", stacktrace.Propagate(err, "An error occurred getting Loki container by labels: %v.", lokiContainerLabels)
+	}
+	if lokiContainer != nil {
 		existsLoki = true
 		lokiBridgeNetworkIpAddress, err = dockerManager.GetContainerIPOnNetwork(ctx, lokiContainer.GetId(), bridgeNetworkId)
 		if err != nil {
-			return false, ""
+			return false, "", stacktrace.Propagate(err, "An error occurred getting IP of Loki container on network: %v", bridgeNetworkId)
 		}
 	}
 
 	grafanaContainer, err := getContainerByLabel(ctx, dockerManager, grafanaContainerLabels)
-	if err == nil && grafanaContainer != nil {
+	if err != nil {
+		return false, "", stacktrace.Propagate(err, "An error occurred getting Grafana container by labels: %v.", grafanaContainerLabels)
+	}
+	if grafanaContainer != nil {
 		existsGrafana = true
 	}
 
-	return existsLoki && existsGrafana, fmt.Sprintf("http://%v:%v", lokiBridgeNetworkIpAddress, lokiPort)
+	return existsLoki && existsGrafana, fmt.Sprintf("http://%v:%v", lokiBridgeNetworkIpAddress, lokiPort), nil
 }
 
 func getContainerByLabel(ctx context.Context, dockerManager *docker_manager.DockerManager, containerLabels map[string]string) (*types.Container, error) {
@@ -206,11 +214,11 @@ func getContainerByLabel(ctx context.Context, dockerManager *docker_manager.Dock
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting container by labels '%+v'.", containerLabels)
 	}
-	if len(containers) == 0 {
-		return nil, stacktrace.NewError("No containers with labels '%v' found.", containerLabels)
-	}
 	if len(containers) > 1 {
 		return nil, stacktrace.NewError("More than one container with labels '%v' found.", containerLabels)
+	}
+	if len(containers) == 0 {
+		return nil, nil
 	}
 	return containers[0], nil
 }
