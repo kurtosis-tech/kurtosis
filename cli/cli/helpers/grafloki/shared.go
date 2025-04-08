@@ -14,19 +14,20 @@ const (
 	grafanaSecurityAllowEmbeddingEnvVarKey = "GF_SECURITY_ALLOW_EMBEDDING"
 	grafanaSecurityAllowEmbeddingEnvVarVal = "true"
 
-	grafanaDatasourcesKey = "datasources"
+	grafanaDatasourcesKey  = "datasources"
+	grafanaDatasourcesPath = "/etc/grafana/provisioning/datasources"
 )
 
 type GrafanaDatasource struct {
-	name      string `yaml:"string"`
-	type_     string `yaml:"type"`
-	access    string `yaml:"access"`
-	url       string `yaml:"url"`
-	isDefault bool   `yaml:"isDefault"`
-	editable  bool   `yaml:"editable"`
+	Name      string `yaml:"name"`
+	Type_     string `yaml:"type"`
+	Access    string `yaml:"access"`
+	Url       string `yaml:"url"`
+	IsDefault bool   `yaml:"isDefault"`
+	Editable  bool   `yaml:"editable"`
 }
 
 type GrafanaDatasources struct {
-	apiVersion  string              `yaml:"apiVersion"`
-	datasources []GrafanaDatasource `yaml:"datasources"`
+	ApiVersion  int64               `yaml:"apiVersion"`
+	Datasources []GrafanaDatasource `yaml:"datasources"`
 }

@@ -22,8 +22,8 @@ const (
 	GrafanaContainerName = "kurtosis-grafana"
 	lokiReadinessPath    = "/ready"
 
-	bridgeNetworkId = "bridge"
-	localhostAddr   = "127.0.0.1"
+	bridgeNetworkName = "bridge"
+	localhostAddr     = "127.0.0.1"
 )
 
 var EmptyDockerClientOpts = []client.Opt{}
@@ -62,13 +62,18 @@ func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_m
 	lokiNatPort := nat.Port(strconv.Itoa(lokiPort) + "/tcp")
 	grafanaNatPort := nat.Port(strconv.Itoa(grafanaPort) + "/tcp")
 
+	bridgeNetworkId, err := dockerManager.GetNetworkIdByName(ctx, bridgeNetworkName)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting Docker network id by Name: %v", bridgeNetworkName)
+	}
+
 	lokiArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(lokiImage, LokiContainerName, bridgeNetworkId).
 		WithUsedPorts(map[nat.Port]docker_manager.PortPublishSpec{
 			lokiNatPort: docker_manager.NewManualPublishingSpec(lokiPort),
 		}).
 		WithFetchingLatestImageIfMissing().
 		WithRestartPolicy(docker_manager.RestartOnFailure).
-		WithNetworkMode(bridgeNetworkId).
+		WithNetworkMode(bridgeNetworkName).
 		WithLabels(lokiContainerLabels).
 		Build()
 	lokiContainerId, _, err := dockerManager.CreateAndStartContainer(ctx, lokiArgs)
@@ -87,9 +92,9 @@ func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_m
 	}()
 	logrus.Infof("Loki container started.")
 
-	lokiBridgeNetworkIpAddr, err := dockerManager.GetContainerIPOnNetwork(ctx, lokiContainerId, bridgeNetworkId)
+	lokiBridgeNetworkIpAddr, err := dockerManager.GetContainerIPOnNetwork(ctx, lokiContainerId, bridgeNetworkName)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting container '%v' ip address on network '%v'.", lokiContainerId, bridgeNetworkId)
+		return "", stacktrace.Propagate(err, "An error occurred getting container '%v' ip address on network '%v'.", lokiContainerId, bridgeNetworkName)
 	}
 
 	lokiBridgeNetworkIpAddress := fmt.Sprintf("http://%v:%v", lokiBridgeNetworkIpAddr, lokiPort)
@@ -98,22 +103,23 @@ func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_m
 		return "", stacktrace.Propagate(err, "An error occurred waiting for Loki container to become ready.")
 	}
 
-	grafanaDatasource := GrafanaDatasources{
-		apiVersion: "1",
-		datasources: []GrafanaDatasource{
+	grafanaDatasource := &GrafanaDatasources{
+		ApiVersion: int64(1),
+		Datasources: []GrafanaDatasource{
 			{
-				name:      LokiContainerName,
-				type_:     "loki",
-				access:    "proxy",
-				url:       lokiBridgeNetworkIpAddress,
-				isDefault: true,
-				editable:  true,
+				Name:      LokiContainerName,
+				Type_:     "loki",
+				Access:    "proxy",
+				Url:       lokiBridgeNetworkIpAddress,
+				IsDefault: true,
+				Editable:  true,
 			},
 		}}
 	grafanaDatasourceYaml, err := yaml.Marshal(grafanaDatasource)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred serializing Grafana datasource to yaml: %v", grafanaDatasourceYaml)
 	}
+	logrus.Infof("Grafana data source yaml %v", string(grafanaDatasourceYaml))
 
 	tmpFile, err := os.CreateTemp("", "grafana-datasource-*.yaml")
 	if err != nil {
@@ -129,16 +135,16 @@ func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_m
 			grafanaNatPort: docker_manager.NewManualPublishingSpec(grafanaPort),
 		}).
 		WithEnvironmentVariables(map[string]string{
-			grafanaAuthAnonymousEnabledEnvVarVal:   grafanaAuthAnonymousEnabledEnvVarVal,
+			grafanaAuthAnonymousEnabledEnvVarKey:   grafanaAuthAnonymousEnabledEnvVarVal,
 			grafanaSecurityAllowEmbeddingEnvVarKey: grafanaSecurityAllowEmbeddingEnvVarVal,
 			grafanaAuthAnonymousOrgRoleEnvVarKey:   grafanaAuthAnonymousOrgRoleEnvVarVal,
 		}).
 		WithBindMounts(map[string]string{
-			tmpFile.Name(): "/etc/grafana/provisioning/datasources/loki.yaml",
+			tmpFile.Name(): fmt.Sprintf("%v/loki.yaml", grafanaDatasourcesPath),
 		}).
 		WithFetchingLatestImageIfMissing().
 		WithRestartPolicy(docker_manager.RestartOnFailure).
-		WithNetworkMode(bridgeNetworkId).
+		WithNetworkMode(bridgeNetworkName).
 		WithLabels(grafanaContainerLabels).
 		Build()
 	grafanaContainerId, _, err := dockerManager.CreateAndStartContainer(ctx, grafanaArgs)
@@ -192,9 +198,9 @@ func checkGrafanaAndLokiContainerExistence(ctx context.Context, dockerManager *d
 	}
 	if lokiContainer != nil {
 		existsLoki = true
-		lokiBridgeNetworkIpAddress, err = dockerManager.GetContainerIPOnNetwork(ctx, lokiContainer.GetId(), bridgeNetworkId)
+		lokiBridgeNetworkIpAddress, err = dockerManager.GetContainerIPOnNetwork(ctx, lokiContainer.GetId(), bridgeNetworkName)
 		if err != nil {
-			return false, "", stacktrace.Propagate(err, "An error occurred getting IP of Loki container on network: %v", bridgeNetworkId)
+			return false, "", stacktrace.Propagate(err, "An error occurred getting IP of Loki container on network: %v", bridgeNetworkName)
 		}
 	}
 
