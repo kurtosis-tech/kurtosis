@@ -490,7 +490,7 @@ func processJsonServiceConfigFlagInput(jsonServiceConfigFlagInput string) (strin
 			return "", stacktrace.Propagate(err, "An error occurred reading json service config from stdin.")
 		}
 	default:
-		logrus.Info("No json provided via stdin so attempting to read json service config input from file '%v' instead.", jsonServiceConfigFlagInput)
+		logrus.Infof("No json provided via stdin so attempting to read json service config input from file '%v' instead.", jsonServiceConfigFlagInput)
 		configBytes, err = os.ReadFile(jsonServiceConfigFlagInput)
 		if err != nil {
 			return "", stacktrace.Propagate(err, "An error occurred err when attempting to read service config from file '%v'.", jsonServiceConfigFlagInput)
