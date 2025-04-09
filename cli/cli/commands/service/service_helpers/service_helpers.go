@@ -36,7 +36,7 @@ const (
 	FilesFlagKey                     = "files"
 	FilesArtifactMountsDelimiter     = ","
 	FilesArtifactMountpointDelimiter = ":"
-	MultipleFilesArtifactsDelimiter  = "|"
+	FilesMultipleArtifactsDelimiter  = "|"
 
 	EmptyApplicationProtocol = ""
 
@@ -349,7 +349,7 @@ func ParseFilesArtifactMountsStr(filesArtifactMountsStr string) (map[string][]st
 			)
 		}
 
-		result[mountpoint] = strings.Split(filesArtifactNamesStr, MultipleFilesArtifactsDelimiter)
+		result[mountpoint] = strings.Split(filesArtifactNamesStr, FilesMultipleArtifactsDelimiter)
 	}
 
 	return result, nil

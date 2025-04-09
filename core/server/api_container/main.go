@@ -288,7 +288,13 @@ func createServiceNetwork(
 		args.Version,
 	)
 
-	serviceNetwork, err := service_network.NewDefaultServiceNetwork(enclaveUuid, apiContainerInfo, kurtosisBackend, enclaveDataDir, enclaveDb)
+	serviceNetwork, err := service_network.NewDefaultServiceNetwork(
+		enclaveUuid,
+		apiContainerInfo,
+		kurtosisBackend,
+		enclaveDataDir,
+		enclaveDb,
+	)
 
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while creating the default service network")

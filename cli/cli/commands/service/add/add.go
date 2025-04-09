@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/inspect"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/service_helpers"
 	"io"
 	"os"
@@ -171,8 +172,15 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Default: fullUuidFlagKeyDefault,
 		},
 		{
-			Key:     JsonConfigFlagKey,
-			Usage:   "If a json formatted service config string is provided via this flag, service add will parse the values in the json for the service. The format is identical to the json output format from kurtosis service inspect -o json.",
+			Key: JsonConfigFlagKey,
+			Usage: fmt.Sprintf("If a json formatted service config string is provided via stdin using '%v' value for this flag, service will parse the values in the json for the service config. If The format is identical to the json output format from %v %v %v %v %v. If stdin value not provided, attempts to read from a filepath provided in the input.",
+				readJsonConfigFromStdinInput,
+				command_str_consts.KurtosisCmdStr,
+				command_str_consts.ServiceCmdStr,
+				command_str_consts.ServiceInspectCmdStr,
+				inspect.OutputFormatKeyShorthand,
+				inspect.JsonOutputFormat,
+			),
 			Type:    flags.FlagType_String,
 			Default: JsonConfigFlagKeyDefault,
 		},
@@ -303,10 +311,8 @@ func run(
 			)
 		}
 	}
-	logrus.Infof("SERVICE CONFIG STARLARK: %v", serviceConfigStarlarkStr)
 
 	addServiceStarlark := service_helpers.GetAddServiceStarlarkScript(serviceName, serviceConfigStarlarkStr)
-	logrus.Infof("ADD SERVICE STARLARK SCRIPT: %v", addServiceStarlark)
 	_, err = service_helpers.RunAddServiceStarlarkScript(ctx, serviceName, enclaveIdentifier, addServiceStarlark, enclaveCtx)
 	if err != nil {
 		return err // already wrapped
@@ -478,10 +484,10 @@ func processJsonServiceConfigFlagInput(jsonServiceConfigFlagInput string) (strin
 			return "", stacktrace.Propagate(err, "An error occurred reading json service config from stdin.")
 		}
 	default:
+		logrus.Info("No json provided via stdin so attempting to read json service config input from file '%v' instead.", jsonServiceConfigFlagInput)
 		configBytes, err = os.ReadFile(jsonServiceConfigFlagInput)
 		if err != nil {
-			logrus.Warnf("Received err when attempting to read service config as string: %v", err)
-			logrus.Warn("Attempting to read json service config input as a string instead.")
+			return "", stacktrace.Propagate(err, "An error occurred err when attempting to read service config from file '%v'.", jsonServiceConfigFlagInput)
 		}
 	}
 	return string(configBytes), nil

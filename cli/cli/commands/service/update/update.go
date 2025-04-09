@@ -116,12 +116,15 @@ var ServiceUpdateCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosi
 			Usage: fmt.Sprintf(
 				"String containing declarations of files paths on the container -> artifact name  where the contents of those "+
 					"files artifacts should be mounted, in the form \"MOUNTPATH1%vARTIFACTNAME1%vMOUNTPATH2%vARTIFACTNAME2\" where "+
-					"ARTIFACTNAME is the name returned by Kurtosis when uploading files to the enclave (e.g. via the '%v %v' command)",
+					"ARTIFACTNAME is the name returned by Kurtosis when uploading files to the enclave (e.g. via the '%v %v' command)"+
+					"directories can be mounted by mounting multiple artifacts to the same mountpath, in the form, \"MOUNTPATH1%vARTIFACTNAME1%vARTIFACTNAME2\"",
 				service_helpers.FilesArtifactMountpointDelimiter,
 				service_helpers.FilesArtifactMountsDelimiter,
 				service_helpers.FilesArtifactMountpointDelimiter,
 				command_str_consts.FilesCmdStr,
 				command_str_consts.FilesUploadCmdStr,
+				service_helpers.FilesArtifactMountpointDelimiter,
+				service_helpers.FilesMultipleArtifactsDelimiter,
 			),
 			Type:    flags.FlagType_String,
 			Default: "",

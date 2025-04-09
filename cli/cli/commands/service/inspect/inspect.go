@@ -44,10 +44,10 @@ const (
 	fullUuidFlagKeyDefault = "false"
 
 	outputFormatKey          = "output"
-	outputFormatKeyShorthand = "o"
+	OutputFormatKeyShorthand = "o"
 	stdoutOutputFormat       = ""
 	yamlOutputFormat         = "yaml"
-	jsonOutputFormat         = "json"
+	JsonOutputFormat         = "json"
 
 	ServiceNameTitleName           = "Name"
 	ServiceUUIDTitleName           = "UUID"
@@ -77,7 +77,7 @@ var ServiceInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtos
 		},
 		{
 			Key:       outputFormatKey,
-			Shorthand: outputFormatKeyShorthand,
+			Shorthand: OutputFormatKeyShorthand,
 			Usage:     "Format to output the result (yaml or json)",
 			Type:      flags.FlagType_String,
 			Default:   stdoutOutputFormat,
@@ -128,8 +128,8 @@ func run(
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", outputFormatKey)
 	}
 	outputFormat = strings.ToLower(strings.TrimSpace(outputFormat))
-	if outputFormat != "" && outputFormat != jsonOutputFormat && outputFormat != yamlOutputFormat {
-		return stacktrace.NewError("Invalid output format '%s'; must be '%v' or '%v'", outputFormat, jsonOutputFormat, yamlOutputFormat)
+	if outputFormat != "" && outputFormat != JsonOutputFormat && outputFormat != yamlOutputFormat {
+		return stacktrace.NewError("Invalid output format '%s'; must be '%v' or '%v'", outputFormat, JsonOutputFormat, yamlOutputFormat)
 	}
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
@@ -151,18 +151,18 @@ func run(
 
 func PrintServiceInspect(userService *kurtosis_core_rpc_api_bindings.ServiceInfo, userServiceConfig *services.ServiceConfig, showFullUuid bool, outputFormat string) error {
 	switch outputFormat {
-	case jsonOutputFormat:
-		marshaled, err := json.MarshalIndent(userServiceConfig, "", "  ")
+	case JsonOutputFormat:
+		jsonServiceConfigStr, err := json.MarshalIndent(userServiceConfig, "", "  ")
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to marshal service info to %s", outputFormat)
 		}
-		out.PrintOutLn(string(marshaled))
+		out.PrintOutLn(string(jsonServiceConfigStr))
 	case yamlOutputFormat:
-		marshaled, err := yaml.Marshal(userServiceConfig)
+		yamlServiceConfigStr, err := yaml.Marshal(userServiceConfig)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to marshal service info to %s", outputFormat)
 		}
-		out.PrintOutLn(string(marshaled))
+		out.PrintOutLn(string(yamlServiceConfigStr))
 	case stdoutOutputFormat:
 		err := printlnServiceInfo(userService, showFullUuid)
 		if err != nil {

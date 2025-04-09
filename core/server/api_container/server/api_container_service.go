@@ -104,7 +104,7 @@ type ApiContainerService struct {
 
 	githubAuthProvider *git_package_content_provider.GitHubPackageAuthProvider
 
-	// NOTE: interpretationTimeValueStore is modified by the StarlarkInterpreter - allowing this object to have access to it
+	// NOTE: interpretationTimeValueStore is modified by the StarlarkInterpreter - allowing APIContainer to have access to it
 	// allows retrieving service configs of running services but it is NOT mutex protected, thus this object should never modify
 	// the interpretationTimeValueStore or it could mess with interpretation
 	// TODO: Either mutex protect the interpretationTimeValueStore OR compose the interpretationTimeValueStore of a separate mutex protected `serviceConfigRepository` object
