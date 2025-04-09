@@ -37,24 +37,7 @@ const (
 	serviceNameTitleKey = "Name"
 	serviceUuidTitleKey = "UUID"
 
-	serviceImageArgKey = "image"
-
-	entrypointBinaryFlagKey = "entrypoint"
-
-	envvarsFlagKey              = "env"
-	envvarKeyValueDelimiter     = "="
-	envvarDeclarationsDelimiter = ","
-
-	portsFlagKey                     = "ports"
-	portIdSpecDelimiter              = "="
-	portNumberProtocolDelimiter      = "/"
-	portDeclarationsDelimiter        = ","
-	portApplicationProtocolDelimiter = ":"
-
-	filesFlagKey                     = "files"
-	filesArtifactMountsDelimiter     = ","
-	filesArtifactMountpointDelimiter = ":"
-	defaultLimits                    = 0
+	defaultLimits = 0
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
@@ -64,11 +47,6 @@ const (
 
 	emptyApplicationProtocol = ""
 	linkDelimiter            = "://"
-
-	maybeApplicationProtocolSpecForHelp = "MAYBE_APPLICATION_PROTOCOL"
-	transportProtocolSpecForHelp        = "TRANSPORT_PROTOCOL"
-	portNumberSpecForHelp               = "PORT_NUMBER"
-	portIdSpecForHelp                   = "PORT_ID"
 
 	fullUuidsFlagKey       = "full-uuids"
 	fullUuidFlagKeyDefault = "false"
@@ -84,16 +62,16 @@ var (
 	defaultTransportProtocolStr = strings.ToLower(kurtosis_core_rpc_api_bindings.Port_TCP.String())
 	serviceAddSpec              = fmt.Sprintf(
 		`%v%v%v%v%v`,
-		maybeApplicationProtocolSpecForHelp,
-		portApplicationProtocolDelimiter,
-		portNumberSpecForHelp,
-		portNumberProtocolDelimiter,
-		transportProtocolSpecForHelp,
+		service_helpers.MaybeApplicationProtocolSpecForHelp,
+		service_helpers.PortApplicationProtocolDelimiter,
+		service_helpers.PortNumberSpecForHelp,
+		service_helpers.PortNumberProtocolDelimiter,
+		service_helpers.TransportProtocolSpecForHelp,
 	)
 	serviceAddSpecWithPortId = fmt.Sprintf(
 		`%v%v%v`,
-		portIdSpecForHelp,
-		portIdSpecDelimiter,
+		service_helpers.PortIdSpecForHelp,
+		service_helpers.PortIdSpecDelimiter,
 		serviceAddSpec,
 	)
 )
@@ -140,9 +118,9 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Usage: fmt.Sprintf(
 				"String containing environment variables that will be set when running the container, in "+
 					"the form \"KEY1%vVALUE1%vKEY2%vVALUE2\"",
-				envvarKeyValueDelimiter,
-				envvarDeclarationsDelimiter,
-				envvarKeyValueDelimiter,
+				service_helpers.EnvvarKeyValueDelimiter,
+				service_helpers.EnvvarDeclarationsDelimiter,
+				service_helpers.EnvvarKeyValueDelimiter,
 			),
 			Type:    flags.FlagType_String,
 			Default: "",
@@ -153,13 +131,13 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 				` where %q is a user friendly string for identifying the port, %q is required field, %q is an optional field which must be either`+
 				` '%v' or '%v' and defaults to '%v' if omitted and %q is user defined optional value. %v`,
 				serviceAddSpecWithPortId,
-				portIdSpecForHelp,
-				portNumberSpecForHelp,
-				transportProtocolSpecForHelp,
+				service_helpers.PortIdSpecForHelp,
+				service_helpers.PortNumberSpecForHelp,
+				service_helpers.TransportProtocolSpecForHelp,
 				strings.ToLower(kurtosis_core_rpc_api_bindings.Port_TCP.String()),
 				strings.ToLower(kurtosis_core_rpc_api_bindings.Port_UDP.String()),
 				defaultTransportProtocolStr,
-				maybeApplicationProtocolSpecForHelp,
+				service_helpers.MaybeApplicationProtocolSpecForHelp,
 				generateExampleForPortFlag(),
 			),
 			Type:    flags.FlagType_String,
@@ -171,9 +149,9 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 				"String containing declarations of files paths on the container -> artifact name  where the contents of those "+
 					"files artifacts should be mounted, in the form \"MOUNTPATH1%vARTIFACTNAME1%vMOUNTPATH2%vARTIFACTNAME2\" where "+
 					"ARTIFACTNAME is the name returned by Kurtosis when uploading files to the enclave (e.g. via the '%v %v' command)",
-				filesArtifactMountpointDelimiter,
-				filesArtifactMountsDelimiter,
-				filesArtifactMountpointDelimiter,
+				service_helpers.FilesArtifactMountpointDelimiter,
+				service_helpers.FilesArtifactMountsDelimiter,
+				service_helpers.FilesArtifactMountpointDelimiter,
 				command_str_consts.FilesCmdStr,
 				command_str_consts.FilesUploadCmdStr,
 			),
@@ -220,34 +198,34 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the service name value using key '%v'", serviceNameArgKey)
 	}
 
-	image, err := args.GetNonGreedyArg(serviceImageArgKey)
+	image, err := args.GetNonGreedyArg(service_helpers.ImageKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the service image value using key '%v'", serviceImageArgKey)
+		return stacktrace.Propagate(err, "An error occurred getting the service image value using key '%v'", service_helpers.ImageKey)
 	}
 
-	//cmdArgs, err := flags.GetString(cmdArgsFlagsKey)
-	//if err != nil {
-	//	return stacktrace.Propagate(err, "An error occurred getting the CMD flag using key '%v'", cmdArgsFlagsKey)
-	//}
-
-	entrypointStr, err := flags.GetString(entrypointBinaryFlagKey)
+	entrypointStr, err := flags.GetString(service_helpers.EntrypointFlagKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the ENTRYPOINT binary using key '%v'", entrypointBinaryFlagKey)
+		return stacktrace.Propagate(err, "An error occurred getting the ENTRYPOINT binary using key '%v'", service_helpers.EntrypointFlagKey)
 	}
 
-	envvarsStr, err := flags.GetString(envvarsFlagKey)
+	cmdStr, err := flags.GetString(service_helpers.CmdKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the env vars string using key '%v'", envvarsFlagKey)
+		return stacktrace.Propagate(err, "An error occurred getting the CMD using key '%v'", service_helpers.CmdKey)
 	}
 
-	portsStr, err := flags.GetString(portsFlagKey)
+	envvarsStr, err := flags.GetString(service_helpers.EnvvarsFlagKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the ports string using key '%v'", portsFlagKey)
+		return stacktrace.Propagate(err, "An error occurred getting the env vars string using key '%v'", service_helpers.EnvvarsFlagKey)
 	}
 
-	filesArtifactMountsStr, err := flags.GetString(filesFlagKey)
+	portsStr, err := flags.GetString(service_helpers.PortsFlagKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the files artifact mounts string using key '%v'", filesFlagKey)
+		return stacktrace.Propagate(err, "An error occurred getting the ports string using key '%v'", service_helpers.PortsFlagKey)
+	}
+
+	filesArtifactMountsStr, err := flags.GetString(service_helpers.FilesFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the files artifact mounts string using key '%v'", service_helpers.FilesFlagKey)
 	}
 
 	privateIPAddressPlaceholder, err := flags.GetString(privateIPAddressPlaceholderKey)
@@ -308,13 +286,17 @@ func run(
 		if entrypointStr != "" {
 			entrypoint = append(entrypoint, entrypointStr)
 		}
-		serviceConfigStarlarkStr, err = GetServiceConfigStarlark(image, portsStr, []string{}, entrypoint, envvarsStr, filesArtifactMountsStr, defaultLimits, defaultLimits, defaultLimits, defaultLimits, privateIPAddressPlaceholder)
+		cmd := []string{}
+		if cmdStr != "" {
+			cmd = strings.Split(cmdStr, " ")
+		}
+		serviceConfigStarlarkStr, err = GetServiceConfigStarlark(image, portsStr, cmd, entrypoint, envvarsStr, filesArtifactMountsStr, defaultLimits, defaultLimits, defaultLimits, defaultLimits, privateIPAddressPlaceholder)
 		if err != nil {
 			return stacktrace.Propagate(
 				err,
-				"An error occurred getting the container config to start image '%v' with CMD '%+v', ENTRYPOINT '%v',  envvars '%v' and private IP address placeholder '%v'",
+				"An error occurred getting the container config to start image '%v' with CMD '%v', ENTRYPOINT '%v',  envvars '%v' and private IP address placeholder '%v'",
 				image,
-				" ",
+				cmdStr,
 				entrypointStr,
 				envvarsStr,
 				privateIPAddressPlaceholder,
@@ -472,15 +454,15 @@ func GetServiceConfigStarlark(
 func generateExampleForPortFlag() string {
 	return fmt.Sprintf(
 		`Example: "PORTID1%v1234%vudp%vPORTID2%vhttp%v5678%vPORTID3%vhttp%v6000%vudp"`,
-		portIdSpecDelimiter,
-		portNumberProtocolDelimiter,
-		portDeclarationsDelimiter,
-		portIdSpecDelimiter,
-		portApplicationProtocolDelimiter,
-		portDeclarationsDelimiter,
-		portIdSpecDelimiter,
-		portApplicationProtocolDelimiter,
-		portNumberProtocolDelimiter,
+		service_helpers.PortIdSpecDelimiter,
+		service_helpers.PortNumberProtocolDelimiter,
+		service_helpers.PortDeclarationsDelimiter,
+		service_helpers.PortIdSpecDelimiter,
+		service_helpers.PortApplicationProtocolDelimiter,
+		service_helpers.PortDeclarationsDelimiter,
+		service_helpers.PortIdSpecDelimiter,
+		service_helpers.PortApplicationProtocolDelimiter,
+		service_helpers.PortNumberProtocolDelimiter,
 	)
 }
 

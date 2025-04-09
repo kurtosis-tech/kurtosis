@@ -21,38 +21,38 @@ const (
 	EntrypointFlagKey = "entrypoint"
 
 	EnvvarsFlagKey              = "env"
-	envvarKeyValueDelimiter     = "="
-	envvarDeclarationsDelimiter = ","
+	EnvvarKeyValueDelimiter     = "="
+	EnvvarDeclarationsDelimiter = ","
 
 	PortsFlagKey                     = "ports"
-	portIdSpecDelimiter              = "="
-	portNumberProtocolDelimiter      = "/"
-	portDeclarationsDelimiter        = ","
-	portApplicationProtocolDelimiter = ":"
-	portNumberUintParsingBase        = 10
-	portNumberUintParsingBits        = 16
+	PortIdSpecDelimiter              = "="
+	PortNumberProtocolDelimiter      = "/"
+	PortDeclarationsDelimiter        = ","
+	PortApplicationProtocolDelimiter = ":"
+	PortNumberUintParsingBase        = 10
+	PortNumberUintParsingBits        = 16
 
 	FilesFlagKey                     = "files"
-	filesArtifactMountsDelimiter     = ","
-	filesArtifactMountpointDelimiter = ":"
-	multipleFilesArtifactsDelimiter  = "|"
+	FilesArtifactMountsDelimiter     = ","
+	FilesArtifactMountpointDelimiter = ":"
+	MultipleFilesArtifactsDelimiter  = "|"
 
-	emptyApplicationProtocol = ""
+	EmptyApplicationProtocol = ""
 
-	maybeApplicationProtocolSpecForHelp = "MAYBE_APPLICATION_PROTOCOL"
-	transportProtocolSpecForHelp        = "TRANSPORT_PROTOCOL"
-	portNumberSpecForHelp               = "PORT_NUMBER"
-	portIdSpecForHelp                   = "PORT_ID"
+	MaybeApplicationProtocolSpecForHelp = "MAYBE_APPLICATION_PROTOCOL"
+	TransportProtocolSpecForHelp        = "TRANSPORT_PROTOCOL"
+	PortNumberSpecForHelp               = "PORT_NUMBER"
+	PortIdSpecForHelp                   = "PORT_ID"
 
 	// Each envvar should be KEY1=VALUE1, which means we should have two components to each envvar declaration
-	expectedNumberKeyValueComponentsInEnvvarDeclaration = 2
-	portNumberIndex                                     = 0
-	transportProtocolIndex                              = 1
-	expectedPortIdSpecComponentsCount                   = 2
-	expectedMountFragmentsCount                         = 2
+	ExpectedNumberKeyValueComponentsInEnvvarDeclaration = 2
+	PortNumberIndex                                     = 0
+	TransportProtocolIndex                              = 1
+	ExpectedPortIdSpecComponentsCount                   = 2
+	ExpectedMountFragmentsCount                         = 2
 
-	minRemainingPortSpecComponents = 1
-	maxRemainingPortSpecComponents = 2
+	MinRemainingPortSpecComponents = 1
+	MaxRemainingPortSpecComponents = 2
 
 	defaultPortWaitTimeoutStr = "30s"
 )
@@ -61,11 +61,11 @@ var (
 	defaultTransportProtocolStr = strings.ToLower(kurtosis_core_rpc_api_bindings.Port_TCP.String())
 	serviceAddSpec              = fmt.Sprintf(
 		`%v%v%v%v%v`,
-		maybeApplicationProtocolSpecForHelp,
-		portApplicationProtocolDelimiter,
-		portNumberSpecForHelp,
-		portNumberProtocolDelimiter,
-		transportProtocolSpecForHelp,
+		MaybeApplicationProtocolSpecForHelp,
+		PortApplicationProtocolDelimiter,
+		PortNumberSpecForHelp,
+		PortNumberProtocolDelimiter,
+		TransportProtocolSpecForHelp,
 	)
 )
 
@@ -153,15 +153,15 @@ func ParseEnvVarsStr(envvarsStr string) (map[string]string, error) {
 		return result, nil
 	}
 
-	allEnvvarDeclarationStrs := strings.Split(envvarsStr, envvarDeclarationsDelimiter)
+	allEnvvarDeclarationStrs := strings.Split(envvarsStr, EnvvarDeclarationsDelimiter)
 	for _, envvarDeclarationStr := range allEnvvarDeclarationStrs {
 		if len(strings.TrimSpace(envvarDeclarationStr)) == 0 {
 			continue
 		}
 
-		envvarKeyValueComponents := strings.SplitN(envvarDeclarationStr, envvarKeyValueDelimiter, expectedNumberKeyValueComponentsInEnvvarDeclaration)
-		if len(envvarKeyValueComponents) < expectedNumberKeyValueComponentsInEnvvarDeclaration {
-			return nil, stacktrace.NewError("Environment declaration string '%v' must be of the form KEY1%vVALUE1", envvarDeclarationStr, envvarKeyValueDelimiter)
+		envvarKeyValueComponents := strings.SplitN(envvarDeclarationStr, EnvvarKeyValueDelimiter, ExpectedNumberKeyValueComponentsInEnvvarDeclaration)
+		if len(envvarKeyValueComponents) < ExpectedNumberKeyValueComponentsInEnvvarDeclaration {
+			return nil, stacktrace.NewError("Environment declaration string '%v' must be of the form KEY1%vVALUE1", envvarDeclarationStr, EnvvarKeyValueDelimiter)
 		}
 		key := envvarKeyValueComponents[0]
 		value := envvarKeyValueComponents[1]
@@ -191,15 +191,15 @@ func ParsePortsStr(portsStr string) (map[string]*kurtosis_core_rpc_api_bindings.
 		return result, nil
 	}
 
-	allPortDeclarationStrs := strings.Split(portsStr, portDeclarationsDelimiter)
+	allPortDeclarationStrs := strings.Split(portsStr, PortDeclarationsDelimiter)
 	for _, portDeclarationStr := range allPortDeclarationStrs {
 		if len(strings.TrimSpace(portDeclarationStr)) == 0 {
 			continue
 		}
 
-		portIdSpecComponents := strings.Split(portDeclarationStr, portIdSpecDelimiter)
-		if len(portIdSpecComponents) != expectedPortIdSpecComponentsCount {
-			return nil, stacktrace.NewError("Port declaration string '%v' must be of the form PORTID%vSPEC", portDeclarationStr, portIdSpecDelimiter)
+		portIdSpecComponents := strings.Split(portDeclarationStr, PortIdSpecDelimiter)
+		if len(portIdSpecComponents) != ExpectedPortIdSpecComponentsCount {
+			return nil, stacktrace.NewError("Port declaration string '%v' must be of the form PORTID%vSPEC", portDeclarationStr, PortIdSpecDelimiter)
 		}
 		portId := portIdSpecComponents[0]
 		specStr := portIdSpecComponents[1]
@@ -235,9 +235,9 @@ func parsePortSpecStr(specStr string) (*kurtosis_core_rpc_api_bindings.Port, err
 		return nil, stacktrace.Propagate(err, "Error occurred while parsing application protocol '%v' in port spec '%v'", maybeApplicationProtocol, specStr)
 	}
 
-	remainingPortSpecComponents := strings.Split(remainingPortSpec, portNumberProtocolDelimiter)
+	remainingPortSpecComponents := strings.Split(remainingPortSpec, PortNumberProtocolDelimiter)
 	numRemainingPortSpecComponents := len(remainingPortSpecComponents)
-	if numRemainingPortSpecComponents > maxRemainingPortSpecComponents {
+	if numRemainingPortSpecComponents > MaxRemainingPortSpecComponents {
 		return nil, stacktrace.NewError(
 			`Invalid port spec string, expected format is %q but got '%v'`,
 			serviceAddSpec,
@@ -245,19 +245,19 @@ func parsePortSpecStr(specStr string) (*kurtosis_core_rpc_api_bindings.Port, err
 		)
 	}
 
-	portNumberUint16, err := getPortNumberFromPortSpecString(remainingPortSpecComponents[portNumberIndex])
+	portNumberUint16, err := getPortNumberFromPortSpecString(remainingPortSpecComponents[PortNumberIndex])
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error occurred while parsing port number '%v' in port spec '%v'", remainingPortSpecComponents[portNumberIndex], specStr)
+		return nil, stacktrace.Propagate(err, "Error occurred while parsing port number '%v' in port spec '%v'", remainingPortSpecComponents[PortNumberIndex], specStr)
 	}
 
 	transportProtocol := defaultTransportProtocolStr
-	if numRemainingPortSpecComponents > minRemainingPortSpecComponents {
-		transportProtocol = remainingPortSpecComponents[transportProtocolIndex]
+	if numRemainingPortSpecComponents > MinRemainingPortSpecComponents {
+		transportProtocol = remainingPortSpecComponents[TransportProtocolIndex]
 	}
 
 	transportProtocolFromEnum, err := getTransportProtocolFromPortSpecString(transportProtocol)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error occurred while parsing transport protocol '%v' in port spec '%v'", remainingPortSpecComponents[transportProtocolIndex], specStr)
+		return nil, stacktrace.Propagate(err, "Error occurred while parsing transport protocol '%v' in port spec '%v'", remainingPortSpecComponents[TransportProtocolIndex], specStr)
 	}
 	return &kurtosis_core_rpc_api_bindings.Port{
 		Number:                   portNumberUint16,
@@ -278,28 +278,28 @@ strings.Cut() does. // TODO: use that instead once we update go version
 */
 func getMaybeApplicationProtocolFromPortSpecString(portProtocolStr string) (string, string, error) {
 
-	beforeDelimiter, afterDelimiter, foundDelimiter := strings.Cut(portProtocolStr, portApplicationProtocolDelimiter)
+	beforeDelimiter, afterDelimiter, foundDelimiter := strings.Cut(portProtocolStr, PortApplicationProtocolDelimiter)
 
 	if !foundDelimiter {
-		return emptyApplicationProtocol, beforeDelimiter, nil
+		return EmptyApplicationProtocol, beforeDelimiter, nil
 	}
 
-	if foundDelimiter && beforeDelimiter == emptyApplicationProtocol {
-		return emptyApplicationProtocol, "", stacktrace.NewError("optional application protocol argument cannot be empty")
+	if foundDelimiter && beforeDelimiter == EmptyApplicationProtocol {
+		return EmptyApplicationProtocol, "", stacktrace.NewError("optional application protocol argument cannot be empty")
 	}
 
 	return beforeDelimiter, afterDelimiter, nil
 }
 
 func getPortNumberFromPortSpecString(portNumberStr string) (uint32, error) {
-	portNumberUint64, err := strconv.ParseUint(portNumberStr, portNumberUintParsingBase, portNumberUintParsingBits)
+	portNumberUint64, err := strconv.ParseUint(portNumberStr, PortNumberUintParsingBase, PortNumberUintParsingBits)
 	if err != nil {
 		return 0, stacktrace.Propagate(
 			err,
 			"An error occurred parsing port number string '%v' with base '%v' and bits '%v'",
 			portNumberStr,
-			portNumberUintParsingBase,
-			portNumberUintParsingBits,
+			PortNumberUintParsingBase,
+			PortNumberUintParsingBits,
 		)
 	}
 	portNumberUint32 := uint32(portNumberUint64)
@@ -321,20 +321,20 @@ func ParseFilesArtifactMountsStr(filesArtifactMountsStr string) (map[string][]st
 	}
 
 	// NOTE: we might actually want to allow the same artifact being mounted in multiple places
-	allMountStrs := strings.Split(filesArtifactMountsStr, filesArtifactMountsDelimiter)
+	allMountStrs := strings.Split(filesArtifactMountsStr, FilesArtifactMountsDelimiter)
 	for idx, mountStr := range allMountStrs {
 		trimmedMountStr := strings.TrimSpace(mountStr)
 		if len(trimmedMountStr) == 0 {
 			continue
 		}
 
-		mountFragments := strings.Split(trimmedMountStr, filesArtifactMountpointDelimiter)
-		if len(mountFragments) != expectedMountFragmentsCount {
+		mountFragments := strings.Split(trimmedMountStr, FilesArtifactMountpointDelimiter)
+		if len(mountFragments) != ExpectedMountFragmentsCount {
 			return nil, stacktrace.NewError(
 				"Files artifact mountpoint string %v was '%v' but should be in the form 'mountpoint%sfiles_artifact_name'",
 				idx,
 				trimmedMountStr,
-				filesArtifactMountpointDelimiter,
+				FilesArtifactMountpointDelimiter,
 			)
 		}
 		mountpoint := mountFragments[0]
@@ -348,7 +348,7 @@ func ParseFilesArtifactMountsStr(filesArtifactMountsStr string) (map[string][]st
 			)
 		}
 
-		result[mountpoint] = strings.Split(filesArtifactNamesStr, multipleFilesArtifactsDelimiter)
+		result[mountpoint] = strings.Split(filesArtifactNamesStr, MultipleFilesArtifactsDelimiter)
 	}
 
 	return result, nil
