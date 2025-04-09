@@ -16,9 +16,10 @@ import (
 )
 
 const (
-	ImageKey          = "image"
-	CmdKey            = "cmd"
-	EntrypointFlagKey = "entrypoint"
+	ImageKey                  = "image"
+	CmdKey                    = "cmd"
+	EntrypointFlagKey         = "entrypoint"
+	EntrypointAndCmdDelimiter = " "
 
 	EnvvarsFlagKey              = "env"
 	EnvvarKeyValueDelimiter     = "="

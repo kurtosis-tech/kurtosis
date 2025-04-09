@@ -213,7 +213,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the CMD using key '%v'", service_helpers.CmdKey)
 	}
 
-	envvarsStr, err := flags.GetString(service_helpers.EnvvarsFlagKey)
+	envVarsStr, err := flags.GetString(service_helpers.EnvvarsFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the env vars string using key '%v'", service_helpers.EnvvarsFlagKey)
 	}
@@ -284,13 +284,13 @@ func run(
 	} else {
 		entrypoint := []string{}
 		if entrypointStr != "" {
-			entrypoint = append(entrypoint, entrypointStr)
+			entrypoint = strings.Split(cmdStr, service_helpers.EntrypointAndCmdDelimiter)
 		}
 		cmd := []string{}
 		if cmdStr != "" {
-			cmd = strings.Split(cmdStr, " ")
+			cmd = strings.Split(cmdStr, service_helpers.EntrypointAndCmdDelimiter)
 		}
-		serviceConfigStarlarkStr, err = GetServiceConfigStarlark(image, portsStr, cmd, entrypoint, envvarsStr, filesArtifactMountsStr, defaultLimits, defaultLimits, defaultLimits, defaultLimits, privateIPAddressPlaceholder)
+		serviceConfigStarlarkStr, err = GetServiceConfigStarlark(image, portsStr, cmd, entrypoint, envVarsStr, filesArtifactMountsStr, defaultLimits, defaultLimits, defaultLimits, defaultLimits, privateIPAddressPlaceholder)
 		if err != nil {
 			return stacktrace.Propagate(
 				err,
@@ -298,7 +298,7 @@ func run(
 				image,
 				cmdStr,
 				entrypointStr,
-				envvarsStr,
+				envVarsStr,
 				privateIPAddressPlaceholder,
 			)
 		}

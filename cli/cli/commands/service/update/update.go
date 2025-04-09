@@ -191,7 +191,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the cmd using key '%v'", service_helpers.CmdKey)
 	}
 	if cmdStr != "" {
-		overrideCmd = []string{cmdStr}
+		overrideCmd = strings.Split(cmdStr, service_helpers.EntrypointAndCmdDelimiter)
 	}
 
 	entrypointStr, err := flags.GetString(service_helpers.EntrypointFlagKey)
@@ -199,7 +199,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the ENTRYPOINT binary using key '%v'", service_helpers.EntrypointFlagKey)
 	}
 	if entrypointStr != "" {
-		overrideEntrypoint = []string{entrypointStr}
+		overrideEntrypoint = strings.Split(entrypointStr, service_helpers.EntrypointAndCmdDelimiter)
 	}
 
 	envVarsStr, err := flags.GetString(service_helpers.EnvvarsFlagKey)
