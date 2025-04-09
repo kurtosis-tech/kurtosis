@@ -285,7 +285,7 @@ If there are any changes to the Protobuf files in the `api` subdirectory, the Pr
 Running Dev Version
 ----------------------
 
-Once the project has built, run `./cli/cli/scripts/launch-cli.sh` as if it was the `kurtosis` command. This will run the most recently built version of the cli. The cli will then start the engine and core containers off the most recently built versions of those images.
+After building the project, run `./cli/cli/scripts/launch-cli.sh` just like you would the kurtosis command. This will launch the latest locally built version of the CLI, which will also start the engine and core containers using their latest built images.
 
 You can verify this by running `./cli/cli/launch-cli.sh engine status` and
 ```
@@ -293,13 +293,18 @@ A Kurtosis engine is running with the following info:
 Version:   53d823 <-- or `-dirty` depending on the commit
 ```
 
-The version should be identical to the version on the most recent dev versions of the engine image created - (can verify with `docker images`). Enclaves started by the engine will be started with the identical version. 
+The version will be identical to the version on the latest dev versions of the engine image created - (can verify with `docker images`). Enclaves started by the engine will be started with the same version as the engine. 
 
 If you'd like to specify a different core image version than that of the engine, you can do so with the `--api-container-version` flag on `enclave add` (e.g. `./cli/cli/scripts/build.sh enclave add --api-container-version <image tag>`).
 
 If you are working on multiple dev versions of the engine at a time, you can use `engine restart --version <image tag>` to specify exactly what version of the engine to use.
 
-For frequent contributors, we recommend attaching an alias to `kurtosis` (e.g. `alias kt=kurtosis`) and `./cli/cli/scripts/launch-cli.sh` - (e.g. `alias dkt="./cli/cli/scripts/launch-cli.sh"` for dev kt).
+For frequent contributors, we recommend attaching an alias to `kurtosis` and `./cli/cli/scripts/launch-cli.sh`. 
+
+```bash
+alias kt="kurtosis"
+alias dkt="$(pwd)/cli/cli/scripts/launch-cli.sh"
+```
 
 If you want tab completion on the recently built CLI, you can alias it to `kurtosis`:
 
