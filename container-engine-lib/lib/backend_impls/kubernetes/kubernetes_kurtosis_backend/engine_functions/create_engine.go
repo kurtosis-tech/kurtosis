@@ -3,11 +3,13 @@ package engine_functions
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_aggregator_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_aggregator_functions/implementations/vector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_collector_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_collector_functions/implementations/fluentbit"
-	"time"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
@@ -34,6 +36,7 @@ const (
 	httpApplicationProtocol                              = "http"
 	logsCollectorHttpPortNum                             = 9713
 	logsCollectorTcpPortNum                              = 9712
+	defaultHttpLogsAggregatorPortNum                     = 8686
 	logsVolumeName                                       = "logsdb"
 )
 
@@ -52,6 +55,7 @@ func CreateEngine(
 	envVars map[string]string,
 	_ bool, //It's not required to add extra configuration in K8S for enabling the debug server
 	githubAuthToken string,
+	sinks logs_aggregator.Sinks,
 	engineNodeName string,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
@@ -284,7 +288,15 @@ func CreateEngine(
 		}*/
 
 	logrus.Infof("Starting the centralized logs components...")
-	logsAggregator, removeLogsAggregatorFunc, err := logs_aggregator_functions.CreateLogsAggregator(ctx, namespace.Name, logsAggregatorDeployment, objAttrsProvider, kubernetesManager)
+	logsAggregator, removeLogsAggregatorFunc, err := logs_aggregator_functions.CreateLogsAggregator(
+		ctx,
+		namespace.Name,
+		logsAggregatorDeployment,
+		defaultHttpLogsAggregatorPortNum,
+		sinks,
+		objAttrsProvider,
+		kubernetesManager,
+	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the logs aggregator")
 	}

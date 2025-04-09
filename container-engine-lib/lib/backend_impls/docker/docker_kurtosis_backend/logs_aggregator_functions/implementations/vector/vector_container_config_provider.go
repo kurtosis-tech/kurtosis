@@ -10,9 +10,7 @@ import (
 
 const (
 	shBinaryFilepath = "/bin/sh"
-	printfCmdName    = "printf"
 	shCmdFlag        = "-c"
-	validateCmdName  = "validate"
 	httpProtocolStr  = "http"
 )
 
@@ -43,12 +41,14 @@ func (vector *vectorContainerConfigProvider) GetContainerArgs(
 	containerName string,
 	containerLabels map[string]string,
 	networkId string,
-	logsAggregatorVolumeName string,
+	configVolumeName string,
+	dataVolumeName string,
 	logsStorageVolumeName string,
 ) (*docker_manager.CreateAndStartContainerArgs, error) {
 	volumeMounts := map[string]string{
-		logsStorageVolumeName:    logsStorageDirpath,
-		logsAggregatorVolumeName: configDirpath,
+		logsStorageVolumeName: logsStorageDirpath,
+		configVolumeName:      configDirpath,
+		dataVolumeName:        dataDirPath,
 	}
 
 	// Create cmd to

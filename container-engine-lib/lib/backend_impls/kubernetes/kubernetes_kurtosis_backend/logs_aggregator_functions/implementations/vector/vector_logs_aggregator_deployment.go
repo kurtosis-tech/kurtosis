@@ -1,9 +1,9 @@
 package vector
 
 import (
-	"bytes"
 	"context"
-	"fmt"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
@@ -18,9 +18,6 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"strconv"
-	"text/template"
-	"time"
 )
 
 const (
@@ -39,6 +36,8 @@ func NewVectorLogsAggregatorResourcesManager() *vectorLogsAggregatorResourcesMan
 func (logsAggregator *vectorLogsAggregatorResourcesManager) CreateAndStart(
 	ctx context.Context,
 	logsListeningPortNum uint16,
+	sinks logs_aggregator.Sinks,
+	httpPortNumber uint16,
 	engineNamespace string,
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
@@ -79,20 +78,11 @@ func (logsAggregator *vectorLogsAggregatorResourcesManager) CreateAndStart(
 		}
 	}()
 
-	configMap, err := createLogsAggregatorConfigMap(ctx, namespace.Name, logsListeningPortNum, logsAggregatorAttrProvider, kubernetesManager)
+	vectorConfigurationCreatorObj := createVectorConfigurationCreatorForKurtosis(logsListeningPortNum, httpPortNumber, sinks)
+
+	configMap, removeConfigMapFunc, err := vectorConfigurationCreatorObj.CreateConfiguration(ctx, namespace.Name, logsAggregatorAttrProvider, kubernetesManager)
 	if err != nil {
 		return nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create config map for vector logs aggregator.")
-	}
-	removeConfigMapFunc := func() {
-		removeCtx := context.Background()
-		if err := kubernetesManager.RemoveConfigMap(removeCtx, namespace.Name, configMap); err != nil {
-			logrus.Errorf(
-				"Launching the logs aggregator deployment with name '%v' didn't complete successfully so we "+
-					"tried to remove the config map we started, but doing so exited with an error:\n%v",
-				configMap.Name,
-				err)
-			logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs aggregator config map with Kubernetes name '%v' in namespace '%v'!!!!!!", configMap.Name, configMap.Namespace)
-		}
 	}
 	shouldRemoveLogsAggregatorConfigMap := false
 	defer func() {
@@ -145,7 +135,7 @@ func (logsAggregator *vectorLogsAggregatorResourcesManager) CreateAndStart(
 		}
 	}()
 
-	if err = waitForPodManagedByDeployment(ctx, deployment, kubernetesManager); err != nil {
+	if err = kubernetesManager.WaitForPodManagedByDeployment(ctx, deployment, maxRetries, retryInterval); err != nil {
 		return nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred waiting for active pod managed by logs aggregator deployment '%v'", deployment.Name)
 	}
 
@@ -190,7 +180,7 @@ func createLogsAggregatorDeployment(
 			Name:       vectorContainerName,
 			Image:      vectorImage,
 			Command:    nil,
-			Args:       []string{"--config", fmt.Sprintf("%s/vector.toml", vectorConfigMountPath)},
+			Args:       []string{"--config", vectorConfigFilePath},
 			WorkingDir: "",
 			Ports: []apiv1.ContainerPort{
 				{
@@ -384,115 +374,6 @@ func createLogsAggregatorService(
 	return serviceObj, nil
 }
 
-func createLogsAggregatorConfigMap(
-	ctx context.Context,
-	namespace string,
-	logListeningPortNum uint16,
-	objAttrProvider object_attributes_provider.KubernetesLogsAggregatorObjectAttributesProvider,
-	kubernetesManager *kubernetes_manager.KubernetesManager,
-) (
-	*apiv1.ConfigMap,
-	error,
-) {
-	configMapAttrProvider, err := objAttrProvider.ForLogsAggregatorConfigMap()
-	if err != nil {
-		return nil, err
-	}
-	name := configMapAttrProvider.GetName().GetString()
-	labels := shared_helpers.GetStringMapFromLabelMap(configMapAttrProvider.GetLabels())
-	annotations := shared_helpers.GetStringMapFromAnnotationMap(configMapAttrProvider.GetAnnotations())
-
-	vectorConfigStr, err := generateVectorConfigStr(logListeningPortNum)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred generating vector config.")
-	}
-
-	configMap, err := kubernetesManager.CreateConfigMap(
-		ctx,
-		namespace,
-		name,
-		labels,
-		annotations,
-		map[string]string{
-			vectorConfigFileName: vectorConfigStr,
-		},
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while creating config map for vector log aggregator config.")
-	}
-
-	return configMap, nil
-}
-
-func generateVectorConfigStr(
-	logListeningPort uint16,
-) (
-	string,
-	error,
-) {
-	type VectorConfigData struct {
-		DataDir              string
-		APIPort              string
-		LogsListeningPort    uint16
-		LogsPath             string
-		LogsEnclaveUUIDLabel string
-		LogsServiceUUIDLabel string
-		BufferSize           string
-	}
-
-	tmpl, err := template.New("vectorConfig").Parse(vectorConfigTemplate)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred parsing vector config template: %v", vectorConfigTemplate)
-	}
-
-	vectorConfigData := VectorConfigData{
-		DataDir:              vectorDataDirMountPath,
-		APIPort:              strconv.Itoa(apiPort),
-		LogsListeningPort:    logListeningPort,
-		LogsPath:             kurtosisLogsMountPath,
-		LogsEnclaveUUIDLabel: kubernetes_label_key.LogsEnclaveUUIDKubernetesLabelKey.GetString(),
-		LogsServiceUUIDLabel: kubernetes_label_key.LogsServiceUUIDKubernetesLabelKey.GetString(),
-		BufferSize:           bufferSizeStr,
-	}
-	var buf bytes.Buffer
-	err = tmpl.Execute(&buf, vectorConfigData)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred generating vector config string from vector config data: %v.", vectorConfigData)
-	}
-
-	return buf.String(), nil
-}
-
-func waitForPodManagedByDeployment(ctx context.Context, logsAggregatorDeployment *appsv1.Deployment, kubernetesManager *kubernetes_manager.KubernetesManager) error {
-	timeoutCtx, cancel := context.WithTimeout(ctx, time.Duration(maxRetries)*retryInterval)
-	defer cancel()
-
-	ticker := time.NewTicker(retryInterval)
-	defer ticker.Stop()
-	for attempt := 0; attempt < maxRetries; attempt++ {
-		select {
-		case <-timeoutCtx.Done():
-			return stacktrace.NewError(
-				"Timeout waiting for a pod managed by logs aggregator deployment '%s' to come online",
-				logsAggregatorDeployment.Name,
-			)
-		case <-ticker.C:
-			pods, err := kubernetesManager.GetPodsManagedByDeployment(ctx, logsAggregatorDeployment)
-			if err != nil {
-				return stacktrace.Propagate(err, "An error occurred getting pods managed by logs aggregator deployment'%v'", logsAggregatorDeployment.Name)
-			}
-			if len(pods) > 0 && len(pods[0].Status.ContainerStatuses) > 0 && pods[0].Status.ContainerStatuses[0].Ready {
-				// found a pod with a running vector container
-				return nil
-			}
-		}
-	}
-	return stacktrace.NewError(
-		"Exceeded max retries (%d) waiting for a pod managed by deployment '%s' to come online",
-		maxRetries, logsAggregatorDeployment.Name,
-	)
-}
-
 func (vector *vectorLogsAggregatorResourcesManager) GetLogsBaseDirPath() string {
 	return kurtosisLogsMountPath
 }
@@ -541,7 +422,7 @@ func (vector *vectorLogsAggregatorResourcesManager) Clean(ctx context.Context, l
 	}
 
 	// before continuing, ensure logs aggregator is up again
-	if err := waitForPodManagedByDeployment(ctx, logsAggregatorDeployment, kubernetesManager); err != nil {
+	if err := kubernetesManager.WaitForPodManagedByDeployment(ctx, logsAggregatorDeployment, maxRetries, retryInterval); err != nil {
 		return stacktrace.Propagate(err, "An error occurred waiting for a pod managed by deployment '%v' to become available.", logsAggregatorDeployment.Name)
 	}
 

@@ -20,6 +20,8 @@ const (
 	validationFailedExitCode            = 78
 	configFileCreationSuccessExitCode   = 0
 	sleepSeconds                        = 1800
+	printfCmdName                       = "printf"
+	validateCmdName                     = "validate"
 )
 
 type vectorConfigurationCreator struct {
@@ -135,13 +137,7 @@ func (vector *vectorConfigurationCreator) createVectorConfigFileInVolume(
 				return stacktrace.NewError("The configuration provided to the logs aggregator component was invalid; errors are below:\n%s", outputBuffer.String())
 			}
 
-			logrus.Debugf(
-				"Logs aggregator config file creation command '%v' returned without a Docker error, but exited with non-%v exit code '%v' and logs:\n%v",
-				commandStr,
-				configFileCreationSuccessExitCode,
-				exitCode,
-				outputBuffer.String(),
-			)
+			return stacktrace.NewError("Logs aggregator validation exited with non-zero status code; errors are below:\n%s", outputBuffer.String())
 		} else {
 			logrus.Debugf(
 				"Logs aggregator config file creation command '%v' experienced a Docker error:\n%v",

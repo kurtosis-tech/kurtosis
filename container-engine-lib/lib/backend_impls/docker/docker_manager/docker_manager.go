@@ -393,6 +393,37 @@ func (manager *DockerManager) GetContainerIdsConnectedToNetwork(context context.
 	return result, nil
 }
 
+func (manager *DockerManager) GetContainerIPOnNetwork(context context.Context, containerId string, networkId string) (string, error) {
+	inspectResponse, err := manager.dockerClient.NetworkInspect(context, networkId, types.NetworkInspectOptions{
+		Scope:   "",
+		Verbose: false,
+	})
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Failed to get network information for network with ID '%v'", networkId)
+	}
+	for id, c := range inspectResponse.Containers {
+		if id == containerId {
+			ip, _, err := net.ParseCIDR(c.IPv4Address)
+			if err != nil {
+				return "", stacktrace.Propagate(err, "Failed to parse IPv4 address '%s'", c.IPv4Address)
+			}
+			return ip.String(), nil
+		}
+	}
+	return "", stacktrace.NewError("Could not find container '%v' IP on network '%v'.", containerId, networkId)
+}
+
+func (manager *DockerManager) GetNetworkIdByName(ctx context.Context, networkName string) (string, error) {
+	n, err := manager.dockerClient.NetworkInspect(ctx, networkName, types.NetworkInspectOptions{
+		Scope:   "",
+		Verbose: false,
+	})
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Failed to inspect the '%v' network.", networkName)
+	}
+	return n.ID, nil
+}
+
 /*
 RemoveNetwork
 Removes the Docker network with the given id
@@ -539,10 +570,12 @@ func (manager *DockerManager) CreateAndStartContainer(
 		return "", nil, stacktrace.Propagate(err, "An error occurred fetching image '%v'", dockerImage)
 	}
 
-	idFilterArgs := filters.NewArgs(filters.KeyValuePair{
-		Key:   networkIdSearchFilterKey,
-		Value: args.networkId,
-	})
+	idFilterArgs := filters.NewArgs(
+		filters.KeyValuePair{
+			Key:   networkIdSearchFilterKey,
+			Value: args.networkId,
+		},
+	)
 	networks, err := manager.getNetworksByFilterArgs(ctx, idFilterArgs)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred checking for the existence of network with ID %v", args.networkId)
@@ -2131,6 +2164,7 @@ func newContainerFromDockerContainer(dockerContainer types.ContainerJSON) (*dock
 		dockerContainer.Config.Entrypoint,
 		dockerContainer.Config.Cmd,
 		containerEnvArgs,
+		dockerContainer.NetworkSettings.IPAddress,
 	)
 
 	return newContainer, nil
