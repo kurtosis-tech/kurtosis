@@ -149,12 +149,15 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Usage: fmt.Sprintf(
 				"String containing declarations of files paths on the container -> artifact name  where the contents of those "+
 					"files artifacts should be mounted, in the form \"MOUNTPATH1%vARTIFACTNAME1%vMOUNTPATH2%vARTIFACTNAME2\" where "+
-					"ARTIFACTNAME is the name returned by Kurtosis when uploading files to the enclave (e.g. via the '%v %v' command)",
+					"ARTIFACTNAME is the name returned by Kurtosis when uploading files to the enclave (e.g. via the '%v %v' command)."+
+					"directories can be mounted by mounting multiple artifacts to the same mountpath, in the form, \"MOUNTPATH1%vARTIFACTNAME1%vARTIFACTNAME2\"",
 				service_helpers.FilesArtifactMountpointDelimiter,
 				service_helpers.FilesArtifactMountsDelimiter,
 				service_helpers.FilesArtifactMountpointDelimiter,
 				command_str_consts.FilesCmdStr,
 				command_str_consts.FilesUploadCmdStr,
+				service_helpers.FilesArtifactMountpointDelimiter,
+				service_helpers.FilesMultipleArtifactsDelimiter,
 			),
 			Type:    flags.FlagType_String,
 			Default: "",
@@ -173,7 +176,10 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 		},
 		{
 			Key: JsonConfigFlagKey,
-			Usage: fmt.Sprintf("If a json formatted service config string is provided via stdin using '%v' value for this flag, service will parse the values in the json for the service config. If The format is identical to the json output format from %v %v %v %v %v. If stdin value not provided, attempts to read from a filepath provided in the input.",
+			Usage: fmt.Sprintf("If a json formatted service config string is provided via stdin using '%v' value for this flag,"+
+				"stdin will get parsed to json and used as values for the service config."+
+				"The json format should be identical to the json output format from %v %v %v %v %v."+
+				"If stdin value not provided, will assume input is a filepath to a service config json and attempts to read from it.",
 				readJsonConfigFromStdinInput,
 				command_str_consts.KurtosisCmdStr,
 				command_str_consts.ServiceCmdStr,
