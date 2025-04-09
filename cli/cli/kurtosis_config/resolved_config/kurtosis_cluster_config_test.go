@@ -171,3 +171,57 @@ func TestNewKurtosisClusterConfigLogsAggregatorFullConfig(t *testing.T) {
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)
 }
+
+func TestNewKurtosisClusterConfigGraflokiNoConfig(t *testing.T) {
+	kubernetesType := KurtosisClusterType_Kubernetes.String()
+	kubernetesClusterName := "some-name"
+	kubernetesStorageClass := "some-storage-class"
+	kubernetesEnclaveSizeInMB := uint(5)
+	kubernetesEngineNodeName := "some-node-name"
+	kubernetesFullConfig := v5.KubernetesClusterConfigV5{
+		KubernetesClusterName:  &kubernetesClusterName,
+		StorageClass:           &kubernetesStorageClass,
+		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
+		EngineNodeName:         &kubernetesEngineNodeName,
+	}
+	kurtosisClusterConfigOverrides := v5.KurtosisClusterConfigV5{
+		Type:   &kubernetesType,
+		Config: &kubernetesFullConfig,
+		LogsAggregator: &v5.LogsAggregatorConfigV5{
+			Sinks: map[string]map[string]interface{}{
+				"elasticsearch": {
+					"type": "elasticsearch",
+				},
+			},
+		},
+		GraflokiConfig: nil,
+	}
+	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
+	require.NoError(t, err)
+}
+
+func TestNewKurtosisClusterConfigGraflokiFullConfig(t *testing.T) {
+	kubernetesType := KurtosisClusterType_Kubernetes.String()
+	kubernetesClusterName := "some-name"
+	kubernetesStorageClass := "some-storage-class"
+	kubernetesEnclaveSizeInMB := uint(5)
+	kubernetesEngineNodeName := "some-node-name"
+	kubernetesFullConfig := v5.KubernetesClusterConfigV5{
+		KubernetesClusterName:  &kubernetesClusterName,
+		StorageClass:           &kubernetesStorageClass,
+		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
+		EngineNodeName:         &kubernetesEngineNodeName,
+	}
+	kurtosisClusterConfigOverrides := v5.KurtosisClusterConfigV5{
+		Type:           &kubernetesType,
+		Config:         &kubernetesFullConfig,
+		LogsAggregator: nil,
+		GraflokiConfig: &v5.GraflokiConfig{
+			ShouldStartBeforeEngine: false,
+			GrafanaImage:            "grafana:1.32",
+			LokiImage:               "loki:1.32",
+		},
+	}
+	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
+	require.NoError(t, err)
+}
