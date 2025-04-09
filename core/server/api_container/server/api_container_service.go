@@ -1066,9 +1066,14 @@ func (apicService *ApiContainerService) runStarlark(
 func (apicService *ApiContainerService) getServiceInfosFromServiceObjs(services map[service.ServiceUUID]*service.Service) (map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo, error) {
 	serviceInfos := map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo{}
 	for uuid, serviceObj := range services {
+		var serviceConfig *service.ServiceConfig
 		serviceConfig, err := apicService.interpretationTimeValueStore.GetServiceConfig(serviceObj.GetRegistration().GetName())
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting service config from interpretation time value store.")
+			// if no service config was found, instead of failing - we just give an empty service config
+			// this is because the service config info in the interpretationTimeValueStore is not persisted to the enclave db yet
+			// so on apic restarts the information will be lost - but we still want to service information about existing services
+			// in the future, service config information should be persisted
+			serviceConfig = service.GetEmptyServiceConfig()
 		}
 		serviceInfo, err := getServiceInfoFromServiceObj(serviceObj, serviceConfig)
 		if err != nil {
