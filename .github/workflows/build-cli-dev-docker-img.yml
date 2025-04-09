@@ -1,0 +1,39 @@
+name: Build and push CLI Dev Docker Image
+
+on:
+  pull_request:
+    types:
+      - labeled
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.label.name == 'build-dev-cli-img'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Get docker image tag
+        id: image-tag
+        run: |
+          TAG=$(./scripts/get-docker-tag.sh)
+          echo "DOCKER_IMAGE_TAG=$TAG" >> $GITHUB_ENV
+          echo "Dev image tag: $TAG" 
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name == 'push' }}
+          tags: tedim52/kurtosis-cli:${{ env.DOCKER_IMAGE_TAG }}
