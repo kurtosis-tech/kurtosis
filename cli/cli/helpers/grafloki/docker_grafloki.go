@@ -6,6 +6,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/go-yaml/yaml"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
@@ -36,7 +37,7 @@ var grafanaContainerLabels = map[string]string{
 	docker_label_key.ContainerTypeDockerLabelKey.GetString(): GrafanaContainerName,
 }
 
-func StartGrafLokiInDocker(ctx context.Context) (string, string, error) {
+func StartGrafLokiInDocker(ctx context.Context, graflokiConfig resolved_config.GrafanaLoki) (string, string, error) {
 	dockerManager, err := docker_manager.CreateDockerManager(EmptyDockerClientOpts)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error occurred creating the docker manager to start grafana and loki.")

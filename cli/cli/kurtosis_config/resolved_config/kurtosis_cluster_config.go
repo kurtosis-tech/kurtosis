@@ -118,6 +118,10 @@ func (clusterConfig *KurtosisClusterConfig) GetLogsAggregatorConfig() LogsAggreg
 	return clusterConfig.logsAggregator
 }
 
+func (clusterConfig *KurtosisClusterConfig) GetGraflokiConfig() GrafanaLoki {
+	return clusterConfig.graflokiConfig
+}
+
 // ====================================================================================================
 //
 //	Private Helpers

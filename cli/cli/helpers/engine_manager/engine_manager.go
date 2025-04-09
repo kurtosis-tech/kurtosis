@@ -2,6 +2,7 @@ package engine_manager
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/grafloki"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"strings"
 	"time"
@@ -247,6 +248,16 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 	}
 
 	clusterType := manager.clusterConfig.GetClusterType()
+
+	if manager.clusterConfig.GetGraflokiConfig().ShouldStartBeforeEngine {
+		// TODO: pass this loki sink into engine
+		// and also reconcile it with the one from grafloki start
+		_, err := grafloki.StartGrafloki(ctx, clusterType, manager.clusterConfig.GetGraflokiConfig())
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred starting Grafana and Loki before engine.")
+		}
+	}
+
 	engineGuarantor := newEngineExistenceGuarantorWithCustomVersion(
 		ctx,
 		maybeHostMachinePortBinding,

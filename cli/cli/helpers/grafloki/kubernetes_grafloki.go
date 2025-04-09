@@ -3,6 +3,7 @@ package grafloki
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/stacktrace"
@@ -43,7 +44,7 @@ var grafanaLabels = map[string]string{
 
 var httpApplicationProtocol = "http"
 
-func StartGrafLokiInKubernetes(ctx context.Context) (string, string, error) {
+func StartGrafLokiInKubernetes(ctx context.Context, graflokiConfig resolved_config.GrafanaLoki) (string, string, error) {
 	k8sManager, err := getKubernetesManager()
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error occurred getting Kubernetes Manager.")
