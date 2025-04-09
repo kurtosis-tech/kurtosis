@@ -293,7 +293,9 @@ func GetEmptyServiceConfig() *ServiceConfig {
 			ServiceDirpathsToArtifactIdentifiers: nil,
 			ExpanderDirpathsToServiceDirpaths:    nil,
 		},
-		&service_directory.PersistentDirectories{},
+		&service_directory.PersistentDirectories{
+			ServiceDirpathToPersistentDirectory: map[string]service_directory.PersistentDirectory{},
+		},
 		0,
 		0,
 		"",
