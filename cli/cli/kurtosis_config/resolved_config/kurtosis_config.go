@@ -2,7 +2,6 @@ package resolved_config
 
 import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/config_version"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v4"
 	v5 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v5"
 	"github.com/kurtosis-tech/stacktrace"
 )
@@ -138,7 +137,7 @@ func NewKurtosisConfigFromOverrides(uncastedOverrides interface{}) (*KurtosisCon
 
 // NOTE: We probably want to remove this function entirely
 func NewKurtosisConfigFromRequiredFields(shouldSendMetrics bool) (*KurtosisConfig, error) {
-	overrides := &v4.KurtosisConfigV4{
+	overrides := &v5.KurtosisConfigV5{
 		ConfigVersion:     0,
 		ShouldSendMetrics: &shouldSendMetrics,
 		KurtosisClusters:  nil,
