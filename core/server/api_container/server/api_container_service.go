@@ -910,9 +910,14 @@ func (apicService *ApiContainerService) getServiceInfoForIdentifier(ctx context.
 		return nil, stacktrace.Propagate(err, "An error occurred getting info for service '%v'", serviceIdentifier)
 	}
 
-	serviceConfig, err := apicService.interpretationTimeValueStore.GetServiceConfig(serviceObj.GetRegistration().GetName())
+	var serviceConfig *service.ServiceConfig
+	serviceConfig, err = apicService.interpretationTimeValueStore.GetServiceConfig(serviceObj.GetRegistration().GetName())
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting service config from interpretation time value store.")
+		// if no service config was found, instead of failing - we just give an empty service config
+		// this is because the service config info in the interpretationTimeValueStore is not persisted to the enclave db yet
+		// so on apic restarts the information will be lost - but we still want to service information about existing services
+		// in the future, service config information should be persisted
+		serviceConfig = service.GetEmptyServiceConfig()
 	}
 
 	serviceInfo, err := getServiceInfoFromServiceObj(serviceObj, serviceConfig)
@@ -1124,16 +1129,13 @@ func getServiceInfoFromServiceObj(serviceObj *service.Service, serviceConfig *se
 		EnvVars:        serviceContainer.GetEnvVars(),
 	}
 
-	maxMillicpus := uint32(0)
-	minMillicpus := uint32(0)
-	maxMemoryMegabytes := uint32(0)
-	minMemoryMegabytes := uint32(0)
+	maxMillicpus := uint32(serviceConfig.GetCPUAllocationMillicpus())
+	minMillicpus := uint32(serviceConfig.GetMinCPUAllocationMillicpus())
+	maxMemoryMegabytes := uint32(serviceConfig.GetMemoryAllocationMegabytes())
+	minMemoryMegabytes := uint32(serviceConfig.GetMinMemoryAllocationMegabytes())
 
 	serviceDirPathsToFilesArtifactsList := map[string]*kurtosis_core_rpc_api_bindings.FilesArtifactsList{}
 
-	svcFilesArtifactsExpansions := serviceConfig.GetFilesArtifactsExpansion()
-
-	logrus.Infof("GET FILES ARTIFACTS EXPANSION: %v", svcFilesArtifactsExpansions)
 	if serviceConfig.GetFilesArtifactsExpansion() != nil {
 		serviceDirPathsToFilesArtifactsList = transformServiceDirPathsToFileArtifactsToApiPortsFilesArtifactsList(serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers)
 	}
