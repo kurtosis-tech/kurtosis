@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net/http"
@@ -24,6 +25,7 @@ const (
 
 	bridgeNetworkName = "bridge"
 	localhostAddr     = "127.0.0.1"
+	rootUserUid       = 0
 )
 
 var EmptyDockerClientOpts = []client.Opt{}
@@ -119,7 +121,6 @@ func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_m
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred serializing Grafana datasource to yaml: %v", grafanaDatasourceYaml)
 	}
-	logrus.Infof("Grafana data source yaml %v", string(grafanaDatasourceYaml))
 
 	tmpFile, err := os.CreateTemp("", "grafana-datasource-*.yaml")
 	if err != nil {
@@ -130,6 +131,7 @@ func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_m
 		return "", stacktrace.Propagate(err, "An error occurred writing config.")
 	}
 
+	root := service_user.NewServiceUser(rootUserUid)
 	grafanaArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(grafanaImage, GrafanaContainerName, bridgeNetworkId).
 		WithUsedPorts(map[nat.Port]docker_manager.PortPublishSpec{
 			grafanaNatPort: docker_manager.NewManualPublishingSpec(grafanaPort),
@@ -146,6 +148,7 @@ func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_m
 		WithRestartPolicy(docker_manager.RestartOnFailure).
 		WithNetworkMode(bridgeNetworkName).
 		WithLabels(grafanaContainerLabels).
+		WithUser(root).
 		Build()
 	grafanaContainerId, _, err := dockerManager.CreateAndStartContainer(ctx, grafanaArgs)
 	if err != nil {
