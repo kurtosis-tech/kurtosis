@@ -2,7 +2,7 @@ package resolved_config
 
 import (
 	"context"
-	v4 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v4"
+	v5 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v5"
 	"strings"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
@@ -28,13 +28,20 @@ type KurtosisClusterConfig struct {
 	engineBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
 	clusterType                 KurtosisClusterType
 	logsAggregator              LogsAggregatorConfig
+	graflokiConfig              GrafanaLoki
 }
 
 type LogsAggregatorConfig struct {
 	Sinks logs_aggregator.Sinks
 }
 
-func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v4.KurtosisClusterConfigV4) (*KurtosisClusterConfig, error) {
+type GrafanaLoki struct {
+	ShouldStartBeforeEngine bool
+	GrafanaImage            string
+	LokiImage               string
+}
+
+func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v5.KurtosisClusterConfigV5) (*KurtosisClusterConfig, error) {
 	if overrides.Type == nil {
 		return nil, stacktrace.NewError("Kurtosis cluster must have a defined type")
 	}
@@ -73,11 +80,21 @@ func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v4.Kurto
 		}
 	}
 
+	var grafloki GrafanaLoki
+	if overrides.GraflokiConfig != nil {
+		grafloki = GrafanaLoki{
+			ShouldStartBeforeEngine: overrides.GraflokiConfig.ShouldStartBeforeEngine,
+			GrafanaImage:            overrides.GraflokiConfig.GrafanaImage,
+			LokiImage:               overrides.GraflokiConfig.LokiImage,
+		}
+	}
+
 	return &KurtosisClusterConfig{
 		kurtosisBackendSupplier:     backendSupplier,
 		engineBackendConfigSupplier: engineBackendConfigSupplier,
 		clusterType:                 clusterType,
 		logsAggregator:              logsAggregator,
+		graflokiConfig:              grafloki,
 	}, nil
 }
 
@@ -106,7 +123,7 @@ func (clusterConfig *KurtosisClusterConfig) GetLogsAggregatorConfig() LogsAggreg
 //	Private Helpers
 //
 // ====================================================================================================
-func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesConfig *v4.KubernetesClusterConfigV4) (
+func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesConfig *v5.KubernetesClusterConfigV5) (
 	kurtosisBackendSupplier,
 	engine_server_launcher.KurtosisBackendConfigSupplier,
 	error,
