@@ -19,8 +19,8 @@ def run(plan):
 		field="code",
 		assertion="==",
 		target_value=%v,
-		interval="1s",
-		timeout="40s"
+		interval="2s",
+		timeout="20s"
     )
 
 	service_config = ServiceConfig(
