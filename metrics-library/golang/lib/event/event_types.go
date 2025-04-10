@@ -113,7 +113,7 @@ func NewKurtosisRunEvent(packageId string, isRemote bool, isDryRun bool, isScrip
 	return event
 }
 
-func NewStartServiceEvent(packageId string, isRemote bool, isDryRun bool, isScript bool) *Event {
+func NewStartServiceEvent(enclaveId string, serviceId string) *Event {
 	isRemotePackageStr := fmt.Sprintf("%v", isRemote)
 	isDryRunStr := fmt.Sprintf("%v", isDryRun)
 	isScriptStr := fmt.Sprintf("%v", isScript)
@@ -129,7 +129,7 @@ func NewStartServiceEvent(packageId string, isRemote bool, isDryRun bool, isScri
 	return event
 }
 
-func NewStopServiceEvent(packageId string, isRemote bool, isDryRun bool, isScript bool) *Event {
+func NewStopServiceEvent(enclaveId string, serviceId string) *Event {
 	isRemotePackageStr := fmt.Sprintf("%v", isRemote)
 	isDryRunStr := fmt.Sprintf("%v", isDryRun)
 	isScriptStr := fmt.Sprintf("%v", isScript)
@@ -145,7 +145,7 @@ func NewStopServiceEvent(packageId string, isRemote bool, isDryRun bool, isScrip
 	return event
 }
 
-func NewUpdateServiceEvent(packageId string, isRemote bool, isDryRun bool, isScript bool) *Event {
+func NewUpdateServiceEvent(enclaveId string, serviceId string) *Event {
 	isRemotePackageStr := fmt.Sprintf("%v", isRemote)
 	isDryRunStr := fmt.Sprintf("%v", isDryRun)
 	isScriptStr := fmt.Sprintf("%v", isScript)

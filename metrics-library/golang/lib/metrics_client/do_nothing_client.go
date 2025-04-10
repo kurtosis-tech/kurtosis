@@ -49,20 +49,20 @@ func (client *doNothingClient) TrackKurtosisRun(packageId string, isRemote bool,
 	return nil
 }
 
-func (client *doNothingClient) TrackServiceUpdate(packageId string, isRemote bool, isDryRun bool, isScript bool) error {
-	logrus.Debugf("Do-nothing metrics client TrackServiceUpdate called with arguments packageId '%v', isRemote '%v', isDryRun '%v', isScript '%v'; skipping sending event", packageId, isRemote, isDryRun, isScript)
+func (client *doNothingClient) TrackServiceUpdate(enclaveId string, serviceId string) error {
+	logrus.Debugf("Do-nothing metrics client TrackServiceUpdate called with arguments enclaveId '%v', serviceId '%v'", enclaveId, serviceId)
 	client.callback.Success()
 	return nil
 }
 
-func (client *doNothingClient) TrackStartService(packageId string, isRemote bool, isDryRun bool, isScript bool) error {
-	logrus.Debugf("Do-nothing metrics client TrackStartService called with arguments packageId '%v', isRemote '%v', isDryRun '%v', isScript '%v'; skipping sending event", packageId, isRemote, isDryRun, isScript)
+func (client *doNothingClient) TrackStartService(enclaveId string, serviceId string) error {
+	logrus.Debugf("Do-nothing metrics client TrackStartService called with arguments enclaveId '%v', serviceId '%v'", enclaveId, serviceId)
 	client.callback.Success()
 	return nil
 }
 
-func (client *doNothingClient) TrackStopService(packageId string, isRemote bool, isDryRun bool, isScript bool) error {
-	logrus.Debugf("Do-nothing metrics client TrackStopService called with arguments packageId '%v', isRemote '%v', isDryRun '%v', isScript '%v'; skipping sending event", packageId, isRemote, isDryRun, isScript)
+func (client *doNothingClient) TrackStopService(enclaveId string, serviceId string) error {
+	logrus.Debugf("Do-nothing metrics client TrackStopService called with arguments enclaveId '%v', serviceId '%v'", enclaveId, serviceId)
 	client.callback.Success()
 	return nil
 }
