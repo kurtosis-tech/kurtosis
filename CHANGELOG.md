@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.7.0](https://github.com/kurtosis-tech/kurtosis/compare/1.6.0...1.7.0) (2025-04-10)
+
+
+### Features
+
+* export service logs (Kubenertes) ([#2693](https://github.com/kurtosis-tech/kurtosis/issues/2693)) ([c00f357](https://github.com/kurtosis-tech/kurtosis/commit/c00f357b5ebb9cb9e1b52ab412e489d6260895c6))
+* grafloki start/stop ([#2696](https://github.com/kurtosis-tech/kurtosis/issues/2696)) ([53d823a](https://github.com/kurtosis-tech/kurtosis/commit/53d823a53c7941eb93fe14e1b06e958a30b539d7))
+
+
+### Bug Fixes
+
+* **backend/kubernetes:** use default KUBECONFIG resolution ([#2672](https://github.com/kurtosis-tech/kurtosis/issues/2672)) ([379e49b](https://github.com/kurtosis-tech/kurtosis/commit/379e49b0013a769e5f5102386d6733eafb528014))
+* docker auth wasn't being used by engine and API ([#2699](https://github.com/kurtosis-tech/kurtosis/issues/2699)) ([4eea787](https://github.com/kurtosis-tech/kurtosis/commit/4eea787e2cad7e7e91811fa4e8de05b08022cc0e))
+
 ## [1.6.0](https://github.com/kurtosis-tech/kurtosis/compare/1.5.0...1.6.0) (2025-03-18)
 
 
