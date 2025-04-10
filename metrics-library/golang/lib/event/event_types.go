@@ -10,6 +10,7 @@ const (
 	// We are following these naming conventions for event's data
 	// https://segment.com/docs/getting-started/04-full-install/#event-naming-best-practices
 	enclaveIDPropertyKey           = "enclave_id"
+	serviceIDPropertyKey           = "service_id"
 	didUserAcceptSendingMetricsKey = "did_user_accept_sending_metrics"
 	packageIdKey                   = "package_id"
 	isRemotePackageKey             = "is_remote_package"
@@ -114,15 +115,9 @@ func NewKurtosisRunEvent(packageId string, isRemote bool, isDryRun bool, isScrip
 }
 
 func NewStartServiceEvent(enclaveId string, serviceId string) *Event {
-	isRemotePackageStr := fmt.Sprintf("%v", isRemote)
-	isDryRunStr := fmt.Sprintf("%v", isDryRun)
-	isScriptStr := fmt.Sprintf("%v", isScript)
-
 	properties := map[string]string{
-		packageIdKey:       packageId,
-		isRemotePackageKey: isRemotePackageStr,
-		isDryRunKey:        isDryRunStr,
-		isScriptKey:        isScriptStr,
+		enclaveIDPropertyKey: enclaveId,
+		serviceIDPropertyKey: serviceId,
 	}
 
 	event := newEvent(kurtosisCategory, serviceStartAction, properties)
@@ -130,15 +125,9 @@ func NewStartServiceEvent(enclaveId string, serviceId string) *Event {
 }
 
 func NewStopServiceEvent(enclaveId string, serviceId string) *Event {
-	isRemotePackageStr := fmt.Sprintf("%v", isRemote)
-	isDryRunStr := fmt.Sprintf("%v", isDryRun)
-	isScriptStr := fmt.Sprintf("%v", isScript)
-
 	properties := map[string]string{
-		packageIdKey:       packageId,
-		isRemotePackageKey: isRemotePackageStr,
-		isDryRunKey:        isDryRunStr,
-		isScriptKey:        isScriptStr,
+		enclaveIDPropertyKey: enclaveId,
+		serviceIDPropertyKey: serviceId,
 	}
 
 	event := newEvent(kurtosisCategory, serviceStopAction, properties)
@@ -146,15 +135,9 @@ func NewStopServiceEvent(enclaveId string, serviceId string) *Event {
 }
 
 func NewUpdateServiceEvent(enclaveId string, serviceId string) *Event {
-	isRemotePackageStr := fmt.Sprintf("%v", isRemote)
-	isDryRunStr := fmt.Sprintf("%v", isDryRun)
-	isScriptStr := fmt.Sprintf("%v", isScript)
-
 	properties := map[string]string{
-		packageIdKey:       packageId,
-		isRemotePackageKey: isRemotePackageStr,
-		isDryRunKey:        isDryRunStr,
-		isScriptKey:        isScriptStr,
+		enclaveIDPropertyKey: enclaveId,
+		serviceIDPropertyKey: serviceId,
 	}
 
 	event := newEvent(kurtosisCategory, updateAction, properties)

@@ -181,11 +181,12 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting metrics client.")
 	}
+	defer closeMetricsClientFunc()
+
 	err = metricsClient.TrackServiceUpdate(enclaveIdentifier, serviceName)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred tracking service update metric.")
 	}
-	defer closeMetricsClientFunc()
 
 	var overrideImage string
 	var overridePorts map[string]*kurtosis_core_rpc_api_bindings.Port
