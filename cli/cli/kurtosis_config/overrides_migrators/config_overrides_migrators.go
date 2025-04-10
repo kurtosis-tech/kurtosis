@@ -52,15 +52,21 @@ func migrateFromV4(uncastedConfig interface{}) (interface{}, error) {
 			oldKubernetesConfig := oldClusterConfig.Config
 			oldLogsAggregatorConfig := oldClusterConfig.LogsAggregator
 
-			newKubernetesConfig := &v5.KubernetesClusterConfigV5{
-				KubernetesClusterName:  oldKubernetesConfig.KubernetesClusterName,
-				StorageClass:           oldKubernetesConfig.StorageClass,
-				EnclaveSizeInMegabytes: oldKubernetesConfig.EnclaveSizeInMegabytes,
-				EngineNodeName:         oldKubernetesConfig.EngineNodeName,
+			var newKubernetesConfig *v5.KubernetesClusterConfigV5
+			if oldKubernetesConfig != nil {
+				newKubernetesConfig = &v5.KubernetesClusterConfigV5{
+					KubernetesClusterName:  oldKubernetesConfig.KubernetesClusterName,
+					StorageClass:           oldKubernetesConfig.StorageClass,
+					EnclaveSizeInMegabytes: oldKubernetesConfig.EnclaveSizeInMegabytes,
+					EngineNodeName:         oldKubernetesConfig.EngineNodeName,
+				}
 			}
 
-			newLogsAggregatorConfig := &v5.LogsAggregatorConfigV5{
-				Sinks: oldLogsAggregatorConfig.Sinks,
+			var newLogsAggregatorConfig *v5.LogsAggregatorConfigV5
+			if oldLogsAggregatorConfig != nil {
+				newLogsAggregatorConfig = &v5.LogsAggregatorConfigV5{
+					Sinks: oldLogsAggregatorConfig.Sinks,
+				}
 			}
 
 			newGraflokiConfig := &v5.GraflokiConfig{
@@ -70,6 +76,7 @@ func migrateFromV4(uncastedConfig interface{}) (interface{}, error) {
 			}
 
 			defaultShouldTurnOffDefaultLogsSink := false
+
 			newClusterConfig := &v5.KurtosisClusterConfigV5{
 				Type:                         oldClusterConfig.Type,
 				Config:                       newKubernetesConfig,
