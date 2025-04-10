@@ -252,7 +252,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.domain,
 			guarantor.logRetentionPeriod,
 			guarantor.sinks,
-			false,
+			guarantor.shouldTurnOffPersistentVolumeLogsCollection,
 		)
 	} else {
 		_, _, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
@@ -276,7 +276,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.domain,
 			guarantor.logRetentionPeriod,
 			guarantor.sinks,
-			false,
+			guarantor.shouldTurnOffPersistentVolumeLogsCollection,
 		)
 	}
 	if engineLaunchErr != nil {
