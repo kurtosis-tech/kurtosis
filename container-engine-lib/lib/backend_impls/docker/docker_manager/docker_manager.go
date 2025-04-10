@@ -2331,6 +2331,7 @@ func pullImage(dockerClient *client.Client, imageName string, registrySpec *imag
 			logrus.Warnf("Falling back to pulling image with no auth config.")
 		} else {
 			imagePullOptions.RegistryAuth = authFromConfig
+			logrus.Infof("Using authentication to pull image: %s", imageName)
 		}
 	}
 
