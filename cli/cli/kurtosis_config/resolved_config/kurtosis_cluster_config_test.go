@@ -69,10 +69,11 @@ func TestNewKurtosisClusterConfigKubernetesPartialConfig(t *testing.T) {
 		EngineNodeName:         nil,
 	}
 	kurtosisClusterConfigOverrides := v5.KurtosisClusterConfigV5{
-		Type:           &kubernetesType,
-		Config:         &kubernetesPartialConfig,
-		LogsAggregator: nil,
-		GraflokiConfig: nil,
+		Type:                         &kubernetesType,
+		Config:                       &kubernetesPartialConfig,
+		LogsAggregator:               nil,
+		GraflokiConfig:               nil,
+		ShouldTurnOffDefaultLogsSink: nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.Error(t, err)
@@ -91,10 +92,11 @@ func TestNewKurtosisClusterConfigKubernetesFullConfig(t *testing.T) {
 		EngineNodeName:         &kubernetesEngineNodeName,
 	}
 	kurtosisClusterConfigOverrides := v5.KurtosisClusterConfigV5{
-		Type:           &kubernetesType,
-		Config:         &kubernetesFullConfig,
-		LogsAggregator: nil,
-		GraflokiConfig: nil,
+		Type:                         &kubernetesType,
+		Config:                       &kubernetesFullConfig,
+		LogsAggregator:               nil,
+		GraflokiConfig:               nil,
+		ShouldTurnOffDefaultLogsSink: nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)
@@ -113,10 +115,11 @@ func TestNewKurtosisClusterConfigLogsAggregatorNoConfig(t *testing.T) {
 		EngineNodeName:         &kubernetesEngineNodeName,
 	}
 	kurtosisClusterConfigOverrides := v5.KurtosisClusterConfigV5{
-		Type:           &kubernetesType,
-		Config:         &kubernetesFullConfig,
-		LogsAggregator: nil,
-		GraflokiConfig: nil,
+		Type:                         &kubernetesType,
+		Config:                       &kubernetesFullConfig,
+		LogsAggregator:               nil,
+		GraflokiConfig:               nil,
+		ShouldTurnOffDefaultLogsSink: nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)
@@ -202,7 +205,8 @@ func TestNewKurtosisClusterConfigGraflokiNoConfig(t *testing.T) {
 				},
 			},
 		},
-		GraflokiConfig: nil,
+		GraflokiConfig:               nil,
+		ShouldTurnOffDefaultLogsSink: nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)
@@ -229,6 +233,31 @@ func TestNewKurtosisClusterConfigGraflokiFullConfig(t *testing.T) {
 			GrafanaImage:            "grafana:1.32",
 			LokiImage:               "loki:1.32",
 		},
+		ShouldTurnOffDefaultLogsSink: nil,
+	}
+	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
+	require.NoError(t, err)
+}
+
+func TestNewKurtosisClusterConfigShouldTurnOffDefaultLogsSink(t *testing.T) {
+	kubernetesType := KurtosisClusterType_Kubernetes.String()
+	kubernetesClusterName := "some-name"
+	kubernetesStorageClass := "some-storage-class"
+	kubernetesEnclaveSizeInMB := uint(5)
+	kubernetesEngineNodeName := "some-node-name"
+	shouldTurnOffDefaultLogsSink := true
+	kubernetesFullConfig := v5.KubernetesClusterConfigV5{
+		KubernetesClusterName:  &kubernetesClusterName,
+		StorageClass:           &kubernetesStorageClass,
+		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
+		EngineNodeName:         &kubernetesEngineNodeName,
+	}
+	kurtosisClusterConfigOverrides := v5.KurtosisClusterConfigV5{
+		Type:                         &kubernetesType,
+		Config:                       &kubernetesFullConfig,
+		LogsAggregator:               nil,
+		GraflokiConfig:               nil,
+		ShouldTurnOffDefaultLogsSink: &shouldTurnOffDefaultLogsSink,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)
