@@ -40,6 +40,7 @@ const (
 	logsLabelPrefixStr                = "kurtosis_"
 	logsOnlyEnclaveUuidLabelKeyStr    = logsLabelPrefixStr + "enclave_uuid"
 	logsOnlyServiceUuidDockerLabelKey = logsLabelPrefixStr + "service_uuid"
+	logsOnlyServiceNameDockerLabelKey = logsLabelPrefixStr + "service_name"
 
 	// Traefik label keys
 	traefikLabelKeyPrefixStr = "traefik."
@@ -67,3 +68,4 @@ var PrivateIPDockerLabelKey = MustCreateNewDockerLabelKey(privateIpAddrLabelKeyS
 var UserServiceGUIDDockerLabelKey = MustCreateNewDockerLabelKey(userServiceGuidDockerLabelKeyStr)
 var LogsEnclaveUUIDDockerLabelKey = MustCreateNewDockerLabelKey(logsOnlyEnclaveUuidLabelKeyStr)
 var LogsServiceUUIDDockerLabelKey = MustCreateNewDockerLabelKey(logsOnlyServiceUuidDockerLabelKey)
+var LogsServiceNameDockerLabelKey = MustCreateNewDockerLabelKey(logsOnlyServiceNameDockerLabelKey)
