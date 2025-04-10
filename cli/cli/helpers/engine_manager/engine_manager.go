@@ -198,6 +198,15 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(
 	logrus.Debugf("Engine status: '%v'", status)
 	clusterType := manager.clusterConfig.GetClusterType()
 
+	var lokiSink logs_aggregator.Sinks
+	if manager.clusterConfig.GetGraflokiConfig().ShouldStartBeforeEngine {
+		lokiSink, err = grafloki.StartGrafloki(ctx, clusterType, manager.clusterConfig.GetGraflokiConfig())
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred starting Grafana and Loki before engine.")
+		}
+	}
+	additionalSinks = combineSinks(additionalSinks, lokiSink)
+
 	engineGuarantor := newEngineExistenceGuarantorWithDefaultVersion(
 		ctx,
 		maybeHostMachinePortBinding,
@@ -216,7 +225,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(
 		restartAPIContainers,
 		domain,
 		logRetentionPeriodStr,
-		combineAdditionalSinksAndConfigSinks(additionalSinks, manager.clusterConfig.GetLogsAggregatorConfig().Sinks),
+		combineSinks(additionalSinks, manager.clusterConfig.GetLogsAggregatorConfig().Sinks),
 	)
 	// TODO Need to handle the Kubernetes case, where a gateway needs to be started after the engine is started but
 	//  before we can return an EngineClient
@@ -249,14 +258,14 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 
 	clusterType := manager.clusterConfig.GetClusterType()
 
+	var lokiSink logs_aggregator.Sinks
 	if manager.clusterConfig.GetGraflokiConfig().ShouldStartBeforeEngine {
-		// TODO: pass this loki sink into engine
-		// and also reconcile it with the one from grafloki start
-		_, err := grafloki.StartGrafloki(ctx, clusterType, manager.clusterConfig.GetGraflokiConfig())
+		lokiSink, err = grafloki.StartGrafloki(ctx, clusterType, manager.clusterConfig.GetGraflokiConfig())
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred starting Grafana and Loki before engine.")
 		}
 	}
+	additionalSinks = combineSinks(additionalSinks, lokiSink)
 
 	engineGuarantor := newEngineExistenceGuarantorWithCustomVersion(
 		ctx,
@@ -277,7 +286,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 		restartAPIContainers,
 		domain,
 		logRetentionPeriodStr,
-		combineAdditionalSinksAndConfigSinks(additionalSinks, manager.clusterConfig.GetLogsAggregatorConfig().Sinks),
+		combineSinks(manager.clusterConfig.GetLogsAggregatorConfig().Sinks, additionalSinks),
 	)
 	engineClient, engineClientCloseFunc, err := manager.startEngineWithGuarantor(ctx, status, engineGuarantor)
 	if err != nil {
@@ -539,14 +548,14 @@ func (manager *EngineManager) waitUntilEngineStoppedOrError(ctx context.Context)
 	return stacktrace.NewError("Engine did not report stopped status, last status reported was '%v'", status)
 }
 
-// combineAdditionalSinksAndConfigSinks will combine additionalSinks and configSinks
-// note: additionalSinks will override configSinks in case of an id clash
-func combineAdditionalSinksAndConfigSinks(additionalSinks logs_aggregator.Sinks, configSinks logs_aggregator.Sinks) logs_aggregator.Sinks {
+// combineSinks aggregates sinks and sinksToAdd
+// note: sinksToAdd will override sinks in case of an id clash
+func combineSinks(sinks logs_aggregator.Sinks, sinksToAdd logs_aggregator.Sinks) logs_aggregator.Sinks {
 	combinedSinks := logs_aggregator.Sinks{}
-	for sinkId, sink := range configSinks {
+	for sinkId, sink := range sinks {
 		combinedSinks[sinkId] = sink
 	}
-	for sinkId, sink := range additionalSinks {
+	for sinkId, sink := range sinksToAdd {
 		combinedSinks[sinkId] = sink
 	}
 	return combinedSinks

@@ -77,3 +77,23 @@ func StartGrafloki(ctx context.Context, clusterType resolved_config.KurtosisClus
 
 	return lokiSink, nil
 }
+
+func StopGrafloki(ctx context.Context, clusterType resolved_config.KurtosisClusterType) error {
+	switch clusterType {
+	case resolved_config.KurtosisClusterType_Docker:
+		err := StopGrafLokiInDocker(ctx)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred stopping Grafana and Loki containers in Docker.")
+		}
+	case resolved_config.KurtosisClusterType_Kubernetes:
+		err := StopGrafLokiInKubernetes(ctx)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred stopping Grafana and Loki containers in Kubernetes.")
+		}
+	default:
+		return stacktrace.NewError("Unsupported cluster type: %v", clusterType.String())
+	}
+
+	out.PrintOutLn("Successfully stopped Grafana and Loki containers.")
+	return nil
+}
