@@ -236,6 +236,107 @@ export declare enum Container_Status {
 }
 
 /**
+ * @generated from message api_container_api.FilesArtifactsList
+ */
+export declare class FilesArtifactsList extends Message<FilesArtifactsList> {
+  /**
+   * @generated from field: repeated string files_artifacts_identifiers = 1;
+   */
+  filesArtifactsIdentifiers: string[];
+
+  constructor(data?: PartialMessage<FilesArtifactsList>);
+
+  static readonly runtime: typeof proto3;
+  static readonly typeName = "api_container_api.FilesArtifactsList";
+  static readonly fields: FieldList;
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): FilesArtifactsList;
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): FilesArtifactsList;
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): FilesArtifactsList;
+
+  static equals(a: FilesArtifactsList | PlainMessage<FilesArtifactsList> | undefined, b: FilesArtifactsList | PlainMessage<FilesArtifactsList> | undefined): boolean;
+}
+
+/**
+ * Equivalent of user on ServiceConfig
+ *
+ * @generated from message api_container_api.User
+ */
+export declare class User extends Message<User> {
+  /**
+   * @generated from field: uint32 uid = 1;
+   */
+  uid: number;
+
+  /**
+   * @generated from field: uint32 gid = 2;
+   */
+  gid: number;
+
+  constructor(data?: PartialMessage<User>);
+
+  static readonly runtime: typeof proto3;
+  static readonly typeName = "api_container_api.User";
+  static readonly fields: FieldList;
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): User;
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): User;
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): User;
+
+  static equals(a: User | PlainMessage<User> | undefined, b: User | PlainMessage<User> | undefined): boolean;
+}
+
+/**
+ * Equivalent of tolerations on ServiceConfig
+ *
+ * @generated from message api_container_api.Toleration
+ */
+export declare class Toleration extends Message<Toleration> {
+  /**
+   * @generated from field: string key = 1;
+   */
+  key: string;
+
+  /**
+   * @generated from field: string operator = 2;
+   */
+  operator: string;
+
+  /**
+   * @generated from field: string value = 3;
+   */
+  value: string;
+
+  /**
+   * @generated from field: string effect = 4;
+   */
+  effect: string;
+
+  /**
+   * @generated from field: int64 toleration_seconds = 5;
+   */
+  tolerationSeconds: bigint;
+
+  constructor(data?: PartialMessage<Toleration>);
+
+  static readonly runtime: typeof proto3;
+  static readonly typeName = "api_container_api.Toleration";
+  static readonly fields: FieldList;
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Toleration;
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Toleration;
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Toleration;
+
+  static equals(a: Toleration | PlainMessage<Toleration> | undefined, b: Toleration | PlainMessage<Toleration> | undefined): boolean;
+}
+
+/**
  * @generated from message api_container_api.ServiceInfo
  */
 export declare class ServiceInfo extends Message<ServiceInfo> {
@@ -305,6 +406,68 @@ export declare class ServiceInfo extends Message<ServiceInfo> {
    * @generated from field: api_container_api.Container container = 9;
    */
   container?: Container;
+
+  /**
+   * Mapping of directory paths on service to names of files artifacts that are mounted to that directory
+   *
+   * @generated from field: map<string, api_container_api.FilesArtifactsList> service_dir_paths_to_files_artifacts_list = 10;
+   */
+  serviceDirPathsToFilesArtifactsList: { [key: string]: FilesArtifactsList };
+
+  /**
+   * @generated from field: uint32 max_millicpus = 11;
+   */
+  maxMillicpus: number;
+
+  /**
+   * @generated from field: uint32 min_millicpus = 12;
+   */
+  minMillicpus: number;
+
+  /**
+   * @generated from field: uint32 max_memory_megabytes = 13;
+   */
+  maxMemoryMegabytes: number;
+
+  /**
+   * @generated from field: uint32 min_memory_megabytes = 14;
+   */
+  minMemoryMegabytes: number;
+
+  /**
+   * Optional user identity for the service
+   *
+   * @generated from field: optional api_container_api.User user = 15;
+   */
+  user?: User;
+
+  /**
+   * Optional list of Kubernetes tolerations
+   *
+   * @generated from field: repeated api_container_api.Toleration tolerations = 16;
+   */
+  tolerations: Toleration[];
+
+  /**
+   * Optional node selectors for pod placement
+   *
+   * @generated from field: map<string, string> node_selectors = 17;
+   */
+  nodeSelectors: { [key: string]: string };
+
+  /**
+   * Optional labels
+   *
+   * @generated from field: map<string, string> labels = 18;
+   */
+  labels: { [key: string]: string };
+
+  /**
+   * Whether Tini is enabled
+   *
+   * @generated from field: optional bool tini_enabled = 19;
+   */
+  tiniEnabled?: boolean;
 
   constructor(data?: PartialMessage<ServiceInfo>);
 

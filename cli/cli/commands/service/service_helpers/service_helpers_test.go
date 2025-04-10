@@ -1,4 +1,4 @@
-package add
+package service_helpers
 
 import (
 	"fmt"
@@ -140,17 +140,17 @@ func TestParsePortSpecstr_CustomProtocol(t *testing.T) {
 }
 
 func TestParsePortsStr_DuplicatePortsCauseError(t *testing.T) {
-	_, err := parsePortsStr("http=80/tcp,http=8080")
+	_, err := ParsePortsStr("http=80/tcp,http=8080")
 	require.Error(t, err)
 }
 
 func TestParsePortsStr_EmptyPortIDCausesError(t *testing.T) {
-	_, err := parsePortsStr("=80/tcp")
+	_, err := ParsePortsStr("=80/tcp")
 	require.Error(t, err)
 }
 
 func TestParsePortsStr_SuccessfulPortsString(t *testing.T) {
-	ports, err := parsePortsStr("port1=8080,port2=2900/udp")
+	ports, err := ParsePortsStr("port1=8080,port2=2900/udp")
 	require.NoError(t, err)
 	require.Equal(t, 2, len(ports))
 
@@ -166,7 +166,7 @@ func TestParsePortsStr_SuccessfulPortsString(t *testing.T) {
 }
 
 func TestParseEnvVarsStr_EqualSignInValueIsOkay(t *testing.T) {
-	envvars, err := parseEnvVarsStr("VAR=thing=otherthing")
+	envvars, err := ParseEnvVarsStr("VAR=thing=otherthing")
 	require.NoError(t, err)
 	require.Equal(t, 1, len(envvars))
 
@@ -176,7 +176,7 @@ func TestParseEnvVarsStr_EqualSignInValueIsOkay(t *testing.T) {
 }
 
 func TestParseEnvVarsStr_MultipleVarsAreOkay(t *testing.T) {
-	envvars, err := parseEnvVarsStr("VAR1=VALUE1,VAR2=VALUE2")
+	envvars, err := ParseEnvVarsStr("VAR1=VALUE1,VAR2=VALUE2")
 	require.NoError(t, err)
 	require.Equal(t, 2, len(envvars))
 
@@ -190,12 +190,12 @@ func TestParseEnvVarsStr_MultipleVarsAreOkay(t *testing.T) {
 }
 
 func TestParseEnvVarsStr_DuplicateVarNamesError(t *testing.T) {
-	_, err := parseEnvVarsStr("VAR1=VALUE1,VAR1=VALUE2")
+	_, err := ParseEnvVarsStr("VAR1=VALUE1,VAR1=VALUE2")
 	require.Error(t, err)
 }
 
 func TestParseEnvVarsStr_EmptyDeclarations(t *testing.T) {
-	envvars, err := parseEnvVarsStr("VAR1=VALUE1,, ,  ,,")
+	envvars, err := ParseEnvVarsStr("VAR1=VALUE1,, ,  ,,")
 	require.NoError(t, err)
 	require.Equal(t, 1, len(envvars))
 }
@@ -206,7 +206,7 @@ func TestParseFilesArtifactMountStr_ValidParse(t *testing.T) {
 	mountpoint1 := "/dest1"
 	mountpoint2 := "/dest2"
 
-	result, err := parseFilesArtifactMountsStr(fmt.Sprintf(
+	result, err := ParseFilesArtifactMountsStr(fmt.Sprintf(
 		"%v:%v,%v:%v",
 		mountpoint1,
 		artifactUuid1,
@@ -216,13 +216,13 @@ func TestParseFilesArtifactMountStr_ValidParse(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 2, len(result))
 
-	parsedArtifactUuid1, found := result[mountpoint1]
+	parsedArtifactsUuid1, found := result[mountpoint1]
 	require.True(t, found)
-	require.Equal(t, artifactUuid1, parsedArtifactUuid1)
+	require.Equal(t, artifactUuid1, parsedArtifactsUuid1[0])
 
-	parsedArtifactUuid2, found := result[mountpoint2]
+	parsedArtifactsUuid2, found := result[mountpoint2]
 	require.True(t, found)
-	require.Equal(t, artifactUuid2, parsedArtifactUuid2)
+	require.Equal(t, artifactUuid2, parsedArtifactsUuid2[0])
 }
 
 func TestParseFilesArtifactMountStr_EmptyDeclarationsAreSkipped(t *testing.T) {
@@ -231,7 +231,7 @@ func TestParseFilesArtifactMountStr_EmptyDeclarationsAreSkipped(t *testing.T) {
 	mountpoint1 := "/dest1"
 	mountpoint2 := "/dest2"
 
-	result, err := parseFilesArtifactMountsStr(fmt.Sprintf(
+	result, err := ParseFilesArtifactMountsStr(fmt.Sprintf(
 		"%v:%v,,,,,%v:%v",
 		mountpoint1,
 		artifactUuid1,
@@ -241,20 +241,20 @@ func TestParseFilesArtifactMountStr_EmptyDeclarationsAreSkipped(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 2, len(result))
 
-	parsedArtifactUuid1, found := result[mountpoint1]
+	parsedArtifactsUuid1, found := result[mountpoint1]
 	require.True(t, found)
-	require.Equal(t, artifactUuid1, parsedArtifactUuid1)
+	require.Equal(t, artifactUuid1, parsedArtifactsUuid1[0])
 
-	parsedArtifactUuid2, found := result[mountpoint2]
+	parsedArtifactsUuid2, found := result[mountpoint2]
 	require.True(t, found)
-	require.Equal(t, artifactUuid2, parsedArtifactUuid2)
+	require.Equal(t, artifactUuid2, parsedArtifactsUuid2[0])
 }
 
 func TestParseFilesArtifactMountStr_TooManyArtifactUuidMountpointDelimitersIsError(t *testing.T) {
 	artifactUuid := services.FilesArtifactUUID("1234")
 	mountpoint := "/dest"
 
-	_, err := parseFilesArtifactMountsStr(fmt.Sprintf(
+	_, err := ParseFilesArtifactMountsStr(fmt.Sprintf(
 		"%v::%v",
 		artifactUuid,
 		mountpoint,
@@ -266,7 +266,7 @@ func TestParseFilesArtifactMountStr_TooFewArtifactUuidMountpointDelimitersIsErro
 	artifactUuid := services.FilesArtifactUUID("1234")
 	mountpoint := "/dest"
 
-	_, err := parseFilesArtifactMountsStr(fmt.Sprintf(
+	_, err := ParseFilesArtifactMountsStr(fmt.Sprintf(
 		"%v%v",
 		artifactUuid,
 		mountpoint,
@@ -279,7 +279,7 @@ func TestParseFilesArtifactMountStr_DuplicateArtifactUuids(t *testing.T) {
 	mountpoint1 := "/dest1"
 	mountpoint2 := "/dest2"
 
-	_, err := parseFilesArtifactMountsStr(fmt.Sprintf(
+	_, err := ParseFilesArtifactMountsStr(fmt.Sprintf(
 		"%v:%v,%v:%v",
 		artifactUuid,
 		mountpoint1,
@@ -287,4 +287,25 @@ func TestParseFilesArtifactMountStr_DuplicateArtifactUuids(t *testing.T) {
 		mountpoint2,
 	))
 	require.Error(t, err)
+}
+
+func TestParseMultipleFilesArtifactMountAtOneDirPathStr_ValidParse(t *testing.T) {
+	mountpoint1 := "/dest1"
+	artifactUuid1 := "1234"
+	artifactUuid2 := "4567"
+
+	result, err := ParseFilesArtifactMountsStr(fmt.Sprintf(
+		"%v:%v|%v",
+		mountpoint1,
+		artifactUuid1,
+		artifactUuid2,
+	))
+	require.NoError(t, err)
+	require.Equal(t, 1, len(result))
+
+	parsedArtifacts, found := result[mountpoint1]
+	require.True(t, found)
+	require.Len(t, parsedArtifacts, 2)
+	require.Equal(t, artifactUuid1, parsedArtifacts[0])
+	require.Equal(t, artifactUuid2, parsedArtifacts[1])
 }

@@ -2,9 +2,12 @@ package add
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
-	"strconv"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/inspect"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/service_helpers"
+	"io"
+	"os"
 	"strings"
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
@@ -35,75 +38,41 @@ const (
 	serviceNameTitleKey = "Name"
 	serviceUuidTitleKey = "UUID"
 
-	serviceImageArgKey = "image"
-
-	cmdArgsArgKey = "cmd-arg"
-
-	entrypointBinaryFlagKey = "entrypoint"
-
-	envvarsFlagKey              = "env"
-	envvarKeyValueDelimiter     = "="
-	envvarDeclarationsDelimiter = ","
-
-	portsFlagKey                     = "ports"
-	portIdSpecDelimiter              = "="
-	portNumberProtocolDelimiter      = "/"
-	portDeclarationsDelimiter        = ","
-	portApplicationProtocolDelimiter = ":"
-	portNumberUintParsingBase        = 10
-	portNumberUintParsingBits        = 16
-
-	filesFlagKey                     = "files"
-	filesArtifactMountsDelimiter     = ","
-	filesArtifactMountpointDelimiter = ":"
-	defaultLimits                    = 0
+	defaultLimits = 0
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
 
 	privateIPAddressPlaceholderKey     = "ip-address-placeholder"
-	privateIPAddressPlaceholderDefault = "KURTOSIS_IP_ADDR_PLACEHOLDER"
-
-	// Each envvar should be KEY1=VALUE1, which means we should have two components to each envvar declaration
-	expectedNumberKeyValueComponentsInEnvvarDeclaration = 2
-	portNumberIndex                                     = 0
-	transportProtocolIndex                              = 1
-	expectedPortIdSpecComponentsCount                   = 2
-	expectedMountFragmentsCount                         = 2
-
-	minRemainingPortSpecComponents = 1
-	maxRemainingPortSpecComponents = 2
+	privateIPAddressPlaceholderDefault = ""
 
 	emptyApplicationProtocol = ""
 	linkDelimiter            = "://"
 
-	maybeApplicationProtocolSpecForHelp = "MAYBE_APPLICATION_PROTOCOL"
-	transportProtocolSpecForHelp        = "TRANSPORT_PROTOCOL"
-	portNumberSpecForHelp               = "PORT_NUMBER"
-	portIdSpecForHelp                   = "PORT_ID"
-
 	fullUuidsFlagKey       = "full-uuids"
 	fullUuidFlagKeyDefault = "false"
 
-	portMappingSeparatorForLogs = ", "
+	JsonConfigFlagKey            = "json-service-config"
+	JsonConfigFlagKeyDefault     = ""
+	readJsonConfigFromStdinInput = "-"
 
-	defaultPortWaitTimeoutStr = "30s"
+	portMappingSeparatorForLogs = ", "
 )
 
 var (
 	defaultTransportProtocolStr = strings.ToLower(kurtosis_core_rpc_api_bindings.Port_TCP.String())
 	serviceAddSpec              = fmt.Sprintf(
 		`%v%v%v%v%v`,
-		maybeApplicationProtocolSpecForHelp,
-		portApplicationProtocolDelimiter,
-		portNumberSpecForHelp,
-		portNumberProtocolDelimiter,
-		transportProtocolSpecForHelp,
+		service_helpers.MaybeApplicationProtocolSpecForHelp,
+		service_helpers.PortApplicationProtocolDelimiter,
+		service_helpers.PortNumberSpecForHelp,
+		service_helpers.PortNumberProtocolDelimiter,
+		service_helpers.TransportProtocolSpecForHelp,
 	)
 	serviceAddSpecWithPortId = fmt.Sprintf(
 		`%v%v%v`,
-		portIdSpecForHelp,
-		portIdSpecDelimiter,
+		service_helpers.PortIdSpecForHelp,
+		service_helpers.PortIdSpecDelimiter,
 		serviceAddSpec,
 	)
 )
@@ -125,64 +94,73 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Key: serviceNameArgKey,
 		},
 		{
-			Key: serviceImageArgKey,
-		},
-		{
-			Key:          cmdArgsArgKey,
+			Key:          service_helpers.ImageKey,
 			IsOptional:   true,
-			IsGreedy:     true,
-			DefaultValue: []string{},
+			DefaultValue: "",
 		},
 	},
 	Flags: []*flags.FlagConfig{
 		{
-			Key:   entrypointBinaryFlagKey,
+			Key:     service_helpers.CmdKey,
+			Usage:   "CMD binary that will be used when running the container",
+			Type:    flags.FlagType_String,
+			Default: "",
+		},
+		{
+			Key:   service_helpers.EntrypointFlagKey,
 			Usage: "ENTRYPOINT binary that will be used when running the container, overriding the image's default ENTRYPOINT",
 			// TODO Make this a string list
-			Type: flags.FlagType_String,
+			Type:    flags.FlagType_String,
+			Default: "",
 		},
 		{
 			// TODO We currently can't handle commas, so allow users to set the flag multiple times to set multiple envvars
-			Key: envvarsFlagKey,
+			Key: service_helpers.EnvvarsFlagKey,
 			Usage: fmt.Sprintf(
 				"String containing environment variables that will be set when running the container, in "+
 					"the form \"KEY1%vVALUE1%vKEY2%vVALUE2\"",
-				envvarKeyValueDelimiter,
-				envvarDeclarationsDelimiter,
-				envvarKeyValueDelimiter,
+				service_helpers.EnvvarKeyValueDelimiter,
+				service_helpers.EnvvarDeclarationsDelimiter,
+				service_helpers.EnvvarKeyValueDelimiter,
 			),
-			Type: flags.FlagType_String,
+			Type:    flags.FlagType_String,
+			Default: "",
 		},
 		{
-			Key: portsFlagKey,
+			Key: service_helpers.PortsFlagKey,
 			Usage: fmt.Sprintf(`String containing declarations of ports that the container will listen on, in the form, %q`+
 				` where %q is a user friendly string for identifying the port, %q is required field, %q is an optional field which must be either`+
 				` '%v' or '%v' and defaults to '%v' if omitted and %q is user defined optional value. %v`,
 				serviceAddSpecWithPortId,
-				portIdSpecForHelp,
-				portNumberSpecForHelp,
-				transportProtocolSpecForHelp,
+				service_helpers.PortIdSpecForHelp,
+				service_helpers.PortNumberSpecForHelp,
+				service_helpers.TransportProtocolSpecForHelp,
 				strings.ToLower(kurtosis_core_rpc_api_bindings.Port_TCP.String()),
 				strings.ToLower(kurtosis_core_rpc_api_bindings.Port_UDP.String()),
 				defaultTransportProtocolStr,
-				maybeApplicationProtocolSpecForHelp,
+				service_helpers.MaybeApplicationProtocolSpecForHelp,
 				generateExampleForPortFlag(),
 			),
-			Type: flags.FlagType_String,
+			Type:    flags.FlagType_String,
+			Default: "",
 		},
 		{
-			Key: filesFlagKey,
+			Key: service_helpers.FilesFlagKey,
 			Usage: fmt.Sprintf(
 				"String containing declarations of files paths on the container -> artifact name  where the contents of those "+
 					"files artifacts should be mounted, in the form \"MOUNTPATH1%vARTIFACTNAME1%vMOUNTPATH2%vARTIFACTNAME2\" where "+
-					"ARTIFACTNAME is the name returned by Kurtosis when uploading files to the enclave (e.g. via the '%v %v' command)",
-				filesArtifactMountpointDelimiter,
-				filesArtifactMountsDelimiter,
-				filesArtifactMountpointDelimiter,
+					"ARTIFACTNAME is the name returned by Kurtosis when uploading files to the enclave (e.g. via the '%v %v' command)."+
+					"directories can be mounted by mounting multiple artifacts to the same mountpath, in the form, \"MOUNTPATH1%vARTIFACTNAME1%vARTIFACTNAME2\"",
+				service_helpers.FilesArtifactMountpointDelimiter,
+				service_helpers.FilesArtifactMountsDelimiter,
+				service_helpers.FilesArtifactMountpointDelimiter,
 				command_str_consts.FilesCmdStr,
 				command_str_consts.FilesUploadCmdStr,
+				service_helpers.FilesArtifactMountpointDelimiter,
+				service_helpers.FilesMultipleArtifactsDelimiter,
 			),
-			Type: flags.FlagType_String,
+			Type:    flags.FlagType_String,
+			Default: "",
 		},
 		{
 			Key:     privateIPAddressPlaceholderKey,
@@ -195,6 +173,22 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Usage:   "If true then Kurtosis prints full UUIDs instead of shortened UUIDs. Default false.",
 			Type:    flags.FlagType_Bool,
 			Default: fullUuidFlagKeyDefault,
+		},
+		{
+			Key: JsonConfigFlagKey,
+			Usage: fmt.Sprintf("If a json formatted service config string is provided via stdin using '%v' value for this flag,"+
+				"stdin will get parsed to json and used as values for the service config."+
+				"The json format should be identical to the json output format from %v %v %v %v %v."+
+				"If stdin value not provided, will assume input is a filepath to a service config json and attempts to read from it.",
+				readJsonConfigFromStdinInput,
+				command_str_consts.KurtosisCmdStr,
+				command_str_consts.ServiceCmdStr,
+				command_str_consts.ServiceInspectCmdStr,
+				inspect.OutputFormatKeyShorthand,
+				inspect.JsonOutputFormat,
+			),
+			Type:    flags.FlagType_String,
+			Default: JsonConfigFlagKeyDefault,
 		},
 	},
 	RunFunc: run,
@@ -218,34 +212,34 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the service name value using key '%v'", serviceNameArgKey)
 	}
 
-	image, err := args.GetNonGreedyArg(serviceImageArgKey)
+	image, err := args.GetNonGreedyArg(service_helpers.ImageKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the service image value using key '%v'", serviceImageArgKey)
+		return stacktrace.Propagate(err, "An error occurred getting the service image value using key '%v'", service_helpers.ImageKey)
 	}
 
-	cmdArgs, err := args.GetGreedyArg(cmdArgsArgKey)
+	entrypointStr, err := flags.GetString(service_helpers.EntrypointFlagKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the CMD args using key '%v'", cmdArgsArgKey)
+		return stacktrace.Propagate(err, "An error occurred getting the ENTRYPOINT binary using key '%v'", service_helpers.EntrypointFlagKey)
 	}
 
-	entrypointStr, err := flags.GetString(entrypointBinaryFlagKey)
+	cmdStr, err := flags.GetString(service_helpers.CmdKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the ENTRYPOINT binary using key '%v'", entrypointBinaryFlagKey)
+		return stacktrace.Propagate(err, "An error occurred getting the CMD using key '%v'", service_helpers.CmdKey)
 	}
 
-	envvarsStr, err := flags.GetString(envvarsFlagKey)
+	envVarsStr, err := flags.GetString(service_helpers.EnvvarsFlagKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the env vars string using key '%v'", envvarsFlagKey)
+		return stacktrace.Propagate(err, "An error occurred getting the env vars string using key '%v'", service_helpers.EnvvarsFlagKey)
 	}
 
-	portsStr, err := flags.GetString(portsFlagKey)
+	portsStr, err := flags.GetString(service_helpers.PortsFlagKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the ports string using key '%v'", portsFlagKey)
+		return stacktrace.Propagate(err, "An error occurred getting the ports string using key '%v'", service_helpers.PortsFlagKey)
 	}
 
-	filesArtifactMountsStr, err := flags.GetString(filesFlagKey)
+	filesArtifactMountsStr, err := flags.GetString(service_helpers.FilesFlagKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the files artifact mounts string using key '%v'", filesFlagKey)
+		return stacktrace.Propagate(err, "An error occurred getting the files artifact mounts string using key '%v'", service_helpers.FilesFlagKey)
 	}
 
 	privateIPAddressPlaceholder, err := flags.GetString(privateIPAddressPlaceholderKey)
@@ -258,6 +252,15 @@ func run(
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", fullUuidsFlagKey)
 	}
 
+	jsonServiceConfigFlagValue, err := flags.GetString(JsonConfigFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the json service config string using key '%v'.", JsonConfigFlagKey)
+	}
+	jsonServiceConfigStr, err := processJsonServiceConfigFlagInput(jsonServiceConfigFlagValue)
+	if err != nil {
+		return err // already wrapped
+	}
+
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
@@ -268,38 +271,57 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting an enclave context from enclave info for enclave '%v'", enclaveIdentifier)
 	}
 
-	entrypoint := []string{}
-	if entrypointStr != "" {
-		entrypoint = append(entrypoint, entrypointStr)
-	}
-	serviceConfigStarlark, err := GetServiceConfigStarlark(image, portsStr, cmdArgs, entrypoint, envvarsStr, filesArtifactMountsStr, defaultLimits, defaultLimits, defaultLimits, defaultLimits, privateIPAddressPlaceholder)
-	if err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred getting the container config to start image '%v' with CMD '%+v', ENTRYPOINT '%v',  envvars '%v' and private IP address placeholder '%v'",
-			image,
-			cmdArgs,
-			entrypointStr,
-			envvarsStr,
-			privateIPAddressPlaceholder,
+	var serviceConfigStarlarkStr string
+	if jsonServiceConfigStr != "" {
+		var serviceConfigJson services.ServiceConfig
+		if err = json.Unmarshal([]byte(jsonServiceConfigStr), &serviceConfigJson); err != nil {
+			return stacktrace.Propagate(err, "An error occurred unmarshalling json service config string:\n '%v'.", jsonServiceConfigStr)
+		}
+		serviceConfigStarlarkStr = services.GetFullServiceConfigStarlark(
+			serviceConfigJson.Image,
+			services.ConvertJsonPortToApiPort(serviceConfigJson.PrivatePorts),
+			serviceConfigJson.Files,
+			serviceConfigJson.Entrypoint,
+			serviceConfigJson.Cmd,
+			serviceConfigJson.EnvVars,
+			serviceConfigJson.MaxMillicpus,
+			serviceConfigJson.MaxMemory,
+			serviceConfigJson.MaxMemory,
+			serviceConfigJson.MinMemory,
+			serviceConfigJson.User,
+			serviceConfigJson.Tolerations,
+			serviceConfigJson.NodeSelectors,
+			serviceConfigJson.Labels,
+			serviceConfigJson.TiniEnabled,
+			serviceConfigJson.PrivateIPAddressPlaceholder,
 		)
+	} else {
+		entrypoint := []string{}
+		if entrypointStr != "" {
+			entrypoint = strings.Split(cmdStr, service_helpers.EntrypointAndCmdDelimiter)
+		}
+		cmd := []string{}
+		if cmdStr != "" {
+			cmd = strings.Split(cmdStr, service_helpers.EntrypointAndCmdDelimiter)
+		}
+		serviceConfigStarlarkStr, err = GetServiceConfigStarlark(image, portsStr, cmd, entrypoint, envVarsStr, filesArtifactMountsStr, defaultLimits, defaultLimits, defaultLimits, defaultLimits, privateIPAddressPlaceholder)
+		if err != nil {
+			return stacktrace.Propagate(
+				err,
+				"An error occurred getting the container config to start image '%v' with CMD '%v', ENTRYPOINT '%v',  envvars '%v' and private IP address placeholder '%v'",
+				image,
+				cmdStr,
+				entrypointStr,
+				envVarsStr,
+				privateIPAddressPlaceholder,
+			)
+		}
 	}
 
-	starlarkScript := fmt.Sprintf(`def run(plan):
-	plan.add_service(name = "%s", config = %s)
-`, serviceName, serviceConfigStarlark)
-	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, starlark_run_config.NewRunStarlarkConfig())
+	addServiceStarlark := service_helpers.GetAddServiceStarlarkScript(serviceName, serviceConfigStarlarkStr)
+	_, err = service_helpers.RunAddServiceStarlarkScript(ctx, serviceName, enclaveIdentifier, addServiceStarlark, enclaveCtx)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
-	}
-	if starlarkRunResult.InterpretationError != nil {
-		return stacktrace.NewError("An error has occurred when adding service: %s\nThis is a bug in Kurtosis, please report.", starlarkRunResult.InterpretationError)
-	}
-	if len(starlarkRunResult.ValidationErrors) > 0 {
-		return stacktrace.NewError("An error occurred when validating add service '%v' to enclave '%v': %s", serviceName, enclaveIdentifier, starlarkRunResult.ValidationErrors)
-	}
-	if starlarkRunResult.ExecutionError != nil {
-		return stacktrace.NewError("An error occurred adding service '%v' to enclave '%v': %s", serviceName, enclaveIdentifier, starlarkRunResult.ExecutionError)
+		return err // already wrapped
 	}
 	serviceCtx, err := enclaveCtx.GetServiceContext(serviceName)
 	if err != nil {
@@ -404,245 +426,75 @@ func GetServiceConfigStarlark(
 	minMemoryMegaBytes int,
 	privateIPAddressPlaceholder string,
 ) (string, error) {
-	envvarsMap, err := parseEnvVarsStr(envvarsStr)
+	envvarsMap, err := service_helpers.ParseEnvVarsStr(envvarsStr)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred parsing environment variables string '%v'", envvarsStr)
 	}
 
-	ports, err := parsePortsStr(portsStr)
+	ports, err := service_helpers.ParsePortsStr(portsStr)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred parsing ports string '%v'", portsStr)
 	}
 
-	filesArtifactMounts, err := parseFilesArtifactMountsStr(filesArtifactMountsStr)
+	filesArtifactMounts, err := service_helpers.ParseFilesArtifactMountsStr(filesArtifactMountsStr)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred parsing files artifact mounts string '%v'", filesArtifactMountsStr)
 	}
-	return services.GetServiceConfigStarlark(image, ports, filesArtifactMounts, entrypoint, cmdArgs, envvarsMap, privateIPAddressPlaceholder, cpuAllocationMillicpus, memoryAllocationMegabytes, minCpuMilliCores, minMemoryMegaBytes), nil
-}
+	tiniEnabled := false
 
-// Parses a string in the form KEY1=VALUE1,KEY2=VALUE2 into a map of strings
-// An empty string will result in an empty map
-// Empty strings will be skipped (e.g. ',,,' will result in an empty map)
-func parseEnvVarsStr(envvarsStr string) (map[string]string, error) {
-	result := map[string]string{}
-	if envvarsStr == "" {
-		return result, nil
-	}
-
-	allEnvvarDeclarationStrs := strings.Split(envvarsStr, envvarDeclarationsDelimiter)
-	for _, envvarDeclarationStr := range allEnvvarDeclarationStrs {
-		if len(strings.TrimSpace(envvarDeclarationStr)) == 0 {
-			continue
-		}
-
-		envvarKeyValueComponents := strings.SplitN(envvarDeclarationStr, envvarKeyValueDelimiter, expectedNumberKeyValueComponentsInEnvvarDeclaration)
-		if len(envvarKeyValueComponents) < expectedNumberKeyValueComponentsInEnvvarDeclaration {
-			return nil, stacktrace.NewError("Environment declaration string '%v' must be of the form KEY1%vVALUE1", envvarDeclarationStr, envvarKeyValueDelimiter)
-		}
-		key := envvarKeyValueComponents[0]
-		value := envvarKeyValueComponents[1]
-
-		preexistingValue, found := result[key]
-		if found {
-			return nil, stacktrace.NewError(
-				"Cannot declare environment variable '%v' assigned to value '%v' because the key has previously been assigned to value '%v'",
-				key,
-				value,
-				preexistingValue,
-			)
-		}
-
-		result[key] = value
-	}
-
-	return result, nil
-}
-
-// Parses a string in the form PORTID1=1234,PORTID2=5678/udp
-// An empty string will result in an empty map
-// Empty strings will be skipped (e.g. ',,,' will result in an empty map)
-func parsePortsStr(portsStr string) (map[string]*kurtosis_core_rpc_api_bindings.Port, error) {
-	result := map[string]*kurtosis_core_rpc_api_bindings.Port{}
-	if strings.TrimSpace(portsStr) == "" {
-		return result, nil
-	}
-
-	allPortDeclarationStrs := strings.Split(portsStr, portDeclarationsDelimiter)
-	for _, portDeclarationStr := range allPortDeclarationStrs {
-		if len(strings.TrimSpace(portDeclarationStr)) == 0 {
-			continue
-		}
-
-		portIdSpecComponents := strings.Split(portDeclarationStr, portIdSpecDelimiter)
-		if len(portIdSpecComponents) != expectedPortIdSpecComponentsCount {
-			return nil, stacktrace.NewError("Port declaration string '%v' must be of the form PORTID%vSPEC", portDeclarationStr, portIdSpecDelimiter)
-		}
-		portId := portIdSpecComponents[0]
-		specStr := portIdSpecComponents[1]
-		if len(strings.TrimSpace(portId)) == 0 {
-			return nil, stacktrace.NewError("Port declaration with spec string '%v' has an empty port ID", specStr)
-		}
-		portSpec, err := parsePortSpecStr(specStr)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred parsing port spec string '%v' for port with ID '%v'", specStr, portId)
-		}
-
-		if _, found := result[portId]; found {
-			return nil, stacktrace.NewError(
-				"Cannot define port '%v' with spec '%v' because it is already defined",
-				portId,
-				specStr,
-			)
-		}
-
-		result[portId] = portSpec
-	}
-
-	return result, nil
-}
-
-func parsePortSpecStr(specStr string) (*kurtosis_core_rpc_api_bindings.Port, error) {
-	if len(strings.TrimSpace(specStr)) == 0 {
-		return nil, stacktrace.NewError("Cannot parse empty spec string")
-	}
-
-	maybeApplicationProtocol, remainingPortSpec, err := getMaybeApplicationProtocolFromPortSpecString(specStr)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error occurred while parsing application protocol '%v' in port spec '%v'", maybeApplicationProtocol, specStr)
-	}
-
-	remainingPortSpecComponents := strings.Split(remainingPortSpec, portNumberProtocolDelimiter)
-	numRemainingPortSpecComponents := len(remainingPortSpecComponents)
-	if numRemainingPortSpecComponents > maxRemainingPortSpecComponents {
-		return nil, stacktrace.NewError(
-			`Invalid port spec string, expected format is %q but got '%v'`,
-			serviceAddSpec,
-			specStr,
-		)
-	}
-
-	portNumberUint16, err := getPortNumberFromPortSpecString(remainingPortSpecComponents[portNumberIndex])
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error occurred while parsing port number '%v' in port spec '%v'", remainingPortSpecComponents[portNumberIndex], specStr)
-	}
-
-	transportProtocol := defaultTransportProtocolStr
-	if numRemainingPortSpecComponents > minRemainingPortSpecComponents {
-		transportProtocol = remainingPortSpecComponents[transportProtocolIndex]
-	}
-
-	transportProtocolFromEnum, err := getTransportProtocolFromPortSpecString(transportProtocol)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error occurred while parsing transport protocol '%v' in port spec '%v'", remainingPortSpecComponents[transportProtocolIndex], specStr)
-	}
-	return &kurtosis_core_rpc_api_bindings.Port{
-		Number:                   portNumberUint16,
-		TransportProtocol:        transportProtocolFromEnum,
-		MaybeApplicationProtocol: maybeApplicationProtocol,
-		MaybeWaitTimeout:         defaultPortWaitTimeoutStr, //TODO we should add this to the port's arguments instead of using only a default value
-		Locked:                   nil,
-		Alias:                    nil,
-	}, nil
-}
-
-/*
-*
-This method takes in port protocol string and parses it to get application protocol.
-It looks for `:` delimiter and splits the string into array of at most size 2. If the length
-of array is 2 then application protocol exists, otherwise it does not. This is basically what
-strings.Cut() does. // TODO: use that instead once we update go version
-*/
-func getMaybeApplicationProtocolFromPortSpecString(portProtocolStr string) (string, string, error) {
-
-	beforeDelimiter, afterDelimiter, foundDelimiter := strings.Cut(portProtocolStr, portApplicationProtocolDelimiter)
-
-	if !foundDelimiter {
-		return emptyApplicationProtocol, beforeDelimiter, nil
-	}
-
-	if foundDelimiter && beforeDelimiter == emptyApplicationProtocol {
-		return emptyApplicationProtocol, "", stacktrace.NewError("optional application protocol argument cannot be empty")
-	}
-
-	return beforeDelimiter, afterDelimiter, nil
-}
-
-func getPortNumberFromPortSpecString(portNumberStr string) (uint32, error) {
-	portNumberUint64, err := strconv.ParseUint(portNumberStr, portNumberUintParsingBase, portNumberUintParsingBits)
-	if err != nil {
-		return 0, stacktrace.Propagate(
-			err,
-			"An error occurred parsing port number string '%v' with base '%v' and bits '%v'",
-			portNumberStr,
-			portNumberUintParsingBase,
-			portNumberUintParsingBits,
-		)
-	}
-	portNumberUint32 := uint32(portNumberUint64)
-	return portNumberUint32, nil
-}
-
-func getTransportProtocolFromPortSpecString(portSpec string) (kurtosis_core_rpc_api_bindings.Port_TransportProtocol, error) {
-	transportProtocolEnumInt, found := kurtosis_core_rpc_api_bindings.Port_TransportProtocol_value[strings.ToUpper(portSpec)]
-	if !found {
-		return 0, stacktrace.NewError("Unrecognized port protocol '%v'", portSpec)
-	}
-	return kurtosis_core_rpc_api_bindings.Port_TransportProtocol(transportProtocolEnumInt), nil
-}
-
-func parseFilesArtifactMountsStr(filesArtifactMountsStr string) (map[string]string, error) {
-	result := map[string]string{}
-	if strings.TrimSpace(filesArtifactMountsStr) == "" {
-		return result, nil
-	}
-
-	// NOTE: we might actually want to allow the same artifact being mounted in multiple places
-	allMountStrs := strings.Split(filesArtifactMountsStr, filesArtifactMountsDelimiter)
-	for idx, mountStr := range allMountStrs {
-		trimmedMountStr := strings.TrimSpace(mountStr)
-		if len(trimmedMountStr) == 0 {
-			continue
-		}
-
-		mountFragments := strings.Split(trimmedMountStr, filesArtifactMountpointDelimiter)
-		if len(mountFragments) != expectedMountFragmentsCount {
-			return nil, stacktrace.NewError(
-				"Files artifact mountpoint string %v was '%v' but should be in the form 'mountpoint%sfiles_artifact_name'",
-				idx,
-				trimmedMountStr,
-				filesArtifactMountpointDelimiter,
-			)
-		}
-		mountpoint := mountFragments[0]
-		filesArtifactName := mountFragments[1]
-
-		if existingName, found := result[mountpoint]; found {
-			return nil, stacktrace.NewError(
-				"Mountpoint '%v' is declared twice; once to artifact name '%v' and again to artifact name '%v'",
-				mountpoint,
-				existingName,
-				filesArtifactName,
-			)
-		}
-
-		result[mountpoint] = filesArtifactName
-	}
-
-	return result, nil
+	emptyNodeSelecors := map[string]string{}
+	emptyLabels := map[string]string{}
+	return services.GetFullServiceConfigStarlark(
+		image,
+		ports,
+		filesArtifactMounts,
+		entrypoint,
+		cmdArgs,
+		envvarsMap,
+		uint32(cpuAllocationMillicpus),
+		uint32(memoryAllocationMegabytes),
+		uint32(minCpuMilliCores),
+		uint32(minMemoryMegaBytes),
+		nil, //empty user
+		nil, //empty tolerations
+		emptyNodeSelecors,
+		emptyLabels,
+		&tiniEnabled,
+		privateIPAddressPlaceholder), nil
 }
 
 func generateExampleForPortFlag() string {
 	return fmt.Sprintf(
 		`Example: "PORTID1%v1234%vudp%vPORTID2%vhttp%v5678%vPORTID3%vhttp%v6000%vudp"`,
-		portIdSpecDelimiter,
-		portNumberProtocolDelimiter,
-		portDeclarationsDelimiter,
-		portIdSpecDelimiter,
-		portApplicationProtocolDelimiter,
-		portDeclarationsDelimiter,
-		portIdSpecDelimiter,
-		portApplicationProtocolDelimiter,
-		portNumberProtocolDelimiter,
+		service_helpers.PortIdSpecDelimiter,
+		service_helpers.PortNumberProtocolDelimiter,
+		service_helpers.PortDeclarationsDelimiter,
+		service_helpers.PortIdSpecDelimiter,
+		service_helpers.PortApplicationProtocolDelimiter,
+		service_helpers.PortDeclarationsDelimiter,
+		service_helpers.PortIdSpecDelimiter,
+		service_helpers.PortApplicationProtocolDelimiter,
+		service_helpers.PortNumberProtocolDelimiter,
 	)
+}
+
+func processJsonServiceConfigFlagInput(jsonServiceConfigFlagInput string) (string, error) {
+	var configBytes []byte
+	var err error
+	switch jsonServiceConfigFlagInput {
+	case JsonConfigFlagKeyDefault:
+		return JsonConfigFlagKeyDefault, nil
+	case readJsonConfigFromStdinInput:
+		configBytes, err = io.ReadAll(os.Stdin)
+		if err != nil {
+			return "", stacktrace.Propagate(err, "An error occurred reading json service config from stdin.")
+		}
+	default:
+		logrus.Infof("No json provided via stdin so attempting to read json service config input from file '%v' instead.", jsonServiceConfigFlagInput)
+		configBytes, err = os.ReadFile(jsonServiceConfigFlagInput)
+		if err != nil {
+			return "", stacktrace.Propagate(err, "An error occurred err when attempting to read service config from file '%v'.", jsonServiceConfigFlagInput)
+		}
+	}
+	return string(configBytes), nil
 }
