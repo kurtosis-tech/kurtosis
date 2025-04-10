@@ -145,6 +145,30 @@ func (segment *segmentClient) TrackKurtosisRun(packageId string, isRemote bool, 
 	return nil
 }
 
+func (segment *segmentClient) TrackServiceUpdate(packageId string, isRemote bool, isDryRun bool, isScript bool) error {
+	newEvent := event.NewUpdateServiceEvent(packageId, isRemote, isDryRun, isScript)
+	if err := segment.track(newEvent); err != nil {
+		return stacktrace.Propagate(err, "An error occurred tracking service update event")
+	}
+	return nil
+}
+
+func (segment *segmentClient) TrackStartService(packageId string, isRemote bool, isDryRun bool, isScript bool) error {
+	newEvent := event.NewStartServiceEvent(packageId, isRemote, isDryRun, isScript)
+	if err := segment.track(newEvent); err != nil {
+		return stacktrace.Propagate(err, "An error occurred tracking start service event")
+	}
+	return nil
+}
+
+func (segment *segmentClient) TrackStopService(packageId string, isRemote bool, isDryRun bool, isScript bool) error {
+	newEvent := event.NewStopServiceEvent(packageId, isRemote, isDryRun, isScript)
+	if err := segment.track(newEvent); err != nil {
+		return stacktrace.Propagate(err, "An error occurred tracking stop service event")
+	}
+	return nil
+}
+
 func (segment *segmentClient) TrackKurtosisRunFinishedEvent(packageId string, numberOfServices int, isSuccess bool) error {
 	newEvent := event.NewKurtosisRunFinishedEvent(packageId, numberOfServices, isSuccess)
 	if err := segment.track(newEvent); err != nil {

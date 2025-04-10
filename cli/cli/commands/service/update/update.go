@@ -194,7 +194,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the cmd using key '%v'", service_helpers.CmdKey)
 	}
 	if cmdStr != "" {
-		overrideCmd = strings.Split(cmdStr, service_helpers.EntrypointAndCmdDelimiter)
+		overrideCmd = []string{cmdStr}
 	}
 
 	entrypointStr, err := flags.GetString(service_helpers.EntrypointFlagKey)
@@ -202,7 +202,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the ENTRYPOINT binary using key '%v'", service_helpers.EntrypointFlagKey)
 	}
 	if entrypointStr != "" {
-		overrideEntrypoint = strings.Split(entrypointStr, service_helpers.EntrypointAndCmdDelimiter)
+		overrideEntrypoint = []string{entrypointStr}
 	}
 
 	envVarsStr, err := flags.GetString(service_helpers.EnvvarsFlagKey)
@@ -317,6 +317,7 @@ func run(
 	)
 
 	addServiceStarlarkStr := service_helpers.GetAddServiceStarlarkScript(serviceName, serviceConfigStr)
+	logrus.Infof("Update Service Starlark:\n%v", addServiceStarlarkStr)
 
 	logrus.Infof("Running update service starlark for service '%v' in enclave '%v'...", serviceName, enclaveIdentifier)
 	starlarkRunResult, err := service_helpers.RunAddServiceStarlarkScript(ctx, serviceName, enclaveIdentifier, addServiceStarlarkStr, enclaveCtx)

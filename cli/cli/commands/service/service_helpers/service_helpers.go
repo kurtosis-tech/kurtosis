@@ -107,7 +107,7 @@ func GetServiceInfo(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisC
 		Entrypoint:                  service.GetContainer().GetEntrypointArgs(),
 		Cmd:                         service.GetContainer().GetCmdArgs(),
 		EnvVars:                     service.GetContainer().GetEnvVars(),
-		PrivateIPAddressPlaceholder: service.GetPrivateIpAddr(),
+		PrivateIPAddressPlaceholder: "", // leave empty for now
 		MaxMillicpus:                service.GetMaxMillicpus(),
 		MinMillicpus:                service.GetMinMillicpus(),
 		MaxMemory:                   service.GetMaxMemoryMegabytes(),

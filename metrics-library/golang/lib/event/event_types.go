@@ -36,6 +36,9 @@ const (
 	stopAction            = "stop"
 	destroyAction         = "destroy"
 	runAction             = "run"
+	updateAction          = "update"
+	serviceStartAction    = "service-start"
+	serviceStopAction     = "service-stop"
 	runFinishedAction     = "run-finished"
 	analyticsToggleAction = "analytics-toggle"
 )
@@ -107,6 +110,54 @@ func NewKurtosisRunEvent(packageId string, isRemote bool, isDryRun bool, isScrip
 	}
 
 	event := newEvent(kurtosisCategory, runAction, properties)
+	return event
+}
+
+func NewStartServiceEvent(packageId string, isRemote bool, isDryRun bool, isScript bool) *Event {
+	isRemotePackageStr := fmt.Sprintf("%v", isRemote)
+	isDryRunStr := fmt.Sprintf("%v", isDryRun)
+	isScriptStr := fmt.Sprintf("%v", isScript)
+
+	properties := map[string]string{
+		packageIdKey:       packageId,
+		isRemotePackageKey: isRemotePackageStr,
+		isDryRunKey:        isDryRunStr,
+		isScriptKey:        isScriptStr,
+	}
+
+	event := newEvent(kurtosisCategory, serviceStartAction, properties)
+	return event
+}
+
+func NewStopServiceEvent(packageId string, isRemote bool, isDryRun bool, isScript bool) *Event {
+	isRemotePackageStr := fmt.Sprintf("%v", isRemote)
+	isDryRunStr := fmt.Sprintf("%v", isDryRun)
+	isScriptStr := fmt.Sprintf("%v", isScript)
+
+	properties := map[string]string{
+		packageIdKey:       packageId,
+		isRemotePackageKey: isRemotePackageStr,
+		isDryRunKey:        isDryRunStr,
+		isScriptKey:        isScriptStr,
+	}
+
+	event := newEvent(kurtosisCategory, serviceStopAction, properties)
+	return event
+}
+
+func NewUpdateServiceEvent(packageId string, isRemote bool, isDryRun bool, isScript bool) *Event {
+	isRemotePackageStr := fmt.Sprintf("%v", isRemote)
+	isDryRunStr := fmt.Sprintf("%v", isDryRun)
+	isScriptStr := fmt.Sprintf("%v", isScript)
+
+	properties := map[string]string{
+		packageIdKey:       packageId,
+		isRemotePackageKey: isRemotePackageStr,
+		isDryRunKey:        isDryRunStr,
+		isScriptKey:        isScriptStr,
+	}
+
+	event := newEvent(kurtosisCategory, updateAction, properties)
 	return event
 }
 
