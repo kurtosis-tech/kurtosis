@@ -90,13 +90,18 @@ func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v5.Kurto
 		}
 	}
 
+	shouldTurnOffDefaultLogsSink := defaultShouldTurnOffDefaultLogsSink
+	if overrides.ShouldTurnOffDefaultLogsSink != nil {
+		shouldTurnOffDefaultLogsSink = *overrides.ShouldTurnOffDefaultLogsSink
+	}
+
 	return &KurtosisClusterConfig{
 		kurtosisBackendSupplier:     backendSupplier,
 		engineBackendConfigSupplier: engineBackendConfigSupplier,
 		clusterType:                 clusterType,
 		logsAggregator:              logsAggregator,
 		graflokiConfig:              grafloki,
-		shouldTurnOffPersistentVolumeLogsCollection: overrides.ShouldTurnOffDefaultLogsSink,
+		shouldTurnOffPersistentVolumeLogsCollection: shouldTurnOffDefaultLogsSink,
 	}, nil
 }
 

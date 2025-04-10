@@ -15,5 +15,5 @@ type KurtosisClusterConfigV5 struct {
 	Config                       *KubernetesClusterConfigV5 `yaml:"config,omitempty"`
 	LogsAggregator               *LogsAggregatorConfigV5    `yaml:"logs-aggregator,omitempty"`
 	GraflokiConfig               *GraflokiConfig            `yaml:"grafloki-config,omitempty"`
-	ShouldTurnOffDefaultLogsSink bool                       `yaml:"should-turn-off-default-logs-sink,omitempty"`
+	ShouldTurnOffDefaultLogsSink *bool                      `yaml:"should-turn-off-default-logs-sink,omitempty"`
 }

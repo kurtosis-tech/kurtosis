@@ -198,6 +198,7 @@ func getDefaultKurtosisClusterConfigOverrides() map[string]*v5.KurtosisClusterCo
 	minikubeStorageClass := defaultMinikubeStorageClass
 	minikubeEnclaveDataVolSizeMB := defaultMinikubeEnclaveDataVolumeMB
 	minikubeEngineNodeName := defaultMinikubeEngineNodeName
+	shouldTurnOffDefaultLogsSink := defaultShouldTurnOffDefaultLogsSink
 
 	result := map[string]*v5.KurtosisClusterConfigV5{
 		DefaultDockerClusterName: {
@@ -216,7 +217,7 @@ func getDefaultKurtosisClusterConfigOverrides() map[string]*v5.KurtosisClusterCo
 			},
 			LogsAggregator:               nil,
 			GraflokiConfig:               nil,
-			ShouldTurnOffDefaultLogsSink: false,
+			ShouldTurnOffDefaultLogsSink: &shouldTurnOffDefaultLogsSink,
 		},
 	}
 

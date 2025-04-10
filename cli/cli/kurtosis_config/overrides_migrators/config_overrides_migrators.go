@@ -69,12 +69,13 @@ func migrateFromV4(uncastedConfig interface{}) (interface{}, error) {
 				LokiImage:               "",
 			}
 
+			defaultShouldTurnOffDefaultLogsSink := false
 			newClusterConfig := &v5.KurtosisClusterConfigV5{
 				Type:                         oldClusterConfig.Type,
 				Config:                       newKubernetesConfig,
 				LogsAggregator:               newLogsAggregatorConfig,
 				GraflokiConfig:               newGraflokiConfig,
-				ShouldTurnOffDefaultLogsSink: false,
+				ShouldTurnOffDefaultLogsSink: &defaultShouldTurnOffDefaultLogsSink,
 			}
 
 			newClusters[oldClusterName] = newClusterConfig

@@ -22,10 +22,11 @@ func TestNewKurtosisClusterConfigEmptyOverrides(t *testing.T) {
 func TestNewKurtosisClusterConfigDockerType(t *testing.T) {
 	dockerType := KurtosisClusterType_Docker.String()
 	kurtosisClusterConfigOverrides := v5.KurtosisClusterConfigV5{
-		Type:           &dockerType,
-		Config:         nil,
-		LogsAggregator: nil,
-		GraflokiConfig: nil,
+		Type:                         &dockerType,
+		Config:                       nil,
+		LogsAggregator:               nil,
+		GraflokiConfig:               nil,
+		ShouldTurnOffDefaultLogsSink: nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)
