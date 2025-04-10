@@ -55,7 +55,7 @@ func StartGrafLokiInKubernetes(ctx context.Context, graflokiConfig resolved_conf
 	shouldRemoveGrafanaAndLoki := false
 	doesGrafanaAndLokiExist, lokiHost := checkGrafanaAndLokiDeploymentExistence(ctx, k8sManager)
 	if !doesGrafanaAndLokiExist {
-		lokiHost, removeGrafanaAndLokiFunc, err = createGrafanaAndLokiDeployments(ctx, k8sManager)
+		lokiHost, removeGrafanaAndLokiFunc, err = createGrafanaAndLokiDeployments(ctx, k8sManager, graflokiConfig)
 		if err != nil {
 			return "", "", stacktrace.Propagate(err, "An error occurred creating Grafana and Loki deployments.")
 		}
@@ -72,7 +72,7 @@ func StartGrafLokiInKubernetes(ctx context.Context, graflokiConfig resolved_conf
 	return lokiHost, getGrafanaUrlOnHostMachine(grafanaPort), nil
 }
 
-func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes_manager.KubernetesManager) (string, func(), error) {
+func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes_manager.KubernetesManager, graflokiConfig resolved_config.GrafanaLoki) (string, func(), error) {
 	graflokilNamespaceObj, err := k8sManager.CreateNamespace(ctx, graflokiNamespace, map[string]string{}, map[string]string{})
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred creating namespace '%v'", graflokiNamespace)
@@ -90,6 +90,10 @@ func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes
 		}
 	}()
 
+	lokiImage := defaultLokiImage
+	if graflokiConfig.LokiImage != "" {
+		lokiImage = defaultLokiImage
+	}
 	lokiDeployment, err := k8sManager.CreateDeployment(
 		ctx,
 		graflokiNamespace,
@@ -100,7 +104,7 @@ func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes
 		[]apiv1.Container{
 			{
 				Name:  "loki",
-				Image: defaultLokiImage,
+				Image: lokiImage,
 				Ports: []apiv1.ContainerPort{
 					{
 						Name:          "",
@@ -255,6 +259,10 @@ func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes
 		}
 	}()
 
+	grafanaImage := defaultGrafanaImage
+	if graflokiConfig.GrafanaImage != "" {
+		grafanaImage = defaultGrafanaImage
+	}
 	grafanaDeployment, err := k8sManager.CreateDeployment(
 		ctx,
 		graflokiNamespace,
@@ -265,7 +273,7 @@ func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes
 		[]apiv1.Container{
 			{
 				Name:  "grafana",
-				Image: defaultGrafanaImage,
+				Image: grafanaImage,
 				Ports: []apiv1.ContainerPort{
 					{
 						Name:          "",
