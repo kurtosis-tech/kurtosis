@@ -51,6 +51,7 @@ type KurtosisBackend interface {
 		shouldStartInDebugMode bool,
 		githubAuthToken string,
 		sinks logs_aggregator.Sinks,
+		shouldTurnOffPersistentVolumeLogsCollection bool,
 	) (
 		*engine.Engine,
 		error,

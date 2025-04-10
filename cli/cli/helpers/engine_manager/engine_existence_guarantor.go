@@ -95,6 +95,9 @@ type engineExistenceGuarantor struct {
 
 	// Destinations the logs aggregator will deliver to
 	sinks logs_aggregator.Sinks
+
+	// If set to true, engine will not store logs in a persistent volume
+	shouldTurnOffPersistentVolumeLogsCollection bool
 }
 
 func newEngineExistenceGuarantorWithDefaultVersion(
@@ -116,6 +119,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 	domain string,
 	logRetentionPeriod string,
 	sinks logs_aggregator.Sinks,
+	shouldTurnOffPersistentVolumeLogsCollection bool,
 ) *engineExistenceGuarantor {
 	return newEngineExistenceGuarantorWithCustomVersion(
 		ctx,
@@ -137,6 +141,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 		domain,
 		logRetentionPeriod,
 		sinks,
+		shouldTurnOffPersistentVolumeLogsCollection,
 	)
 }
 
@@ -160,6 +165,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 	domain string,
 	logRetentionPeriod string,
 	sinks logs_aggregator.Sinks,
+	shouldTurnOffPersistentVolumeLogsCollection bool,
 ) *engineExistenceGuarantor {
 	return &engineExistenceGuarantor{
 		ctx:                                  ctx,
@@ -183,6 +189,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 		domain:                                    domain,
 		logRetentionPeriod:                        logRetentionPeriod,
 		sinks:                                     sinks,
+		shouldTurnOffPersistentVolumeLogsCollection: shouldTurnOffPersistentVolumeLogsCollection,
 	}
 }
 
@@ -245,6 +252,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.domain,
 			guarantor.logRetentionPeriod,
 			guarantor.sinks,
+			false,
 		)
 	} else {
 		_, _, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
@@ -268,6 +276,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.domain,
 			guarantor.logRetentionPeriod,
 			guarantor.sinks,
+			false,
 		)
 	}
 	if engineLaunchErr != nil {

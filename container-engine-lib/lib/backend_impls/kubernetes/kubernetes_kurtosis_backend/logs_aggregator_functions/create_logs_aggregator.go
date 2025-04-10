@@ -16,6 +16,7 @@ func CreateLogsAggregator(
 	logsAggregatorResourcesManager LogsAggregatorResourcesManager,
 	logsAggregatorHttpPortNumber uint16,
 	sinks logs_aggregator.Sinks,
+	shouldTurnOffPersistentVolumeLogsCollection bool,
 	objAttrProvider object_attributes_provider.KubernetesObjectAttributesProvider,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (*logs_aggregator.LogsAggregator, func(), error) {
@@ -40,6 +41,7 @@ func CreateLogsAggregator(
 			defaultLogsListeningPortNum,
 			sinks,
 			logsAggregatorHttpPortNumber,
+			shouldTurnOffPersistentVolumeLogsCollection,
 			engineNamespace,
 			objAttrProvider,
 			kubernetesManager)

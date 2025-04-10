@@ -23,9 +23,12 @@ func newVectorConfig(
 	listeningPortNumber uint16,
 	httpPortNumber uint16,
 	sinks logs_aggregator.Sinks,
+	shouldTurnOffPersistentVolumeLogsCollection bool,
 ) *VectorConfig {
-	reconciledSinks := map[string]map[string]interface{}{
-		logs_aggregator.DefaultSinkId: {
+	reconciledSinks := map[string]map[string]interface{}{}
+
+	if !shouldTurnOffPersistentVolumeLogsCollection {
+		reconciledSinks[logs_aggregator.DefaultSinkId] = map[string]interface{}{
 			"type":   fileSinkType,
 			"inputs": []string{defaultSourceId},
 			"path":   uuidLogsFilepath,
@@ -39,7 +42,7 @@ func newVectorConfig(
 				"max_size":  bufferSize,
 				"when_full": "block",
 			},
-		},
+		}
 	}
 
 	for sinkId, sinkConfig := range sinks {

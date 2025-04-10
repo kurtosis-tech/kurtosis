@@ -24,11 +24,12 @@ const (
 type kurtosisBackendSupplier func(ctx context.Context) (backend_interface.KurtosisBackend, error)
 
 type KurtosisClusterConfig struct {
-	kurtosisBackendSupplier     kurtosisBackendSupplier
-	engineBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
-	clusterType                 KurtosisClusterType
-	logsAggregator              LogsAggregatorConfig
-	graflokiConfig              GrafanaLoki
+	kurtosisBackendSupplier                     kurtosisBackendSupplier
+	engineBackendConfigSupplier                 engine_server_launcher.KurtosisBackendConfigSupplier
+	clusterType                                 KurtosisClusterType
+	logsAggregator                              LogsAggregatorConfig
+	graflokiConfig                              GrafanaLoki
+	shouldTurnOffPersistentVolumeLogsCollection bool
 }
 
 type LogsAggregatorConfig struct {
@@ -95,6 +96,7 @@ func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v5.Kurto
 		clusterType:                 clusterType,
 		logsAggregator:              logsAggregator,
 		graflokiConfig:              grafloki,
+		shouldTurnOffPersistentVolumeLogsCollection: overrides.ShouldTurnOffDefaultLogsSink,
 	}, nil
 }
 
@@ -120,6 +122,10 @@ func (clusterConfig *KurtosisClusterConfig) GetLogsAggregatorConfig() LogsAggreg
 
 func (clusterConfig *KurtosisClusterConfig) GetGraflokiConfig() GrafanaLoki {
 	return clusterConfig.graflokiConfig
+}
+
+func (clusterConfig *KurtosisClusterConfig) ShouldTurnOffPersistentVolumeLogsCollection() bool {
+	return clusterConfig.shouldTurnOffPersistentVolumeLogsCollection
 }
 
 // ====================================================================================================
