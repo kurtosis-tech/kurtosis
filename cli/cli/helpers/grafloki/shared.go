@@ -2,7 +2,6 @@ package grafloki
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
@@ -41,7 +40,7 @@ type GrafanaDatasources struct {
 	Datasources []GrafanaDatasource `yaml:"datasources"`
 }
 
-func StartGrafloki(ctx context.Context, clusterType resolved_config.KurtosisClusterType, graflokiConfig resolved_config.GrafanaLoki) (logs_aggregator.Sinks, error) {
+func StartGrafloki(ctx context.Context, clusterType resolved_config.KurtosisClusterType, graflokiConfig resolved_config.GrafanaLoki) (logs_aggregator.Sinks, string, error) {
 	var lokiHost string
 	var grafanaUrl string
 	var err error
@@ -49,15 +48,15 @@ func StartGrafloki(ctx context.Context, clusterType resolved_config.KurtosisClus
 	case resolved_config.KurtosisClusterType_Docker:
 		lokiHost, grafanaUrl, err = StartGrafLokiInDocker(ctx, graflokiConfig)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred starting Grafana and Loki in Docker.")
+			return nil, "", stacktrace.Propagate(err, "An error occurred starting Grafana and Loki in Docker.")
 		}
 	case resolved_config.KurtosisClusterType_Kubernetes:
 		lokiHost, grafanaUrl, err = StartGrafLokiInKubernetes(ctx, graflokiConfig)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred starting Grafana and Loki in Kubernetes.")
+			return nil, "", stacktrace.Propagate(err, "An error occurred starting Grafana and Loki in Kubernetes.")
 		}
 	default:
-		return nil, stacktrace.NewError("Unsupported cluster type: %v", clusterType.String())
+		return nil, "", stacktrace.NewError("Unsupported cluster type: %v", clusterType.String())
 	}
 
 	// This matches the exact configurations here: https://vector.dev/docs/reference/configuration/sinks/loki/
@@ -73,9 +72,8 @@ func StartGrafloki(ctx context.Context, clusterType resolved_config.KurtosisClus
 			},
 		},
 	}
-	out.PrintOutLn(fmt.Sprintf("Grafana running at %v", grafanaUrl))
 
-	return lokiSink, nil
+	return lokiSink, grafanaUrl, nil
 }
 
 func StopGrafloki(ctx context.Context, clusterType resolved_config.KurtosisClusterType) error {

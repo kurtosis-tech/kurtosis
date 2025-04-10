@@ -199,12 +199,14 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(
 	clusterType := manager.clusterConfig.GetClusterType()
 
 	var lokiSink logs_aggregator.Sinks
+	var grafanaUrl string
 	if manager.clusterConfig.GetGraflokiConfig().ShouldStartBeforeEngine {
-		lokiSink, err = grafloki.StartGrafloki(ctx, clusterType, manager.clusterConfig.GetGraflokiConfig())
+		lokiSink, grafanaUrl, err = grafloki.StartGrafloki(ctx, clusterType, manager.clusterConfig.GetGraflokiConfig())
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred starting Grafana and Loki before engine.")
 		}
 	}
+	logrus.Infof("Grafana running at %v", grafanaUrl)
 	additionalSinks = combineSinks(additionalSinks, lokiSink)
 
 	engineGuarantor := newEngineExistenceGuarantorWithDefaultVersion(
@@ -259,12 +261,14 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 	clusterType := manager.clusterConfig.GetClusterType()
 
 	var lokiSink logs_aggregator.Sinks
+	var grafanaUrl string
 	if manager.clusterConfig.GetGraflokiConfig().ShouldStartBeforeEngine {
-		lokiSink, err = grafloki.StartGrafloki(ctx, clusterType, manager.clusterConfig.GetGraflokiConfig())
+		lokiSink, grafanaUrl, err = grafloki.StartGrafloki(ctx, clusterType, manager.clusterConfig.GetGraflokiConfig())
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred starting Grafana and Loki before engine.")
 		}
 	}
+	logrus.Infof("Grafana running at %v", grafanaUrl)
 	additionalSinks = combineSinks(additionalSinks, lokiSink)
 
 	engineGuarantor := newEngineExistenceGuarantorWithCustomVersion(

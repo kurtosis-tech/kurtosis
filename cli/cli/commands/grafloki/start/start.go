@@ -52,10 +52,11 @@ func run(
 	// putting it in the CLI is saying - “You could set up Grafana and Loki yourself, and then restart the engine to point to it, Kurtosis CLI will do that for you to save you a step”
 	// putting it in Kurtosis core is saying - “Grafana and Loki are core a necessary part of the Kurtosis platform and supports the Kurtosis abstraction/value prop" - which is not the case
 	// https://drawpaintacademy.com/the-bull/
-	lokiSink, err := grafloki.StartGrafloki(ctx, clusterConfig.GetClusterType(), clusterConfig.GetGraflokiConfig())
+	lokiSink, grafanaUrl, err := grafloki.StartGrafloki(ctx, clusterConfig.GetClusterType(), clusterConfig.GetGraflokiConfig())
 	if err != nil {
 		return err // already wrapped
 	}
+	logrus.Infof("Grafana running at %v", grafanaUrl)
 
 	logrus.Infof("Configuring engine to send logs to Loki...")
 	err = restartEngineWithLogsSink(ctx, lokiSink)
