@@ -100,7 +100,7 @@ func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes
 		[]apiv1.Container{
 			{
 				Name:  "loki",
-				Image: lokiImage,
+				Image: defaultLokiImage,
 				Ports: []apiv1.ContainerPort{
 					{
 						Name:          "",
@@ -265,7 +265,7 @@ func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes
 		[]apiv1.Container{
 			{
 				Name:  "grafana",
-				Image: grafanaImage,
+				Image: defaultGrafanaImage,
 				Ports: []apiv1.ContainerPort{
 					{
 						Name:          "",

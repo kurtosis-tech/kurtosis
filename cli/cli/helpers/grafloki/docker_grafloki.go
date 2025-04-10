@@ -61,7 +61,7 @@ func StartGrafLokiInDocker(ctx context.Context, graflokiConfig resolved_config.G
 	return lokiHost, grafanaUrl, nil
 }
 
-func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_manager.DockerManager) (string, error) {
+func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_manager.DockerManager, graflokConfig resolved_config.GrafanaLoki) (string, error) {
 	lokiNatPort := nat.Port(strconv.Itoa(lokiPort) + "/tcp")
 	grafanaNatPort := nat.Port(strconv.Itoa(grafanaPort) + "/tcp")
 
@@ -70,6 +70,10 @@ func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_m
 		return "", stacktrace.Propagate(err, "An error occurred getting Docker network id by Name: %v", bridgeNetworkName)
 	}
 
+	lokiImage := defaultLokiImage
+	if graflokConfig.LokiImage != "" {
+		lokiImage = graflokConfig.LokiImage
+	}
 	lokiArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(lokiImage, LokiContainerName, bridgeNetworkId).
 		WithUsedPorts(map[nat.Port]docker_manager.PortPublishSpec{
 			lokiNatPort: docker_manager.NewManualPublishingSpec(lokiPort),
@@ -132,6 +136,10 @@ func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_m
 		return "", stacktrace.Propagate(err, "An error occurred writing config.")
 	}
 
+	grafanaImage := defaultGrafanaImage
+	if graflokConfig.GrafanaImage != "" {
+		grafanaImage = graflokConfig.GrafanaImage
+	}
 	root := service_user.NewServiceUser(rootUserUid)
 	grafanaArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(grafanaImage, GrafanaContainerName, bridgeNetworkId).
 		WithUsedPorts(map[nat.Port]docker_manager.PortPublishSpec{
