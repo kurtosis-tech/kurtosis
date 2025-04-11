@@ -176,7 +176,7 @@ func PrintEnclaveInspect(ctx context.Context, kurtosisCtx *kurtosis_context.Kurt
 		}
 
 		numRunesInHeader := utf8.RuneLen(' ') + utf8.RuneCountInString(header) + utf8.RuneLen(' ') // there will be a space before and after the header
-		numPadChars := (headerWidthChars - numRunesInHeader) / 2                                   //nolint:gomnd
+		numPadChars := (headerWidthChars - numRunesInHeader) / 2                                   //nolint:mnd
 		padStr := strings.Repeat(headerPadChar, numPadChars)
 		fmt.Printf("%v %v %v\n", padStr, header, padStr)
 

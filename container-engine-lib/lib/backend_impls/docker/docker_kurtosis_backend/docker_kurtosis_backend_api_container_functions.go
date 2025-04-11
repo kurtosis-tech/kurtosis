@@ -452,14 +452,14 @@ func (backend *DockerKurtosisBackend) getMatchingApiContainers(ctx context.Conte
 		}
 
 		// If the ID filter is specified, drop API containers not matching it
-		if filters.EnclaveIDs != nil && len(filters.EnclaveIDs) > 0 {
+		if len(filters.EnclaveIDs) > 0 {
 			if _, found := filters.EnclaveIDs[apicObj.GetEnclaveID()]; !found {
 				continue
 			}
 		}
 
 		// If status filter is specified, drop API containers not matching it
-		if filters.Statuses != nil && len(filters.Statuses) > 0 {
+		if len(filters.Statuses) > 0 {
 			if _, found := filters.Statuses[apicObj.GetStatus()]; !found {
 				continue
 			}

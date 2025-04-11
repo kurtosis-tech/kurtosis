@@ -182,6 +182,12 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServicePod
 	}
 	labels[kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey] = label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue
 
+	uuidLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(string(serviceUUID))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a short GUID Kubernetes label value from GUID string '%v'", string(serviceUUID))
+	}
+	labels[kubernetes_label_key.LogsServiceUUIDKubernetesLabelKey] = uuidLabelValue
+
 	// add user custom label
 	for userLabelKey, userLabelValue := range userLabels {
 		kubernetesLabelKey, err := kubernetes_label_key.CreateNewKubernetesUserCustomLabelKey(userLabelKey)
@@ -342,6 +348,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEncla
 	return map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
 		kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EnclaveKurtosisResourceTypeKubernetesLabelValue,
 		kubernetes_label_key.EnclaveUUIDKubernetesLabelKey:          enclaveIdLabelValue,
+		kubernetes_label_key.LogsEnclaveUUIDKubernetesLabelKey:      enclaveIdLabelValue,
 	}, nil
 }
 

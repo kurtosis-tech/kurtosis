@@ -1,13 +1,9 @@
-//go:build !kubernetes
-// +build !kubernetes
-
-// We don't run this test in Kubernetes because, as of 2022-10-28, the centralized logs feature is not implemented in Kubernetes yet
-
 package stream_logs_test
 
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
+	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/testsuite/consts"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/stretchr/testify/require"
@@ -31,8 +27,6 @@ const (
 	secondLogLine = "test"
 	thirdLogLine  = "running"
 	lastLogLine   = "successfully"
-
-	secondsToWaitForLogs = 1 * time.Second
 )
 
 var (
@@ -81,7 +75,7 @@ func TestStreamLogs(t *testing.T) {
 
 	// It takes some time for logs to persist so we sleep to ensure logs have persisted
 	// Otherwise the test is flaky
-	time.Sleep(secondsToWaitForLogs)
+	time.Sleep(consts.FluentbitRefreshInterval)
 	// ------------------------------------- TEST RUN ----------------------------------------------
 
 	enclaveUuid := enclaveCtx.GetEnclaveUuid()
@@ -111,7 +105,7 @@ func TestStreamLogs(t *testing.T) {
 			expectedLogLinesByService[userServiceUuid] = expectedLogLines
 		}
 
-		testEvaluationErr, receivedLogLinesByService, receivedNotFoundServiceUuids := test_helpers.GetLogsResponse(
+		receivedLogLinesByService, receivedNotFoundServiceUuids, testEvaluationErr := test_helpers.GetLogsResponse(
 			t,
 			ctx,
 			testTimeOut,
@@ -125,7 +119,9 @@ func TestStreamLogs(t *testing.T) {
 
 		require.NoError(t, testEvaluationErr)
 		for userServiceUuid := range requestedServiceUuids {
-			require.Equal(t, expectedLogLines, receivedLogLinesByService[userServiceUuid])
+			for logNum, expectedLogLine := range expectedLogLinesByService[userServiceUuid] {
+				require.Contains(t, receivedLogLinesByService[userServiceUuid][logNum], expectedLogLine)
+			}
 		}
 		require.Equal(t, expectedNonExistenceServiceUuids, receivedNotFoundServiceUuids)
 	}

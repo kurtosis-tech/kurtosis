@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	randomError = errors.New("This error was random.")
+	ErrRandomError = errors.New("this error was random")
 
 	doSomething Operation = func() (interface{}, error) {
 		for i := 0; i < 5; i++ {
@@ -18,7 +18,7 @@ var (
 	}
 	doSomethingError Operation = func() (interface{}, error) {
 		// do something
-		return nil, randomError
+		return nil, ErrRandomError
 	}
 )
 
@@ -53,7 +53,7 @@ func TestOperationInParallelReturnsFailedOperations(t *testing.T) {
 	require.Equal(t, 3, numFailed)
 	require.Equal(t, 0, numSucceeded)
 	for _, err := range failed {
-		require.ErrorIs(t, randomError, err)
+		require.ErrorIs(t, ErrRandomError, err)
 	}
 }
 
@@ -73,7 +73,7 @@ func TestOperationInParallelReturnsBothSuccessAndFailedOperations(t *testing.T) 
 	require.Equal(t, 2, numSucceeded)
 	for id, err := range failed {
 		require.Equal(t, "first", string(id))
-		require.ErrorIs(t, randomError, err)
+		require.ErrorIs(t, ErrRandomError, err)
 	}
 }
 
@@ -138,11 +138,11 @@ func TestOperationsInParallelUsingDeferFunctionsExecuteDeferCorrectly(t *testing
 			}
 		}()
 
-		return nil, randomError
+		return nil, ErrRandomError
 	}
 
 	var operationWithDeferNoError Operation = func() (interface{}, error) {
-		var p *int = new(int)
+		var p = new(int)
 		*p = 1
 
 		undo := true

@@ -36,6 +36,8 @@ Because of this additional layer of abstraction, we are able to introduce severa
 - First-class plug-and-play composability; it's expected for users to import stack definitions into larger stacks, and this experience is optimized
 - The ability to get all of the above, but running over _either_ the docker engine or k8s, at your election
 
+`NOTE: we do NOT recommend using Kurtosis to deploy long term production environments at this moment. Any issues/Discords related to production usage will be closed.`
+
 How do I get going?
 ===================
 To see Kurtosis in action, first install it using the instructions [here](https://docs.kurtosis.com/install).
@@ -162,21 +164,21 @@ On MacOS:
 brew install docker
 ```
 
-#### Go (1.20 or above)
+#### Go (1.23 or above)
 
 On MacOS:
 ```bash
-brew install go@1.20
+brew install go@1.23
 # Add the Go binary dir to your PATH
-PATH="${BREW_PREFIX}/opt/go@1.20/bin:$PATH"
+PATH="${BREW_PREFIX}/opt/go@1.23/bin:$PATH"
 # Add the GOPATH bin dir to your PATH
 PATH="${HOME}/go/bin:$PATH"
 ```
 
 On Ubuntu:
 ```bash
-wget https://go.dev/dl/go1.20.8.linux-amd64.tar.gz
-tar -C /usr/local -zxf go1.20.8.linux-amd64.tar.gz
+wget https://go.dev/dl/go1.23.7.linux-amd64.tar.gz
+tar -C /usr/local -zxf go1.23.7.linux-amd64.tar.gz
 # Add the following to your bashrc or equivalent.
 export PATH=$PATH:/usr/local/go/bin
 ```
@@ -273,16 +275,47 @@ To only build a specific project, run the script on `./PROJECT/PATH/script/build
 ./cli/scripts/build.sh
 ```
 
+
 If there are any changes to the Protobuf files in the `api` subdirectory, the Protobuf bindings must be regenerated:
 
 ```bash
 ./api/scripts/regenerate-protobuf-bindings.sh
 ```
 
-Build scripts also run unit tests as part of the build process.
+Running Dev Version
+----------------------
+
+After building the project, run `./cli/cli/scripts/launch-cli.sh` just like you would the kurtosis command. This will launch the latest locally built version of the CLI, which will also start the engine and core containers using their latest built images.
+
+You can verify this by running `./cli/cli/launch-cli.sh engine status` and
+```
+A Kurtosis engine is running with the following info:
+Version:   53d823 <-- or `-dirty` depending on the commit
+```
+
+The version will be identical to the version on the latest dev versions of the engine image created - (can verify with `docker images`). Enclaves started by the engine will be started with the same version as the engine. 
+
+If you'd like to specify a different core image version than that of the engine, you can do so with the `--api-container-version` flag on `enclave add` (e.g. `./cli/cli/scripts/build.sh enclave add --api-container-version <image tag>`).
+
+If you are working on multiple dev versions of the engine at a time, you can use `engine restart --version <image tag>` to specify exactly what version of the engine to use.
+
+For frequent contributors, we recommend attaching an alias to `kurtosis` and `./cli/cli/scripts/launch-cli.sh`. 
+
+```bash
+alias kt="kurtosis"
+alias dkt="$(pwd)/cli/cli/scripts/launch-cli.sh"
+```
+
+If you want tab completion on the recently built CLI, you can alias it to `kurtosis`:
+
+```bash
+alias kurtosis="$(pwd)/cli/cli/scripts/launch-cli.sh"
+kurtosis enclave add
+```
 
 Unit Test Instructions
 ----------------------
+Build scripts also run unit tests as part of the build process.
 
 For all Go modules, run `go test ./...` on the module folder. For example:
 
@@ -321,22 +354,6 @@ $ ./internal_testsuites/scripts/test.sh
 
 If you are developing the Typescript test, make sure that you have first built `api/typescript`. Any
 changes made to the Typescript package within `api/typescript` aren't hot loaded as of 2022-09-29.
-
-Dev Run Instructions
---------------------
-
-Once the project has built, run `./cli/cli/scripts/launch-cli.sh` as if it was the `kurtosis` command:
-
-```bash
-./cli/cli/scripts/launch-cli.sh enclave add
-```
-
-If you want tab completion on the recently built CLI, you can alias it to `kurtosis`:
-
-```bash
-alias kurtosis="$(pwd)/cli/cli/scripts/launch-cli.sh"
-kurtosis enclave add
-```
 
 Run Debug Instructions (for Golang code so far)
 ----------------------------------------------

@@ -22,7 +22,8 @@ var (
 	// https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
 	// https://kubernetes.io/docs/concepts/services-networking/service/
 	// nolint: gomnd
-	ServiceNameRegex = regexp.MustCompile(generateRegex(63))
+	maxSvcNameLength = 63
+	ServiceNameRegex = regexp.MustCompile(generateRegex(maxSvcNameLength))
 
 	// PortNameRegex implements RFC-6335 for naming ports, namely:
 	// * contain at least 1 character
@@ -35,12 +36,13 @@ var (
 	// We use this over RFC-6335 as Port Names require 6335 to be followed
 	// https://github.com/kubernetes/kubernetes/blob/master/staging/src/k8s.io/apimachinery/pkg/util/validation/validation.go#L326-L351
 	// nolint: gomnd
-	PortNameRegex = regexp.MustCompile(generateRegex(15))
+	maxPortNameLength = 15
+	PortNameRegex     = regexp.MustCompile(generateRegex(maxPortNameLength))
 )
 
 // generateRegex creates a regex string based on the provided constraints (RFC-1035 and RFC-6335).
 func generateRegex(maxLen int) string {
-	// nolint: gomnd
+	// nolint: mnd
 	return "^[a-z]([-a-z0-9]{0," + strconv.Itoa(maxLen-2) + "}[a-z0-9])?$"
 }
 

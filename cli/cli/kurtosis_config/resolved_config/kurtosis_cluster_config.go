@@ -2,13 +2,14 @@ package resolved_config
 
 import (
 	"context"
-	v2 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v2"
+	v4 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v4"
 	"strings"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/configs"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/stacktrace"
@@ -16,6 +17,8 @@ import (
 
 const (
 	defaultKubernetesEnclaveDataVolumeSizeInMegabytes = uint(1024)
+	// this will schedule engine on node selected by k8s scheduler
+	defaultEngineNodeName = ""
 )
 
 type kurtosisBackendSupplier func(ctx context.Context) (backend_interface.KurtosisBackend, error)
@@ -24,9 +27,14 @@ type KurtosisClusterConfig struct {
 	kurtosisBackendSupplier     kurtosisBackendSupplier
 	engineBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
 	clusterType                 KurtosisClusterType
+	logsAggregator              LogsAggregatorConfig
 }
 
-func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v2.KurtosisClusterConfigV2) (*KurtosisClusterConfig, error) {
+type LogsAggregatorConfig struct {
+	Sinks logs_aggregator.Sinks
+}
+
+func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v4.KurtosisClusterConfigV4) (*KurtosisClusterConfig, error) {
 	if overrides.Type == nil {
 		return nil, stacktrace.NewError("Kurtosis cluster must have a defined type")
 	}
@@ -47,10 +55,29 @@ func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v2.Kurto
 		return nil, stacktrace.Propagate(err, "An error occurred getting the suppliers that cluster '%v' will use", clusterId)
 	}
 
+	logsAggregator := LogsAggregatorConfig{
+		Sinks: nil,
+	}
+
+	if overrides.LogsAggregator != nil {
+		if len(overrides.LogsAggregator.Sinks) > 0 {
+			for sinkId := range overrides.LogsAggregator.Sinks {
+				// We add a default file sink as the logs database for certain log commands (i.e. kurtosis service logs) to work, hence this validation
+				// A potential improvement would be that all log-related commands are compatible with user-defined sinks
+				if sinkId == logs_aggregator.DefaultSinkId {
+					return nil, stacktrace.NewError("The LogsAggregator Sinks had a sink named %s which is reserved for Kurtosis default sink", logs_aggregator.DefaultSinkId)
+				}
+			}
+
+			logsAggregator.Sinks = overrides.LogsAggregator.Sinks
+		}
+	}
+
 	return &KurtosisClusterConfig{
 		kurtosisBackendSupplier:     backendSupplier,
 		engineBackendConfigSupplier: engineBackendConfigSupplier,
 		clusterType:                 clusterType,
+		logsAggregator:              logsAggregator,
 	}, nil
 }
 
@@ -70,12 +97,16 @@ func (clusterConfig *KurtosisClusterConfig) GetClusterType() KurtosisClusterType
 	return clusterConfig.clusterType
 }
 
+func (clusterConfig *KurtosisClusterConfig) GetLogsAggregatorConfig() LogsAggregatorConfig {
+	return clusterConfig.logsAggregator
+}
+
 // ====================================================================================================
 //
 //	Private Helpers
 //
 // ====================================================================================================
-func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesConfig *v2.KubernetesClusterConfigV2) (
+func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesConfig *v4.KubernetesClusterConfigV4) (
 	kurtosisBackendSupplier,
 	engine_server_launcher.KurtosisBackendConfigSupplier,
 	error,
@@ -144,8 +175,13 @@ func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesC
 			enclaveDataVolumeSizeInMb = *kubernetesConfig.EnclaveSizeInMegabytes
 		}
 
+		engineNodeName := defaultEngineNodeName
+		if kubernetesConfig.EngineNodeName != nil {
+			engineNodeName = *kubernetesConfig.EngineNodeName
+		}
+
 		backendSupplier = func(ctx context.Context) (backend_interface.KurtosisBackend, error) {
-			backend, err := kubernetes_kurtosis_backend.GetCLIBackend(ctx, *kubernetesConfig.StorageClass)
+			backend, err := kubernetes_kurtosis_backend.GetCLIBackend(ctx, *kubernetesConfig.StorageClass, engineNodeName)
 			if err != nil {
 				return nil, stacktrace.Propagate(
 					err,

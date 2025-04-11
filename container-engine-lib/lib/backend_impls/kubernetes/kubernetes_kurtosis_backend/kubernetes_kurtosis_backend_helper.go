@@ -12,23 +12,18 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"os"
-	"path/filepath"
 )
 
-const emptyMasterURL = ""
-
-var kubeConfigFileFilepath = filepath.Join(
-	os.Getenv("HOME"), ".kube", "config",
-)
-
-func GetCLIBackend(ctx context.Context, storageClass string) (backend_interface.KurtosisBackend, error) {
-	kubernetesConfig, err := clientcmd.BuildConfigFromFlags(emptyMasterURL, kubeConfigFileFilepath)
+func GetCLIBackend(ctx context.Context, storageClass string, engineNodeName string) (backend_interface.KurtosisBackend, error) {
+	kubernetesConfig, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
+		clientcmd.NewDefaultClientConfigLoadingRules(), nil,
+	).ClientConfig()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating kubernetes configuration from flags in file '%v'", kubeConfigFileFilepath)
+		return nil, stacktrace.Propagate(err, "An error occurred creating kubernetes configuration")
 	}
 
 	backendSupplier := func(_ context.Context, kubernetesManager *kubernetes_manager.KubernetesManager) (*KubernetesKurtosisBackend, error) {
-		return NewCLIModeKubernetesKurtosisBackend(kubernetesManager), nil
+		return NewCLIModeKubernetesKurtosisBackend(kubernetesManager, engineNodeName), nil
 	}
 
 	wrappedBackend, err := getWrappedKubernetesKurtosisBackend(

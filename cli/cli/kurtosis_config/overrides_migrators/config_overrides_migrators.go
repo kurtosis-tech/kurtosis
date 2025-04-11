@@ -5,6 +5,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v0"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v1"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v2"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v3"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v4"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
@@ -24,11 +26,128 @@ type configOverridesMigrator = func(uncastedOldConfig interface{}) (interface{},
 // to the bottom each time
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>> INSTRUCTIONS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 var AllConfigOverridesMigrators = map[config_version.ConfigVersion]configOverridesMigrator{
+	config_version.ConfigVersion_v3: migrateFromV3,
+	config_version.ConfigVersion_v2: migrateFromV2,
 	config_version.ConfigVersion_v1: migrateFromV1,
 	config_version.ConfigVersion_v0: migrateFromV0,
 }
 
 // vvvvvvvvvvvvvvvvvvvvvvv REVERSE chronological order so you don't have to scroll forever vvvvvvvvvvvvvvvvvvvv
+func migrateFromV3(uncastedConfig interface{}) (interface{}, error) {
+	// cast "uncastedConfig" to current version we're upgrading from
+	castedOldConfig, ok := uncastedConfig.(*v3.KurtosisConfigV3)
+	if !ok {
+		return nil, stacktrace.NewError(
+			"Failed to cast old configuration '%+v' to expected configuration struct",
+			uncastedConfig,
+		)
+	}
+
+	var newClusters map[string]*v4.KurtosisClusterConfigV4
+	if castedOldConfig.KurtosisClusters != nil {
+		newClusters = map[string]*v4.KurtosisClusterConfigV4{}
+		for oldClusterName, oldClusterConfig := range castedOldConfig.KurtosisClusters {
+			oldKubernetesConfig := oldClusterConfig.Config
+			oldLogsAggregatorConfig := oldClusterConfig.LogsAggregator
+
+			var newKubernetesConfig *v4.KubernetesClusterConfigV4
+			if oldKubernetesConfig != nil {
+				newKubernetesConfig = &v4.KubernetesClusterConfigV4{
+					KubernetesClusterName:  oldKubernetesConfig.KubernetesClusterName,
+					StorageClass:           oldKubernetesConfig.StorageClass,
+					EnclaveSizeInMegabytes: oldKubernetesConfig.EnclaveSizeInMegabytes,
+					EngineNodeName:         nil,
+				}
+			}
+
+			var newLogsAggregator *v4.LogsAggregatorConfigV4
+			if oldLogsAggregatorConfig != nil {
+				newLogsAggregator = &v4.LogsAggregatorConfigV4{
+					Sinks: oldLogsAggregatorConfig.Sinks,
+				}
+			}
+
+			newClusterConfig := &v4.KurtosisClusterConfigV4{
+				Type:           oldClusterConfig.Type,
+				Config:         newKubernetesConfig,
+				LogsAggregator: newLogsAggregator,
+			}
+			newClusters[oldClusterName] = newClusterConfig
+		}
+	}
+
+	var newCloudConfig *v4.KurtosisCloudConfigV4
+	if castedOldConfig.CloudConfig != nil {
+		newCloudConfig = &v4.KurtosisCloudConfigV4{
+			ApiUrl:           castedOldConfig.CloudConfig.ApiUrl,
+			Port:             castedOldConfig.CloudConfig.Port,
+			CertificateChain: castedOldConfig.CloudConfig.CertificateChain,
+		}
+	}
+
+	newConfig := &v4.KurtosisConfigV4{
+		ConfigVersion:     config_version.ConfigVersion_v4,
+		ShouldSendMetrics: castedOldConfig.ShouldSendMetrics,
+		KurtosisClusters:  newClusters,
+		CloudConfig:       newCloudConfig,
+	}
+
+	return newConfig, nil
+}
+
+func migrateFromV2(uncastedConfig interface{}) (interface{}, error) {
+	// cast "uncastedConfig" to current version we're upgrading from
+	castedOldConfig, ok := uncastedConfig.(*v2.KurtosisConfigV2)
+	if !ok {
+		return nil, stacktrace.NewError(
+			"Failed to cast old configuration '%+v' to expected configuration struct",
+			uncastedConfig,
+		)
+	}
+
+	var newClusters map[string]*v3.KurtosisClusterConfigV3
+	if castedOldConfig.KurtosisClusters != nil {
+		newClusters = map[string]*v3.KurtosisClusterConfigV3{}
+		for oldClusterName, oldClusterConfig := range castedOldConfig.KurtosisClusters {
+			oldKubernetesConfig := oldClusterConfig.Config
+
+			var newKubernetesConfig *v3.KubernetesClusterConfigV3
+			if oldKubernetesConfig != nil {
+				newKubernetesConfig = &v3.KubernetesClusterConfigV3{
+					KubernetesClusterName:  oldKubernetesConfig.KubernetesClusterName,
+					StorageClass:           oldKubernetesConfig.StorageClass,
+					EnclaveSizeInMegabytes: oldKubernetesConfig.EnclaveSizeInMegabytes,
+				}
+			}
+
+			newClusterConfig := &v3.KurtosisClusterConfigV3{
+				Type:           oldClusterConfig.Type,
+				Config:         newKubernetesConfig,
+				LogsAggregator: nil,
+			}
+			newClusters[oldClusterName] = newClusterConfig
+		}
+	}
+
+	var newCloudConfig *v3.KurtosisCloudConfigV3
+	if castedOldConfig.CloudConfig != nil {
+		newCloudConfig = &v3.KurtosisCloudConfigV3{
+			ApiUrl:           castedOldConfig.CloudConfig.ApiUrl,
+			Port:             castedOldConfig.CloudConfig.Port,
+			CertificateChain: castedOldConfig.CloudConfig.CertificateChain,
+		}
+	}
+
+	newConfig := &v3.KurtosisConfigV3{
+		ConfigVersion:     config_version.ConfigVersion_v3,
+		ShouldSendMetrics: castedOldConfig.ShouldSendMetrics,
+		KurtosisClusters:  newClusters,
+		CloudConfig:       newCloudConfig,
+	}
+
+	return newConfig, nil
+}
+
 func migrateFromV1(uncastedConfig interface{}) (interface{}, error) {
 	// cast "uncastedConfig" to current version we're upgrading from
 	castedOldConfig, ok := uncastedConfig.(*v1.KurtosisConfigV1)

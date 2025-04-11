@@ -7,6 +7,7 @@ import (
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/docker_config_storage_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/github_auth_storage_creator"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
@@ -31,9 +32,9 @@ const (
 	enclaveManagerUIPort                        = 9711
 	enclaveManagerAPIPort                       = 8081
 	engineDebugServerPort                       = 50102 // in ClI this is 50101 and 50103 for the APIC
+	defaultHttpLogsAggregatorPortNum            = 8686
 	maxWaitForEngineAvailabilityRetries         = 40
 	timeBetweenWaitForEngineAvailabilityRetries = 2 * time.Second
-	logsStorageDirPath                          = "/var/log/kurtosis/"
 )
 
 func CreateEngine(
@@ -44,6 +45,7 @@ func CreateEngine(
 	envVars map[string]string,
 	shouldStartInDebugMode bool,
 	gitAuthToken string,
+	sinks logs_aggregator.Sinks,
 	dockerManager *docker_manager.DockerManager,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 ) (
@@ -103,6 +105,8 @@ func CreateEngine(
 	_, removeLogsAggregatorFunc, err := logs_aggregator_functions.CreateLogsAggregator(
 		ctx,
 		logsAggregatorContainer,
+		defaultHttpLogsAggregatorPortNum,
+		sinks,
 		dockerManager,
 		objAttrsProvider)
 	if err != nil {
@@ -265,6 +269,7 @@ func CreateEngine(
 	if err = dockerManager.CreateVolume(ctx, dockerConfigStorageVolNameStr, dockerConfigStorageVolLabelStrs); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating Docker config storage volume.")
 	}
+	logrus.Tracef("Creating Docker config storage")
 	err = docker_config_storage_creator.CreateDockerConfigStorage(ctx, targetNetworkId, dockerConfigStorageVolNameStr, consts.DockerConfigStorageDirPath, dockerManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating Docker config storage.")
@@ -276,7 +281,7 @@ func CreateEngine(
 	}
 
 	volumeMounts := map[string]string{
-		logsStorageVolNameStr:         logsStorageDirPath,
+		logsStorageVolNameStr:         logsAggregatorContainer.GetLogsBaseDirPath(),
 		githubAuthStorageVolNameStr:   consts.GitHubAuthStorageDirPath,
 		dockerConfigStorageVolNameStr: consts.DockerConfigStorageDirPath,
 	}

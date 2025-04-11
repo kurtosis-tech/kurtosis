@@ -147,7 +147,7 @@ func storeTokenInVolume(
 		}
 
 		// Tiny optimization to not sleep if we're not going to run the loop again
-		if i < maxRetries {
+		if i < maxRetries-1 {
 			time.Sleep(timeBetweenRetries)
 		}
 	}

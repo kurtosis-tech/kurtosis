@@ -183,6 +183,24 @@ func CollectMatchingDaemonSets(
 	return postFilterKubernetesResources(getListOfPointersFromListOfElements(objects.Items), postFilterLabelKey, postFilterLabelValues)
 }
 
+func CollectMatchingDeployments(
+	ctx context.Context,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+	namespace string,
+	searchLabels map[string]string,
+	postFilterLabelKey string,
+	postFilterLabelValues map[string]bool,
+) (
+	map[string][]*v1.Deployment,
+	error,
+) {
+	objects, err := kubernetesManager.GetDeploymentsByLabels(ctx, namespace, searchLabels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes resources matching labels: %+v", searchLabels)
+	}
+	return postFilterKubernetesResources(getListOfPointersFromListOfElements(objects.Items), postFilterLabelKey, postFilterLabelValues)
+}
+
 func CollectMatchingConfigMaps(
 	ctx context.Context,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
@@ -199,6 +217,28 @@ func CollectMatchingConfigMaps(
 		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes resources matching labels: %+v", searchLabels)
 	}
 	return postFilterKubernetesResources(getListOfPointersFromListOfElements(objects.Items), postFilterLabelKey, postFilterLabelValues)
+}
+
+func CollectMatchingNodeLabels(
+	ctx context.Context,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+	nodeName string,
+	searchLabels map[string]bool,
+) (
+	map[string]string,
+	error,
+) {
+	labels, err := kubernetesManager.GetLabelsOnNode(ctx, nodeName)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes resources matching labels: %+v", searchLabels)
+	}
+	matchingNodeLabels := map[string]string{}
+	for k, v := range labels {
+		if _, ok := searchLabels[k]; ok {
+			matchingNodeLabels[k] = v
+		}
+	}
+	return matchingNodeLabels, nil
 }
 
 func getListOfPointersFromListOfElements[T any](list []T) []*T {

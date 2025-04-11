@@ -111,14 +111,19 @@ func storeConfigInVolume(
 	}
 
 	// Add the auths for each registry
+	logrus.Tracef("Getting auth from docker config for registries: %v", registries)
 	for _, registry := range registries {
+		logrus.Tracef("Getting auth from docker config for registry: %s", registry)
 		creds, err := docker_manager.GetAuthFromDockerConfig(registry)
 		if err != nil {
 			logrus.Warnf("An error occurred getting auth for registry '%v' from Docker config: %v", registry, err)
 		}
 		// creds can be nil if the registry doesn't have auth
-		if err != nil && creds != nil {
+		if err == nil && creds != nil {
 			cfg.Auths[registry] = *creds
+			logrus.Tracef("Found auth config for docker registry: %s", registry)
+		} else {
+			logrus.Tracef("No auth config found for docker registry: %s", registry)
 		}
 	}
 
@@ -164,7 +169,7 @@ func storeConfigInVolume(
 		}
 
 		// Tiny optimization to not sleep if we're not going to run the loop again
-		if i < maxRetries {
+		if i < maxRetries-1 {
 			time.Sleep(timeBetweenRetries)
 		}
 	}
