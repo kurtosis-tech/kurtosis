@@ -300,7 +300,7 @@ func GetEmptyServiceConfig() *ServiceConfig {
 		0,
 		"",
 		0,
-		1,
+		0,
 		map[string]string{},
 		nil,
 		[]v1.Toleration{},

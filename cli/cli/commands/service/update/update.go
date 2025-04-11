@@ -176,144 +176,69 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting an enclave context from enclave info for enclave '%v'", enclaveIdentifier)
 	}
 
-	var overrideImage string
-	var overridePorts map[string]*kurtosis_core_rpc_api_bindings.Port
-	var overrideFilesArtifactsMountpoint map[string][]string
-	var overrideEntrypoint []string
-	var overrideCmd []string
-	var overrideEnvVars map[string]string
-
 	imageStr, err := flags.GetString(service_helpers.ImageKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the image using key '%v'", service_helpers.ImageKey)
 	}
-	overrideImage = imageStr
 
 	cmdStr, err := flags.GetString(service_helpers.CmdKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the cmd using key '%v'", service_helpers.CmdKey)
-	}
-	if cmdStr != "" {
-		overrideCmd = strings.Split(cmdStr, service_helpers.EntrypointAndCmdDelimiter)
 	}
 
 	entrypointStr, err := flags.GetString(service_helpers.EntrypointFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the ENTRYPOINT binary using key '%v'", service_helpers.EntrypointFlagKey)
 	}
-	if entrypointStr != "" {
-		overrideEntrypoint = strings.Split(entrypointStr, service_helpers.EntrypointAndCmdDelimiter)
-	}
 
 	envVarsStr, err := flags.GetString(service_helpers.EnvvarsFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the env vars string using key '%v'", service_helpers.EnvvarsFlagKey)
-	}
-	if envVarsStr != "" {
-		overrideEnvVars, err = service_helpers.ParseEnvVarsStr(envVarsStr)
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred parsing env vars string: %v", envVarsStr)
-		}
 	}
 
 	portsStr, err := flags.GetString(service_helpers.PortsFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the ports string using key '%v'", service_helpers.PortsFlagKey)
 	}
-	if portsStr != "" {
-		overridePorts, err = service_helpers.ParsePortsStr(portsStr)
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred parsing ports string: %v", portsStr)
-		}
-	}
 
 	filesArtifactMountsStr, err := flags.GetString(service_helpers.FilesFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the files artifact mounts string using key '%v'", service_helpers.FilesFlagKey)
 	}
-	if filesArtifactMountsStr != "" {
-		overrideFilesArtifactsMountpoint, err = service_helpers.ParseFilesArtifactMountsStr(filesArtifactMountsStr)
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred parsing files artifacts mount points string: %v", filesArtifactMountsStr)
-		}
-	}
+
+	overridesServiceConfig, err := parseOverridesServiceConfigFromFlags(
+		imageStr,
+		entrypointStr,
+		cmdStr,
+		filesArtifactMountsStr,
+		envVarsStr,
+		portsStr)
 
 	_, currServiceConfig, err := service_helpers.GetServiceInfo(ctx, kurtosisCtx, enclaveIdentifier, serviceName)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting service info of service '%v' in enclave '%v'.", serviceName, enclaveIdentifier)
 	}
 
-	// merge overrides with existing service config
-	// if override image was provided, use that as the image, otherwise keep curr
-	var mergedImage string
-	if overrideImage != "" {
-		mergedImage = overrideImage
-	} else {
-		mergedImage = currServiceConfig.Image
-	}
-
-	// if override entrypoint was provided, use that as the entrypoint, otherwise keep curr
-	var mergedEntrypoint []string
-	if len(overrideEntrypoint) > 0 {
-		mergedEntrypoint = overrideEntrypoint
-	} else {
-		mergedEntrypoint = currServiceConfig.Entrypoint
-	}
-
-	// if override cmd was provided, use that as the cmd, otherwise keep curr
-	var mergedCmd []string
-	if len(overrideCmd) > 0 {
-		mergedCmd = overrideCmd
-	} else {
-		mergedCmd = currServiceConfig.Cmd
-	}
-
-	// combine current ports with override ports
-	mergedPorts := map[string]*kurtosis_core_rpc_api_bindings.Port{}
-	currApiPorts := services.ConvertJsonPortToApiPort(currServiceConfig.PrivatePorts)
-	for portId, port := range currApiPorts {
-		mergedPorts[portId] = port
-	}
-	for portId, port := range overridePorts {
-		mergedPorts[portId] = port
-	}
-
-	// combine current env vars with override env vars
-	mergedEnvVarsMap := map[string]string{}
-	for key, val := range currServiceConfig.EnvVars {
-		mergedEnvVarsMap[key] = val
-	}
-	for key, val := range overrideEnvVars {
-		mergedEnvVarsMap[key] = val
-	}
-
-	// combine current files artifacts mount points with override mount points
-	mergedFilesArtifactsMountpoint := map[string][]string{}
-	for key, val := range currServiceConfig.Files {
-		mergedFilesArtifactsMountpoint[key] = val
-	}
-	for key, val := range overrideFilesArtifactsMountpoint {
-		mergedFilesArtifactsMountpoint[key] = val
-	}
+	updatedServiceConfig := createUpdatedServiceConfigFromOverrides(overridesServiceConfig, currServiceConfig)
 
 	// call getServiceConfig
 	serviceConfigStr := services.GetFullServiceConfigStarlark(
-		mergedImage,
-		mergedPorts,
-		mergedFilesArtifactsMountpoint,
-		mergedEntrypoint,
-		mergedCmd,
-		mergedEnvVarsMap,
-		currServiceConfig.MaxMillicpus,
-		currServiceConfig.MaxMemory,
-		currServiceConfig.MinMillicpus,
-		currServiceConfig.MinMemory,
-		currServiceConfig.User,
-		currServiceConfig.Tolerations,
-		currServiceConfig.NodeSelectors,
-		currServiceConfig.Labels,
-		currServiceConfig.TiniEnabled,
-		currServiceConfig.PrivateIPAddressPlaceholder,
+		updatedServiceConfig.Image,
+		services.ConvertJsonPortToApiPort(updatedServiceConfig.PrivatePorts),
+		updatedServiceConfig.Files,
+		updatedServiceConfig.Entrypoint,
+		updatedServiceConfig.Cmd,
+		updatedServiceConfig.EnvVars,
+		updatedServiceConfig.MaxMillicpus,
+		updatedServiceConfig.MaxMemory,
+		updatedServiceConfig.MinMillicpus,
+		updatedServiceConfig.MinMemory,
+		updatedServiceConfig.User,
+		updatedServiceConfig.Tolerations,
+		updatedServiceConfig.NodeSelectors,
+		updatedServiceConfig.Labels,
+		updatedServiceConfig.TiniEnabled,
+		updatedServiceConfig.PrivateIPAddressPlaceholder,
 	)
 
 	addServiceStarlarkStr := service_helpers.GetAddServiceStarlarkScript(serviceName, serviceConfigStr)
@@ -325,7 +250,6 @@ func run(
 	}
 
 	out.PrintOutLn(string(starlarkRunResult.RunOutput))
-
 	return nil
 }
 
@@ -342,4 +266,143 @@ func generateExampleForPortFlag() string {
 		service_helpers.PortApplicationProtocolDelimiter,
 		service_helpers.PortNumberProtocolDelimiter,
 	)
+}
+
+func parseOverridesServiceConfigFromFlags(
+	image string,
+	entrypoint string,
+	cmd string,
+	filesArtifactsMount string,
+	envVars string,
+	ports string) (*services.ServiceConfig, error) {
+	var err error
+	overrideImage := image
+
+	var overrideCmd []string
+	if cmd != "" {
+		overrideCmd = []string{cmd}
+	}
+
+	var overrideEntrypoint []string
+	if entrypoint != "" {
+		overrideEntrypoint = []string{entrypoint}
+	}
+
+	var overrideEnvVars map[string]string
+	if envVars != "" {
+		overrideEnvVars, err = service_helpers.ParseEnvVarsStr(envVars)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred parsing env vars string: %v", envVars)
+		}
+	}
+
+	var overridePorts map[string]*kurtosis_core_rpc_api_bindings.Port
+	if ports != "" {
+		overridePorts, err = service_helpers.ParsePortsStr(ports)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred parsing ports string: %v", ports)
+		}
+	}
+
+	var overrideFilesArtifactsMountpoint map[string][]string
+	if filesArtifactsMount != "" {
+		overrideFilesArtifactsMountpoint, err = service_helpers.ParseFilesArtifactMountsStr(filesArtifactsMount)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred parsing files artifacts mount points string: %v", filesArtifactsMount)
+		}
+	}
+
+	return &services.ServiceConfig{
+		Image:                       overrideImage,
+		PrivatePorts:                services.ConvertApiPortToJsonPort(overridePorts),
+		PublicPorts:                 nil,
+		Files:                       overrideFilesArtifactsMountpoint,
+		Entrypoint:                  overrideEntrypoint,
+		Cmd:                         overrideCmd,
+		EnvVars:                     overrideEnvVars,
+		PrivateIPAddressPlaceholder: "",
+		MaxMillicpus:                0,
+		MinMillicpus:                0,
+		MaxMemory:                   0,
+		MinMemory:                   0,
+		User:                        nil,
+		Tolerations:                 nil,
+		Labels:                      nil,
+		NodeSelectors:               nil,
+		TiniEnabled:                 nil,
+	}, nil
+}
+
+func createUpdatedServiceConfigFromOverrides(overridesServiceConfig, currServiceConfig *services.ServiceConfig) *services.ServiceConfig {
+	// merge overrides with existing service config
+	// if override image was provided, use that as the image, otherwise keep curr
+	var updatedImage string
+	if overridesServiceConfig.Image != "" {
+		updatedImage = overridesServiceConfig.Image
+	} else {
+		updatedImage = currServiceConfig.Image
+	}
+
+	// if override entrypoint was provided, use that as the entrypoint, otherwise keep curr
+	var updatedEntrypoint []string
+	if len(overridesServiceConfig.Entrypoint) > 0 {
+		updatedEntrypoint = overridesServiceConfig.Entrypoint
+	} else {
+		updatedEntrypoint = currServiceConfig.Entrypoint
+	}
+
+	// if override cmd was provided, use that as the cmd, otherwise keep curr
+	var updatedCmd []string
+	if len(overridesServiceConfig.Cmd) > 0 {
+		updatedCmd = overridesServiceConfig.Cmd
+	} else {
+		updatedCmd = currServiceConfig.Cmd
+	}
+
+	// combine current ports with override ports
+	updatedPorts := map[string]services.Port{}
+	for portId, port := range currServiceConfig.PrivatePorts {
+		updatedPorts[portId] = port
+	}
+	for portId, port := range overridesServiceConfig.PrivatePorts {
+		updatedPorts[portId] = port
+	}
+
+	// combine current env vars with override env vars
+	updatedEnvVarsMap := map[string]string{}
+	for key, val := range currServiceConfig.EnvVars {
+		updatedEnvVarsMap[key] = val
+	}
+	for key, val := range overridesServiceConfig.EnvVars {
+		updatedEnvVarsMap[key] = val
+	}
+
+	// combine current files artifacts mount points with override mount points
+	updatedFilesArtifactsMountpoint := map[string][]string{}
+	for key, val := range currServiceConfig.Files {
+		updatedFilesArtifactsMountpoint[key] = val
+	}
+	for key, val := range overridesServiceConfig.Files {
+		updatedFilesArtifactsMountpoint[key] = val
+	}
+
+	return &services.ServiceConfig{
+		Image:                       updatedImage,
+		PrivatePorts:                updatedPorts,
+		PublicPorts:                 nil,
+		Files:                       updatedFilesArtifactsMountpoint,
+		Entrypoint:                  updatedEntrypoint,
+		Cmd:                         updatedCmd,
+		EnvVars:                     updatedEnvVarsMap,
+		PrivateIPAddressPlaceholder: "",
+		MaxMillicpus:                0,
+		MinMillicpus:                0,
+		MaxMemory:                   0,
+		MinMemory:                   0,
+		User:                        nil,
+		Tolerations:                 nil,
+		Labels:                      nil,
+		NodeSelectors:               nil,
+		TiniEnabled:                 nil,
+	}
 }
