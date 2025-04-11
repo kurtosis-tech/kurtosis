@@ -17,8 +17,14 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 		{
 			name: "override image, entrypoint, cmd, env vars, ports, and files",
 			currConfig: &services.ServiceConfig{
-				Image:                       "old-image",
-				PrivatePorts:                map[string]services.Port{"port1": {Number: 8080}},
+				Image: "old-image",
+				PrivatePorts: map[string]services.Port{
+					"port1": {
+						Number:                   8080,
+						Transport:                0,
+						MaybeApplicationProtocol: "",
+						Wait:                     "",
+					}},
 				Files:                       map[string][]string{"/mnt/data": {"artifactA"}},
 				Entrypoint:                  []string{"old-entry"},
 				Cmd:                         []string{"old-cmd"},
@@ -36,10 +42,17 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				TiniEnabled:                 nil,
 			},
 			overrideConfig: &services.ServiceConfig{
-				Image:                       "new-image",
-				Entrypoint:                  []string{"new-entry"},
-				Cmd:                         []string{"new-cmd"},
-				PrivatePorts:                map[string]services.Port{"port2": {Number: 9090}},
+				Image:      "new-image",
+				Entrypoint: []string{"new-entry"},
+				Cmd:        []string{"new-cmd"},
+				PrivatePorts: map[string]services.Port{
+					"port2": {
+						Number:                   9090,
+						Transport:                0,
+						MaybeApplicationProtocol: "",
+						Wait:                     "",
+					},
+				},
 				Files:                       map[string][]string{"/mnt/config": {"artifactB"}},
 				EnvVars:                     map[string]string{"FOO": "new", "BAR": "added"},
 				PublicPorts:                 nil,
@@ -55,10 +68,23 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				TiniEnabled:                 nil,
 			},
 			expectedUpdatedConfig: &services.ServiceConfig{
-				Image:                       "new-image",
-				Entrypoint:                  []string{"new-entry"},
-				Cmd:                         []string{"new-cmd"},
-				PrivatePorts:                map[string]services.Port{"port1": {Number: 8080}, "port2": {Number: 9090}},
+				Image:      "new-image",
+				Entrypoint: []string{"new-entry"},
+				Cmd:        []string{"new-cmd"},
+				PrivatePorts: map[string]services.Port{
+					"port1": {
+						Number:                   8080,
+						Transport:                0,
+						MaybeApplicationProtocol: "",
+						Wait:                     "",
+					},
+					"port2": {
+						Number:                   9090,
+						Transport:                0,
+						MaybeApplicationProtocol: "",
+						Wait:                     "",
+					},
+				},
 				Files:                       map[string][]string{"/mnt/data": {"artifactA"}, "/mnt/config": {"artifactB"}},
 				EnvVars:                     map[string]string{"FOO": "new", "BAR": "added"},
 				PublicPorts:                 nil,
@@ -77,10 +103,17 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 		{
 			name: "no overrides applied",
 			currConfig: &services.ServiceConfig{
-				Image:                       "base-image",
-				Entrypoint:                  []string{"entry"},
-				Cmd:                         []string{"cmd"},
-				PrivatePorts:                map[string]services.Port{"http": {Number: 80}},
+				Image:      "base-image",
+				Entrypoint: []string{"entry"},
+				Cmd:        []string{"cmd"},
+				PrivatePorts: map[string]services.Port{
+					"http": {
+						Number:                   80,
+						Transport:                0,
+						MaybeApplicationProtocol: "",
+						Wait:                     "",
+					},
+				},
 				Files:                       map[string][]string{"/data": {"foo"}},
 				EnvVars:                     map[string]string{"KEY": "VAL"},
 				PublicPorts:                 nil,
@@ -95,12 +128,36 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				NodeSelectors:               nil,
 				TiniEnabled:                 nil,
 			},
-			overrideConfig: &services.ServiceConfig{},
+			overrideConfig: &services.ServiceConfig{
+				Image:                       "",
+				PrivatePorts:                nil,
+				PublicPorts:                 nil,
+				Files:                       nil,
+				Entrypoint:                  nil,
+				Cmd:                         nil,
+				EnvVars:                     nil,
+				PrivateIPAddressPlaceholder: "",
+				MaxMillicpus:                0,
+				MinMillicpus:                0,
+				MaxMemory:                   0,
+				MinMemory:                   0,
+				User:                        nil,
+				Tolerations:                 nil,
+				Labels:                      nil,
+				NodeSelectors:               nil,
+				TiniEnabled:                 nil,
+			},
 			expectedUpdatedConfig: &services.ServiceConfig{
-				Image:                       "base-image",
-				Entrypoint:                  []string{"entry"},
-				Cmd:                         []string{"cmd"},
-				PrivatePorts:                map[string]services.Port{"http": {Number: 80}},
+				Image:      "base-image",
+				Entrypoint: []string{"entry"},
+				Cmd:        []string{"cmd"},
+				PrivatePorts: map[string]services.Port{
+					"http": {
+						Number:                   80,
+						Transport:                0,
+						MaybeApplicationProtocol: "",
+						Wait:                     "",
+					}},
 				Files:                       map[string][]string{"/data": {"foo"}},
 				EnvVars:                     map[string]string{"KEY": "VAL"},
 				PublicPorts:                 nil,
@@ -119,8 +176,15 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 		{
 			name: "override overwrites duplicate env var and port",
 			currConfig: &services.ServiceConfig{
-				Image:                       "original",
-				PrivatePorts:                map[string]services.Port{"p": {Number: 1000}},
+				Image: "original",
+				PrivatePorts: map[string]services.Port{
+					"p": {
+						Number:                   1000,
+						Transport:                0,
+						MaybeApplicationProtocol: "",
+						Wait:                     "",
+					},
+				},
 				EnvVars:                     map[string]string{"K1": "V1"},
 				Files:                       map[string][]string{},
 				PublicPorts:                 nil,
@@ -138,8 +202,15 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				TiniEnabled:                 nil,
 			},
 			overrideConfig: &services.ServiceConfig{
-				Image:                       "",
-				PrivatePorts:                map[string]services.Port{"p": {Number: 2000}},
+				Image: "",
+				PrivatePorts: map[string]services.Port{
+					"p": {
+						Number:                   2000,
+						Transport:                0,
+						MaybeApplicationProtocol: "",
+						Wait:                     "",
+					},
+				},
 				EnvVars:                     map[string]string{"K1": "override"},
 				Files:                       map[string][]string{},
 				PublicPorts:                 nil,
@@ -157,8 +228,15 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				TiniEnabled:                 nil,
 			},
 			expectedUpdatedConfig: &services.ServiceConfig{
-				Image:                       "original",
-				PrivatePorts:                map[string]services.Port{"p": {Number: 2000}},
+				Image: "original",
+				PrivatePorts: map[string]services.Port{
+					"p": {
+						Number:                   2000,
+						Transport:                0,
+						MaybeApplicationProtocol: "",
+						Wait:                     "",
+					},
+				},
 				EnvVars:                     map[string]string{"K1": "override"},
 				Files:                       map[string][]string{},
 				PublicPorts:                 nil,

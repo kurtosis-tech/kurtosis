@@ -6,10 +6,6 @@ import (
 	"strings"
 )
 
-const (
-	tiniEnabledStr = "True"
-)
-
 type FilesArtifactUUID string
 type FileArtifactName string
 

@@ -212,7 +212,18 @@ func run(
 		cmdStr,
 		filesArtifactMountsStr,
 		envVarsStr,
-		portsStr)
+		portsStr,
+	)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred parsing overrides service config from flags image '%v', entrypoint '%v', cmd '%v', files artifacts mount '%v', env vars '%v', and ports '%v'.",
+			imageStr,
+			entrypointStr,
+			cmdStr,
+			filesArtifactMountsStr,
+			envVarsStr,
+			portsStr,
+		)
+	}
 
 	_, currServiceConfig, err := service_helpers.GetServiceInfo(ctx, kurtosisCtx, enclaveIdentifier, serviceName)
 	if err != nil {
