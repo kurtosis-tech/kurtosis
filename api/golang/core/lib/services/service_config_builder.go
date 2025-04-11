@@ -94,7 +94,7 @@ func GetSimpleServiceConfigStarlark(
 	fileStrings := []string{}
 	for filePath, artifactNames := range fileArtifactMountPoints {
 		if len(artifactNames) > 1 { // if multiple files artifacts mounted, create a Directory
-			fileStrings = append(fileStrings, fmt.Sprintf(`%q: %q`, filePath, createDirectoryStarlarkStr(artifactNames)))
+			fileStrings = append(fileStrings, fmt.Sprintf(`%q: %s`, filePath, createDirectoryStarlarkStr(artifactNames)))
 		} else {
 			fileStrings = append(fileStrings, fmt.Sprintf(`%q: %q`, filePath, artifactNames[0]))
 		}
@@ -174,7 +174,7 @@ func GetFullServiceConfigStarlark(
 	fileStrings := []string{}
 	for filePath, artifactNames := range fileArtifactMountPoints {
 		if len(artifactNames) > 1 { // if multiple files artifacts mounted, create a Directory
-			fileStrings = append(fileStrings, fmt.Sprintf(`%q: %q`, filePath, createDirectoryStarlarkStr(artifactNames)))
+			fileStrings = append(fileStrings, fmt.Sprintf(`%q: %s`, filePath, createDirectoryStarlarkStr(artifactNames)))
 		} else {
 			fileStrings = append(fileStrings, fmt.Sprintf(`%q: %q`, filePath, artifactNames[0]))
 		}
@@ -337,5 +337,9 @@ func ConvertApiTolerationsToJsonTolerations(tolerations []*kurtosis_core_rpc_api
 }
 
 func createDirectoryStarlarkStr(artifactNames []string) string {
-	return fmt.Sprintf(`Directory(artifact_names=[%s])`, strings.Join(artifactNames, ", "))
+	quoted := make([]string, len(artifactNames))
+	for i, name := range artifactNames {
+		quoted[i] = fmt.Sprintf("%q", name) // adds double quotes around each string
+	}
+	return fmt.Sprintf("Directory(artifact_names=[%s])", strings.Join(quoted, ", "))
 }
