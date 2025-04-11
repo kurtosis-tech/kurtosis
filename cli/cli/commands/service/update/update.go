@@ -334,7 +334,6 @@ func parseOverridesServiceConfigFromFlags(
 }
 
 func createUpdatedServiceConfigFromOverrides(overridesServiceConfig, currServiceConfig *services.ServiceConfig) *services.ServiceConfig {
-	// merge overrides with existing service config
 	// if override image was provided, use that as the image, otherwise keep curr
 	var updatedImage string
 	if overridesServiceConfig.Image != "" {
