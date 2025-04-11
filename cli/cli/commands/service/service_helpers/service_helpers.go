@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/user_services"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
 )
@@ -129,6 +130,7 @@ func GetAddServiceStarlarkScript(serviceName string, serviceConfigStarlark strin
 }
 
 func RunAddServiceStarlarkScript(ctx context.Context, serviceName, enclaveIdentifier, starlarkScript string, enclaveCtx *enclaves.EnclaveContext) (*enclaves.StarlarkRunResult, error) {
+	logrus.Infof("ADD SERVICE STARLARK:\n%v", starlarkScript)
 	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, starlark_run_config.NewRunStarlarkConfig())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")

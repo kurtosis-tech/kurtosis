@@ -882,7 +882,7 @@ jobs:
       - run: "${KURTOSIS_BINPATH} files download test-enclave stored-file ."
 
       # Service update
-      - run: "${KURTOSIS_BINPATH} service update test-enclave test1 --image httpd:2.4.63 --env-var update=test;where=ci --ports http=90 --files /root/somewhere:rendered-file|stored-file"
+      - run: "${KURTOSIS_BINPATH} service update test-enclave test1 --image httpd:2.4.63 --env 'update=test;where=ci' --ports http=80 --files '/root/somewhere:rendered-file|stored-file'"
 
       # Check Dump Contains files
       - run: "${KURTOSIS_BINPATH} enclave dump test-enclave test-dump"

@@ -269,8 +269,8 @@ func GetFullServiceConfigStarlark(
 	}
 
 	// Tini
-	if *tiniEnabled {
-		starlarkFields = append(starlarkFields, fmt.Sprintf(`tini_enabled=%s`, tiniEnabledStr))
+	if tiniEnabled != nil && !*tiniEnabled {
+		starlarkFields = append(starlarkFields, `tini_enabled=False`)
 	}
 
 	return fmt.Sprintf("ServiceConfig(%s)", strings.Join(starlarkFields, ", "))
