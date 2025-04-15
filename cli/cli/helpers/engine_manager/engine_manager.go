@@ -206,7 +206,9 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(
 			return nil, nil, stacktrace.Propagate(err, "An error occurred starting Grafana and Loki before engine.")
 		}
 	}
-	logrus.Infof("Grafana running at %v", grafanaUrl)
+	if grafanaUrl != "" {
+		logrus.Infof("Grafana running at %v", grafanaUrl)
+	}
 	additionalSinks = combineSinks(additionalSinks, lokiSink)
 
 	engineGuarantor := newEngineExistenceGuarantorWithDefaultVersion(
@@ -269,7 +271,9 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 			return nil, nil, stacktrace.Propagate(err, "An error occurred starting Grafana and Loki before engine.")
 		}
 	}
-	logrus.Infof("Grafana running at %v", grafanaUrl)
+	if grafanaUrl != "" {
+		logrus.Infof("Grafana running at %v", grafanaUrl)
+	}
 	additionalSinks = combineSinks(additionalSinks, lokiSink)
 
 	engineGuarantor := newEngineExistenceGuarantorWithCustomVersion(

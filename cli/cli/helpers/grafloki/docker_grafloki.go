@@ -54,7 +54,6 @@ func StartGrafLokiInDocker(ctx context.Context, graflokiConfig resolved_config.G
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error occurred checking if Grafana and Loki exist.")
 	}
-
 	if !doesGrafanaAndLokiExist {
 		logrus.Infof("No running Grafana and Loki containers found. Creating them...")
 		lokiHost, err = createGrafanaAndLokiContainers(ctx, dockerManager, graflokiConfig)
