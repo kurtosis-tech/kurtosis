@@ -218,6 +218,8 @@ func TestNewKurtosisClusterConfigGraflokiFullConfig(t *testing.T) {
 	kubernetesStorageClass := "some-storage-class"
 	kubernetesEnclaveSizeInMB := uint(5)
 	kubernetesEngineNodeName := "some-node-name"
+	grafanaImage := "grafana:1.32"
+	lokiImage := "loki:1.32"
 	kubernetesFullConfig := v5.KubernetesClusterConfigV5{
 		KubernetesClusterName:  &kubernetesClusterName,
 		StorageClass:           &kubernetesStorageClass,
@@ -230,12 +232,15 @@ func TestNewKurtosisClusterConfigGraflokiFullConfig(t *testing.T) {
 		LogsAggregator: nil,
 		GrafanaLokiConfig: &v5.GrafanaLokiConfig{
 			ShouldStartBeforeEngine: false,
-			GrafanaImage:            "grafana:1.32",
-			LokiImage:               "loki:1.32",
+			GrafanaImage:            grafanaImage,
 		},
 		ShouldTurnOffDefaultLogsSink: nil,
 	}
-	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
+	actualKurtosisClusterConfig, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
+	require.NotNil(t, actualKurtosisClusterConfig.graflokiConfig)
+	require.Equal(t, actualKurtosisClusterConfig.graflokiConfig.GrafanaImage, grafanaImage)
+	require.Equal(t, actualKurtosisClusterConfig.graflokiConfig.LokiImage, lokiImage)
+	require.False(t, actualKurtosisClusterConfig.graflokiConfig.ShouldStartBeforeEngine)
 	require.NoError(t, err)
 }
 
