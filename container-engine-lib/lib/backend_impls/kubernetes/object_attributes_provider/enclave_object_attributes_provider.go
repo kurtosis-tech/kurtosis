@@ -190,7 +190,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServicePod
 
 	nameLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(string(serviceName))
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a short GUID Kubernetes label value from GUID string '%v'", string(serviceName))
+		return nil, stacktrace.Propagate(err, "An error occurred creating a service name Kubernetes label value from string '%v'", string(serviceName))
 	}
 	labels[kubernetes_label_key.LogsServiceNameKubernetesLabelKey] = nameLabelValue
 

@@ -247,9 +247,9 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContain
 
 	serviceNameLabel, err := docker_label_value.CreateNewDockerLabelValue(serviceNameStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from GUID string '%v'", serviceNameStr)
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from service name string '%v'", serviceNameStr)
 	}
-	labels[docker_label_key.LogsServiceUUIDDockerLabelKey] = serviceNameLabel
+	labels[docker_label_key.LogsServiceNameDockerLabelKey] = serviceNameLabel
 
 	// add user custom label
 	for userLabelKey, userLabelValue := range userLabels {
