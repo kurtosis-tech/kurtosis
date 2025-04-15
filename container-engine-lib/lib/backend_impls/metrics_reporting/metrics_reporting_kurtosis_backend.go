@@ -57,6 +57,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateEngine(
 	shouldStartInDebugMode bool,
 	githubAuthToken string,
 	sinks logs_aggregator.Sinks,
+	shouldEnablePersistentVolumeLogsCollection bool,
 ) (*engine.Engine, error) {
 	result, err := backend.underlying.CreateEngine(
 		ctx,
@@ -67,6 +68,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateEngine(
 		shouldStartInDebugMode,
 		githubAuthToken,
 		sinks,
+		shouldEnablePersistentVolumeLogsCollection,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the engine using image '%v' with tag '%v' and debug mode '%v'", imageOrgAndRepo, imageVersionTag, shouldStartInDebugMode)

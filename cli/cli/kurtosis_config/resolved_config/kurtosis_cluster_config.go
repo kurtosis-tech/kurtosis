@@ -2,7 +2,7 @@ package resolved_config
 
 import (
 	"context"
-	v4 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v4"
+	v5 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v5"
 	"strings"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
@@ -28,13 +28,21 @@ type KurtosisClusterConfig struct {
 	engineBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
 	clusterType                 KurtosisClusterType
 	logsAggregator              LogsAggregatorConfig
+	graflokiConfig              GrafanaLokiConfig
+	shouldEnableDefaultLogsSink bool
 }
 
 type LogsAggregatorConfig struct {
 	Sinks logs_aggregator.Sinks
 }
 
-func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v4.KurtosisClusterConfigV4) (*KurtosisClusterConfig, error) {
+type GrafanaLokiConfig struct {
+	ShouldStartBeforeEngine bool
+	GrafanaImage            string
+	LokiImage               string
+}
+
+func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v5.KurtosisClusterConfigV5) (*KurtosisClusterConfig, error) {
 	if overrides.Type == nil {
 		return nil, stacktrace.NewError("Kurtosis cluster must have a defined type")
 	}
@@ -73,11 +81,27 @@ func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v4.Kurto
 		}
 	}
 
+	var grafloki GrafanaLokiConfig
+	if overrides.GrafanaLokiConfig != nil {
+		grafloki = GrafanaLokiConfig{
+			ShouldStartBeforeEngine: overrides.GrafanaLokiConfig.ShouldStartBeforeEngine,
+			GrafanaImage:            overrides.GrafanaLokiConfig.GrafanaImage,
+			LokiImage:               overrides.GrafanaLokiConfig.LokiImage,
+		}
+	}
+
+	shouldEnableDefaultLogsSink := DefaultShouldEnableDefaultLogsSink
+	if overrides.ShouldEnableDefaultLogsSink != nil {
+		shouldEnableDefaultLogsSink = *overrides.ShouldEnableDefaultLogsSink
+	}
+
 	return &KurtosisClusterConfig{
 		kurtosisBackendSupplier:     backendSupplier,
 		engineBackendConfigSupplier: engineBackendConfigSupplier,
 		clusterType:                 clusterType,
 		logsAggregator:              logsAggregator,
+		graflokiConfig:              grafloki,
+		shouldEnableDefaultLogsSink: shouldEnableDefaultLogsSink,
 	}, nil
 }
 
@@ -101,12 +125,20 @@ func (clusterConfig *KurtosisClusterConfig) GetLogsAggregatorConfig() LogsAggreg
 	return clusterConfig.logsAggregator
 }
 
+func (clusterConfig *KurtosisClusterConfig) GetGraflokiConfig() GrafanaLokiConfig {
+	return clusterConfig.graflokiConfig
+}
+
+func (clusterConfig *KurtosisClusterConfig) ShouldEnableDefaultLogsSink() bool {
+	return clusterConfig.shouldEnableDefaultLogsSink
+}
+
 // ====================================================================================================
 //
 //	Private Helpers
 //
 // ====================================================================================================
-func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesConfig *v4.KubernetesClusterConfigV4) (
+func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesConfig *v5.KubernetesClusterConfigV5) (
 	kurtosisBackendSupplier,
 	engine_server_launcher.KurtosisBackendConfigSupplier,
 	error,

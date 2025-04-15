@@ -52,6 +52,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 	domain string,
 	logRetentionPeriod string,
 	sinks logs_aggregator.Sinks,
+	shouldEnablePersistentVolumeLogsCollection bool,
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicGrpcPortSpec *port_spec.PortSpec,
@@ -78,6 +79,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 		domain,
 		logRetentionPeriod,
 		sinks,
+		shouldEnablePersistentVolumeLogsCollection,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", kurtosis_version.KurtosisVersion)
@@ -106,6 +108,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	domain string,
 	logRetentionPeriod string,
 	sinks logs_aggregator.Sinks,
+	shouldEnablePersistentVolumeLogsCollection bool,
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicGrpcPortSpec *port_spec.PortSpec,
@@ -150,6 +153,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 		shouldStartInDebugMode,
 		githubAuthToken,
 		sinks,
+		shouldEnablePersistentVolumeLogsCollection,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred launching the engine server container")

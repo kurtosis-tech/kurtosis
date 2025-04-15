@@ -36,6 +36,7 @@ const (
 	logsOnlyKurtosisPrefix                = "kurtosis_"
 	logsOnlyEnclaveUuidLabelKeyStr        = logsOnlyKurtosisPrefix + "enclave_uuid"
 	logsOnlyServiceUuidKubernetesLabelKey = logsOnlyKurtosisPrefix + "service_uuid"
+	logsOnlyServiceNameKubernetesLabelKey = logsOnlyKurtosisPrefix + "service_logs"
 
 	engineNodeLabelKeyStr = labelKeyPrefixStr + "engine-node"
 )
@@ -62,3 +63,4 @@ var EngineNodeLabelKey = MustCreateNewKubernetesLabelKey(engineNodeLabelKeyStr)
 
 var LogsEnclaveUUIDKubernetesLabelKey = MustCreateNewKubernetesLabelKey(logsOnlyEnclaveUuidLabelKeyStr)
 var LogsServiceUUIDKubernetesLabelKey = MustCreateNewKubernetesLabelKey(logsOnlyServiceUuidKubernetesLabelKey)
+var LogsServiceNameKubernetesLabelKey = MustCreateNewKubernetesLabelKey(logsOnlyServiceNameKubernetesLabelKey)

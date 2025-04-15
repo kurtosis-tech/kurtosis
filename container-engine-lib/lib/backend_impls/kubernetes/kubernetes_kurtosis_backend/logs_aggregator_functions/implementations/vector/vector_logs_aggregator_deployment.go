@@ -38,6 +38,7 @@ func (logsAggregator *vectorLogsAggregatorResourcesManager) CreateAndStart(
 	logsListeningPortNum uint16,
 	sinks logs_aggregator.Sinks,
 	httpPortNumber uint16,
+	shouldEnablePersistentVolumeLogsCollection bool,
 	engineNamespace string,
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
@@ -78,7 +79,7 @@ func (logsAggregator *vectorLogsAggregatorResourcesManager) CreateAndStart(
 		}
 	}()
 
-	vectorConfigurationCreatorObj := createVectorConfigurationCreatorForKurtosis(logsListeningPortNum, httpPortNumber, sinks)
+	vectorConfigurationCreatorObj := createVectorConfigurationCreatorForKurtosis(logsListeningPortNum, httpPortNumber, sinks, shouldEnablePersistentVolumeLogsCollection)
 
 	configMap, removeConfigMapFunc, err := vectorConfigurationCreatorObj.CreateConfiguration(ctx, namespace.Name, logsAggregatorAttrProvider, kubernetesManager)
 	if err != nil {
