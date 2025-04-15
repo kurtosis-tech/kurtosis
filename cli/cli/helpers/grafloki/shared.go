@@ -3,9 +3,9 @@ package grafloki
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -92,6 +92,6 @@ func StopGrafloki(ctx context.Context, clusterType resolved_config.KurtosisClust
 		return stacktrace.NewError("Unsupported cluster type: %v", clusterType.String())
 	}
 
-	out.PrintOutLn("Successfully stopped Grafana and Loki containers.")
+	logrus.Info("Successfully stopped Grafana and Loki.")
 	return nil
 }

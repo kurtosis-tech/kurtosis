@@ -92,7 +92,7 @@ func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes
 
 	lokiImage := defaultLokiImage
 	if graflokiConfig.LokiImage != "" {
-		lokiImage = defaultLokiImage
+		lokiImage = graflokiConfig.LokiImage
 	}
 	lokiDeployment, err := k8sManager.CreateDeployment(
 		ctx,
@@ -261,7 +261,7 @@ func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes
 
 	grafanaImage := defaultGrafanaImage
 	if graflokiConfig.GrafanaImage != "" {
-		grafanaImage = defaultGrafanaImage
+		grafanaImage = graflokiConfig.GrafanaImage
 	}
 	grafanaDeployment, err := k8sManager.CreateDeployment(
 		ctx,
