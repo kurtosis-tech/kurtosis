@@ -97,7 +97,7 @@ type engineExistenceGuarantor struct {
 	sinks logs_aggregator.Sinks
 
 	// If set to true, engine will not store logs in a persistent volume
-	shouldTurnOffPersistentVolumeLogsCollection bool
+	shouldEnablePersistentVolumeLogsCollection bool
 }
 
 func newEngineExistenceGuarantorWithDefaultVersion(
@@ -119,7 +119,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 	domain string,
 	logRetentionPeriod string,
 	sinks logs_aggregator.Sinks,
-	shouldTurnOffPersistentVolumeLogsCollection bool,
+	shouldEnablePersistentVolumeLogsCollection bool,
 ) *engineExistenceGuarantor {
 	return newEngineExistenceGuarantorWithCustomVersion(
 		ctx,
@@ -141,7 +141,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 		domain,
 		logRetentionPeriod,
 		sinks,
-		shouldTurnOffPersistentVolumeLogsCollection,
+		shouldEnablePersistentVolumeLogsCollection,
 	)
 }
 
@@ -165,7 +165,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 	domain string,
 	logRetentionPeriod string,
 	sinks logs_aggregator.Sinks,
-	shouldTurnOffPersistentVolumeLogsCollection bool,
+	shouldEnablePersistentVolumeLogsCollection bool,
 ) *engineExistenceGuarantor {
 	return &engineExistenceGuarantor{
 		ctx:                                  ctx,
@@ -189,7 +189,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 		domain:                                    domain,
 		logRetentionPeriod:                        logRetentionPeriod,
 		sinks:                                     sinks,
-		shouldTurnOffPersistentVolumeLogsCollection: shouldTurnOffPersistentVolumeLogsCollection,
+		shouldEnablePersistentVolumeLogsCollection: shouldEnablePersistentVolumeLogsCollection,
 	}
 }
 
@@ -252,7 +252,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.domain,
 			guarantor.logRetentionPeriod,
 			guarantor.sinks,
-			guarantor.shouldTurnOffPersistentVolumeLogsCollection,
+			guarantor.shouldEnablePersistentVolumeLogsCollection,
 		)
 	} else {
 		_, _, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
@@ -276,7 +276,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.domain,
 			guarantor.logRetentionPeriod,
 			guarantor.sinks,
-			guarantor.shouldTurnOffPersistentVolumeLogsCollection,
+			guarantor.shouldEnablePersistentVolumeLogsCollection,
 		)
 	}
 	if engineLaunchErr != nil {

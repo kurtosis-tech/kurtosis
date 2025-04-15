@@ -24,12 +24,12 @@ const (
 type kurtosisBackendSupplier func(ctx context.Context) (backend_interface.KurtosisBackend, error)
 
 type KurtosisClusterConfig struct {
-	kurtosisBackendSupplier                     kurtosisBackendSupplier
-	engineBackendConfigSupplier                 engine_server_launcher.KurtosisBackendConfigSupplier
-	clusterType                                 KurtosisClusterType
-	logsAggregator                              LogsAggregatorConfig
-	graflokiConfig                              GrafanaLokiConfig
-	shouldTurnOffPersistentVolumeLogsCollection bool
+	kurtosisBackendSupplier     kurtosisBackendSupplier
+	engineBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
+	clusterType                 KurtosisClusterType
+	logsAggregator              LogsAggregatorConfig
+	graflokiConfig              GrafanaLokiConfig
+	shouldEnableDefaultLogsSink bool
 }
 
 type LogsAggregatorConfig struct {
@@ -90,9 +90,9 @@ func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v5.Kurto
 		}
 	}
 
-	shouldTurnOffDefaultLogsSink := defaultShouldTurnOffDefaultLogsSink
-	if overrides.ShouldTurnOffDefaultLogsSink != nil {
-		shouldTurnOffDefaultLogsSink = *overrides.ShouldTurnOffDefaultLogsSink
+	shouldEnableDefaultLogsSink := DefaultShouldEnableDefaultLogsSink
+	if overrides.ShouldEnableDefaultLogsSink != nil {
+		shouldEnableDefaultLogsSink = *overrides.ShouldEnableDefaultLogsSink
 	}
 
 	return &KurtosisClusterConfig{
@@ -101,7 +101,7 @@ func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v5.Kurto
 		clusterType:                 clusterType,
 		logsAggregator:              logsAggregator,
 		graflokiConfig:              grafloki,
-		shouldTurnOffPersistentVolumeLogsCollection: shouldTurnOffDefaultLogsSink,
+		shouldEnableDefaultLogsSink: shouldEnableDefaultLogsSink,
 	}, nil
 }
 
@@ -129,8 +129,8 @@ func (clusterConfig *KurtosisClusterConfig) GetGraflokiConfig() GrafanaLokiConfi
 	return clusterConfig.graflokiConfig
 }
 
-func (clusterConfig *KurtosisClusterConfig) ShouldTurnOffPersistentVolumeLogsCollection() bool {
-	return clusterConfig.shouldTurnOffPersistentVolumeLogsCollection
+func (clusterConfig *KurtosisClusterConfig) ShouldEnableDefaultLogsSink() bool {
+	return clusterConfig.shouldEnableDefaultLogsSink
 }
 
 // ====================================================================================================

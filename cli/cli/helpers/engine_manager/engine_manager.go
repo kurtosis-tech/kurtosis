@@ -228,7 +228,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(
 		domain,
 		logRetentionPeriodStr,
 		combineSinks(additionalSinks, manager.clusterConfig.GetLogsAggregatorConfig().Sinks),
-		manager.clusterConfig.ShouldTurnOffPersistentVolumeLogsCollection(),
+		manager.clusterConfig.ShouldEnableDefaultLogsSink(),
 	)
 	// TODO Need to handle the Kubernetes case, where a gateway needs to be started after the engine is started but
 	//  before we can return an EngineClient
@@ -292,7 +292,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 		domain,
 		logRetentionPeriodStr,
 		combineSinks(manager.clusterConfig.GetLogsAggregatorConfig().Sinks, additionalSinks),
-		manager.clusterConfig.ShouldTurnOffPersistentVolumeLogsCollection(),
+		manager.clusterConfig.ShouldEnableDefaultLogsSink(),
 	)
 	engineClient, engineClientCloseFunc, err := manager.startEngineWithGuarantor(ctx, status, engineGuarantor)
 	if err != nil {

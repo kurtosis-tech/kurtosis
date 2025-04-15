@@ -35,11 +35,11 @@ func (vector *vectorLogsAggregatorContainer) CreateAndStart(
 	httpPortNumber uint16,
 	logsAggregatorHttpPortId string,
 	targetNetworkId string,
-	shouldTurnOffPersistentVolumeLogsCollection bool,
+	shouldEnablePersistentVolumeLogsCollection bool,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	dockerManager *docker_manager.DockerManager,
 ) (string, map[string]string, func(), error) {
-	vectorConfigurationCreatorObj := createVectorConfigurationCreatorForKurtosis(logsListeningPortNumber, httpPortNumber, sinks, shouldTurnOffPersistentVolumeLogsCollection)
+	vectorConfigurationCreatorObj := createVectorConfigurationCreatorForKurtosis(logsListeningPortNumber, httpPortNumber, sinks, shouldEnablePersistentVolumeLogsCollection)
 	vectorContainerConfigProviderObj := createVectorContainerConfigProvider(httpPortNumber)
 
 	// Start vector

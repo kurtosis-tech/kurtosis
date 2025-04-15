@@ -46,7 +46,7 @@ func CreateEngine(
 	shouldStartInDebugMode bool,
 	gitAuthToken string,
 	sinks logs_aggregator.Sinks,
-	shouldTurnOffPersistentVolumeLogsCollection bool,
+	shouldEnablePersistentVolumeLogsCollection bool,
 	dockerManager *docker_manager.DockerManager,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 ) (
@@ -108,7 +108,7 @@ func CreateEngine(
 		logsAggregatorContainer,
 		defaultHttpLogsAggregatorPortNum,
 		sinks,
-		shouldTurnOffPersistentVolumeLogsCollection,
+		shouldEnablePersistentVolumeLogsCollection,
 		dockerManager,
 		objAttrsProvider)
 	if err != nil {

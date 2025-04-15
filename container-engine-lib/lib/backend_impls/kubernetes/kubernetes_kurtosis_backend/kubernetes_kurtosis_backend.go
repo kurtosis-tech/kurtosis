@@ -153,7 +153,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	shouldStartInDebugMode bool,
 	githubAuthToken string,
 	sinks logs_aggregator.Sinks,
-	shouldTurnOffPersistentVolumeLogsCollection bool,
+	shouldEnablePersistentVolumeLogsCollection bool,
 ) (
 	*engine.Engine,
 	error,
@@ -167,7 +167,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 		shouldStartInDebugMode,
 		githubAuthToken,
 		sinks,
-		shouldTurnOffPersistentVolumeLogsCollection,
+		shouldEnablePersistentVolumeLogsCollection,
 		backend.engineNodeName,
 		backend.kubernetesManager,
 		backend.objAttrsProvider,

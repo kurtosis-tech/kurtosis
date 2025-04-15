@@ -8,8 +8,8 @@ func createVectorConfigurationCreatorForKurtosis(
 	listeningPortNumber uint16,
 	httpPortNumber uint16,
 	sinks logs_aggregator.Sinks,
-	shouldTurnOffPersistentVolumeLogsCollection bool,
+	shouldEnablePersistentVolumeLogsCollection bool,
 ) *vectorConfigurationCreator {
-	config := newVectorConfig(listeningPortNumber, httpPortNumber, sinks, shouldTurnOffPersistentVolumeLogsCollection)
+	config := newVectorConfig(listeningPortNumber, httpPortNumber, sinks, shouldEnablePersistentVolumeLogsCollection)
 	return newVectorConfigurationCreator(config)
 }

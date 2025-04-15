@@ -19,7 +19,7 @@ type LogsAggregatorContainer interface {
 		httpPortNumber uint16,
 		logsAggregatorHttpPortId string,
 		targetNetworkId string,
-		shouldTurnOffPersistentVolumeLogsCollection bool,
+		shouldEnablePersistentVolumeLogsCollection bool,
 		objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 		dockerManager *docker_manager.DockerManager,
 	) (string, map[string]string, func(), error)

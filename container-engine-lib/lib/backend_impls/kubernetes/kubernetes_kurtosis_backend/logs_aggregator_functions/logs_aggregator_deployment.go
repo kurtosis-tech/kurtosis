@@ -18,7 +18,7 @@ type LogsAggregatorResourcesManager interface {
 		logsListeningPort uint16,
 		sinks logs_aggregator.Sinks,
 		httpPortNumber uint16,
-		shouldTurnOffPersistentVolumeLogsCollection bool,
+		shouldEnablePersistentVolumeLogsCollection bool,
 		// Provided so deployment can be scheduled on same node as engine
 		engineNamespace string,
 		objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,

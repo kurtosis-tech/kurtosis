@@ -23,11 +23,11 @@ func newVectorConfig(
 	listeningPortNumber uint16,
 	httpPortNumber uint16,
 	sinks logs_aggregator.Sinks,
-	shouldTurnOffPersistentVolumeLogsCollection bool,
+	shouldEnablePersistentVolumeLogsCollection bool,
 ) *VectorConfig {
 	reconciledSinks := map[string]map[string]interface{}{}
 
-	if !shouldTurnOffPersistentVolumeLogsCollection {
+	if shouldEnablePersistentVolumeLogsCollection {
 		reconciledSinks[logs_aggregator.DefaultSinkId] = map[string]interface{}{
 			"type":   fileSinkType,
 			"inputs": []string{defaultSourceId},
