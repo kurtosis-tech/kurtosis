@@ -22,6 +22,7 @@ func CreateLogsAggregator(
 	logsAggregatorContainer LogsAggregatorContainer,
 	logsAggregatorHttpPortNumber uint16,
 	sinks logs_aggregator.Sinks,
+	shouldEnablePersistentVolumeLogsCollection bool,
 	dockerManager *docker_manager.DockerManager,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 ) (
@@ -65,6 +66,7 @@ func CreateLogsAggregator(
 		logsAggregatorHttpPortNumber,
 		logsAggregatorHttpPortId,
 		targetNetworkId,
+		shouldEnablePersistentVolumeLogsCollection,
 		objAttrsProvider,
 		dockerManager)
 	if err != nil {

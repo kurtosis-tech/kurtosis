@@ -6,9 +6,12 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/go-yaml/yaml"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net/http"
@@ -18,23 +21,29 @@ import (
 )
 
 const (
-	LokiContainerName    = "kurtosis-loki"
-	GrafanaContainerName = "kurtosis-grafana"
-	lokiReadinessPath    = "/ready"
+	LokiContainerLabel    = "kurtosis-loki"
+	GrafanaContainerLabel = "kurtosis-grafana"
+
+	lokiReadinessPath = "/ready"
 
 	bridgeNetworkName = "bridge"
 	localhostAddr     = "127.0.0.1"
+	rootUserUid       = 0
 )
 
 var EmptyDockerClientOpts = []client.Opt{}
+
+var LokiContainerNamePrefix = fmt.Sprintf("%v-", LokiContainerLabel)
+var GrafanaContainerNamePrefix = fmt.Sprintf("%v-", GrafanaContainerLabel)
+
 var lokiContainerLabels = map[string]string{
-	docker_label_key.ContainerTypeDockerLabelKey.GetString(): LokiContainerName,
+	docker_label_key.ContainerTypeDockerLabelKey.GetString(): LokiContainerLabel,
 }
 var grafanaContainerLabels = map[string]string{
-	docker_label_key.ContainerTypeDockerLabelKey.GetString(): GrafanaContainerName,
+	docker_label_key.ContainerTypeDockerLabelKey.GetString(): GrafanaContainerLabel,
 }
 
-func StartGrafLokiInDocker(ctx context.Context) (string, string, error) {
+func StartGrafLokiInDocker(ctx context.Context, graflokiConfig resolved_config.GrafanaLokiConfig) (string, string, error) {
 	dockerManager, err := docker_manager.CreateDockerManager(EmptyDockerClientOpts)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error occurred creating the docker manager to start grafana and loki.")
@@ -45,10 +54,9 @@ func StartGrafLokiInDocker(ctx context.Context) (string, string, error) {
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error occurred checking if Grafana and Loki exist.")
 	}
-
 	if !doesGrafanaAndLokiExist {
 		logrus.Infof("No running Grafana and Loki containers found. Creating them...")
-		lokiHost, err = createGrafanaAndLokiContainers(ctx, dockerManager)
+		lokiHost, err = createGrafanaAndLokiContainers(ctx, dockerManager, graflokiConfig)
 		if err != nil {
 			return "", "", stacktrace.Propagate(err, "An error occurred creating Grafana and Loki containers.")
 		}
@@ -58,7 +66,7 @@ func StartGrafLokiInDocker(ctx context.Context) (string, string, error) {
 	return lokiHost, grafanaUrl, nil
 }
 
-func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_manager.DockerManager) (string, error) {
+func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_manager.DockerManager, graflokConfig resolved_config.GrafanaLokiConfig) (string, error) {
 	lokiNatPort := nat.Port(strconv.Itoa(lokiPort) + "/tcp")
 	grafanaNatPort := nat.Port(strconv.Itoa(grafanaPort) + "/tcp")
 
@@ -67,7 +75,16 @@ func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_m
 		return "", stacktrace.Propagate(err, "An error occurred getting Docker network id by Name: %v", bridgeNetworkName)
 	}
 
-	lokiArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(lokiImage, LokiContainerName, bridgeNetworkId).
+	lokiImage := defaultLokiImage
+	if graflokConfig.LokiImage != "" {
+		lokiImage = graflokConfig.LokiImage
+	}
+	lokiUuid, err := uuid_generator.GenerateUUIDString()
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred generating a uuid for Loki.")
+	}
+	lokiContainerName := fmt.Sprintf("%v%v", LokiContainerNamePrefix, lokiUuid)
+	lokiArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(lokiImage, lokiContainerName, bridgeNetworkId).
 		WithUsedPorts(map[nat.Port]docker_manager.PortPublishSpec{
 			lokiNatPort: docker_manager.NewManualPublishingSpec(lokiPort),
 		}).
@@ -78,7 +95,7 @@ func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_m
 		Build()
 	lokiContainerId, _, err := dockerManager.CreateAndStartContainer(ctx, lokiArgs)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred creating '%v' container.", LokiContainerName)
+		return "", stacktrace.Propagate(err, "An error occurred creating '%v' container.", lokiContainerName)
 	}
 	shouldDestroyLokiContainer := true
 	defer func() {
@@ -107,7 +124,7 @@ func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_m
 		ApiVersion: int64(1),
 		Datasources: []GrafanaDatasource{
 			{
-				Name:      LokiContainerName,
+				Name:      lokiContainerName,
 				Type_:     "loki",
 				Access:    "proxy",
 				Url:       lokiBridgeNetworkIpAddress,
@@ -119,7 +136,7 @@ func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_m
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred serializing Grafana datasource to yaml: %v", grafanaDatasourceYaml)
 	}
-	logrus.Infof("Grafana data source yaml %v", string(grafanaDatasourceYaml))
+	logrus.Debugf("Grafana data source yaml %v", string(grafanaDatasourceYaml))
 
 	tmpFile, err := os.CreateTemp("", "grafana-datasource-*.yaml")
 	if err != nil {
@@ -130,7 +147,17 @@ func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_m
 		return "", stacktrace.Propagate(err, "An error occurred writing config.")
 	}
 
-	grafanaArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(grafanaImage, GrafanaContainerName, bridgeNetworkId).
+	grafanaImage := defaultGrafanaImage
+	if graflokConfig.GrafanaImage != "" {
+		grafanaImage = graflokConfig.GrafanaImage
+	}
+	root := service_user.NewServiceUser(rootUserUid)
+	grafanaUuid, err := uuid_generator.GenerateUUIDString()
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred generating a uuid for Grafana.")
+	}
+	grafanaContainerName := fmt.Sprintf("%v%v", GrafanaContainerNamePrefix, grafanaUuid)
+	grafanaArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(grafanaImage, grafanaContainerName, bridgeNetworkId).
 		WithUsedPorts(map[nat.Port]docker_manager.PortPublishSpec{
 			grafanaNatPort: docker_manager.NewManualPublishingSpec(grafanaPort),
 		}).
@@ -146,10 +173,11 @@ func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_m
 		WithRestartPolicy(docker_manager.RestartOnFailure).
 		WithNetworkMode(bridgeNetworkName).
 		WithLabels(grafanaContainerLabels).
+		WithUser(root).
 		Build()
 	grafanaContainerId, _, err := dockerManager.CreateAndStartContainer(ctx, grafanaArgs)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error creating creating '%v' container.", GrafanaContainerName)
+		return "", stacktrace.Propagate(err, "An error creating creating '%v' container.", grafanaContainerName)
 	}
 	shouldDestroyGrafanaContainer := true
 	defer func() {
@@ -215,6 +243,35 @@ func checkGrafanaAndLokiContainerExistence(ctx context.Context, dockerManager *d
 	return existsLoki && existsGrafana, fmt.Sprintf("http://%v:%v", lokiBridgeNetworkIpAddress, lokiPort), nil
 }
 
+func StopGrafLokiInDocker(ctx context.Context) error {
+	dockerManager, err := docker_manager.CreateDockerManager(EmptyDockerClientOpts)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating Docker manager.")
+	}
+
+	grafanaContainer, err := getContainerByLabel(ctx, dockerManager, grafanaContainerLabels)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting Grafana container by labels: +%v", grafanaContainerLabels)
+	}
+	if grafanaContainer != nil {
+		if err := dockerManager.RemoveContainer(ctx, grafanaContainer.GetName()); err != nil {
+			return stacktrace.Propagate(err, "An error occurred removing Grafana container '%v'", GrafanaContainerNamePrefix)
+		}
+	}
+
+	lokiContainer, err := getContainerByLabel(ctx, dockerManager, lokiContainerLabels)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting Loki container by labels: +%v", lokiContainerLabels)
+	}
+	if lokiContainer != nil {
+		if err := dockerManager.RemoveContainer(ctx, lokiContainer.GetName()); err != nil {
+			return stacktrace.Propagate(err, "An error occurred removing Loki container '%v'", GrafanaContainerNamePrefix)
+		}
+	}
+
+	return nil
+}
+
 func getContainerByLabel(ctx context.Context, dockerManager *docker_manager.DockerManager, containerLabels map[string]string) (*types.Container, error) {
 	containers, err := dockerManager.GetContainersByLabels(ctx, containerLabels, false)
 	if err != nil {
@@ -227,18 +284,4 @@ func getContainerByLabel(ctx context.Context, dockerManager *docker_manager.Dock
 		return nil, nil
 	}
 	return containers[0], nil
-}
-
-func StopGrafLokiInDocker(ctx context.Context) error {
-	dockerManager, err := docker_manager.CreateDockerManager(EmptyDockerClientOpts)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating Docker manager.")
-	}
-	if err := dockerManager.RemoveContainer(ctx, GrafanaContainerName); err != nil {
-		return stacktrace.Propagate(err, "An error occurred removing Grafana container '%v'", GrafanaContainerName)
-	}
-	if err := dockerManager.RemoveContainer(ctx, LokiContainerName); err != nil {
-		return stacktrace.Propagate(err, "An error occurred removing Loki container '%v'", GrafanaContainerName)
-	}
-	return nil
 }

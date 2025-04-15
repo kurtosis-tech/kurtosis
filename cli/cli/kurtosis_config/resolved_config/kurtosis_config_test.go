@@ -1,7 +1,7 @@
 package resolved_config
 
 import (
-	v4 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v4"
+	v5 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v5"
 	"sort"
 	"testing"
 
@@ -51,7 +51,7 @@ func TestNewKurtosisConfigFromRequiredFields_MetricsElectionIsSent(t *testing.T)
 }
 
 func TestNewKurtosisConfigEmptyOverrides(t *testing.T) {
-	_, err := NewKurtosisConfigFromOverrides(&v4.KurtosisConfigV4{
+	_, err := NewKurtosisConfigFromOverrides(&v5.KurtosisConfigV5{
 		ConfigVersion:     0,
 		ShouldSendMetrics: nil,
 		KurtosisClusters:  nil,
@@ -62,9 +62,9 @@ func TestNewKurtosisConfigEmptyOverrides(t *testing.T) {
 }
 
 func TestNewKurtosisConfigJustMetrics(t *testing.T) {
-	version := config_version.ConfigVersion_v4
+	version := config_version.ConfigVersion_v5
 	shouldSendMetrics := true
-	originalOverrides := v4.KurtosisConfigV4{
+	originalOverrides := v5.KurtosisConfigV5{
 		ConfigVersion:     version,
 		ShouldSendMetrics: &shouldSendMetrics,
 		KurtosisClusters:  nil,
@@ -92,14 +92,14 @@ func TestNewKurtosisConfigOverridesAreLatestVersion(t *testing.T) {
 }
 
 func TestCloudConfigOverridesApiUrl(t *testing.T) {
-	version := config_version.ConfigVersion_v4
+	version := config_version.ConfigVersion_v5
 	shouldSendMetrics := true
 	apiUrl := "test.com"
-	originalOverrides := v4.KurtosisConfigV4{
+	originalOverrides := v5.KurtosisConfigV5{
 		ConfigVersion:     version,
 		ShouldSendMetrics: &shouldSendMetrics,
 		KurtosisClusters:  nil,
-		CloudConfig: &v4.KurtosisCloudConfigV4{
+		CloudConfig: &v5.KurtosisCloudConfigV5{
 			ApiUrl:           &apiUrl,
 			Port:             nil,
 			CertificateChain: nil,
