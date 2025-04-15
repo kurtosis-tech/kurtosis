@@ -275,16 +275,47 @@ To only build a specific project, run the script on `./PROJECT/PATH/script/build
 ./cli/scripts/build.sh
 ```
 
+
 If there are any changes to the Protobuf files in the `api` subdirectory, the Protobuf bindings must be regenerated:
 
 ```bash
 ./api/scripts/regenerate-protobuf-bindings.sh
 ```
 
-Build scripts also run unit tests as part of the build process.
+Running Dev Version
+----------------------
+
+After building the project, run `./cli/cli/scripts/launch-cli.sh` just like you would the kurtosis command. This will launch the latest locally built version of the CLI, which will also start the engine and core containers using their latest built images.
+
+You can verify this by running `./cli/cli/launch-cli.sh engine status` and
+```
+A Kurtosis engine is running with the following info:
+Version:   53d823 <-- or `-dirty` depending on the commit
+```
+
+The version will be identical to the version on the latest dev versions of the engine image created - (can verify with `docker images`). Enclaves started by the engine will be started with the same version as the engine. 
+
+If you'd like to specify a different core image version than that of the engine, you can do so with the `--api-container-version` flag on `enclave add` (e.g. `./cli/cli/scripts/build.sh enclave add --api-container-version <image tag>`).
+
+If you are working on multiple dev versions of the engine at a time, you can use `engine restart --version <image tag>` to specify exactly what version of the engine to use.
+
+For frequent contributors, we recommend attaching an alias to `kurtosis` and `./cli/cli/scripts/launch-cli.sh`. 
+
+```bash
+alias kt="kurtosis"
+alias dkt="$(pwd)/cli/cli/scripts/launch-cli.sh"
+```
+
+If you want tab completion on the recently built CLI, you can alias it to `kurtosis`:
+
+```bash
+alias kurtosis="$(pwd)/cli/cli/scripts/launch-cli.sh"
+kurtosis enclave add
+```
 
 Unit Test Instructions
 ----------------------
+Build scripts also run unit tests as part of the build process.
 
 For all Go modules, run `go test ./...` on the module folder. For example:
 
@@ -323,22 +354,6 @@ $ ./internal_testsuites/scripts/test.sh
 
 If you are developing the Typescript test, make sure that you have first built `api/typescript`. Any
 changes made to the Typescript package within `api/typescript` aren't hot loaded as of 2022-09-29.
-
-Dev Run Instructions
---------------------
-
-Once the project has built, run `./cli/cli/scripts/launch-cli.sh` as if it was the `kurtosis` command:
-
-```bash
-./cli/cli/scripts/launch-cli.sh enclave add
-```
-
-If you want tab completion on the recently built CLI, you can alias it to `kurtosis`:
-
-```bash
-alias kurtosis="$(pwd)/cli/cli/scripts/launch-cli.sh"
-kurtosis enclave add
-```
 
 Run Debug Instructions (for Golang code so far)
 ----------------------------------------------
