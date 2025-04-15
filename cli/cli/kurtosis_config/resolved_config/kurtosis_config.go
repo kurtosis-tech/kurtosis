@@ -202,10 +202,10 @@ func getDefaultKurtosisClusterConfigOverrides() map[string]*v5.KurtosisClusterCo
 
 	result := map[string]*v5.KurtosisClusterConfigV5{
 		DefaultDockerClusterName: {
-			Type:           &dockerClusterType,
-			Config:         nil, // Must be nil for Docker
-			LogsAggregator: nil,
-			GraflokiConfig: nil,
+			Type:              &dockerClusterType,
+			Config:            nil, // Must be nil for Docker
+			LogsAggregator:    nil,
+			GrafanaLokiConfig: nil,
 		},
 		defaultMinikubeClusterName: {
 			Type: &minikubeClusterType,
@@ -216,7 +216,7 @@ func getDefaultKurtosisClusterConfigOverrides() map[string]*v5.KurtosisClusterCo
 				EngineNodeName:         &minikubeEngineNodeName,
 			},
 			LogsAggregator:               nil,
-			GraflokiConfig:               nil,
+			GrafanaLokiConfig:            nil,
 			ShouldTurnOffDefaultLogsSink: &shouldTurnOffDefaultLogsSink,
 		},
 	}

@@ -44,7 +44,7 @@ var grafanaLabels = map[string]string{
 
 var httpApplicationProtocol = "http"
 
-func StartGrafLokiInKubernetes(ctx context.Context, graflokiConfig resolved_config.GrafanaLoki) (string, string, error) {
+func StartGrafLokiInKubernetes(ctx context.Context, graflokiConfig resolved_config.GrafanaLokiConfig) (string, string, error) {
 	k8sManager, err := getKubernetesManager()
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error occurred getting Kubernetes Manager.")
@@ -72,7 +72,7 @@ func StartGrafLokiInKubernetes(ctx context.Context, graflokiConfig resolved_conf
 	return lokiHost, getGrafanaUrlOnHostMachine(grafanaPort), nil
 }
 
-func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes_manager.KubernetesManager, graflokiConfig resolved_config.GrafanaLoki) (string, func(), error) {
+func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes_manager.KubernetesManager, graflokiConfig resolved_config.GrafanaLokiConfig) (string, func(), error) {
 	graflokilNamespaceObj, err := k8sManager.CreateNamespace(ctx, graflokiNamespace, map[string]string{}, map[string]string{})
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred creating namespace '%v'", graflokiNamespace)

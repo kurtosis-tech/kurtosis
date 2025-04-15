@@ -40,7 +40,7 @@ type GrafanaDatasources struct {
 	Datasources []GrafanaDatasource `yaml:"datasources"`
 }
 
-func StartGrafloki(ctx context.Context, clusterType resolved_config.KurtosisClusterType, graflokiConfig resolved_config.GrafanaLoki) (logs_aggregator.Sinks, string, error) {
+func StartGrafloki(ctx context.Context, clusterType resolved_config.KurtosisClusterType, graflokiConfig resolved_config.GrafanaLokiConfig) (logs_aggregator.Sinks, string, error) {
 	var lokiHost string
 	var grafanaUrl string
 	var err error

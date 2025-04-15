@@ -28,7 +28,7 @@ type KurtosisClusterConfig struct {
 	engineBackendConfigSupplier                 engine_server_launcher.KurtosisBackendConfigSupplier
 	clusterType                                 KurtosisClusterType
 	logsAggregator                              LogsAggregatorConfig
-	graflokiConfig                              GrafanaLoki
+	graflokiConfig                              GrafanaLokiConfig
 	shouldTurnOffPersistentVolumeLogsCollection bool
 }
 
@@ -36,7 +36,7 @@ type LogsAggregatorConfig struct {
 	Sinks logs_aggregator.Sinks
 }
 
-type GrafanaLoki struct {
+type GrafanaLokiConfig struct {
 	ShouldStartBeforeEngine bool
 	GrafanaImage            string
 	LokiImage               string
@@ -81,12 +81,12 @@ func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v5.Kurto
 		}
 	}
 
-	var grafloki GrafanaLoki
-	if overrides.GraflokiConfig != nil {
-		grafloki = GrafanaLoki{
-			ShouldStartBeforeEngine: overrides.GraflokiConfig.ShouldStartBeforeEngine,
-			GrafanaImage:            overrides.GraflokiConfig.GrafanaImage,
-			LokiImage:               overrides.GraflokiConfig.LokiImage,
+	var grafloki GrafanaLokiConfig
+	if overrides.GrafanaLokiConfig != nil {
+		grafloki = GrafanaLokiConfig{
+			ShouldStartBeforeEngine: overrides.GrafanaLokiConfig.ShouldStartBeforeEngine,
+			GrafanaImage:            overrides.GrafanaLokiConfig.GrafanaImage,
+			LokiImage:               overrides.GrafanaLokiConfig.LokiImage,
 		}
 	}
 
@@ -125,7 +125,7 @@ func (clusterConfig *KurtosisClusterConfig) GetLogsAggregatorConfig() LogsAggreg
 	return clusterConfig.logsAggregator
 }
 
-func (clusterConfig *KurtosisClusterConfig) GetGraflokiConfig() GrafanaLoki {
+func (clusterConfig *KurtosisClusterConfig) GetGraflokiConfig() GrafanaLokiConfig {
 	return clusterConfig.graflokiConfig
 }
 

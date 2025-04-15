@@ -14,6 +14,6 @@ type KurtosisClusterConfigV5 struct {
 	// If we ever get another type of cluster that has configuration, this will need to be polymorphically deserialized
 	Config                       *KubernetesClusterConfigV5 `yaml:"config,omitempty"`
 	LogsAggregator               *LogsAggregatorConfigV5    `yaml:"logs-aggregator,omitempty"`
-	GraflokiConfig               *GraflokiConfig            `yaml:"grafloki-config,omitempty"`
+	GrafanaLokiConfig            *GrafanaLokiConfig         `yaml:"grafana-loki-config,omitempty"`
 	ShouldTurnOffDefaultLogsSink *bool                      `yaml:"should-turn-off-default-logs-sink,omitempty"`
 }

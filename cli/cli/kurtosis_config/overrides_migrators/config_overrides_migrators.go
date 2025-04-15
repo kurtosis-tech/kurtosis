@@ -69,7 +69,7 @@ func migrateFromV4(uncastedConfig interface{}) (interface{}, error) {
 				}
 			}
 
-			newGraflokiConfig := &v5.GraflokiConfig{
+			newGraflokiConfig := &v5.GrafanaLokiConfig{
 				ShouldStartBeforeEngine: false,
 				GrafanaImage:            "",
 				LokiImage:               "",
@@ -81,7 +81,7 @@ func migrateFromV4(uncastedConfig interface{}) (interface{}, error) {
 				Type:                         oldClusterConfig.Type,
 				Config:                       newKubernetesConfig,
 				LogsAggregator:               newLogsAggregatorConfig,
-				GraflokiConfig:               newGraflokiConfig,
+				GrafanaLokiConfig:            newGraflokiConfig,
 				ShouldTurnOffDefaultLogsSink: &defaultShouldTurnOffDefaultLogsSink,
 			}
 

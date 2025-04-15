@@ -13,7 +13,7 @@ func TestNewKurtosisClusterConfigEmptyOverrides(t *testing.T) {
 		Type:                         nil,
 		Config:                       nil,
 		LogsAggregator:               nil,
-		GraflokiConfig:               nil,
+		GrafanaLokiConfig:            nil,
 		ShouldTurnOffDefaultLogsSink: nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
@@ -26,7 +26,7 @@ func TestNewKurtosisClusterConfigDockerType(t *testing.T) {
 		Type:                         &dockerType,
 		Config:                       nil,
 		LogsAggregator:               nil,
-		GraflokiConfig:               nil,
+		GrafanaLokiConfig:            nil,
 		ShouldTurnOffDefaultLogsSink: nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
@@ -39,7 +39,7 @@ func TestNewKurtosisClusterConfigKubernetesNoConfig(t *testing.T) {
 		Type:                         &kubernetesType,
 		Config:                       nil,
 		LogsAggregator:               nil,
-		GraflokiConfig:               nil,
+		GrafanaLokiConfig:            nil,
 		ShouldTurnOffDefaultLogsSink: nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
@@ -52,7 +52,7 @@ func TestNewKurtosisClusterConfigNonsenseType(t *testing.T) {
 		Type:                         &clusterType,
 		Config:                       nil,
 		LogsAggregator:               nil,
-		GraflokiConfig:               nil,
+		GrafanaLokiConfig:            nil,
 		ShouldTurnOffDefaultLogsSink: nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
@@ -72,7 +72,7 @@ func TestNewKurtosisClusterConfigKubernetesPartialConfig(t *testing.T) {
 		Type:                         &kubernetesType,
 		Config:                       &kubernetesPartialConfig,
 		LogsAggregator:               nil,
-		GraflokiConfig:               nil,
+		GrafanaLokiConfig:            nil,
 		ShouldTurnOffDefaultLogsSink: nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
@@ -95,7 +95,7 @@ func TestNewKurtosisClusterConfigKubernetesFullConfig(t *testing.T) {
 		Type:                         &kubernetesType,
 		Config:                       &kubernetesFullConfig,
 		LogsAggregator:               nil,
-		GraflokiConfig:               nil,
+		GrafanaLokiConfig:            nil,
 		ShouldTurnOffDefaultLogsSink: nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
@@ -118,7 +118,7 @@ func TestNewKurtosisClusterConfigLogsAggregatorNoConfig(t *testing.T) {
 		Type:                         &kubernetesType,
 		Config:                       &kubernetesFullConfig,
 		LogsAggregator:               nil,
-		GraflokiConfig:               nil,
+		GrafanaLokiConfig:            nil,
 		ShouldTurnOffDefaultLogsSink: nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
@@ -147,7 +147,7 @@ func TestNewKurtosisClusterConfigLogsAggregatorReservedSinkId(t *testing.T) {
 				},
 			},
 		},
-		GraflokiConfig:               nil,
+		GrafanaLokiConfig:            nil,
 		ShouldTurnOffDefaultLogsSink: nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
@@ -176,7 +176,7 @@ func TestNewKurtosisClusterConfigLogsAggregatorFullConfig(t *testing.T) {
 				},
 			},
 		},
-		GraflokiConfig:               nil,
+		GrafanaLokiConfig:            nil,
 		ShouldTurnOffDefaultLogsSink: nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
@@ -205,7 +205,7 @@ func TestNewKurtosisClusterConfigGraflokiNoConfig(t *testing.T) {
 				},
 			},
 		},
-		GraflokiConfig:               nil,
+		GrafanaLokiConfig:            nil,
 		ShouldTurnOffDefaultLogsSink: nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
@@ -228,7 +228,7 @@ func TestNewKurtosisClusterConfigGraflokiFullConfig(t *testing.T) {
 		Type:           &kubernetesType,
 		Config:         &kubernetesFullConfig,
 		LogsAggregator: nil,
-		GraflokiConfig: &v5.GraflokiConfig{
+		GrafanaLokiConfig: &v5.GrafanaLokiConfig{
 			ShouldStartBeforeEngine: false,
 			GrafanaImage:            "grafana:1.32",
 			LokiImage:               "loki:1.32",
@@ -256,7 +256,7 @@ func TestNewKurtosisClusterConfigShouldTurnOffDefaultLogsSink(t *testing.T) {
 		Type:                         &kubernetesType,
 		Config:                       &kubernetesFullConfig,
 		LogsAggregator:               nil,
-		GraflokiConfig:               nil,
+		GrafanaLokiConfig:            nil,
 		ShouldTurnOffDefaultLogsSink: &shouldTurnOffDefaultLogsSink,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
