@@ -312,6 +312,9 @@ func ConvertApiFilesArtifactsToJsonFiles(serviceDirPathsToFilesArtifactsList map
 }
 
 func ConvertApiUserToJsonUser(user *kurtosis_core_rpc_api_bindings.User) *User {
+	if user == nil {
+		return nil
+	}
 	return &User{
 		UID: user.GetUid(),
 		GID: user.GetGid(),
@@ -335,7 +338,7 @@ func ConvertApiTolerationsToJsonTolerations(tolerations []*kurtosis_core_rpc_api
 func createDirectoryStarlarkStr(artifactNames []string) string {
 	quoted := make([]string, len(artifactNames))
 	for i, name := range artifactNames {
-		quoted[i] = fmt.Sprintf("%q", name) // adds double quotes around each string
+		quoted[i] = fmt.Sprintf("%q", name) // adds double quotes around each string needed for identifying artifacts
 	}
 	return fmt.Sprintf("Directory(artifact_names=[%s])", strings.Join(quoted, ", "))
 }

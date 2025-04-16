@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_client_factory"
 	"github.com/sirupsen/logrus"
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
@@ -91,6 +92,12 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting an enclave context from enclave info for enclave '%v'", enclaveIdentifier)
 	}
 
+	metricsClient, closeMetricsClientFunc, err := metrics_client_factory.GetMetricsClient()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting metrics client.")
+	}
+	defer closeMetricsClientFunc()
+
 	for _, serviceIdentifier := range serviceIdentifiers {
 		logrus.Infof("Starting service '%v'", serviceIdentifier)
 		serviceContext, err := enclaveCtx.GetServiceContext(serviceIdentifier)
@@ -100,9 +107,15 @@ func run(
 
 		serviceName := serviceContext.GetServiceName()
 
+		err = metricsClient.TrackStartService(enclaveIdentifier, string(serviceName))
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred tracking service update metric.")
+		}
+
 		if err := startServiceStarlarkCommand(ctx, enclaveCtx, serviceName); err != nil {
 			return stacktrace.Propagate(err, "An error occurred starting service '%v' from enclave '%v'", serviceIdentifier, enclaveIdentifier)
 		}
+
 	}
 	return nil
 }

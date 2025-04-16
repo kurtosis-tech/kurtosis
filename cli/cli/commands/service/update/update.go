@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/service_helpers"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_client_factory"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
@@ -174,6 +175,16 @@ func run(
 	enclaveCtx, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveIdentifier)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting an enclave context from enclave info for enclave '%v'", enclaveIdentifier)
+	}
+	metricsClient, closeMetricsClientFunc, err := metrics_client_factory.GetMetricsClient()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting metrics client.")
+	}
+	defer closeMetricsClientFunc()
+
+	err = metricsClient.TrackServiceUpdate(enclaveIdentifier, serviceName)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred tracking service update metric.")
 	}
 
 	imageStr, err := flags.GetString(service_helpers.ImageKey)
