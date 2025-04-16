@@ -96,7 +96,11 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting metrics client.")
 	}
-	defer closeMetricsClientFunc()
+	defer func() {
+		if err = closeMetricsClientFunc(); err != nil {
+			logrus.Warnf("An error occurred closing metrics client:\n%v", closeMetricsClientFunc())
+		}
+	}()
 
 	for _, serviceIdentifier := range serviceIdentifiers {
 		logrus.Infof("Starting service '%v'", serviceIdentifier)

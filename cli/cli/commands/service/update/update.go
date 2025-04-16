@@ -180,7 +180,11 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting metrics client.")
 	}
-	defer closeMetricsClientFunc()
+	defer func() {
+		if err = closeMetricsClientFunc(); err != nil {
+			logrus.Warnf("An error occurred closing metrics client:\n%v", closeMetricsClientFunc())
+		}
+	}()
 
 	err = metricsClient.TrackServiceUpdate(enclaveIdentifier, serviceName)
 	if err != nil {
