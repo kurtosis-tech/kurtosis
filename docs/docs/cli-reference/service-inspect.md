@@ -22,3 +22,8 @@ Running the above command will print detailed information about:
 
 By default, the service UUID is shortened. To view the full UUID of your service, add the following flag:
 * `--full-uuid`
+
+You can also control the output format using the `--output` (`-o`) flag:
+* `--output yaml` will print the service config in YAML format
+* `--output json` will print the service config in JSON format (this can be piped into `service add` via `--json-service-config`)
+* If `--output` is omitted, the result will be printed in a human-readable format

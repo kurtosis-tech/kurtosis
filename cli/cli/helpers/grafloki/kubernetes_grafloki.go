@@ -30,7 +30,7 @@ const (
 	lokiProbeTimeoutSeconds              = 10
 
 	// takes around 30 seconds for loki pod to become ready
-	lokiDeploymentMaxRetries    = 40
+	lokiDeploymentMaxRetries    = 60
 	lokiDeploymentRetryInterval = 1 * time.Second
 	defaultStorageClass         = ""
 )
@@ -53,8 +53,12 @@ func StartGrafLokiInKubernetes(ctx context.Context, graflokiConfig resolved_conf
 	var lokiHost string
 	var removeGrafanaAndLokiFunc func()
 	shouldRemoveGrafanaAndLoki := false
-	doesGrafanaAndLokiExist, lokiHost := checkGrafanaAndLokiDeploymentExistence(ctx, k8sManager)
+	doesGrafanaAndLokiExist, lokiHost, err := checkGrafanaAndLokiDeploymentExistence(ctx, k8sManager)
+	if err != nil {
+		return "", "", stacktrace.Propagate(err, "An error occurred checking if Grafana and Loki exist.")
+	}
 	if !doesGrafanaAndLokiExist {
+		logrus.Infof("No running Grafana and Loki deployments found. Creating them...")
 		lokiHost, removeGrafanaAndLokiFunc, err = createGrafanaAndLokiDeployments(ctx, k8sManager, graflokiConfig)
 		if err != nil {
 			return "", "", stacktrace.Propagate(err, "An error occurred creating Grafana and Loki deployments.")
@@ -445,27 +449,29 @@ func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes
 	return lokiHost, removeGrafanaAndLokiDeploymentsFunc, nil
 }
 
-func checkGrafanaAndLokiDeploymentExistence(ctx context.Context, k8sManager *kubernetes_manager.KubernetesManager) (bool, string) {
+func checkGrafanaAndLokiDeploymentExistence(ctx context.Context, k8sManager *kubernetes_manager.KubernetesManager) (bool, string, error) {
 	existsLoki := false
 	existsGrafana := false
 	var lokiHost string
 
 	lokiDeployment, err := k8sManager.GetDeployment(ctx, graflokiNamespace, lokiDeploymentName)
-	if err == nil && lokiDeployment != nil {
+	if err != nil {
+		return false, "", stacktrace.Propagate(err, "An error occurred getting Loki deployment '%v'", lokiDeploymentName)
+	}
+	if lokiDeployment != nil {
 		existsLoki = true
 		lokiHost = getLokiUrlInsideK8sCluster(lokiServiceName, graflokiNamespace, lokiNodePort)
-	} else {
-		return existsLoki, "" // loki doesn't in this case so eject early
 	}
 
 	grafanaDeployment, err := k8sManager.GetDeployment(ctx, graflokiNamespace, grafanaDeploymentName)
-	if err == nil && grafanaDeployment != nil {
-		existsGrafana = false
-	} else {
-		return existsGrafana, ""
+	if err != nil {
+		return false, "", stacktrace.Propagate(err, "An error occurred getting Grafana deployment '%v'", grafanaDeploymentName)
+	}
+	if grafanaDeployment != nil {
+		existsGrafana = true
 	}
 
-	return existsLoki && existsGrafana, lokiHost
+	return existsLoki && existsGrafana, lokiHost, nil
 }
 
 func StopGrafLokiInKubernetes(ctx context.Context) error {

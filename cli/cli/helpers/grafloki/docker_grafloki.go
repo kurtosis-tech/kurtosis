@@ -50,29 +50,38 @@ func StartGrafLokiInDocker(ctx context.Context, graflokiConfig resolved_config.G
 	}
 
 	var lokiHost string
+	var removeGrafanaAndLokiFunc func()
+	shouldRemoveGrafanaAndLoki := false
 	doesGrafanaAndLokiExist, lokiHost, err := checkGrafanaAndLokiContainerExistence(ctx, dockerManager, lokiContainerLabels, grafanaContainerLabels)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error occurred checking if Grafana and Loki exist.")
 	}
 	if !doesGrafanaAndLokiExist {
 		logrus.Infof("No running Grafana and Loki containers found. Creating them...")
-		lokiHost, err = createGrafanaAndLokiContainers(ctx, dockerManager, graflokiConfig)
+		lokiHost, removeGrafanaAndLokiFunc, err = createGrafanaAndLokiContainers(ctx, dockerManager, graflokiConfig)
 		if err != nil {
 			return "", "", stacktrace.Propagate(err, "An error occurred creating Grafana and Loki containers.")
 		}
+		shouldRemoveGrafanaAndLoki = true
+		defer func() {
+			if shouldRemoveGrafanaAndLoki {
+				removeGrafanaAndLokiFunc()
+			}
+		}()
 	}
 
 	grafanaUrl := fmt.Sprintf("http://%v:%v", localhostAddr, grafanaPort)
+	shouldRemoveGrafanaAndLoki = false
 	return lokiHost, grafanaUrl, nil
 }
 
-func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_manager.DockerManager, graflokConfig resolved_config.GrafanaLokiConfig) (string, error) {
+func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_manager.DockerManager, graflokConfig resolved_config.GrafanaLokiConfig) (string, func(), error) {
 	lokiNatPort := nat.Port(strconv.Itoa(lokiPort) + "/tcp")
 	grafanaNatPort := nat.Port(strconv.Itoa(grafanaPort) + "/tcp")
 
 	bridgeNetworkId, err := dockerManager.GetNetworkIdByName(ctx, bridgeNetworkName)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting Docker network id by Name: %v", bridgeNetworkName)
+		return "", nil, stacktrace.Propagate(err, "An error occurred getting Docker network id by Name: %v", bridgeNetworkName)
 	}
 
 	lokiImage := defaultLokiImage
@@ -81,7 +90,7 @@ func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_m
 	}
 	lokiUuid, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred generating a uuid for Loki.")
+		return "", nil, stacktrace.Propagate(err, "An error occurred generating a uuid for Loki.")
 	}
 	lokiContainerName := fmt.Sprintf("%v%v", LokiContainerNamePrefix, lokiUuid)
 	lokiArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(lokiImage, lokiContainerName, bridgeNetworkId).
@@ -95,10 +104,10 @@ func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_m
 		Build()
 	lokiContainerId, _, err := dockerManager.CreateAndStartContainer(ctx, lokiArgs)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred creating '%v' container.", lokiContainerName)
+		return "", nil, stacktrace.Propagate(err, "An error occurred creating '%v' container.", lokiContainerName)
 	}
 	shouldDestroyLokiContainer := true
-	defer func() {
+	removeLokiContainerFunc := func() {
 		if shouldDestroyLokiContainer {
 			err := dockerManager.RemoveContainer(ctx, lokiContainerId)
 			if err != nil {
@@ -106,18 +115,21 @@ func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_m
 				logrus.Warnf("Manually remove Loki container with id: %v", lokiContainerId)
 			}
 		}
+	}
+	defer func() {
+		removeLokiContainerFunc()
 	}()
 	logrus.Infof("Loki container started.")
 
 	lokiBridgeNetworkIpAddr, err := dockerManager.GetContainerIPOnNetwork(ctx, lokiContainerId, bridgeNetworkName)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting container '%v' ip address on network '%v'.", lokiContainerId, bridgeNetworkName)
+		return "", nil, stacktrace.Propagate(err, "An error occurred getting container '%v' ip address on network '%v'.", lokiContainerId, bridgeNetworkName)
 	}
 
 	lokiBridgeNetworkIpAddress := fmt.Sprintf("http://%v:%v", lokiBridgeNetworkIpAddr, lokiPort)
 	lokiHostNetworkIpAddress := fmt.Sprintf("http://%v:%v", localhostAddr, lokiPort)
 	if err := waitForLokiReadiness(lokiHostNetworkIpAddress, lokiReadinessPath); err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred waiting for Loki container to become ready.")
+		return "", nil, stacktrace.Propagate(err, "An error occurred waiting for Loki container to become ready.")
 	}
 
 	grafanaDatasource := &GrafanaDatasources{
@@ -134,17 +146,17 @@ func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_m
 		}}
 	grafanaDatasourceYaml, err := yaml.Marshal(grafanaDatasource)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred serializing Grafana datasource to yaml: %v", grafanaDatasourceYaml)
+		return "", nil, stacktrace.Propagate(err, "An error occurred serializing Grafana datasource to yaml: %v", grafanaDatasourceYaml)
 	}
 	logrus.Debugf("Grafana data source yaml %v", string(grafanaDatasourceYaml))
 
 	tmpFile, err := os.CreateTemp("", "grafana-datasource-*.yaml")
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred creating temp datasource config.")
+		return "", nil, stacktrace.Propagate(err, "An error occurred creating temp datasource config.")
 	}
 	defer tmpFile.Close()
 	if _, err := tmpFile.WriteString(string(grafanaDatasourceYaml)); err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred writing config.")
+		return "", nil, stacktrace.Propagate(err, "An error occurred writing config.")
 	}
 
 	grafanaImage := defaultGrafanaImage
@@ -154,7 +166,7 @@ func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_m
 	root := service_user.NewServiceUser(rootUserUid)
 	grafanaUuid, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred generating a uuid for Grafana.")
+		return "", nil, stacktrace.Propagate(err, "An error occurred generating a uuid for Grafana.")
 	}
 	grafanaContainerName := fmt.Sprintf("%v%v", GrafanaContainerNamePrefix, grafanaUuid)
 	grafanaArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(grafanaImage, grafanaContainerName, bridgeNetworkId).
@@ -177,10 +189,10 @@ func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_m
 		Build()
 	grafanaContainerId, _, err := dockerManager.CreateAndStartContainer(ctx, grafanaArgs)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error creating creating '%v' container.", grafanaContainerName)
+		return "", nil, stacktrace.Propagate(err, "An error creating creating '%v' container.", grafanaContainerName)
 	}
 	shouldDestroyGrafanaContainer := true
-	defer func() {
+	removeGrafanaContainerFunc := func() {
 		if shouldDestroyGrafanaContainer {
 			err := dockerManager.RemoveContainer(ctx, grafanaContainerId)
 			if err != nil {
@@ -188,12 +200,20 @@ func createGrafanaAndLokiContainers(ctx context.Context, dockerManager *docker_m
 				logrus.Warnf("Manually remove Grafana container with id: %v", grafanaContainerId)
 			}
 		}
+	}
+	defer func() {
+		removeGrafanaContainerFunc()
 	}()
 	logrus.Infof("Grafana container started.")
 
+	removeGrafanaAndLokiContainersFunc := func() {
+		removeLokiContainerFunc()
+		removeGrafanaContainerFunc()
+	}
+
 	shouldDestroyLokiContainer = false
 	shouldDestroyGrafanaContainer = false
-	return lokiBridgeNetworkIpAddress, nil
+	return lokiBridgeNetworkIpAddress, removeGrafanaAndLokiContainersFunc, nil
 }
 
 func waitForLokiReadiness(lokiHost string, readyPath string) error {

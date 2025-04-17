@@ -130,7 +130,7 @@ func GetAddServiceStarlarkScript(serviceName string, serviceConfigStarlark strin
 }
 
 func RunAddServiceStarlarkScript(ctx context.Context, serviceName, enclaveIdentifier, starlarkScript string, enclaveCtx *enclaves.EnclaveContext) (*enclaves.StarlarkRunResult, error) {
-	logrus.Infof("ADD SERVICE STARLARK:\n%v", starlarkScript)
+	logrus.Debugf("Add service starlark:\n%v", starlarkScript)
 	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, starlark_run_config.NewRunStarlarkConfig())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
