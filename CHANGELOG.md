@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.7.0](https://github.com/kurtosis-tech/kurtosis/compare/1.6.0...1.7.0) (2025-04-17)
+
+
+### Features
+
+* add grafloki to kurtosis config ([#2707](https://github.com/kurtosis-tech/kurtosis/issues/2707)) ([b6794e1](https://github.com/kurtosis-tech/kurtosis/commit/b6794e1618091c77ec18a23079c11e1c5463f30e))
+* export service logs (Kubenertes) ([#2693](https://github.com/kurtosis-tech/kurtosis/issues/2693)) ([c00f357](https://github.com/kurtosis-tech/kurtosis/commit/c00f357b5ebb9cb9e1b52ab412e489d6260895c6))
+* grafloki start/stop ([#2696](https://github.com/kurtosis-tech/kurtosis/issues/2696)) ([53d823a](https://github.com/kurtosis-tech/kurtosis/commit/53d823a53c7941eb93fe14e1b06e958a30b539d7))
+* service update ([#2689](https://github.com/kurtosis-tech/kurtosis/issues/2689)) ([4cda391](https://github.com/kurtosis-tech/kurtosis/commit/4cda3910a8ab333ae0726631579a8a300c69cbe4))
+
+
+### Bug Fixes
+
+* **backend/kubernetes:** use default KUBECONFIG resolution ([#2672](https://github.com/kurtosis-tech/kurtosis/issues/2672)) ([379e49b](https://github.com/kurtosis-tech/kurtosis/commit/379e49b0013a769e5f5102386d6733eafb528014))
+* docker auth wasn't being used by engine and API ([#2699](https://github.com/kurtosis-tech/kurtosis/issues/2699)) ([4eea787](https://github.com/kurtosis-tech/kurtosis/commit/4eea787e2cad7e7e91811fa4e8de05b08022cc0e))
+* give grafana root access ([#2706](https://github.com/kurtosis-tech/kurtosis/issues/2706)) ([b8e2fab](https://github.com/kurtosis-tech/kurtosis/commit/b8e2fab7c3be8ea27108c20bbd29199d9d460abc))
+* remove k8s ingress on stop user services ([#2715](https://github.com/kurtosis-tech/kurtosis/issues/2715)) ([e31c0d4](https://github.com/kurtosis-tech/kurtosis/commit/e31c0d4217d883da72a38e0e43dd77ceb55d8e65))
+* return empty deployment if not found ([#2716](https://github.com/kurtosis-tech/kurtosis/issues/2716)) ([451c70e](https://github.com/kurtosis-tech/kurtosis/commit/451c70e5cea2c72edeb68ccd424433f05592474c))
+
 ## [1.6.0](https://github.com/kurtosis-tech/kurtosis/compare/1.5.0...1.6.0) (2025-03-18)
 
 
