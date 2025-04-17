@@ -33,7 +33,7 @@ kurtosis service update my-enclave test-service \
   --ports "port1:8080/tcp"
 ```
 
-:::note Restarted container
+:::note Restarted Container
 This command replaces the existing service with a new container using the updated configuration. The service will be briefly stopped and restarted as part of this process.
 :::
 

@@ -21,7 +21,13 @@ Much like `docker run`, this command has multiple options available to customize
 1. The `--env` flag can be used to specify a set of environment variables that should be set when running the service
 1. The `--ports` flag can be used to set the ports that the service will listen on
 
-If you have an existing service config in JSON format (for example, one that was output using `kurtosis service inspect`), you can use the `--json-service-config` flag to add a service using that config:
+To override the service's CMD, add a `--` after the image name and then pass in your CMD args like so:
+
+```bash
+kurtosis service add --entrypoint sh my-enclave test-service alpine -- -c "echo 'Hello world'"
+```
+
+Alternatively, if you have an existing service config in JSON format (for example, one that was output using `kurtosis service inspect`), you can use the `--json-service-config` flag to add a service using that config:
 
 ```bash
 kurtosis service add my-enclave test-service --json-service-config ./my-service-config.json
@@ -30,7 +36,7 @@ kurtosis service add my-enclave test-service --json-service-config ./my-service-
 To read the JSON config from stdin, use:
 
 ```bash
-kurtosis service add my-enclave test-service ubuntu:latest --json-service-config - < ./my-service-config.json
+kurtosis service add my-enclave test-service --json-service-config - < ./my-service-config.json
 ```
 
 :::note Override
