@@ -242,8 +242,6 @@ type KurtosisBackend interface {
 	)
 
 	// RemoveRegisteredUserServiceProcesses removes the running user service process but keeps the service registration
-	// TODO: As we don't persist user service logs anywhere, removing the container/pod will also remove all its
-	//  logs. We need a persistent log storage to address this issue.
 	RemoveRegisteredUserServiceProcesses(
 		ctx context.Context,
 		enclaveUuid enclave.EnclaveUUID,
