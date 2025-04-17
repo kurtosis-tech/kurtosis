@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"net/http"
 	"net/url"
 	"os"
@@ -1444,20 +1445,23 @@ func (manager *KubernetesManager) RemoveDeployment(ctx context.Context, namespac
 }
 
 func (manager *KubernetesManager) GetDeployment(ctx context.Context, namespace string, name string) (*v1.Deployment, error) {
-	daemonSetClient := manager.kubernetesClientSet.AppsV1().Deployments(namespace)
+	deploymentClient := manager.kubernetesClientSet.AppsV1().Deployments(namespace)
 
-	daemonSet, err := daemonSetClient.Get(ctx, name, metav1.GetOptions{
+	deployment, err := deploymentClient.Get(ctx, name, metav1.GetOptions{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "",
 			APIVersion: "",
 		},
 		ResourceVersion: "",
 	})
+	if apierrors.IsNotFound(err) {
+		return nil, nil // in the case the deployment doesn't exist, simply return a nil object
+	}
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get daemon set with name '%s'", name)
+		return nil, stacktrace.Propagate(err, "Failed to get deployment with name '%s'", name)
 	}
 
-	return daemonSet, nil
+	return deployment, nil
 }
 
 func (manager *KubernetesManager) CreateDeployment(
