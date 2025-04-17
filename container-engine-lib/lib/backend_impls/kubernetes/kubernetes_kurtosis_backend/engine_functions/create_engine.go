@@ -56,6 +56,7 @@ func CreateEngine(
 	_ bool, //It's not required to add extra configuration in K8S for enabling the debug server
 	githubAuthToken string,
 	sinks logs_aggregator.Sinks,
+	shouldEnablePersistentVolumeLogsCollection bool,
 	engineNodeName string,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
@@ -294,6 +295,7 @@ func CreateEngine(
 		logsAggregatorDeployment,
 		defaultHttpLogsAggregatorPortNum,
 		sinks,
+		shouldEnablePersistentVolumeLogsCollection,
 		objAttrsProvider,
 		kubernetesManager,
 	)

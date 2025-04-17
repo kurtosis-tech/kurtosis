@@ -41,7 +41,8 @@ import (
 )
 
 const (
-	isResourceInformationComplete = true
+	isResourceInformationComplete                     = true
+	defaultShouldEnablePersistentVolumeLogsCollection = true
 )
 
 type DockerKurtosisBackend struct {
@@ -115,6 +116,7 @@ func (backend *DockerKurtosisBackend) CreateEngine(
 	shouldStartInDebugMode bool,
 	gitAuthToken string,
 	sinks logs_aggregator.Sinks,
+	shouldEnablePersistentVolumeLogsCollection bool,
 ) (
 	*engine.Engine,
 	error,
@@ -128,6 +130,7 @@ func (backend *DockerKurtosisBackend) CreateEngine(
 		shouldStartInDebugMode,
 		gitAuthToken,
 		sinks,
+		shouldEnablePersistentVolumeLogsCollection,
 		backend.dockerManager,
 		backend.objAttrsProvider,
 	)
@@ -389,6 +392,7 @@ func (backend *DockerKurtosisBackend) CreateLogsAggregator(
 		logsAggregatorContainer,
 		httpPortNum,
 		sinks,
+		defaultShouldEnablePersistentVolumeLogsCollection,
 		backend.dockerManager,
 		backend.objAttrsProvider,
 	)

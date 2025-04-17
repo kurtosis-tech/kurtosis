@@ -51,6 +51,7 @@ type KurtosisBackend interface {
 		shouldStartInDebugMode bool,
 		githubAuthToken string,
 		sinks logs_aggregator.Sinks,
+		shouldTurnOffPersistentVolumeLogsCollection bool,
 	) (
 		*engine.Engine,
 		error,
@@ -329,6 +330,7 @@ type KurtosisBackend interface {
 		resultErr error, // Represents an error with the function itself, rather than the user services
 	)
 
+	// TODO: this should be removed from KurtosisBackend interface, as nobody consumes it - all CRUD for LogsAggregator is used/managed by engine
 	CreateLogsAggregator(
 		ctx context.Context,
 		httpPortNum uint16,

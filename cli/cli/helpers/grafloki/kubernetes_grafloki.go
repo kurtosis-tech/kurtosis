@@ -3,6 +3,7 @@ package grafloki
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/stacktrace"
@@ -43,7 +44,7 @@ var grafanaLabels = map[string]string{
 
 var httpApplicationProtocol = "http"
 
-func StartGrafLokiInKubernetes(ctx context.Context) (string, string, error) {
+func StartGrafLokiInKubernetes(ctx context.Context, graflokiConfig resolved_config.GrafanaLokiConfig) (string, string, error) {
 	k8sManager, err := getKubernetesManager()
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error occurred getting Kubernetes Manager.")
@@ -54,7 +55,7 @@ func StartGrafLokiInKubernetes(ctx context.Context) (string, string, error) {
 	shouldRemoveGrafanaAndLoki := false
 	doesGrafanaAndLokiExist, lokiHost := checkGrafanaAndLokiDeploymentExistence(ctx, k8sManager)
 	if !doesGrafanaAndLokiExist {
-		lokiHost, removeGrafanaAndLokiFunc, err = createGrafanaAndLokiDeployments(ctx, k8sManager)
+		lokiHost, removeGrafanaAndLokiFunc, err = createGrafanaAndLokiDeployments(ctx, k8sManager, graflokiConfig)
 		if err != nil {
 			return "", "", stacktrace.Propagate(err, "An error occurred creating Grafana and Loki deployments.")
 		}
@@ -71,7 +72,7 @@ func StartGrafLokiInKubernetes(ctx context.Context) (string, string, error) {
 	return lokiHost, getGrafanaUrlOnHostMachine(grafanaPort), nil
 }
 
-func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes_manager.KubernetesManager) (string, func(), error) {
+func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes_manager.KubernetesManager, graflokiConfig resolved_config.GrafanaLokiConfig) (string, func(), error) {
 	graflokilNamespaceObj, err := k8sManager.CreateNamespace(ctx, graflokiNamespace, map[string]string{}, map[string]string{})
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred creating namespace '%v'", graflokiNamespace)
@@ -89,6 +90,10 @@ func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes
 		}
 	}()
 
+	lokiImage := defaultLokiImage
+	if graflokiConfig.LokiImage != "" {
+		lokiImage = graflokiConfig.LokiImage
+	}
 	lokiDeployment, err := k8sManager.CreateDeployment(
 		ctx,
 		graflokiNamespace,
@@ -254,6 +259,10 @@ func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes
 		}
 	}()
 
+	grafanaImage := defaultGrafanaImage
+	if graflokiConfig.GrafanaImage != "" {
+		grafanaImage = graflokiConfig.GrafanaImage
+	}
 	grafanaDeployment, err := k8sManager.CreateDeployment(
 		ctx,
 		graflokiNamespace,

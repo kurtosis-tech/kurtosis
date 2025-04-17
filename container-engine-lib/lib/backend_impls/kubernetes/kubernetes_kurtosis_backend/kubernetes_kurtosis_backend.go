@@ -36,9 +36,10 @@ import (
 )
 
 const (
-	isResourceInformationComplete = false
-	noProductionMode              = false
-	anyNodeEngineNodeName         = "" // engine can be scheduled by k8s on any node
+	isResourceInformationComplete                      = false
+	noProductionMode                                   = false
+	anyNodeEngineNodeName                              = "" // engine can be scheduled by k8s on any node
+	defaultShouldTurnOffPersistentVolumeLogsCollection = false
 )
 
 type KubernetesKurtosisBackend struct {
@@ -152,6 +153,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	shouldStartInDebugMode bool,
 	githubAuthToken string,
 	sinks logs_aggregator.Sinks,
+	shouldEnablePersistentVolumeLogsCollection bool,
 ) (
 	*engine.Engine,
 	error,
@@ -165,6 +167,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 		shouldStartInDebugMode,
 		githubAuthToken,
 		sinks,
+		shouldEnablePersistentVolumeLogsCollection,
 		backend.engineNodeName,
 		backend.kubernetesManager,
 		backend.objAttrsProvider,
@@ -481,6 +484,7 @@ func (backend *KubernetesKurtosisBackend) CreateLogsAggregator(ctx context.Conte
 		logsAggregatorDeployment,
 		httpPortNum,
 		sinks,
+		defaultShouldTurnOffPersistentVolumeLogsCollection,
 		backend.objAttrsProvider,
 		backend.kubernetesManager)
 	if err != nil {
