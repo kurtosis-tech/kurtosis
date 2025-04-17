@@ -10,6 +10,7 @@ const (
 	// We are following these naming conventions for event's data
 	// https://segment.com/docs/getting-started/04-full-install/#event-naming-best-practices
 	enclaveIDPropertyKey           = "enclave_id"
+	serviceIDPropertyKey           = "service_id"
 	didUserAcceptSendingMetricsKey = "did_user_accept_sending_metrics"
 	packageIdKey                   = "package_id"
 	isRemotePackageKey             = "is_remote_package"
@@ -36,6 +37,9 @@ const (
 	stopAction            = "stop"
 	destroyAction         = "destroy"
 	runAction             = "run"
+	updateAction          = "update"
+	serviceStartAction    = "service-start"
+	serviceStopAction     = "service-stop"
 	runFinishedAction     = "run-finished"
 	analyticsToggleAction = "analytics-toggle"
 )
@@ -107,6 +111,36 @@ func NewKurtosisRunEvent(packageId string, isRemote bool, isDryRun bool, isScrip
 	}
 
 	event := newEvent(kurtosisCategory, runAction, properties)
+	return event
+}
+
+func NewStartServiceEvent(enclaveId string, serviceId string) *Event {
+	properties := map[string]string{
+		enclaveIDPropertyKey: enclaveId,
+		serviceIDPropertyKey: serviceId,
+	}
+
+	event := newEvent(kurtosisCategory, serviceStartAction, properties)
+	return event
+}
+
+func NewStopServiceEvent(enclaveId string, serviceId string) *Event {
+	properties := map[string]string{
+		enclaveIDPropertyKey: enclaveId,
+		serviceIDPropertyKey: serviceId,
+	}
+
+	event := newEvent(kurtosisCategory, serviceStopAction, properties)
+	return event
+}
+
+func NewUpdateServiceEvent(enclaveId string, serviceId string) *Event {
+	properties := map[string]string{
+		enclaveIDPropertyKey: enclaveId,
+		serviceIDPropertyKey: serviceId,
+	}
+
+	event := newEvent(kurtosisCategory, updateAction, properties)
 	return event
 }
 

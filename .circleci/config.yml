@@ -881,6 +881,9 @@ jobs:
       - run: "${KURTOSIS_BINPATH} files storeservice test-enclave test1 /usr/local/apache2/conf/httpd.conf --name stored-file"
       - run: "${KURTOSIS_BINPATH} files download test-enclave stored-file ."
 
+      # Service update
+      - run: "${KURTOSIS_BINPATH} service update test-enclave test1 --image httpd:2.4.63 --env 'update=test;where=ci' --ports http=80 --files '/root/somewhere:rendered-file|stored-file'"
+
       # Check Dump Contains files
       - run: "${KURTOSIS_BINPATH} enclave dump test-enclave test-dump"
       - run: "ls test-dump/files/rendered-file"

@@ -145,6 +145,30 @@ func (segment *segmentClient) TrackKurtosisRun(packageId string, isRemote bool, 
 	return nil
 }
 
+func (segment *segmentClient) TrackServiceUpdate(enclaveId string, serviceId string) error {
+	newEvent := event.NewUpdateServiceEvent(enclaveId, serviceId)
+	if err := segment.track(newEvent); err != nil {
+		return stacktrace.Propagate(err, "An error occurred tracking service update event")
+	}
+	return nil
+}
+
+func (segment *segmentClient) TrackStartService(enclaveId string, serviceId string) error {
+	newEvent := event.NewStartServiceEvent(enclaveId, serviceId)
+	if err := segment.track(newEvent); err != nil {
+		return stacktrace.Propagate(err, "An error occurred tracking start service event")
+	}
+	return nil
+}
+
+func (segment *segmentClient) TrackStopService(enclaveId string, serviceId string) error {
+	newEvent := event.NewStopServiceEvent(enclaveId, serviceId)
+	if err := segment.track(newEvent); err != nil {
+		return stacktrace.Propagate(err, "An error occurred tracking stop service event")
+	}
+	return nil
+}
+
 func (segment *segmentClient) TrackKurtosisRunFinishedEvent(packageId string, numberOfServices int, isSuccess bool) error {
 	newEvent := event.NewKurtosisRunFinishedEvent(packageId, numberOfServices, isSuccess)
 	if err := segment.track(newEvent); err != nil {
