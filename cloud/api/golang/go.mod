@@ -1,7 +1,6 @@
 module github.com/kurtosis-tech/kurtosis/cloud/api/golang
 
-go 1.23.0
-
+go 1.23
 toolchain go1.24.1
 
 require (
