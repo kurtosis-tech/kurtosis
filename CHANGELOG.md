@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.1](https://github.com/kurtosis-tech/kurtosis/compare/1.7.0...1.7.1) (2025-04-18)
+
+
+### Bug Fixes
+
+* go work sum ([#2717](https://github.com/kurtosis-tech/kurtosis/issues/2717)) ([ed09d72](https://github.com/kurtosis-tech/kurtosis/commit/ed09d725a88ba213a92e48f3d6689672abfd0063))
+
 ## [1.7.0](https://github.com/kurtosis-tech/kurtosis/compare/1.6.0...1.7.0) (2025-04-17)
 
 
