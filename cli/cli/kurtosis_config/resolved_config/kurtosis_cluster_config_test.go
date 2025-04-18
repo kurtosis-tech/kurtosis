@@ -1,15 +1,16 @@
 package resolved_config
 
 import (
-	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v5"
 	"testing"
+
+	v6 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v6"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNewKurtosisClusterConfigEmptyOverrides(t *testing.T) {
-	kurtosisClusterConfigOverrides := v5.KurtosisClusterConfigV5{
+	kurtosisClusterConfigOverrides := v6.KurtosisClusterConfigV6{
 		Type:                        nil,
 		Config:                      nil,
 		LogsAggregator:              nil,
@@ -22,7 +23,7 @@ func TestNewKurtosisClusterConfigEmptyOverrides(t *testing.T) {
 
 func TestNewKurtosisClusterConfigDockerType(t *testing.T) {
 	dockerType := KurtosisClusterType_Docker.String()
-	kurtosisClusterConfigOverrides := v5.KurtosisClusterConfigV5{
+	kurtosisClusterConfigOverrides := v6.KurtosisClusterConfigV6{
 		Type:                        &dockerType,
 		Config:                      nil,
 		LogsAggregator:              nil,
@@ -35,7 +36,7 @@ func TestNewKurtosisClusterConfigDockerType(t *testing.T) {
 
 func TestNewKurtosisClusterConfigKubernetesNoConfig(t *testing.T) {
 	kubernetesType := KurtosisClusterType_Kubernetes.String()
-	kurtosisClusterConfigOverrides := v5.KurtosisClusterConfigV5{
+	kurtosisClusterConfigOverrides := v6.KurtosisClusterConfigV6{
 		Type:                        &kubernetesType,
 		Config:                      nil,
 		LogsAggregator:              nil,
@@ -48,7 +49,7 @@ func TestNewKurtosisClusterConfigKubernetesNoConfig(t *testing.T) {
 
 func TestNewKurtosisClusterConfigNonsenseType(t *testing.T) {
 	clusterType := "gdsfgsdfvsf"
-	kurtosisClusterConfigOverrides := v5.KurtosisClusterConfigV5{
+	kurtosisClusterConfigOverrides := v6.KurtosisClusterConfigV6{
 		Type:                        &clusterType,
 		Config:                      nil,
 		LogsAggregator:              nil,
@@ -62,13 +63,13 @@ func TestNewKurtosisClusterConfigNonsenseType(t *testing.T) {
 func TestNewKurtosisClusterConfigKubernetesPartialConfig(t *testing.T) {
 	kubernetesType := KurtosisClusterType_Kubernetes.String()
 	kubernetesClusterName := "some-name"
-	kubernetesPartialConfig := v5.KubernetesClusterConfigV5{
+	kubernetesPartialConfig := v6.KubernetesClusterConfigV6{
 		KubernetesClusterName:  &kubernetesClusterName,
 		StorageClass:           nil,
 		EnclaveSizeInMegabytes: nil,
 		EngineNodeName:         nil,
 	}
-	kurtosisClusterConfigOverrides := v5.KurtosisClusterConfigV5{
+	kurtosisClusterConfigOverrides := v6.KurtosisClusterConfigV6{
 		Type:                        &kubernetesType,
 		Config:                      &kubernetesPartialConfig,
 		LogsAggregator:              nil,
@@ -85,13 +86,13 @@ func TestNewKurtosisClusterConfigKubernetesFullConfig(t *testing.T) {
 	kubernetesStorageClass := "some-storage-class"
 	kubernetesEnclaveSizeInMB := uint(5)
 	kubernetesEngineNodeName := "some-node-name"
-	kubernetesFullConfig := v5.KubernetesClusterConfigV5{
+	kubernetesFullConfig := v6.KubernetesClusterConfigV6{
 		KubernetesClusterName:  &kubernetesClusterName,
 		StorageClass:           &kubernetesStorageClass,
 		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
 		EngineNodeName:         &kubernetesEngineNodeName,
 	}
-	kurtosisClusterConfigOverrides := v5.KurtosisClusterConfigV5{
+	kurtosisClusterConfigOverrides := v6.KurtosisClusterConfigV6{
 		Type:                        &kubernetesType,
 		Config:                      &kubernetesFullConfig,
 		LogsAggregator:              nil,
@@ -108,13 +109,13 @@ func TestNewKurtosisClusterConfigLogsAggregatorNoConfig(t *testing.T) {
 	kubernetesStorageClass := "some-storage-class"
 	kubernetesEnclaveSizeInMB := uint(5)
 	kubernetesEngineNodeName := "some-node-name"
-	kubernetesFullConfig := v5.KubernetesClusterConfigV5{
+	kubernetesFullConfig := v6.KubernetesClusterConfigV6{
 		KubernetesClusterName:  &kubernetesClusterName,
 		StorageClass:           &kubernetesStorageClass,
 		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
 		EngineNodeName:         &kubernetesEngineNodeName,
 	}
-	kurtosisClusterConfigOverrides := v5.KurtosisClusterConfigV5{
+	kurtosisClusterConfigOverrides := v6.KurtosisClusterConfigV6{
 		Type:                        &kubernetesType,
 		Config:                      &kubernetesFullConfig,
 		LogsAggregator:              nil,
@@ -131,16 +132,16 @@ func TestNewKurtosisClusterConfigLogsAggregatorReservedSinkId(t *testing.T) {
 	kubernetesStorageClass := "some-storage-class"
 	kubernetesEnclaveSizeInMB := uint(5)
 	kubernetesEngineNodeName := "some-node-name"
-	kubernetesFullConfig := v5.KubernetesClusterConfigV5{
+	kubernetesFullConfig := v6.KubernetesClusterConfigV6{
 		KubernetesClusterName:  &kubernetesClusterName,
 		StorageClass:           &kubernetesStorageClass,
 		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
 		EngineNodeName:         &kubernetesEngineNodeName,
 	}
-	kurtosisClusterConfigOverrides := v5.KurtosisClusterConfigV5{
+	kurtosisClusterConfigOverrides := v6.KurtosisClusterConfigV6{
 		Type:   &kubernetesType,
 		Config: &kubernetesFullConfig,
-		LogsAggregator: &v5.LogsAggregatorConfigV5{
+		LogsAggregator: &v6.LogsAggregatorConfigV6{
 			Sinks: map[string]map[string]interface{}{
 				logs_aggregator.DefaultSinkId: {
 					"type": "elasticsearch",
@@ -160,16 +161,16 @@ func TestNewKurtosisClusterConfigLogsAggregatorFullConfig(t *testing.T) {
 	kubernetesStorageClass := "some-storage-class"
 	kubernetesEnclaveSizeInMB := uint(5)
 	kubernetesEngineNodeName := "some-node-name"
-	kubernetesFullConfig := v5.KubernetesClusterConfigV5{
+	kubernetesFullConfig := v6.KubernetesClusterConfigV6{
 		KubernetesClusterName:  &kubernetesClusterName,
 		StorageClass:           &kubernetesStorageClass,
 		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
 		EngineNodeName:         &kubernetesEngineNodeName,
 	}
-	kurtosisClusterConfigOverrides := v5.KurtosisClusterConfigV5{
+	kurtosisClusterConfigOverrides := v6.KurtosisClusterConfigV6{
 		Type:   &kubernetesType,
 		Config: &kubernetesFullConfig,
-		LogsAggregator: &v5.LogsAggregatorConfigV5{
+		LogsAggregator: &v6.LogsAggregatorConfigV6{
 			Sinks: map[string]map[string]interface{}{
 				"elasticsearch": {
 					"type": "elasticsearch",
@@ -189,16 +190,16 @@ func TestNewKurtosisClusterConfigGraflokiNoConfig(t *testing.T) {
 	kubernetesStorageClass := "some-storage-class"
 	kubernetesEnclaveSizeInMB := uint(5)
 	kubernetesEngineNodeName := "some-node-name"
-	kubernetesFullConfig := v5.KubernetesClusterConfigV5{
+	kubernetesFullConfig := v6.KubernetesClusterConfigV6{
 		KubernetesClusterName:  &kubernetesClusterName,
 		StorageClass:           &kubernetesStorageClass,
 		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
 		EngineNodeName:         &kubernetesEngineNodeName,
 	}
-	kurtosisClusterConfigOverrides := v5.KurtosisClusterConfigV5{
+	kurtosisClusterConfigOverrides := v6.KurtosisClusterConfigV6{
 		Type:   &kubernetesType,
 		Config: &kubernetesFullConfig,
-		LogsAggregator: &v5.LogsAggregatorConfigV5{
+		LogsAggregator: &v6.LogsAggregatorConfigV6{
 			Sinks: map[string]map[string]interface{}{
 				"elasticsearch": {
 					"type": "elasticsearch",
@@ -220,17 +221,17 @@ func TestNewKurtosisClusterConfigGraflokiFullConfig(t *testing.T) {
 	kubernetesEngineNodeName := "some-node-name"
 	grafanaImage := "grafana:1.32"
 	lokiImage := "loki:1.32"
-	kubernetesFullConfig := v5.KubernetesClusterConfigV5{
+	kubernetesFullConfig := v6.KubernetesClusterConfigV6{
 		KubernetesClusterName:  &kubernetesClusterName,
 		StorageClass:           &kubernetesStorageClass,
 		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
 		EngineNodeName:         &kubernetesEngineNodeName,
 	}
-	kurtosisClusterConfigOverrides := v5.KurtosisClusterConfigV5{
+	kurtosisClusterConfigOverrides := v6.KurtosisClusterConfigV6{
 		Type:           &kubernetesType,
 		Config:         &kubernetesFullConfig,
 		LogsAggregator: nil,
-		GrafanaLokiConfig: &v5.GrafanaLokiConfig{
+		GrafanaLokiConfig: &v6.GrafanaLokiConfigV6{
 			ShouldStartBeforeEngine: false,
 			GrafanaImage:            grafanaImage,
 			LokiImage:               lokiImage,
@@ -252,13 +253,13 @@ func TestNewKurtosisClusterConfigShouldEnableDefaultLogsSink(t *testing.T) {
 	kubernetesEnclaveSizeInMB := uint(5)
 	kubernetesEngineNodeName := "some-node-name"
 	ShouldEnableDefaultLogsSink := true
-	kubernetesFullConfig := v5.KubernetesClusterConfigV5{
+	kubernetesFullConfig := v6.KubernetesClusterConfigV6{
 		KubernetesClusterName:  &kubernetesClusterName,
 		StorageClass:           &kubernetesStorageClass,
 		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
 		EngineNodeName:         &kubernetesEngineNodeName,
 	}
-	kurtosisClusterConfigOverrides := v5.KurtosisClusterConfigV5{
+	kurtosisClusterConfigOverrides := v6.KurtosisClusterConfigV6{
 		Type:                        &kubernetesType,
 		Config:                      &kubernetesFullConfig,
 		LogsAggregator:              nil,
@@ -267,4 +268,75 @@ func TestNewKurtosisClusterConfigShouldEnableDefaultLogsSink(t *testing.T) {
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)
+}
+
+func TestNewKurtosisClusterConfigLogsCollectorNoConfig(t *testing.T) {
+	kubernetesType := KurtosisClusterType_Kubernetes.String()
+	kubernetesClusterName := "some-name"
+	kubernetesStorageClass := "some-storage-class"
+	kubernetesEnclaveSizeInMB := uint(5)
+	kubernetesEngineNodeName := "some-node-name"
+	kubernetesFullConfig := v6.KubernetesClusterConfigV6{
+		KubernetesClusterName:  &kubernetesClusterName,
+		StorageClass:           &kubernetesStorageClass,
+		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
+		EngineNodeName:         &kubernetesEngineNodeName,
+	}
+	kurtosisClusterConfigOverrides := v6.KurtosisClusterConfigV6{
+		Type:                        &kubernetesType,
+		Config:                      &kubernetesFullConfig,
+		LogsAggregator:              nil,
+		LogsCollector:               nil,
+		GrafanaLokiConfig:           nil,
+		ShouldEnableDefaultLogsSink: nil,
+	}
+	actualKurtosisClusterConfig, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
+	require.NoError(t, err)
+	require.Nil(t, actualKurtosisClusterConfig.logsCollector.Filters)
+}
+
+func TestNewKurtosisClusterConfigLogsCollectorFullConfig(t *testing.T) {
+	kubernetesType := KurtosisClusterType_Kubernetes.String()
+	kubernetesClusterName := "some-name"
+	kubernetesStorageClass := "some-storage-class"
+	kubernetesEnclaveSizeInMB := uint(5)
+	kubernetesEngineNodeName := "some-node-name"
+	kubernetesFullConfig := v6.KubernetesClusterConfigV6{
+		KubernetesClusterName:  &kubernetesClusterName,
+		StorageClass:           &kubernetesStorageClass,
+		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
+		EngineNodeName:         &kubernetesEngineNodeName,
+	}
+	filters := []map[string]string{
+		{
+			"service": "service1",
+			"level":   "info",
+			"app":     "backend",
+		},
+		{
+			"service": "service2",
+			"level":   "error",
+			"app":     "frontend",
+		},
+	}
+	kurtosisClusterConfigOverrides := v6.KurtosisClusterConfigV6{
+		Type:   &kubernetesType,
+		Config: &kubernetesFullConfig,
+		LogsAggregator: &v6.LogsAggregatorConfigV6{
+			Sinks: map[string]map[string]interface{}{
+				"elasticsearch": {
+					"type": "elasticsearch",
+				},
+			},
+		},
+		LogsCollector: &v6.LogsCollectorConfigV6{
+			Filters: filters,
+		},
+		GrafanaLokiConfig:           nil,
+		ShouldEnableDefaultLogsSink: nil,
+	}
+	actualKurtosisClusterConfig, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
+	require.NoError(t, err)
+	require.NotNil(t, actualKurtosisClusterConfig.logsCollector)
+	require.Equal(t, filters, actualKurtosisClusterConfig.logsCollector.Filters)
 }
