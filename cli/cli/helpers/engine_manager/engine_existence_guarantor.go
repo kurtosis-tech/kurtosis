@@ -90,6 +90,7 @@ type engineExistenceGuarantor struct {
 	// Enclave manager UI domain name
 	domain string
 
+	// TODO: Create a config that wraps logs specific configuration (sinks, retention, filters, etc)
 	// Length of time Kurtosis will keep logs for
 	logRetentionPeriod string
 
