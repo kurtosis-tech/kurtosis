@@ -460,6 +460,13 @@ func createStartServiceOperation(
 				return
 			}
 			for _, volumeAndClaim := range createVolumesWithClaims {
+				if volumeAndClaim.UsedPreExistingPVC {
+					logrus.Infof(
+						"Skipping deleteion of persistent volume claim during cleanup '%v' because it was pre-existing",
+						volumeAndClaim.VolumeClaimName,
+					)
+					continue
+				}
 				volumeClaimName := volumeAndClaim.VolumeClaimName
 				if err := kubernetesManager.RemovePersistentVolumeClaim(ctx, namespaceName, volumeClaimName); err != nil {
 					logrus.Errorf("Starting service didn't complete successfully so we tried to remove the persistent volume claim we created but doing so threw an error:\n%v", err)

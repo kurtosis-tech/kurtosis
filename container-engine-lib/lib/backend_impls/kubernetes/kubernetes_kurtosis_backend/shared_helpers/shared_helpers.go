@@ -532,6 +532,10 @@ func GetUserServiceObjectsFromKubernetesResources(
 		if _, found := kubernetesService.Annotations[kubernetes_annotation_key_consts.PortSpecsKubernetesAnnotationKey.GetString()]; !found {
 			// If we're using the unbound port, no actual user ports have been set yet so there's no way we can
 			// return a service
+			logrus.Debugf(
+				"Service with GUID '%v' has no ports set yet, erasing the service attribute",
+				serviceUuid,
+			)
 			resultObj.Service = nil
 			continue
 		}

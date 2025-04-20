@@ -73,6 +73,23 @@ func DestroyUserServices(
 				continue
 			}
 		}
+
+		if extraIngressToRemove := resources.ExtraIngresses; extraIngressToRemove != nil {
+			for _, ingressToRemove := range *extraIngressToRemove {
+				if err := kubernetesManager.RemoveIngress(
+					ctx,
+					&ingressToRemove,
+				); err != nil {
+					erroredGuids[serviceUuid] = stacktrace.Propagate(
+						err,
+						"An error occurred removing Kubernetes ingress '%v' in namespace '%v'",
+						ingressToRemove.Name,
+						namespaceName,
+					)
+					continue
+				}
+			}
+		}
 	}
 	return successfulGuids, erroredGuids, nil
 }

@@ -65,15 +65,43 @@ func StopUserServices(
 			}
 		}
 
-		extraIngresses := resources.ExtraIngresses
-		if extraIngresses != nil {
+		if resources.Ingress != nil {
+			if err := kubernetesManager.RemoveIngress(
+				ctx,
+				resources.Ingress,
+			); err != nil {
+				erroredUuids[serviceUuid] = stacktrace.Propagate(
+					err,
+					"An error occurred removing Kubernetes ingress '%v' in namespace '%v'",
+					resources.Ingress.Name,
+					namespaceName,
+				)
+			}
+		}
+
+		if extraIngresses := resources.ExtraIngresses; extraIngresses != nil {
 			for _, ingress := range *extraIngresses {
 				if err := kubernetesManager.RemoveIngress(ctx, &ingress); err != nil {
 					erroredUuids[serviceUuid] = stacktrace.Propagate(err, "An error occurred removing Kubernetes ingress '%v' in namespace '%v'", ingress.Name, namespaceName)
 				}
 			}
 		}
+
+		if resources.Service != nil {
+			if err := kubernetesManager.RemoveService(
+				ctx,
+				resources.Service,
+			); err != nil {
+				erroredUuids[serviceUuid] = stacktrace.Propagate(
+					err,
+					"An error occurred removing Kubernetes service '%v' in namespace '%v'",
+					resources.Service.Name,
+					namespaceName,
+				)
+			}
+		}
 		successfulUuids[serviceUuid] = true
 	}
+
 	return successfulUuids, erroredUuids, nil
 }

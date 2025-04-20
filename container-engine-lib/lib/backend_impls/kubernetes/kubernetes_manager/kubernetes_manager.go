@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"net/http"
 	"net/url"
 	"os"
@@ -1435,12 +1436,51 @@ func (manager *KubernetesManager) UpdateDaemonSetWithNodeSelectors(ctx context.C
 // ---------------------------deployments---------------------------------------------------------------------------------------
 func (manager *KubernetesManager) RemoveDeployment(ctx context.Context, namespace string, deployment *v1.Deployment) error {
 	client := manager.kubernetesClientSet.AppsV1().Deployments(namespace)
-
 	if err := client.Delete(ctx, deployment.Name, globalDeleteOptions); err != nil {
 		return stacktrace.Propagate(err, "Failed to delete deployment with name '%s' with delete options '%+v'", deployment.Name, globalDeleteOptions)
 	}
 
-	// TODO: maybe add a termination wait here?
+	deleteDeploymentTimeout := 1 * time.Minute
+	pollingInterval := 5 * time.Second
+	waitContext, cancel := context.WithTimeout(
+		context.Background(),
+		deleteDeploymentTimeout,
+	)
+	defer cancel()
+	for {
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf(
+				"timeout exceeded while waiting for deployment %s to be deleted",
+				deployment.Name,
+			)
+		default:
+			_, err := client.Get(
+				waitContext,
+				deployment.Name,
+				metav1.GetOptions{},
+			)
+
+			if errors.IsNotFound(err) {
+				fmt.Printf(
+					"Deployment %s successfully deleted.\n",
+					deployment.Name,
+				)
+				return nil
+			} else if err != nil {
+				return fmt.Errorf(
+					"error checking deployment status: %v",
+					err,
+				)
+			}
+			logrus.Infof(
+				"Waiting for deployment %s to be deleted...",
+				deployment.Name,
+			)
+			time.Sleep(pollingInterval)
+		}
+	}
+
 	return nil
 }
 
