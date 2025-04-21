@@ -6,6 +6,7 @@ import (
 
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/github_auth_store"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
@@ -99,6 +100,9 @@ type engineExistenceGuarantor struct {
 
 	// If set to true, engine will not store logs in a persistent volume
 	shouldEnablePersistentVolumeLogsCollection bool
+
+	// Filters to apply to the logs collector
+	logsCollectorFilters []logs_collector.Filter
 }
 
 func newEngineExistenceGuarantorWithDefaultVersion(
@@ -121,6 +125,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 	logRetentionPeriod string,
 	sinks logs_aggregator.Sinks,
 	shouldEnablePersistentVolumeLogsCollection bool,
+	logsCollectorFilters []logs_collector.Filter,
 ) *engineExistenceGuarantor {
 	return newEngineExistenceGuarantorWithCustomVersion(
 		ctx,
@@ -143,6 +148,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 		logRetentionPeriod,
 		sinks,
 		shouldEnablePersistentVolumeLogsCollection,
+		logsCollectorFilters,
 	)
 }
 
@@ -167,6 +173,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 	logRetentionPeriod string,
 	sinks logs_aggregator.Sinks,
 	shouldEnablePersistentVolumeLogsCollection bool,
+	logsCollectorFilters []logs_collector.Filter,
 ) *engineExistenceGuarantor {
 	return &engineExistenceGuarantor{
 		ctx:                                  ctx,
@@ -191,6 +198,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 		logRetentionPeriod:                        logRetentionPeriod,
 		sinks:                                     sinks,
 		shouldEnablePersistentVolumeLogsCollection: shouldEnablePersistentVolumeLogsCollection,
+		logsCollectorFilters:                       logsCollectorFilters,
 	}
 }
 
@@ -254,6 +262,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.logRetentionPeriod,
 			guarantor.sinks,
 			guarantor.shouldEnablePersistentVolumeLogsCollection,
+			guarantor.logsCollectorFilters,
 		)
 	} else {
 		_, _, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
@@ -278,6 +287,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.logRetentionPeriod,
 			guarantor.sinks,
 			guarantor.shouldEnablePersistentVolumeLogsCollection,
+			guarantor.logsCollectorFilters,
 		)
 	}
 	if engineLaunchErr != nil {

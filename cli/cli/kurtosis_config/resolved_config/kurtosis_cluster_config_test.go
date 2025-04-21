@@ -14,6 +14,7 @@ func TestNewKurtosisClusterConfigEmptyOverrides(t *testing.T) {
 		Type:                        nil,
 		Config:                      nil,
 		LogsAggregator:              nil,
+		LogsCollector:               nil,
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
 	}
@@ -27,6 +28,7 @@ func TestNewKurtosisClusterConfigDockerType(t *testing.T) {
 		Type:                        &dockerType,
 		Config:                      nil,
 		LogsAggregator:              nil,
+		LogsCollector:               nil,
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
 	}
@@ -40,6 +42,7 @@ func TestNewKurtosisClusterConfigKubernetesNoConfig(t *testing.T) {
 		Type:                        &kubernetesType,
 		Config:                      nil,
 		LogsAggregator:              nil,
+		LogsCollector:               nil,
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
 	}
@@ -53,6 +56,7 @@ func TestNewKurtosisClusterConfigNonsenseType(t *testing.T) {
 		Type:                        &clusterType,
 		Config:                      nil,
 		LogsAggregator:              nil,
+		LogsCollector:               nil,
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
 	}
@@ -73,6 +77,7 @@ func TestNewKurtosisClusterConfigKubernetesPartialConfig(t *testing.T) {
 		Type:                        &kubernetesType,
 		Config:                      &kubernetesPartialConfig,
 		LogsAggregator:              nil,
+		LogsCollector:               nil,
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
 	}
@@ -96,6 +101,7 @@ func TestNewKurtosisClusterConfigKubernetesFullConfig(t *testing.T) {
 		Type:                        &kubernetesType,
 		Config:                      &kubernetesFullConfig,
 		LogsAggregator:              nil,
+		LogsCollector:               nil,
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
 	}
@@ -119,6 +125,7 @@ func TestNewKurtosisClusterConfigLogsAggregatorNoConfig(t *testing.T) {
 		Type:                        &kubernetesType,
 		Config:                      &kubernetesFullConfig,
 		LogsAggregator:              nil,
+		LogsCollector:               nil,
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
 	}
@@ -150,6 +157,7 @@ func TestNewKurtosisClusterConfigLogsAggregatorReservedSinkId(t *testing.T) {
 		},
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
+		LogsCollector:               nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.Error(t, err)
@@ -179,6 +187,7 @@ func TestNewKurtosisClusterConfigLogsAggregatorFullConfig(t *testing.T) {
 		},
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
+		LogsCollector:               nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)
@@ -208,6 +217,7 @@ func TestNewKurtosisClusterConfigGraflokiNoConfig(t *testing.T) {
 		},
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
+		LogsCollector:               nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)
@@ -237,6 +247,7 @@ func TestNewKurtosisClusterConfigGraflokiFullConfig(t *testing.T) {
 			LokiImage:               lokiImage,
 		},
 		ShouldEnableDefaultLogsSink: nil,
+		LogsCollector:               nil,
 	}
 	actualKurtosisClusterConfig, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NotNil(t, actualKurtosisClusterConfig.graflokiConfig)
@@ -263,6 +274,7 @@ func TestNewKurtosisClusterConfigShouldEnableDefaultLogsSink(t *testing.T) {
 		Type:                        &kubernetesType,
 		Config:                      &kubernetesFullConfig,
 		LogsAggregator:              nil,
+		LogsCollector:               nil,
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: &ShouldEnableDefaultLogsSink,
 	}
@@ -309,14 +321,14 @@ func TestNewKurtosisClusterConfigLogsCollectorFullConfig(t *testing.T) {
 	}
 	filters := []map[string]string{
 		{
-			"service": "service1",
-			"level":   "info",
-			"app":     "backend",
+			"name":       "grep",
+			"exclude":    "*",
+			"logical_op": "&",
 		},
 		{
-			"service": "service2",
-			"level":   "error",
-			"app":     "frontend",
+			"name":   "lua",
+			"script": "print smth",
+			"call":   "frontend",
 		},
 	}
 	kurtosisClusterConfigOverrides := v6.KurtosisClusterConfigV6{

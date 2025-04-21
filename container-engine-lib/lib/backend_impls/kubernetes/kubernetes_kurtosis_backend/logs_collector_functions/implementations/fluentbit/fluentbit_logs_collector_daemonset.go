@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"text/template"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
@@ -17,8 +20,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"text/template"
-	"time"
 )
 
 const (
@@ -44,6 +45,7 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 	httpPortNumber uint16,
 	logsCollectorTcpPortId string,
 	logsCollectorHttpPortId string,
+	logsCollectorFilters []logs_collector.Filter,
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (
@@ -152,7 +154,7 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 		}
 	}()
 
-	configMap, err := createLogsCollectorConfigMap(ctx, namespace.Name, httpPortNumber, logsAggregatorHost, logsAggregatorPort, logsCollectorAttrProvider, kubernetesManager)
+	configMap, err := createLogsCollectorConfigMap(ctx, namespace.Name, httpPortNumber, logsAggregatorHost, logsAggregatorPort, logsCollectorFilters, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
 		return nil, nil, nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create config map for fluent bit log collector.")
 	}
@@ -423,6 +425,7 @@ func createLogsCollectorConfigMap(
 	logsCollectorHttpPortNum uint16,
 	logsAggregatorHost string,
 	logsAggregatorPortNum uint16,
+	logsCollectorFilters []logs_collector.Filter,
 	objAttrProvider object_attributes_provider.KubernetesLogsCollectorObjectAttributesProvider,
 	kubernetesManager *kubernetes_manager.KubernetesManager) (*apiv1.ConfigMap, error) {
 	configMapAttrProvider, err := objAttrProvider.ForLogsCollectorConfigMap()
@@ -437,6 +440,7 @@ func createLogsCollectorConfigMap(
 		logsCollectorHttpPortNum,
 		logsAggregatorHost,
 		logsAggregatorPortNum,
+		logsCollectorFilters,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred generating fluent bit config string.")
@@ -462,10 +466,44 @@ func generateFluentBitConfigStr(
 	logsCollectorHttpPort uint16,
 	logsAggregatorHost string,
 	logsAggregatorPortNun uint16,
+	logsCollectorFilters []logs_collector.Filter,
 ) (
 	string,
 	error,
 ) {
+	type Filter struct {
+		Name   string
+		Match  string
+		Params map[string]string
+	}
+	filters := make([]*Filter, len(logsCollectorFilters))
+	for idx, logsCollectorFilter := range logsCollectorFilters {
+		params := logsCollectorFilter
+		logrus.Infof("params: %v", params)
+
+		name, ok := params["name"]
+		if !ok {
+			return "", stacktrace.NewError("name key is required for fluentbit filters")
+		}
+		match, ok := params["match"]
+		if !ok {
+			return "", stacktrace.NewError("match key is required for fluentbit filters")
+		}
+
+		paramsWithNoNameAndMatch := make(map[string]string)
+		for k, v := range params {
+			if k != "name" && k != "match" {
+				paramsWithNoNameAndMatch[k] = v
+			}
+		}
+
+		filters[idx] = &Filter{
+			Name:   name,
+			Match:  match,
+			Params: paramsWithNoNameAndMatch,
+		}
+	}
+
 	type FluentBitConfigData struct {
 		HTTPPort               uint16
 		UserServiceResourceStr string
@@ -476,6 +514,7 @@ func generateFluentBitConfigStr(
 		K8sApiServerURL        string
 		LogsAggregatorHost     string
 		LogsAggregatorPortNum  uint16
+		Filters                []*Filter
 	}
 
 	tmpl, err := template.New("fluentBitConfig").Parse(fluentBitConfigTemplate)
@@ -493,12 +532,15 @@ func generateFluentBitConfigStr(
 		K8sApiServerURL:        k8sApiServerUrl,
 		LogsAggregatorPortNum:  logsAggregatorPortNun,
 		LogsAggregatorHost:     logsAggregatorHost,
+		Filters:                filters,
 	}
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, fluentBitConfigData)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred generating vector config string from fluent bit config data: %v.", fluentBitConfigData)
 	}
+
+	logrus.Infof("Generated fluent bit config string: %v", buf.String())
 
 	return buf.String(), nil
 }

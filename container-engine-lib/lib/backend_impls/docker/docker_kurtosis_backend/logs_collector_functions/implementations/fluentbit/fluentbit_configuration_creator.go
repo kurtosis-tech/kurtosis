@@ -109,7 +109,6 @@ func (fluent *fluentbitConfigurationCreator) createFluentbitConfigFileInVolume(
 	maxRetries uint,
 	timeBetweenRetries time.Duration,
 ) error {
-
 	configFileContentStr, err := fluent.getConfigFileContent()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the Fluentbit config file content")
@@ -178,6 +177,8 @@ func (fluent *fluentbitConfigurationCreator) getConfigFileContent() (string, err
 	}
 
 	templateStr := templateStrBuffer.String()
+
+	logrus.Infof("Generated fluent bit config string: %v", templateStr)
 
 	return templateStr, nil
 }

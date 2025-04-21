@@ -2,10 +2,12 @@ package engine_manager
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/grafloki"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"strings"
 	"time"
+
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/grafloki"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 
 	portal_constructors "github.com/kurtosis-tech/kurtosis-portal/api/golang/constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
@@ -211,6 +213,11 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(
 	}
 	additionalSinks = combineSinks(additionalSinks, lokiSink)
 
+	logsCollectorFilters := []logs_collector.Filter{}
+	for _, filter := range manager.clusterConfig.GetLogsCollectorConfig().Filters {
+		logsCollectorFilters = append(logsCollectorFilters, logs_collector.Filter(filter))
+	}
+
 	engineGuarantor := newEngineExistenceGuarantorWithDefaultVersion(
 		ctx,
 		maybeHostMachinePortBinding,
@@ -231,6 +238,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(
 		logRetentionPeriodStr,
 		combineSinks(additionalSinks, manager.clusterConfig.GetLogsAggregatorConfig().Sinks),
 		manager.clusterConfig.ShouldEnableDefaultLogsSink(),
+		logsCollectorFilters,
 	)
 	// TODO Need to handle the Kubernetes case, where a gateway needs to be started after the engine is started but
 	//  before we can return an EngineClient
@@ -276,6 +284,11 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 	}
 	additionalSinks = combineSinks(additionalSinks, lokiSink)
 
+	logsCollectorFilters := []logs_collector.Filter{}
+	for _, filter := range manager.clusterConfig.GetLogsCollectorConfig().Filters {
+		logsCollectorFilters = append(logsCollectorFilters, logs_collector.Filter(filter))
+	}
+
 	engineGuarantor := newEngineExistenceGuarantorWithCustomVersion(
 		ctx,
 		maybeHostMachinePortBinding,
@@ -297,6 +310,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 		logRetentionPeriodStr,
 		combineSinks(manager.clusterConfig.GetLogsAggregatorConfig().Sinks, additionalSinks),
 		manager.clusterConfig.ShouldEnableDefaultLogsSink(),
+		logsCollectorFilters,
 	)
 	engineClient, engineClientCloseFunc, err := manager.startEngineWithGuarantor(ctx, status, engineGuarantor)
 	if err != nil {

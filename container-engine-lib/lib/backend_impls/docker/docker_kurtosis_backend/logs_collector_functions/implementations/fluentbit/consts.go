@@ -31,7 +31,13 @@ const (
 	name {{.Input.Name}}
 	listen {{.Input.Listen}}
 	port {{.Input.Port}}
-	storage.type  {{.Input.StorageType}}
+	storage.type {{.Input.StorageType}}
+{{range .Filters}}
+[FILTER]
+	name {{.Name}}
+	match {{.Match}}
+{{range $key, $value := .Params}}	{{$key}} {{$value}}
+{{end}}{{end}}
 [OUTPUT]
 	name {{.Output.Name}}
 	match {{.Output.Match}}

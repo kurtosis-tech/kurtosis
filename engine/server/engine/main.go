@@ -8,6 +8,18 @@ package main
 import (
 	"context"
 	"fmt"
+	"io/fs"
+	"math"
+	"net"
+	"net/http"
+	_ "net/http/pprof"
+	"os"
+	"path"
+	"path/filepath"
+	"runtime"
+	"strings"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings/kurtosis_engine_rpc_api_bindingsconnect"
 	enclaveApi "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/server/core_rest_api"
@@ -20,6 +32,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/configs"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
 	em_api "github.com/kurtosis-tech/kurtosis/enclave-manager/server"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
@@ -43,17 +56,6 @@ import (
 	echomiddleware "github.com/labstack/echo/v4/middleware"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
-	"io/fs"
-	"math"
-	"net"
-	"net/http"
-	_ "net/http/pprof"
-	"os"
-	"path"
-	"path/filepath"
-	"runtime"
-	"strings"
-	"time"
 )
 
 const (
@@ -181,6 +183,8 @@ func runMain() error {
 	logsDatabaseClient := getLogsDatabaseClient(kurtosisBackend, logRetentionPeriodDuration)
 	logsDatabaseClient.StartLogFileManagement(ctx)
 
+	logrus.Infof("logsCollectorFilters: %v", serverArgs.LogsCollectorFilters)
+
 	enclaveManager, err := getEnclaveManager(
 		kurtosisBackend,
 		serverArgs.KurtosisBackendType,
@@ -193,7 +197,9 @@ func runMain() error {
 		serverArgs.IsCI,
 		serverArgs.CloudUserID,
 		serverArgs.CloudInstanceID,
-		serverArgs.KurtosisLocalBackendConfig)
+		serverArgs.KurtosisLocalBackendConfig,
+		serverArgs.LogsCollectorFilters,
+	)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create an enclave manager for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
 	}
@@ -334,6 +340,7 @@ func getEnclaveManager(
 	cloudUserId metrics_client.CloudUserID,
 	cloudInstanceId metrics_client.CloudInstanceID,
 	kurtosisLocalBackendConfig interface{},
+	logsCollectorFilters []logs_collector.Filter,
 ) (*enclave_manager.EnclaveManager, error) {
 	var apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier
 	switch kurtosisBackendType {
@@ -362,6 +369,7 @@ func getEnclaveManager(
 		isCI,
 		cloudUserId,
 		cloudInstanceId,
+		logsCollectorFilters,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating enclave manager for backend type '%+v' using pool-size '%v' and engine version '%v'", kurtosisBackendType, poolSize, engineVersion)

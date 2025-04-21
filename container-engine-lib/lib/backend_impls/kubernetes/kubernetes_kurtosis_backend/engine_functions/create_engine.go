@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_collector_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_collector_functions/implementations/fluentbit"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
@@ -57,6 +58,7 @@ func CreateEngine(
 	githubAuthToken string,
 	sinks logs_aggregator.Sinks,
 	shouldEnablePersistentVolumeLogsCollection bool,
+	logsCollectorFilters []logs_collector.Filter,
 	engineNodeName string,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
@@ -313,7 +315,7 @@ func CreateEngine(
 
 	// Unlike the DockerBackend, where the log collectors are deployed by the engine during enclave creation
 	// for k8s backend, the logs collector lifecycle gets managed with the engine's and is created during engine creation
-	_, removeLogsCollectorFunc, err := logs_collector_functions.CreateLogsCollector(ctx, logsCollectorTcpPortNum, logsCollectorHttpPortNum, logsCollectorDaemonSet, logsAggregator, kubernetesManager, objAttrsProvider)
+	_, removeLogsCollectorFunc, err := logs_collector_functions.CreateLogsCollector(ctx, logsCollectorTcpPortNum, logsCollectorHttpPortNum, logsCollectorDaemonSet, logsAggregator, logsCollectorFilters, kubernetesManager, objAttrsProvider)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the logs collector")
 	}

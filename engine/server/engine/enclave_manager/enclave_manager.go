@@ -3,11 +3,12 @@ package enclave_manager
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs"
 	"sort"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs"
 
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
@@ -75,6 +77,8 @@ type EnclaveManager struct {
 	isCI                        bool
 	cloudUserID                 metrics_client.CloudUserID
 	cloudInstanceID             metrics_client.CloudInstanceID
+
+	logsCollectorFilters []logs_collector.Filter
 }
 
 func CreateEnclaveManager(
@@ -90,6 +94,7 @@ func CreateEnclaveManager(
 	isCI bool,
 	cloudUserID metrics_client.CloudUserID,
 	cloudInstanceID metrics_client.CloudInstanceID,
+	logsCollectorFilters []logs_collector.Filter,
 ) (*EnclaveManager, error) {
 	enclaveCreator := newEnclaveCreator(kurtosisBackend, apiContainerKurtosisBackendConfigSupplier)
 
@@ -100,7 +105,7 @@ func CreateEnclaveManager(
 
 	// The enclave pool feature is only available for Kubernetes so far
 	if kurtosisBackendType == args.KurtosisBackendType_Kubernetes {
-		enclavePool, err = CreateEnclavePool(kurtosisBackend, enclaveCreator, poolSize, engineVersion, enclaveEnvVars, metricsUserID, didUserAcceptSendingMetrics, isCI, cloudUserID, cloudInstanceID)
+		enclavePool, err = CreateEnclavePool(kurtosisBackend, enclaveCreator, poolSize, engineVersion, enclaveEnvVars, metricsUserID, didUserAcceptSendingMetrics, isCI, cloudUserID, cloudInstanceID, logsCollectorFilters)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating enclave pool with pool-size '%v' and engine version '%v'", poolSize, engineVersion)
 		}
@@ -121,6 +126,7 @@ func CreateEnclaveManager(
 		isCI:                                      isCI,
 		cloudUserID:                               cloudUserID,
 		cloudInstanceID:                           cloudInstanceID,
+		logsCollectorFilters:                      logsCollectorFilters,
 	}
 
 	return enclaveManager, nil
@@ -197,6 +203,7 @@ func (manager *EnclaveManager) CreateEnclave(
 			manager.cloudInstanceID,
 			manager.kurtosisBackendType,
 			shouldAPICRunInDebugMode,
+			manager.logsCollectorFilters,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(

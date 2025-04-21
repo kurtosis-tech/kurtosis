@@ -2,6 +2,7 @@ package logs_collector_functions
 
 import (
 	"context"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
@@ -26,6 +27,7 @@ func CreateLogsCollector(
 	logsCollectorHttpPortNumber uint16,
 	logsCollectorDaemonSet LogsCollectorDaemonSet,
 	logsAggregator *logs_aggregator.LogsAggregator,
+	logsCollectorFilters []logs_collector.Filter,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
 ) (
@@ -57,6 +59,7 @@ func CreateLogsCollector(
 			logsCollectorHttpPortNumber,
 			logsCollectorTcpPortId,
 			logsCollectorHttpPortId,
+			logsCollectorFilters,
 			objAttrsProvider,
 			kubernetesManager,
 		)

@@ -52,6 +52,7 @@ type KurtosisBackend interface {
 		githubAuthToken string,
 		sinks logs_aggregator.Sinks,
 		shouldTurnOffPersistentVolumeLogsCollection bool,
+		logsCollectorFilters []logs_collector.Filter,
 	) (
 		*engine.Engine,
 		error,
@@ -343,7 +344,16 @@ type KurtosisBackend interface {
 	DestroyLogsAggregator(ctx context.Context) error
 
 	// Create a new Logs Collector for sending container's logs to the logs aggregator server
-	CreateLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, logsCollectorHttpPortNumber uint16, logsCollectorTcpPortNumber uint16) (*logs_collector.LogsCollector, error)
+	CreateLogsCollectorForEnclave(
+		ctx context.Context,
+		enclaveUuid enclave.EnclaveUUID,
+		logsCollectorHttpPortNumber uint16,
+		logsCollectorTcpPortNumber uint16,
+		logsCollectorFilters []logs_collector.Filter,
+	) (
+		*logs_collector.LogsCollector,
+		error,
+	)
 
 	// Gets the logs collector, if nothing is found returns nil
 	GetLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (*logs_collector.LogsCollector, error)

@@ -58,6 +58,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateEngine(
 	githubAuthToken string,
 	sinks logs_aggregator.Sinks,
 	shouldEnablePersistentVolumeLogsCollection bool,
+	logsCollectorFilters []logs_collector.Filter,
 ) (*engine.Engine, error) {
 	result, err := backend.underlying.CreateEngine(
 		ctx,
@@ -69,6 +70,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateEngine(
 		githubAuthToken,
 		sinks,
 		shouldEnablePersistentVolumeLogsCollection,
+		logsCollectorFilters,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the engine using image '%v' with tag '%v' and debug mode '%v'", imageOrgAndRepo, imageVersionTag, shouldStartInDebugMode)
@@ -425,9 +427,8 @@ func (backend *MetricsReportingKurtosisBackend) DestroyLogsAggregator(ctx contex
 	return backend.underlying.DestroyLogsAggregator(ctx)
 }
 
-func (backend *MetricsReportingKurtosisBackend) CreateLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, logsCollectorHttpPortNumber uint16, logsCollectorTcpPortNumber uint16) (*logs_collector.LogsCollector, error) {
-
-	logsCollector, err := backend.underlying.CreateLogsCollectorForEnclave(ctx, enclaveUuid, logsCollectorHttpPortNumber, logsCollectorTcpPortNumber)
+func (backend *MetricsReportingKurtosisBackend) CreateLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, logsCollectorHttpPortNumber uint16, logsCollectorTcpPortNumber uint16, logsCollectorFilters []logs_collector.Filter) (*logs_collector.LogsCollector, error) {
+	logsCollector, err := backend.underlying.CreateLogsCollectorForEnclave(ctx, enclaveUuid, logsCollectorHttpPortNumber, logsCollectorTcpPortNumber, logsCollectorFilters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the logs collector with TCP port number '%v' and HTTP port number '%v'", logsCollectorTcpPortNumber, logsCollectorHttpPortNumber)
 	}

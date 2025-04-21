@@ -15,6 +15,8 @@ const (
 
 type LogsCollectorGuid string
 
+type Filter map[string]string
+
 // This component is responsible for:
 // 1. collecting logs from all services within an enclave
 // 2. forwarding these logs to the logs aggregator

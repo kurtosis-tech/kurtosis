@@ -83,7 +83,13 @@ const (
     Keep_Log          On
     Annotations       Off
     Labels            On
+{{range .Filters}}
+[FILTER]
+    Name              {{.Name}}
+    Match             {{.Match}}
+{{range $key, $value := .Params}}    {{$key}} {{$value}}
 
+{{end}}{{end}}
 [OUTPUT]
     Name              stdout
     Match             *

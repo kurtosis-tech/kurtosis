@@ -1,9 +1,15 @@
 package fluentbit
 
-type FluentbitConfig struct {
-	Service *Service
-	Input   *Input
-	Output  *Output
+import (
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
+	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
+)
+
+type Filter struct {
+	Name   string
+	Match  string
+	Params map[string]string
 }
 
 type Service struct {
@@ -28,12 +34,48 @@ type Output struct {
 	Port  uint16
 }
 
-func newDefaultFluentbitConfigForKurtosisCentralizedLogs(
+type FluentbitConfig struct {
+	Service *Service
+	Input   *Input
+	Filters []*Filter
+	Output  *Output
+}
+
+func newFluentbitConfigForKurtosisCentralizedLogs(
 	logsAggregatorHost string,
 	logsAggregatorPort uint16,
 	tcpPortNumber uint16,
 	httpPortNumber uint16,
-) *FluentbitConfig {
+	logsCollectorFilters []logs_collector.Filter,
+) (*FluentbitConfig, error) {
+	filters := make([]*Filter, len(logsCollectorFilters))
+	for idx, logsCollectorFilter := range logsCollectorFilters {
+		params := logsCollectorFilter
+		logrus.Infof("params: %v", params)
+
+		name, ok := params["name"]
+		if !ok {
+			return nil, stacktrace.NewError("name key is required for fluentbit filters")
+		}
+		match, ok := params["match"]
+		if !ok {
+			return nil, stacktrace.NewError("match key is required for fluentbit filters")
+		}
+
+		paramsWithNoNameAndMatch := make(map[string]string)
+		for k, v := range params {
+			if k != "name" && k != "match" {
+				paramsWithNoNameAndMatch[k] = v
+			}
+		}
+
+		filters[idx] = &Filter{
+			Name:   name,
+			Match:  match,
+			Params: paramsWithNoNameAndMatch,
+		}
+	}
+
 	return &FluentbitConfig{
 		Service: &Service{
 			LogLevel:          logLevel,
@@ -48,11 +90,12 @@ func newDefaultFluentbitConfigForKurtosisCentralizedLogs(
 			Port:        tcpPortNumber,
 			StorageType: inputFilesystemStorageType,
 		},
+		Filters: filters,
 		Output: &Output{
 			Name:  vectorOutputTypeName,
 			Match: matchAllRegex,
 			Host:  logsAggregatorHost,
 			Port:  logsAggregatorPort,
 		},
-	}
+	}, nil
 }
