@@ -459,6 +459,42 @@ kurtosis-clusters:
 
 This configuration first filters out DEBUG logs, then adds a timestamp to the remaining logs.
 
+#### Using Parsers with Filters
+You can use parsers to structure your logs before applying filters. This is particularly useful when working with structured log formats like JSON:
+
+```yaml
+config-version: 6
+should-send-metrics: true
+kurtosis-clusters:
+  docker:
+    type: "docker"
+    logs-collector:
+      parsers:
+        - name: "json_parser"
+          format: "json"
+          params:
+            - key: "Time_Key"
+              value: "timestamp"
+            - key: "Time_Format"
+              value: "%Y-%m-%dT%H:%M:%S.%L"
+      filters:
+        - name: "parser"
+          match: "*"
+          params:
+            - key: "Parser"
+              value: "json_parser"
+        - name: "grep"
+          match: "*"
+          params:
+            - key: "exclude"
+              value: "level=DEBUG"
+```
+
+This configuration:
+1. Defines a JSON parser that extracts the timestamp field and parses it
+2. Uses the parser filter to apply the JSON parser to all logs
+3. Filters out logs with DEBUG level
+
 :::info
 The `match` pattern uses Fluentbit's pattern matching syntax. `"*"` matches all logs, while more specific patterns can be used to target particular services or log types.
 :::
