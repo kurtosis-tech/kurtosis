@@ -22,6 +22,8 @@ const (
 	shBinaryFilepath = "/bin/sh"
 	shCmdFlag        = "-c"
 	printfCmdName    = "printf"
+	echoCmdName      = "echo"
+	echoNewLineFlag  = "-e"
 
 	configFileCreationSuccessExitCode = 0
 
@@ -121,11 +123,12 @@ func (fluent *fluentbitConfigurationCreator) createFluentbitConfigFileInVolume(
 	}
 
 	commandStr := fmt.Sprintf(
-		"%v '%v' > %v && %v '%v' > %v",
+		"%v '%v' > %v && %v %v '%v' > %v",
 		printfCmdName,
 		configFileContentStr,
 		configFilepathInContainer,
-		printfCmdName,
+		echoCmdName, // need to use echo for parser config file because printf will try to escape using % on the commonly used time_format in parsers, echo doesn't do this
+		echoNewLineFlag,
 		parserConfigFileContentStr,
 		parserConfigFilepathInContainer,
 	)

@@ -50,9 +50,9 @@ const (
 
 	parserConfigFileTemplateName = "fluentbitParserConfigFileTemplate"
 	parserConfigFileTemplate     = `{{- range .Parsers}}
-[PARSER]
+[PARSER]\n
 {{- range $key, $value := . }}
-	{{$key}} {{$value}}
+	{{$key}} {{$value}}\n
 {{- end }}{{ end }}
 `
 
