@@ -404,12 +404,76 @@ kurtosis-clusters:
             codec: "json"
 ```
 
+### Configuring Log Filters
+
+Kurtosis allows you to configure filters that get passed through to the logs collector. These filters can be used to modify or filter logs before they are sent to the configured sinks from export logs.
+
+The filters are configured in the `logs-collector` section of your Kurtosis config using version 6. Each filter has a `name`, `match` pattern, and parameters from the corresponding Fluentbit [filter][fluentbit-filters] used.
+
+Here are some examples of common filter configurations that might be useful in Kurtosis.
+
+#### Basic Grep Filter
+This example shows how to filter out logs containing specific patterns:
+
+```yaml
+config-version: 6
+should-send-metrics: true
+kurtosis-clusters:
+  docker:
+    type: "docker"
+    logs-collector:
+      filters:
+        - name: "grep"
+          match: "*"
+          params:
+            - key: "exclude"
+              value: ".*DEBUG.*"
+            - key: "logical_op"
+              value: "&"
+```
+
+This configuration will exclude all logs containing the word "DEBUG".
+
+#### Multiple Filters
+You can chain multiple filters together:
+
+```yaml
+config-version: 6
+should-send-metrics: true
+kurtosis-clusters:
+  docker:
+    type: "docker"
+    logs-collector:
+      filters:
+        - name: "grep"
+          match: "*"
+          params:
+            - key: "exclude"
+              value: ".*DEBUG.*"
+        - name: "modify"
+          match: "*"
+          params:
+            - key: "Add"
+              value: "timestamp ${time}"
+```
+
+This configuration first filters out DEBUG logs, then adds a timestamp to the remaining logs.
+
+:::info
+The `match` pattern uses Fluentbit's pattern matching syntax. `"*"` matches all logs, while more specific patterns can be used to target particular services or log types.
+:::
+
+:::tip
+For more information about available filters and their parameters, refer to the [Fluentbit documentation][fluentbit-filters].
+:::
+
 ### Grafloki
 
 For ease of setup, Kurtosis CLI comes with a feature to start a local Grafana and Loki instance that the engine gets configured to send logs to. See [grafloki start][grafloki-start] for more info.
 
 <!-------------------- ONLY LINKS BELOW THIS POINT ----------------------->
 [grafloki-start]: ../cli-reference/grafloki-start.md
+[fluentbit-filters]: https://docs.fluentbit.io/manual/pipeline/filters
 
 
 
