@@ -14,7 +14,7 @@ const (
 
 	configDirpathInContainer        = rootDirpath + "/etc"
 	configFilepathInContainer       = configDirpathInContainer + "/fluent-bit.conf"
-	parserConfigFilepathInContainer = configDirpathInContainer + "/parsers.conf"
+	parserConfigFilepathInContainer = configDirpathInContainer + "/kurtosis-parsers.conf"
 
 	//these two values are used for configuring the filesystem buffer. See more here: https://docs.fluentbit.io/manual/administration/buffering-and-storage#filesystem-buffering-to-the-rescue
 	filesystemBufferStorageDirpath = configDirpathInContainer + "/storage/"

@@ -143,7 +143,7 @@ func (fluent *fluentbitConfigurationCreator) createFluentbitConfigFileInVolume(
 		exitCode, err := dockerManager.RunUserServiceExecCommands(ctx, containerId, "", execCmd, outputBuffer)
 		if err == nil {
 			if exitCode == configFileCreationSuccessExitCode {
-				logrus.Debugf("The Fluentbit config file with content '%v' was successfully added into the volume", configFileContentStr)
+				logrus.Debugf("The Fluentbit config file with content '%v' and parser config file with content '%v' was successfully added into the volume", configFileContentStr, parserConfigFileContentStr)
 				return nil
 			}
 			logrus.Debugf(
@@ -203,14 +203,13 @@ func (fluent *fluentbitConfigurationCreator) getParserConfigFileContent() (strin
 
 	templateStrBuffer := &bytes.Buffer{}
 
-	logrus.Infof("Executing Fluentbit parser config file template with config: +%v", fluent.parserConfig.Parsers)
 	if err := parserCfgFileTemplate.Execute(templateStrBuffer, fluent.parserConfig); err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred executing the Fluentbit parser config file template")
 	}
 
 	templateStr := templateStrBuffer.String()
 
-	logrus.Infof("Generated fluent bit parser config string: %v", templateStr)
+	logrus.Debugf("Generated fluent bit parser config string: %v", templateStr)
 
 	return templateStr, nil
 }
