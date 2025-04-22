@@ -5,7 +5,7 @@ const (
 
 	fluentBitContainerName = "fluent-bit"
 	// using debug image for now with testing toolkit (curl, netstat) eventually will move to latest regular img
-	fluentBitImage = "fluent/fluent-bit:latest-debug"
+	fluentBitImage = "fluent/fluent-bit:4.0.0-debug"
 
 	// volumes pulled from official fluent bit helm chart: https://github.com/fluent/helm-charts/blob/main/charts/fluent-bit/values.yaml
 	varLogVolumeName                 = "varlog"
