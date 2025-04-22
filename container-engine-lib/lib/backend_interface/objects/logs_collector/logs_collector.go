@@ -26,6 +26,8 @@ type Filter struct {
 	Params []FilterParam `yaml:"params,omitempty" json:"params,omitempty"`
 }
 
+type Parser map[string]string
+
 // This component is responsible for:
 // 1. collecting logs from all services within an enclave
 // 2. forwarding these logs to the logs aggregator

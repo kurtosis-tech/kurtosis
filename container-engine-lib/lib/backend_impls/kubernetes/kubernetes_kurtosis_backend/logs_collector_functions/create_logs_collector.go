@@ -28,6 +28,7 @@ func CreateLogsCollector(
 	logsCollectorDaemonSet LogsCollectorDaemonSet,
 	logsAggregator *logs_aggregator.LogsAggregator,
 	logsCollectorFilters []logs_collector.Filter,
+	logsCollectorParsers []logs_collector.Parser,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
 ) (
@@ -60,6 +61,7 @@ func CreateLogsCollector(
 			logsCollectorTcpPortId,
 			logsCollectorHttpPortId,
 			logsCollectorFilters,
+			logsCollectorParsers,
 			objAttrsProvider,
 			kubernetesManager,
 		)

@@ -101,8 +101,9 @@ type engineExistenceGuarantor struct {
 	// If set to true, engine will not store logs in a persistent volume
 	shouldEnablePersistentVolumeLogsCollection bool
 
-	// Filters to apply to the logs collector
 	logsCollectorFilters []logs_collector.Filter
+
+	logsCollectorParsers []logs_collector.Parser
 }
 
 func newEngineExistenceGuarantorWithDefaultVersion(
@@ -126,6 +127,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 	sinks logs_aggregator.Sinks,
 	shouldEnablePersistentVolumeLogsCollection bool,
 	logsCollectorFilters []logs_collector.Filter,
+	logsCollectorParsers []logs_collector.Parser,
 ) *engineExistenceGuarantor {
 	return newEngineExistenceGuarantorWithCustomVersion(
 		ctx,
@@ -149,6 +151,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 		sinks,
 		shouldEnablePersistentVolumeLogsCollection,
 		logsCollectorFilters,
+		logsCollectorParsers,
 	)
 }
 
@@ -174,6 +177,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 	sinks logs_aggregator.Sinks,
 	shouldEnablePersistentVolumeLogsCollection bool,
 	logsCollectorFilters []logs_collector.Filter,
+	logsCollectorParsers []logs_collector.Parser,
 ) *engineExistenceGuarantor {
 	return &engineExistenceGuarantor{
 		ctx:                                  ctx,
@@ -199,6 +203,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 		sinks:                                     sinks,
 		shouldEnablePersistentVolumeLogsCollection: shouldEnablePersistentVolumeLogsCollection,
 		logsCollectorFilters:                       logsCollectorFilters,
+		logsCollectorParsers:                       logsCollectorParsers,
 	}
 }
 
@@ -263,6 +268,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.sinks,
 			guarantor.shouldEnablePersistentVolumeLogsCollection,
 			guarantor.logsCollectorFilters,
+			guarantor.logsCollectorParsers,
 		)
 	} else {
 		_, _, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
@@ -288,6 +294,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.sinks,
 			guarantor.shouldEnablePersistentVolumeLogsCollection,
 			guarantor.logsCollectorFilters,
+			guarantor.logsCollectorParsers,
 		)
 	}
 	if engineLaunchErr != nil {

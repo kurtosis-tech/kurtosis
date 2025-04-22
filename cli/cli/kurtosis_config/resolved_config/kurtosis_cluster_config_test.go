@@ -306,6 +306,7 @@ func TestNewKurtosisClusterConfigLogsCollectorNoConfig(t *testing.T) {
 	actualKurtosisClusterConfig, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)
 	require.Nil(t, actualKurtosisClusterConfig.logsCollector.Filters)
+	require.Nil(t, actualKurtosisClusterConfig.logsCollector.Parsers)
 }
 
 func TestNewKurtosisClusterConfigLogsCollectorFullConfig(t *testing.T) {
@@ -349,6 +350,19 @@ func TestNewKurtosisClusterConfigLogsCollectorFullConfig(t *testing.T) {
 					},
 				},
 			},
+			Parsers: []logs_collector.Parser{
+				{
+					"name":        "json",
+					"format":      "json",
+					"time_key":    "time",
+					"time_format": "%Y-%m-%dT%H:%M:%S.%L",
+				},
+				{
+					"name":   "regex",
+					"format": "regex",
+					"regex":  "^\\[(?<time>[^\\]]*)\\] (?<level>\\w+) (?<message>.*)$",
+				},
+			},
 		},
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
@@ -356,4 +370,8 @@ func TestNewKurtosisClusterConfigLogsCollectorFullConfig(t *testing.T) {
 	actualKurtosisClusterConfig, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)
 	require.NotNil(t, actualKurtosisClusterConfig.logsCollector)
+	require.NotNil(t, actualKurtosisClusterConfig.logsCollector.Filters)
+	require.NotNil(t, actualKurtosisClusterConfig.logsCollector.Parsers)
+	require.Equal(t, 2, len(actualKurtosisClusterConfig.logsCollector.Filters))
+	require.Equal(t, 2, len(actualKurtosisClusterConfig.logsCollector.Parsers))
 }

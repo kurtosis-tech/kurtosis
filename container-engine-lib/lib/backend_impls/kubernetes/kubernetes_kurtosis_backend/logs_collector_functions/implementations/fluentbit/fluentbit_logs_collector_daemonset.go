@@ -46,6 +46,7 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 	logsCollectorTcpPortId string,
 	logsCollectorHttpPortId string,
 	logsCollectorFilters []logs_collector.Filter,
+	logsCollectorParsers []logs_collector.Parser,
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (
@@ -154,7 +155,7 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 		}
 	}()
 
-	configMap, err := createLogsCollectorConfigMap(ctx, namespace.Name, httpPortNumber, logsAggregatorHost, logsAggregatorPort, logsCollectorFilters, logsCollectorAttrProvider, kubernetesManager)
+	configMap, err := createLogsCollectorConfigMap(ctx, namespace.Name, httpPortNumber, logsAggregatorHost, logsAggregatorPort, logsCollectorFilters, logsCollectorParsers, logsCollectorAttrProvider, kubernetesManager)
 	if err != nil {
 		return nil, nil, nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create config map for fluent bit log collector.")
 	}
@@ -426,6 +427,7 @@ func createLogsCollectorConfigMap(
 	logsAggregatorHost string,
 	logsAggregatorPortNum uint16,
 	logsCollectorFilters []logs_collector.Filter,
+	logsCollectorParsers []logs_collector.Parser,
 	objAttrProvider object_attributes_provider.KubernetesLogsCollectorObjectAttributesProvider,
 	kubernetesManager *kubernetes_manager.KubernetesManager) (*apiv1.ConfigMap, error) {
 	configMapAttrProvider, err := objAttrProvider.ForLogsCollectorConfigMap()

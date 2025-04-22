@@ -33,6 +33,7 @@ func CreateLogsCollectorForEnclave(
 	logsCollectorContainer LogsCollectorContainer,
 	logsAggregator *logs_aggregator.LogsAggregator,
 	logsCollectorFilters []logs_collector.Filter,
+	logsCollectorParsers []logs_collector.Parser,
 	dockerManager *docker_manager.DockerManager,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 ) (
@@ -70,6 +71,7 @@ func CreateLogsCollectorForEnclave(
 		logsCollectorTcpPortId,
 		logsCollectorHttpPortId,
 		logsCollectorFilters,
+		logsCollectorParsers,
 		enclaveNetwork.GetId(),
 		objAttrsProvider,
 		dockerManager,

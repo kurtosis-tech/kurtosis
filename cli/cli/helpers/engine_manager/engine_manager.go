@@ -233,6 +233,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(
 		combineSinks(additionalSinks, manager.clusterConfig.GetLogsAggregatorConfig().Sinks),
 		manager.clusterConfig.ShouldEnableDefaultLogsSink(),
 		manager.clusterConfig.GetLogsCollectorConfig().Filters,
+		manager.clusterConfig.GetLogsCollectorConfig().Parsers,
 	)
 	// TODO Need to handle the Kubernetes case, where a gateway needs to be started after the engine is started but
 	//  before we can return an EngineClient
@@ -300,6 +301,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 		combineSinks(manager.clusterConfig.GetLogsAggregatorConfig().Sinks, additionalSinks),
 		manager.clusterConfig.ShouldEnableDefaultLogsSink(),
 		manager.clusterConfig.GetLogsCollectorConfig().Filters,
+		manager.clusterConfig.GetLogsCollectorConfig().Parsers,
 	)
 	engineClient, engineClientCloseFunc, err := manager.startEngineWithGuarantor(ctx, status, engineGuarantor)
 	if err != nil {

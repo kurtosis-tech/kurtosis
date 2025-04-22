@@ -72,6 +72,8 @@ type EngineServerArgs struct {
 	LogRetentionPeriod string `json:"logRetentionPeriod"`
 
 	LogsCollectorFilters []logs_collector.Filter `json:"logsCollectorFilters"`
+
+	LogsCollectorParsers []logs_collector.Parser `json:"logsCollectorParsers"`
 }
 
 var skipValidation = map[string]bool{
@@ -132,6 +134,7 @@ func NewEngineServerArgs(
 	domain string,
 	logRetentionPeriod string,
 	logsCollectorFilters []logs_collector.Filter,
+	logsCollectorParsers []logs_collector.Parser,
 ) (*EngineServerArgs, error) {
 	if enclaveEnvVars == "" {
 		enclaveEnvVars = emptyJsonField
@@ -155,6 +158,7 @@ func NewEngineServerArgs(
 		Domain:                      domain,
 		LogRetentionPeriod:          logRetentionPeriod,
 		LogsCollectorFilters:        logsCollectorFilters,
+		LogsCollectorParsers:        logsCollectorParsers,
 	}
 	if err := result.validate(); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred validating engine server args")

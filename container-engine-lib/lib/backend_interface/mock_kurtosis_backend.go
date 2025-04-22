@@ -267,25 +267,25 @@ func (_c *MockKurtosisBackend_CreateEnclave_Call) RunAndReturn(run func(context.
 	return _c
 }
 
-// CreateEngine provides a mock function with given fields: ctx, imageOrgAndRepo, imageVersionTag, grpcPortNum, envVars, shouldStartInDebugMode, githubAuthToken, sinks, shouldTurnOffPersistentVolumeLogsCollection, logsCollectorFilters
-func (_m *MockKurtosisBackend) CreateEngine(ctx context.Context, imageOrgAndRepo string, imageVersionTag string, grpcPortNum uint16, envVars map[string]string, shouldStartInDebugMode bool, githubAuthToken string, sinks logs_aggregator.Sinks, shouldTurnOffPersistentVolumeLogsCollection bool, logsCollectorFilters []logs_collector.Filter) (*engine.Engine, error) {
-	ret := _m.Called(ctx, imageOrgAndRepo, imageVersionTag, grpcPortNum, envVars, shouldStartInDebugMode, githubAuthToken, sinks, shouldTurnOffPersistentVolumeLogsCollection, logsCollectorFilters)
+// CreateEngine provides a mock function with given fields: ctx, imageOrgAndRepo, imageVersionTag, grpcPortNum, envVars, shouldStartInDebugMode, githubAuthToken, sinks, shouldTurnOffPersistentVolumeLogsCollection, logsCollectorFilters, logsCollectorParsers
+func (_m *MockKurtosisBackend) CreateEngine(ctx context.Context, imageOrgAndRepo string, imageVersionTag string, grpcPortNum uint16, envVars map[string]string, shouldStartInDebugMode bool, githubAuthToken string, sinks logs_aggregator.Sinks, shouldTurnOffPersistentVolumeLogsCollection bool, logsCollectorFilters []logs_collector.Filter, logsCollectorParsers []logs_collector.Parser) (*engine.Engine, error) {
+	ret := _m.Called(ctx, imageOrgAndRepo, imageVersionTag, grpcPortNum, envVars, shouldStartInDebugMode, githubAuthToken, sinks, shouldTurnOffPersistentVolumeLogsCollection, logsCollectorFilters, logsCollectorParsers)
 
 	var r0 *engine.Engine
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, uint16, map[string]string, bool, string, logs_aggregator.Sinks, bool, []logs_collector.Filter) (*engine.Engine, error)); ok {
-		return rf(ctx, imageOrgAndRepo, imageVersionTag, grpcPortNum, envVars, shouldStartInDebugMode, githubAuthToken, sinks, shouldTurnOffPersistentVolumeLogsCollection, logsCollectorFilters)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, uint16, map[string]string, bool, string, logs_aggregator.Sinks, bool, []logs_collector.Filter, []logs_collector.Parser) (*engine.Engine, error)); ok {
+		return rf(ctx, imageOrgAndRepo, imageVersionTag, grpcPortNum, envVars, shouldStartInDebugMode, githubAuthToken, sinks, shouldTurnOffPersistentVolumeLogsCollection, logsCollectorFilters, logsCollectorParsers)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, uint16, map[string]string, bool, string, logs_aggregator.Sinks, bool, []logs_collector.Filter) *engine.Engine); ok {
-		r0 = rf(ctx, imageOrgAndRepo, imageVersionTag, grpcPortNum, envVars, shouldStartInDebugMode, githubAuthToken, sinks, shouldTurnOffPersistentVolumeLogsCollection, logsCollectorFilters)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, uint16, map[string]string, bool, string, logs_aggregator.Sinks, bool, []logs_collector.Filter, []logs_collector.Parser) *engine.Engine); ok {
+		r0 = rf(ctx, imageOrgAndRepo, imageVersionTag, grpcPortNum, envVars, shouldStartInDebugMode, githubAuthToken, sinks, shouldTurnOffPersistentVolumeLogsCollection, logsCollectorFilters, logsCollectorParsers)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*engine.Engine)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, uint16, map[string]string, bool, string, logs_aggregator.Sinks, bool, []logs_collector.Filter) error); ok {
-		r1 = rf(ctx, imageOrgAndRepo, imageVersionTag, grpcPortNum, envVars, shouldStartInDebugMode, githubAuthToken, sinks, shouldTurnOffPersistentVolumeLogsCollection, logsCollectorFilters)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, uint16, map[string]string, bool, string, logs_aggregator.Sinks, bool, []logs_collector.Filter, []logs_collector.Parser) error); ok {
+		r1 = rf(ctx, imageOrgAndRepo, imageVersionTag, grpcPortNum, envVars, shouldStartInDebugMode, githubAuthToken, sinks, shouldTurnOffPersistentVolumeLogsCollection, logsCollectorFilters, logsCollectorParsers)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -309,13 +309,14 @@ type MockKurtosisBackend_CreateEngine_Call struct {
 //   - sinks logs_aggregator.Sinks
 //   - shouldTurnOffPersistentVolumeLogsCollection bool
 //   - logsCollectorFilters []logs_collector.Filter
-func (_e *MockKurtosisBackend_Expecter) CreateEngine(ctx interface{}, imageOrgAndRepo interface{}, imageVersionTag interface{}, grpcPortNum interface{}, envVars interface{}, shouldStartInDebugMode interface{}, githubAuthToken interface{}, sinks interface{}, shouldTurnOffPersistentVolumeLogsCollection interface{}, logsCollectorFilters interface{}) *MockKurtosisBackend_CreateEngine_Call {
-	return &MockKurtosisBackend_CreateEngine_Call{Call: _e.mock.On("CreateEngine", ctx, imageOrgAndRepo, imageVersionTag, grpcPortNum, envVars, shouldStartInDebugMode, githubAuthToken, sinks, shouldTurnOffPersistentVolumeLogsCollection, logsCollectorFilters)}
+//   - logsCollectorParsers []logs_collector.Parser
+func (_e *MockKurtosisBackend_Expecter) CreateEngine(ctx interface{}, imageOrgAndRepo interface{}, imageVersionTag interface{}, grpcPortNum interface{}, envVars interface{}, shouldStartInDebugMode interface{}, githubAuthToken interface{}, sinks interface{}, shouldTurnOffPersistentVolumeLogsCollection interface{}, logsCollectorFilters interface{}, logsCollectorParsers interface{}) *MockKurtosisBackend_CreateEngine_Call {
+	return &MockKurtosisBackend_CreateEngine_Call{Call: _e.mock.On("CreateEngine", ctx, imageOrgAndRepo, imageVersionTag, grpcPortNum, envVars, shouldStartInDebugMode, githubAuthToken, sinks, shouldTurnOffPersistentVolumeLogsCollection, logsCollectorFilters, logsCollectorParsers)}
 }
 
-func (_c *MockKurtosisBackend_CreateEngine_Call) Run(run func(ctx context.Context, imageOrgAndRepo string, imageVersionTag string, grpcPortNum uint16, envVars map[string]string, shouldStartInDebugMode bool, githubAuthToken string, sinks logs_aggregator.Sinks, shouldTurnOffPersistentVolumeLogsCollection bool, logsCollectorFilters []logs_collector.Filter)) *MockKurtosisBackend_CreateEngine_Call {
+func (_c *MockKurtosisBackend_CreateEngine_Call) Run(run func(ctx context.Context, imageOrgAndRepo string, imageVersionTag string, grpcPortNum uint16, envVars map[string]string, shouldStartInDebugMode bool, githubAuthToken string, sinks logs_aggregator.Sinks, shouldTurnOffPersistentVolumeLogsCollection bool, logsCollectorFilters []logs_collector.Filter, logsCollectorParsers []logs_collector.Parser)) *MockKurtosisBackend_CreateEngine_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(uint16), args[4].(map[string]string), args[5].(bool), args[6].(string), args[7].(logs_aggregator.Sinks), args[8].(bool), args[9].([]logs_collector.Filter))
+		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(uint16), args[4].(map[string]string), args[5].(bool), args[6].(string), args[7].(logs_aggregator.Sinks), args[8].(bool), args[9].([]logs_collector.Filter), args[10].([]logs_collector.Parser))
 	})
 	return _c
 }
@@ -325,7 +326,7 @@ func (_c *MockKurtosisBackend_CreateEngine_Call) Return(_a0 *engine.Engine, _a1 
 	return _c
 }
 
-func (_c *MockKurtosisBackend_CreateEngine_Call) RunAndReturn(run func(context.Context, string, string, uint16, map[string]string, bool, string, logs_aggregator.Sinks, bool, []logs_collector.Filter) (*engine.Engine, error)) *MockKurtosisBackend_CreateEngine_Call {
+func (_c *MockKurtosisBackend_CreateEngine_Call) RunAndReturn(run func(context.Context, string, string, uint16, map[string]string, bool, string, logs_aggregator.Sinks, bool, []logs_collector.Filter, []logs_collector.Parser) (*engine.Engine, error)) *MockKurtosisBackend_CreateEngine_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -386,25 +387,25 @@ func (_c *MockKurtosisBackend_CreateLogsAggregator_Call) RunAndReturn(run func(c
 	return _c
 }
 
-// CreateLogsCollectorForEnclave provides a mock function with given fields: ctx, enclaveUuid, logsCollectorHttpPortNumber, logsCollectorTcpPortNumber, logsCollectorFilters
-func (_m *MockKurtosisBackend) CreateLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, logsCollectorHttpPortNumber uint16, logsCollectorTcpPortNumber uint16, logsCollectorFilters []logs_collector.Filter) (*logs_collector.LogsCollector, error) {
-	ret := _m.Called(ctx, enclaveUuid, logsCollectorHttpPortNumber, logsCollectorTcpPortNumber, logsCollectorFilters)
+// CreateLogsCollectorForEnclave provides a mock function with given fields: ctx, enclaveUuid, logsCollectorHttpPortNumber, logsCollectorTcpPortNumber, logsCollectorFilters, logsCollectorParsers
+func (_m *MockKurtosisBackend) CreateLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, logsCollectorHttpPortNumber uint16, logsCollectorTcpPortNumber uint16, logsCollectorFilters []logs_collector.Filter, logsCollectorParsers []logs_collector.Parser) (*logs_collector.LogsCollector, error) {
+	ret := _m.Called(ctx, enclaveUuid, logsCollectorHttpPortNumber, logsCollectorTcpPortNumber, logsCollectorFilters, logsCollectorParsers)
 
 	var r0 *logs_collector.LogsCollector
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, enclave.EnclaveUUID, uint16, uint16, []logs_collector.Filter) (*logs_collector.LogsCollector, error)); ok {
-		return rf(ctx, enclaveUuid, logsCollectorHttpPortNumber, logsCollectorTcpPortNumber, logsCollectorFilters)
+	if rf, ok := ret.Get(0).(func(context.Context, enclave.EnclaveUUID, uint16, uint16, []logs_collector.Filter, []logs_collector.Parser) (*logs_collector.LogsCollector, error)); ok {
+		return rf(ctx, enclaveUuid, logsCollectorHttpPortNumber, logsCollectorTcpPortNumber, logsCollectorFilters, logsCollectorParsers)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, enclave.EnclaveUUID, uint16, uint16, []logs_collector.Filter) *logs_collector.LogsCollector); ok {
-		r0 = rf(ctx, enclaveUuid, logsCollectorHttpPortNumber, logsCollectorTcpPortNumber, logsCollectorFilters)
+	if rf, ok := ret.Get(0).(func(context.Context, enclave.EnclaveUUID, uint16, uint16, []logs_collector.Filter, []logs_collector.Parser) *logs_collector.LogsCollector); ok {
+		r0 = rf(ctx, enclaveUuid, logsCollectorHttpPortNumber, logsCollectorTcpPortNumber, logsCollectorFilters, logsCollectorParsers)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*logs_collector.LogsCollector)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, enclave.EnclaveUUID, uint16, uint16, []logs_collector.Filter) error); ok {
-		r1 = rf(ctx, enclaveUuid, logsCollectorHttpPortNumber, logsCollectorTcpPortNumber, logsCollectorFilters)
+	if rf, ok := ret.Get(1).(func(context.Context, enclave.EnclaveUUID, uint16, uint16, []logs_collector.Filter, []logs_collector.Parser) error); ok {
+		r1 = rf(ctx, enclaveUuid, logsCollectorHttpPortNumber, logsCollectorTcpPortNumber, logsCollectorFilters, logsCollectorParsers)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -423,13 +424,14 @@ type MockKurtosisBackend_CreateLogsCollectorForEnclave_Call struct {
 //   - logsCollectorHttpPortNumber uint16
 //   - logsCollectorTcpPortNumber uint16
 //   - logsCollectorFilters []logs_collector.Filter
-func (_e *MockKurtosisBackend_Expecter) CreateLogsCollectorForEnclave(ctx interface{}, enclaveUuid interface{}, logsCollectorHttpPortNumber interface{}, logsCollectorTcpPortNumber interface{}, logsCollectorFilters interface{}) *MockKurtosisBackend_CreateLogsCollectorForEnclave_Call {
-	return &MockKurtosisBackend_CreateLogsCollectorForEnclave_Call{Call: _e.mock.On("CreateLogsCollectorForEnclave", ctx, enclaveUuid, logsCollectorHttpPortNumber, logsCollectorTcpPortNumber, logsCollectorFilters)}
+//   - logsCollectorParsers []logs_collector.Parser
+func (_e *MockKurtosisBackend_Expecter) CreateLogsCollectorForEnclave(ctx interface{}, enclaveUuid interface{}, logsCollectorHttpPortNumber interface{}, logsCollectorTcpPortNumber interface{}, logsCollectorFilters interface{}, logsCollectorParsers interface{}) *MockKurtosisBackend_CreateLogsCollectorForEnclave_Call {
+	return &MockKurtosisBackend_CreateLogsCollectorForEnclave_Call{Call: _e.mock.On("CreateLogsCollectorForEnclave", ctx, enclaveUuid, logsCollectorHttpPortNumber, logsCollectorTcpPortNumber, logsCollectorFilters, logsCollectorParsers)}
 }
 
-func (_c *MockKurtosisBackend_CreateLogsCollectorForEnclave_Call) Run(run func(ctx context.Context, enclaveUuid enclave.EnclaveUUID, logsCollectorHttpPortNumber uint16, logsCollectorTcpPortNumber uint16, logsCollectorFilters []logs_collector.Filter)) *MockKurtosisBackend_CreateLogsCollectorForEnclave_Call {
+func (_c *MockKurtosisBackend_CreateLogsCollectorForEnclave_Call) Run(run func(ctx context.Context, enclaveUuid enclave.EnclaveUUID, logsCollectorHttpPortNumber uint16, logsCollectorTcpPortNumber uint16, logsCollectorFilters []logs_collector.Filter, logsCollectorParsers []logs_collector.Parser)) *MockKurtosisBackend_CreateLogsCollectorForEnclave_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(enclave.EnclaveUUID), args[2].(uint16), args[3].(uint16), args[4].([]logs_collector.Filter))
+		run(args[0].(context.Context), args[1].(enclave.EnclaveUUID), args[2].(uint16), args[3].(uint16), args[4].([]logs_collector.Filter), args[5].([]logs_collector.Parser))
 	})
 	return _c
 }
@@ -439,7 +441,7 @@ func (_c *MockKurtosisBackend_CreateLogsCollectorForEnclave_Call) Return(_a0 *lo
 	return _c
 }
 
-func (_c *MockKurtosisBackend_CreateLogsCollectorForEnclave_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID, uint16, uint16, []logs_collector.Filter) (*logs_collector.LogsCollector, error)) *MockKurtosisBackend_CreateLogsCollectorForEnclave_Call {
+func (_c *MockKurtosisBackend_CreateLogsCollectorForEnclave_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID, uint16, uint16, []logs_collector.Filter, []logs_collector.Parser) (*logs_collector.LogsCollector, error)) *MockKurtosisBackend_CreateLogsCollectorForEnclave_Call {
 	_c.Call.Return(run)
 	return _c
 }

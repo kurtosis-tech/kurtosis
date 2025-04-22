@@ -21,6 +21,7 @@ type LogsCollectorContainer interface {
 		logsCollectorTcpPortId string,
 		logsCollectorHttpPortId string,
 		logsCollectorFilters []logs_collector.Filter,
+		logsCollectorParsers []logs_collector.Parser,
 		targetNetworkId string,
 		objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 		dockerManager *docker_manager.DockerManager,

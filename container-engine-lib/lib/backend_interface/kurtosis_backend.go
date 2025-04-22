@@ -52,7 +52,10 @@ type KurtosisBackend interface {
 		githubAuthToken string,
 		sinks logs_aggregator.Sinks,
 		shouldTurnOffPersistentVolumeLogsCollection bool,
+		// logsCollectorFilters and logsCollectorParsers needs to be passed into both CreateEngine and CreateLogsCollectorForEnclave
+		// this is becuase over Docker, CreateLogsCollectorForEnclave creates the logs collector and over k8s CreateEngine does
 		logsCollectorFilters []logs_collector.Filter,
+		logsCollectorParsers []logs_collector.Parser,
 	) (
 		*engine.Engine,
 		error,
@@ -350,6 +353,7 @@ type KurtosisBackend interface {
 		logsCollectorHttpPortNumber uint16,
 		logsCollectorTcpPortNumber uint16,
 		logsCollectorFilters []logs_collector.Filter,
+		logsCollectorParsers []logs_collector.Parser,
 	) (
 		*logs_collector.LogsCollector,
 		error,

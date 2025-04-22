@@ -55,6 +55,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 	sinks logs_aggregator.Sinks,
 	shouldEnablePersistentVolumeLogsCollection bool,
 	logsCollectorFilters []logs_collector.Filter,
+	logsCollectorParsers []logs_collector.Parser,
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicGrpcPortSpec *port_spec.PortSpec,
@@ -83,6 +84,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 		sinks,
 		shouldEnablePersistentVolumeLogsCollection,
 		logsCollectorFilters,
+		logsCollectorParsers,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", kurtosis_version.KurtosisVersion)
@@ -113,6 +115,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	sinks logs_aggregator.Sinks,
 	shouldEnablePersistentVolumeLogsCollection bool,
 	logsCollectorFilters []logs_collector.Filter,
+	logsCollectorParsers []logs_collector.Parser,
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicGrpcPortSpec *port_spec.PortSpec,
@@ -139,6 +142,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 		domain,
 		logRetentionPeriod,
 		logsCollectorFilters,
+		logsCollectorParsers,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred creating the engine server args")
@@ -160,6 +164,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 		sinks,
 		shouldEnablePersistentVolumeLogsCollection,
 		logsCollectorFilters,
+		logsCollectorParsers,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred launching the engine server container")

@@ -117,7 +117,8 @@ func (backend *DockerKurtosisBackend) CreateEngine(
 	gitAuthToken string,
 	sinks logs_aggregator.Sinks,
 	shouldEnablePersistentVolumeLogsCollection bool,
-	logsCollectorFilters []logs_collector.Filter,
+	logsCollectorFilters []logs_collector.Filter, // ignored on docker backend for create engine
+	logsCollectorParsers []logs_collector.Parser, // ignored on docker backend for create engine
 ) (
 	*engine.Engine,
 	error,
@@ -429,6 +430,7 @@ func (backend *DockerKurtosisBackend) CreateLogsCollectorForEnclave(
 	logsCollectorTcpPortNumber uint16,
 	logsCollectorHttpPortNumber uint16,
 	logsCollectorFilters []logs_collector.Filter,
+	logsCollectorParsers []logs_collector.Parser,
 ) (
 	*logs_collector.LogsCollector,
 	error,
@@ -465,6 +467,7 @@ func (backend *DockerKurtosisBackend) CreateLogsCollectorForEnclave(
 		logsCollectorContainer,
 		logsAggregator,
 		logsCollectorFilters,
+		logsCollectorParsers,
 		backend.dockerManager,
 		backend.objAttrsProvider,
 	)

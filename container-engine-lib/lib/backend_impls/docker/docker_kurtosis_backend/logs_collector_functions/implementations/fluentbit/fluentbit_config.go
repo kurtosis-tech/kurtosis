@@ -29,6 +29,7 @@ type Output struct {
 type FluentbitConfig struct {
 	Service *Service
 	Input   *Input
+	Parsers []logs_collector.Parser
 	Filters []logs_collector.Filter
 	Output  *Output
 }
@@ -39,6 +40,7 @@ func newFluentbitConfigForKurtosisCentralizedLogs(
 	tcpPortNumber uint16,
 	httpPortNumber uint16,
 	logsCollectorFilters []logs_collector.Filter,
+	logsCollectorParsers []logs_collector.Parser,
 ) *FluentbitConfig {
 	return &FluentbitConfig{
 		Service: &Service{
@@ -54,6 +56,7 @@ func newFluentbitConfigForKurtosisCentralizedLogs(
 			Port:        tcpPortNumber,
 			StorageType: inputFilesystemStorageType,
 		},
+		Parsers: logsCollectorParsers,
 		Filters: logsCollectorFilters,
 		Output: &Output{
 			Name:  vectorOutputTypeName,

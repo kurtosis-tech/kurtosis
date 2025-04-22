@@ -41,6 +41,7 @@ type LogsAggregatorConfig struct {
 
 type LogsCollectorConfig struct {
 	Filters []logs_collector.Filter
+	Parsers []logs_collector.Parser
 }
 
 type GrafanaLokiConfig struct {
@@ -90,10 +91,12 @@ func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v6.Kurto
 
 	logsCollector := LogsCollectorConfig{
 		Filters: nil,
+		Parsers: nil,
 	}
 
 	if overrides.LogsCollector != nil {
 		logsCollector.Filters = overrides.LogsCollector.Filters
+		logsCollector.Parsers = overrides.LogsCollector.Parsers
 	}
 
 	var grafloki GrafanaLokiConfig

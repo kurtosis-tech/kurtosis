@@ -197,6 +197,7 @@ func runMain() error {
 		serverArgs.CloudInstanceID,
 		serverArgs.KurtosisLocalBackendConfig,
 		serverArgs.LogsCollectorFilters,
+		serverArgs.LogsCollectorParsers,
 	)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create an enclave manager for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
@@ -339,6 +340,7 @@ func getEnclaveManager(
 	cloudInstanceId metrics_client.CloudInstanceID,
 	kurtosisLocalBackendConfig interface{},
 	logsCollectorFilters []logs_collector.Filter,
+	logsCollectorParsers []logs_collector.Parser,
 ) (*enclave_manager.EnclaveManager, error) {
 	var apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier
 	switch kurtosisBackendType {
@@ -368,6 +370,7 @@ func getEnclaveManager(
 		cloudUserId,
 		cloudInstanceId,
 		logsCollectorFilters,
+		logsCollectorParsers,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating enclave manager for backend type '%+v' using pool-size '%v' and engine version '%v'", kurtosisBackendType, poolSize, engineVersion)

@@ -155,6 +155,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	sinks logs_aggregator.Sinks,
 	shouldEnablePersistentVolumeLogsCollection bool,
 	logsCollectorFilters []logs_collector.Filter,
+	logsCollectorParsers []logs_collector.Parser,
 ) (
 	*engine.Engine,
 	error,
@@ -170,6 +171,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 		sinks,
 		shouldEnablePersistentVolumeLogsCollection,
 		logsCollectorFilters,
+		logsCollectorParsers,
 		backend.engineNodeName,
 		backend.kubernetesManager,
 		backend.objAttrsProvider,
@@ -504,7 +506,17 @@ func (backend *KubernetesKurtosisBackend) DestroyLogsAggregator(ctx context.Cont
 	return nil
 }
 
-func (backend *KubernetesKurtosisBackend) CreateLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, logsCollectorHttpPortNumber uint16, logsCollectorTcpPortNumber uint16, logsCollectorFilters []logs_collector.Filter) (*logs_collector.LogsCollector, error) {
+func (backend *KubernetesKurtosisBackend) CreateLogsCollectorForEnclave(
+	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
+	logsCollectorHttpPortNumber uint16,
+	logsCollectorTcpPortNumber uint16,
+	logsCollectorFilters []logs_collector.Filter,
+	logsCollectorParsers []logs_collector.Parser,
+) (
+	*logs_collector.LogsCollector,
+	error,
+) {
 	var logsAggregator *logs_aggregator.LogsAggregator
 	maybeLogsAggregator, err := logs_aggregator_functions.GetLogsAggregator(ctx, backend.kubernetesManager)
 	if err != nil {
@@ -537,6 +549,7 @@ func (backend *KubernetesKurtosisBackend) CreateLogsCollectorForEnclave(ctx cont
 		logsCollectorDaemonSet,
 		logsAggregator,
 		logsCollectorFilters,
+		logsCollectorParsers,
 		backend.kubernetesManager,
 		backend.objAttrsProvider,
 	)

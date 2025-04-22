@@ -10,7 +10,8 @@ func createFluentbitContainerConfigProviderForKurtosis(
 	tcpPortNumber uint16,
 	httpPortNumber uint16,
 	logsCollectorFilters []logs_collector.Filter,
+	logsCollectorParsers []logs_collector.Parser,
 ) *fluentbitContainerConfigProvider {
-	configCreator := createFluentbitConfigurationCreatorForKurtosis(logsAggregatorHost, logsAggregatorPort, tcpPortNumber, httpPortNumber, logsCollectorFilters)
+	configCreator := createFluentbitConfigurationCreatorForKurtosis(logsAggregatorHost, logsAggregatorPort, tcpPortNumber, httpPortNumber, logsCollectorFilters, logsCollectorParsers)
 	return newFluentbitContainerConfigProvider(configCreator.config, tcpPortNumber, httpPortNumber)
 }

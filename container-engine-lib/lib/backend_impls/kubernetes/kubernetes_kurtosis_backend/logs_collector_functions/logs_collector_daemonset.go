@@ -21,6 +21,7 @@ type LogsCollectorDaemonSet interface {
 		logsCollectorTcpPortId string,
 		logsCollectorHttpPortId string,
 		logsCollectorFilters []logs_collector.Filter,
+		logsCollectorParsers []logs_collector.Parser,
 		objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
 		kubernetesManager *kubernetes_manager.KubernetesManager,
 	) (
