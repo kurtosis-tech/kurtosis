@@ -106,6 +106,26 @@ func getCredentialsFromStore(credHelper string, registryURL string) (*registry.A
 	// Prepare the helper command (docker-credential-<store>)
 	credHelperCmd := "docker-credential-" + credHelper
 
+	// First try with the original URL
+	auth, err := tryGetCredentialsWithURL(credHelperCmd, registryURL)
+	if err == nil {
+		return auth, nil
+	}
+
+	// If the URL doesn't end with a slash, try again with a trailing slash
+	if !strings.HasSuffix(registryURL, "/") {
+		auth, retryErr := tryGetCredentialsWithURL(credHelperCmd, registryURL+"/")
+		if retryErr == nil {
+			return auth, nil
+		}
+	}
+
+	// If both attempts failed, return the original error
+	return nil, err
+}
+
+// tryGetCredentialsWithURL attempts to get credentials for a specific URL
+func tryGetCredentialsWithURL(credHelperCmd string, registryURL string) (*registry.AuthConfig, error) {
 	// Execute the credential helper to get credentials for the registry
 	cmd := exec.Command(credHelperCmd, "get")
 	cmd.Stdin = strings.NewReader(registryURL)
