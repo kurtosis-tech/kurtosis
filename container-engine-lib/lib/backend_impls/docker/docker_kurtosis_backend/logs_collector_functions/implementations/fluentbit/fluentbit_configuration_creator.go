@@ -32,11 +32,12 @@ const (
 )
 
 type fluentbitConfigurationCreator struct {
-	config *FluentbitConfig
+	config       *FluentbitConfig
+	parserConfig *ParserConfig
 }
 
-func newFluentbitConfigurationCreator(config *FluentbitConfig) *fluentbitConfigurationCreator {
-	return &fluentbitConfigurationCreator{config: config}
+func newFluentbitConfigurationCreator(config *FluentbitConfig, parserConfig *ParserConfig) *fluentbitConfigurationCreator {
+	return &fluentbitConfigurationCreator{config: config, parserConfig: parserConfig}
 }
 
 func (fluent *fluentbitConfigurationCreator) CreateConfiguration(
@@ -114,11 +115,19 @@ func (fluent *fluentbitConfigurationCreator) createFluentbitConfigFileInVolume(
 		return stacktrace.Propagate(err, "An error occurred getting the Fluentbit config file content")
 	}
 
+	parserConfigFileContentStr, err := fluent.getParserConfigFileContent()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the Fluentbit parser config file content")
+	}
+
 	commandStr := fmt.Sprintf(
-		"%v '%v' > %v",
+		"%v '%v' > %v && %v '%v' > %v",
 		printfCmdName,
 		configFileContentStr,
 		configFilepathInContainer,
+		printfCmdName,
+		parserConfigFileContentStr,
+		parserConfigFilepathInContainer,
 	)
 
 	execCmd := []string{
@@ -179,6 +188,25 @@ func (fluent *fluentbitConfigurationCreator) getConfigFileContent() (string, err
 	templateStr := templateStrBuffer.String()
 
 	logrus.Debugf("Generated fluent bit config string: %v", templateStr)
+
+	return templateStr, nil
+}
+
+func (fluent *fluentbitConfigurationCreator) getParserConfigFileContent() (string, error) {
+	cngFileTemplate, err := template.New(parserConfigFileTemplateName).Parse(parserConfigFileTemplate)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred parsing Fluentbit parserconfig template '%v'", configFileTemplate)
+	}
+
+	templateStrBuffer := &bytes.Buffer{}
+
+	if err := cngFileTemplate.Execute(templateStrBuffer, fluent.parserConfig); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred executing the Fluentbit parser config file template")
+	}
+
+	templateStr := templateStrBuffer.String()
+
+	logrus.Infof("Generated fluent bit parser config string: %v", templateStr)
 
 	return templateStr, nil
 }

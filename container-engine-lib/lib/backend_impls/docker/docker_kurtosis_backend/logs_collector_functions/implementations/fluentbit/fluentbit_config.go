@@ -10,6 +10,7 @@ type Service struct {
 	HttpServerHost    string
 	HttpServerPort    uint16
 	StoragePath       string
+	ParsersFile       string
 }
 
 type Input struct {
@@ -29,9 +30,12 @@ type Output struct {
 type FluentbitConfig struct {
 	Service *Service
 	Input   *Input
-	Parsers []logs_collector.Parser
 	Filters []logs_collector.Filter
 	Output  *Output
+}
+
+type ParserConfig struct {
+	Parsers []logs_collector.Parser
 }
 
 func newFluentbitConfigForKurtosisCentralizedLogs(
@@ -41,28 +45,30 @@ func newFluentbitConfigForKurtosisCentralizedLogs(
 	httpPortNumber uint16,
 	logsCollectorFilters []logs_collector.Filter,
 	logsCollectorParsers []logs_collector.Parser,
-) *FluentbitConfig {
+) (*FluentbitConfig, *ParserConfig) {
 	return &FluentbitConfig{
-		Service: &Service{
-			LogLevel:          logLevel,
-			HttpServerEnabled: httpServerEnabledValue,
-			HttpServerHost:    httpServerLocalhost,
-			HttpServerPort:    httpPortNumber,
-			StoragePath:       filesystemBufferStorageDirpath,
-		},
-		Input: &Input{
-			Name:        inputName,
-			Listen:      inputListenIP,
-			Port:        tcpPortNumber,
-			StorageType: inputFilesystemStorageType,
-		},
-		Parsers: logsCollectorParsers,
-		Filters: logsCollectorFilters,
-		Output: &Output{
-			Name:  vectorOutputTypeName,
-			Match: matchAllRegex,
-			Host:  logsAggregatorHost,
-			Port:  logsAggregatorPort,
-		},
-	}
+			Service: &Service{
+				LogLevel:          logLevel,
+				HttpServerEnabled: httpServerEnabledValue,
+				HttpServerHost:    httpServerLocalhost,
+				HttpServerPort:    httpPortNumber,
+				StoragePath:       filesystemBufferStorageDirpath,
+				ParsersFile:       parserConfigFilepathInContainer,
+			},
+			Input: &Input{
+				Name:        inputName,
+				Listen:      inputListenIP,
+				Port:        tcpPortNumber,
+				StorageType: inputFilesystemStorageType,
+			},
+			Filters: logsCollectorFilters,
+			Output: &Output{
+				Name:  vectorOutputTypeName,
+				Match: matchAllRegex,
+				Host:  logsAggregatorHost,
+				Port:  logsAggregatorPort,
+			},
+		}, &ParserConfig{
+			Parsers: logsCollectorParsers,
+		}
 }
