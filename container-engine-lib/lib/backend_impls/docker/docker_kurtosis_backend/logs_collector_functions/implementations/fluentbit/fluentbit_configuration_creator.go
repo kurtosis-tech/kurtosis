@@ -178,7 +178,7 @@ func (fluent *fluentbitConfigurationCreator) getConfigFileContent() (string, err
 
 	templateStr := templateStrBuffer.String()
 
-	logrus.Infof("Generated fluent bit config string: %v", templateStr)
+	logrus.Debugf("Generated fluent bit config string: %v", templateStr)
 
 	return templateStr, nil
 }

@@ -183,8 +183,6 @@ func runMain() error {
 	logsDatabaseClient := getLogsDatabaseClient(kurtosisBackend, logRetentionPeriodDuration)
 	logsDatabaseClient.StartLogFileManagement(ctx)
 
-	logrus.Infof("logsCollectorFilters: %v", serverArgs.LogsCollectorFilters)
-
 	enclaveManager, err := getEnclaveManager(
 		kurtosisBackend,
 		serverArgs.KurtosisBackendType,

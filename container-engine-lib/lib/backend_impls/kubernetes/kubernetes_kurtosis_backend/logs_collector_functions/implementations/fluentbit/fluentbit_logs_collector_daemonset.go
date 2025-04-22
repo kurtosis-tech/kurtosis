@@ -507,7 +507,7 @@ func generateFluentBitConfigStr(
 		return "", stacktrace.Propagate(err, "An error occurred generating vector config string from fluent bit config data: %v.", fluentBitConfigData)
 	}
 
-	logrus.Infof("Generated fluent bit config string: %v", buf.String())
+	logrus.Debugf("Generated fluent bit config string: %v", buf.String())
 
 	return buf.String(), nil
 }

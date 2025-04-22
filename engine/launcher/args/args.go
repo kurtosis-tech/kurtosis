@@ -7,7 +7,6 @@ import (
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
-	"github.com/sirupsen/logrus"
 
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args/kurtosis_backend_config"
 	"github.com/kurtosis-tech/stacktrace"
@@ -134,7 +133,6 @@ func NewEngineServerArgs(
 	logRetentionPeriod string,
 	logsCollectorFilters []logs_collector.Filter,
 ) (*EngineServerArgs, error) {
-	logrus.Infof("logsCollectorFilters: %+v", logsCollectorFilters)
 	if enclaveEnvVars == "" {
 		enclaveEnvVars = emptyJsonField
 	}
