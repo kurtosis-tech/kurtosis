@@ -1,5 +1,7 @@
 package v6
 
+import "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
+
 type LogsCollectorConfigV6 struct {
-	Filters []map[string]string `yaml:"filters,omitempty"`
+	Filters []logs_collector.Filter `yaml:"filters,omitempty"`
 }

@@ -84,12 +84,14 @@ const (
     Annotations       Off
     Labels            On
 {{range .Filters}}
+
 [FILTER]
     Name              {{.Name}}
     Match             {{.Match}}
-{{range $key, $value := .Params}}    {{$key}} {{$value}}
+{{- range .Params}}
+    {{.Key}} {{.Value}}
+{{- end}}{{end}}
 
-{{end}}{{end}}
 [OUTPUT]
     Name              stdout
     Match             *

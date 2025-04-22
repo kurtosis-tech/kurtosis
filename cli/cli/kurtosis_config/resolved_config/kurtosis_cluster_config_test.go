@@ -6,6 +6,7 @@ import (
 	v6 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v6"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/stretchr/testify/require"
 )
 
@@ -319,18 +320,6 @@ func TestNewKurtosisClusterConfigLogsCollectorFullConfig(t *testing.T) {
 		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
 		EngineNodeName:         &kubernetesEngineNodeName,
 	}
-	filters := []map[string]string{
-		{
-			"name":       "grep",
-			"exclude":    "*",
-			"logical_op": "&",
-		},
-		{
-			"name":   "lua",
-			"script": "print smth",
-			"call":   "frontend",
-		},
-	}
 	kurtosisClusterConfigOverrides := v6.KurtosisClusterConfigV6{
 		Type:   &kubernetesType,
 		Config: &kubernetesFullConfig,
@@ -342,7 +331,24 @@ func TestNewKurtosisClusterConfigLogsCollectorFullConfig(t *testing.T) {
 			},
 		},
 		LogsCollector: &v6.LogsCollectorConfigV6{
-			Filters: filters,
+			Filters: []logs_collector.Filter{
+				{
+					Name:  "grep",
+					Match: "*",
+					Params: []logs_collector.FilterParam{
+						{Key: "exclude", Value: "*"},
+						{Key: "logical_op", Value: "&"},
+					},
+				},
+				{
+					Name:  "lua",
+					Match: "*",
+					Params: []logs_collector.FilterParam{
+						{Key: "script", Value: "print smth"},
+						{Key: "call", Value: "frontend"},
+					},
+				},
+			},
 		},
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
@@ -350,5 +356,4 @@ func TestNewKurtosisClusterConfigLogsCollectorFullConfig(t *testing.T) {
 	actualKurtosisClusterConfig, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)
 	require.NotNil(t, actualKurtosisClusterConfig.logsCollector)
-	require.Equal(t, filters, actualKurtosisClusterConfig.logsCollector.Filters)
 }

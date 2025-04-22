@@ -471,39 +471,6 @@ func generateFluentBitConfigStr(
 	string,
 	error,
 ) {
-	type Filter struct {
-		Name   string
-		Match  string
-		Params map[string]string
-	}
-	filters := make([]*Filter, len(logsCollectorFilters))
-	for idx, logsCollectorFilter := range logsCollectorFilters {
-		params := logsCollectorFilter
-		logrus.Infof("params: %v", params)
-
-		name, ok := params["name"]
-		if !ok {
-			return "", stacktrace.NewError("name key is required for fluentbit filters")
-		}
-		match, ok := params["match"]
-		if !ok {
-			return "", stacktrace.NewError("match key is required for fluentbit filters")
-		}
-
-		paramsWithNoNameAndMatch := make(map[string]string)
-		for k, v := range params {
-			if k != "name" && k != "match" {
-				paramsWithNoNameAndMatch[k] = v
-			}
-		}
-
-		filters[idx] = &Filter{
-			Name:   name,
-			Match:  match,
-			Params: paramsWithNoNameAndMatch,
-		}
-	}
-
 	type FluentBitConfigData struct {
 		HTTPPort               uint16
 		UserServiceResourceStr string
@@ -514,7 +481,7 @@ func generateFluentBitConfigStr(
 		K8sApiServerURL        string
 		LogsAggregatorHost     string
 		LogsAggregatorPortNum  uint16
-		Filters                []*Filter
+		Filters                []logs_collector.Filter
 	}
 
 	tmpl, err := template.New("fluentBitConfig").Parse(fluentBitConfigTemplate)
@@ -532,7 +499,7 @@ func generateFluentBitConfigStr(
 		K8sApiServerURL:        k8sApiServerUrl,
 		LogsAggregatorPortNum:  logsAggregatorPortNun,
 		LogsAggregatorHost:     logsAggregatorHost,
-		Filters:                filters,
+		Filters:                logsCollectorFilters,
 	}
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, fluentBitConfigData)

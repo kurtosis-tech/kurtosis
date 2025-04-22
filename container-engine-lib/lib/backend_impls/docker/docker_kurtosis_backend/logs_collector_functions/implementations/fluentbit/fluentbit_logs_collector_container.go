@@ -39,15 +39,8 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 	resultRemoveLogsCollectorContainerFunc func(),
 	resultErr error,
 ) {
-	logsCollectorConfigurationCreator, err := createFluentbitConfigurationCreatorForKurtosis(logsAggregatorHost, logsAggregatorPort, tcpPortNumber, httpPortNumber, logsCollectorFilters)
-	if err != nil {
-		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating Fluentbit configuration creator")
-	}
-
-	logsCollectorContainerConfigProvider, err := createFluentbitContainerConfigProviderForKurtosis(logsAggregatorHost, logsAggregatorPort, tcpPortNumber, httpPortNumber, logsCollectorFilters)
-	if err != nil {
-		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating Fluentbit container config provider")
-	}
+	logsCollectorConfigurationCreator := createFluentbitConfigurationCreatorForKurtosis(logsAggregatorHost, logsAggregatorPort, tcpPortNumber, httpPortNumber, logsCollectorFilters)
+	logsCollectorContainerConfigProvider := createFluentbitContainerConfigProviderForKurtosis(logsAggregatorHost, logsAggregatorPort, tcpPortNumber, httpPortNumber, logsCollectorFilters)
 
 	privateTcpPortSpec, err := logsCollectorContainerConfigProvider.GetPrivateTcpPortSpec()
 	if err != nil {
