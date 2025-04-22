@@ -5,12 +5,12 @@ import (
 )
 
 type Service struct {
-	LogLevel          string
-	HttpServerEnabled string
-	HttpServerHost    string
-	HttpServerPort    uint16
-	StoragePath       string
-	ParsersFile       string
+	LogLevel                      string
+	HttpServerEnabled             string
+	HttpServerHost                string
+	HttpServerPort                uint16
+	StoragePath                   string
+	KurtosisParsersConfigFilepath string
 }
 
 type Input struct {
@@ -48,12 +48,12 @@ func newFluentbitConfigForKurtosisCentralizedLogs(
 ) (*FluentbitConfig, *ParserConfig) {
 	return &FluentbitConfig{
 			Service: &Service{
-				LogLevel:          logLevel,
-				HttpServerEnabled: httpServerEnabledValue,
-				HttpServerHost:    httpServerLocalhost,
-				HttpServerPort:    httpPortNumber,
-				StoragePath:       filesystemBufferStorageDirpath,
-				ParsersFile:       parserConfigFilepathInContainer,
+				LogLevel:                      logLevel,
+				HttpServerEnabled:             httpServerEnabledValue,
+				HttpServerHost:                httpServerLocalhost,
+				HttpServerPort:                httpPortNumber,
+				StoragePath:                   filesystemBufferStorageDirpath,
+				KurtosisParsersConfigFilepath: parserConfigFilepathInContainer,
 			},
 			Input: &Input{
 				Name:        inputName,

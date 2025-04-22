@@ -447,6 +447,14 @@ func createLogsCollectorConfigMap(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred generating fluent bit config string.")
 	}
+
+	fluentBitParserConfigStr, err := generateFluentBitParserConfigStr(
+		logsCollectorParsers,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred generating fluent bit parser config string.")
+	}
+
 	configMap, err := kubernetesManager.CreateConfigMap(
 		ctx,
 		namespace,
@@ -455,6 +463,7 @@ func createLogsCollectorConfigMap(
 		annotations,
 		map[string]string{
 			fluentBitConfigFileName: fluentBitConfigStr,
+			parsersFileName:         fluentBitParserConfigStr,
 		},
 	)
 	if err != nil {
@@ -474,16 +483,17 @@ func generateFluentBitConfigStr(
 	error,
 ) {
 	type FluentBitConfigData struct {
-		HTTPPort               uint16
-		UserServiceResourceStr string
-		CheckpointDbMountPath  string
-		LogsEnclaveUUIDLabel   string
-		LogsServiceUUIDLabel   string
-		LogsServiceNameLabel   string
-		K8sApiServerURL        string
-		LogsAggregatorHost     string
-		LogsAggregatorPortNum  uint16
-		Filters                []logs_collector.Filter
+		HTTPPort                      uint16
+		KurtosisParsersConfigFilepath string
+		UserServiceResourceStr        string
+		CheckpointDbMountPath         string
+		LogsEnclaveUUIDLabel          string
+		LogsServiceUUIDLabel          string
+		LogsServiceNameLabel          string
+		K8sApiServerURL               string
+		LogsAggregatorHost            string
+		LogsAggregatorPortNum         uint16
+		Filters                       []logs_collector.Filter
 	}
 
 	tmpl, err := template.New("fluentBitConfig").Parse(fluentBitConfigTemplate)
@@ -492,24 +502,54 @@ func generateFluentBitConfigStr(
 	}
 
 	fluentBitConfigData := FluentBitConfigData{
-		HTTPPort:               logsCollectorHttpPort,
-		UserServiceResourceStr: label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue.GetString(),
-		CheckpointDbMountPath:  fluentBitCheckpointDbMountPath,
-		LogsEnclaveUUIDLabel:   kubernetes_label_key.LogsEnclaveUUIDKubernetesLabelKey.GetString(),
-		LogsServiceUUIDLabel:   kubernetes_label_key.LogsServiceUUIDKubernetesLabelKey.GetString(),
-		LogsServiceNameLabel:   kubernetes_label_key.LogsServiceNameKubernetesLabelKey.GetString(),
-		K8sApiServerURL:        k8sApiServerUrl,
-		LogsAggregatorPortNum:  logsAggregatorPortNun,
-		LogsAggregatorHost:     logsAggregatorHost,
-		Filters:                logsCollectorFilters,
+		HTTPPort:                      logsCollectorHttpPort,
+		UserServiceResourceStr:        label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue.GetString(),
+		CheckpointDbMountPath:         fluentBitCheckpointDbMountPath,
+		LogsEnclaveUUIDLabel:          kubernetes_label_key.LogsEnclaveUUIDKubernetesLabelKey.GetString(),
+		LogsServiceUUIDLabel:          kubernetes_label_key.LogsServiceUUIDKubernetesLabelKey.GetString(),
+		LogsServiceNameLabel:          kubernetes_label_key.LogsServiceNameKubernetesLabelKey.GetString(),
+		K8sApiServerURL:               k8sApiServerUrl,
+		LogsAggregatorPortNum:         logsAggregatorPortNun,
+		LogsAggregatorHost:            logsAggregatorHost,
+		Filters:                       logsCollectorFilters,
+		KurtosisParsersConfigFilepath: fmt.Sprintf("%v/%v", fluentBitConfigMountPath, parsersFileName),
 	}
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, fluentBitConfigData)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred generating vector config string from fluent bit config data: %v.", fluentBitConfigData)
+		return "", stacktrace.Propagate(err, "An error occurred generating fluent bit config string from fluent bit config data: %v.", fluentBitConfigData)
 	}
 
 	logrus.Debugf("Generated fluent bit config string: %v", buf.String())
+
+	return buf.String(), nil
+}
+
+func generateFluentBitParserConfigStr(
+	logsCollectorParsers []logs_collector.Parser,
+) (
+	string,
+	error,
+) {
+	type FluentBitParserConfigData struct {
+		Parsers []logs_collector.Parser
+	}
+
+	tmpl, err := template.New("fluentBitParserConfig").Parse(parserConfigFileTemplate)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred parsing fluent bit config template: %v", fluentBitConfigTemplate)
+	}
+
+	fluentBitParserConfigData := FluentBitParserConfigData{
+		Parsers: logsCollectorParsers,
+	}
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, fluentBitParserConfigData)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred generating fluent bit parser config string from fluent bit parser config data: %v.", fluentBitParserConfigData)
+	}
+
+	logrus.Debugf("Generated fluent bit parser config string: %v", buf.String())
 
 	return buf.String(), nil
 }
