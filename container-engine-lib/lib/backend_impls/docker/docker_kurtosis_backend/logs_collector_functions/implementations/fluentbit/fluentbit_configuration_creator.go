@@ -193,7 +193,7 @@ func (fluent *fluentbitConfigurationCreator) getConfigFileContent() (string, err
 }
 
 func (fluent *fluentbitConfigurationCreator) getParserConfigFileContent() (string, error) {
-	cngFileTemplate, err := template.New(parserConfigFileTemplateName).Parse(parserConfigFileTemplate)
+	parserCfgFileTemplate, err := template.New(parserConfigFileTemplateName).Parse(parserConfigFileTemplate)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred parsing Fluentbit parser config template '%v'", configFileTemplate)
 	}
@@ -201,7 +201,7 @@ func (fluent *fluentbitConfigurationCreator) getParserConfigFileContent() (strin
 	templateStrBuffer := &bytes.Buffer{}
 
 	logrus.Infof("Executing Fluentbit parser config file template with config: +%v", fluent.parserConfig.Parsers)
-	if err := cngFileTemplate.Execute(templateStrBuffer, fluent.parserConfig); err != nil {
+	if err := parserCfgFileTemplate.Execute(templateStrBuffer, fluent.parserConfig); err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred executing the Fluentbit parser config file template")
 	}
 

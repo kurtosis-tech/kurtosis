@@ -51,9 +51,9 @@ const (
 	parserConfigFileTemplateName = "fluentbitParserConfigFileTemplate"
 	parserConfigFileTemplate     = `{{- range .Parsers}}
 [PARSER]
-{{- range $key, $value := .Parsers}}
+{{- range $key, $value := . }}
 	{{$key}} {{$value}}
-{{- end}}{{end}}
+{{- end }}{{ end }}
 `
 
 	healthCheckEndpointPath = "api/v1/health"
