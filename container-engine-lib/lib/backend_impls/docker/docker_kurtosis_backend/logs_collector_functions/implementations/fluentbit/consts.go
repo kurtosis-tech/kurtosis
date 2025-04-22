@@ -8,7 +8,7 @@ const (
 	rootDirpath = "/fluent-bit"
 
 	////////////////////////--FLUENT BIT CONTAINER CONFIGURATION SECTION--/////////////////////////////
-	containerImage        = "fluent/fluent-bit:1.9.7"
+	containerImage        = "fluent/fluent-bit:4.0.0"
 	tcpTransportProtocol  = port_spec.TransportProtocol_TCP
 	httpTransportProtocol = port_spec.TransportProtocol_TCP
 

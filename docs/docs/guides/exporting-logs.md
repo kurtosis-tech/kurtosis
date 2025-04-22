@@ -426,10 +426,10 @@ kurtosis-clusters:
         - name: "grep"
           match: "*"
           params:
-            - key: "exclude"
-              value: ".*DEBUG.*"
-            - key: "logical_op"
-              value: "&"
+           - key: "exclude"
+             value: "log .*DEBUG.*"
+           - key: "logical_op"
+             value: "&"
 ```
 
 This configuration will exclude all logs containing the word "DEBUG".
@@ -448,13 +448,13 @@ kurtosis-clusters:
         - name: "grep"
           match: "*"
           params:
-            - key: "exclude"
-              value: ".*DEBUG.*"
+           - key: "exclude"
+             value: ".*DEBUG.*"
         - name: "modify"
           match: "*"
           params:
-            - key: "Add"
-              value: "timestamp ${time}"
+           - key: "Add"
+             value: "timestamp ${time}"
 ```
 
 This configuration first filters out DEBUG logs, then adds a timestamp to the remaining logs.
