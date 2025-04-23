@@ -350,6 +350,7 @@ func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_ar
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred getting service registration for run_python task '%s'", builtin.name)
 	}
+	logrus.Infof("Does '%v' exist? %v", builtin.name, exist)
 	if exist {
 		logrus.Infof("Updating task '%v' with image '%v'", builtin.name, builtin.serviceConfig.GetContainerImageName())
 		_, err = builtin.serviceNetwork.UpdateService(ctx, service.ServiceName(builtin.name), builtin.serviceConfig)
@@ -360,10 +361,6 @@ func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_ar
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while creating a run_python task with name '%v' and image: %v", builtin.name, builtin.serviceConfig.GetContainerImageName())
 	}
-	// _, err := builtin.serviceNetwork.AddService(ctx, service.ServiceName(builtin.name), builtin.serviceConfig)
-	// if err != nil {
-	// return "", stacktrace.Propagate(err, "error occurred while creating a run_python task with name '%v' and image: %v", builtin.name, builtin.serviceConfig.GetContainerImageName())
-	// }
 
 	pipInstallationResult, err := setupRequiredPackages(ctx, builtin)
 	if err != nil {
