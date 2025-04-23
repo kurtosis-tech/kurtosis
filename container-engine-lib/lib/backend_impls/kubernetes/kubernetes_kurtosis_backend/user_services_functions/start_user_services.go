@@ -890,7 +890,6 @@ func createRegisterUserServiceOperation(
 			},
 		}
 
-		logrus.Infof("Creating Kubernetes service in enclave '%v' with ID '%v'", enclaveID, serviceName)
 		createdService, err := kubernetesManager.CreateService(
 			ctx,
 			namespaceName,
