@@ -3,6 +3,7 @@ package tasks
 import (
 	"context"
 	"fmt"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
@@ -24,6 +25,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
 )
@@ -305,9 +307,20 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 		return "", stacktrace.Propagate(err, "An error occurred replacing magic strings in env vars.")
 	}
 
-	_, err = builtin.serviceNetwork.AddService(ctx, service.ServiceName(builtin.name), serviceConfigWithReplacedEnvVars)
+	exist, err := builtin.serviceNetwork.ExistServiceRegistration(service.ServiceName(builtin.name))
 	if err != nil {
-		return "", stacktrace.Propagate(err, "error occurred while creating a run_sh task with image: %v", builtin.serviceConfig.GetContainerImageName())
+		return "", stacktrace.Propagate(err, "An error occurred getting service registration for run_sh task '%s'", builtin.name)
+	}
+	logrus.Infof("Does '%v' exist? %v", builtin.name, exist)
+	if exist {
+		logrus.Infof("Updating task '%v' with image '%v'", builtin.name, builtin.serviceConfig.GetContainerImageName())
+		_, err = builtin.serviceNetwork.UpdateService(ctx, service.ServiceName(builtin.name), serviceConfigWithReplacedEnvVars)
+	} else {
+		logrus.Infof("Adding task '%v' with image '%v'", builtin.name, builtin.serviceConfig.GetContainerImageName())
+		_, err = builtin.serviceNetwork.AddService(ctx, service.ServiceName(builtin.name), serviceConfigWithReplacedEnvVars)
+	}
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while creating a run_sh task with name '%v' and image '%v'", builtin.name, serviceConfigWithReplacedEnvVars.GetContainerImageName())
 	}
 
 	// create work directory and cd into that directory

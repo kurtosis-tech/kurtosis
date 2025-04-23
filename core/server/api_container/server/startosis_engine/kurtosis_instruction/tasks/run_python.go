@@ -3,6 +3,8 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
@@ -25,9 +27,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
-	"strings"
 )
 
 const (
@@ -344,9 +346,20 @@ func (builtin *RunPythonCapabilities) Validate(_ *builtin_argument.ArgumentValue
 //	TODO Create an mechanism for other services to retrieve files from the task container
 //	TODO Make task as its own entity instead of currently shown under services
 func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
-	_, err := builtin.serviceNetwork.AddService(ctx, service.ServiceName(builtin.name), builtin.serviceConfig)
+	exist, err := builtin.serviceNetwork.ExistServiceRegistration(service.ServiceName(builtin.name))
 	if err != nil {
-		return "", stacktrace.Propagate(err, "error occurred while creating a run_python task with image: %v", builtin.serviceConfig.GetContainerImageName())
+		return "", stacktrace.Propagate(err, "An error occurred getting service registration for run_python task '%s'", builtin.name)
+	}
+	logrus.Infof("Does '%v' exist? %v", builtin.name, exist)
+	if exist {
+		logrus.Infof("Updating task '%v' with image '%v'", builtin.name, builtin.serviceConfig.GetContainerImageName())
+		_, err = builtin.serviceNetwork.UpdateService(ctx, service.ServiceName(builtin.name), builtin.serviceConfig)
+	} else {
+		logrus.Infof("Adding task '%v' with image '%v'", builtin.name, builtin.serviceConfig.GetContainerImageName())
+		_, err = builtin.serviceNetwork.AddService(ctx, service.ServiceName(builtin.name), builtin.serviceConfig)
+	}
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while creating a run_python task with name '%v' and image: %v", builtin.name, builtin.serviceConfig.GetContainerImageName())
 	}
 
 	pipInstallationResult, err := setupRequiredPackages(ctx, builtin)
