@@ -306,22 +306,22 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 		return "", stacktrace.Propagate(err, "An error occurred replacing magic strings in env vars.")
 	}
 
-	_, err = builtin.serviceNetwork.AddService(ctx, service.ServiceName(builtin.name), serviceConfigWithReplacedEnvVars)
+	// _, err = builtin.serviceNetwork.AddService(ctx, service.ServiceName(builtin.name), serviceConfigWithReplacedEnvVars)
+	// if err != nil {
+	// 	return "", stacktrace.Propagate(err, "An error occurred while creating a run_sh task with name '%v' and image: %v", builtin.name, builtin.serviceConfig.GetContainerImageName())
+	// }
+	exist, err := builtin.serviceNetwork.ExistServiceRegistration(service.ServiceName(builtin.name))
 	if err != nil {
-		return "", stacktrace.Propagate(err, "error occurred while creating a run_sh task with image: %v", builtin.serviceConfig.GetContainerImageName())
+		return "", stacktrace.Propagate(err, "An error occurred getting service registration for run_sh task '%s'", builtin.name)
 	}
-	// exist, err := builtin.serviceNetwork.ExistServiceRegistration(service.ServiceName(builtin.name))
-	// if err != nil {
-	// 	return "", stacktrace.Propagate(err, "An error occurred getting service registration for run_sh task '%s'", builtin.name)
-	// }
-	// if exist {
-	// 	_, err = builtin.serviceNetwork.UpdateService(ctx, service.ServiceName(builtin.name), serviceConfigWithReplacedEnvVars)
-	// } else {
-	// 	_, err = builtin.serviceNetwork.AddService(ctx, service.ServiceName(builtin.name), serviceConfigWithReplacedEnvVars)
-	// }
-	// if err != nil {
-	// 	return "", stacktrace.Propagate(err, "error occurred while creating a run_sh task with name: %v", builtin.name)
-	// }
+	if exist {
+		_, err = builtin.serviceNetwork.UpdateService(ctx, service.ServiceName(builtin.name), serviceConfigWithReplacedEnvVars)
+	} else {
+		_, err = builtin.serviceNetwork.AddService(ctx, service.ServiceName(builtin.name), serviceConfigWithReplacedEnvVars)
+	}
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while creating a run_sh task with name '%v' and image '%v'", builtin.name, serviceConfigWithReplacedEnvVars.GetContainerImageName())
+	}
 
 	// create work directory and cd into that directory
 	commandToRun, err := getCommandToRun(builtin)
