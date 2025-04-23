@@ -3,6 +3,7 @@ package tasks
 import (
 	"context"
 	"fmt"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
@@ -309,6 +310,18 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 	if err != nil {
 		return "", stacktrace.Propagate(err, "error occurred while creating a run_sh task with image: %v", builtin.serviceConfig.GetContainerImageName())
 	}
+	// exist, err := builtin.serviceNetwork.ExistServiceRegistration(service.ServiceName(builtin.name))
+	// if err != nil {
+	// 	return "", stacktrace.Propagate(err, "An error occurred getting service registration for run_sh task '%s'", builtin.name)
+	// }
+	// if exist {
+	// 	_, err = builtin.serviceNetwork.UpdateService(ctx, service.ServiceName(builtin.name), serviceConfigWithReplacedEnvVars)
+	// } else {
+	// 	_, err = builtin.serviceNetwork.AddService(ctx, service.ServiceName(builtin.name), serviceConfigWithReplacedEnvVars)
+	// }
+	// if err != nil {
+	// 	return "", stacktrace.Propagate(err, "error occurred while creating a run_sh task with name: %v", builtin.name)
+	// }
 
 	// create work directory and cd into that directory
 	commandToRun, err := getCommandToRun(builtin)
