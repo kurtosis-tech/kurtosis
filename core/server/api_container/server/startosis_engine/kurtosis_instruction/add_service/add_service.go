@@ -209,6 +209,7 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 		logrus.Infof("Updating service '%s'", replacedServiceName)
 		startedService, err = builtin.serviceNetwork.UpdateService(ctx, replacedServiceName, replacedServiceConfig)
 	} else {
+		logrus.Infof("Adding brand new service '%s'", replacedServiceName)
 		startedService, err = builtin.serviceNetwork.AddService(ctx, replacedServiceName, replacedServiceConfig)
 	}
 	if err != nil {
