@@ -2,6 +2,7 @@ package user_services_functions
 
 import (
 	"context"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -52,6 +53,19 @@ func StopUserServices(
 					err,
 					"An error occurred removing Kubernetes ingress '%v' in namespace '%v'",
 					ingress.Name,
+					namespaceName,
+				)
+				continue
+			}
+		}
+
+		service := resources.Service
+		if service != nil {
+			if err := kubernetesManager.RemoveService(ctx, service); err != nil {
+				erroredUuids[serviceUuid] = stacktrace.Propagate(
+					err,
+					"An error occurred removing Kubernetes service '%v' in namespace '%v'",
+					service.Name,
 					namespaceName,
 				)
 				continue
