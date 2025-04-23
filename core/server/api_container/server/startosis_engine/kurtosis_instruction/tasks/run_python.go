@@ -27,6 +27,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
 )
@@ -350,8 +351,10 @@ func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_ar
 		return "", stacktrace.Propagate(err, "An error occurred getting service registration for run_python task '%s'", builtin.name)
 	}
 	if exist {
+		logrus.Infof("Updating task '%v' with image '%v'", builtin.name, builtin.serviceConfig.GetContainerImageName())
 		_, err = builtin.serviceNetwork.UpdateService(ctx, service.ServiceName(builtin.name), builtin.serviceConfig)
 	} else {
+		logrus.Infof("Adding task '%v' with image '%v'", builtin.name, builtin.serviceConfig.GetContainerImageName())
 		_, err = builtin.serviceNetwork.AddService(ctx, service.ServiceName(builtin.name), builtin.serviceConfig)
 	}
 	if err != nil {
