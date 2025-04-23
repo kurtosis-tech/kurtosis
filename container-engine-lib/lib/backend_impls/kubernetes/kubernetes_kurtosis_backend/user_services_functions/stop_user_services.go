@@ -59,19 +59,6 @@ func StopUserServices(
 			}
 		}
 
-		service := resources.Service
-		if service != nil {
-			if err := kubernetesManager.RemoveService(ctx, service); err != nil {
-				erroredUuids[serviceUuid] = stacktrace.Propagate(
-					err,
-					"An error occurred removing Kubernetes service '%v' in namespace '%v'",
-					service.Name,
-					namespaceName,
-				)
-				continue
-			}
-		}
-
 		successfulUuids[serviceUuid] = true
 	}
 	return successfulUuids, erroredUuids, nil
