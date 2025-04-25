@@ -39,7 +39,7 @@ func CreateLogsCollector(
 	var logsCollectorObj *logs_collector.LogsCollector
 	var kubernetesResources *logsCollectorKubernetesResources
 	shouldRemoveLogsCollector := false // only gets set to true if a logs collector is created (and might need to be removed)
-	var removeLogsCollectorFunc func()
+	removeLogsCollectorFunc := func() {}
 	var err error
 
 	logsCollectorObj, kubernetesResources, err = getLogsCollectorObjAndResourcesForCluster(ctx, kubernetesManager)
@@ -48,7 +48,6 @@ func CreateLogsCollector(
 	}
 
 	if logsCollectorObj != nil {
-		removeLogsCollectorFunc = func() {} // can't create remove in this situation so jus make it a no op
 		logrus.Debug("Found existing logs collector daemon set.")
 	} else {
 		logrus.Debug("Did not find existing log collector, creating one...")

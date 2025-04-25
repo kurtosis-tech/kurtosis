@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.2](https://github.com/kurtosis-tech/kurtosis/compare/1.7.1...1.7.2) (2025-04-22)
+
+
+### Bug Fixes
+
+* retry using docker-credential helpers with trailing slash on the registry URL ([#2728](https://github.com/kurtosis-tech/kurtosis/issues/2728)) ([d7bcf22](https://github.com/kurtosis-tech/kurtosis/commit/d7bcf22d90b44d5f5060e749c8f6d7fcab3a2b76))
+
 ## [1.7.1](https://github.com/kurtosis-tech/kurtosis/compare/1.7.0...1.7.1) (2025-04-18)
 
 
