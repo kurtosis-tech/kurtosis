@@ -406,11 +406,11 @@ kurtosis-clusters:
 
 ### Configuring Log Filters
 
-Kurtosis allows you to configure filters that get passed through to the logs collector. These filters can be used to modify or filter logs before they are sent to the configured sinks from export logs.
+Kurtosis allows you to configure filters that get passed through to the logs collector, currently implemented using [Fluentbit][fluentbit]. These filters can be used to modify or filter logs before they are sent to the configured sinks from export logs.
 
-The filters are configured in the `logs-collector` section of your Kurtosis config using version 6. Each filter has a `name`, `match` pattern, and parameters from the corresponding Fluentbit [filter][fluentbit-filters] used.
+The filters are configured in the `logs-collector` section of your Kurtosis config using version 6 or higher. Each filter has a `name`, `match` pattern, and parameters from the corresponding Fluentbit [filter][fluentbit-filters] used.
 
-Here are some examples of common filter configurations that might be useful in Kurtosis.
+Here are some examples of common configurations that might be useful in Kurtosis.
 
 #### Basic Grep Filter
 This example shows how to filter out logs containing specific patterns:
@@ -432,7 +432,7 @@ kurtosis-clusters:
              value: "&"
 ```
 
-This configuration will exclude all logs containing the word "DEBUG".
+This configuration will exclude all logs containing the word "DEBUG" using the [grep][fluentbit-grep] filter.
 
 #### Multiple Filters
 You can chain multiple filters together:
@@ -457,7 +457,7 @@ kurtosis-clusters:
              value: "timestamp ${time}"
 ```
 
-This configuration first filters out DEBUG logs, then adds a timestamp to the remaining logs.
+This configuration first filters out DEBUG logs, then adds a timestamp to the remaining logs using the [modify][fluentbit-modify] filter.
 
 #### Using Parsers with Filters
 You can use parsers to structure your logs before applying filters. This is particularly useful when working with structured log formats like JSON:
@@ -496,7 +496,7 @@ This configuration:
 3. Filters out logs with DEBUG level
 
 :::info
-The `match` pattern uses Fluentbit's pattern matching syntax. `"*"` matches all logs, while more specific patterns can be used to target particular services or log types.
+The [`match`][fluentbit-match] pattern uses Fluentbit's pattern matching syntax. `"*"` matches all logs, while more specific patterns can be used to target particular services or log types.
 :::
 
 :::tip
@@ -509,7 +509,11 @@ For ease of setup, Kurtosis CLI comes with a feature to start a local Grafana an
 
 <!-------------------- ONLY LINKS BELOW THIS POINT ----------------------->
 [grafloki-start]: ../cli-reference/grafloki-start.md
+[fluentbit]: https://docs.fluentbit.io/manual
 [fluentbit-filters]: https://docs.fluentbit.io/manual/pipeline/filters
-
+[fluentbit-modify]: https://docs.fluentbit.io/manual/pipeline/filters/modify
+[fluentbit-grep]: https://docs.fluentbit.io/manual/pipeline/filters/grep
+[fluentbit-parsers]: https://docs.fluentbit.io/manual/pipeline/parsers
+[fluentbit-match]: https://docs.fluentbit.io/manual/concepts/key-concepts#match
 
 

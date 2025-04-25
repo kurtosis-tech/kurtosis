@@ -517,7 +517,7 @@ func generateFluentBitConfigStr(
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, fluentBitConfigData)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred generating fluent bit config string from fluent bit config data: %v.", fluentBitConfigData)
+		return "", stacktrace.Propagate(err, "An error occurred generating fluent bit config string from fluent bit config data: %v", fluentBitConfigData)
 	}
 
 	logrus.Debugf("Generated fluent bit config string: %v", buf.String())

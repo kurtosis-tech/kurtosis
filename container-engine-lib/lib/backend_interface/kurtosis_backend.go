@@ -53,7 +53,7 @@ type KurtosisBackend interface {
 		sinks logs_aggregator.Sinks,
 		shouldTurnOffPersistentVolumeLogsCollection bool,
 		// logsCollectorFilters and logsCollectorParsers needs to be passed into both CreateEngine and CreateLogsCollectorForEnclave
-		// this is becuase over Docker, CreateLogsCollectorForEnclave creates the logs collector and over k8s CreateEngine does
+		// this is because over Docker, CreateLogsCollectorForEnclave creates the logs collector and over k8s CreateEngine does
 		logsCollectorFilters []logs_collector.Filter,
 		logsCollectorParsers []logs_collector.Parser,
 	) (

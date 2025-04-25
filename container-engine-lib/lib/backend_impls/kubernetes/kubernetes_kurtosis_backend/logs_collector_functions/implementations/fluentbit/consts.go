@@ -4,8 +4,7 @@ const (
 	healthCheckEndpointPath = "api/v1/health"
 
 	fluentBitContainerName = "fluent-bit"
-	// using debug image for now with testing toolkit (curl, netstat) eventually will move to latest regular img
-	fluentBitImage = "fluent/fluent-bit:4.0.0-debug"
+	fluentBitImage         = "fluent/fluent-bit:4.0.0"
 
 	// volumes pulled from official fluent bit helm chart: https://github.com/fluent/helm-charts/blob/main/charts/fluent-bit/values.yaml
 	varLogVolumeName                 = "varlog"

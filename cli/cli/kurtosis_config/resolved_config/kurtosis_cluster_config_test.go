@@ -374,4 +374,8 @@ func TestNewKurtosisClusterConfigLogsCollectorFullConfig(t *testing.T) {
 	require.NotNil(t, actualKurtosisClusterConfig.logsCollector.Parsers)
 	require.Equal(t, 2, len(actualKurtosisClusterConfig.logsCollector.Filters))
 	require.Equal(t, 2, len(actualKurtosisClusterConfig.logsCollector.Parsers))
+	require.Equal(t, "json", actualKurtosisClusterConfig.logsCollector.Parsers[0]["name"])
+	require.Equal(t, "regex", actualKurtosisClusterConfig.logsCollector.Parsers[1]["name"])
+	require.Equal(t, "grep", actualKurtosisClusterConfig.logsCollector.Filters[0].Name)
+	require.Equal(t, "lua", actualKurtosisClusterConfig.logsCollector.Filters[1].Name)
 }
