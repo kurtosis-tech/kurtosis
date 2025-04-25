@@ -1,4 +1,4 @@
-package v4
+package v6
 
 /*
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -9,9 +9,8 @@ package v4
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */
 
-// LogsAggregatorConfigV4 is the configuration for the logs aggregator.
-// Kurtosis leverages a logs collector and logs aggregator to collect, aggregate, and logs from services in enclaves.
-// The logs aggregator aggregates logs forwarded to it by the logs collector and sends them to the configured sinks for storage and downstream processing.
-type LogsAggregatorConfigV4 struct {
-	Sinks map[string]map[string]interface{} `yaml:"sinks,omitempty"`
+type KurtosisCloudConfigV6 struct {
+	ApiUrl           *string `yaml:"api-url,omitempty"`
+	Port             *uint   `yaml:"port,omitempty"`
+	CertificateChain *string `yaml:"certificate-chain,omitempty"`
 }

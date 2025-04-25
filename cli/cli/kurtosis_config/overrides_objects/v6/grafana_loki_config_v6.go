@@ -1,4 +1,4 @@
-package v5
+package v6
 
 /*
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -9,7 +9,7 @@ package v5
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */
 
-type GrafanaLokiConfigV5 struct {
+type GrafanaLokiConfigV6 struct {
 	// ShouldStartBeforeEngine starts Grafana and Loki before the engine, if true.
 	// Equivalent to running `grafloki start` before `engine start`.
 	// Useful for treating Grafana and Loki as default logging setup in Kurtosis.

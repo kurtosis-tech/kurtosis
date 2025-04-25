@@ -2,8 +2,10 @@ package logs_collector_functions
 
 import (
 	"context"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -18,6 +20,8 @@ type LogsCollectorDaemonSet interface {
 		httpPortNumber uint16,
 		logsCollectorTcpPortId string,
 		logsCollectorHttpPortId string,
+		logsCollectorFilters []logs_collector.Filter,
+		logsCollectorParsers []logs_collector.Parser,
 		objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
 		kubernetesManager *kubernetes_manager.KubernetesManager,
 	) (

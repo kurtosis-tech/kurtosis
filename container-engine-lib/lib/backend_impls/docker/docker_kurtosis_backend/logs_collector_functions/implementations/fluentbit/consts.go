@@ -8,12 +8,13 @@ const (
 	rootDirpath = "/fluent-bit"
 
 	////////////////////////--FLUENT BIT CONTAINER CONFIGURATION SECTION--/////////////////////////////
-	containerImage        = "fluent/fluent-bit:1.9.7"
+	containerImage        = "fluent/fluent-bit:4.0.0"
 	tcpTransportProtocol  = port_spec.TransportProtocol_TCP
 	httpTransportProtocol = port_spec.TransportProtocol_TCP
 
-	configDirpathInContainer  = rootDirpath + "/etc"
-	configFilepathInContainer = configDirpathInContainer + "/fluent-bit.conf"
+	configDirpathInContainer        = rootDirpath + "/etc"
+	configFilepathInContainer       = configDirpathInContainer + "/fluent-bit.conf"
+	parserConfigFilepathInContainer = configDirpathInContainer + "/kurtosis-parsers.conf" // create an additional parsers file for ones defined by users in kurtosis config
 
 	//these two values are used for configuring the filesystem buffer. See more here: https://docs.fluentbit.io/manual/administration/buffering-and-storage#filesystem-buffering-to-the-rescue
 	filesystemBufferStorageDirpath = configDirpathInContainer + "/storage/"
@@ -27,16 +28,32 @@ const (
 	http_listen {{.Service.HttpServerHost}}
 	http_port {{.Service.HttpServerPort}}
 	storage.path {{.Service.StoragePath}}
+	parsers_file /fluent-bit/etc/parsers.conf
+	parsers_file {{.Service.KurtosisParsersConfigFilepath}}
 [INPUT]
 	name {{.Input.Name}}
 	listen {{.Input.Listen}}
 	port {{.Input.Port}}
-	storage.type  {{.Input.StorageType}}
+	storage.type {{.Input.StorageType}}
+{{- range .Filters}}
+[FILTER]
+	name {{.Name}}
+	match {{.Match}}
+{{- range .Params}}
+	{{.Key}} {{.Value}}
+{{- end}}{{end}}
 [OUTPUT]
 	name {{.Output.Name}}
 	match {{.Output.Match}}
 	host {{.Output.Host}}
 	port {{.Output.Port}}
+`
+
+	parserConfigFileTemplateName = "fluentbitParserConfigFileTemplate"
+	parserConfigFileTemplate     = `{{- range .Parsers}}[PARSER]
+{{- range $key, $value := . }}
+	{{$key}} {{$value}}
+{{- end }}{{ end }}
 `
 
 	healthCheckEndpointPath = "api/v1/health"

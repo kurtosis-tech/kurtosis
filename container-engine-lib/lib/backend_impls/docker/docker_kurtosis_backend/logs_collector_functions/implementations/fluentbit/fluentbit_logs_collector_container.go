@@ -2,10 +2,12 @@ package fluentbit
 
 import (
 	"context"
+
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -26,6 +28,8 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 	httpPortNumber uint16,
 	logsCollectorTcpPortId string,
 	logsCollectorHttpPortId string,
+	logsCollectorFilters []logs_collector.Filter,
+	logsCollectorParsers []logs_collector.Parser,
 	targetNetworkId string,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	dockerManager *docker_manager.DockerManager,
@@ -36,8 +40,8 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 	resultRemoveLogsCollectorContainerFunc func(),
 	resultErr error,
 ) {
-	logsCollectorConfigurationCreator := createFluentbitConfigurationCreatorForKurtosis(logsAggregatorHost, logsAggregatorPort, tcpPortNumber, httpPortNumber)
-	logsCollectorContainerConfigProvider := createFluentbitContainerConfigProviderForKurtosis(logsAggregatorHost, logsAggregatorPort, tcpPortNumber, httpPortNumber)
+	logsCollectorConfigurationCreator := createFluentbitConfigurationCreatorForKurtosis(logsAggregatorHost, logsAggregatorPort, tcpPortNumber, httpPortNumber, logsCollectorFilters, logsCollectorParsers)
+	logsCollectorContainerConfigProvider := createFluentbitContainerConfigProviderForKurtosis(logsAggregatorHost, logsAggregatorPort, tcpPortNumber, httpPortNumber, logsCollectorFilters, logsCollectorParsers)
 
 	privateTcpPortSpec, err := logsCollectorContainerConfigProvider.GetPrivateTcpPortSpec()
 	if err != nil {

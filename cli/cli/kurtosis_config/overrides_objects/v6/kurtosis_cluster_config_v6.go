@@ -1,4 +1,4 @@
-package v5
+package v6
 
 /*
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -9,12 +9,13 @@ package v5
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */
 
-type KurtosisClusterConfigV5 struct {
+type KurtosisClusterConfigV6 struct {
 	Type *string `yaml:"type,omitempty"`
 	// If we ever get another type of cluster that has configuration, this will need to be polymorphically deserialized
-	Config            *KubernetesClusterConfigV5 `yaml:"config,omitempty"`
-	LogsAggregator    *LogsAggregatorConfigV5    `yaml:"logs-aggregator,omitempty"`
-	GrafanaLokiConfig *GrafanaLokiConfigV5       `yaml:"grafana-loki,omitempty"`
+	Config            *KubernetesClusterConfigV6 `yaml:"config,omitempty"`
+	LogsAggregator    *LogsAggregatorConfigV6    `yaml:"logs-aggregator,omitempty"`
+	LogsCollector     *LogsCollectorConfigV6     `yaml:"logs-collector,omitempty"`
+	GrafanaLokiConfig *GrafanaLokiConfigV6       `yaml:"grafana-loki,omitempty"`
 
 	// ShouldEnableDefaultLogsSink controls use of PersistentVolumeLogsDB (default: true) as the storage location for logs.
 	// Useful for saving storage when using custom or Grafana Loki-based logging.

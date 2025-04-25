@@ -1,4 +1,6 @@
-package v4
+package v6
+
+import "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 
 /*
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -9,9 +11,10 @@ package v4
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */
 
-// LogsAggregatorConfigV4 is the configuration for the logs aggregator.
+// LogsCollectorConfigV6 is the configuration for the logs collector.
 // Kurtosis leverages a logs collector and logs aggregator to collect, aggregate, and logs from services in enclaves.
-// The logs aggregator aggregates logs forwarded to it by the logs collector and sends them to the configured sinks for storage and downstream processing.
-type LogsAggregatorConfigV4 struct {
-	Sinks map[string]map[string]interface{} `yaml:"sinks,omitempty"`
+// The logs collector picks up logs from services in enclaves and sends them to the logs aggregator.
+type LogsCollectorConfigV6 struct {
+	Parsers []logs_collector.Parser `yaml:"parsers,omitempty"`
+	Filters []logs_collector.Filter `yaml:"filters,omitempty"`
 }

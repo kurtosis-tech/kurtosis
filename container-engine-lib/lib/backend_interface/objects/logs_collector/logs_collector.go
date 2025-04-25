@@ -15,6 +15,19 @@ const (
 
 type LogsCollectorGuid string
 
+type FilterParam struct {
+	Key   string `yaml:"key,omitempty" json:"key,omitempty"`
+	Value string `yaml:"value,omitempty" json:"value,omitempty"`
+}
+
+type Filter struct {
+	Name   string        `yaml:"name,omitempty" json:"name,omitempty"`
+	Match  string        `yaml:"match,omitempty" json:"match,omitempty"`
+	Params []FilterParam `yaml:"params,omitempty" json:"params,omitempty"`
+}
+
+type Parser map[string]string
+
 // This component is responsible for:
 // 1. collecting logs from all services within an enclave
 // 2. forwarding these logs to the logs aggregator

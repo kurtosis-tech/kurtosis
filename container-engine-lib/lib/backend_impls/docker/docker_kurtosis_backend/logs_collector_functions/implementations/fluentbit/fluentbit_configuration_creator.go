@@ -22,6 +22,8 @@ const (
 	shBinaryFilepath = "/bin/sh"
 	shCmdFlag        = "-c"
 	printfCmdName    = "printf"
+	echoCmdName      = "echo"
+	echoNewLineFlag  = "-e"
 
 	configFileCreationSuccessExitCode = 0
 
@@ -32,11 +34,12 @@ const (
 )
 
 type fluentbitConfigurationCreator struct {
-	config *FluentbitConfig
+	config       *FluentbitConfig
+	parserConfig *ParserConfig
 }
 
-func newFluentbitConfigurationCreator(config *FluentbitConfig) *fluentbitConfigurationCreator {
-	return &fluentbitConfigurationCreator{config: config}
+func newFluentbitConfigurationCreator(config *FluentbitConfig, parserConfig *ParserConfig) *fluentbitConfigurationCreator {
+	return &fluentbitConfigurationCreator{config: config, parserConfig: parserConfig}
 }
 
 func (fluent *fluentbitConfigurationCreator) CreateConfiguration(
@@ -109,17 +112,25 @@ func (fluent *fluentbitConfigurationCreator) createFluentbitConfigFileInVolume(
 	maxRetries uint,
 	timeBetweenRetries time.Duration,
 ) error {
-
 	configFileContentStr, err := fluent.getConfigFileContent()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the Fluentbit config file content")
 	}
 
+	parserConfigFileContentStr, err := fluent.getParserConfigFileContent()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the Fluentbit parser config file content")
+	}
+
 	commandStr := fmt.Sprintf(
-		"%v '%v' > %v",
+		"%v '%v' > %v && %v %v '%v' > %v",
 		printfCmdName,
 		configFileContentStr,
 		configFilepathInContainer,
+		echoCmdName, // need to use echo for parser config file because printf will try to escape using % on the commonly used time_format in parsers, echo doesn't do this
+		echoNewLineFlag,
+		parserConfigFileContentStr,
+		parserConfigFilepathInContainer,
 	)
 
 	execCmd := []string{
@@ -132,7 +143,7 @@ func (fluent *fluentbitConfigurationCreator) createFluentbitConfigFileInVolume(
 		exitCode, err := dockerManager.RunUserServiceExecCommands(ctx, containerId, "", execCmd, outputBuffer)
 		if err == nil {
 			if exitCode == configFileCreationSuccessExitCode {
-				logrus.Debugf("The Fluentbit config file with content '%v' was successfully added into the volume", configFileContentStr)
+				logrus.Debugf("The Fluentbit config file with content '%v' and parser config file with content '%v' was successfully added into the volume", configFileContentStr, parserConfigFileContentStr)
 				return nil
 			}
 			logrus.Debugf(
@@ -178,6 +189,27 @@ func (fluent *fluentbitConfigurationCreator) getConfigFileContent() (string, err
 	}
 
 	templateStr := templateStrBuffer.String()
+
+	logrus.Debugf("Generated fluent bit config string: %v", templateStr)
+
+	return templateStr, nil
+}
+
+func (fluent *fluentbitConfigurationCreator) getParserConfigFileContent() (string, error) {
+	parserCfgFileTemplate, err := template.New(parserConfigFileTemplateName).Parse(parserConfigFileTemplate)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred parsing Fluentbit parser config template '%v'", configFileTemplate)
+	}
+
+	templateStrBuffer := &bytes.Buffer{}
+
+	if err := parserCfgFileTemplate.Execute(templateStrBuffer, fluent.parserConfig); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred executing the Fluentbit parser config file template")
+	}
+
+	templateStr := templateStrBuffer.String()
+
+	logrus.Debugf("Generated fluent bit parser config string: %v", templateStr)
 
 	return templateStr, nil
 }
