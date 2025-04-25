@@ -4,7 +4,8 @@ const (
 	healthCheckEndpointPath = "api/v1/health"
 
 	fluentBitContainerName = "fluent-bit"
-	fluentBitImage         = "fluent/fluent-bit:4.0.0"
+	// fluentbit uses debug img for access to `sh` so that other pods can clean up stuff
+	fluentBitImage = "fluent/fluent-bit:4.0.0-debug"
 
 	// volumes pulled from official fluent bit helm chart: https://github.com/fluent/helm-charts/blob/main/charts/fluent-bit/values.yaml
 	varLogVolumeName                 = "varlog"
