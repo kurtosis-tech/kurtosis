@@ -299,6 +299,30 @@ func (manager *DockerManager) PruneUnusedImages(ctx context.Context) ([]types.Im
 	return successfulPrunedImages, nil
 }
 
+// RemoveImage removes a Docker image by its name. If force is true, it will remove the image even if it has multiple tags
+// or is being used by stopped containers. If prune is true, it will also remove untagged parent images.
+func (manager *DockerManager) RemoveImage(ctx context.Context, imageName string, shouldForce bool, shouldPrune bool) error {
+	// First check if the image exists
+	exists, err := manager.isImageAvailableLocally(imageName)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred checking if image '%v' exists", imageName)
+	}
+	if !exists {
+		return stacktrace.NewError("Image '%v' does not exist locally", imageName)
+	}
+
+	// Remove the image
+	_, err = manager.dockerClient.ImageRemove(ctx, imageName, types.ImageRemoveOptions{
+		Force:         shouldForce,
+		PruneChildren: shouldPrune,
+	})
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred removing image '%v'", imageName)
+	}
+
+	return nil
+}
+
 func containsSemVer(s string) bool {
 	// Matches patterns like X.Y.Z
 	semVerRegex := `\b(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)\b`
@@ -1517,11 +1541,11 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 	return imageArch, nil
 }
 
-func (manager *DockerManager) CommitContainer(ctx context.Context, containerId string) error {
+func (manager *DockerManager) CommitContainer(ctx context.Context, containerId string, imageName string) error {
 	_, err := manager.dockerClient.ContainerCommit(ctx, containerId, types.ContainerCommitOptions{
-		Reference: "",
-		Comment:   "Snapshot of enclave",
-		Author:    "Kurtosis",
+		Reference: imageName,
+		Comment:   fmt.Sprintf("Kurtosis snapshot of container '%v'", containerId),
+		Author:    "kurtosistech",
 		Changes:   []string{},
 		Pause:     false,
 		Config:    nil,
@@ -1535,19 +1559,19 @@ func (manager *DockerManager) CommitContainer(ctx context.Context, containerId s
 func (manager *DockerManager) SaveImage(ctx context.Context, imageName string, outputPath string) error {
 	outputFile, err := os.Create(outputPath)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to create output file '%v'", outputPath)
+		return stacktrace.Propagate(err, "An error occurred creating output file '%v'", outputPath)
 	}
 	defer outputFile.Close()
 
 	imageReader, err := manager.dockerClient.ImageSave(ctx, []string{imageName})
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to save image '%v'", imageName)
+		return stacktrace.Propagate(err, "An error occurred saving image '%v'", imageName)
 	}
 	defer imageReader.Close()
 
 	_, err = io.Copy(outputFile, imageReader)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to write image data to file '%v'", outputPath)
+		return stacktrace.Propagate(err, "An error occurred writing image data to file '%v'", outputPath)
 	}
 	return nil
 }
@@ -1565,6 +1589,7 @@ func (manager *DockerManager) LoadImage(ctx context.Context, inputPath string) e
 		return stacktrace.Propagate(err, "Failed to load image from file '%v'", inputPath)
 	}
 	defer response.Body.Close()
+	logrus.Infof("Successfully loaded image from file %s", response.Body)
 
 	responseBytes, err := io.ReadAll(response.Body)
 	if err != nil {

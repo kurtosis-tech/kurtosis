@@ -182,3 +182,33 @@ func TestBuildImage(t *testing.T) {
 	//_, err = dockerManager.BuildImage(ctx, "foobar", imageBuildSpec)
 	//require.NoError(t, err)
 }
+
+// func TestCommitAndSaveImage(t *testing.T) {
+// 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+// 	require.NoError(t, err)
+// 	require.NotNil(t, dockerClient)
+
+// 	ctx := context.Background()
+// 	clientOpts := []client.Opt{client.FromEnv, client.WithAPIVersionNegotiation()}
+// 	dockerManager, err := CreateDockerManager(clientOpts)
+// 	require.NoError(t, err)
+
+// 	containerId := "0a2c5a17a590"
+// 	imageName := "tedim52/engine-snapshot:one"
+// 	err = dockerManager.CommitContainer(ctx, containerId, imageName)
+// 	require.NoError(t, err)
+// 	logrus.Info("Successfully committed container to image")
+
+// 	outputPath := "/Users/tewodrosmitiku/craft/kurtosis/engine-snapshot-two.tar"
+// 	err = dockerManager.SaveImage(ctx, imageName, outputPath)
+// 	require.NoError(t, err)
+// 	logrus.Infof("Successfully saved image to %s\n", outputPath)
+
+// 	err = dockerManager.LoadImage(ctx, outputPath)
+// 	require.NoError(t, err)
+// 	logrus.Info("Successfully loaded image from file")
+
+// 	err = dockerManager.RemoveImage(ctx, imageName, false, false)
+// 	require.NoError(t, err)
+// 	logrus.Info("Successfully removed image")
+// }
