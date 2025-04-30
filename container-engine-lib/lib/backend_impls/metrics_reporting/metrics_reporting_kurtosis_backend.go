@@ -189,6 +189,17 @@ func (backend *MetricsReportingKurtosisBackend) DumpEnclave(
 	return nil
 }
 
+func (backend *MetricsReportingKurtosisBackend) SnapshotEnclave(
+	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
+	outputDirpath string,
+) error {
+	if err := backend.underlying.SnapshotEnclave(ctx, enclaveUuid, outputDirpath); err != nil {
+		return stacktrace.Propagate(err, "An error occurred snapshotting enclave '%v' to path '%v'", enclaveUuid, outputDirpath)
+	}
+	return nil
+}
+
 func (backend *MetricsReportingKurtosisBackend) DestroyEnclaves(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,

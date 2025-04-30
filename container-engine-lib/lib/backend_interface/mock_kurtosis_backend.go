@@ -2006,6 +2006,50 @@ func (_c *MockKurtosisBackend_RunUserServiceExecCommands_Call) RunAndReturn(run 
 	return _c
 }
 
+// SnapshotEnclave provides a mock function with given fields: ctx, enclaveUuid, outputDirpath
+func (_m *MockKurtosisBackend) SnapshotEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, outputDirpath string) error {
+	ret := _m.Called(ctx, enclaveUuid, outputDirpath)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, enclave.EnclaveUUID, string) error); ok {
+		r0 = rf(ctx, enclaveUuid, outputDirpath)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// MockKurtosisBackend_SnapshotEnclave_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SnapshotEnclave'
+type MockKurtosisBackend_SnapshotEnclave_Call struct {
+	*mock.Call
+}
+
+// SnapshotEnclave is a helper method to define mock.On call
+//   - ctx context.Context
+//   - enclaveUuid enclave.EnclaveUUID
+//   - outputDirpath string
+func (_e *MockKurtosisBackend_Expecter) SnapshotEnclave(ctx interface{}, enclaveUuid interface{}, outputDirpath interface{}) *MockKurtosisBackend_SnapshotEnclave_Call {
+	return &MockKurtosisBackend_SnapshotEnclave_Call{Call: _e.mock.On("SnapshotEnclave", ctx, enclaveUuid, outputDirpath)}
+}
+
+func (_c *MockKurtosisBackend_SnapshotEnclave_Call) Run(run func(ctx context.Context, enclaveUuid enclave.EnclaveUUID, outputDirpath string)) *MockKurtosisBackend_SnapshotEnclave_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(enclave.EnclaveUUID), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_SnapshotEnclave_Call) Return(_a0 error) *MockKurtosisBackend_SnapshotEnclave_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_SnapshotEnclave_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID, string) error) *MockKurtosisBackend_SnapshotEnclave_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // StartRegisteredUserServices provides a mock function with given fields: ctx, enclaveUuid, services
 func (_m *MockKurtosisBackend) StartRegisteredUserServices(ctx context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceUUID]*service.ServiceConfig) (map[service.ServiceUUID]*service.Service, map[service.ServiceUUID]error, error) {
 	ret := _m.Called(ctx, enclaveUuid, services)

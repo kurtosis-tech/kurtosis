@@ -3,11 +3,12 @@ package user_service_functions
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/availability_checker"
 	"net"
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/availability_checker"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"

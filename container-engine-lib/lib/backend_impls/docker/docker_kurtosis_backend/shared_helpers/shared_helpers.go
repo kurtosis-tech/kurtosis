@@ -357,6 +357,7 @@ func GetMatchingUserServiceObjsAndDockerResourcesNoMutex(
 		resultServiceObjs[uuid] = serviceObj
 		resultDockerResources[uuid] = dockerResources
 	}
+	logrus.Infof("Found %v services in enclave '%v'", len(resultServiceObjs), enclaveId)
 	return resultServiceObjs, resultDockerResources, nil
 }
 

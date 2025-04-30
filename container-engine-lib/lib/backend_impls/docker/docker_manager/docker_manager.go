@@ -1517,6 +1517,68 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 	return imageArch, nil
 }
 
+func (manager *DockerManager) CommitContainer(ctx context.Context, containerId string) error {
+	_, err := manager.dockerClient.ContainerCommit(ctx, containerId, types.ContainerCommitOptions{
+		Reference: "",
+		Comment:   "Snapshot of enclave",
+		Author:    "Kurtosis",
+		Changes:   []string{},
+		Pause:     false,
+		Config:    nil,
+	})
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred committing container '%v'", containerId)
+	}
+	return nil
+}
+
+func (manager *DockerManager) SaveImage(ctx context.Context, imageName string, outputPath string) error {
+	outputFile, err := os.Create(outputPath)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to create output file '%v'", outputPath)
+	}
+	defer outputFile.Close()
+
+	imageReader, err := manager.dockerClient.ImageSave(ctx, []string{imageName})
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to save image '%v'", imageName)
+	}
+	defer imageReader.Close()
+
+	_, err = io.Copy(outputFile, imageReader)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to write image data to file '%v'", outputPath)
+	}
+	return nil
+}
+
+func (manager *DockerManager) LoadImage(ctx context.Context, inputPath string) error {
+	inputFile, err := os.Open(inputPath)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to open input file '%v'", inputPath)
+	}
+	defer inputFile.Close()
+
+	// Load the image
+	response, err := manager.dockerClient.ImageLoad(ctx, inputFile, false)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to load image from file '%v'", inputPath)
+	}
+	defer response.Body.Close()
+
+	responseBytes, err := io.ReadAll(response.Body)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to read response from image load")
+	}
+
+	// Check if there were any errors in the response
+	if strings.Contains(string(responseBytes), "error") {
+		return stacktrace.NewError("Error loading image: %v", string(responseBytes))
+	}
+
+	return nil
+}
+
 // returns a reader to a tarball of [contextDirPath]
 func getBuildContextReader(contextDirPath string) (io.Reader, error) {
 	buildContext, _, _, err := path_compression.CompressPath(contextDirPath, false)

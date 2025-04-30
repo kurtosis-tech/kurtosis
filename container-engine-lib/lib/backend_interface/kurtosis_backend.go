@@ -129,6 +129,14 @@ type KurtosisBackend interface {
 		outputDirpath string,
 	) error
 
+	// Snapshots the contents of the given enclave to the given directory
+	// TODO add this to K8S
+	SnapshotEnclave(
+		ctx context.Context,
+		enclaveUuid enclave.EnclaveUUID,
+		outputDirpath string,
+	) error
+
 	// Destroys enclaves matching the given filters
 	DestroyEnclaves(
 		ctx context.Context,

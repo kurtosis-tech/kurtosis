@@ -66,6 +66,11 @@ func (backend *KubernetesKurtosisBackend) DumpKurtosis(ctx context.Context, outp
 	panic("implement me")
 }
 
+func (backend *KubernetesKurtosisBackend) SnapshotEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, outputDirpath string) error {
+	//TODO implement me
+	return nil
+}
+
 // Private constructor that the other public constructors will use
 func newKubernetesKurtosisBackend(
 	kubernetesManager *kubernetes_manager.KubernetesManager,

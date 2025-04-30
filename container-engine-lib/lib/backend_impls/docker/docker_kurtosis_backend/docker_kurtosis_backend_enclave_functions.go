@@ -425,6 +425,40 @@ func (backend *DockerKurtosisBackend) UpdateEnclave(
 	return stacktrace.NewError("UpdateEnclave isn't implemented for Docker yet")
 }
 
+func (backend *DockerKurtosisBackend) SnapshotEnclave(
+	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
+	outputDirpath string,
+) error {
+	// stop enclave
+	_, _, err := backend.StopEnclaves(ctx, &enclave.EnclaveFilters{
+		UUIDs: map[enclave.EnclaveUUID]bool{
+			enclaveUuid: true,
+		},
+	})
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred stopping enclave '%v' while snapshotting", enclaveUuid)
+	}
+	logrus.Infof("Enclave '%v' stopped", enclaveUuid)
+
+	// commit all the services in the enclave
+	_, err = backend.GetUserServices(ctx, enclaveUuid, nil)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting services in enclave '%v' while snapshotting", enclaveUuid)
+	}
+	// for _, service := range services {
+	// 	err = backend.dockerManager.CommitContainer(ctx, service.GetContainer().))
+	// }
+
+	// save the images in tar files
+
+	// create a tar file containing the tars of all the images
+
+	// save this tar file to output dir path
+
+	return nil
+}
+
 // ====================================================================================================
 //
 //	Private helper methods
