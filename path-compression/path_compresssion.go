@@ -78,7 +78,7 @@ func CompressPathToFile(pathToCompress string, enforceMaxFileSizeLimit bool) (st
 	// Create output file
 	outFile, err := os.Create(compressedFilePath)
 	if err != nil {
-		return "", 0, nil, stacktrace.Propagate(err, "Failed to create output file '%s'.", compressedFilePath)
+		return "", 0, nil, stacktrace.Propagate(err, "An error occurred when creating the output file '%s'.", compressedFilePath)
 	}
 	defer outFile.Close()
 
@@ -102,18 +102,18 @@ func CompressPathToFile(pathToCompress string, enforceMaxFileSizeLimit bool) (st
 	// Create files from disk with default options
 	files, err := archives.FilesFromDisk(ctx, nil, filenameMappings)
 	if err != nil {
-		return "", 0, nil, stacktrace.Propagate(err, "Failed to create files list for archive from '%s'.", pathToCompress)
+		return "", 0, nil, stacktrace.Propagate(err, "An error occurred when creating files list for archive from '%s'.", pathToCompress)
 	}
 
 	// Create the archive
 	if err = format.Archive(ctx, outFile, files); err != nil {
-		return "", 0, nil, stacktrace.Propagate(err, "Failed to compress '%s'.", pathToCompress)
+		return "", 0, nil, stacktrace.Propagate(err, "An error occurred when compressing '%s'.", pathToCompress)
 	}
 
 	compressedFileInfo, err := os.Stat(compressedFilePath)
 	if err != nil {
 		return "", 0, nil, stacktrace.Propagate(err,
-			"Failed to inspect temporary archive file at '%s' during files upload for '%s'.",
+			"An error occurred when inspecting the temporary archive file at '%s' during files upload for '%s'.",
 			tempDir, pathToCompress)
 	}
 
@@ -122,7 +122,7 @@ func CompressPathToFile(pathToCompress string, enforceMaxFileSizeLimit bool) (st
 		compressedFileSize = uint64(compressedFileInfo.Size())
 	} else {
 		return "", 0, nil, stacktrace.Propagate(err,
-			"Failed to compute archive size for temporary file '%s' obtained compressing path '%s'",
+			"An error occurred when computing the archive size for the temporary file '%s' obtained compressing path '%s'",
 			tempDir, pathToCompress)
 	}
 
