@@ -435,6 +435,7 @@ func (backend *DockerKurtosisBackend) SnapshotEnclave(
 		UUIDs: map[enclave.EnclaveUUID]bool{
 			enclaveUuid: true,
 		},
+		Statuses: nil,
 	})
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred stopping enclave '%v' while snapshotting", enclaveUuid)
