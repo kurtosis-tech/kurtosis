@@ -535,7 +535,6 @@ pub struct ExecCommandArgs {
 pub struct ExecCommandResponse {
     #[prost(int32, tag = "1")]
     pub exit_code: i32,
-    /// Assumes UTF-8 encoding
     #[prost(string, tag = "2")]
     pub log_output: ::prost::alloc::string::String,
 }
@@ -798,6 +797,9 @@ pub struct StarlarkPackagePlanYamlArgs {
     #[prost(string, optional, tag = "5")]
     pub main_function_name: ::core::option::Option<::prost::alloc::string::String>,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateSnapshotArgs {}
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum ServiceStatus {
@@ -1564,6 +1566,33 @@ pub mod api_container_service_client {
                 );
             self.inner.unary(req, path, codec).await
         }
+        pub async fn create_snapshot(
+            &mut self,
+            request: impl tonic::IntoRequest<super::CreateSnapshotArgs>,
+        ) -> std::result::Result<tonic::Response<()>, tonic::Status> {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/api_container_api.ApiContainerService/CreateSnapshot",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "api_container_api.ApiContainerService",
+                        "CreateSnapshot",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
     }
 }
 /// Generated server implementations.
@@ -1718,6 +1747,10 @@ pub mod api_container_service_server {
             &self,
             request: tonic::Request<super::StarlarkPackagePlanYamlArgs>,
         ) -> std::result::Result<tonic::Response<super::PlanYaml>, tonic::Status>;
+        async fn create_snapshot(
+            &self,
+            request: tonic::Request<super::CreateSnapshotArgs>,
+        ) -> std::result::Result<tonic::Response<()>, tonic::Status>;
     }
     #[derive(Debug)]
     pub struct ApiContainerServiceServer<T: ApiContainerService> {
@@ -2645,6 +2678,52 @@ pub mod api_container_service_server {
                     let fut = async move {
                         let inner = inner.0;
                         let method = GetStarlarkPackagePlanYamlSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/api_container_api.ApiContainerService/CreateSnapshot" => {
+                    #[allow(non_camel_case_types)]
+                    struct CreateSnapshotSvc<T: ApiContainerService>(pub Arc<T>);
+                    impl<
+                        T: ApiContainerService,
+                    > tonic::server::UnaryService<super::CreateSnapshotArgs>
+                    for CreateSnapshotSvc<T> {
+                        type Response = ();
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::CreateSnapshotArgs>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                (*inner).create_snapshot(request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = CreateSnapshotSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(

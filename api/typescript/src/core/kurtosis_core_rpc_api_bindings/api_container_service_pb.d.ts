@@ -1724,6 +1724,20 @@ export namespace StarlarkPackagePlanYamlArgs {
   }
 }
 
+export class CreateSnapshotArgs extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): CreateSnapshotArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: CreateSnapshotArgs): CreateSnapshotArgs.AsObject;
+  static serializeBinaryToWriter(message: CreateSnapshotArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): CreateSnapshotArgs;
+  static deserializeBinaryFromReader(message: CreateSnapshotArgs, reader: jspb.BinaryReader): CreateSnapshotArgs;
+}
+
+export namespace CreateSnapshotArgs {
+  export type AsObject = {
+  }
+}
+
 export enum ServiceStatus { 
   STOPPED = 0,
   RUNNING = 1,

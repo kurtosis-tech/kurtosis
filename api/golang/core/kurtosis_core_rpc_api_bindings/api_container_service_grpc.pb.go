@@ -38,6 +38,7 @@ const (
 	ApiContainerService_GetStarlarkRun_FullMethodName                             = "/api_container_api.ApiContainerService/GetStarlarkRun"
 	ApiContainerService_GetStarlarkScriptPlanYaml_FullMethodName                  = "/api_container_api.ApiContainerService/GetStarlarkScriptPlanYaml"
 	ApiContainerService_GetStarlarkPackagePlanYaml_FullMethodName                 = "/api_container_api.ApiContainerService/GetStarlarkPackagePlanYaml"
+	ApiContainerService_CreateSnapshot_FullMethodName                             = "/api_container_api.ApiContainerService/CreateSnapshot"
 )
 
 // ApiContainerServiceClient is the client API for ApiContainerService service.
@@ -78,6 +79,7 @@ type ApiContainerServiceClient interface {
 	GetStarlarkScriptPlanYaml(ctx context.Context, in *StarlarkScriptPlanYamlArgs, opts ...grpc.CallOption) (*PlanYaml, error)
 	// Gets yaml representing the plan the package will execute in an enclave
 	GetStarlarkPackagePlanYaml(ctx context.Context, in *StarlarkPackagePlanYamlArgs, opts ...grpc.CallOption) (*PlanYaml, error)
+	CreateSnapshot(ctx context.Context, in *CreateSnapshotArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type apiContainerServiceClient struct {
@@ -369,6 +371,15 @@ func (c *apiContainerServiceClient) GetStarlarkPackagePlanYaml(ctx context.Conte
 	return out, nil
 }
 
+func (c *apiContainerServiceClient) CreateSnapshot(ctx context.Context, in *CreateSnapshotArgs, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, ApiContainerService_CreateSnapshot_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ApiContainerServiceServer is the server API for ApiContainerService service.
 // All implementations should embed UnimplementedApiContainerServiceServer
 // for forward compatibility
@@ -407,6 +418,7 @@ type ApiContainerServiceServer interface {
 	GetStarlarkScriptPlanYaml(context.Context, *StarlarkScriptPlanYamlArgs) (*PlanYaml, error)
 	// Gets yaml representing the plan the package will execute in an enclave
 	GetStarlarkPackagePlanYaml(context.Context, *StarlarkPackagePlanYamlArgs) (*PlanYaml, error)
+	CreateSnapshot(context.Context, *CreateSnapshotArgs) (*emptypb.Empty, error)
 }
 
 // UnimplementedApiContainerServiceServer should be embedded to have forward compatible implementations.
@@ -466,6 +478,9 @@ func (UnimplementedApiContainerServiceServer) GetStarlarkScriptPlanYaml(context.
 }
 func (UnimplementedApiContainerServiceServer) GetStarlarkPackagePlanYaml(context.Context, *StarlarkPackagePlanYamlArgs) (*PlanYaml, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetStarlarkPackagePlanYaml not implemented")
+}
+func (UnimplementedApiContainerServiceServer) CreateSnapshot(context.Context, *CreateSnapshotArgs) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateSnapshot not implemented")
 }
 
 // UnsafeApiContainerServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -828,6 +843,24 @@ func _ApiContainerService_GetStarlarkPackagePlanYaml_Handler(srv interface{}, ct
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ApiContainerService_CreateSnapshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateSnapshotArgs)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApiContainerServiceServer).CreateSnapshot(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ApiContainerService_CreateSnapshot_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApiContainerServiceServer).CreateSnapshot(ctx, req.(*CreateSnapshotArgs))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ApiContainerService_ServiceDesc is the grpc.ServiceDesc for ApiContainerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -886,6 +919,10 @@ var ApiContainerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetStarlarkPackagePlanYaml",
 			Handler:    _ApiContainerService_GetStarlarkPackagePlanYaml_Handler,
+		},
+		{
+			MethodName: "CreateSnapshot",
+			Handler:    _ApiContainerService_CreateSnapshot_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

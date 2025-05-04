@@ -6,11 +6,16 @@
 package server
 
 import (
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
-	"github.com/stretchr/testify/require"
+	"context"
 	"strings"
 	"testing"
+
+	"github.com/docker/docker/client"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/stretchr/testify/require"
 )
 
 func TestOneToOneApiAndPortSpecProtoMapping(t *testing.T) {
@@ -49,4 +54,15 @@ line
 	require.NoError(t, err)
 	require.NotNil(t, output)
 	require.Equal(t, expectedOutput, *output)
+}
+
+func TestCreateSnapshot(t *testing.T) {
+	dockerManager, err := docker_manager.CreateDockerManager([]client.Opt{})
+	require.NoError(t, err)
+
+	containers, err := dockerManager.GetContainersByLabels(context.Background(), map[string]string{
+		docker_label_key.IDDockerLabelKey.GetString(): "test1",
+	}, false)
+	require.NoError(t, err)
+	require.Equal(t, 0, len(containers))
 }

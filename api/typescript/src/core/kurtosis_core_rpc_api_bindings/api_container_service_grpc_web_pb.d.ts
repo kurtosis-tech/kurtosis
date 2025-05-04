@@ -115,6 +115,13 @@ export class ApiContainerServiceClient {
                response: api_container_service_pb.PlanYaml) => void
   ): grpcWeb.ClientReadableStream<api_container_service_pb.PlanYaml>;
 
+  createSnapshot(
+    request: api_container_service_pb.CreateSnapshotArgs,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: google_protobuf_empty_pb.Empty) => void
+  ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
+
 }
 
 export class ApiContainerServicePromiseClient {
@@ -201,6 +208,11 @@ export class ApiContainerServicePromiseClient {
     request: api_container_service_pb.StarlarkPackagePlanYamlArgs,
     metadata?: grpcWeb.Metadata
   ): Promise<api_container_service_pb.PlanYaml>;
+
+  createSnapshot(
+    request: api_container_service_pb.CreateSnapshotArgs,
+    metadata?: grpcWeb.Metadata
+  ): Promise<google_protobuf_empty_pb.Empty>;
 
 }
 

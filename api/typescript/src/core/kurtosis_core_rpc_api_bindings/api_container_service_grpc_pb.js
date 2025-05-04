@@ -27,6 +27,17 @@ function deserialize_api_container_api_ConnectServicesResponse(buffer_arg) {
   return api_container_service_pb.ConnectServicesResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_api_container_api_CreateSnapshotArgs(arg) {
+  if (!(arg instanceof api_container_service_pb.CreateSnapshotArgs)) {
+    throw new Error('Expected argument of type api_container_api.CreateSnapshotArgs');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_CreateSnapshotArgs(buffer_arg) {
+  return api_container_service_pb.CreateSnapshotArgs.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_api_container_api_DownloadFilesArtifactArgs(arg) {
   if (!(arg instanceof api_container_service_pb.DownloadFilesArtifactArgs)) {
     throw new Error('Expected argument of type api_container_api.DownloadFilesArtifactArgs');
@@ -517,6 +528,17 @@ getStarlarkPackagePlanYaml: {
     requestDeserialize: deserialize_api_container_api_StarlarkPackagePlanYamlArgs,
     responseSerialize: serialize_api_container_api_PlanYaml,
     responseDeserialize: deserialize_api_container_api_PlanYaml,
+  },
+  createSnapshot: {
+    path: '/api_container_api.ApiContainerService/CreateSnapshot',
+    requestStream: false,
+    responseStream: false,
+    requestType: api_container_service_pb.CreateSnapshotArgs,
+    responseType: google_protobuf_empty_pb.Empty,
+    requestSerialize: serialize_api_container_api_CreateSnapshotArgs,
+    requestDeserialize: deserialize_api_container_api_CreateSnapshotArgs,
+    responseSerialize: serialize_google_protobuf_Empty,
+    responseDeserialize: deserialize_google_protobuf_Empty,
   },
 };
 

@@ -1308,8 +1308,6 @@ export declare class ExecCommandResponse extends Message<ExecCommandResponse> {
   exitCode: number;
 
   /**
-   * Assumes UTF-8 encoding
-   *
    * @generated from field: string log_output = 2;
    */
   logOutput: string;
@@ -2111,5 +2109,24 @@ export declare class StarlarkPackagePlanYamlArgs extends Message<StarlarkPackage
   static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): StarlarkPackagePlanYamlArgs;
 
   static equals(a: StarlarkPackagePlanYamlArgs | PlainMessage<StarlarkPackagePlanYamlArgs> | undefined, b: StarlarkPackagePlanYamlArgs | PlainMessage<StarlarkPackagePlanYamlArgs> | undefined): boolean;
+}
+
+/**
+ * @generated from message api_container_api.CreateSnapshotArgs
+ */
+export declare class CreateSnapshotArgs extends Message<CreateSnapshotArgs> {
+  constructor(data?: PartialMessage<CreateSnapshotArgs>);
+
+  static readonly runtime: typeof proto3;
+  static readonly typeName = "api_container_api.CreateSnapshotArgs";
+  static readonly fields: FieldList;
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): CreateSnapshotArgs;
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): CreateSnapshotArgs;
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): CreateSnapshotArgs;
+
+  static equals(a: CreateSnapshotArgs | PlainMessage<CreateSnapshotArgs> | undefined, b: CreateSnapshotArgs | PlainMessage<CreateSnapshotArgs> | undefined): boolean;
 }
 

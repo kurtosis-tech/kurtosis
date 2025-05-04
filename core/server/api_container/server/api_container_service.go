@@ -12,6 +12,18 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
+	"io"
+	"math"
+	"net/http"
+	"os"
+	"path"
+	"strings"
+	"time"
+	"unicode"
+
+	"github.com/docker/docker/client"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/docker_compose_transpiler"
@@ -21,14 +33,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_run"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/git_package_content_provider"
-	"io"
-	"math"
-	"net/http"
-	"os"
-	"path"
-	"strings"
-	"time"
-	"unicode"
 
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 
@@ -742,6 +746,45 @@ func (apicService *ApiContainerService) GetStarlarkScriptPlanYaml(ctx context.Co
 	}
 
 	return &kurtosis_core_rpc_api_bindings.PlanYaml{PlanYaml: planYamlStr}, nil
+}
+
+func (apicService *ApiContainerService) CreateSnapshot(ctx context.Context, args *kurtosis_core_rpc_api_bindings.CreateSnapshotArgs) (*emptypb.Empty, error) {
+	logrus.Infof("Creating snapshot for enclave")
+
+	dockerManager, err := docker_manager.CreateDockerManager([]client.Opt{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating docker manager")
+	}
+
+	// get services in enclave and commit and save their images to a file save to a file
+	services, err := apicService.serviceNetwork.GetServices(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting services in enclave")
+	}
+	logrus.Infof("Services in enclave: %v", services)
+	logrus.Infof("Number of services in enclave: %v", len(services))
+	for _, service := range services {
+		containers, err := dockerManager.GetContainersByLabels(ctx, map[string]string{
+			docker_label_key.IDDockerLabelKey.GetString(): service.GetRegistration().GetHostname(),
+		}, true)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting containers by labels for service %s", service.GetRegistration().GetHostname())
+		}
+		if len(containers) == 0 {
+			return nil, stacktrace.NewError("No containers found for service %s", service.GetRegistration().GetHostname())
+		}
+		container := containers[0]
+		containerId := container.GetId()
+		logrus.Infof("Committing container %v", containerId)
+
+		err = dockerManager.CommitContainer(ctx, containerId, fmt.Sprintf("%v-%v-snapshot-img", service.GetRegistration().GetHostname(), time.Now().Unix()))
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred committing container %v", containerId)
+		}
+	}
+
+	// commit containers of all services in enclave
+	return &emptypb.Empty{}, nil
 }
 
 // ====================================================================================================

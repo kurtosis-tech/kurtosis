@@ -725,3 +725,11 @@ export const StarlarkPackagePlanYamlArgs = proto3.makeMessageType(
   ],
 );
 
+/**
+ * @generated from message api_container_api.CreateSnapshotArgs
+ */
+export const CreateSnapshotArgs = proto3.makeMessageType(
+  "api_container_api.CreateSnapshotArgs",
+  [],
+);
+

@@ -19,6 +19,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -64,67 +65,41 @@ func run(
 		return stacktrace.NewError("Enclave identifier cannot be empty")
 	}
 
+	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating kurtosis context from local engine.")
+	}
+
+	enclaveCtx, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveIdentifier)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting enclave context for enclave '%v'", enclaveIdentifier)
+	}
+
 	err = stopAllEnclaveServices(ctx, enclaveIdentifier)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred stopping all services in enclave '%v'", enclaveIdentifier)
 	}
 
-	// err = snapshotEnclave(ctx, enclaveIdentifier, kurtosisBackend, dockerManager)
-	// if err != nil {
-	// 	return stacktrace.Propagate(err, "An error occurred snapshotting enclave '%v'", enclaveIdentifier)
-	// }
+	err = enclaveCtx.CreateSnapshot()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating snapshot for enclave '%v'", enclaveIdentifier)
+	}
+	logrus.Infof("Successfully created snapshot for enclave '%v'", enclaveIdentifier)
 
-	// 3. Handle response and output
+	// download snapshot
 
-	// get services in enclave
+	// output to to path
 
 	// kurtosis backend.snapshot enclave (enclave identifier)?
 
+	err = kurtosisCtx.StopEnclave(ctx, enclaveIdentifier)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred stopping enclave '%v'", enclaveIdentifier)
+	}
+	logrus.Infof("Successfully stopped enclave '%v'", enclaveIdentifier)
+
 	return nil
 }
-
-// func snapshotEnclave(ctx context.Context, enclaveIdentifier string, kurtosisBackend backend_interface.KurtosisBackend, dockerManager *docker_manager.DockerManager) error {
-// 	enclaveUuid := enclave.EnclaveUUID(enclaveIdentifier)
-
-// 	err := stopAllEnclaveServices(ctx, enclaveIdentifier)
-
-// 	// Stop enclave
-// 	_, _, err = kurtosisBackend.StopEnclaves(ctx, &enclave.EnclaveFilters{
-// 		UUIDs: map[enclave.EnclaveUUID]bool{
-// 			enclaveUuid: true,
-// 		},
-// 	})
-// 	if err != nil {
-// 		return stacktrace.Propagate(err, "An error occurred stopping enclave '%v' while snapshotting", enclaveUuid)
-// 	}
-// 	logrus.Infof("Enclave '%v' stopped", enclaveUuid)
-
-// 	// Commit all the services in the enclave
-// 	logrus.Infof("Getting services in enclave '%v'", enclaveUuid)
-// 	services, err := kurtosisBackend.GetUserServices(ctx, enclaveUuid, &service.ServiceFilters{
-// 		Names:    nil,
-// 		UUIDs:    map[service.ServiceUUID]bool{},
-// 		Statuses: nil,
-// 	})
-// 	if err != nil {
-// 		return stacktrace.Propagate(err, "An error occurred getting services in enclave '%v' while snapshotting", enclaveUuid)
-// 	}
-// 	for _, service := range services {
-// 		logrus.Infof("Commits service '%v'", service.GetRegistration().GetName())
-// 		err = dockerManager.CommitContainer(ctx, string(service.GetRegistration().GetName()))
-// 		if err != nil {
-// 			return stacktrace.Propagate(err, "An error occurred committing service '%v' while snapshotting", service.GetRegistration().GetName())
-// 		}
-// 	}
-
-// 	// save the images in tar files
-
-// 	// create a tar file containing the tars of all the images
-
-// 	// save this tar file to output dir path
-
-// 	return nil
-// }
 
 func stopAllEnclaveServices(ctx context.Context, enclaveIdentifier string) error {
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()

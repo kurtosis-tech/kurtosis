@@ -246,6 +246,14 @@ func (service *ApiContainerGatewayServiceServer) GetStarlarkPackagePlanYaml(ctx 
 	return remoteApiContainerResponse, nil
 }
 
+func (service *ApiContainerGatewayServiceServer) CreateSnapshot(ctx context.Context, args *kurtosis_core_rpc_api_bindings.CreateSnapshotArgs) (*emptypb.Empty, error) {
+	remoteApiContainerResponse, err := service.remoteApiContainerClient.CreateSnapshot(ctx, args)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
+	}
+	return remoteApiContainerResponse, nil
+}
+
 // ====================================================================================================
 //
 //	Private helper methods

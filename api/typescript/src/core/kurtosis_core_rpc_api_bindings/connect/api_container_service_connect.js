@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConnectServicesArgs, ConnectServicesResponse, DownloadFilesArtifactArgs, ExecCommandArgs, ExecCommandResponse, GetExistingAndHistoricalServiceIdentifiersResponse, GetServicesArgs, GetServicesResponse, GetStarlarkRunResponse, InspectFilesArtifactContentsRequest, InspectFilesArtifactContentsResponse, ListFilesArtifactNamesAndUuidsResponse, PlanYaml, RunStarlarkPackageArgs, RunStarlarkScriptArgs, StarlarkPackagePlanYamlArgs, StarlarkRunResponseLine, StarlarkScriptPlanYamlArgs, StoreFilesArtifactFromServiceArgs, StoreFilesArtifactFromServiceResponse, StoreWebFilesArtifactArgs, StoreWebFilesArtifactResponse, StreamedDataChunk, UploadFilesArtifactResponse, WaitForHttpGetEndpointAvailabilityArgs, WaitForHttpPostEndpointAvailabilityArgs } from "./api_container_service_pb.js";
+import { ConnectServicesArgs, ConnectServicesResponse, CreateSnapshotArgs, DownloadFilesArtifactArgs, ExecCommandArgs, ExecCommandResponse, GetExistingAndHistoricalServiceIdentifiersResponse, GetServicesArgs, GetServicesResponse, GetStarlarkRunResponse, InspectFilesArtifactContentsRequest, InspectFilesArtifactContentsResponse, ListFilesArtifactNamesAndUuidsResponse, PlanYaml, RunStarlarkPackageArgs, RunStarlarkScriptArgs, StarlarkPackagePlanYamlArgs, StarlarkRunResponseLine, StarlarkScriptPlanYamlArgs, StoreFilesArtifactFromServiceArgs, StoreFilesArtifactFromServiceResponse, StoreWebFilesArtifactArgs, StoreWebFilesArtifactResponse, StreamedDataChunk, UploadFilesArtifactResponse, WaitForHttpGetEndpointAvailabilityArgs, WaitForHttpPostEndpointAvailabilityArgs } from "./api_container_service_pb.js";
 import { Empty, MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -204,6 +204,15 @@ export const ApiContainerService = {
       name: "GetStarlarkPackagePlanYaml",
       I: StarlarkPackagePlanYamlArgs,
       O: PlanYaml,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc api_container_api.ApiContainerService.CreateSnapshot
+     */
+    createSnapshot: {
+      name: "CreateSnapshot",
+      I: CreateSnapshotArgs,
+      O: Empty,
       kind: MethodKind.Unary,
     },
   }

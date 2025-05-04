@@ -20,11 +20,12 @@ package enclaves
 import (
 	"context"
 	"encoding/json"
-	"github.com/kurtosis-tech/kurtosis/path-compression"
 	"io"
 	"os"
 	"path"
 	"strings"
+
+	path_compression "github.com/kurtosis-tech/kurtosis/path-compression"
 
 	yaml_convert "github.com/ghodss/yaml"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
@@ -434,6 +435,14 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string, artifactName 
 		return "", "", stacktrace.Propagate(err, "An error was encountered while uploading data to the API Container.")
 	}
 	return services.FilesArtifactUUID(response.GetUuid()), services.FileArtifactName(response.GetName()), nil
+}
+
+func (enclaveCtx *EnclaveContext) CreateSnapshot() error {
+	_, err := enclaveCtx.client.CreateSnapshot(context.Background(), &kurtosis_core_rpc_api_bindings.CreateSnapshotArgs{})
+	if err != nil {
+		return stacktrace.Propagate(err, "An error was encountered creating snapshot.")
+	}
+	return nil
 }
 
 func (enclaveCtx *EnclaveContext) StoreWebFiles(ctx context.Context, urlToStoreWeb string, artifactName string) (services.FilesArtifactUUID, error) {
