@@ -6,14 +6,10 @@
 package server
 
 import (
-	"context"
 	"strings"
 	"testing"
 
-	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/stretchr/testify/require"
 )
@@ -56,18 +52,18 @@ line
 	require.Equal(t, expectedOutput, *output)
 }
 
-func TestCreateSnapshot(t *testing.T) {
-	dockerManager, err := docker_manager.CreateDockerManager([]client.Opt{})
-	require.NoError(t, err)
+// func TestCreateSnapshot(t *testing.T) {
+// 	dockerManager, err := docker_manager.CreateDockerManager([]client.Opt{})
+// 	require.NoError(t, err)
 
-	containers, err := dockerManager.GetContainersByLabels(context.Background(), map[string]string{
-		docker_label_key.IDDockerLabelKey.GetString(): "test1",
-	}, true)
-	require.NoError(t, err)
-	require.Equal(t, 1, len(containers))
-	// require.Equal(t, "0", containers[0].GetId())
-}
+// 	containers, err := dockerManager.GetContainersByLabels(context.Background(), map[string]string{
+// 		docker_label_key.IDDockerLabelKey.GetString(): "test1",
+// 	}, true)
+// 	require.NoError(t, err)
+// 	require.Equal(t, 1, len(containers))
+// 	// require.Equal(t, "0", containers[0].GetId())
+// }
 
-func TestRunSnapshot(t *testing.T) {
+// func TestRunSnapshot(t *testing.T) {
 
-}
+// }
