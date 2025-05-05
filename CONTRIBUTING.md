@@ -14,6 +14,9 @@ If you have a feature request, search if a similar [feature request already exis
 
 If you notice an issue in our docs (e.g. typo, grammar, conflicting information), first search to see if there is [already an issue open for it](https://github.com/kurtosis-tech/kurtosis/issues?q=is%3Aopen+is%3Aissue+label%3Adocs). Otherwise, please file a [docs issue report](https://github.com/kurtosis-tech/kurtosis/issues/new?assignees=leeederek&labels=docs&template=docs-issue.yml&title=%5BDocs%5D%3A+) and we will address it as soon as we can.
 
+### Style Guide
+
+Please reference our [style guide](https://github.com/kurtosis-tech/style-guides) repository with information about common styles, patterns, and libraries used throughout the repository.
 
 ### Questions, help, or feedback
 
