@@ -4,7 +4,7 @@ This document lists the individuals who are responsible for maintaining and cont
 
 ## Core Maintainers
 
-- [Tedi Mitiku](https://github.com/tedim52) - Full Time Kurtosis Open Source Maintainer
+- [Tedi Mitiku](https://github.com/tedim52) - Maintainer
 - [Barnabas Busa](https://github.com/barnabasbusa) - Dev Ops @Ethereum Foundation
 - [Parithosh Jayanthi](https://github.com/parithosh) - Dev Ops @Ethereum Foundation
 - [Rafael Matias](https://github.com/skylenet) - Dev Ops @Ethereum Foundation
