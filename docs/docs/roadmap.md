@@ -12,9 +12,8 @@ Last updated: May 5, 2025
 Kurtosis Technologies open sourced Kurtosis in June '24. Since then, Kurtosis has grown via open source contributions and active maintenance. If you have ideas to improve Kurtosis, please make a PR to suggest them under Kurtosis Improvement Proposals and get in touch with one of the [maintainers](https://github.com/kurtosis-tech/kurtosis/blob/main/MAINTAINERS.md).
 :::
 
+## Roadmap
 Over the next 3–6 months, Kurtosis maintainers aim to improve the following product areas:
-
----
 
 ### **Persisting enclave data**
 
@@ -38,7 +37,7 @@ Potential improvements include enabling a watch mode that detects updated Docker
 
 Kurtosis simplifies orchestration on Kubernetes, but it’s not yet optimized for managing environments that run for days or months. Enhancing support for Kubernetes-native features like StatefulSets and ReplicaSets is a priority.
 
-Teams like [Bloctopus.io](https://www.bloctopus.io/) are actively contributing to this area to make Kurtosis better suited for persistent, long-lived use cases. (See KIP #01 for details.)
+Teams like [Bloctopus.io](https://www.bloctopus.io/) are actively contributing to this area to make Kurtosis better suited for persistent, long-lived use cases.
 
 ---
 
@@ -54,7 +53,7 @@ If any of these investments interest you, or if you have feedback, please let us
 
 ---
 
-### **Kurtosis Improvement Proposals**
+## **Kurtosis Improvement Proposals**
 
 We encourage users to fork Kurtosis and improve the engine in ways that suit their needs. For larger features that require discussion and coordination, we welcome proposals via Kurtosis Improvement Proposals (KIPs).
 
