@@ -4,11 +4,11 @@ sidebar_label: Roadmap
 slug: '/roadmap'
 ---
 
-::: note:
+:::note
 Last updated: May 5, 2025
 :::
 
-:::note
+:::info
 Kurtosis Technologies open sourced Kurtosis in June '24. Since then, Kurtosis has grown via open source contributions and active maintenance. If you have ideas to improve Kurtosis, please make a PR to suggest them under Kurtosis Improvement Proposals and get in touch with one of the [maintainers](https://github.com/kurtosis-tech/kurtosis/blob/main/MAINTAINERS.md).
 :::
 

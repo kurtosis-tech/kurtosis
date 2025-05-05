@@ -82,6 +82,11 @@ kurtosis-clusters:
     config:
       kubernetes-cluster-name: "minikube"
       storage-class: "standard"
+      enclave-size-in-megabytes: 10 
+
+      # Name of node to schedule the engine and logs aggregator on.
+      # Currently, the engine and logs aggregator will be scheduled on the same machine as they need to share a filesystem for reading and writing to default logs db.
+      engine-node-name: "minikube-one"
 
 # Optional. Used when connecting to Kurtosis Cloud.
 # Typically only needed in enterprise or managed deployments.
@@ -98,6 +103,6 @@ cloud-config:
 
 - Kurtosis merges your config with internal defaults, so you only need to specify overrides.
 - To see where your current config file is located, run:
-```bash
-  kurtosis config path  
-```
+  ```bash
+    kurtosis config path  
+  ```
