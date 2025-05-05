@@ -777,10 +777,16 @@ func (apicService *ApiContainerService) CreateSnapshot(ctx context.Context, args
 		containerId := container.GetId()
 		logrus.Infof("Committing container %v", containerId)
 
-		err = dockerManager.CommitContainer(ctx, containerId, fmt.Sprintf("%v-%v-snapshot-img", service.GetRegistration().GetHostname(), time.Now().Unix()))
+		imageName := fmt.Sprintf("%v-%v-snapshot-img", service.GetRegistration().GetHostname(), time.Now().Unix())
+		err = dockerManager.CommitContainer(ctx, containerId, imageName)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred committing container %v", containerId)
 		}
+
+		// err = dockerManager.SaveImage(ctx, imageName)
+		// if err != nil {
+		// 	return nil, stacktrace.Propagate(err, "An error occurred saving image to file for service %s", service.GetRegistration().GetHostname())
+		// }
 	}
 
 	// commit containers of all services in enclave
