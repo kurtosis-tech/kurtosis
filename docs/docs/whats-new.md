@@ -27,8 +27,6 @@ You can configure different sinks per cluster, and supported sink types mirror t
 
 To get started, check out our guide on [Exporting Logs to External Services](./guides/exporting-logs.md).
 
----
-
 ### `service update` Command
 
 A new `service update` command lets you modify services in-place within a running enclave—without tearing down the entire environment.
