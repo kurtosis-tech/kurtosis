@@ -90,13 +90,11 @@ func run(
 
 	// output to to path
 
-	// kurtosis backend.snapshot enclave (enclave identifier)?
-
-	err = kurtosisCtx.StopEnclave(ctx, enclaveIdentifier)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred stopping enclave '%v'", enclaveIdentifier)
-	}
-	logrus.Infof("Successfully stopped enclave '%v'", enclaveIdentifier)
+	// err = kurtosisCtx.StopEnclave(ctx, enclaveIdentifier)
+	// if err != nil {
+	// 	return stacktrace.Propagate(err, "An error occurred stopping enclave '%v'", enclaveIdentifier)
+	// }
+	// logrus.Infof("Successfully stopped enclave '%v'", enclaveIdentifier)
 
 	return nil
 }

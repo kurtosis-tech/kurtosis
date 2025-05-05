@@ -5,6 +5,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"os"
+	"os/signal"
+	"path"
+	"path/filepath"
+	"regexp"
+	"strings"
+
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
@@ -14,16 +24,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/user_support_constants"
 	"gopkg.in/yaml.v2"
-	"io"
 	"k8s.io/utils/strings/slices"
-	"net/http"
-	"net/url"
-	"os"
-	"os/signal"
-	"path"
-	"path/filepath"
-	"regexp"
-	"strings"
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
@@ -465,12 +466,17 @@ func run(
 			return stacktrace.Propagate(err, "There was an error reading file or package from disk at '%v'", starlarkScriptOrPackagePath)
 		}
 
-		if isStandaloneScript(fileOrDir, kurtosisYMLFilePath) {
+		if isSnapshot(fileOrDir, kurtosisYMLFilePath) {
+			logrus.Infof("Executing snapshot package at '%v'", starlarkScriptOrPackagePath)
+			responseLineChan, cancelFunc, errRunningKurtosis = executePackage(ctx, enclaveCtx, starlarkScriptOrPackagePath, starlarkRunConfig)
+		} else if isStandaloneScript(fileOrDir, kurtosisYMLFilePath) {
+			logrus.Infof("Executing standalone script at '%v'", starlarkScriptOrPackagePath)
 			if !strings.HasSuffix(starlarkScriptOrPackagePath, starlarkExtension) {
 				return stacktrace.NewError("Expected a script with a '%s' extension but got file '%v' with a different extension", starlarkExtension, starlarkScriptOrPackagePath)
 			}
 			responseLineChan, cancelFunc, errRunningKurtosis = executeScript(ctx, enclaveCtx, starlarkScriptOrPackagePath, starlarkRunConfig)
 		} else {
+			logrus.Infof("Executing package at '%v'", starlarkScriptOrPackagePath)
 			// if the path is a file with `kurtosis.yml` at the end it's a module dir
 			// we remove the `kurtosis.yml` to get just the Dir containing the module
 			if isKurtosisYMLFileInPackageDir(fileOrDir, kurtosisYMLFilePath) {
@@ -789,6 +795,10 @@ func parseExperimentalFlag(flags *flags.ParsedFlags) ([]kurtosis_core_rpc_api_bi
 // isStandaloneScript returns true if the fileInfo points to a non `kurtosis.yml` regular file
 func isStandaloneScript(fileInfo os.FileInfo, kurtosisYMLFilePath string) bool {
 	return fileInfo.Mode().IsRegular() && fileInfo.Name() != kurtosisYMLFilePath
+}
+
+func isSnapshot(fileInfo os.FileInfo, kurtosisYMLFilePath string) bool {
+	return strings.Contains(fileInfo.Name(), ".tar")
 }
 
 func isKurtosisYMLFileInPackageDir(fileInfo os.FileInfo, kurtosisYMLFilePath string) bool {

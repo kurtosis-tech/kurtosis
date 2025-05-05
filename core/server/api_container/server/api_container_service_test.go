@@ -62,7 +62,12 @@ func TestCreateSnapshot(t *testing.T) {
 
 	containers, err := dockerManager.GetContainersByLabels(context.Background(), map[string]string{
 		docker_label_key.IDDockerLabelKey.GetString(): "test1",
-	}, false)
+	}, true)
 	require.NoError(t, err)
-	require.Equal(t, 0, len(containers))
+	require.Equal(t, 1, len(containers))
+	// require.Equal(t, "0", containers[0].GetId())
+}
+
+func TestRunSnapshot(t *testing.T) {
+
 }

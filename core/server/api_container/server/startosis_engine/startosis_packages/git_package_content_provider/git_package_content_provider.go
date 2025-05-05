@@ -2,6 +2,13 @@ package git_package_content_provider
 
 import (
 	"errors"
+	"io"
+	"os"
+	"path"
+	"path/filepath"
+	"strings"
+	"time"
+
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport"
@@ -16,12 +23,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
 	"github.com/mholt/archiver"
 	"github.com/sirupsen/logrus"
-	"io"
-	"os"
-	"path"
-	"path/filepath"
-	"strings"
-	"time"
 )
 
 const (
@@ -212,6 +213,7 @@ func (provider *GitPackageContentProvider) StorePackageContents(packageId string
 	if err != nil {
 		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred parsing Git URL for package ID '%s'", packageId)
 	}
+	logrus.Infof("Storing package contents for package ID '%s'", packageId)
 
 	relPackagePathToPackagesDir := getPathToPackageRoot(parsedPackageId)
 	packageAbsolutePathOnDisk := path.Join(provider.repositoriesDir, relPackagePathToPackagesDir)

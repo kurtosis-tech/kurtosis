@@ -50,7 +50,8 @@ const (
 	dotRelativePathIndicatorString = "."
 
 	// required to get around "only Github URLs" validation
-	composePackageIdPlaceholder = "github.com/NOTIONAL_USER/USER_UPLOADED_COMPOSE_PACKAGE"
+	composePackageIdPlaceholder  = "github.com/NOTIONAL_USER/USER_UPLOADED_COMPOSE_PACKAGE"
+	snapshotPackageIdPlaceholder = "github.com/NOTIONAL_USER/USER_UPLOADED_SNAPSHOT_PACKAGE"
 )
 
 // TODO Remove this once package ID is detected ONLY the APIC side (i.e. the CLI doesn't need to tell the APIC what package ID it's using)
@@ -184,9 +185,18 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackage(
 		return nil, nil, stacktrace.Propagate(err, "Error preparing package '%s' for execution", packageRootPath)
 	}
 
-	err = enclaveCtx.uploadStarlarkPackage(executeStartosisPackageArgs.PackageId, packageRootPath)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "Error uploading package '%s' prior to executing it", packageRootPath)
+	logrus.Infof("Uploading package '%s' with ID '%s'", packageRootPath, executeStartosisPackageArgs.PackageId)
+	if executeStartosisPackageArgs.PackageId == snapshotPackageIdPlaceholder {
+		logrus.Infof("Uploading snapshot package '%s'", packageRootPath)
+		err = enclaveCtx.uploadSnapshotPackage(executeStartosisPackageArgs.PackageId, packageRootPath)
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "Error uploading snapshot package '%s' prior to executing it", packageRootPath)
+		}
+	} else {
+		err = enclaveCtx.uploadStarlarkPackage(executeStartosisPackageArgs.PackageId, packageRootPath)
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "Error uploading package '%s' prior to executing it", packageRootPath)
+		}
 	}
 
 	if len(packageReplaceOptions) > 0 {
@@ -231,11 +241,8 @@ func getPackageNameAndReplaceOptions(packageRootPath string) (string, map[string
 			}
 		}
 		if composeAbsFilepath == "" {
-			return "", map[string]string{}, stacktrace.NewError(
-				"Neither a '%s' file nor one of the default Compose files (%s) was found in the package root; at least one of these is required",
-				kurtosisYamlFilename,
-				strings.Join(supportedDockerComposeYmlFilenames, ", "),
-			)
+			// assume this is a snapshot package if no docker compose
+			return snapshotPackageIdPlaceholder, map[string]string{}, nil
 		}
 		packageName = composePackageIdPlaceholder
 		packageReplaceOptions = map[string]string{}
@@ -727,6 +734,48 @@ func (enclaveCtx *EnclaveContext) uploadStarlarkPackage(packageId string, packag
 	if err != nil {
 		return stacktrace.Propagate(err, "An error was encountered while uploading data to the API Container.")
 	}
+	return nil
+}
+
+func (enclaveCtx *EnclaveContext) uploadSnapshotPackage(packageId string, packageRootPath string) error {
+	logrus.Infof("Opening snapshot package '%v' at '%v' for upload", packageId, packageRootPath)
+	compressedModule, err := os.OpenFile(packageRootPath, os.O_RDONLY, 0700)
+	if err != nil {
+		return stacktrace.Propagate(err,
+			"Failed to open the archive file at '%s' during snapshot upload for '%s'.", packageRootPath, packageRootPath)
+	}
+	defer compressedModule.Close()
+	compressedModuleInfo, err := compressedModule.Stat()
+	if err != nil {
+		return stacktrace.Propagate(err,
+			"Failed to stat of the snapshot package at '%s' during snapshot upload for '%s'.", packageRootPath, packageRootPath)
+	}
+	compressedModuleSize := uint64(compressedModuleInfo.Size())
+	logrus.Infof("Uploading and executing package '%v'", packageId)
+
+	client, err := enclaveCtx.client.UploadStarlarkPackage(context.Background())
+	if err != nil {
+		return stacktrace.Propagate(err, "An error was encountered initiating the data upload to the API Container.")
+	}
+	clientStream := grpc_file_streaming.NewClientStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, emptypb.Empty](client)
+	_, err = clientStream.SendData(
+		packageId,
+		compressedModule,
+		compressedModuleSize,
+		func(previousChunkHash string, contentChunk []byte) (*kurtosis_core_rpc_api_bindings.StreamedDataChunk, error) {
+			return &kurtosis_core_rpc_api_bindings.StreamedDataChunk{
+				Data:              contentChunk,
+				PreviousChunkHash: previousChunkHash,
+				Metadata: &kurtosis_core_rpc_api_bindings.DataChunkMetadata{
+					Name: packageId,
+				},
+			}, nil
+		},
+	)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error was encountered while uploading data to the API Container.")
+	}
+
 	return nil
 }
 
