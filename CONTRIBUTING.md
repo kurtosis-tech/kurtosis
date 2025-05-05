@@ -16,7 +16,7 @@ If you notice an issue in our docs (e.g. typo, grammar, conflicting information)
 
 ### Style Guide
 
-Please reference our [style guide](https://github.com/kurtosis-tech/style-guides) repository with information about common styles, patterns, and libraries used throughout the repository.
+Please reference our [style guide](https://github.com/kurtosis-tech/style-guide) repository with information about common styles, patterns, and libraries used throughout the repository.
 
 ### Questions, help, or feedback
 
