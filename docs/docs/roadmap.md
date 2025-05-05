@@ -12,7 +12,7 @@ Last updated: May 5, 2025
 Kurtosis Technologies open sourced Kurtosis in June '24. Since then, Kurtosis has grown via open source contributions and active maintenance. If you have ideas to improve Kurtosis, please make a PR to suggest them under Kurtosis Improvement Proposals and get in touch with one of the [maintainers](https://github.com/kurtosis-tech/kurtosis/blob/main/MAINTAINERS.md).
 :::
 
-## Roadma
+## Roadmap
 Over the next 3–6 months, Kurtosis maintainers aim to improve the following product areas:
 
 ### **Persisting enclave data**
