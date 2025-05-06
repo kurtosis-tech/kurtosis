@@ -4,20 +4,47 @@ sidebar_label: Roadmap
 slug: '/roadmap'
 ---
 
-:::tip
-Kurtosis is rapidly evolving alongside the needs of our users. As a result, please interpret the below to be accurate for approximately 3 months from the last updated date.
-
-The last updated date is **August 1, 2023**
+:::note
+Last updated: May 5, 2025
 :::
 
-Over the next 1-3 months, we will be making investments in our product to enable workflows that involve long-lived environments. Doing so cements the value proposition that we offer for both dev and test, and opens a new world when it comes to production use cases. Directionally, these efforts represent a step closer to our goal of extending Kurtosis across the entire development lifecycle. Our investments will be spread across various features and improvements but will generally fall into one of the below buckets:
+:::info
+Kurtosis Technologies open sourced Kurtosis in June '24. Since then, Kurtosis has grown via open source contributions and active maintenance. If you have ideas to improve Kurtosis, please make a PR to suggest them under Kurtosis Improvement Proposals and get in touch with one of the [maintainers](https://github.com/kurtosis-tech/kurtosis/blob/main/MAINTAINERS.md).
+:::
 
-- **More robust support for various workflows involving enclaves deployed on Kubernetes.** This includes support for graceful blue/green rollouts, support for replication controllers like ReplicaSet (RS), and cleaner ways to interact with the cluster from the outside.
-- **Idempotent runs** that enable a developer to make changes to the Starlark package & Kurtosis will apply those changes to a long-lived enclave deterministically.
-- **Frontend improvements** to support a cleaner interface for users to deploy & interact with a long-lived enclave in the cloud. These improvements would be in service of ensuring that the experience is as seamless and self-service as possible.
-- **Connectivity to and from long-lived enclaves** to standardize, both from a user experience and technically, how one would get traffic to and from the enclave. This scope of work will include making it seamless to set up and manage the connection as well.
-- **Persisting data** across enclaves, services within those enclaves, and beyond the lifecycle of a service and enclave as well. This includes the supporting workflows for trivial manipulation of the data inside a container.
-- **Centralized logging infrastructure** to aggregate logs from everything inside an enclave, making them easily queryable, and storing them somewhere so that they can be used beyond the life of the enclave.
-- **A fully managed cloud offering and accompanying self-service workflows** for a stress-free, easy way to deploy test and dev environments, that live as long as you need them to, directly onto remote infrastructure.
+## Roadmap
+Over the next 3–6 months, Kurtosis maintainers aim to improve the following product areas:
 
-If any of the investments we are making interest you or if you have feedback for us, please let us know in our [Github Discussions](https://github.com/kurtosis-tech/kurtosis/discussions/categories/q-a) page, where we are fielding some great questions from our community.
+### **Persisting enclave data**
+
+Enclaves contain valuable state that can aid in debugging, reproducing environments, and saving time when spinning up new setups. Today, Kurtosis captures much of an enclave's state (e.g., service info, file artifacts, persistent directories, running containers), but there’s no easy way to extract and reuse that data to reproduce an environment.
+
+We’ll be exploring features like restarting enclaves, snapshotting enclave state, and injecting data into enclaves.
+
+If this is relevant to you or your team's workflows, please reach out to [Tedi Mitiku](https://tedi.dev).
+
+### **Faster local development loop**
+
+As the ecosystem of Kurtosis packages grows, users are composing multiple packages into larger setups. Fortunately, Kurtosis makes composition easy—but the result is that these packages are getting bigger and taking longer to spin up locally for testing. Once the enclave is running, developers want to iterate quickly: modify service code and immediately see the changes reflected.
+
+Potential improvements include enabling a watch mode that detects updated Docker images and reloads them into the enclave automatically, or supporting hot reload by detecting binary changes and applying them live.
+
+### **Support for long-lived Kubernetes environments**
+
+Kurtosis simplifies orchestration on Kubernetes, but it’s not yet optimized for managing environments that run for days or months. Enhancing support for Kubernetes-native features like StatefulSets and ReplicaSets is a priority.
+
+Teams like [Bloctopus.io](https://www.bloctopus.io/) are actively contributing to this area to make Kurtosis better suited for persistent, long-lived use cases.
+
+### **Speeding up Kurtosis**
+
+Kurtosis relies heavily on containers, launching them for nearly every task. While this design provides flexibility, it adds overhead—especially for lightweight tasks like parsing or ETL, where container startup and teardown create delays.
+
+Possible optimizations include reusing a dedicated container for lightweight tasks or supporting task execution outside of containers entirely.
+
+If any of these investments interest you, or if you have feedback, please let us know in our [GitHub Discussions](https://github.com/kurtosis-tech/kurtosis/discussions/categories/q-a), [Discord](https://discord.com/invite/TMhR2uX5WMZ), or feel free to reach out directly to a maintainer or [Tedi Mitiku](https://tedi.dev).
+
+## **Kurtosis Improvement Proposals**
+
+We encourage users to fork Kurtosis and improve the engine in ways that suit their needs. For larger features that require discussion and coordination, we welcome proposals via Kurtosis Improvement Proposals (KIPs).
+
+If you'd like to propose a feature, please create a document and submit a pull request to add it to the KIP list!
