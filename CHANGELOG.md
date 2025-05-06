@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.8.0](https://github.com/kurtosis-tech/kurtosis/compare/1.7.2...1.8.0) (2025-05-06)
+
+
+### Features
+
+* configurable fluent bit filters and parsers ([#2727](https://github.com/kurtosis-tech/kurtosis/issues/2727)) ([9f52d04](https://github.com/kurtosis-tech/kurtosis/commit/9f52d04bd686dbe6c1c4e8ebf96e07321fad3aff))
+
+
+### Bug Fixes
+
+* don't get historical enclaves for service logs completion ([#2636](https://github.com/kurtosis-tech/kurtosis/issues/2636)) ([63f5b8a](https://github.com/kurtosis-tech/kurtosis/commit/63f5b8a5686ee9cc7b2ee8712eabdd0dd24eaa95))
+* init remove funcs ([#2734](https://github.com/kurtosis-tech/kurtosis/issues/2734)) ([54de9c2](https://github.com/kurtosis-tech/kurtosis/commit/54de9c24504182b312b28947c4ac95811dc3be6f))
+
 ## [1.7.2](https://github.com/kurtosis-tech/kurtosis/compare/1.7.1...1.7.2) (2025-04-22)
 
 
