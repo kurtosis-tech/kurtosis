@@ -98,6 +98,7 @@ func CompressPathToFile(pathToCompress string, enforceMaxFileSizeLimit bool) (st
 		relativePath = strings.TrimPrefix(relativePath, string(filepath.Separator))
 		filenameMappings[filePath] = relativePath
 	}
+	logrus.Infof("filenameMappings: %v", filenameMappings)
 
 	// Create files from disk with default options
 	files, err := archives.FilesFromDisk(ctx, nil, filenameMappings)
