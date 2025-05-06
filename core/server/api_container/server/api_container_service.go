@@ -25,6 +25,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/snapshots"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/docker_compose_transpiler"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
@@ -1075,7 +1076,7 @@ func (apicService *ApiContainerService) runStarlarkPackageSetup(
 	}
 
 	// If kurtosis.yml doesn't exist, assume a Compose package and transpile compose into starlark
-	// var mainScriptToExecute string
+	var mainScriptToExecute string
 	var transpilationErr error
 	if relativePathToMainFile == "" {
 		for _, defaultComposeFilename := range docker_compose_transpiler.DefaultComposeFilenames {
@@ -1086,28 +1087,23 @@ func (apicService *ApiContainerService) runStarlarkPackageSetup(
 			}
 		}
 		if relativePathToMainFile != "" {
-			// return "", "", "", nil, startosis_errors.NewInterpretationError(
-			// 	"No '%s' file was found in the package root so fell back to Docker Compose package, but no "+
-			// 		"default Compose files (%s) were found. Either add a '%s' file to the package root or add one of the "+
-			// 		"default Compose files.",
-			// 	startosis_constants.KurtosisYamlName,
-			// 	strings.Join(docker_compose_transpiler.DefaultComposeFilenames, ", "),
-			// 	startosis_constants.KurtosisYamlName,
-			// )
-			_, transpilationErr = docker_compose_transpiler.TranspileDockerComposePackageToStarlark(packageRootPathOnDisk, relativePathToMainFile)
+			mainScriptToExecute, transpilationErr = docker_compose_transpiler.TranspileDockerComposePackageToStarlark(packageRootPathOnDisk, relativePathToMainFile)
 			if transpilationErr != nil {
 				return "", "", "", nil, startosis_errors.WrapWithInterpretationError(transpilationErr, "An error occurred transpiling the Docker Compose package '%v' to Starlark", packageIdFromArgs)
 			}
+			replacesForComposePackage := map[string]string{}
+			return mainScriptToExecute, relativePathToMainFile, packageIdFromArgs, replacesForComposePackage, nil
 		}
 	}
 
 	// If kurtosis.yml or docker-compose.yml does not exist, assume a snapshot and run a snapshot
-	// RUNNING A SNAPSHOT PACKAGE
-	logrus.Infof("Running a snapshot package '%v'", packageIdFromArgs)
-	return "", "", "", nil, startosis_errors.WrapWithInterpretationError(transpilationErr, "WE ARE RUNNING A SNAPSHOT PACKAGE")
-
-	// replacesForComposePackage := map[string]string{}
-	// return mainScriptToExecute, relativePathToMainFile, packageIdFromArgs, replacesForComposePackage, nil
+	logrus.Infof("Running a snapshot package '%v' with package root path '%v' and relative path to main file '%v'", packageIdFromArgs, packageRootPathOnDisk, relativePathToMainFile)
+	mainScriptToExecute, transpilationErr = snapshots.GetMainScriptToExecuteFromSnapshotPackage(packageRootPathOnDisk)
+	if transpilationErr != nil {
+		return "", "", "", nil, startosis_errors.WrapWithInterpretationError(transpilationErr, "An error occurred getting the main script to execute from the snapshot package '%v'", packageIdFromArgs)
+	}
+	replacesForSnapshotPackage := map[string]string{}
+	return mainScriptToExecute, relativePathToMainFile, packageIdFromArgs, replacesForSnapshotPackage, nil
 }
 
 func (apicService *ApiContainerService) runStarlark(
