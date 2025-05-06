@@ -93,9 +93,12 @@ func CompressPathToFile(pathToCompress string, enforceMaxFileSizeLimit bool) (st
 	filenameMappings := make(map[string]string)
 
 	// Map each file path to its path in the archive
+	pathToCompressPrefix := strings.TrimPrefix(pathToCompress, "./")
+	logrus.Infof("pathToCompressPrefix: %v", pathToCompressPrefix)
 	for _, filePath := range filepathsToUpload {
-		relativePath := strings.TrimPrefix(filePath, pathToCompress)
-		relativePath = strings.TrimPrefix(relativePath, string(filepath.Separator))
+		logrus.Infof("filePath: %v", filePath)
+		relativePath := strings.TrimPrefix(filePath, pathToCompressPrefix)
+		logrus.Infof("relativePath: %v", relativePath)
 		filenameMappings[filePath] = relativePath
 	}
 	logrus.Infof("filenameMappings: %v", filenameMappings)
