@@ -256,3 +256,62 @@ func TestCompressPath_EmptyDirDoesNotError(t *testing.T) {
 	_, _, _, err = CompressPath(dirPath, false)
 	require.NoError(t, err)
 }
+
+func TestGetFilenameMappings(t *testing.T) {
+	tests := []struct {
+		name           string
+		pathToCompress string
+		filesToUpload  []string
+		expected       map[string]string
+	}{
+		{
+			name:           "basic path mapping",
+			pathToCompress: "./test-dir",
+			filesToUpload: []string{
+				"./test-dir/file1.txt",
+				"./test-dir/subdir/file2.txt",
+			},
+			expected: map[string]string{
+				"./test-dir/file1.txt":        "file1.txt",
+				"./test-dir/subdir/file2.txt": "subdir/file2.txt",
+			},
+		},
+		{
+			name:           "path without ./ prefix",
+			pathToCompress: "test-dir",
+			filesToUpload: []string{
+				"test-dir/file1.txt",
+				"test-dir/subdir/file2.txt",
+			},
+			expected: map[string]string{
+				"test-dir/file1.txt":        "file1.txt",
+				"test-dir/subdir/file2.txt": "subdir/file2.txt",
+			},
+		},
+		{
+			name:           "empty file list",
+			pathToCompress: "./test-dir",
+			filesToUpload:  []string{},
+			expected:       map[string]string{},
+		},
+		{
+			name:           "paths with special characters",
+			pathToCompress: "./test-dir",
+			filesToUpload: []string{
+				"./test-dir/file with spaces.txt",
+				"./test-dir/subdir/file-with-dashes.txt",
+			},
+			expected: map[string]string{
+				"./test-dir/file with spaces.txt":        "file with spaces.txt",
+				"./test-dir/subdir/file-with-dashes.txt": "subdir/file-with-dashes.txt",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := getFilenameMappings(tt.pathToCompress, tt.filesToUpload)
+			require.Equal(t, tt.expected, result)
+		})
+	}
+}

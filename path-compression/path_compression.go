@@ -82,34 +82,20 @@ func CompressPathToFile(pathToCompress string, enforceMaxFileSizeLimit bool) (st
 	}
 	defer outFile.Close()
 
-	// Use CompressedArchive with Tar+Gz
-	format := archives.CompressedArchive{
-		Compression: archives.Gz{},
-		Archival:    archives.Tar{},
-	}
-
-	// Create files list for archive
 	ctx := context.Background()
-	filenameMappings := make(map[string]string)
 
-	// Map each file path to its path in the archive
-	pathToCompressPrefix := strings.TrimPrefix(pathToCompress, "./")
-	logrus.Infof("pathToCompressPrefix: %v", pathToCompressPrefix)
-	for _, filePath := range filepathsToUpload {
-		logrus.Infof("filePath: %v", filePath)
-		relativePath := strings.TrimPrefix(filePath, pathToCompressPrefix)
-		logrus.Infof("relativePath: %v", relativePath)
-		filenameMappings[filePath] = relativePath
-	}
-	logrus.Infof("filenameMappings: %v", filenameMappings)
-
-	// Create files from disk with default options
-	files, err := archives.FilesFromDisk(ctx, nil, filenameMappings)
+	files, err := archives.FilesFromDisk(
+		ctx,
+		nil, // use default settings
+		getFilenameMappings(pathToCompress, filepathsToUpload))
 	if err != nil {
 		return "", 0, nil, stacktrace.Propagate(err, "An error occurred when creating files list for archive from '%s'.", pathToCompress)
 	}
 
-	// Create the archive
+	format := archives.CompressedArchive{
+		Compression: archives.Gz{},
+		Archival:    archives.Tar{},
+	}
 	if err = format.Archive(ctx, outFile, files); err != nil {
 		return "", 0, nil, stacktrace.Propagate(err, "An error occurred when compressing '%s'.", pathToCompress)
 	}
@@ -207,4 +193,14 @@ func writeFileContent(filePath string, writer io.Writer) error {
 		return stacktrace.Propagate(err, "Unable to hash file content for file '%s'.", filePath)
 	}
 	return nil
+}
+
+func getFilenameMappings(pathToCompress string, filesToUpload []string) map[string]string {
+	filenameMappings := make(map[string]string)
+	for _, filePath := range filesToUpload {
+		relativePath := strings.TrimPrefix(filePath, pathToCompress)
+		relativePath = strings.TrimPrefix(relativePath, string(filepath.Separator))
+		filenameMappings[filePath] = relativePath
+	}
+	return filenameMappings
 }
