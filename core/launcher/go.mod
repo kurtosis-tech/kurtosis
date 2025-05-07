@@ -1,6 +1,7 @@
 module github.com/kurtosis-tech/kurtosis/core/launcher
 
 go 1.23
+toolchain go1.24.1
 
 replace (
 	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
@@ -9,7 +10,6 @@ replace (
 
 require (
 	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // Local dependency
-	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0 // Local dependency generated during build
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.10.0
@@ -31,9 +31,9 @@ require (
 	github.com/segmentio/backo-go v1.0.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
-	golang.org/x/net v0.35.0 // indirect
-	golang.org/x/sys v0.30.0 // indirect
-	golang.org/x/text v0.22.0 // indirect
+	golang.org/x/net v0.38.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/text v0.23.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/segmentio/analytics-go.v3 v3.1.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
