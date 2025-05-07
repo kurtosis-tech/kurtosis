@@ -792,6 +792,7 @@ func (apicService *ApiContainerService) CreateSnapshot(ctx context.Context, args
 	logrus.Infof("Number of services in enclave: %v", len(services))
 
 	for _, service := range services {
+		// HIDE THIS PART BEHIND KURTOSIS BACKEND
 		containers, err := dockerManager.GetContainersByLabels(ctx, map[string]string{
 			docker_label_key.IDDockerLabelKey.GetString(): service.GetRegistration().GetHostname(),
 		}, true)
@@ -817,6 +818,7 @@ func (apicService *ApiContainerService) CreateSnapshot(ctx context.Context, args
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred saving image to file for service %s", service.GetRegistration().GetHostname())
 		}
+		// HIDE THIS PART BEHIND KURTOSIS BACKEND
 
 		// remove the image
 		// err = dockerManager.RemoveImage(ctx, imageName, true, true)

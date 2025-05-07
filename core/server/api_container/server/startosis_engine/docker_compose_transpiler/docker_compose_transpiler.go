@@ -3,14 +3,15 @@ package docker_compose_transpiler
 import (
 	"errors"
 	"fmt"
-	"github.com/hashicorp/go-envparse"
-	"golang.org/x/exp/slices"
 	"os"
 	"path"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/hashicorp/go-envparse"
+	"golang.org/x/exp/slices"
 
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
@@ -21,6 +22,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/directory"
 	port_spec_starlark "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
+	"github.com/kurtosis-tech/kurtosis/core/server/commons/starlark_script_creator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
@@ -49,18 +51,7 @@ const (
 	shouldConvertWindowsPathsToLinux = true
 
 	builtImageSuffix = "-image"
-
-	// eg. plan.upload_files(src = "./data/project", name = "web-volume0")
-	uploadFilesLinesFmtStr = "plan.upload_files(src = \"%s\", name = \"%s\")"
-
-	// eg. plan.add_service(name="web", config=ServiceConfig(...))
-	addServiceLinesFmtStr = "plan.add_service(name = \"%s\", config = %s)"
-
-	defRunStr = "def run(plan):\n"
-
-	newStarlarkLineFmtStr = "    %s\n"
-
-	httpProtocol = "http"
+	httpProtocol     = "http"
 
 	alphanumericCharWithDashesRegexStr = `[^a-z0-9-]`
 	consecutiveDashesRegexStr          = `-+`
@@ -83,15 +74,11 @@ var DefaultComposeFilenames = []string{
 
 type ComposeService types.ServiceConfig
 
-type StarlarkServiceConfig *kurtosis_type_constructor.KurtosisValueTypeDefault
-
 var dockerPortProtosToKurtosisPortProtos = map[string]port_spec.TransportProtocol{
 	"tcp":  port_spec.TransportProtocol_TCP,
 	"udp":  port_spec.TransportProtocol_UDP,
 	"sctp": port_spec.TransportProtocol_SCTP,
 }
-
-var CyclicalDependencyError = stacktrace.NewError("A cycle was detected in the service dependency graph.")
 
 func TranspileDockerComposePackageToStarlark(packageAbsDirpath string, relativePathToComposeFile string) (string, error) {
 	composeAbsFilepath := path.Join(packageAbsDirpath, relativePathToComposeFile)
@@ -137,7 +124,7 @@ func convertComposeToStarlarkScript(composeBytes []byte, envVars map[string]stri
 		return "", stacktrace.Propagate(err, "An error occurred converting compose services to starlark service configs.")
 	}
 
-	return createStarlarkScript(serviceNameToStarlarkServiceConfig, serviceDependencyGraph, perServiceFilesArtifactsToUpload)
+	return starlark_script_creator.CreateStarlarkScript(serviceNameToStarlarkServiceConfig, serviceDependencyGraph, perServiceFilesArtifactsToUpload)
 }
 
 func convertComposeBytesToComposeStruct(composeBytes []byte, envVars map[string]string) (*types.Project, error) {
@@ -163,53 +150,13 @@ func convertComposeBytesToComposeStruct(composeBytes []byte, envVars map[string]
 	return compose, nil
 }
 
-// Creates a starlark script based on starlark ServiceConfigs, the service dependency graph, and files artifacts to upload
-func createStarlarkScript(
-	serviceNameToStarlarkServiceConfig map[string]StarlarkServiceConfig,
-	serviceDependencyGraph map[string]map[string]bool,
-	servicesToFilesArtifactsToUpload map[string]map[string]string) (string, error) {
-	starlarkLines := []string{}
-
-	// Add add_service instructions in an order that respects [serviceDependencyGraph] determined by 'depends_on' keys in Compose
-	sortedServices, err := sortServicesBasedOnDependencies(serviceDependencyGraph)
-	if err != nil {
-		return "", err
-	}
-	for _, serviceName := range sortedServices {
-		// upload_files artifacts for service
-		// get and sort keys first for deterministic order
-		filesArtifactsToUpload := servicesToFilesArtifactsToUpload[serviceName]
-		sortedRelativePaths := []string{}
-		for relativePath := range filesArtifactsToUpload {
-			sortedRelativePaths = append(sortedRelativePaths, relativePath)
-		}
-		sort.Strings(sortedRelativePaths)
-		for _, relativePath := range sortedRelativePaths {
-			filesArtifactName := filesArtifactsToUpload[relativePath]
-			uploadFilesLine := fmt.Sprintf(uploadFilesLinesFmtStr, relativePath, filesArtifactName)
-			starlarkLines = append(starlarkLines, uploadFilesLine)
-		}
-
-		// add_service
-		starlarkServiceConfig := *serviceNameToStarlarkServiceConfig[serviceName]
-		addServiceLine := fmt.Sprintf(addServiceLinesFmtStr, serviceName, starlarkServiceConfig.String())
-		starlarkLines = append(starlarkLines, addServiceLine)
-	}
-
-	script := defRunStr
-	for _, line := range starlarkLines {
-		script += fmt.Sprintf(newStarlarkLineFmtStr, line)
-	}
-	return script, nil
-}
-
 // Turns DockerCompose Service into Kurtosis ServiceConfigs and returns info needed for creating a valid starlark script
 func convertComposeServicesToStarlarkInfo(composeServices types.Services, packageAbsDirPath string) (
-	map[string]StarlarkServiceConfig, // Map of service names to Kurtosis ServiceConfig's
+	map[string]starlark_script_creator.StarlarkServiceConfig, // Map of service names to Kurtosis ServiceConfig's
 	map[string]map[string]bool, // Graph of service dependencies based on depends_on key (determines order in which to add services)
 	map[string]map[string]string, // Map of service names to map of relative paths to files artifacts names that need to get uploaded for the service (determines files artifacts that need to be uploaded)
 	error) {
-	serviceNameToStarlarkServiceConfig := map[string]StarlarkServiceConfig{}
+	serviceNameToStarlarkServiceConfig := map[string]starlark_script_creator.StarlarkServiceConfig{}
 	perServiceDependencies := map[string]map[string]bool{}
 	servicesToFilesArtifactsToUpload := map[string]map[string]string{}
 
@@ -624,54 +571,6 @@ func appendKwarg(kwargs []starlark.Tuple, argName string, argValue starlark.Valu
 		argValue,
 	}
 	return append(kwargs, tuple)
-}
-
-// Returns list of service names in an order that respects dependencies by performing a topological sort
-// Returns error if cyclical dependency is detected
-// o(n^2) but simpler variation of Kahns algorithm https://en.wikipedia.org/wiki/Topological_sorting#Kahn's_algorithm
-// To ensure a deterministic sort, ties are broken lexicographically based on service name
-func sortServicesBasedOnDependencies(serviceDependencyGraph map[string]map[string]bool) ([]string, error) {
-	initServices := []string{} // start services with services that have no dependencies
-	for service, dependencies := range serviceDependencyGraph {
-		if len(dependencies) == 0 {
-			initServices = append(initServices, service)
-		}
-	}
-
-	sortedServices := []string{}
-	queue := []string{}
-	sort.Strings(initServices)
-	queue = append(queue, initServices...)
-
-	for len(queue) > 0 {
-		processedService := queue[0]
-		queue = queue[1:]
-		sortedServices = append(sortedServices, processedService)
-		delete(serviceDependencyGraph, processedService)
-
-		servicesToQueue := []string{}
-		for service, dependencies := range serviceDependencyGraph {
-			// Remove processedService if it was as a dependency
-			if dependencies[processedService] {
-				delete(dependencies, processedService)
-
-				// add service to queue if all of its dependencies have been processed
-				if len(dependencies) == 0 {
-					servicesToQueue = append(servicesToQueue, service)
-				}
-			}
-		}
-
-		sort.Strings(servicesToQueue)
-		queue = append(queue, servicesToQueue...)
-	}
-
-	// If there are still dependencies that need to be processed, a cycle exists
-	if len(serviceDependencyGraph) > 0 {
-		return nil, CyclicalDependencyError
-	}
-
-	return sortedServices, nil
 }
 
 // Converts a string to a RFC 1035 compliant format
