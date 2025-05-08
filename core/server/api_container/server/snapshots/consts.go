@@ -39,9 +39,9 @@ const (
 
 	serviceConfigFileName         = "service-config.json"
 	serviceConfigPathFmtSpecifier = "services/%s/%s"
-	serviceImagePathFmtSpecifier  = "services/%s/%s.tar"
+	serviceImagePathFmtSpecifier  = "services/%s/%s"
 )
 
 var (
-	snapshottedImageNameFmtSpecifier = "%s-snapshotted-img"
+	snapshottedImageNameFmtSpecifier = "%s-snapshotted-img.tar"
 )
