@@ -43,5 +43,5 @@ const (
 )
 
 var (
-	snapshottedImageNameFmtSpecifier = "%s-snapshotted-img.tar"
+	snapshottedImageNameFmtSpecifier = "%s-snapshotted-img"
 )
