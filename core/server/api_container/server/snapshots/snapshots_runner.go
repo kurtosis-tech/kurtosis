@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"sort"
 	"strings"
 
 	"github.com/docker/docker/client"
@@ -79,8 +80,40 @@ func GetMainScriptToExecuteFromSnapshotPackage(packageRootPathOnDisk string) (st
 		)
 
 		// cmd
+		commandSLStrs := make([]starlark.Value, len(serviceConfig.Cmd))
+		for idx, commandFragment := range serviceConfig.Cmd {
+			commandSLStrs[idx] = starlark.String(commandFragment)
+		}
+		serviceConfigKwargs = starlark_script_creator.AppendKwarg(
+			serviceConfigKwargs,
+			service_config.CmdAttr,
+			starlark.NewList([]starlark.Value{}),
+		)
 
 		// env vars
+		envVarKeys := []string{}
+		for key := range serviceConfig.EnvVars {
+			envVarKeys = append(envVarKeys, key)
+		}
+		sort.Strings(envVarKeys)
+		envVarsSLDict := starlark.NewDict(len(serviceConfig.EnvVars))
+		for _, key := range envVarKeys {
+			value := serviceConfig.EnvVars[key]
+			if value == "" {
+				continue
+			}
+			if err := envVarsSLDict.SetKey(
+				starlark.String(key),
+				starlark.String(value),
+			); err != nil {
+				return "", stacktrace.Propagate(err, "An error occurred setting key '%s' in environment variables Starlark dict.", key)
+			}
+		}
+		serviceConfigKwargs = starlark_script_creator.AppendKwarg(
+			serviceConfigKwargs,
+			service_config.EnvVarsAttr,
+			envVarsSLDict,
+		)
 
 		// Finally, create Starlark Service Config object based on kwargs
 		argumentValuesSet, interpretationErr := builtin_argument.CreateNewArgumentValuesSet(
