@@ -12,14 +12,22 @@ import (
 	"github.com/docker/docker/client"
 	api_services "github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
+	port_spec_starlark "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/starlark_script_creator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 )
+
+var dockerPortProtosToKurtosisPortProtos = map[string]port_spec.TransportProtocol{
+	"tcp":  port_spec.TransportProtocol_TCP,
+	"udp":  port_spec.TransportProtocol_UDP,
+	"sctp": port_spec.TransportProtocol_SCTP,
+}
 
 // BEFORE THIS FUNCTION IS CALLED
 // - create the persistent directory docker managed volumes
@@ -113,6 +121,37 @@ func GetMainScriptToExecuteFromSnapshotPackage(packageRootPathOnDisk string) (st
 			serviceConfigKwargs,
 			service_config.EnvVarsAttr,
 			envVarsSLDict,
+		)
+
+		// ports
+		portSpecs := starlark.NewDict(len(serviceConfig.PrivatePorts))
+		for portIdx, dockerPort := range serviceConfig.PrivatePorts {
+			kurtosisProto, found := dockerPortProtosToKurtosisPortProtos["tcp"]
+			if !found {
+				return "", stacktrace.NewError("Port #%d has unsupported protocol '%v'", portIdx, "tcp")
+			}
+
+			applicationProtocol := "http"
+
+			portSpec, interpretationErr := port_spec_starlark.CreatePortSpecUsingGoValues(
+				serviceName,
+				uint16(dockerPort.Number),
+				kurtosisProto,
+				&applicationProtocol, // Application protocol (which Compose doesn't have)
+				"",                   // Wait timeout (which Compose doesn't have a way to override)
+				nil,                  // No way to change the URL for the port
+			)
+			if interpretationErr != nil {
+				return "", stacktrace.Propagate(interpretationErr, "smth went wrong")
+			}
+			if err := portSpecs.SetKey(starlark.String(portIdx), portSpec); err != nil {
+				return "", stacktrace.Propagate(err, "smth went wrong")
+			}
+		}
+		serviceConfigKwargs = starlark_script_creator.AppendKwarg(
+			serviceConfigKwargs,
+			service_config.PortsAttr,
+			portSpecs,
 		)
 
 		// Finally, create Starlark Service Config object based on kwargs
