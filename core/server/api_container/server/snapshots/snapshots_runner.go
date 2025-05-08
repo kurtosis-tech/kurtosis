@@ -1,13 +1,23 @@
 package snapshots
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path"
 	"strings"
 
+	"github.com/docker/docker/client"
+	api_services "github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/starlark_script_creator"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
+	"go.starlark.net/starlark"
 )
 
 // BEFORE THIS FUNCTION IS CALLED
@@ -16,6 +26,7 @@ import (
 // NOTES:
 //   - uses add_services to parallelize services that can be parallelized?
 func GetMainScriptToExecuteFromSnapshotPackage(packageRootPathOnDisk string) (string, error) {
+	ctx := context.Background()
 	// 	- upload the files artifacts into the enclave
 	perServiceFilesArtifactsToUpload := map[string]map[string]string{}
 
@@ -33,17 +44,55 @@ func GetMainScriptToExecuteFromSnapshotPackage(packageRootPathOnDisk string) (st
 	for _, serviceName := range orderedServiceList {
 		serviceConfigPath := fmt.Sprintf(serviceConfigPathFmtSpecifier, serviceName, serviceConfigFileName)
 
-		_, err = os.ReadFile(path.Join(packageRootPathOnDisk, serviceConfigPath))
+		serviceConfigBytes, err := os.ReadFile(path.Join(packageRootPathOnDisk, serviceConfigPath))
 		if err != nil {
 			return "", stacktrace.Propagate(err, "An error occurred reading the service config file at path: %v", serviceConfigPath)
 		}
 
-		// serviceConfig := service_config.ServiceConfig{} // TODO: use service config builder from the CLI
-		// if err := json.Unmarshal(serviceConfigBytes, &serviceConfig); err != nil {
-		// 	return "", stacktrace.Propagate(err, "An error occurred unmarshalling the service config file at path: %v", serviceConfigPath)
-		// }
+		serviceConfig := api_services.ServiceConfig{}
+		if err := json.Unmarshal(serviceConfigBytes, &serviceConfig); err != nil {
+			return "", stacktrace.Propagate(err, "An error occurred unmarshalling the service config file at path: %v", serviceConfigPath)
+		}
 
-		// convert service config into Starlark Service Config
+		// Convert service config into Starlark Service Config
+		serviceConfigKwargs := []starlark.Tuple{}
+
+		// IMAGE
+		dockerManager, err := docker_manager.CreateDockerManager([]client.Opt{})
+		if err != nil {
+			return "", stacktrace.Propagate(err, "An error occurred creating a docker manager")
+		}
+
+		imageName := fmt.Sprintf(snapshottedImageNameFmtSpecifier, serviceName)
+		serviceImagePath := fmt.Sprintf(serviceImagePathFmtSpecifier, serviceName, imageName)
+		logrus.Infof("Loading image for service '%v' from path: %v", serviceName, serviceImagePath)
+		err = dockerManager.LoadImage(ctx, path.Join(packageRootPathOnDisk, serviceImagePath))
+		if err != nil {
+			return "", stacktrace.Propagate(err, "An error occurred loading the image for service '%v'", serviceName)
+		}
+		logrus.Infof("Successfully loaded image for service '%v'", serviceName)
+
+		serviceConfigKwargs = starlark_script_creator.AppendKwarg(
+			serviceConfigKwargs,
+			service_config.ImageAttr,
+			starlark.String(imageName),
+		)
+
+		// Finally, create Starlark Service Config object based on kwargs
+		argumentValuesSet, interpretationErr := builtin_argument.CreateNewArgumentValuesSet(
+			service_config.ServiceConfigTypeName,
+			service_config.NewServiceConfigType().Arguments,
+			[]starlark.Value{},
+			serviceConfigKwargs,
+		)
+		if interpretationErr != nil {
+			return "", stacktrace.Propagate(interpretationErr, "An starlark interpretation error was detected while attempting to create argument values for service config for service '%v'.", serviceName)
+		}
+		serviceConfigKurtosisType, interpretationErr := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(service_config.ServiceConfigTypeName, argumentValuesSet)
+		if interpretationErr != nil {
+			return "", stacktrace.Propagate(interpretationErr, "An starlark interpretation error was detected while attempting to create a service config for service '%v'.", serviceName)
+		}
+		serviceNameToStarlarkServiceConfig[serviceName] = serviceConfigKurtosisType
 	}
 
 	snapshotStarlarkScript, err := starlark_script_creator.CreateStarlarkScript(serviceNameToStarlarkServiceConfig, serviceDependencyGraph, perServiceFilesArtifactsToUpload)

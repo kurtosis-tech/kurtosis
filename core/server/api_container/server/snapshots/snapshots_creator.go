@@ -7,7 +7,6 @@ import (
 	"os"
 	"path"
 	"strings"
-	"time"
 
 	"github.com/docker/docker/client"
 	api_services "github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
@@ -144,7 +143,7 @@ func (sc *SnapshotCreator) outputSnapshottedImage(ctx context.Context, serviceNa
 	logrus.Infof("Committing container %v", containerId)
 
 	// commit container to image
-	imageName := fmt.Sprintf("%v-%v-snapshot-img", serviceName, time.Now().Unix())
+	imageName := fmt.Sprintf(snapshottedImageNameFmtSpecifier, serviceName)
 	err = dockerManager.CommitContainer(ctx, containerId, imageName)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred committing container %v", containerId)
