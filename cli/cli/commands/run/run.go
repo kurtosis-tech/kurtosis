@@ -798,7 +798,7 @@ func isStandaloneScript(fileInfo os.FileInfo, kurtosisYMLFilePath string) bool {
 }
 
 func isSnapshot(fileInfo os.FileInfo, kurtosisYMLFilePath string) bool {
-	return strings.Contains(fileInfo.Name(), ".tar")
+	return strings.Contains(fileInfo.Name(), ".tar") || strings.Contains(fileInfo.Name(), ".tgz") || strings.Contains(fileInfo.Name(), ".tar.gz")
 }
 
 func isKurtosisYMLFileInPackageDir(fileInfo os.FileInfo, kurtosisYMLFilePath string) bool {

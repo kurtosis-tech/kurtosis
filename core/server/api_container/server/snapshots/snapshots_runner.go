@@ -12,7 +12,7 @@ import (
 
 // BEFORE THIS FUNCTION IS CALLED
 // - create the persistent directory docker managed volumes
-// - service network registers all the services beforehand so they get started with correct ips?
+// - service network registers all the services beforehand so they get started with correct ips
 // NOTES:
 //   - uses add_services to parallelize services that can be parallelized?
 func GetMainScriptToExecuteFromSnapshotPackage(packageRootPathOnDisk string) (string, error) {
@@ -308,7 +308,7 @@ func GetMainScriptToExecuteFromSnapshotPackage(packageRootPathOnDisk string) (st
 // }
 
 func getOrderedServiceListAndDependencies(packageRootPathOnDisk string) ([]string, map[string]map[string]bool, error) {
-	serviceStartupOrderBytes, err := os.ReadFile(path.Join(packageRootPathOnDisk, fmt.Sprintf("%s/%s", packageRootPathOnDisk, serviceStartupOrderFileName)))
+	serviceStartupOrderBytes, err := os.ReadFile(path.Join(packageRootPathOnDisk, serviceStartupOrderFileName))
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred reading the service startup order file at path: %v", path.Join(packageRootPathOnDisk, fmt.Sprintf("%s/%s", packageRootPathOnDisk, serviceStartupOrderFileName)))
 	}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/docker/docker/client"
@@ -64,6 +65,7 @@ func (sc *SnapshotCreator) CreateSnapshot() (string, error) {
 	}
 	// defer os.RemoveAll(snapshotDir) // should we remove or keep the snapshot around?
 
+	// TODO: how do you reconcile service network get services
 	services, err := sc.serviceNetwork.GetServices(ctx)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred getting services in enclave")
@@ -71,8 +73,10 @@ func (sc *SnapshotCreator) CreateSnapshot() (string, error) {
 	logrus.Infof("Services in enclave: %v", services)
 	logrus.Infof("Number of services in enclave: %v", len(services))
 
+	serviceNames := []string{}
 	for _, service := range services {
 		serviceName := service.GetRegistration().GetHostname()
+		serviceNames = append(serviceNames, serviceName)
 		serviceDir := path.Join(servicesDir, serviceName)
 		if err := os.Mkdir(serviceDir, snapshotDirPerms); err != nil {
 			return "", stacktrace.Propagate(err, "An error occurred creating directory '%s' for service '%s'", servicesDir, serviceName)
@@ -100,6 +104,14 @@ func (sc *SnapshotCreator) CreateSnapshot() (string, error) {
 
 		// output input args
 	}
+
+	// TODO: get the service startup order from the persisted enclave plan
+	serviceStartupOrderPath := path.Join(snapshotDir, serviceStartupOrderFileName)
+	err = os.WriteFile(serviceStartupOrderPath, []byte(strings.Join(serviceNames, "\n")), snapshotDirPerms)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred writing service startup order to file '%s'", serviceStartupOrderPath)
+	}
+	logrus.Infof("Service startup order written to file '%s'", serviceStartupOrderPath)
 
 	// tar everything in the tmp directory and save to snapshot directory
 	compressedFilePath, sizeOfCompressedPath, _, err := path_compression.CompressPathToFile(snapshotDir, false)

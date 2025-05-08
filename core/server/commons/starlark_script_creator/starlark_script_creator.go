@@ -26,6 +26,7 @@ var CyclicalDependencyError = stacktrace.NewError("A cycle was detected in the s
 type StarlarkServiceConfig *kurtosis_type_constructor.KurtosisValueTypeDefault
 
 // Creates a starlark script based on starlark ServiceConfigs, the service dependency graph, and files artifacts to upload
+// Assumes that there exists an entry in [serviceDependencyGraph] for every service in [serviceNameToStarlarkServiceConfig], otherwise errors
 func CreateStarlarkScript(
 	serviceNameToStarlarkServiceConfig map[string]StarlarkServiceConfig,
 	serviceDependencyGraph map[string]map[string]bool,
@@ -53,7 +54,11 @@ func CreateStarlarkScript(
 		}
 
 		// add_service
-		starlarkServiceConfig := *serviceNameToStarlarkServiceConfig[serviceName]
+		starlarkServiceConfigObj, ok := serviceNameToStarlarkServiceConfig[serviceName]
+		if !ok {
+			return "", stacktrace.NewError("No starlark service config found for service '%s'. This is a bug in Kurtosis as there should be a service config for every service in the service dependency graph.", serviceName)
+		}
+		starlarkServiceConfig := *starlarkServiceConfigObj
 		addServiceLine := fmt.Sprintf(addServiceLinesFmtStr, serviceName, starlarkServiceConfig.String())
 		starlarkLines = append(starlarkLines, addServiceLine)
 	}
