@@ -78,6 +78,10 @@ func GetMainScriptToExecuteFromSnapshotPackage(packageRootPathOnDisk string) (st
 			starlark.String(imageName),
 		)
 
+		// cmd
+
+		// env vars
+
 		// Finally, create Starlark Service Config object based on kwargs
 		argumentValuesSet, interpretationErr := builtin_argument.CreateNewArgumentValuesSet(
 			service_config.ServiceConfigTypeName,
