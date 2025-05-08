@@ -15,28 +15,6 @@ import (
 // - service network registers all the services beforehand so they get started with correct ips?
 // NOTES:
 //   - uses add_services to parallelize services that can be parallelized?
-//
-// Snapshot package layout
-// /snapshot
-//
-//	/persistent-directories
-//	   /persistent-key-1
-//		   /tar.tgz
-//	   /persistent-key-2
-//		   /tar.tgz
-//	/files-artifacts
-//		files-artifacts-name.tar.tgz
-//		...
-//	/services
-//		/service-name
-//			service-config.json
-//			image.tar
-//			service-registration.json
-//	 args.json
-//	 return args ...
-//	 service-startup-order.txt
-//	 files-artifacts-names.txt
-//	 persistent-directories-names.txt
 func GetMainScriptToExecuteFromSnapshotPackage(packageRootPathOnDisk string) (string, error) {
 	// 	- upload the files artifacts into the enclave
 	perServiceFilesArtifactsToUpload := map[string]map[string]string{}

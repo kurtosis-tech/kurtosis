@@ -212,8 +212,8 @@ export const ApiContainerService = {
     createSnapshot: {
       name: "CreateSnapshot",
       I: CreateSnapshotArgs,
-      O: Empty,
-      kind: MethodKind.Unary,
+      O: StreamedDataChunk,
+      kind: MethodKind.ServerStreaming,
     },
   }
 };

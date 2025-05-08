@@ -532,13 +532,13 @@ getStarlarkPackagePlanYaml: {
   createSnapshot: {
     path: '/api_container_api.ApiContainerService/CreateSnapshot',
     requestStream: false,
-    responseStream: false,
+    responseStream: true,
     requestType: api_container_service_pb.CreateSnapshotArgs,
-    responseType: google_protobuf_empty_pb.Empty,
+    responseType: api_container_service_pb.StreamedDataChunk,
     requestSerialize: serialize_api_container_api_CreateSnapshotArgs,
     requestDeserialize: deserialize_api_container_api_CreateSnapshotArgs,
-    responseSerialize: serialize_google_protobuf_Empty,
-    responseDeserialize: deserialize_google_protobuf_Empty,
+    responseSerialize: serialize_api_container_api_StreamedDataChunk,
+    responseDeserialize: deserialize_api_container_api_StreamedDataChunk,
   },
 };
 

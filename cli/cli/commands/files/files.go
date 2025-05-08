@@ -26,5 +26,5 @@ func init() {
 	FilesCmd.AddCommand(storeservice.FilesStoreServiceCmd.MustGetCobraCommand())
 	FilesCmd.AddCommand(rendertemplate.RenderTemplateCommand.MustGetCobraCommand())
 	FilesCmd.AddCommand(inspect.FilesInspectCmd.MustGetCobraCommand())
-	FilesCmd.AddCommand(download.FilesUploadCmd.MustGetCobraCommand())
+	FilesCmd.AddCommand(download.FilesDownloadCmd.MustGetCobraCommand())
 }

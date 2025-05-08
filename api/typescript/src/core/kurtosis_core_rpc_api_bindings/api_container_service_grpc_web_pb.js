@@ -1041,13 +1041,13 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.getStarlarkPa
  * @const
  * @type {!grpc.web.MethodDescriptor<
  *   !proto.api_container_api.CreateSnapshotArgs,
- *   !proto.google.protobuf.Empty>}
+ *   !proto.api_container_api.StreamedDataChunk>}
  */
 const methodDescriptor_ApiContainerService_CreateSnapshot = new grpc.web.MethodDescriptor(
   '/api_container_api.ApiContainerService/CreateSnapshot',
-  grpc.web.MethodType.UNARY,
+  grpc.web.MethodType.SERVER_STREAMING,
   proto.api_container_api.CreateSnapshotArgs,
-  google_protobuf_empty_pb.Empty,
+  proto.api_container_api.StreamedDataChunk,
   /**
    * @param {!proto.api_container_api.CreateSnapshotArgs} request
    * @return {!Uint8Array}
@@ -1055,42 +1055,37 @@ const methodDescriptor_ApiContainerService_CreateSnapshot = new grpc.web.MethodD
   function(request) {
     return request.serializeBinary();
   },
-  google_protobuf_empty_pb.Empty.deserializeBinary
+  proto.api_container_api.StreamedDataChunk.deserializeBinary
 );
 
 
 /**
- * @param {!proto.api_container_api.CreateSnapshotArgs} request The
- *     request proto
- * @param {?Object<string, string>} metadata User defined
+ * @param {!proto.api_container_api.CreateSnapshotArgs} request The request proto
+ * @param {?Object<string, string>=} metadata User defined
  *     call metadata
- * @param {function(?grpc.web.RpcError, ?proto.google.protobuf.Empty)}
- *     callback The callback function(error, response)
- * @return {!grpc.web.ClientReadableStream<!proto.google.protobuf.Empty>|undefined}
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.StreamedDataChunk>}
  *     The XHR Node Readable Stream
  */
 proto.api_container_api.ApiContainerServiceClient.prototype.createSnapshot =
-    function(request, metadata, callback) {
-  return this.client_.rpcCall(this.hostname_ +
+    function(request, metadata) {
+  return this.client_.serverStreaming(this.hostname_ +
       '/api_container_api.ApiContainerService/CreateSnapshot',
       request,
       metadata || {},
-      methodDescriptor_ApiContainerService_CreateSnapshot,
-      callback);
+      methodDescriptor_ApiContainerService_CreateSnapshot);
 };
 
 
 /**
- * @param {!proto.api_container_api.CreateSnapshotArgs} request The
- *     request proto
+ * @param {!proto.api_container_api.CreateSnapshotArgs} request The request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
- * @return {!Promise<!proto.google.protobuf.Empty>}
- *     Promise that resolves to the response
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.StreamedDataChunk>}
+ *     The XHR Node Readable Stream
  */
 proto.api_container_api.ApiContainerServicePromiseClient.prototype.createSnapshot =
     function(request, metadata) {
-  return this.client_.unaryCall(this.hostname_ +
+  return this.client_.serverStreaming(this.hostname_ +
       '/api_container_api.ApiContainerService/CreateSnapshot',
       request,
       metadata || {},

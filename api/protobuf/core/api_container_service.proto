@@ -60,7 +60,8 @@ service ApiContainerService {
   // Gets yaml representing the plan the package will execute in an enclave
   rpc GetStarlarkPackagePlanYaml(StarlarkPackagePlanYamlArgs) returns (PlanYaml) {};
 
-  rpc CreateSnapshot(CreateSnapshotArgs) returns (google.protobuf.Empty) {};
+  // Creates a snapshot of a Kurtosis enclave
+  rpc CreateSnapshot(CreateSnapshotArgs) returns (stream StreamedDataChunk) {};
 }
 
 // ==============================================================================================

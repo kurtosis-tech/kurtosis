@@ -1569,7 +1569,10 @@ pub mod api_container_service_client {
         pub async fn create_snapshot(
             &mut self,
             request: impl tonic::IntoRequest<super::CreateSnapshotArgs>,
-        ) -> std::result::Result<tonic::Response<()>, tonic::Status> {
+        ) -> std::result::Result<
+            tonic::Response<tonic::codec::Streaming<super::StreamedDataChunk>>,
+            tonic::Status,
+        > {
             self.inner
                 .ready()
                 .await
@@ -1591,7 +1594,7 @@ pub mod api_container_service_client {
                         "CreateSnapshot",
                     ),
                 );
-            self.inner.unary(req, path, codec).await
+            self.inner.server_streaming(req, path, codec).await
         }
     }
 }
@@ -1747,10 +1750,19 @@ pub mod api_container_service_server {
             &self,
             request: tonic::Request<super::StarlarkPackagePlanYamlArgs>,
         ) -> std::result::Result<tonic::Response<super::PlanYaml>, tonic::Status>;
+        /// Server streaming response type for the CreateSnapshot method.
+        type CreateSnapshotStream: futures_core::Stream<
+                Item = std::result::Result<super::StreamedDataChunk, tonic::Status>,
+            >
+            + Send
+            + 'static;
         async fn create_snapshot(
             &self,
             request: tonic::Request<super::CreateSnapshotArgs>,
-        ) -> std::result::Result<tonic::Response<()>, tonic::Status>;
+        ) -> std::result::Result<
+            tonic::Response<Self::CreateSnapshotStream>,
+            tonic::Status,
+        >;
     }
     #[derive(Debug)]
     pub struct ApiContainerServiceServer<T: ApiContainerService> {
@@ -2698,11 +2710,12 @@ pub mod api_container_service_server {
                     struct CreateSnapshotSvc<T: ApiContainerService>(pub Arc<T>);
                     impl<
                         T: ApiContainerService,
-                    > tonic::server::UnaryService<super::CreateSnapshotArgs>
+                    > tonic::server::ServerStreamingService<super::CreateSnapshotArgs>
                     for CreateSnapshotSvc<T> {
-                        type Response = ();
+                        type Response = super::StreamedDataChunk;
+                        type ResponseStream = T::CreateSnapshotStream;
                         type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
+                            tonic::Response<Self::ResponseStream>,
                             tonic::Status,
                         >;
                         fn call(
@@ -2734,7 +2747,7 @@ pub mod api_container_service_server {
                                 max_decoding_message_size,
                                 max_encoding_message_size,
                             );
-                        let res = grpc.unary(method, req).await;
+                        let res = grpc.server_streaming(method, req).await;
                         Ok(res)
                     };
                     Box::pin(fut)

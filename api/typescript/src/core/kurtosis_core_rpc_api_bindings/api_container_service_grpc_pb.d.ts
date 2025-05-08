@@ -26,7 +26,7 @@ interface IApiContainerServiceService extends grpc.ServiceDefinition<grpc.Untype
   getStarlarkRun: grpc.MethodDefinition<google_protobuf_empty_pb.Empty, api_container_service_pb.GetStarlarkRunResponse>;
   getStarlarkScriptPlanYaml: grpc.MethodDefinition<api_container_service_pb.StarlarkScriptPlanYamlArgs, api_container_service_pb.PlanYaml>;
   getStarlarkPackagePlanYaml: grpc.MethodDefinition<api_container_service_pb.StarlarkPackagePlanYamlArgs, api_container_service_pb.PlanYaml>;
-  createSnapshot: grpc.MethodDefinition<api_container_service_pb.CreateSnapshotArgs, google_protobuf_empty_pb.Empty>;
+  createSnapshot: grpc.MethodDefinition<api_container_service_pb.CreateSnapshotArgs, api_container_service_pb.StreamedDataChunk>;
 }
 
 export const ApiContainerServiceService: IApiContainerServiceService;
@@ -50,7 +50,7 @@ export interface IApiContainerServiceServer extends grpc.UntypedServiceImplement
   getStarlarkRun: grpc.handleUnaryCall<google_protobuf_empty_pb.Empty, api_container_service_pb.GetStarlarkRunResponse>;
   getStarlarkScriptPlanYaml: grpc.handleUnaryCall<api_container_service_pb.StarlarkScriptPlanYamlArgs, api_container_service_pb.PlanYaml>;
   getStarlarkPackagePlanYaml: grpc.handleUnaryCall<api_container_service_pb.StarlarkPackagePlanYamlArgs, api_container_service_pb.PlanYaml>;
-  createSnapshot: grpc.handleUnaryCall<api_container_service_pb.CreateSnapshotArgs, google_protobuf_empty_pb.Empty>;
+  createSnapshot: grpc.handleServerStreamingCall<api_container_service_pb.CreateSnapshotArgs, api_container_service_pb.StreamedDataChunk>;
 }
 
 export class ApiContainerServiceClient extends grpc.Client {
@@ -106,7 +106,6 @@ export class ApiContainerServiceClient extends grpc.Client {
   getStarlarkPackagePlanYaml(argument: api_container_service_pb.StarlarkPackagePlanYamlArgs, callback: grpc.requestCallback<api_container_service_pb.PlanYaml>): grpc.ClientUnaryCall;
   getStarlarkPackagePlanYaml(argument: api_container_service_pb.StarlarkPackagePlanYamlArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.PlanYaml>): grpc.ClientUnaryCall;
   getStarlarkPackagePlanYaml(argument: api_container_service_pb.StarlarkPackagePlanYamlArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.PlanYaml>): grpc.ClientUnaryCall;
-  createSnapshot(argument: api_container_service_pb.CreateSnapshotArgs, callback: grpc.requestCallback<google_protobuf_empty_pb.Empty>): grpc.ClientUnaryCall;
-  createSnapshot(argument: api_container_service_pb.CreateSnapshotArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<google_protobuf_empty_pb.Empty>): grpc.ClientUnaryCall;
-  createSnapshot(argument: api_container_service_pb.CreateSnapshotArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<google_protobuf_empty_pb.Empty>): grpc.ClientUnaryCall;
+  createSnapshot(argument: api_container_service_pb.CreateSnapshotArgs, metadataOrOptions?: grpc.Metadata | grpc.CallOptions | null): grpc.ClientReadableStream<api_container_service_pb.StreamedDataChunk>;
+  createSnapshot(argument: api_container_service_pb.CreateSnapshotArgs, metadata?: grpc.Metadata | null, options?: grpc.CallOptions | null): grpc.ClientReadableStream<api_container_service_pb.StreamedDataChunk>;
 }

@@ -212,8 +212,8 @@ export declare const ApiContainerService: {
     readonly createSnapshot: {
       readonly name: "CreateSnapshot",
       readonly I: typeof CreateSnapshotArgs,
-      readonly O: typeof Empty,
-      readonly kind: MethodKind.Unary,
+      readonly O: typeof StreamedDataChunk,
+      readonly kind: MethodKind.ServerStreaming,
     },
   }
 };

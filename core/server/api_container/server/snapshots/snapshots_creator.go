@@ -41,10 +41,11 @@ func NewSnapshotCreator(serviceNetwork service_network.ServiceNetwork, interpret
 	}
 }
 
-func (sc *SnapshotCreator) CreateSnapshot(ctx context.Context) (string, error) {
+func (sc *SnapshotCreator) CreateSnapshot() (string, error) {
+	ctx := context.Background()
 	// create a tmp directory that will hold all the image tars until we save them to the snapshot directory and defer removal of it
 	snapshotDir := path.Join(sc.snapshotBaseDirPath, fmt.Sprintf("%d", sc.snapshotNum)) // TODO: refactor to use name of enclave
-	if err := os.MkdirAll(snapshotDir, 0755); err != nil {
+	if err := os.MkdirAll(snapshotDir, snapshotDirPerms); err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred creating tmp directory %s", snapshotDir)
 	}
 	sc.snapshotNum++

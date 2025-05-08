@@ -129,7 +129,7 @@ type ApiContainerServiceClient interface {
 	GetStarlarkScriptPlanYaml(context.Context, *connect.Request[kurtosis_core_rpc_api_bindings.StarlarkScriptPlanYamlArgs]) (*connect.Response[kurtosis_core_rpc_api_bindings.PlanYaml], error)
 	// Gets yaml representing the plan the package will execute in an enclave
 	GetStarlarkPackagePlanYaml(context.Context, *connect.Request[kurtosis_core_rpc_api_bindings.StarlarkPackagePlanYamlArgs]) (*connect.Response[kurtosis_core_rpc_api_bindings.PlanYaml], error)
-	CreateSnapshot(context.Context, *connect.Request[kurtosis_core_rpc_api_bindings.CreateSnapshotArgs]) (*connect.Response[emptypb.Empty], error)
+	CreateSnapshot(context.Context, *connect.Request[kurtosis_core_rpc_api_bindings.CreateSnapshotArgs]) (*connect.ServerStreamForClient[kurtosis_core_rpc_api_bindings.StreamedDataChunk], error)
 }
 
 // NewApiContainerServiceClient constructs a client for the api_container_api.ApiContainerService
@@ -232,7 +232,7 @@ func NewApiContainerServiceClient(httpClient connect.HTTPClient, baseURL string,
 			baseURL+ApiContainerServiceGetStarlarkPackagePlanYamlProcedure,
 			opts...,
 		),
-		createSnapshot: connect.NewClient[kurtosis_core_rpc_api_bindings.CreateSnapshotArgs, emptypb.Empty](
+		createSnapshot: connect.NewClient[kurtosis_core_rpc_api_bindings.CreateSnapshotArgs, kurtosis_core_rpc_api_bindings.StreamedDataChunk](
 			httpClient,
 			baseURL+ApiContainerServiceCreateSnapshotProcedure,
 			opts...,
@@ -260,7 +260,7 @@ type apiContainerServiceClient struct {
 	getStarlarkRun                             *connect.Client[emptypb.Empty, kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse]
 	getStarlarkScriptPlanYaml                  *connect.Client[kurtosis_core_rpc_api_bindings.StarlarkScriptPlanYamlArgs, kurtosis_core_rpc_api_bindings.PlanYaml]
 	getStarlarkPackagePlanYaml                 *connect.Client[kurtosis_core_rpc_api_bindings.StarlarkPackagePlanYamlArgs, kurtosis_core_rpc_api_bindings.PlanYaml]
-	createSnapshot                             *connect.Client[kurtosis_core_rpc_api_bindings.CreateSnapshotArgs, emptypb.Empty]
+	createSnapshot                             *connect.Client[kurtosis_core_rpc_api_bindings.CreateSnapshotArgs, kurtosis_core_rpc_api_bindings.StreamedDataChunk]
 }
 
 // RunStarlarkScript calls api_container_api.ApiContainerService.RunStarlarkScript.
@@ -361,8 +361,8 @@ func (c *apiContainerServiceClient) GetStarlarkPackagePlanYaml(ctx context.Conte
 }
 
 // CreateSnapshot calls api_container_api.ApiContainerService.CreateSnapshot.
-func (c *apiContainerServiceClient) CreateSnapshot(ctx context.Context, req *connect.Request[kurtosis_core_rpc_api_bindings.CreateSnapshotArgs]) (*connect.Response[emptypb.Empty], error) {
-	return c.createSnapshot.CallUnary(ctx, req)
+func (c *apiContainerServiceClient) CreateSnapshot(ctx context.Context, req *connect.Request[kurtosis_core_rpc_api_bindings.CreateSnapshotArgs]) (*connect.ServerStreamForClient[kurtosis_core_rpc_api_bindings.StreamedDataChunk], error) {
+	return c.createSnapshot.CallServerStream(ctx, req)
 }
 
 // ApiContainerServiceHandler is an implementation of the api_container_api.ApiContainerService
@@ -402,7 +402,7 @@ type ApiContainerServiceHandler interface {
 	GetStarlarkScriptPlanYaml(context.Context, *connect.Request[kurtosis_core_rpc_api_bindings.StarlarkScriptPlanYamlArgs]) (*connect.Response[kurtosis_core_rpc_api_bindings.PlanYaml], error)
 	// Gets yaml representing the plan the package will execute in an enclave
 	GetStarlarkPackagePlanYaml(context.Context, *connect.Request[kurtosis_core_rpc_api_bindings.StarlarkPackagePlanYamlArgs]) (*connect.Response[kurtosis_core_rpc_api_bindings.PlanYaml], error)
-	CreateSnapshot(context.Context, *connect.Request[kurtosis_core_rpc_api_bindings.CreateSnapshotArgs]) (*connect.Response[emptypb.Empty], error)
+	CreateSnapshot(context.Context, *connect.Request[kurtosis_core_rpc_api_bindings.CreateSnapshotArgs], *connect.ServerStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk]) error
 }
 
 // NewApiContainerServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -501,7 +501,7 @@ func NewApiContainerServiceHandler(svc ApiContainerServiceHandler, opts ...conne
 		svc.GetStarlarkPackagePlanYaml,
 		opts...,
 	)
-	apiContainerServiceCreateSnapshotHandler := connect.NewUnaryHandler(
+	apiContainerServiceCreateSnapshotHandler := connect.NewServerStreamHandler(
 		ApiContainerServiceCreateSnapshotProcedure,
 		svc.CreateSnapshot,
 		opts...,
@@ -627,6 +627,6 @@ func (UnimplementedApiContainerServiceHandler) GetStarlarkPackagePlanYaml(contex
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("api_container_api.ApiContainerService.GetStarlarkPackagePlanYaml is not implemented"))
 }
 
-func (UnimplementedApiContainerServiceHandler) CreateSnapshot(context.Context, *connect.Request[kurtosis_core_rpc_api_bindings.CreateSnapshotArgs]) (*connect.Response[emptypb.Empty], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("api_container_api.ApiContainerService.CreateSnapshot is not implemented"))
+func (UnimplementedApiContainerServiceHandler) CreateSnapshot(context.Context, *connect.Request[kurtosis_core_rpc_api_bindings.CreateSnapshotArgs], *connect.ServerStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("api_container_api.ApiContainerService.CreateSnapshot is not implemented"))
 }

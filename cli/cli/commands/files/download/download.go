@@ -3,6 +3,9 @@ package download
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/artifact_identifier_arg"
@@ -17,8 +20,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"os"
-	"path/filepath"
 )
 
 const (
@@ -43,7 +44,7 @@ const (
 	engineClientCtxKey    = "engine-client"
 )
 
-var FilesUploadCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
+var FilesDownloadCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
 	CommandStr:                command_str_consts.FilesDownloadCmdStr,
 	ShortDescription:          "Download a files artifact from an enclave",
 	LongDescription:           "Download the given files artifact from the given enclave to your machine. The files artifact and enclave are specified by identifier (name, UUID, or shortened UUID). Read more about identifiers here: https://docs.kurtosis.com/reference/resource-identifier",

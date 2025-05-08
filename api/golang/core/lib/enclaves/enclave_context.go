@@ -444,12 +444,22 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string, artifactName 
 	return services.FilesArtifactUUID(response.GetUuid()), services.FileArtifactName(response.GetName()), nil
 }
 
-func (enclaveCtx *EnclaveContext) CreateSnapshot() error {
-	_, err := enclaveCtx.client.CreateSnapshot(context.Background(), &kurtosis_core_rpc_api_bindings.CreateSnapshotArgs{})
+func (enclaveCtx *EnclaveContext) CreateSnapshot() ([]byte, error) {
+	client, err := enclaveCtx.client.CreateSnapshot(context.Background(), &kurtosis_core_rpc_api_bindings.CreateSnapshotArgs{})
 	if err != nil {
-		return stacktrace.Propagate(err, "An error was encountered creating snapshot.")
+		return nil, stacktrace.Propagate(err, "An error was encountered creating snapshot.")
 	}
-	return nil
+	clientStream := grpc_file_streaming.NewClientStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, []byte](client)
+	fileContent, err := clientStream.ReceiveData(
+		"snapshot",
+		func(dataChunk *kurtosis_core_rpc_api_bindings.StreamedDataChunk) ([]byte, string, error) {
+			return dataChunk.Data, dataChunk.PreviousChunkHash, nil
+		},
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred downloading snapshot.")
+	}
+	return fileContent, nil
 }
 
 func (enclaveCtx *EnclaveContext) StoreWebFiles(ctx context.Context, urlToStoreWeb string, artifactName string) (services.FilesArtifactUUID, error) {

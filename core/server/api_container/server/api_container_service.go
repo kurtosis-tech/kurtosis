@@ -750,18 +750,50 @@ func (apicService *ApiContainerService) GetStarlarkScriptPlanYaml(ctx context.Co
 	return &kurtosis_core_rpc_api_bindings.PlanYaml{PlanYaml: planYamlStr}, nil
 }
 
-func (apicService *ApiContainerService) CreateSnapshot(ctx context.Context, args *kurtosis_core_rpc_api_bindings.CreateSnapshotArgs) (*emptypb.Empty, error) {
+func (apicService *ApiContainerService) CreateSnapshot(args *kurtosis_core_rpc_api_bindings.CreateSnapshotArgs, server kurtosis_core_rpc_api_bindings.ApiContainerService_CreateSnapshotServer) error {
 	logrus.Infof("Creating snapshot for enclave")
 
-	_, err := apicService.snapshotCreator.CreateSnapshot(ctx)
+	snapshotFilePath, err := apicService.snapshotCreator.CreateSnapshot()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating snapshot")
+		return stacktrace.Propagate(err, "An error occurred creating snapshot")
+	}
+
+	file, err := os.OpenFile(snapshotFilePath, os.O_RDONLY, allFilePermissionsForOwner)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred reading snapshot file at '%s'", snapshotFilePath)
+	}
+	defer file.Close()
+	fileInfo, err := file.Stat()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred inspecting snapshot file at '%s'", snapshotFilePath)
+	}
+	var fileSize uint64
+	if fileInfo.Size() >= 0 {
+		fileSize = uint64(fileInfo.Size())
+	} else {
+		return stacktrace.Propagate(err, "An error occurred inspecting snapshot file at '%s'. The size of the file is a negative integer", snapshotFilePath)
 	}
 
 	// download snapshot tar
-
 	logrus.Infof("Snapshot created")
-	return &emptypb.Empty{}, nil
+	serverStream := grpc_file_streaming.NewServerStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, []byte](server)
+	err = serverStream.SendData(
+		"snapshot",
+		file,
+		fileSize,
+		func(previousChunkHash string, contentChunk []byte) (*kurtosis_core_rpc_api_bindings.StreamedDataChunk, error) {
+			return &kurtosis_core_rpc_api_bindings.StreamedDataChunk{
+				Data:              contentChunk,
+				PreviousChunkHash: previousChunkHash,
+				Metadata:          &kurtosis_core_rpc_api_bindings.DataChunkMetadata{},
+			}, nil
+		},
+	)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred receiving the file payload")
+	}
+
+	return nil
 }
 
 // ====================================================================================================
@@ -1025,6 +1057,7 @@ func (apicService *ApiContainerService) runStarlarkPackageSetup(
 		return "", "", "", nil, startosis_errors.WrapWithInterpretationError(transpilationErr, "An error occurred getting the main script to execute from the snapshot package '%v'", packageIdFromArgs)
 	}
 	replacesForSnapshotPackage := map[string]string{}
+
 	return mainScriptToExecute, relativePathToMainFile, packageIdFromArgs, replacesForSnapshotPackage, nil
 }
 

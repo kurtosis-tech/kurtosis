@@ -117,10 +117,8 @@ export class ApiContainerServiceClient {
 
   createSnapshot(
     request: api_container_service_pb.CreateSnapshotArgs,
-    metadata: grpcWeb.Metadata | undefined,
-    callback: (err: grpcWeb.RpcError,
-               response: google_protobuf_empty_pb.Empty) => void
-  ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
+    metadata?: grpcWeb.Metadata
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.StreamedDataChunk>;
 
 }
 
@@ -212,7 +210,7 @@ export class ApiContainerServicePromiseClient {
   createSnapshot(
     request: api_container_service_pb.CreateSnapshotArgs,
     metadata?: grpcWeb.Metadata
-  ): Promise<google_protobuf_empty_pb.Empty>;
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.StreamedDataChunk>;
 
 }
 
