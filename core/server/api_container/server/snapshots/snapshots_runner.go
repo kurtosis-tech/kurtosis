@@ -10,18 +10,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 )
 
-const (
-	serviceStartupOrderFileName = "service-startup-order.txt"
-
-	filesArtifactsNamesFileName = "files-artifacts-names.txt"
-	filesArtifactsNamesFileDir  = "files-artifacts"
-
-	persistentDirectoriesDirName = "persistent-directories"
-
-	serviceConfigFileName         = "service-config.json"
-	serviceConfigPathFmtSpecifier = "services/%s/%s"
-)
-
 // BEFORE THIS FUNCTION IS CALLED
 // - create the persistent directory docker managed volumes
 // - service network registers all the services beforehand so they get started with correct ips?
@@ -67,7 +55,7 @@ func GetMainScriptToExecuteFromSnapshotPackage(packageRootPathOnDisk string) (st
 	for _, serviceName := range orderedServiceList {
 		serviceConfigPath := fmt.Sprintf(serviceConfigPathFmtSpecifier, serviceName, serviceConfigFileName)
 
-		serviceConfigBytes, err := os.ReadFile(path.Join(packageRootPathOnDisk, serviceConfigPath))
+		_, err = os.ReadFile(path.Join(packageRootPathOnDisk, serviceConfigPath))
 		if err != nil {
 			return "", stacktrace.Propagate(err, "An error occurred reading the service config file at path: %v", serviceConfigPath)
 		}

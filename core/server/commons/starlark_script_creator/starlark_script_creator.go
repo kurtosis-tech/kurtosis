@@ -6,6 +6,7 @@ import (
 
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/stacktrace"
+	"go.starlark.net/starlark"
 )
 
 const (
@@ -62,6 +63,14 @@ func CreateStarlarkScript(
 		script += fmt.Sprintf(newStarlarkLineFmtStr, line)
 	}
 	return script, nil
+}
+
+func AppendKwarg(kwargs []starlark.Tuple, argName string, argValue starlark.Value) []starlark.Tuple {
+	tuple := []starlark.Value{
+		starlark.String(argName),
+		argValue,
+	}
+	return append(kwargs, tuple)
 }
 
 // Returns list of service names in an order that respects dependencies by performing a topological sort

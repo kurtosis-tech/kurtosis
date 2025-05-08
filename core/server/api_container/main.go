@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/snapshots"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_run"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/git_package_content_provider"
@@ -119,7 +120,7 @@ func runMain() error {
 		return stacktrace.NewError("Kurtosis backend type is '%v' but cluster configuration parameters are null.", args.KurtosisBackendType_Kubernetes.String())
 	}
 
-	repositoriesDirPath, tempDirectoriesDirPath, githubAuthDirPath, enclaveDatabaseDirpath, err := enclaveDataDir.GetEnclaveDataDirectoryPaths()
+	repositoriesDirPath, tempDirectoriesDirPath, githubAuthDirPath, enclaveDatabaseDirpath, snapshotStoreDirpath, err := enclaveDataDir.GetEnclaveDataDirectoryPaths()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting directory paths of the enclave data directory.")
 	}
@@ -233,6 +234,8 @@ func runMain() error {
 		return stacktrace.Propagate(err, "An error occurred creating the starlark run repository")
 	}
 
+	snapshotCreator := snapshots.NewSnapshotCreator(serviceNetwork, interpretationTimeValueStore, snapshotStoreDirpath)
+
 	//Creation of ApiContainerService
 	restartPolicy := kurtosis_core_rpc_api_bindings.RestartPolicy_NEVER
 	if serverArgs.IsProductionEnclave {
@@ -249,6 +252,7 @@ func runMain() error {
 		githubAuthProvider,
 		starlarkRunRepository,
 		interpretationTimeValueStore,
+		snapshotCreator,
 	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the API container service")

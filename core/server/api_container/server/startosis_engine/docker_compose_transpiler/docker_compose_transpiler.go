@@ -188,13 +188,13 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services, packag
 			if err != nil {
 				return nil, nil, nil, err
 			}
-			serviceConfigKwargs = appendKwarg(
+			serviceConfigKwargs = starlark_script_creator.AppendKwarg(
 				serviceConfigKwargs,
 				service_config.ImageAttr,
 				imageBuildSpec,
 			)
 		} else {
-			serviceConfigKwargs = appendKwarg(
+			serviceConfigKwargs = starlark_script_creator.AppendKwarg(
 				serviceConfigKwargs,
 				service_config.ImageAttr,
 				starlark.String(imageName),
@@ -207,7 +207,7 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services, packag
 			if err != nil {
 				return nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating the port specs dict for service '%s'", serviceName)
 			}
-			serviceConfigKwargs = appendKwarg(
+			serviceConfigKwargs = starlark_script_creator.AppendKwarg(
 				serviceConfigKwargs,
 				service_config.PortsAttr,
 				portSpecsDict,
@@ -217,7 +217,7 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services, packag
 		// ENTRYPOINT
 		if composeService.Entrypoint != nil {
 			entrypointList := getStarlarkEntrypoint(composeService.Entrypoint)
-			serviceConfigKwargs = appendKwarg(
+			serviceConfigKwargs = starlark_script_creator.AppendKwarg(
 				serviceConfigKwargs,
 				service_config.EntrypointAttr,
 				entrypointList,
@@ -227,7 +227,7 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services, packag
 		// CMD
 		if composeService.Command != nil {
 			commandList := getStarlarkCommand(composeService.Command)
-			serviceConfigKwargs = appendKwarg(
+			serviceConfigKwargs = starlark_script_creator.AppendKwarg(
 				serviceConfigKwargs,
 				service_config.CmdAttr,
 				commandList,
@@ -240,7 +240,7 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services, packag
 			if err != nil {
 				return nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating the env vars dict for service '%s'", serviceName)
 			}
-			serviceConfigKwargs = appendKwarg(
+			serviceConfigKwargs = starlark_script_creator.AppendKwarg(
 				serviceConfigKwargs,
 				service_config.EnvVarsAttr,
 				envVarsDict,
@@ -253,13 +253,13 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services, packag
 			if err != nil {
 				return nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating the files dict for service '%s'", serviceName)
 			}
-			serviceConfigKwargs = appendKwarg(
+			serviceConfigKwargs = starlark_script_creator.AppendKwarg(
 				serviceConfigKwargs,
 				service_config.FilesAttr,
 				filesDict,
 			)
 			if filesToBeMoved.Len() > 0 {
-				serviceConfigKwargs = appendKwarg(serviceConfigKwargs, service_config.FilesToBeMovedAttr, filesToBeMoved)
+				serviceConfigKwargs = starlark_script_creator.AppendKwarg(serviceConfigKwargs, service_config.FilesToBeMovedAttr, filesToBeMoved)
 			}
 			servicesToFilesArtifactsToUpload[serviceName] = artifactsToUpload
 		}
@@ -267,14 +267,14 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services, packag
 		if composeService.Deploy != nil {
 			// MIN MEMORY
 			memMinLimit := getStarlarkMinMemory(composeService.Deploy)
-			serviceConfigKwargs = appendKwarg(
+			serviceConfigKwargs = starlark_script_creator.AppendKwarg(
 				serviceConfigKwargs,
 				service_config.MinMemoryMegaBytesAttr,
 				memMinLimit)
 
 			// MIN CPU
 			cpuMinLimit := getStarlarkMinCpus(composeService.Deploy)
-			serviceConfigKwargs = appendKwarg(
+			serviceConfigKwargs = starlark_script_creator.AppendKwarg(
 				serviceConfigKwargs,
 				service_config.MinCpuMilliCoresAttr,
 				cpuMinLimit)
@@ -519,7 +519,7 @@ func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, servi
 
 func getStarlarkPersistentDirectory(persistenceKey string) (starlark.Value, error) {
 	directoryKwargs := []starlark.Tuple{}
-	directoryKwargs = appendKwarg(
+	directoryKwargs = starlark_script_creator.AppendKwarg(
 		directoryKwargs,
 		directory.PersistentKeyAttr,
 		starlark.String(persistenceKey),
@@ -563,14 +563,6 @@ func getStarlarkMinCpus(composeDeployConfig *types.DeployConfig) starlark.Int {
 		}
 	}
 	return starlark.MakeInt(reservation)
-}
-
-func appendKwarg(kwargs []starlark.Tuple, argName string, argValue starlark.Value) []starlark.Tuple {
-	tuple := []starlark.Value{
-		starlark.String(argName),
-		argValue,
-	}
-	return append(kwargs, tuple)
 }
 
 // Converts a string to a RFC 1035 compliant format

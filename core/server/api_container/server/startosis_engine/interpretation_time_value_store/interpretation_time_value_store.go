@@ -5,6 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 )
 
 type InterpretationTimeValueStore struct {
@@ -62,6 +63,7 @@ func (itvs *InterpretationTimeValueStore) PutServiceConfig(name service.ServiceN
 }
 
 func (itvs *InterpretationTimeValueStore) GetServiceConfig(name service.ServiceName) (*service.ServiceConfig, error) {
+	logrus.Infof("Getting service config for '%v' from interpretation time value store", name)
 	serviceConfig, ok := itvs.serviceConfigValues[name]
 	if !ok {
 		return nil, stacktrace.NewError("Did not find new service config for '%v' in interpretation time value store.", name)

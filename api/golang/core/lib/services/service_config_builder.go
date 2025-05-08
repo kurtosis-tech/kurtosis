@@ -2,9 +2,13 @@ package services
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"strings"
+
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 )
+
+// what do i need
+// i need to output a service config from the api container in the same way inspect outputs a service config
 
 type FilesArtifactUUID string
 type FileArtifactName string

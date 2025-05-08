@@ -21,9 +21,6 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/snapshots"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
@@ -52,7 +49,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang/grpc_file_streaming"
-	path_compression "github.com/kurtosis-tech/kurtosis/path-compression"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -116,6 +112,8 @@ type ApiContainerService struct {
 	// TODO: Either mutex protect the interpretationTimeValueStore OR compose the interpretationTimeValueStore of a separate mutex protected `serviceConfigRepository` object
 	// and allow both ApiContainerService and interpretationTimeValueStore to have access to that
 	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore
+
+	snapshotCreator *snapshots.SnapshotCreator
 }
 
 func NewApiContainerService(
@@ -129,6 +127,7 @@ func NewApiContainerService(
 	githubAuthProvider *git_package_content_provider.GitHubPackageAuthProvider,
 	starlarkRunRepository *starlark_run.StarlarkRunRepository,
 	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore,
+	snapshotCreator *snapshots.SnapshotCreator,
 ) (*ApiContainerService, error) {
 
 	if err := initStarlarkRun(starlarkRunRepository, restartPolicy); err != nil {
@@ -145,6 +144,7 @@ func NewApiContainerService(
 		metricsClient:                metricsClient,
 		githubAuthProvider:           githubAuthProvider,
 		interpretationTimeValueStore: interpretationTimeValueStore,
+		snapshotCreator:              snapshotCreator,
 	}
 
 	return service, nil
@@ -753,94 +753,14 @@ func (apicService *ApiContainerService) GetStarlarkScriptPlanYaml(ctx context.Co
 func (apicService *ApiContainerService) CreateSnapshot(ctx context.Context, args *kurtosis_core_rpc_api_bindings.CreateSnapshotArgs) (*emptypb.Empty, error) {
 	logrus.Infof("Creating snapshot for enclave")
 
-	dockerManager, err := docker_manager.CreateDockerManager([]client.Opt{})
+	_, err := apicService.snapshotCreator.CreateSnapshot(ctx)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating docker manager")
+		return nil, stacktrace.Propagate(err, "An error occurred creating snapshot")
 	}
 
-	// create snapshot directory for this api container and snapshot
-	snapshotDir := path.Join("/kurtosis-data", "snapshot-store")
-	if err := os.MkdirAll(snapshotDir, 0755); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating snapshot directory %s", snapshotDir)
-	}
+	// download snapshot tar
 
-	// create a tmp directory that will hold all the image tars until we save them to the snapshot directory and defer removal of it
-	tmpDir := path.Join(snapshotDir, "tmp")
-	if err := os.MkdirAll(tmpDir, 0755); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating tmp directory %s", tmpDir)
-	}
-	servicesDir := path.Join(tmpDir, "services")
-	if err := os.MkdirAll(servicesDir, 0755); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating services directory %s", servicesDir)
-	}
-	filesArtifactsDir := path.Join(tmpDir, "files-artifacts")
-	if err := os.MkdirAll(filesArtifactsDir, 0755); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating files artifacts directory %s", filesArtifactsDir)
-	}
-	persistentDirectoriesDir := path.Join(tmpDir, "persistent-directories")
-	if err := os.MkdirAll(persistentDirectoriesDir, 0755); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating persistent directories directory %s", persistentDirectoriesDir)
-	}
-	defer os.RemoveAll(tmpDir)
-
-	// get services in enclave and commit and save their images to a file save to a file
-	services, err := apicService.serviceNetwork.GetServices(ctx)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting services in enclave")
-	}
-	logrus.Infof("Services in enclave: %v", services)
-	logrus.Infof("Number of services in enclave: %v", len(services))
-
-	for _, service := range services {
-		// HIDE THIS PART BEHIND KURTOSIS BACKEND
-		containers, err := dockerManager.GetContainersByLabels(ctx, map[string]string{
-			docker_label_key.IDDockerLabelKey.GetString(): service.GetRegistration().GetHostname(),
-		}, true)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting containers by labels for service %s", service.GetRegistration().GetHostname())
-		}
-		if len(containers) == 0 {
-			return nil, stacktrace.NewError("No containers found for service %s", service.GetRegistration().GetHostname())
-		}
-		container := containers[0]
-		containerId := container.GetId()
-		logrus.Infof("Committing container %v", containerId)
-
-		imageName := fmt.Sprintf("%v-%v-snapshot-img", service.GetRegistration().GetHostname(), time.Now().Unix())
-		err = dockerManager.CommitContainer(ctx, containerId, imageName)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred committing container %v", containerId)
-		}
-
-		// save image to tmp directory
-		imagePath := path.Join(tmpDir, fmt.Sprintf("%v/%v.tar", service.GetRegistration().GetHostname(), imageName))
-		err = dockerManager.SaveImage(ctx, imageName, imagePath)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred saving image to file for service %s", service.GetRegistration().GetHostname())
-		}
-		// HIDE THIS PART BEHIND KURTOSIS BACKEND
-
-		// remove the image
-		// err = dockerManager.RemoveImage(ctx, imageName, true, true)
-		// if err != nil {
-		// 	return nil, stacktrace.Propagate(err, "An error occurred removing image %s", imageName)
-		// }
-	}
-
-	// tar everything in the tmp directory and save to snapshot directory
-	outputPath, sizeOfCompressedPath, _, err := path_compression.CompressPathToFile(tmpDir, true)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating tar for snapshot")
-	}
-	logrus.Infof("Snapshot tar path and size: %s, %d", outputPath, sizeOfCompressedPath)
-
-	// save tar to snapshot directory
-	snapshotTarPath := path.Join(snapshotDir, fmt.Sprintf("snapshot-%v.tar", time.Now().Unix()))
-	err = os.Rename(outputPath, snapshotTarPath)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred renaming tar to snapshot directory")
-	}
-
+	logrus.Infof("Snapshot created")
 	return &emptypb.Empty{}, nil
 }
 
