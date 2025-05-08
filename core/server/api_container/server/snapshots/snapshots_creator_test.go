@@ -1,13 +1,17 @@
 package snapshots
 
-// func TestSnapshotCreator_CreateSnapshot(t *testing.T) {
-// 	serviceConfig := service.GetEmptyServiceConfig()
+import (
+	"testing"
 
-// 	apiServiceConfig, err := convertServiceConfigToJsonServiceConfig(serviceConfig)
-// 	require.NoError(t, err)
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/stretchr/testify/require"
+)
 
-// 	require.Nil(t, apiServiceConfig)
-// }
+func TestSnapshotCreator_CreateSnapshot(t *testing.T) {
+	serviceConfig := service.GetEmptyServiceConfig()
 
-// logic to test
-// creating service config
+	apiServiceConfig, err := convertServiceConfigToJsonServiceConfig(serviceConfig)
+	require.NoError(t, err)
+
+	require.Nil(t, apiServiceConfig)
+}

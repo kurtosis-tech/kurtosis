@@ -3,6 +3,10 @@ package add_service
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"strings"
+	"sync"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -22,9 +26,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
-	"reflect"
-	"strings"
-	"sync"
 )
 
 const (
@@ -494,6 +495,7 @@ func makeAndPersistAddServicesInterpretationReturnValue(serviceConfigs map[servi
 		if err = interpretationTimeValueStore.PutService(serviceName, serviceObject); err != nil {
 			return nil, nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while persisting the return value for service with name '%v'", serviceName)
 		}
+		interpretationTimeValueStore.PutServiceConfig(serviceName, serviceConfig)
 	}
 	return resultUuids, servicesObjectDict, nil
 }

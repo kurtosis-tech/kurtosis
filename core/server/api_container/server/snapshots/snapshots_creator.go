@@ -200,7 +200,7 @@ func convertServiceConfigToJsonServiceConfig(serviceConfig *container_engine_ser
 		privatePorts[i] = api_services.Port{
 			Number:                   uint32(port.GetNumber()),
 			Transport:                int(port.GetTransportProtocol()),
-			MaybeApplicationProtocol: *port.GetMaybeApplicationProtocol(),
+			MaybeApplicationProtocol: "http",
 			Wait:                     "",
 		}
 	}
@@ -235,8 +235,8 @@ func convertServiceConfigToJsonServiceConfig(serviceConfig *container_engine_ser
 	// create toleration
 	isTiniEnabled := serviceConfig.GetTiniEnabled()
 	apiServiceConfig := api_services.ServiceConfig{
-		Image: serviceConfig.GetContainerImageName(),
-		// PrivatePorts:                privatePorts,
+		Image:        serviceConfig.GetContainerImageName(),
+		PrivatePorts: privatePorts,
 		// PublicPorts:                 publicPorts,
 		// Files:                       serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers,
 		Entrypoint:                  serviceConfig.GetEntrypointArgs(),

@@ -128,7 +128,7 @@ func GetMainScriptToExecuteFromSnapshotPackage(packageRootPathOnDisk string) (st
 		for portIdx, dockerPort := range serviceConfig.PrivatePorts {
 			kurtosisProto, found := dockerPortProtosToKurtosisPortProtos["tcp"]
 			if !found {
-				return "", stacktrace.NewError("Port #%d has unsupported protocol '%v'", portIdx, "tcp")
+				return "", stacktrace.NewError("asdfs")
 			}
 
 			applicationProtocol := "http"
