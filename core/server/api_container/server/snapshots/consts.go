@@ -1,24 +1,41 @@
 package snapshots
 
-import "path"
+import "os"
 
+// Snapshot package layout
+// /snapshot
+//
+//	/persistent-directories
+//	   /persistent-key-1
+//		   /tar.tgz
+//	   /persistent-key-2
+//		   /tar.tgz
+//	/files-artifacts
+//		files-artifacts-name.tar.tgz
+//		...
+//	/services
+//		/service-name
+//			service-config.json
+//			image.tar
+//			service-registration.json
+//	 args.json
+//	 return args ...
+//	 service-startup-order.txt
+//	 files-artifacts-names.txt
+//	 persistent-directories-names.txt
 const (
-	SnapshotDir = "/kurtosis-data/snapshot-store"
-)
+	snapshotServicesDirPath              = "services"
+	snapshotFilesArtifactsDirPath        = "files-artifacts"
+	snapshotPersistentDirectoriesDirPath = "persistent-directories"
 
-var (
-	SnapshotDirPath                      = path.Join(SnapshotDir, "snapshot")
-	SnapshotTmpDirPath                   = path.Join(SnapshotDirPath, "tmp")
-	SnapshotServicesDirPath              = path.Join(SnapshotDirPath, "services")
-	SnapshotFilesArtifactsDirPath        = path.Join(SnapshotDirPath, "files-artifacts")
-	SnapshotPersistentDirectoriesDirPath = path.Join(SnapshotDirPath, "persistent-directories")
+	serviceStartupOrderFileName = "service-names.txt"
 
-	serviceStartupOrderFileName = "service-startup-order.txt"
+	snapshotDirPerms = os.FileMode(0777) // TODO: refactor to use enclave data directory perms
 
-	filesArtifactsNamesFileName = "files-artifacts-names.txt"
-	filesArtifactsNamesFileDir  = "files-artifacts"
+	// filesArtifactsNamesFileName = "files-artifacts-names.txt"
+	// filesArtifactsNamesFileDir  = "files-artifacts"
 
-	persistentDirectoriesDirName = "persistent-directories"
+	// persistentDirectoriesDirName = "persistent-directories"
 
 	serviceConfigFileName         = "service-config.json"
 	serviceConfigPathFmtSpecifier = "services/%s/%s"

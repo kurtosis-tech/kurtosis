@@ -28,6 +28,8 @@ type SnapshotCreator struct {
 	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore
 
 	snapshotBaseDirPath string
+
+	snapshotNum int
 }
 
 func NewSnapshotCreator(serviceNetwork service_network.ServiceNetwork, interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore, snapshotBaseDirPath string) *SnapshotCreator {
@@ -35,56 +37,31 @@ func NewSnapshotCreator(serviceNetwork service_network.ServiceNetwork, interpret
 		serviceNetwork:               serviceNetwork,
 		interpretationTimeValueStore: interpretationTimeValueStore,
 		snapshotBaseDirPath:          snapshotBaseDirPath,
+		snapshotNum:                  0,
 	}
 }
 
-// Snapshot package layout
-// /snapshot
-//
-//	/persistent-directories
-//	   /persistent-key-1
-//		   /tar.tgz
-//	   /persistent-key-2
-//		   /tar.tgz
-//	/files-artifacts
-//		files-artifacts-name.tar.tgz
-//		...
-//	/services
-//		/service-name
-//			service-config.json
-//			image.tar
-//			service-registration.json
-//	 args.json
-//	 return args ...
-//	 service-startup-order.txt
-//	 files-artifacts-names.txt
-//	 persistent-directories-names.txt
-
 func (sc *SnapshotCreator) CreateSnapshot(ctx context.Context) (string, error) {
-	// create snapshot directory for this api container and snapshot
-	snapshotStoreDir := path.Join("/kurtosis-data", "snapshot-store") // TODO: refactor to use enclave data directory
-	if err := os.MkdirAll(snapshotStoreDir, 0755); err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred creating snapshot store directory %s", snapshotStoreDir)
-	}
-
 	// create a tmp directory that will hold all the image tars until we save them to the snapshot directory and defer removal of it
-	snapshotDir := path.Join(snapshotStoreDir, "tmp") // TODO: refactor to use name of enclave
+	snapshotDir := path.Join(sc.snapshotBaseDirPath, fmt.Sprintf("%d", sc.snapshotNum)) // TODO: refactor to use name of enclave
 	if err := os.MkdirAll(snapshotDir, 0755); err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred creating tmp directory %s", snapshotDir)
 	}
-	servicesDir := path.Join(snapshotDir, "services")
-	if err := os.MkdirAll(servicesDir, 0755); err != nil {
+	sc.snapshotNum++
+
+	servicesDir := path.Join(snapshotDir, snapshotServicesDirPath)
+	if err := os.MkdirAll(servicesDir, snapshotDirPerms); err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred creating services directory %s", servicesDir)
 	}
-	filesArtifactsDir := path.Join(snapshotDir, "files-artifacts")
-	if err := os.MkdirAll(filesArtifactsDir, 0755); err != nil {
+	filesArtifactsDir := path.Join(snapshotDir, snapshotFilesArtifactsDirPath)
+	if err := os.MkdirAll(filesArtifactsDir, snapshotDirPerms); err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred creating files artifacts directory %s", filesArtifactsDir)
 	}
-	persistentDirectoriesDir := path.Join(snapshotDir, "persistent-directories")
-	if err := os.MkdirAll(persistentDirectoriesDir, 0755); err != nil {
+	persistentDirectoriesDir := path.Join(snapshotDir, snapshotPersistentDirectoriesDirPath)
+	if err := os.MkdirAll(persistentDirectoriesDir, snapshotDirPerms); err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred creating persistent directories directory %s", persistentDirectoriesDir)
 	}
-	defer os.RemoveAll(snapshotDir)
+	// defer os.RemoveAll(snapshotDir) // should we remove or keep the snapshot around?
 
 	services, err := sc.serviceNetwork.GetServices(ctx)
 	if err != nil {
@@ -94,23 +71,21 @@ func (sc *SnapshotCreator) CreateSnapshot(ctx context.Context) (string, error) {
 	logrus.Infof("Number of services in enclave: %v", len(services))
 
 	for _, service := range services {
-
-		serviceDir := path.Join(servicesDir, service.GetRegistration().GetHostname())
-		if err := os.Mkdir(serviceDir, 0755); err != nil {
-			return "", stacktrace.Propagate(err, "An error occurred creating directory '%s' for service '%s'", servicesDir, service.GetRegistration().GetHostname())
+		serviceName := service.GetRegistration().GetHostname()
+		serviceDir := path.Join(servicesDir, serviceName)
+		if err := os.Mkdir(serviceDir, snapshotDirPerms); err != nil {
+			return "", stacktrace.Propagate(err, "An error occurred creating directory '%s' for service '%s'", servicesDir, serviceName)
 		}
 
-		// output snapshotted image
-		err = sc.outputSnapshottedImage(ctx, serviceDir, service)
+		err = sc.outputSnapshottedImage(ctx, serviceName, serviceDir)
 		if err != nil {
-			return "", stacktrace.Propagate(err, "An error occurred outputting snapshotted image for service %s", service.GetRegistration().GetHostname())
+			return "", stacktrace.Propagate(err, "An error occurred outputting snapshotted image for service %s", serviceName)
 		}
 		// TODO: defer undo removal of images
 
-		// output service config
-		err = sc.outputServiceConfig(serviceDir, service)
+		err = sc.outputServiceConfig(serviceName, serviceDir)
 		if err != nil {
-			return "", stacktrace.Propagate(err, "An error occurred outputting service config for service %s", service.GetRegistration().GetHostname())
+			return "", stacktrace.Propagate(err, "An error occurred outputting service config for service %s", serviceName)
 		}
 		// TODO: defer undo writing service config
 
@@ -135,7 +110,7 @@ func (sc *SnapshotCreator) CreateSnapshot(ctx context.Context) (string, error) {
 	return compressedFilePath, nil
 }
 
-func (sc *SnapshotCreator) outputSnapshottedImage(ctx context.Context, serviceDir string, service *container_engine_service.Service) error {
+func (sc *SnapshotCreator) outputSnapshottedImage(ctx context.Context, serviceName, serviceDir string) error {
 	dockerManager, err := docker_manager.CreateDockerManager([]client.Opt{})
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating docker manager")
@@ -143,20 +118,20 @@ func (sc *SnapshotCreator) outputSnapshottedImage(ctx context.Context, serviceDi
 
 	// HIDE THIS PART BEHIND KURTOSIS BACKEND
 	containers, err := dockerManager.GetContainersByLabels(ctx, map[string]string{
-		docker_label_key.IDDockerLabelKey.GetString(): service.GetRegistration().GetHostname(),
+		docker_label_key.IDDockerLabelKey.GetString(): serviceName,
 	}, true)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting containers by labels for service %s", service.GetRegistration().GetHostname())
+		return stacktrace.Propagate(err, "An error occurred getting containers by labels for service %s", serviceName)
 	}
 	if len(containers) == 0 {
-		return stacktrace.NewError("No containers found for service %s", service.GetRegistration().GetHostname())
+		return stacktrace.NewError("No containers found for service %s", serviceName)
 	}
 	container := containers[0]
 	containerId := container.GetId()
 	logrus.Infof("Committing container %v", containerId)
 
 	// commit container to image
-	imageName := fmt.Sprintf("%v-%v-snapshot-img", service.GetRegistration().GetHostname(), time.Now().Unix())
+	imageName := fmt.Sprintf("%v-%v-snapshot-img", serviceName, time.Now().Unix())
 	err = dockerManager.CommitContainer(ctx, containerId, imageName)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred committing container %v", containerId)
@@ -166,7 +141,7 @@ func (sc *SnapshotCreator) outputSnapshottedImage(ctx context.Context, serviceDi
 	imagePath := path.Join(serviceDir, imageName)
 	err = dockerManager.SaveImage(ctx, imageName, imagePath)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred saving image to file for service %s", service.GetRegistration().GetHostname())
+		return stacktrace.Propagate(err, "An error occurred saving image to file for service %s", serviceName)
 	}
 
 	// remove the image
@@ -181,30 +156,29 @@ func (sc *SnapshotCreator) outputSnapshottedImage(ctx context.Context, serviceDi
 
 }
 
-func (sc *SnapshotCreator) outputServiceConfig(serviceDir string, service *container_engine_service.Service) error {
-	serviceConfig, err := sc.interpretationTimeValueStore.GetServiceConfig(container_engine_service.ServiceName(service.GetRegistration().GetHostname()))
+func (sc *SnapshotCreator) outputServiceConfig(serviceName string, serviceDir string) error {
+	serviceConfig, err := sc.interpretationTimeValueStore.GetServiceConfig(container_engine_service.ServiceName(serviceName))
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting service config for service %s", service.GetRegistration().GetHostname())
+		return stacktrace.Propagate(err, "An error occurred getting service config for service %s", serviceName)
 	}
 
 	jsonServiceConfig, err := convertServiceConfigToJsonServiceConfig(serviceConfig)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred converting service config to json for service %s", service.GetRegistration().GetHostname())
+		return stacktrace.Propagate(err, "An error occurred converting service config to json for service %s", serviceName)
 	}
 
 	jsonServiceConfigBytes, err := json.Marshal(jsonServiceConfig)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred marshalling service config to json for service %s", service.GetRegistration().GetHostname())
+		return stacktrace.Propagate(err, "An error occurred marshalling service config to json for service %s", serviceName)
 	}
 
-	jsonServiceConfigPath := path.Join(serviceDir, "service-config.json")
-	err = os.WriteFile(jsonServiceConfigPath, jsonServiceConfigBytes, 0644)
+	jsonServiceConfigPath := path.Join(serviceDir, serviceConfigFileName)
+	err = os.WriteFile(jsonServiceConfigPath, jsonServiceConfigBytes, snapshotDirPerms)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred writing service config to file for service %s", service.GetRegistration().GetHostname())
+		return stacktrace.Propagate(err, "An error occurred writing service config to file for service %s", serviceName)
 	}
 
 	return nil
-
 }
 
 func convertServiceConfigToJsonServiceConfig(serviceConfig *container_engine_service.ServiceConfig) (api_services.ServiceConfig, error) {
