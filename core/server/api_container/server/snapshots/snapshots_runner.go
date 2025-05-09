@@ -178,46 +178,6 @@ func GetMainScriptToExecuteFromSnapshotPackage(packageRootPathOnDisk string) (st
 	return snapshotStarlarkScript, nil
 }
 
-// func getStarlarkImageBuildSpec(composeBuild *types.BuildConfig, serviceName string) (starlark.Value, error) {
-// 	var imageBuildSpecKwargs []starlark.Tuple
-
-// 	builtImageName := serviceName + builtImageSuffix
-// 	imageNameKwarg := []starlark.Value{
-// 		starlark.String(service_config.BuiltImageNameAttr),
-// 		starlark.String(builtImageName),
-// 	}
-// 	imageBuildSpecKwargs = append(imageBuildSpecKwargs, imageNameKwarg)
-// 	if composeBuild.Context != "" {
-// 		contextDirKwarg := []starlark.Value{
-// 			starlark.String(service_config.BuildContextAttr),
-// 			starlark.String(composeBuild.Context),
-// 		}
-// 		imageBuildSpecKwargs = append(imageBuildSpecKwargs, contextDirKwarg)
-// 	}
-// 	if composeBuild.Target != "" {
-// 		targetStageKwarg := []starlark.Value{
-// 			starlark.String(service_config.TargetStageAttr),
-// 			starlark.String(composeBuild.Target),
-// 		}
-// 		imageBuildSpecKwargs = append(imageBuildSpecKwargs, targetStageKwarg)
-// 	}
-
-// 	imageBuildSpecArgumentValuesSet, interpretationErr := builtin_argument.CreateNewArgumentValuesSet(
-// 		service_config.ImageBuildSpecTypeName,
-// 		service_config.NewImageBuildSpecType().Arguments,
-// 		[]starlark.Value{},
-// 		imageBuildSpecKwargs,
-// 	)
-// 	if interpretationErr != nil {
-// 		return nil, stacktrace.Propagate(interpretationErr, "An starlark interpretation error was detected while attempting to create argument values for image build spec for service '%v'.", serviceName)
-// 	}
-// 	imageBuildSpecKurtosisType, interpretationErr := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(service_config.ImageBuildSpecTypeName, imageBuildSpecArgumentValuesSet)
-// 	if interpretationErr != nil {
-// 		return nil, stacktrace.Propagate(interpretationErr, "An starlark interpretation error was detected while attempting to create an image build spec for '%v'.", serviceName)
-// 	}
-// 	return imageBuildSpecKurtosisType, nil
-// }
-
 // // TODO: Support public ports
 // func getStarlarkPortSpecs(serviceName string, composePorts []types.ServicePortConfig) (*starlark.Dict, error) {
 // 	portSpecs := starlark.NewDict(len(composePorts))

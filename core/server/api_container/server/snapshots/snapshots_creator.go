@@ -93,15 +93,15 @@ func (sc *SnapshotCreator) CreateSnapshot() (string, error) {
 		}
 		// TODO: defer undo writing service config
 
-		// output files artifacts
-
-		// output persistent directories
-
 		// output service startup order
 
 		// output return args
 
 		// output input args
+
+		// output persistent directories
+
+		// output files artifacts
 	}
 
 	// TODO: get the service startup order from the persisted enclave plan
