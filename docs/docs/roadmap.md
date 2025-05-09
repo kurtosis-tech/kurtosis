@@ -35,6 +35,8 @@ Kurtosis simplifies orchestration on Kubernetes, but it’s not yet optimized fo
 
 Teams like [Bloctopus.io](https://www.bloctopus.io/) are actively contributing to this area to make Kurtosis better suited for persistent, long-lived use cases.
 
+If this interests you, or if you have feedback, please reach out to the Bloctopus team on [TG](https://t.me/wanderosity) or anisha@bloctopus.io
+
 ### **Speeding up Kurtosis**
 
 Kurtosis relies heavily on containers, launching them for nearly every task. While this design provides flexibility, it adds overhead—especially for lightweight tasks like parsing or ETL, where container startup and teardown create delays.
@@ -46,5 +48,13 @@ If any of these investments interest you, or if you have feedback, please let us
 ## **Kurtosis Improvement Proposals**
 
 We encourage users to fork Kurtosis and improve the engine in ways that suit their needs. For larger features that require discussion and coordination, we welcome proposals via Kurtosis Improvement Proposals (KIPs).
+
+## **KIP-001 - Persistent, Scalable Devnets**
+Kurtosis began as a developer‑focused tool to spin up reproducible, ephemeral environments. Over the last two years the community has stretched those limits, running long‑lived devnets and complex integration testbeds on top of Kurtosis. 
+We propose an evolution that promotes Kurtosis from purely ephemeral to persistent devnets, and eventually, a production‑grade orchestration platform capable of hosting stateful, durable, multi‑tenant networks in the cloud.
+
+[KIP-001 for Persistent, Scalable Devnets detailed here](https://daffodil-porpoise-366.notion.site/KIP-001-Kurtosis-Improvement-Proposal-1df1019e456a8056b051f908775da808)
+
+If this interests you, or if you have feedback, please reach out to the Bloctopus team on [TG](https://t.me/wanderosity) or anisha@bloctopus.io
 
 If you'd like to propose a feature, please create a document and submit a pull request to add it to the KIP list!
