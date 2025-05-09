@@ -52,6 +52,9 @@
               clippy
               libiconv
               bash-completion
+              # https://github.com/kurtosis-tech/kurtosis/issues/2109
+              glibc
+              glibc.static
               # local definition (see above)
               openapi-codegen-go
               grpc-tools-node
