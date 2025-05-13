@@ -33,12 +33,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.starlark.net/starlark"
-<<<<<<< HEAD
-=======
-	"net"
-	"strings"
-	"testing"
->>>>>>> main
 )
 
 var (

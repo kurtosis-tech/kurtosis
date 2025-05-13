@@ -1,7 +1,7 @@
 package host_machine_directories
 
 import (
-	"io/ioutil"
+	"os"
 	"path"
 	"path/filepath"
 
@@ -111,17 +111,13 @@ func GetLastPesteredUserAboutOldVersionsFilepath() (string, error) {
 
 func GetKurtosisCliLogsFileDirPath(fileName string) (string, error) {
 	xdgRelDirPath := getRelativeFilePathForKurtosisCliLogs()
-	// kurtosisCliLogFilePath, err := xdg.DataFile(path.Join(xdgRelDirPath, fileName))
-	// if err != nil {
-	// 	return "", stacktrace.Propagate(err, "An error occurred getting the kurtosis cli logs file path using '%v'", kurtosisCliLogFilePath)
-	// }
 	kurtosisCliLogFilePath, errXdg := xdg.DataFile(path.Join(xdgRelDirPath, fileName))
 	if errXdg != nil {
 		// Fallback to temp folder if XDG fails to find a suitable location. For instance XDG will fail when testing inside Nix sandbox.
-		logrus.WithError(errXdg).Warnf("Couldn't create kurtosis cli logs file path in the user space '%v'. Trying on temp folder.", kurtosisCliLogFilePath)
-		kurtosisCliLogDir, errTemp := ioutil.TempDir("", applicationDirname)
+		logrus.New().WithError(errXdg).Warnf("Couldn't create Kurtosis CLI logs file path at '%v'. Attempting to create in temp directory.", kurtosisCliLogFilePath)
+		kurtosisCliLogDir, errTemp := os.MkdirTemp("", applicationDirname)
 		if errTemp != nil {
-			return "", stacktrace.Propagate(errTemp, "An error occurred creating  kurtosis cli logs file path using '%v'", kurtosisCliLogDir)
+			return "", stacktrace.Propagate(errTemp, "An error occurred creating Kurtosis CLI logs file path using '%v'", kurtosisCliLogDir)
 		}
 		kurtosisCliLogFilePath = filepath.Join(kurtosisCliLogDir, fileName)
 	}
