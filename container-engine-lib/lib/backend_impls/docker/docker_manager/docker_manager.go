@@ -1864,7 +1864,6 @@ func (manager *DockerManager) getContainerHostConfig(
 		securityOptStr := string(securityOpt)
 		securityOptsSlice = append(securityOptsSlice, securityOptStr)
 	}
-	securityOptsSlice = append(securityOptsSlice, "")
 
 	// if podman
 	securityOptsSlice = append(securityOptsSlice, "label=disable")
