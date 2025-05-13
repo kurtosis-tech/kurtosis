@@ -4,20 +4,17 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_labels_for_logs"
 )
 
-// These are the list of container's labels that the Docker's logging driver (currently, the Fluentd logging driver)
-// will add into the logs stream when it sends them to the destination (currently, Fluentbit logs collector)
-type LogsCollectorLabels []string
+// GetServiceLabelsForLogsTracking returns list of labels to add to kurtosis user service containers
+// Docker's logging driver (currently, the Fluentd logging driver) will add them into the logs stream forwarded by the logs collector
+func GetLabelsForLogsTrackingLogsOfUserServiceContainers() []string {
+	var labels []string
 
-func GetKurtosisTrackedLogsCollectorLabels() LogsCollectorLabels {
+	dockerLabelsForLogsStream := docker_labels_for_logs.GetDockerLabelsForLogStream()
 
-	var logsCollectorLabels LogsCollectorLabels
-
-	allLogsDatabaseKurtosisTrackedDockerLabelsSet := docker_labels_for_logs.GetAllLogsDatabaseKurtosisTrackedDockerLabels()
-
-	for _, dockerLabelKey := range allLogsDatabaseKurtosisTrackedDockerLabelsSet {
+	for _, dockerLabelKey := range dockerLabelsForLogsStream {
 		logsCollectorLabel := dockerLabelKey.GetString()
-		logsCollectorLabels = append(logsCollectorLabels, logsCollectorLabel)
+		labels = append(labels, logsCollectorLabel)
 	}
 
-	return logsCollectorLabels
+	return labels
 }

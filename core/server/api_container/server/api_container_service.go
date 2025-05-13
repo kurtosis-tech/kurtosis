@@ -12,10 +12,12 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/docker_compose_transpiler"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_run"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/git_package_content_provider"
@@ -101,6 +103,13 @@ type ApiContainerService struct {
 	metricsClient metrics_client.MetricsClient
 
 	githubAuthProvider *git_package_content_provider.GitHubPackageAuthProvider
+
+	// NOTE: interpretationTimeValueStore is modified by the StarlarkInterpreter - allowing APIContainer to have access to it
+	// allows retrieving service configs of running services but it is NOT mutex protected, thus this object should never modify
+	// the interpretationTimeValueStore or it could mess with interpretation
+	// TODO: Either mutex protect the interpretationTimeValueStore OR compose the interpretationTimeValueStore of a separate mutex protected `serviceConfigRepository` object
+	// and allow both ApiContainerService and interpretationTimeValueStore to have access to that
+	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore
 }
 
 func NewApiContainerService(
@@ -113,6 +122,7 @@ func NewApiContainerService(
 	metricsClient metrics_client.MetricsClient,
 	githubAuthProvider *git_package_content_provider.GitHubPackageAuthProvider,
 	starlarkRunRepository *starlark_run.StarlarkRunRepository,
+	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore,
 ) (*ApiContainerService, error) {
 
 	if err := initStarlarkRun(starlarkRunRepository, restartPolicy); err != nil {
@@ -120,14 +130,15 @@ func NewApiContainerService(
 	}
 
 	service := &ApiContainerService{
-		filesArtifactStore:     filesArtifactStore,
-		serviceNetwork:         serviceNetwork,
-		startosisRunner:        startosisRunner,
-		startosisInterpreter:   startosisInterpreter,
-		packageContentProvider: startosisModuleContentProvider,
-		starlarkRunRepository:  starlarkRunRepository,
-		metricsClient:          metricsClient,
-		githubAuthProvider:     githubAuthProvider,
+		filesArtifactStore:           filesArtifactStore,
+		serviceNetwork:               serviceNetwork,
+		startosisRunner:              startosisRunner,
+		startosisInterpreter:         startosisInterpreter,
+		packageContentProvider:       startosisModuleContentProvider,
+		starlarkRunRepository:        starlarkRunRepository,
+		metricsClient:                metricsClient,
+		githubAuthProvider:           githubAuthProvider,
+		interpretationTimeValueStore: interpretationTimeValueStore,
 	}
 
 	return service, nil
@@ -453,7 +464,8 @@ func (apicService *ApiContainerService) GetServices(ctx context.Context, args *k
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "an error occurred while fetching all services from the backend")
 	}
-	serviceInfos, err = getServiceInfosFromServiceObjs(allServices)
+
+	serviceInfos, err = apicService.getServiceInfosFromServiceObjs(allServices)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "an error occurred while converting the service obj into service info")
 	}
@@ -781,6 +793,17 @@ func transformPortSpecMapToApiPortsMap(apiPorts map[string]*port_spec.PortSpec) 
 	return result, nil
 }
 
+func transformServiceDirPathsToFileArtifactsToApiPortsFilesArtifactsList(serviceDirPathsToFilesArtifactsIdentifiers map[string][]string) map[string]*kurtosis_core_rpc_api_bindings.FilesArtifactsList {
+	result := map[string]*kurtosis_core_rpc_api_bindings.FilesArtifactsList{}
+	for svcName, filesArtifactsIdentifiers := range serviceDirPathsToFilesArtifactsIdentifiers {
+		filesArtifactsList := &kurtosis_core_rpc_api_bindings.FilesArtifactsList{
+			FilesArtifactsIdentifiers: filesArtifactsIdentifiers,
+		}
+		result[svcName] = filesArtifactsList
+	}
+	return result
+}
+
 func (apicService *ApiContainerService) waitForEndpointAvailability(
 	ctx context.Context,
 	serviceIdStr string,
@@ -859,12 +882,13 @@ func makeHttpRequest(httpMethod string, url string, body string) (*http.Response
 		err  error
 	)
 
-	if httpMethod == http.MethodPost {
+	switch httpMethod {
+	case http.MethodPost:
 		var bodyByte = []byte(body)
 		resp, err = http.Post(url, "application/json", bytes.NewBuffer(bodyByte))
-	} else if httpMethod == http.MethodGet {
+	case http.MethodGet:
 		resp, err = http.Get(url)
-	} else {
+	default:
 		return nil, stacktrace.NewError("HTTP method '%v' not allowed", httpMethod)
 	}
 
@@ -885,9 +909,20 @@ func (apicService *ApiContainerService) getServiceInfoForIdentifier(ctx context.
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting info for service '%v'", serviceIdentifier)
 	}
-	serviceInfo, err := getServiceInfoFromServiceObj(serviceObj)
+
+	var serviceConfig *service.ServiceConfig
+	serviceConfig, err = apicService.interpretationTimeValueStore.GetServiceConfig(serviceObj.GetRegistration().GetName())
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "an error occurred while converting service obj for service with id '%v' to service info", serviceIdentifier)
+		// if no service config was found, instead of failing - we just give an empty service config
+		// this is because the service config info in the interpretationTimeValueStore is not persisted to the enclave db yet
+		// so on apic restarts the information will be lost - but we still want to service information about existing services
+		// in the future, service config information should be persisted
+		serviceConfig = service.GetEmptyServiceConfig()
+	}
+
+	serviceInfo, err := getServiceInfoFromServiceObj(serviceObj, serviceConfig)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "A error occurred while converting service obj for service with id '%v' to service info", serviceIdentifier)
 	}
 	return serviceInfo, nil
 }
@@ -1033,19 +1068,28 @@ func (apicService *ApiContainerService) runStarlark(
 	}
 }
 
-func getServiceInfosFromServiceObjs(services map[service.ServiceUUID]*service.Service) (map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo, error) {
+func (apicService *ApiContainerService) getServiceInfosFromServiceObjs(services map[service.ServiceUUID]*service.Service) (map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo, error) {
 	serviceInfos := map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo{}
 	for uuid, serviceObj := range services {
-		serviceInfo, err := getServiceInfoFromServiceObj(serviceObj)
+		var serviceConfig *service.ServiceConfig
+		serviceConfig, err := apicService.interpretationTimeValueStore.GetServiceConfig(serviceObj.GetRegistration().GetName())
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "there was an error converting the service obj for service with uuid '%v' and name '%v' to service info", uuid, serviceObj.GetRegistration().GetName())
+			// if no service config was found, instead of failing - we just give an empty service config
+			// this is because the service config info in the interpretationTimeValueStore is not persisted to the enclave db yet
+			// so on apic restarts the information will be lost - but we still want to service information about existing services
+			// in the future, service config information should be persisted
+			serviceConfig = service.GetEmptyServiceConfig()
+		}
+		serviceInfo, err := getServiceInfoFromServiceObj(serviceObj, serviceConfig)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "There was an error converting the service obj for service with uuid '%v' and name '%v' to service info", uuid, serviceObj.GetRegistration().GetName())
 		}
 		serviceInfos[serviceInfo.Name] = serviceInfo
 	}
 	return serviceInfos, nil
 }
 
-func getServiceInfoFromServiceObj(serviceObj *service.Service) (*kurtosis_core_rpc_api_bindings.ServiceInfo, error) {
+func getServiceInfoFromServiceObj(serviceObj *service.Service, serviceConfig *service.ServiceConfig) (*kurtosis_core_rpc_api_bindings.ServiceInfo, error) {
 	privatePorts := serviceObj.GetPrivatePorts()
 	privateIp := serviceObj.GetRegistration().GetPrivateIP()
 	maybePublicIp := serviceObj.GetMaybePublicIP()
@@ -1085,6 +1129,44 @@ func getServiceInfoFromServiceObj(serviceObj *service.Service) (*kurtosis_core_r
 		EnvVars:        serviceContainer.GetEnvVars(),
 	}
 
+	maxMillicpus := uint32(serviceConfig.GetCPUAllocationMillicpus())
+	minMillicpus := uint32(serviceConfig.GetMinCPUAllocationMillicpus())
+	maxMemoryMegabytes := uint32(serviceConfig.GetMemoryAllocationMegabytes())
+	minMemoryMegabytes := uint32(serviceConfig.GetMinMemoryAllocationMegabytes())
+
+	serviceDirPathsToFilesArtifactsList := map[string]*kurtosis_core_rpc_api_bindings.FilesArtifactsList{}
+
+	if serviceConfig.GetFilesArtifactsExpansion() != nil {
+		serviceDirPathsToFilesArtifactsList = transformServiceDirPathsToFileArtifactsToApiPortsFilesArtifactsList(serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers)
+	}
+
+	var user *service_user.ServiceUser
+	var apiUser *kurtosis_core_rpc_api_bindings.User
+	if serviceConfig.GetUser() != nil {
+		user = serviceConfig.GetUser()
+		var gid uint32 = 0
+		userGid, existsGuid := user.GetGID()
+		if existsGuid {
+			gid = uint32(userGid)
+		}
+		apiUser = &kurtosis_core_rpc_api_bindings.User{
+			Uid: uint32(user.GetUID()),
+			Gid: gid,
+		}
+	}
+
+	tolerations := serviceConfig.GetTolerations()
+	apiTolerations := []*kurtosis_core_rpc_api_bindings.Toleration{}
+	for _, toleration := range tolerations {
+		apiTolerations = append(apiTolerations, &kurtosis_core_rpc_api_bindings.Toleration{
+			Key:               toleration.Key,
+			Operator:          string(toleration.Operator),
+			Value:             toleration.Value,
+			Effect:            string(toleration.Effect),
+			TolerationSeconds: *toleration.TolerationSeconds,
+		})
+	}
+
 	serviceInfoResponse := binding_constructors.NewServiceInfo(
 		serviceUuidStr,
 		serviceNameStr,
@@ -1095,7 +1177,18 @@ func getServiceInfoFromServiceObj(serviceObj *service.Service) (*kurtosis_core_r
 		publicApiPorts,
 		serviceStatus,
 		serviceInfoContainer,
+		serviceDirPathsToFilesArtifactsList,
+		maxMillicpus,
+		minMillicpus,
+		maxMemoryMegabytes,
+		minMemoryMegabytes,
+		apiUser,
+		apiTolerations,
+		serviceConfig.GetNodeSelectors(),
+		serviceConfig.GetLabels(),
+		serviceConfig.GetTiniEnabled(),
 	)
+
 	return serviceInfoResponse, nil
 }
 

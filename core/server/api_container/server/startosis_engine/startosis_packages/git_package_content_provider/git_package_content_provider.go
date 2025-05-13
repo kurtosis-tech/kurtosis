@@ -465,7 +465,7 @@ func (provider *GitPackageContentProvider) cloneWithRetries(parsedURL *shared_ut
 		// We silence the underlying error here as it can be confusing to the user. For example, when there's a typo in
 		// the repo name, pointing to a non existing repo, the underlying error is: "authentication required"
 		logrus.Errorf("Error cloning git repository: '%s' to '%s'. Error was: \n%s", parsedURL.GetGitURL(), gitClonePath, err.Error())
-		return nil, startosis_errors.NewInterpretationError("Error in cloning git repository '%s' to '%s'. Make sure that '%v' exists or if it's a private repository, that you are logged into GitHub via `kurtosis github login`.", parsedURL.GetGitURL(), gitClonePath, parsedURL.GetGitURL())
+		return nil, startosis_errors.NewInterpretationError("Error in cloning git repository '%s' to '%s'. Make sure that '%v' exists or if it's a private repository, that you are logged into GitHub via `kurtosis github login`.\nIf this is NOT a private repo, there could be an issue with MTUs configured by Docker networks. Please refer to discussion and articles at this issue: https://github.com/kurtosis-tech/kurtosis/issues/2150", parsedURL.GetGitURL(), gitClonePath, parsedURL.GetGitURL())
 	}
 	return repo, nil
 }

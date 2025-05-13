@@ -170,10 +170,7 @@ func (service *EngineConnectServerService) CreateEnclave(ctx context.Context, co
 		return nil, stacktrace.Propagate(err, "An error occurred parsing the log level string '%v':", args.ApiContainerLogLevel)
 	}
 
-	isProduction := false
-	if args.GetMode() == kurtosis_engine_rpc_api_bindings.EnclaveMode_PRODUCTION {
-		isProduction = true
-	}
+	isProduction := args.GetMode() == kurtosis_engine_rpc_api_bindings.EnclaveMode_PRODUCTION
 
 	enclaveInfo, err := service.enclaveManager.CreateEnclave(
 		ctx,

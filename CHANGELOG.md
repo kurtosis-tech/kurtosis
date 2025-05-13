@@ -1,5 +1,120 @@
 # Changelog
 
+## [1.8.0](https://github.com/kurtosis-tech/kurtosis/compare/1.7.2...1.8.0) (2025-05-06)
+
+
+### Features
+
+* configurable fluent bit filters and parsers ([#2727](https://github.com/kurtosis-tech/kurtosis/issues/2727)) ([9f52d04](https://github.com/kurtosis-tech/kurtosis/commit/9f52d04bd686dbe6c1c4e8ebf96e07321fad3aff))
+
+
+### Bug Fixes
+
+* don't get historical enclaves for service logs completion ([#2636](https://github.com/kurtosis-tech/kurtosis/issues/2636)) ([63f5b8a](https://github.com/kurtosis-tech/kurtosis/commit/63f5b8a5686ee9cc7b2ee8712eabdd0dd24eaa95))
+* init remove funcs ([#2734](https://github.com/kurtosis-tech/kurtosis/issues/2734)) ([54de9c2](https://github.com/kurtosis-tech/kurtosis/commit/54de9c24504182b312b28947c4ac95811dc3be6f))
+
+## [1.7.2](https://github.com/kurtosis-tech/kurtosis/compare/1.7.1...1.7.2) (2025-04-22)
+
+
+### Bug Fixes
+
+* retry using docker-credential helpers with trailing slash on the registry URL ([#2728](https://github.com/kurtosis-tech/kurtosis/issues/2728)) ([d7bcf22](https://github.com/kurtosis-tech/kurtosis/commit/d7bcf22d90b44d5f5060e749c8f6d7fcab3a2b76))
+
+## [1.7.1](https://github.com/kurtosis-tech/kurtosis/compare/1.7.0...1.7.1) (2025-04-18)
+
+
+### Bug Fixes
+
+* go work sum ([#2717](https://github.com/kurtosis-tech/kurtosis/issues/2717)) ([ed09d72](https://github.com/kurtosis-tech/kurtosis/commit/ed09d725a88ba213a92e48f3d6689672abfd0063))
+
+## [1.7.0](https://github.com/kurtosis-tech/kurtosis/compare/1.6.0...1.7.0) (2025-04-17)
+
+
+### Features
+
+* add grafloki to kurtosis config ([#2707](https://github.com/kurtosis-tech/kurtosis/issues/2707)) ([b6794e1](https://github.com/kurtosis-tech/kurtosis/commit/b6794e1618091c77ec18a23079c11e1c5463f30e))
+* export service logs (Kubenertes) ([#2693](https://github.com/kurtosis-tech/kurtosis/issues/2693)) ([c00f357](https://github.com/kurtosis-tech/kurtosis/commit/c00f357b5ebb9cb9e1b52ab412e489d6260895c6))
+* grafloki start/stop ([#2696](https://github.com/kurtosis-tech/kurtosis/issues/2696)) ([53d823a](https://github.com/kurtosis-tech/kurtosis/commit/53d823a53c7941eb93fe14e1b06e958a30b539d7))
+* service update ([#2689](https://github.com/kurtosis-tech/kurtosis/issues/2689)) ([4cda391](https://github.com/kurtosis-tech/kurtosis/commit/4cda3910a8ab333ae0726631579a8a300c69cbe4))
+
+
+### Bug Fixes
+
+* **backend/kubernetes:** use default KUBECONFIG resolution ([#2672](https://github.com/kurtosis-tech/kurtosis/issues/2672)) ([379e49b](https://github.com/kurtosis-tech/kurtosis/commit/379e49b0013a769e5f5102386d6733eafb528014))
+* docker auth wasn't being used by engine and API ([#2699](https://github.com/kurtosis-tech/kurtosis/issues/2699)) ([4eea787](https://github.com/kurtosis-tech/kurtosis/commit/4eea787e2cad7e7e91811fa4e8de05b08022cc0e))
+* give grafana root access ([#2706](https://github.com/kurtosis-tech/kurtosis/issues/2706)) ([b8e2fab](https://github.com/kurtosis-tech/kurtosis/commit/b8e2fab7c3be8ea27108c20bbd29199d9d460abc))
+* remove k8s ingress on stop user services ([#2715](https://github.com/kurtosis-tech/kurtosis/issues/2715)) ([e31c0d4](https://github.com/kurtosis-tech/kurtosis/commit/e31c0d4217d883da72a38e0e43dd77ceb55d8e65))
+* return empty deployment if not found ([#2716](https://github.com/kurtosis-tech/kurtosis/issues/2716)) ([451c70e](https://github.com/kurtosis-tech/kurtosis/commit/451c70e5cea2c72edeb68ccd424433f05592474c))
+
+## [1.6.0](https://github.com/kurtosis-tech/kurtosis/compare/1.5.0...1.6.0) (2025-03-18)
+
+
+### Features
+
+* add resources to logs collector daemonset for k8s api server access  ([#2663](https://github.com/kurtosis-tech/kurtosis/issues/2663)) ([5ae473c](https://github.com/kurtosis-tech/kurtosis/commit/5ae473cf3551bac8bbd37335551769bd03db5a65))
+* export service logs (Docker) ([#2668](https://github.com/kurtosis-tech/kurtosis/issues/2668)) ([1651249](https://github.com/kurtosis-tech/kurtosis/commit/16512491aadcc840f0c607ca57873fcd9726ed31))
+* fluent bit logs collector in k8s backend ([#2653](https://github.com/kurtosis-tech/kurtosis/issues/2653)) ([05e3813](https://github.com/kurtosis-tech/kurtosis/commit/05e38135ce9d8ba962a9e809cc25e16f26d8077a))
+* vector logs aggregator in k8s ([#2669](https://github.com/kurtosis-tech/kurtosis/issues/2669)) ([106e4a2](https://github.com/kurtosis-tech/kurtosis/commit/106e4a218fdee4ec17493a21192b38a1faec7ac6))
+
+
+### Bug Fixes
+
+* exit codes on tasks ([#2654](https://github.com/kurtosis-tech/kurtosis/issues/2654)) ([ffd86b8](https://github.com/kurtosis-tech/kurtosis/commit/ffd86b873c60acfe2a4a2d03dd1d6a1abd330cf6))
+* push ci docs ([#2680](https://github.com/kurtosis-tech/kurtosis/issues/2680)) ([61857f0](https://github.com/kurtosis-tech/kurtosis/commit/61857f07054927c6ddef53ce7a87b645d2ab6f75))
+* stdout for file inspect ([#2658](https://github.com/kurtosis-tech/kurtosis/issues/2658)) ([6ae51a3](https://github.com/kurtosis-tech/kurtosis/commit/6ae51a3216e6812179fcb0da69e69df4b7b15b73))
+
+## [1.5.0](https://github.com/kurtosis-tech/kurtosis/compare/1.4.4...1.5.0) (2025-02-07)
+
+
+### Features
+
+* Allow builtin manipulation for programmatic use ([#2642](https://github.com/kurtosis-tech/kurtosis/issues/2642)) ([bb508ca](https://github.com/kurtosis-tech/kurtosis/commit/bb508ca59fe8c807011da57cbc652215a7f0390d))
+
+
+### Bug Fixes
+
+* nil docker auth test ([#2630](https://github.com/kurtosis-tech/kurtosis/issues/2630)) ([ae3b2e6](https://github.com/kurtosis-tech/kurtosis/commit/ae3b2e655806ca41fe3bb87e4f25845149ee1874))
+* Stdout/Stderr mixing in commands ([#2637](https://github.com/kurtosis-tech/kurtosis/issues/2637)) ([afe0d87](https://github.com/kurtosis-tech/kurtosis/commit/afe0d87dad2e17e64ced1d1e00bb5b20d6745416))
+
+## [1.4.4](https://github.com/kurtosis-tech/kurtosis/compare/2.1.0...1.4.4) (2025-02-06)
+
+
+### Bug Fixes
+
+* release 1.4.4 ([#2643](https://github.com/kurtosis-tech/kurtosis/issues/2643)) ([f7644b0](https://github.com/kurtosis-tech/kurtosis/commit/f7644b0ef0e97d54fe37e105a9b60940557fcab2))
+* revert release please config ([#2645](https://github.com/kurtosis-tech/kurtosis/issues/2645)) ([5866673](https://github.com/kurtosis-tech/kurtosis/commit/58666733d2e10473b98a1b086a95e848bc47b0f9))
+
+## [2.1.0](https://github.com/kurtosis-tech/kurtosis/compare/2.0.0...2.1.0) (2025-01-16) (DEPRECATED)
+
+* The features in this releases will still be available in the next release but Kurtosis is downgrading from 2.1.0 to 1.4.4. Existing users on 2.1.0 will still be able to use the version, however we encourage uninstalling CLI and API library versions of 2.1.0 and pulling the new latest which will be 1.4.4.
+
+### Features
+
+* add user flag to service exec command ([#2626](https://github.com/kurtosis-tech/kurtosis/issues/2626)) ([be3dbe2](https://github.com/kurtosis-tech/kurtosis/commit/be3dbe2dd863ec55ba6ab94b570f2f79c8c61080))
+
+## [2.0.0](https://github.com/kurtosis-tech/kurtosis/compare/1.4.3...2.0.0) (2025-01-02) (DEPRECATED)
+
+
+### ⚠ BREAKING CHANGES
+
+* impl dependency list flag  ([#2543](https://github.com/kurtosis-tech/kurtosis/issues/2543))
+
+### Features
+
+* impl dependency list flag  ([#2543](https://github.com/kurtosis-tech/kurtosis/issues/2543)) ([a6c1113](https://github.com/kurtosis-tech/kurtosis/commit/a6c1113ec43c052f06c5512f6bc1c9d006c2c16e))
+
+
+### Bug Fixes
+
+* use ISO 8601 year number ([#2621](https://github.com/kurtosis-tech/kurtosis/issues/2621)) ([97324e8](https://github.com/kurtosis-tech/kurtosis/commit/97324e819141e147f2f8bf79b023e827cbafeae6))
+
+## [1.4.3](https://github.com/kurtosis-tech/kurtosis/compare/1.4.2...1.4.3) (2024-12-04)
+
+
+### Bug Fixes
+
+* add suffix to fluentbit configurator ([#2567](https://github.com/kurtosis-tech/kurtosis/issues/2567)) ([f797516](https://github.com/kurtosis-tech/kurtosis/commit/f7975163155264c4d62a11e42697b723cc568ca3))
+
 ## [1.4.2](https://github.com/kurtosis-tech/kurtosis/compare/v1.4.1...1.4.2) (2024-11-10)
 
 
@@ -49,7 +164,7 @@
 
 ### Features
 
-* [log retention improvements pt. 2] add flag for configuring log retention period ([#2536](https://github.com/kurtosis-tech/kurtosis/issues/2536)) ([185dc6f](https://github.com/kurtosis-tech/kurtosis/commit/185dc6fe60f47495f4e314a012e2d87d8e28f979))
+* (log retention improvements pt. 2) add flag for configuring log retention period ([#2536](https://github.com/kurtosis-tech/kurtosis/issues/2536)) ([185dc6f](https://github.com/kurtosis-tech/kurtosis/commit/185dc6fe60f47495f4e314a012e2d87d8e28f979))
 
 ## [1.1.0](https://github.com/kurtosis-tech/kurtosis/compare/1.0.0...1.1.0) (2024-08-16)
 

@@ -25,4 +25,8 @@ type engineKubernetesResources struct {
 
 	// Should always be nil if namespace is nil
 	ingress *netv1.Ingress
+
+	// engineNodeSelectors are applied to engineNodeName and should be removed when engine is cleaned up
+	engineNodeName      string
+	engineNodeSelectors map[string]string
 }

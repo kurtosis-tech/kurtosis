@@ -61,7 +61,6 @@ var (
 	ForwardPortDoNotWaitUntilReady = false
 )
 
-// Docs available at https://docs.kurtosis.com/sdk#kurtosiscontext
 type KurtosisContext struct {
 	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient
 	portalClient portal_api.KurtosisPortalClientClient
@@ -109,7 +108,6 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 	return kurtosisContext, nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk#createenclaveenclaveid-enclaveid-boolean-issubnetworkingenabled---enclavecontextenclavecontext-enclavecontext
 func (kurtosisCtx *KurtosisContext) CreateEnclave(ctx context.Context, enclaveName string) (*enclaves.EnclaveContext, error) {
 
 	createEnclaveArgs := newCreateEnclaveArgsWithDefaultValues(enclaveName)
@@ -147,7 +145,6 @@ func (kurtosisCtx *KurtosisContext) CreateEnclaveWithDebugEnabled(
 	return enclaveContext, nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk#createenclaveenclaveid-enclaveid-boolean-issubnetworkingenabled---enclavecontextenclavecontext-enclavecontext
 func (kurtosisCtx *KurtosisContext) CreateProductionEnclave(ctx context.Context, enclaveName string) (*enclaves.EnclaveContext, error) {
 
 	createEnclaveArgs := newCreateProductionEnclaveWithDefaultValues(enclaveName)
@@ -182,7 +179,6 @@ func (kurtosisCtx *KurtosisContext) CreateProductionEnclaveWithDebugEnabled(ctx 
 	return enclaveContext, nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#getenclavecontextstring-enclaveidentifier---enclavecontextenclavecontext-enclavecontext
 func (kurtosisCtx *KurtosisContext) GetEnclaveContext(ctx context.Context, enclaveIdentifier string) (*enclaves.EnclaveContext, error) {
 	enclaveInfo, err := kurtosisCtx.GetEnclave(ctx, enclaveIdentifier)
 	if err != nil {
@@ -197,7 +193,6 @@ func (kurtosisCtx *KurtosisContext) GetEnclaveContext(ctx context.Context, encla
 	return enclaveCtx, nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk#getenclaves---enclaves-enclaves
 func (kurtosisCtx *KurtosisContext) GetEnclaves(ctx context.Context) (*Enclaves, error) {
 	response, err := kurtosisCtx.engineClient.GetEnclaves(ctx, &emptypb.Empty{})
 	if err != nil {
@@ -223,7 +218,6 @@ func (kurtosisCtx *KurtosisContext) GetEnclaves(ctx context.Context) (*Enclaves,
 	}, nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#getenclavestring-enclaveidentifier---enclaveinfo-enclaveinfo
 func (kurtosisCtx *KurtosisContext) GetEnclave(ctx context.Context, enclaveIdentifier string) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
 	enclaves, err := kurtosisCtx.GetEnclaves(ctx)
 	if err != nil {
@@ -257,7 +251,6 @@ func (kurtosisCtx *KurtosisContext) GetEnclave(ctx context.Context, enclaveIdent
 	return nil, stacktrace.NewError("Couldn't find an enclave for identifier '%v'", enclaveIdentifier)
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#stopenclavestring-enclaveidentifier
 func (kurtosisCtx *KurtosisContext) StopEnclave(ctx context.Context, enclaveIdentifier string) error {
 	stopEnclaveArgs := &kurtosis_engine_rpc_api_bindings.StopEnclaveArgs{
 		EnclaveIdentifier: enclaveIdentifier,
@@ -270,7 +263,6 @@ func (kurtosisCtx *KurtosisContext) StopEnclave(ctx context.Context, enclaveIden
 	return nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#destroyenclavestring-enclaveidentifier
 func (kurtosisCtx *KurtosisContext) DestroyEnclave(ctx context.Context, enclaveIdentifier string) error {
 	destroyEnclaveArgs := &kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs{
 		EnclaveIdentifier: enclaveIdentifier,
@@ -283,7 +275,6 @@ func (kurtosisCtx *KurtosisContext) DestroyEnclave(ctx context.Context, enclaveI
 	return nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk#cleanboolean-shouldcleanall---enclavenameanduuid-removedenclavenameanduuids
 func (kurtosisCtx *KurtosisContext) Clean(ctx context.Context, shouldCleanAll bool) ([]*kurtosis_engine_rpc_api_bindings.EnclaveNameAndUuid, error) {
 	cleanArgs := &kurtosis_engine_rpc_api_bindings.CleanArgs{
 		ShouldCleanAll: &shouldCleanAll,
@@ -296,7 +287,6 @@ func (kurtosisCtx *KurtosisContext) Clean(ctx context.Context, shouldCleanAll bo
 	return cleanResponse.RemovedEnclaveNameAndUuids, nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk#getservicelogsstring-enclaveidentifier-setserviceuuid-serviceuuids-boolean-shouldfollowlogs-loglinefilter-loglinefilter---servicelogsstreamcontent-servicelogsstreamcontent
 func (kurtosisCtx *KurtosisContext) GetServiceLogs(
 	ctx context.Context,
 	enclaveIdentifier string,
@@ -353,7 +343,6 @@ func (kurtosisCtx *KurtosisContext) GetServiceLogs(
 	return serviceLogsStreamContentChan, cancelCtxFunc, nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk#getexistingandhistoricalenclaveidentifiers---enclaveidentifiers-enclaveidentifiers
 func (kurtosisCtx *KurtosisContext) GetExistingAndHistoricalEnclaveIdentifiers(ctx context.Context) (*EnclaveIdentifiers, error) {
 	historicalEnclaveIdentifiers, err := kurtosisCtx.engineClient.GetExistingAndHistoricalEnclaveIdentifiers(ctx, &emptypb.Empty{})
 	if err != nil {

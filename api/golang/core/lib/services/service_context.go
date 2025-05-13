@@ -24,7 +24,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 )
 
-// Docs available at https://docs.kurtosis.com/sdk/#servicecontext
 type ServiceContext struct {
 	client      kurtosis_core_rpc_api_bindings.ApiContainerServiceClient
 	serviceName ServiceName
@@ -59,37 +58,30 @@ func NewServiceContext(
 	}
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#getservicename---servicename
 func (service *ServiceContext) GetServiceName() ServiceName {
 	return service.serviceName
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#getserviceuuid---serviceuuid
 func (service *ServiceContext) GetServiceUUID() ServiceUUID {
 	return service.serviceUuid
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#getprivateipaddress---string
 func (service *ServiceContext) GetPrivateIPAddress() string {
 	return service.privateIpAddr
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#getprivateports---mapportid-portspec
 func (service *ServiceContext) GetPrivatePorts() map[string]*PortSpec {
 	return service.privatePorts
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#getmaybepublicipaddress---string
 func (service *ServiceContext) GetMaybePublicIPAddress() string {
 	return service.publicIpAddr
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#getpublicports---mapportid-portspec
 func (service *ServiceContext) GetPublicPorts() map[string]*PortSpec {
 	return service.publicPorts
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#execcommandliststring-command---int-exitcode-string-logs
 func (service *ServiceContext) ExecCommand(command []string) (int32, string, error) {
 	serviceName := service.serviceName
 	args := binding_constructors.NewExecCommandArgs(string(serviceName), command)

@@ -6,6 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net"
+	"os"
+	"path"
+	"strings"
+	"time"
+
 	"github.com/gammazero/workerpool"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
@@ -24,13 +31,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
 
-	"io"
-	"net"
-	"os"
-	"path"
-	"strings"
-	"time"
-
 	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
@@ -46,6 +46,7 @@ import (
 
 const (
 	netstatSuccessExitCode = 0
+	httpSuccessExitCode    = 0
 
 	// Name to give the file that we'll write for storing specs of pods, containers, etc.
 	podSpecFilename             = "spec.json"
@@ -233,20 +234,20 @@ func GetMatchingUserServiceObjectsAndKubernetesResources(
 	// Filter the results down to the requested filters
 	results := map[service.ServiceUUID]*UserServiceObjectsAndKubernetesResources{}
 	for serviceUuid, objectsAndResources := range allObjectsAndResources {
-		if filters.UUIDs != nil && len(filters.UUIDs) > 0 {
+		if len(filters.UUIDs) > 0 {
 			if _, found := filters.UUIDs[serviceUuid]; !found {
 				continue
 			}
 		}
 
 		registration := objectsAndResources.ServiceRegistration
-		if filters.Names != nil && len(filters.Names) > 0 {
+		if len(filters.Names) > 0 {
 			if _, found := filters.Names[registration.GetName()]; !found {
 				continue
 			}
 		}
 
-		if filters.Statuses != nil && len(filters.Statuses) > 0 {
+		if len(filters.Statuses) > 0 {
 			kubernetesService := objectsAndResources.Service
 
 			// If status isn't specified, return registered-only objects; if not, remove them all
@@ -715,7 +716,7 @@ func WaitForPortAvailabilityUsingNetstat(
 		}
 
 		// Tiny optimization to not sleep if we're not going to run the loop again
-		if i < maxRetries {
+		if i < maxRetries-1 {
 			time.Sleep(timeBetweenRetries)
 		}
 	}

@@ -3,6 +3,7 @@ package exec
 import (
 	"context"
 	"fmt"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
@@ -32,6 +33,10 @@ const (
 	isExecCommandArgOptional = false
 	isExecCommandArgGreedy   = false
 
+	containerUserKey      = "user"
+	containerUserShortKey = "u"
+	containerUserDefault  = "root"
+
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
 
@@ -45,7 +50,13 @@ var ServiceShellCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosis
 	LongDescription:           "Execute a command in a service. Note if the command being run is multiple words you should wrap it in quotes",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
-	Flags:                     []*flags.FlagConfig{},
+	Flags: []*flags.FlagConfig{{
+		Key:       containerUserKey,
+		Usage:     "optional service container user for command",
+		Shorthand: containerUserShortKey,
+		Type:      flags.FlagType_String,
+		Default:   containerUserDefault,
+	}},
 	Args: []*args.ArgConfig{
 		enclave_id_arg.NewEnclaveIdentifierArg(
 			enclaveIdentifierArgKey,
@@ -109,7 +120,17 @@ func run(
 	}
 	serviceUuid := service.ServiceUUID(serviceCtx.GetServiceUUID())
 
-	results, resultErrors, err := kurtosisBackend.RunUserServiceExecCommands(ctx, enclaveUuid, map[service.ServiceUUID][]string{
+	containerUser, err := flags.GetString(containerUserKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the exec container user flag '%v'", containerUserKey)
+	}
+	// convert "root" to "" as it is implied if empty. This simplifies the backend
+	// impl usages that do not support --user
+	if containerUser == containerUserDefault {
+		containerUser = ""
+	}
+
+	results, resultErrors, err := kurtosisBackend.RunUserServiceExecCommands(ctx, enclaveUuid, containerUser, map[service.ServiceUUID][]string{
 		serviceUuid: {
 			binShCommand,
 			binShCommandFlag,
@@ -136,6 +157,7 @@ func run(
 	if successResult.GetExitCode() != 0 {
 		return stacktrace.NewError("The command was successfully executed but returned a non-zero exit code: '%d'. Output was:\n%v", successResult.GetExitCode(), successResult.GetOutput())
 	}
-	out.PrintOutLn(fmt.Sprintf("The command was successfully executed and returned '%d'. Output was:\n%v", successResult.GetExitCode(), successResult.GetOutput()))
+	out.PrintErrLn(fmt.Sprintf("The command was successfully executed and returned '%d'.", successResult.GetExitCode()))
+	out.PrintOutLn(successResult.GetOutput())
 	return nil
 }

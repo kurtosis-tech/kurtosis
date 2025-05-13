@@ -47,7 +47,7 @@ const (
 var expectedRelativeOrder = map[string]int{
 	protocolStr: 0,
 	ipStr:       1,
-	numberStr:   2, //nolint:gomnd
+	numberStr:   2, //nolint:mnd
 }
 
 var (

@@ -421,9 +421,7 @@ func createStartServiceOperation(
 			podVolumes,
 			userServiceServiceAccountName,
 			restartPolicy,
-			tolerations,
-			nodeSelectors,
-		)
+			tolerations, nodeSelectors)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating pod '%v' using image '%v'", podName, containerImageName)
 		}

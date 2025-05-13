@@ -393,6 +393,37 @@ func (manager *DockerManager) GetContainerIdsConnectedToNetwork(context context.
 	return result, nil
 }
 
+func (manager *DockerManager) GetContainerIPOnNetwork(context context.Context, containerId string, networkId string) (string, error) {
+	inspectResponse, err := manager.dockerClient.NetworkInspect(context, networkId, types.NetworkInspectOptions{
+		Scope:   "",
+		Verbose: false,
+	})
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Failed to get network information for network with ID '%v'", networkId)
+	}
+	for id, c := range inspectResponse.Containers {
+		if id == containerId {
+			ip, _, err := net.ParseCIDR(c.IPv4Address)
+			if err != nil {
+				return "", stacktrace.Propagate(err, "Failed to parse IPv4 address '%s'", c.IPv4Address)
+			}
+			return ip.String(), nil
+		}
+	}
+	return "", stacktrace.NewError("Could not find container '%v' IP on network '%v'.", containerId, networkId)
+}
+
+func (manager *DockerManager) GetNetworkIdByName(ctx context.Context, networkName string) (string, error) {
+	n, err := manager.dockerClient.NetworkInspect(ctx, networkName, types.NetworkInspectOptions{
+		Scope:   "",
+		Verbose: false,
+	})
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Failed to inspect the '%v' network.", networkName)
+	}
+	return n.ID, nil
+}
+
 /*
 RemoveNetwork
 Removes the Docker network with the given id
@@ -580,10 +611,12 @@ func (manager *DockerManager) CreateAndStartContainer(
 		return "", nil, stacktrace.Propagate(err, "An error occurred fetching image '%v'", dockerImage)
 	}
 
-	idFilterArgs := filters.NewArgs(filters.KeyValuePair{
-		Key:   networkIdSearchFilterKey,
-		Value: args.networkId,
-	})
+	idFilterArgs := filters.NewArgs(
+		filters.KeyValuePair{
+			Key:   networkIdSearchFilterKey,
+			Value: args.networkId,
+		},
+	)
 	networks, err := manager.getNetworksByFilterArgs(ctx, idFilterArgs)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred checking for the existence of network with ID %v", args.networkId)
@@ -892,10 +925,8 @@ func (manager *DockerManager) StartContainer(context context.Context, containerI
 	}
 	err := manager.dockerClient.ContainerStart(context, containerId, options)
 	if err != nil {
-		containerLogs := manager.getFailedContainerLogsOrErrorString(context, containerId)
-		containerLogsHeader := "\n--------------------- CONTAINER LOGS -----------------------\n"
-		containerLogsFooter := "\n------------------- END CONTAINER LOGS --------------------"
-		return stacktrace.Propagate(err, "Could not start Docker container with ID '%v'; logs are below:%v%v%v", containerId, containerLogsHeader, containerLogs, containerLogsFooter)
+		errorStr := manager.getFormattedFailedContainerLogsOrErrorString(context, containerId)
+		return stacktrace.Propagate(err, "Could not start Docker container with ID '%v'; logs are below:%v", containerId, errorStr)
 	}
 
 	return nil
@@ -1040,13 +1071,13 @@ func (manager *DockerManager) GetContainerLogs(
 }
 
 /*
-RunExecCommand
+RunUserServiceExecCommands
 Executes the given command inside the container with the given ID, blocking until the command completes
 */
-func (manager *DockerManager) RunExecCommand(context context.Context, containerId string, command []string, logOutput io.Writer) (int32, error) {
+func (manager *DockerManager) RunUserServiceExecCommands(context context.Context, containerId, userId string, command []string, logOutput io.Writer) (int32, error) {
 	dockerClient := manager.dockerClient
 	execConfig := types.ExecConfig{
-		User:         "",
+		User:         userId,
 		Privileged:   false,
 		Tty:          false,
 		ConsoleSize:  nil,
@@ -1353,7 +1384,7 @@ func (manager *DockerManager) FetchLatestImage(ctx context.Context, dockerImage 
 
 func (manager *DockerManager) FetchImage(ctx context.Context, image string, registrySpec *image_registry_spec.ImageRegistrySpec, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
 	var err error
-	var pulledFromRemote bool = true
+	var pulledFromRemote = true
 	logrus.Debugf("Fetching image '%s' with image download mode: %s", image, downloadMode)
 
 	switch image_fetching := downloadMode; image_fetching {
@@ -1631,6 +1662,13 @@ func (manager *DockerManager) GetAvailableCPUAndMemory(ctx context.Context) (com
 	}
 	// cpu isn't complete on windows but is complete on linux
 	return compute_resources.MemoryInMegaBytes(availableMemoryInBytes), compute_resources.CpuMilliCores(availableCpuInMilliCores), nil
+}
+
+func (manager *DockerManager) getFormattedFailedContainerLogsOrErrorString(ctx context.Context, containerId string) string {
+	containerLogs := manager.getFailedContainerLogsOrErrorString(ctx, containerId)
+	containerLogsHeader := "\n--------------------- CONTAINER LOGS -----------------------\n"
+	containerLogsFooter := "\n------------------- END CONTAINER LOGS --------------------"
+	return containerLogsHeader + containerLogs + containerLogsFooter
 }
 
 // =================================================================================================================
@@ -2149,10 +2187,8 @@ func (manager *DockerManager) didContainerStartSuccessfully(ctx context.Context,
 	}
 
 	if !isContainerRunning {
-		containerLogs := manager.getFailedContainerLogsOrErrorString(ctx, containerId)
-		containerLogsHeader := "\n--------------------- CONTAINER LOGS -----------------------\n"
-		containerLogsFooter := "\n------------------- END CONTAINER LOGS --------------------"
-		return false, stacktrace.NewError("Container '%v' (with image '%v') die with a non zero exit code rapidly after it was started. This likely indicates a misconfiguration with how the container was started. Container should either exit gracefully or keep running for Kurtosis to consider it in a good state; logs are below:%v%v%v", containerId, dockerImage, containerLogsHeader, containerLogs, containerLogsFooter)
+		errorStr := manager.getFormattedFailedContainerLogsOrErrorString(ctx, containerId)
+		return false, stacktrace.NewError("Container '%v' (with image '%v') die with a non zero exit code rapidly after it was started. This likely indicates a misconfiguration with how the container was started. Container should either exit gracefully or keep running for Kurtosis to consider it in a good state; logs are below:%v", containerId, dockerImage, errorStr)
 	}
 
 	return true, nil
@@ -2192,6 +2228,7 @@ func newContainerFromDockerContainer(dockerContainer types.ContainerJSON) (*dock
 		dockerContainer.Config.Entrypoint,
 		dockerContainer.Config.Cmd,
 		containerEnvArgs,
+		dockerContainer.NetworkSettings.IPAddress,
 	)
 
 	return newContainer, nil
@@ -2358,6 +2395,7 @@ func pullImage(dockerClient *client.Client, imageName string, registrySpec *imag
 			logrus.Warnf("Falling back to pulling image with no auth config.")
 		} else {
 			imagePullOptions.RegistryAuth = authFromConfig
+			logrus.Infof("Using authentication to pull image: %s", imageName)
 		}
 	}
 

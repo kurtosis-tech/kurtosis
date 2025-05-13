@@ -37,10 +37,10 @@ const (
 	// We create a duplicate of the enclave uuid and service uuid label key because:
 	// the logs aggregator (vector) needs the enclave uuid and service uuid label keys to create the filepath where logs are stored in persistent volume
 	// but vectors template syntax can't interpret the "com.kurtosistech." prefix, so we can't use the existing label keys
-	logsEnclaveUuidLabelKeyStr         = "enclave_uuid"
-	logsServiceUuidDockerLabelKey      = "service_uuid"
-	logsServiceShortUuidDockerLabelKey = "service_short_uuid"
-	logsServiceNameDockerLabelKey      = "service_name"
+	logsLabelPrefixStr                = "kurtosis_"
+	logsOnlyEnclaveUuidLabelKeyStr    = logsLabelPrefixStr + "enclave_uuid"
+	logsOnlyServiceUuidDockerLabelKey = logsLabelPrefixStr + "service_uuid"
+	logsOnlyServiceNameDockerLabelKey = logsLabelPrefixStr + "service_name"
 
 	// Traefik label keys
 	traefikLabelKeyPrefixStr = "traefik."
@@ -66,7 +66,6 @@ var EnclaveNameDockerLabelKey = MustCreateNewDockerLabelKey(enclaveNameLabelKeyS
 var EnclaveCreationTimeLabelKey = MustCreateNewDockerLabelKey(enclaveCreationTime)
 var PrivateIPDockerLabelKey = MustCreateNewDockerLabelKey(privateIpAddrLabelKeyStr)
 var UserServiceGUIDDockerLabelKey = MustCreateNewDockerLabelKey(userServiceGuidDockerLabelKeyStr)
-var LogsEnclaveUUIDDockerLabelKey = MustCreateNewDockerLabelKey(logsEnclaveUuidLabelKeyStr)
-var LogsServiceUUIDDockerLabelKey = MustCreateNewDockerLabelKey(logsServiceUuidDockerLabelKey)
-var LogsServiceShortUUIDDockerLabelKey = MustCreateNewDockerLabelKey(logsServiceShortUuidDockerLabelKey)
-var LogsServiceNameDockerLabelKey = MustCreateNewDockerLabelKey(logsServiceNameDockerLabelKey)
+var LogsEnclaveUUIDDockerLabelKey = MustCreateNewDockerLabelKey(logsOnlyEnclaveUuidLabelKeyStr)
+var LogsServiceUUIDDockerLabelKey = MustCreateNewDockerLabelKey(logsOnlyServiceUuidDockerLabelKey)
+var LogsServiceNameDockerLabelKey = MustCreateNewDockerLabelKey(logsOnlyServiceNameDockerLabelKey)

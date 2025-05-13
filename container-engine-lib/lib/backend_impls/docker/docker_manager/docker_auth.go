@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
 	"strings"
@@ -14,6 +13,7 @@ import (
 	"github.com/docker/docker/api/types/registry"
 	dockerregistry "github.com/docker/docker/registry"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -36,6 +36,8 @@ func loadDockerAuth() (RegistryAuthConfig, error) {
 		configFilePath = configFilePath + "/config.json"
 	}
 
+	logrus.Infof("Loading docker auth from config file: %s", configFilePath)
+
 	file, err := os.ReadFile(configFilePath)
 	if errors.Is(err, os.ErrNotExist) {
 		// If the auth config doesn't exist, return an empty auth config
@@ -48,6 +50,15 @@ func loadDockerAuth() (RegistryAuthConfig, error) {
 	var authConfig RegistryAuthConfig
 	if err := json.Unmarshal(file, &authConfig); err != nil {
 		return emptyRegistryAuthConfig(), stacktrace.Propagate(err, "error unmarshalling Docker config file at '%s'", configFilePath)
+	}
+
+	// Remove trailing slashes from registry URLs
+	for registry, auth := range authConfig.Auths {
+		if strings.HasSuffix(registry, "/") {
+			delete(authConfig.Auths, registry)
+			registry = strings.TrimSuffix(registry, "/")
+			authConfig.Auths[registry] = auth
+		}
 	}
 
 	return authConfig, nil
@@ -95,6 +106,26 @@ func getCredentialsFromStore(credHelper string, registryURL string) (*registry.A
 	// Prepare the helper command (docker-credential-<store>)
 	credHelperCmd := "docker-credential-" + credHelper
 
+	// First try with the original URL
+	auth, err := tryGetCredentialsWithURL(credHelperCmd, registryURL)
+	if err == nil {
+		return auth, nil
+	}
+
+	// If the URL doesn't end with a slash, try again with a trailing slash
+	if !strings.HasSuffix(registryURL, "/") {
+		auth, retryErr := tryGetCredentialsWithURL(credHelperCmd, registryURL+"/")
+		if retryErr == nil {
+			return auth, nil
+		}
+	}
+
+	// If both attempts failed, return the original error
+	return nil, err
+}
+
+// tryGetCredentialsWithURL attempts to get credentials for a specific URL
+func tryGetCredentialsWithURL(credHelperCmd string, registryURL string) (*registry.AuthConfig, error) {
 	// Execute the credential helper to get credentials for the registry
 	cmd := exec.Command(credHelperCmd, "get")
 	cmd.Stdin = strings.NewReader(registryURL)
@@ -144,14 +175,18 @@ func GetAuthFromDockerConfig(repo string) (*registry.AuthConfig, error) {
 	}
 
 	// if repo string doesn't contain a repo prefix assume its an official docker library image
-	if !strings.Contains(repo, "/") {
+	if !strings.Contains(repo, "/") && !strings.Contains(repo, ".") {
 		repo = "library/" + repo
 	}
 
 	registryHost := dockerregistry.ConvertToHostname(repo)
 
-	if !strings.Contains(registryHost, ".") || registryHost == "docker.io" || registryHost == "registry-1.docker.io" {
-		registryHost = "https://index.docker.io/v1/"
+	// Deal with the default Docker Hub registry.
+	if !strings.Contains(registryHost, ".") ||
+		registryHost == "docker.io" ||
+		registryHost == "registry-1.docker.io" ||
+		registryHost == "index.docker.io" {
+		registryHost = "https://index.docker.io/v1"
 	}
 
 	// Check if the URL contains "://", meaning it already has a protocol

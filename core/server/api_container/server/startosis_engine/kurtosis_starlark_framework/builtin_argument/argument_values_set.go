@@ -2,6 +2,7 @@ package builtin_argument
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/stacktrace"
@@ -77,26 +78,26 @@ func (arguments *ArgumentValuesSet) IsSet(argumentName string) bool {
 func (arguments *ArgumentValuesSet) ExtractArgumentValue(argumentName string, argumentValuePointer interface{}) error {
 	argumentIdx, found := getArgumentIndex(arguments, argumentName)
 	if !found {
-		return fmt.Errorf("Argument '%s' could not be found in schema", argumentName)
+		return fmt.Errorf("argument '%s' could not be found in schema", argumentName)
 	}
 
 	if !arguments.IsSet(argumentName) {
-		return fmt.Errorf("Argument '%s' should be set to extract its value", argumentName)
+		return fmt.Errorf("argument '%s' should be set to extract its value", argumentName)
 	}
 
 	pointerValue := reflect.ValueOf(argumentValuePointer)
 	if pointerValue.Kind() != reflect.Ptr {
-		return fmt.Errorf("Unable to extract value for argument '%s'. Need a value pointer to value as input", argumentName)
+		return fmt.Errorf("unable to extract value for argument '%s'. Need a value pointer to value as input", argumentName)
 	}
 	paramVar := pointerValue.Elem()
 	if !reflect.TypeOf(arguments.values[argumentIdx]).AssignableTo(paramVar.Type()) {
-		return fmt.Errorf("Unable to extract value for argument '%s'. Types were not assignable (got '%s', expecting '%s')", argumentName, paramVar.Type(), reflect.TypeOf(arguments.values[argumentIdx]))
+		return fmt.Errorf("unable to extract value for argument '%s'. Types were not assignable (got '%s', expecting '%s')", argumentName, paramVar.Type(), reflect.TypeOf(arguments.values[argumentIdx]))
 	}
 
 	// Deep copy the value to avoid having the value modified downstream in the script execution
 	copiedVal, err := DeepCopyArgumentValue(arguments.values[argumentIdx])
 	if err != nil {
-		return fmt.Errorf("Argument '%s' could not be copied to a separate value", argumentName)
+		return fmt.Errorf("argument '%s' could not be copied to a separate value", argumentName)
 	}
 
 	paramVar.Set(reflect.ValueOf(copiedVal))
@@ -141,7 +142,7 @@ func parseArguments(argumentDefinitions []*BuiltinArgument, builtinName string, 
 		if argumentDefinition.Validator != nil {
 			if interpretationErr := argumentDefinition.Validator(argValue); interpretationErr != nil {
 				// TODO: probably worth making parseArguments return an interpretationError to avoid conversion here
-				invalidArgs[argName] = fmt.Errorf(interpretationErr.Error())
+				invalidArgs[argName] = errors.New(interpretationErr.Error())
 				continue
 			}
 		}
@@ -162,7 +163,7 @@ func parseArguments(argumentDefinitions []*BuiltinArgument, builtinName string, 
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Some errors happened parsing the arguments, but those errors could not be serialized. This is a Kurtosis internal bug. Error was: %v", err)
 		}
-		return nil, fmt.Errorf("The following argument(s) could not be parsed or did not pass validation: %s", serializedErrors)
+		return nil, fmt.Errorf("the following argument(s) could not be parsed or did not pass validation: %s", serializedErrors)
 	}
 	return storedValues, nil
 }

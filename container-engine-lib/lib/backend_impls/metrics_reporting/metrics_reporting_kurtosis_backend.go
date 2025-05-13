@@ -56,6 +56,10 @@ func (backend *MetricsReportingKurtosisBackend) CreateEngine(
 	envVars map[string]string,
 	shouldStartInDebugMode bool,
 	githubAuthToken string,
+	sinks logs_aggregator.Sinks,
+	shouldEnablePersistentVolumeLogsCollection bool,
+	logsCollectorFilters []logs_collector.Filter,
+	logsCollectorParsers []logs_collector.Parser,
 ) (*engine.Engine, error) {
 	result, err := backend.underlying.CreateEngine(
 		ctx,
@@ -65,6 +69,10 @@ func (backend *MetricsReportingKurtosisBackend) CreateEngine(
 		envVars,
 		shouldStartInDebugMode,
 		githubAuthToken,
+		sinks,
+		shouldEnablePersistentVolumeLogsCollection,
+		logsCollectorFilters,
+		logsCollectorParsers,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the engine using image '%v' with tag '%v' and debug mode '%v'", imageOrgAndRepo, imageVersionTag, shouldStartInDebugMode)
@@ -322,13 +330,14 @@ func (backend *MetricsReportingKurtosisBackend) GetUserServiceLogs(
 func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommands(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
+	containerUser string,
 	userServiceCommands map[service.ServiceUUID][]string,
 ) (
-	succesfulUserServiceExecResults map[service.ServiceUUID]*exec_result.ExecResult,
+	successfulUserServiceExecResults map[service.ServiceUUID]*exec_result.ExecResult,
 	erroredUserServiceUuids map[service.ServiceUUID]error,
 	resultErr error,
 ) {
-	succesfulUserServiceExecResults, erroredUserServiceUuids, err := backend.underlying.RunUserServiceExecCommands(ctx, enclaveUuid, userServiceCommands)
+	successfulUserServiceExecResults, erroredUserServiceUuids, err := backend.underlying.RunUserServiceExecCommands(ctx, enclaveUuid, containerUser, userServiceCommands)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(
 			err,
@@ -337,7 +346,7 @@ func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommands(
 			enclaveUuid,
 		)
 	}
-	return succesfulUserServiceExecResults, erroredUserServiceUuids, nil
+	return successfulUserServiceExecResults, erroredUserServiceUuids, nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommandWithStreamedOutput(
@@ -408,8 +417,8 @@ func (backend *MetricsReportingKurtosisBackend) DestroyUserServices(
 	return successes, failures, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) CreateLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error) {
-	return backend.underlying.CreateLogsAggregator(ctx)
+func (backend *MetricsReportingKurtosisBackend) CreateLogsAggregator(ctx context.Context, httpPortNum uint16, sinks logs_aggregator.Sinks) (*logs_aggregator.LogsAggregator, error) {
+	return backend.underlying.CreateLogsAggregator(ctx, httpPortNum, sinks)
 }
 
 func (backend *MetricsReportingKurtosisBackend) GetLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error) {
@@ -420,9 +429,18 @@ func (backend *MetricsReportingKurtosisBackend) DestroyLogsAggregator(ctx contex
 	return backend.underlying.DestroyLogsAggregator(ctx)
 }
 
-func (backend *MetricsReportingKurtosisBackend) CreateLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, logsCollectorHttpPortNumber uint16, logsCollectorTcpPortNumber uint16) (*logs_collector.LogsCollector, error) {
-
-	logsCollector, err := backend.underlying.CreateLogsCollectorForEnclave(ctx, enclaveUuid, logsCollectorHttpPortNumber, logsCollectorTcpPortNumber)
+func (backend *MetricsReportingKurtosisBackend) CreateLogsCollectorForEnclave(
+	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
+	logsCollectorHttpPortNumber uint16,
+	logsCollectorTcpPortNumber uint16,
+	logsCollectorFilters []logs_collector.Filter,
+	logsCollectorParsers []logs_collector.Parser,
+) (
+	*logs_collector.LogsCollector,
+	error,
+) {
+	logsCollector, err := backend.underlying.CreateLogsCollectorForEnclave(ctx, enclaveUuid, logsCollectorHttpPortNumber, logsCollectorTcpPortNumber, logsCollectorFilters, logsCollectorParsers)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the logs collector with TCP port number '%v' and HTTP port number '%v'", logsCollectorTcpPortNumber, logsCollectorHttpPortNumber)
 	}

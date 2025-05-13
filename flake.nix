@@ -2,7 +2,7 @@
   description = "Kurtosis dev flake";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
     unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
   };
@@ -36,7 +36,7 @@
             in
             [
               goreleaser
-              go_1_20
+              go_1_23
               gopls
               golangci-lint
               delve
@@ -68,16 +68,16 @@
           shellHook = ''
             export CARGO_NET_GIT_FETCH_WITH_CLI=true
             printf '\u001b[32m
-                                @@@@@@@@     
-                  @@@ @@     @@@   @@@      
-                @@@   @@    @@    @@        
-                @   @@    @@    @@          
-                  @@    @@    @@            
-                @@    @@    @@              
-                @   @@    @@    @@          
-                @       @@  @@    @@        
-                  @@   @@@    @@@    @@      
-                    @@@         @@@@@@@@     
+                                @@@@@@@@
+                  @@@ @@     @@@   @@@
+                @@@   @@    @@    @@
+                @   @@    @@    @@
+                  @@    @@    @@
+                @@    @@    @@
+                @   @@    @@    @@
+                @       @@  @@    @@
+                  @@   @@@    @@@    @@
+                    @@@         @@@@@@@@
             \u001b[0m
             Starting Kurtosis dev shell. Setup the alias to local compiled Kurtosis cli command "ktdev" and "ktdebug" by running:
             \e[32m

@@ -264,7 +264,6 @@ func (serviceConfig *ServiceConfig) GetTiniEnabled() bool {
 }
 
 func (serviceConfig *ServiceConfig) UnmarshalJSON(data []byte) error {
-
 	// Suppressing exhaustruct requirement because we want an object with zero values
 	// nolint: exhaustruct
 	unmarshalledPrivateStructPtr := &privateServiceConfig{}
@@ -275,4 +274,39 @@ func (serviceConfig *ServiceConfig) UnmarshalJSON(data []byte) error {
 
 	serviceConfig.privateServiceConfig = unmarshalledPrivateStructPtr
 	return nil
+}
+
+func GetEmptyServiceConfig() *ServiceConfig {
+	emptyServiceConfig, _ := CreateServiceConfig(
+		"",
+		nil,
+		nil,
+		nil,
+		map[string]*port_spec.PortSpec{},
+		map[string]*port_spec.PortSpec{},
+		[]string{},
+		[]string{},
+		map[string]string{},
+		&service_directory.FilesArtifactsExpansion{
+			ExpanderImage:                        "",
+			ExpanderEnvVars:                      nil,
+			ServiceDirpathsToArtifactIdentifiers: nil,
+			ExpanderDirpathsToServiceDirpaths:    nil,
+		},
+		&service_directory.PersistentDirectories{
+			ServiceDirpathToPersistentDirectory: map[string]service_directory.PersistentDirectory{},
+		},
+		0,
+		0,
+		"",
+		0,
+		0,
+		map[string]string{},
+		nil,
+		[]v1.Toleration{},
+		map[string]string{},
+		image_download_mode.ImageDownloadMode_Always,
+		false,
+	)
+	return emptyServiceConfig
 }

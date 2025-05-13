@@ -5,6 +5,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/grafloki"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
+
 	portal_constructors "github.com/kurtosis-tech/kurtosis-portal/api/golang/constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
@@ -183,13 +186,32 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(
 	githubAuthTokenOverride string,
 	restartAPIContainers bool,
 	domain string,
-	logRetentionPeriodStr string) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
+	logRetentionPeriodStr string,
+	additionalSinks logs_aggregator.Sinks,
+) (
+	kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	func() error, error,
+) {
 	status, maybeHostMachinePortBinding, engineVersion, err := manager.GetEngineStatus(ctx)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
 	}
 	logrus.Debugf("Engine status: '%v'", status)
 	clusterType := manager.clusterConfig.GetClusterType()
+
+	var lokiSink logs_aggregator.Sinks
+	var grafanaUrl string
+	if manager.clusterConfig.GetGraflokiConfig().ShouldStartBeforeEngine {
+		lokiSink, grafanaUrl, err = grafloki.StartGrafloki(ctx, clusterType, manager.clusterConfig.GetGraflokiConfig())
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred starting Grafana and Loki before engine.")
+		}
+	}
+	if grafanaUrl != "" {
+		logrus.Infof("Grafana running at %v", grafanaUrl)
+	}
+	additionalSinks = combineSinks(additionalSinks, lokiSink)
+
 	engineGuarantor := newEngineExistenceGuarantorWithDefaultVersion(
 		ctx,
 		maybeHostMachinePortBinding,
@@ -208,6 +230,10 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(
 		restartAPIContainers,
 		domain,
 		logRetentionPeriodStr,
+		combineSinks(additionalSinks, manager.clusterConfig.GetLogsAggregatorConfig().Sinks),
+		manager.clusterConfig.ShouldEnableDefaultLogsSink(),
+		manager.clusterConfig.GetLogsCollectorConfig().Filters,
+		manager.clusterConfig.GetLogsCollectorConfig().Parsers,
 	)
 	// TODO Need to handle the Kubernetes case, where a gateway needs to be started after the engine is started but
 	//  before we can return an EngineClient
@@ -219,8 +245,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(
 }
 
 // StartEngineIdempotentlyWithCustomVersion Starts an engine if one doesn't exist already, and returns a client to it TokenOverride string) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
-func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(
-	ctx context.Context,
+func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx context.Context,
 	engineImageVersionTag string,
 	logLevel logrus.Level,
 	poolSize uint8,
@@ -228,13 +253,32 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(
 	githubAuthTokenOverride string,
 	restartAPIContainers bool,
 	domain string,
-	logRetentionPeriodStr string) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
+	logRetentionPeriodStr string,
+	additionalSinks logs_aggregator.Sinks,
+) (
+	kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	func() error, error,
+) {
 	status, maybeHostMachinePortBinding, engineVersion, err := manager.GetEngineStatus(ctx)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
 	}
 
 	clusterType := manager.clusterConfig.GetClusterType()
+
+	var lokiSink logs_aggregator.Sinks
+	var grafanaUrl string
+	if manager.clusterConfig.GetGraflokiConfig().ShouldStartBeforeEngine {
+		lokiSink, grafanaUrl, err = grafloki.StartGrafloki(ctx, clusterType, manager.clusterConfig.GetGraflokiConfig())
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred starting Grafana and Loki before engine.")
+		}
+	}
+	if grafanaUrl != "" {
+		logrus.Infof("Grafana running at %v", grafanaUrl)
+	}
+	additionalSinks = combineSinks(additionalSinks, lokiSink)
+
 	engineGuarantor := newEngineExistenceGuarantorWithCustomVersion(
 		ctx,
 		maybeHostMachinePortBinding,
@@ -254,6 +298,10 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(
 		restartAPIContainers,
 		domain,
 		logRetentionPeriodStr,
+		combineSinks(manager.clusterConfig.GetLogsAggregatorConfig().Sinks, additionalSinks),
+		manager.clusterConfig.ShouldEnableDefaultLogsSink(),
+		manager.clusterConfig.GetLogsCollectorConfig().Filters,
+		manager.clusterConfig.GetLogsCollectorConfig().Parsers,
 	)
 	engineClient, engineClientCloseFunc, err := manager.startEngineWithGuarantor(ctx, status, engineGuarantor)
 	if err != nil {
@@ -345,8 +393,7 @@ func (manager *EngineManager) StopEngineIdempotently(ctx context.Context) error 
 // If no optionalVersionToUse is passed, then the new engine will take the default version, unless
 // restartEngineOnSameVersionIfAnyRunning is set to true in which case it will take the version of the currently
 // running engine
-func (manager *EngineManager) RestartEngineIdempotently(
-	ctx context.Context,
+func (manager *EngineManager) RestartEngineIdempotently(ctx context.Context,
 	logLevel logrus.Level,
 	optionalVersionToUse string,
 	restartEngineOnSameVersionIfAnyRunning bool,
@@ -356,7 +403,11 @@ func (manager *EngineManager) RestartEngineIdempotently(
 	shouldRestartAPIContainers bool,
 	domain string,
 	logRetentionPeriodStr string,
-) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
+	additionalSinks logs_aggregator.Sinks,
+) (
+	kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	func() error, error,
+) {
 	var versionOfNewEngine string
 	// We try to do our best to restart an engine on the same version the current on is on
 	_, _, currentEngineVersion, err := manager.GetEngineStatus(ctx)
@@ -381,9 +432,9 @@ func (manager *EngineManager) RestartEngineIdempotently(
 	var engineClientCloseFunc func() error
 	var restartEngineErr error
 	if versionOfNewEngine != defaultEngineVersion {
-		_, engineClientCloseFunc, restartEngineErr = manager.StartEngineIdempotentlyWithCustomVersion(ctx, versionOfNewEngine, logLevel, poolSize, shouldStartInDebugMode, githubAuthTokenOverride, shouldRestartAPIContainers, domain, logRetentionPeriodStr)
+		_, engineClientCloseFunc, restartEngineErr = manager.StartEngineIdempotentlyWithCustomVersion(ctx, versionOfNewEngine, logLevel, poolSize, shouldStartInDebugMode, githubAuthTokenOverride, shouldRestartAPIContainers, domain, logRetentionPeriodStr, additionalSinks)
 	} else {
-		_, engineClientCloseFunc, restartEngineErr = manager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel, poolSize, githubAuthTokenOverride, shouldRestartAPIContainers, domain, logRetentionPeriodStr)
+		_, engineClientCloseFunc, restartEngineErr = manager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel, poolSize, githubAuthTokenOverride, shouldRestartAPIContainers, domain, logRetentionPeriodStr, additionalSinks)
 	}
 	if restartEngineErr != nil {
 		return nil, nil, stacktrace.Propagate(restartEngineErr, "An error occurred starting a new engine")
@@ -510,4 +561,17 @@ func (manager *EngineManager) waitUntilEngineStoppedOrError(ctx context.Context)
 		time.Sleep(waitUntilEngineStoppedCoolOff)
 	}
 	return stacktrace.NewError("Engine did not report stopped status, last status reported was '%v'", status)
+}
+
+// combineSinks aggregates sinks and sinksToAdd
+// note: sinksToAdd will override sinks in case of an id clash
+func combineSinks(sinks logs_aggregator.Sinks, sinksToAdd logs_aggregator.Sinks) logs_aggregator.Sinks {
+	combinedSinks := logs_aggregator.Sinks{}
+	for sinkId, sink := range sinks {
+		combinedSinks[sinkId] = sink
+	}
+	for sinkId, sink := range sinksToAdd {
+		combinedSinks[sinkId] = sink
+	}
+	return combinedSinks
 }

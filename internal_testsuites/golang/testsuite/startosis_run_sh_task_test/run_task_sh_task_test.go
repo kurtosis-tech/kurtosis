@@ -32,6 +32,13 @@ def run(plan):
   result = plan.run_sh(run="sleep 10s", wait="5s")
   plan.verify(value=result.code, assertion="==", target_value="0")
 `
+
+	runStarlarkWithAcceptableCodes = `
+def run(plan):
+  result = plan.run_sh(run="true", acceptable_codes=[0])
+  result2 = plan.run_sh(run="false", acceptable_codes=[1])
+  result3 = plan.run_sh(run="someprog() { echo Hi; return 42; }; someprog", acceptable_codes=[42])
+`
 )
 
 func TestStarlark_RunshTaskSimple(t *testing.T) {
@@ -56,4 +63,12 @@ func TestStarlark_RunshTimesoutSuccess(t *testing.T) {
 	expectedErrorMessage := "The exec request timed out after 5 seconds"
 	require.NotNil(t, runResult.ExecutionError)
 	require.Contains(t, runResult.ExecutionError.GetErrorMessage(), expectedErrorMessage)
+}
+
+func TestStarlark_RunshAcceptableCodes(t *testing.T) {
+	ctx := context.Background()
+	runResult, _ := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, runshTest, runStarlarkWithAcceptableCodes)
+	expectedOutput := "Command returned with exit code '0' with no output\nCommand returned with exit code '1' with no output\nCommand returned with exit code '42' and the following output:\n--------------------\nHi\n\n--------------------\n"
+	require.Nil(t, runResult.ExecutionError)
+	require.Equal(t, expectedOutput, string(runResult.RunOutput))
 }
