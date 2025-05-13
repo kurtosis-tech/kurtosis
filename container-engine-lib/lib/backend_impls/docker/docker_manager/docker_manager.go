@@ -883,7 +883,10 @@ func (manager *DockerManager) GetContainerIps(ctx context.Context, containerId s
 	// }
 	for networkKey, networkInfo := range allNetworkInfo {
 		// podman does not return the networkID properly and as such we need to make sure we get it.
-		network, err := manager.dockerClient.NetworkInspect(ctx, networkInfo.NetworkID, types.NetworkInspectOptions{})
+		network, err := manager.dockerClient.NetworkInspect(ctx, networkInfo.NetworkID, types.NetworkInspectOptions{
+			Scope:   "",
+			Verbose: false,
+		})
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred inspecting network: '%v'", networkKey)
 		}
@@ -1252,15 +1255,6 @@ func (manager *DockerManager) ConnectContainerToNetwork(ctx context.Context, net
 	}
 
 	config := getEndpointSettingsForIpAddress(staticIpAddressStr, alias)
-
-	logrus.Infof("Listing all networks right before attempting to connect to network...")
-	networkResources, err := manager.dockerClient.NetworkList(ctx, types.NetworkListOptions{})
-	for _, networkResource := range networkResources {
-		logrus.Infof("Information about network '%v' that exists: %v", networkResource.Name, networkResource)
-		if networkResource.ID == networkId {
-			logrus.Infof("The network we are trying to connect to exists right before connection.")
-		}
-	}
 
 	err = manager.dockerClient.NetworkConnect(
 		ctx,
@@ -1872,6 +1866,10 @@ func (manager *DockerManager) getContainerHostConfig(
 	}
 	securityOptsSlice = append(securityOptsSlice, "")
 
+	// if podman
+	securityOptsSlice = append(securityOptsSlice, "label=disable")
+	securityOptsSlice = append(securityOptsSlice, "apparmor:unconfined")
+
 	extraHosts := []string{}
 	if needsToAccessDockerHostMachine {
 		// This explicit specification is necessary because in Docker-for-Linux, the magic "host.docker.internal"
@@ -1942,7 +1940,6 @@ func (manager *DockerManager) getContainerHostConfig(
 	// NOTE: Do NOT use PublishAllPorts here!!!! This will work if a Dockerfile doesn't have an EXPOSE directive, but
 	//  if the Dockerfile *does* have and EXPOSE directive then _only_ the ports with EXPOSE will be published
 	// See also: https://www.ctl.io/developers/blog/post/docker-networking-rules/
-
 	containerHostConfigPtr := &container.HostConfig{
 		Binds:           bindsList,
 		ContainerIDFile: "",
@@ -1973,25 +1970,21 @@ func (manager *DockerManager) getContainerHostConfig(
 		Privileged:      false,
 		PublishAllPorts: false,
 		ReadonlyRootfs:  false,
-		//SecurityOpt:     securityOptsSlice,
-		SecurityOpt: []string{
-			"label=disable",       // Disables SELinux
-			"apparmor:unconfined", // Disables AppArmor
-		},
-		StorageOpt:    nil,
-		Tmpfs:         nil,
-		UTSMode:       "",
-		UsernsMode:    "",
-		ShmSize:       0,
-		Sysctls:       nil,
-		Runtime:       "",
-		ConsoleSize:   [2]uint{},
-		Isolation:     "",
-		Resources:     resources,
-		Mounts:        nil,
-		MaskedPaths:   nil,
-		ReadonlyPaths: nil,
-		Init:          &useInit,
+		SecurityOpt:     securityOptsSlice,
+		StorageOpt:      nil,
+		Tmpfs:           nil,
+		UTSMode:         "",
+		UsernsMode:      "",
+		ShmSize:         0,
+		Sysctls:         nil,
+		Runtime:         "",
+		ConsoleSize:     [2]uint{},
+		Isolation:       "",
+		Resources:       resources,
+		Mounts:          nil,
+		MaskedPaths:     nil,
+		ReadonlyPaths:   nil,
+		Init:            &useInit,
 	}
 	return containerHostConfigPtr, nil
 }
