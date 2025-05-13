@@ -2,9 +2,7 @@ package reverse_proxy_functions
 
 import (
 	"context"
-	"github.com/sirupsen/logrus"
 	"net"
-	"time"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
@@ -36,9 +34,6 @@ func ConnectReverseProxyToNetwork(ctx context.Context, dockerManager *docker_man
 		return nil
 	}
 
-	logrus.Infof("Waiting a few second before connecting reverse proxy to network...")
-	time.Sleep(10 * time.Second)
-	logrus.Infof("Okay lets try and connect now.")
 	if err = dockerManager.ConnectContainerToNetwork(ctx, networkId, maybeReverseProxyContainerId, autoAssignIpAddressToReverseProxy, emptyAliasForReverseProxy); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while connecting the reverse proxy with container id '%v' to the enclave network '%v'", maybeReverseProxyContainerId, networkId)
 	}
