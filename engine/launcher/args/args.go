@@ -101,7 +101,7 @@ func (args *EngineServerArgs) UnmarshalJSON(data []byte) error {
 		}
 		engineServerArgsMirror.KurtosisLocalBackendConfig = dockerConfig
 	case KurtosisBackendType_Podman:
-		var podmanConfig kurtosis_backend_config.DockerBackendConfig
+		var podmanConfig kurtosis_backend_config.PodmanBackendConfig
 		if err := json.Unmarshal(byteArray, &podmanConfig); err != nil {
 			return stacktrace.Propagate(err, "Failed to unmarshal backend config '%+v' with type '%v'", engineServerArgsMirror.KurtosisLocalBackendConfig, engineServerArgsMirror.KurtosisBackendType.String())
 		}

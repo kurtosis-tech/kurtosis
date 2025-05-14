@@ -82,11 +82,11 @@ func (args *APIContainerArgs) UnmarshalJSON(data []byte) error {
 		apiContainerArgsMirror.KurtosisBackendConfig = dockerConfig
 	// Podman backend is the same as docker backend with a few changes to account for Podman's differences so the config is the same as docker backend
 	case KurtosisBackendType_Podman:
-		var dockerConfig kurtosis_backend_config.DockerBackendConfig
-		if err := json.Unmarshal(byteArray, &dockerConfig); err != nil {
+		var podmanConfig kurtosis_backend_config.PodmanBackendConfig
+		if err := json.Unmarshal(byteArray, &podmanConfig); err != nil {
 			return stacktrace.Propagate(err, "Failed to unmarshal backend config '%+v' with type '%v'", apiContainerArgsMirror.KurtosisBackendConfig, apiContainerArgsMirror.KurtosisBackendType.String())
 		}
-		apiContainerArgsMirror.KurtosisBackendConfig = dockerConfig
+		apiContainerArgsMirror.KurtosisBackendConfig = podmanConfig
 	case KurtosisBackendType_Kubernetes:
 		var kubernetesConfig kurtosis_backend_config.KubernetesBackendConfig
 		if err := json.Unmarshal(byteArray, &kubernetesConfig); err != nil {
