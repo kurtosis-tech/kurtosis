@@ -59,8 +59,32 @@ var (
 func GetDockerKurtosisBackend(
 	optionalApiContainerModeArgs *APIContainerModeArgs,
 	optionalRemoteBackendConfig *configs.KurtosisRemoteBackendConfig,
-	usePodmanMode bool,
 ) (backend_interface.KurtosisBackend, error) {
+	var kurtosisBackend backend_interface.KurtosisBackend
+	var err error
+	usePodmanMode := false
+	if optionalRemoteBackendConfig != nil {
+		kurtosisBackend, err = getRemoteDockerKurtosisBackend(optionalApiContainerModeArgs, optionalRemoteBackendConfig, usePodmanMode)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating a remote Docker backend")
+		}
+	} else {
+		kurtosisBackend, err = getLocalDockerKurtosisBackend(optionalApiContainerModeArgs, usePodmanMode)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating a local Docker backend")
+		}
+	}
+	return kurtosisBackend, nil
+}
+
+// GetDockerKurtosisBackend is the entrypoint method we expect users of container-engine-lib to call
+// It creates a local or remote docker backend based on the existence of a remote backend config.
+// ONLY the API container should pass in the extra API container args, which will unlock extra API container functionality
+func GetPodmanKurtosisBackend(
+	optionalApiContainerModeArgs *APIContainerModeArgs,
+	optionalRemoteBackendConfig *configs.KurtosisRemoteBackendConfig,
+) (backend_interface.KurtosisBackend, error) {
+	usePodmanMode := true
 	var kurtosisBackend backend_interface.KurtosisBackend
 	var err error
 	if optionalRemoteBackendConfig != nil {
@@ -197,9 +221,18 @@ func getDockerKurtosisBackend(
 	optionalApiContainerModeArgs *APIContainerModeArgs,
 	usePodmanMode bool,
 ) (backend_interface.KurtosisBackend, error) {
-	dockerManager, err := docker_manager.CreateDockerManager(dockerClientOpts, usePodmanMode)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred building docker manager")
+	var dockerManager *docker_manager.DockerManager
+	var err error
+	if usePodmanMode {
+		dockerManager, err = docker_manager.CreatePodmanManager(dockerClientOpts)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred building Podman Dockermanager")
+		}
+	} else {
+		dockerManager, err = docker_manager.CreateDockerManager(dockerClientOpts)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred building Docker manager")
+		}
 	}
 
 	// If running within the API container context, detect the network that the API container is running inside

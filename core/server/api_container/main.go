@@ -148,13 +148,12 @@ func runMain() error {
 	var kurtosisBackend backend_interface.KurtosisBackend
 	switch serverArgs.KurtosisBackendType {
 	case args.KurtosisBackendType_Docker:
-		kurtosisBackend, err = backend_creator.GetDockerKurtosisBackend(dockerApiContainerModeArgs, configs.NoRemoteBackendConfig, false)
+		kurtosisBackend, err = backend_creator.GetDockerKurtosisBackend(dockerApiContainerModeArgs, configs.NoRemoteBackendConfig)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
 		}
 	case args.KurtosisBackendType_Podman:
-		usePodmanMode := true
-		kurtosisBackend, err = backend_creator.GetDockerKurtosisBackend(dockerApiContainerModeArgs, configs.NoRemoteBackendConfig, usePodmanMode)
+		kurtosisBackend, err = backend_creator.GetPodmanKurtosisBackend(dockerApiContainerModeArgs, configs.NoRemoteBackendConfig)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting local Podman Kurtosis backend")
 		}

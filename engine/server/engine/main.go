@@ -386,13 +386,12 @@ func getKurtosisBackend(ctx context.Context, kurtosisBackendType args.KurtosisBa
 	var err error
 	switch kurtosisBackendType {
 	case args.KurtosisBackendType_Docker:
-		kurtosisBackend, err = backend_creator.GetDockerKurtosisBackend(apiContainerModeArgsForKurtosisBackend, remoteBackendConfigMaybe, false)
+		kurtosisBackend, err = backend_creator.GetDockerKurtosisBackend(apiContainerModeArgsForKurtosisBackend, remoteBackendConfigMaybe)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
 		}
 	case args.KurtosisBackendType_Podman:
-		usePodmanMode := true
-		kurtosisBackend, err = backend_creator.GetDockerKurtosisBackend(apiContainerModeArgsForKurtosisBackend, remoteBackendConfigMaybe, usePodmanMode)
+		kurtosisBackend, err = backend_creator.GetPodmanKurtosisBackend(apiContainerModeArgsForKurtosisBackend, remoteBackendConfigMaybe)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting local Podman Kurtosis backend")
 		}

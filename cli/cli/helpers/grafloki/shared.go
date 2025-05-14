@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -47,13 +48,20 @@ func StartGrafloki(ctx context.Context, clusterType resolved_config.KurtosisClus
 	var err error
 	switch clusterType {
 	case resolved_config.KurtosisClusterType_Docker:
-		lokiHost, grafanaUrl, err = StartGrafLokiInDocker(ctx, graflokiConfig, false)
+		dockerManager, err := docker_manager.CreateDockerManager(EmptyDockerClientOpts)
+		if err != nil {
+			return nil, "", stacktrace.Propagate(err, "An error occurred creating the Docker manager to start grafana and loki.")
+		}
+		lokiHost, grafanaUrl, err = StartGrafLokiInDocker(ctx, graflokiConfig, dockerManager)
 		if err != nil {
 			return nil, "", stacktrace.Propagate(err, "An error occurred starting Grafana and Loki in Docker.")
 		}
 	case resolved_config.KurtosisClusterType_Podman:
-		usePodman := true
-		lokiHost, grafanaUrl, err = StartGrafLokiInDocker(ctx, graflokiConfig, usePodman)
+		podmanManager, err := docker_manager.CreatePodmanManager(EmptyDockerClientOpts)
+		if err != nil {
+			return nil, "", stacktrace.Propagate(err, "An error occurred creating the Podman Docker manager to start grafana and loki.")
+		}
+		lokiHost, grafanaUrl, err = StartGrafLokiInDocker(ctx, graflokiConfig, podmanManager)
 		if err != nil {
 			return nil, "", stacktrace.Propagate(err, "An error occurred starting Grafana and Loki in Docker.")
 		}
@@ -86,13 +94,20 @@ func StartGrafloki(ctx context.Context, clusterType resolved_config.KurtosisClus
 func StopGrafloki(ctx context.Context, clusterType resolved_config.KurtosisClusterType) error {
 	switch clusterType {
 	case resolved_config.KurtosisClusterType_Docker:
-		err := StopGrafLokiInDocker(ctx, false)
+		dockerManager, err := docker_manager.CreateDockerManager(EmptyDockerClientOpts)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred creating the Docker manager to stop grafana and loki.")
+		}
+		err = StopGrafLokiInDocker(ctx, dockerManager)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred stopping Grafana and Loki containers in Docker.")
 		}
 	case resolved_config.KurtosisClusterType_Podman:
-		usePodman := true
-		err := StopGrafLokiInDocker(ctx, usePodman)
+		podmanManager, err := docker_manager.CreatePodmanManager(EmptyDockerClientOpts)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred creating the Podman Docker manager to start grafana and loki.")
+		}
+		err = StopGrafLokiInDocker(ctx, podmanManager)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred stopping Grafana and Loki containers in Docker.")
 		}

@@ -865,7 +865,7 @@ func isHttpUrl(maybeHttpUrl string) bool {
 }
 
 func pullImagesLocally(ctx context.Context, images []string) error {
-	kurtosisBackend, err := backend_creator.GetDockerKurtosisBackend(backend_creator.NoAPIContainerModeArgs, configs.NoRemoteBackendConfig, false)
+	kurtosisBackend, err := backend_creator.GetDockerKurtosisBackend(backend_creator.NoAPIContainerModeArgs, configs.NoRemoteBackendConfig)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred retrieving Docker Kurtosis Backend")
 	}

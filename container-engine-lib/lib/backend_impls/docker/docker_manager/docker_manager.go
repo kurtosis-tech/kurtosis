@@ -203,7 +203,7 @@ Args:
 
 	dockerClient: The Docker client that will be used when interacting with the underlying Docker engine the Docker engine.
 */
-func CreateDockerManager(dockerClientOpts []client.Opt, podmanMode bool) (*DockerManager, error) {
+func CreateDockerManager(dockerClientOpts []client.Opt) (*DockerManager, error) {
 	optsWithTimeout := []client.Opt{
 		client.WithTimeout(dockerClientTimeout),
 	}
@@ -220,7 +220,28 @@ func CreateDockerManager(dockerClientOpts []client.Opt, podmanMode bool) (*Docke
 	return &DockerManager{
 		dockerClient:          dockerClient,
 		dockerClientNoTimeout: dockerClientNoTimeout,
-		podmanMode:            podmanMode,
+		podmanMode:            false,
+	}, nil
+}
+
+func CreatePodmanManager(dockerClientOpts []client.Opt) (*DockerManager, error) {
+	optsWithTimeout := []client.Opt{
+		client.WithTimeout(dockerClientTimeout),
+	}
+	optsWithTimeout = append(optsWithTimeout, dockerClientOpts...)
+	dockerClient, err := client.NewClientWithOpts(optsWithTimeout...)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error creating docker client")
+	}
+	dockerClientNoTimeout, err := client.NewClientWithOpts(dockerClientOpts...)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error creating docker client")
+	}
+
+	return &DockerManager{
+		dockerClient:          dockerClient,
+		dockerClientNoTimeout: dockerClientNoTimeout,
+		podmanMode:            true,
 	}, nil
 }
 
