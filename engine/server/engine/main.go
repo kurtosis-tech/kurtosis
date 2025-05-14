@@ -347,7 +347,7 @@ func getEnclaveManager(
 	case args.KurtosisBackendType_Docker:
 		apiContainerKurtosisBackendConfigSupplier = api_container_launcher.NewDockerKurtosisBackendConfigSupplier()
 	case args.KurtosisBackendType_Podman:
-		apiContainerKurtosisBackendConfigSupplier = api_container_launcher.NewDockerKurtosisBackendConfigSupplier()
+		apiContainerKurtosisBackendConfigSupplier = api_container_launcher.NewPodmanKurtosisBackendConfigSupplier()
 	case args.KurtosisBackendType_Kubernetes:
 		kurtosisLocalBackendConfigKubernetesType, ok := kurtosisLocalBackendConfig.(kurtosis_backend_config.KubernetesBackendConfig)
 		if !ok {

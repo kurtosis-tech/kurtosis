@@ -272,6 +272,12 @@ func getDockerBackendAndEngineConfigSupplier(clusterId string, clusterType Kurto
 		return backend, nil
 	}
 
-	engineConfigSupplier := engine_server_launcher.NewDockerKurtosisBackendConfigSupplier()
+	var engineConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
+	if usePodmanMode {
+		engineConfigSupplier = engine_server_launcher.NewPodmanKurtosisBackendConfigSupplier()
+	} else {
+		engineConfigSupplier = engine_server_launcher.NewDockerKurtosisBackendConfigSupplier()
+	}
+
 	return backendSupplier, engineConfigSupplier, nil
 }

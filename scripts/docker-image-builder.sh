@@ -96,7 +96,7 @@ docker_buildx_context='kurtosis-docker-builder-context'
 #fi
 
 ## Actually build the Docker image
-docker_buildx_cmd="sudo docker buildx build ${push_flag} --platform ${buildx_platform_arg} ${image_tags_concatenated} -f ${dockerfile_filepath} ${dockerfile_dirpath}"
+docker_buildx_cmd="sudo podman buildx build ${push_flag} --platform ${buildx_platform_arg} ${image_tags_concatenated} -f ${dockerfile_filepath} ${dockerfile_dirpath}"
 echo "Running the following docker buildx command:"
 echo "${docker_buildx_cmd}"
 if ! eval "${docker_buildx_cmd}"; then
