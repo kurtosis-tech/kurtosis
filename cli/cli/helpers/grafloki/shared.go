@@ -2,6 +2,7 @@ package grafloki
 
 import (
 	"context"
+
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/stacktrace"
@@ -46,7 +47,13 @@ func StartGrafloki(ctx context.Context, clusterType resolved_config.KurtosisClus
 	var err error
 	switch clusterType {
 	case resolved_config.KurtosisClusterType_Docker:
-		lokiHost, grafanaUrl, err = StartGrafLokiInDocker(ctx, graflokiConfig)
+		lokiHost, grafanaUrl, err = StartGrafLokiInDocker(ctx, graflokiConfig, false)
+		if err != nil {
+			return nil, "", stacktrace.Propagate(err, "An error occurred starting Grafana and Loki in Docker.")
+		}
+	case resolved_config.KurtosisClusterType_Podman:
+		usePodman := true
+		lokiHost, grafanaUrl, err = StartGrafLokiInDocker(ctx, graflokiConfig, usePodman)
 		if err != nil {
 			return nil, "", stacktrace.Propagate(err, "An error occurred starting Grafana and Loki in Docker.")
 		}
@@ -79,7 +86,13 @@ func StartGrafloki(ctx context.Context, clusterType resolved_config.KurtosisClus
 func StopGrafloki(ctx context.Context, clusterType resolved_config.KurtosisClusterType) error {
 	switch clusterType {
 	case resolved_config.KurtosisClusterType_Docker:
-		err := StopGrafLokiInDocker(ctx)
+		err := StopGrafLokiInDocker(ctx, false)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred stopping Grafana and Loki containers in Docker.")
+		}
+	case resolved_config.KurtosisClusterType_Podman:
+		usePodman := true
+		err := StopGrafLokiInDocker(ctx, usePodman)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred stopping Grafana and Loki containers in Docker.")
 		}

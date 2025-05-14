@@ -2,10 +2,11 @@ package args
 
 import (
 	"encoding/json"
-	"github.com/kurtosis-tech/kurtosis/core/launcher/args/kurtosis_backend_config"
-	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"reflect"
 	"strings"
+
+	"github.com/kurtosis-tech/kurtosis/core/launcher/args/kurtosis_backend_config"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 
 	"github.com/kurtosis-tech/stacktrace"
 )
@@ -74,6 +75,13 @@ func (args *APIContainerArgs) UnmarshalJSON(data []byte) error {
 	}
 	switch apiContainerArgsMirror.KurtosisBackendType {
 	case KurtosisBackendType_Docker:
+		var dockerConfig kurtosis_backend_config.DockerBackendConfig
+		if err := json.Unmarshal(byteArray, &dockerConfig); err != nil {
+			return stacktrace.Propagate(err, "Failed to unmarshal backend config '%+v' with type '%v'", apiContainerArgsMirror.KurtosisBackendConfig, apiContainerArgsMirror.KurtosisBackendType.String())
+		}
+		apiContainerArgsMirror.KurtosisBackendConfig = dockerConfig
+	// Podman backend is the same as docker backend with a few changes to account for Podman's differences so the config is the same as docker backend
+	case KurtosisBackendType_Podman:
 		var dockerConfig kurtosis_backend_config.DockerBackendConfig
 		if err := json.Unmarshal(byteArray, &dockerConfig); err != nil {
 			return stacktrace.Propagate(err, "Failed to unmarshal backend config '%+v' with type '%v'", apiContainerArgsMirror.KurtosisBackendConfig, apiContainerArgsMirror.KurtosisBackendType.String())

@@ -44,8 +44,8 @@ var grafanaContainerLabels = map[string]string{
 	docker_label_key.ContainerTypeDockerLabelKey.GetString(): GrafanaContainerLabel,
 }
 
-func StartGrafLokiInDocker(ctx context.Context, graflokiConfig resolved_config.GrafanaLokiConfig) (string, string, error) {
-	dockerManager, err := docker_manager.CreateDockerManager(EmptyDockerClientOpts, false)
+func StartGrafLokiInDocker(ctx context.Context, graflokiConfig resolved_config.GrafanaLokiConfig, usePodman bool) (string, string, error) {
+	dockerManager, err := docker_manager.CreateDockerManager(EmptyDockerClientOpts, usePodman)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error occurred creating the docker manager to start grafana and loki.")
 	}
@@ -264,7 +264,7 @@ func checkGrafanaAndLokiContainerExistence(ctx context.Context, dockerManager *d
 	return existsLoki && existsGrafana, fmt.Sprintf("http://%v:%v", lokiBridgeNetworkIpAddress, lokiPort), nil
 }
 
-func StopGrafLokiInDocker(ctx context.Context) error {
+func StopGrafLokiInDocker(ctx context.Context, usePodman bool) error {
 	dockerManager, err := docker_manager.CreateDockerManager(EmptyDockerClientOpts, false)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating Docker manager.")

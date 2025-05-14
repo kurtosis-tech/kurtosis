@@ -346,6 +346,8 @@ func getEnclaveManager(
 	switch kurtosisBackendType {
 	case args.KurtosisBackendType_Docker:
 		apiContainerKurtosisBackendConfigSupplier = api_container_launcher.NewDockerKurtosisBackendConfigSupplier()
+	case args.KurtosisBackendType_Podman:
+		apiContainerKurtosisBackendConfigSupplier = api_container_launcher.NewDockerKurtosisBackendConfigSupplier()
 	case args.KurtosisBackendType_Kubernetes:
 		kurtosisLocalBackendConfigKubernetesType, ok := kurtosisLocalBackendConfig.(kurtosis_backend_config.KubernetesBackendConfig)
 		if !ok {
@@ -384,9 +386,15 @@ func getKurtosisBackend(ctx context.Context, kurtosisBackendType args.KurtosisBa
 	var err error
 	switch kurtosisBackendType {
 	case args.KurtosisBackendType_Docker:
-		kurtosisBackend, err = backend_creator.GetDockerKurtosisBackend(apiContainerModeArgsForKurtosisBackend, remoteBackendConfigMaybe)
+		kurtosisBackend, err = backend_creator.GetDockerKurtosisBackend(apiContainerModeArgsForKurtosisBackend, remoteBackendConfigMaybe, false)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
+		}
+	case args.KurtosisBackendType_Podman:
+		usePodmanMode := true
+		kurtosisBackend, err = backend_creator.GetDockerKurtosisBackend(apiContainerModeArgsForKurtosisBackend, remoteBackendConfigMaybe, usePodmanMode)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting local Podman Kurtosis backend")
 		}
 	case args.KurtosisBackendType_Kubernetes:
 		if remoteBackendConfigMaybe != nil {

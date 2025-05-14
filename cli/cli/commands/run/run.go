@@ -5,6 +5,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"os"
+	"os/signal"
+	"path"
+	"path/filepath"
+	"regexp"
+	"strings"
+
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
@@ -14,16 +24,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/user_support_constants"
 	"gopkg.in/yaml.v2"
-	"io"
 	"k8s.io/utils/strings/slices"
-	"net/http"
-	"net/url"
-	"os"
-	"os/signal"
-	"path"
-	"path/filepath"
-	"regexp"
-	"strings"
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
@@ -864,7 +865,7 @@ func isHttpUrl(maybeHttpUrl string) bool {
 }
 
 func pullImagesLocally(ctx context.Context, images []string) error {
-	kurtosisBackend, err := backend_creator.GetDockerKurtosisBackend(backend_creator.NoAPIContainerModeArgs, configs.NoRemoteBackendConfig)
+	kurtosisBackend, err := backend_creator.GetDockerKurtosisBackend(backend_creator.NoAPIContainerModeArgs, configs.NoRemoteBackendConfig, false)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred retrieving Docker Kurtosis Backend")
 	}
