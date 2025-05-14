@@ -217,6 +217,7 @@ func CreateDockerManager(dockerClientOpts []client.Opt, podmanMode bool) (*Docke
 	return &DockerManager{
 		dockerClient:          dockerClient,
 		dockerClientNoTimeout: dockerClientNoTimeout,
+		podmanMode:            podmanMode,
 	}, nil
 }
 
@@ -514,19 +515,23 @@ func (manager *DockerManager) GetVolumesByLabels(ctx context.Context, labels map
 
 	result := []*volume.Volume{}
 	if resp.Volumes != nil {
-		// Podman API inconsistency - filter out the union matches that podman returns while docker only returns the intersect matches when filtering by label
-		for _, vol := range resp.Volumes {
-			allLabelsMatch := true
+		if manager.podmanMode {
+			// TODO: clean up comment
+			// TODO: inspect what the result value is
+			// Podman API inconsistency - filter out the union matches that podman returns while docker only returns the intersect matches when filtering by label
+			for _, vol := range resp.Volumes {
+				allLabelsMatch := true
 
-			for label, val := range labels {
-				if volValue, exists := vol.Labels[label]; !exists || volValue != val {
-					allLabelsMatch = false
-					break
+				for label, val := range labels {
+					if volValue, exists := vol.Labels[label]; !exists || volValue != val {
+						allLabelsMatch = false
+						break
+					}
 				}
-			}
 
-			if allLabelsMatch {
-				result = append(result, vol)
+				if allLabelsMatch {
+					result = append(result, vol)
+				}
 			}
 		}
 		result = resp.Volumes
@@ -854,20 +859,22 @@ func (manager *DockerManager) GetContainerIps(ctx context.Context, containerId s
 		return nil, stacktrace.Propagate(err, "An error occurred inspecting container with ID '%v'", containerId)
 	}
 	allNetworkInfo := resp.NetworkSettings.Networks
-	// for _, networkInfo := range allNetworkInfo {
-	// 	containerIps[networkInfo.NetworkID] = networkInfo.IPAddress
-	// }
-	for networkKey, networkInfo := range allNetworkInfo {
-		// podman does not return the networkID properly and as such we need to make sure we get it.
-		network, err := manager.dockerClient.NetworkInspect(ctx, networkInfo.NetworkID, types.NetworkInspectOptions{
-			Scope:   "",
-			Verbose: false,
-		})
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred inspecting network: '%v'", networkKey)
+	if manager.podmanMode {
+		for networkKey, networkInfo := range allNetworkInfo {
+			// podman does not return the networkID properly and as such we need to make sure we get it.
+			network, err := manager.dockerClient.NetworkInspect(ctx, networkInfo.NetworkID, types.NetworkInspectOptions{
+				Scope:   "",
+				Verbose: false,
+			})
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred inspecting network: '%v'", networkKey)
+			}
+			containerIps[network.ID] = networkInfo.IPAddress
 		}
-
-		containerIps[network.ID] = networkInfo.IPAddress
+	} else {
+		for _, networkInfo := range allNetworkInfo {
+			containerIps[networkInfo.NetworkID] = networkInfo.IPAddress
+		}
 	}
 	return containerIps, nil
 }
@@ -1802,10 +1809,14 @@ func (manager *DockerManager) getContainerHostConfig(
 		case noPublishing:
 			continue
 		case automaticPublishing:
+			hostIp := ""
+			if manager.podmanMode {
+				hostIp = "0.0.0.0"
+			}
 			portMap[containerPort] = []nat.PortBinding{
 				// Leaving this struct empty will cause Docker to automatically choose an interface IP & port on the host machine
 				{
-					HostIP:   "0.0.0.0",
+					HostIP:   hostIp,
 					HostPort: "",
 				},
 			}
@@ -1841,9 +1852,11 @@ func (manager *DockerManager) getContainerHostConfig(
 		securityOptsSlice = append(securityOptsSlice, securityOptStr)
 	}
 
-	// if podman
-	securityOptsSlice = append(securityOptsSlice, "label=disable")
-	securityOptsSlice = append(securityOptsSlice, "apparmor:unconfined")
+	if manager.podmanMode {
+		// TODO: add a comment explaining why we need to do this
+		securityOptsSlice = append(securityOptsSlice, "label=disable")
+		securityOptsSlice = append(securityOptsSlice, "apparmor:unconfined")
+	}
 
 	extraHosts := []string{}
 	if needsToAccessDockerHostMachine {
