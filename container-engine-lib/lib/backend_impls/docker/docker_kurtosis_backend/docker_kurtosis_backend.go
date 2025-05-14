@@ -66,6 +66,8 @@ type DockerKurtosisBackend struct {
 
 	productionMode bool
 
+	podmanMode bool
+
 	// Control concurrent access to serviceRegistrations
 	serviceRegistrationMutex *sync.Mutex
 }
@@ -75,6 +77,7 @@ func NewDockerKurtosisBackend(
 	enclaveFreeIpProviders map[enclave.EnclaveUUID]*free_ip_addr_tracker.FreeIpAddrTracker,
 	serviceRegistrationRepository *service_registration.ServiceRegistrationRepository,
 	productionMode bool,
+	podmanMode bool,
 ) *DockerKurtosisBackend {
 	dockerNetworkAllocator := docker_network_allocator.NewDockerNetworkAllocator(dockerManager)
 	return &DockerKurtosisBackend{
@@ -85,6 +88,7 @@ func NewDockerKurtosisBackend(
 		serviceRegistrationRepository: serviceRegistrationRepository,
 		productionMode:                productionMode,
 		serviceRegistrationMutex:      &sync.Mutex{},
+		podmanMode:                    podmanMode,
 	}
 }
 
@@ -244,6 +248,9 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 		restartPolicy = docker_manager.RestartAlways
 	}
 
+	// Podman doesn't support the Fluentd logging driver, so we turn off logs collection for podman
+	shouldTurnOnLogsCollection := !backend.podmanMode
+
 	successfullyStartedService, failedService, err := user_service_functions.StartRegisteredUserServices(
 		ctx,
 		enclaveUuid,
@@ -256,7 +263,8 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 		backend.objAttrsProvider,
 		freeIpAddrProviderForEnclave,
 		backend.dockerManager,
-		restartPolicy)
+		restartPolicy,
+		shouldTurnOnLogsCollection)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Unexpected error while starting user service")
 	}

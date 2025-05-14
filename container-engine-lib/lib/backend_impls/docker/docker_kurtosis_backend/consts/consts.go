@@ -29,8 +29,10 @@ const (
 	EngineConfigLocalDir       = "/run/engine"
 
 	//The Docker network name where all the containers in the engine and logs service context will be added
-	NameOfNetworkToStartEngineAndLogServiceContainersIn = "podman"
-	HttpApplicationProtocol                             = "http"
+	NameOfNetworkToStartEngineAndLogServiceContainersIn       = "bridge"
+	NameOfNetworkToStartEngineAndLogServiceContainersInDocker = "bridge"
+	NameOfNetworkToStartEngineAndLogServiceContainersInPodman = "podman"
+	HttpApplicationProtocol                                   = "http"
 
 	GitHubAuthStorageDirPath   = "/kurtosis-data/github-auth/"
 	DockerConfigStorageDirPath = "/root/.docker/"
@@ -48,4 +50,10 @@ var IsContainerRunningDeterminer = map[types.ContainerStatus]bool{
 	types.ContainerStatus_Dead:       false,
 	types.ContainerStatus_Created:    false,
 	types.ContainerStatus_Exited:     false,
+}
+
+// This maps a bool to the network name to start the engine and log service containers in
+var NetworkToStartEngineAndLogServiceContainersInBasedOnPodmanMode = map[bool]string{
+	true:  NameOfNetworkToStartEngineAndLogServiceContainersInPodman,
+	false: NameOfNetworkToStartEngineAndLogServiceContainersInDocker,
 }

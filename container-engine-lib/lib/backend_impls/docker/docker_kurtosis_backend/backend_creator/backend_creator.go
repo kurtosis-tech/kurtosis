@@ -193,7 +193,7 @@ func getDockerKurtosisBackend(
 	dockerClientOpts []client.Opt,
 	optionalApiContainerModeArgs *APIContainerModeArgs,
 ) (backend_interface.KurtosisBackend, error) {
-	dockerManager, err := docker_manager.CreateDockerManager(dockerClientOpts)
+	dockerManager, err := docker_manager.CreateDockerManager(dockerClientOpts, true)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred building docker manager")
 	}
@@ -281,7 +281,7 @@ func getDockerKurtosisBackend(
 		}
 	}
 
-	dockerKurtosisBackend := docker_kurtosis_backend.NewDockerKurtosisBackend(dockerManager, enclaveFreeIpAddrTrackers, serviceRegistrationRepository, productionMode)
+	dockerKurtosisBackend := docker_kurtosis_backend.NewDockerKurtosisBackend(dockerManager, enclaveFreeIpAddrTrackers, serviceRegistrationRepository, productionMode, true)
 
 	wrappedBackend := metrics_reporting.NewMetricsReportingKurtosisBackend(dockerKurtosisBackend)
 

@@ -188,6 +188,8 @@ type DockerManager struct {
 	// We need to use a specific docker client with no timeout for long-running requests on docker, such as tailing
 	// service logs for a long time, or even downloading large container images than can take longer than the timeout
 	dockerClientNoTimeout *client.Client
+
+	podmanMode bool
 }
 
 /*
@@ -198,7 +200,7 @@ Args:
 
 	dockerClient: The Docker client that will be used when interacting with the underlying Docker engine the Docker engine.
 */
-func CreateDockerManager(dockerClientOpts []client.Opt) (*DockerManager, error) {
+func CreateDockerManager(dockerClientOpts []client.Opt, podmanMode bool) (*DockerManager, error) {
 	optsWithTimeout := []client.Opt{
 		client.WithTimeout(dockerClientTimeout),
 	}
@@ -445,7 +447,6 @@ func (manager *DockerManager) RemoveNetwork(context context.Context, networkId s
 }
 
 func (manager *DockerManager) GetDefaultNetwork(ctx context.Context) (*docker_manager_types.Network, error) {
-
 	matchingNetworks, err := manager.GetNetworksByName(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn)
 	if err != nil {
 		return nil, stacktrace.Propagate(
