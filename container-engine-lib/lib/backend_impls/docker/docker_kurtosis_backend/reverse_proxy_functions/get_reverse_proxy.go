@@ -11,9 +11,8 @@ import (
 func GetReverseProxy(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
-	usePodmanBridgeNetwork bool,
 ) (*reverse_proxy.ReverseProxy, error) {
-	maybeReverseProxyObject, _, err := getReverseProxyObjectAndContainerId(ctx, dockerManager, usePodmanBridgeNetwork)
+	maybeReverseProxyObject, _, err := getReverseProxyObjectAndContainerId(ctx, dockerManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the reverse proxy")
 	}

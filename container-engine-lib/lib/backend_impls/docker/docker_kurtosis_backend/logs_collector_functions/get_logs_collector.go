@@ -15,7 +15,6 @@ func GetLogsCollectorForEnclave(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
 	dockerManager *docker_manager.DockerManager,
-	usePodmanBridgeNetwork bool,
 ) (
 	resultMaybeLogsCollector *logs_collector.LogsCollector,
 	resultErr error,
@@ -25,7 +24,7 @@ func GetLogsCollectorForEnclave(
 		return nil, stacktrace.Propagate(err, "An error occurred while retrieving the network id for the enclave '%v'", enclaveUuid)
 	}
 
-	maybeLogsCollectorObject, _, err := getLogsCollectorObjectAndContainerId(ctx, enclaveUuid, enclaveNetworkId, dockerManager, usePodmanBridgeNetwork)
+	maybeLogsCollectorObject, _, err := getLogsCollectorObjectAndContainerId(ctx, enclaveUuid, enclaveNetworkId, dockerManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
 	}

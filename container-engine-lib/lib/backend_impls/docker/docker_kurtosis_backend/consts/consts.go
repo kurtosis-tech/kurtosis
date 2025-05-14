@@ -28,10 +28,7 @@ const (
 	HostEngineConfigDirToMount = "/root/engine_config"
 	EngineConfigLocalDir       = "/run/engine"
 
-	//The Docker or Podman network name where all the containers in the engine and logs service context will be added
-	NameOfNetworkToStartEngineAndLogServiceContainersInDocker = "bridge"
-	NameOfNetworkToStartEngineAndLogServiceContainersInPodman = "podman"
-	HttpApplicationProtocol                                   = "http"
+	HttpApplicationProtocol = "http"
 
 	GitHubAuthStorageDirPath   = "/kurtosis-data/github-auth/"
 	DockerConfigStorageDirPath = "/root/.docker/"

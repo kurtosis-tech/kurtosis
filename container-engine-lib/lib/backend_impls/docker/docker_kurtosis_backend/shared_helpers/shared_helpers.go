@@ -417,9 +417,8 @@ func WaitForPortAvailabilityUsingNetstat(
 func GetEngineAndLogsComponentsNetwork(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
-	usePodmanBridgeNetwork bool,
 ) (*types.Network, error) {
-	bridgeNetworkName := GetBridgeNetworkName(usePodmanBridgeNetwork)
+	bridgeNetworkName := dockerManager.GetBridgeNetworkName()
 	matchingNetworks, err := dockerManager.GetNetworksByName(ctx, bridgeNetworkName)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -772,12 +771,4 @@ func dumpContainerInfo(
 	}
 
 	return nil
-}
-
-// Podman's bridge network is called "podman" by default so return that if we're in podman mode
-func GetBridgeNetworkName(usePodmanBridgeNetwork bool) string {
-	if usePodmanBridgeNetwork {
-		return consts.NameOfNetworkToStartEngineAndLogServiceContainersInPodman
-	}
-	return consts.NameOfNetworkToStartEngineAndLogServiceContainersInDocker
 }

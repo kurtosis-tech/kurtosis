@@ -2,7 +2,6 @@
  * Copyright (c) 2021 - present Kurtosis Technologies Inc.
  * All Rights Reserved.
  */
-
 package docker_manager
 
 import (
@@ -157,6 +156,10 @@ const (
 	buildkitSessionSharedKey = ""
 
 	nixCmdPath = "/nix/var/nix/profiles/default/bin/nix"
+
+	//The Docker or Podman network name where all the containers in the engine and logs service context will be added
+	NameOfNetworkToStartEngineAndLogServiceContainersInDocker = "bridge"
+	NameOfNetworkToStartEngineAndLogServiceContainersInPodman = "podman"
 )
 
 type RestartPolicy string
@@ -360,6 +363,17 @@ func (manager *DockerManager) GetNetworksByName(ctx context.Context, name string
 	}
 
 	return networks, nil
+}
+
+func (manager *DockerManager) GetBridgeNetworkName() string {
+	if manager.podmanMode {
+		return NameOfNetworkToStartEngineAndLogServiceContainersInPodman
+	}
+	return NameOfNetworkToStartEngineAndLogServiceContainersInDocker
+}
+
+func (manager *DockerManager) IsPodman() bool {
+	return manager.podmanMode
 }
 
 /*

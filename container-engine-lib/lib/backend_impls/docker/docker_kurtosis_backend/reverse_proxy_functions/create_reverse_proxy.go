@@ -24,7 +24,6 @@ func CreateReverseProxy(
 	reverseProxyContainer ReverseProxyContainer,
 	dockerManager *docker_manager.DockerManager,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
-	usePodmanBridgeNetwork bool,
 ) (
 	*reverse_proxy.ReverseProxy,
 	func(),
@@ -36,7 +35,7 @@ func CreateReverseProxy(
 	}
 	if found {
 		logrus.Debugf("Found existing reverse proxy; cannot start a new one.")
-		reverseProxyObj, proxyContainerId, getProxyObjErr := getReverseProxyObjectAndContainerId(ctx, dockerManager, usePodmanBridgeNetwork)
+		reverseProxyObj, proxyContainerId, getProxyObjErr := getReverseProxyObjectAndContainerId(ctx, dockerManager)
 		if getProxyObjErr == nil {
 			removeProxyFunc := func() {
 				removeCtx := context.Background()
@@ -55,7 +54,7 @@ func CreateReverseProxy(
 		logrus.Debugf("... current reverse proxy successfully destroyed, starting a new one now.")
 	}
 
-	reverseProxyNetwork, err := shared_helpers.GetEngineAndLogsComponentsNetwork(ctx, dockerManager, usePodmanBridgeNetwork)
+	reverseProxyNetwork, err := shared_helpers.GetEngineAndLogsComponentsNetwork(ctx, dockerManager)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the reverse proxy network.")
 	}
@@ -88,7 +87,7 @@ func CreateReverseProxy(
 		containerId,
 		defaultContainerStatusForNewReverseProxyContainer,
 		dockerManager,
-		usePodmanBridgeNetwork)
+	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting reverse proxy object using container ID '%v', labels '%+v', status '%v'.", containerId, containerLabels, defaultContainerStatusForNewReverseProxyContainer)
 	}

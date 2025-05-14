@@ -11,10 +11,9 @@ import (
 func GetLogsAggregator(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
-	usePodmanBridgeNetwork bool,
 ) (*logs_aggregator.LogsAggregator, error) {
 
-	maybeLogsAggregatorObject, _, err := getLogsAggregatorObjectAndContainerId(ctx, dockerManager, usePodmanBridgeNetwork)
+	maybeLogsAggregatorObject, _, err := getLogsAggregatorObjectAndContainerId(ctx, dockerManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator")
 	}

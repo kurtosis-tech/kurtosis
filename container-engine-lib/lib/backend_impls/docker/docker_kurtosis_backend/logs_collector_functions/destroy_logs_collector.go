@@ -14,7 +14,6 @@ func DestroyLogsCollector(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
 	dockerManager *docker_manager.DockerManager,
-	usePodmanBridgeNetwork bool,
 ) error {
 
 	enclaveNetworkId, err := shared_helpers.GetEnclaveNetworkByEnclaveUuid(ctx, enclaveUuid, dockerManager)
@@ -22,7 +21,7 @@ func DestroyLogsCollector(
 		return stacktrace.Propagate(err, "An error occurred while retrieving the network id for the enclave")
 	}
 
-	_, maybeLogsCollectorContainerId, err := getLogsCollectorObjectAndContainerId(ctx, enclaveUuid, enclaveNetworkId, dockerManager, usePodmanBridgeNetwork)
+	_, maybeLogsCollectorContainerId, err := getLogsCollectorObjectAndContainerId(ctx, enclaveUuid, enclaveNetworkId, dockerManager)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the logs collector for enclave '%v'", enclaveUuid)
 	}

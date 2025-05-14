@@ -408,7 +408,7 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 	if filters.Statuses[enclave.EnclaveStatus_Running] {
 		// TODO: Potentially clean logs collector as well, similar to Kubernetes backend
 
-		if err := logs_aggregator_functions.CleanLogsAggregator(ctx, vector.NewVectorLogsAggregatorContainer(), backend.objAttrsProvider, backend.dockerManager, backend.podmanMode); err != nil {
+		if err := logs_aggregator_functions.CleanLogsAggregator(ctx, vector.NewVectorLogsAggregatorContainer(), backend.objAttrsProvider, backend.dockerManager); err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred cleaning logs aggregator container.")
 		}
 	}

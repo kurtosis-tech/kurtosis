@@ -17,9 +17,8 @@ const (
 func DestroyReverseProxy(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
-	usePodmanBridgeNetwork bool,
 ) error {
-	_, maybeReverseProxyContainerId, err := getReverseProxyObjectAndContainerId(ctx, dockerManager, usePodmanBridgeNetwork)
+	_, maybeReverseProxyContainerId, err := getReverseProxyObjectAndContainerId(ctx, dockerManager)
 	if err != nil {
 		logrus.Warnf("Attempted to destroy reverse proxy but no reverse proxy container was found. Error was:\n%s", err.Error())
 		return nil

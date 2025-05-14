@@ -22,9 +22,8 @@ func ConnectReverseProxyToNetwork(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
 	networkId string,
-	usePodmanBridgeNetwork bool,
 ) error {
-	maybeReverseProxyObject, maybeReverseProxyContainerId, err := getReverseProxyObjectAndContainerId(ctx, dockerManager, usePodmanBridgeNetwork)
+	maybeReverseProxyObject, maybeReverseProxyContainerId, err := getReverseProxyObjectAndContainerId(ctx, dockerManager)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while retrieving the reverse proxy object and container id")
 	}
@@ -46,8 +45,8 @@ func ConnectReverseProxyToNetwork(
 	return nil
 }
 
-func DisconnectReverseProxyFromNetwork(ctx context.Context, dockerManager *docker_manager.DockerManager, networkId string, usePodmanBridgeNetwork bool) error {
-	maybeReverseProxyObject, maybeReverseProxyContainerId, err := getReverseProxyObjectAndContainerId(ctx, dockerManager, usePodmanBridgeNetwork)
+func DisconnectReverseProxyFromNetwork(ctx context.Context, dockerManager *docker_manager.DockerManager, networkId string) error {
+	maybeReverseProxyObject, maybeReverseProxyContainerId, err := getReverseProxyObjectAndContainerId(ctx, dockerManager)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while retrieving the reverse proxy object and container id")
 	}
@@ -69,7 +68,7 @@ func DisconnectReverseProxyFromNetwork(ctx context.Context, dockerManager *docke
 	return nil
 }
 
-func ConnectReverseProxyToEnclaveNetworks(ctx context.Context, dockerManager *docker_manager.DockerManager, usePodmanBridgeNetwork bool) error {
+func ConnectReverseProxyToEnclaveNetworks(ctx context.Context, dockerManager *docker_manager.DockerManager) error {
 	kurtosisNetworkLabels := map[string]string{
 		docker_label_key.AppIDDockerLabelKey.GetString(): label_value_consts.AppIDDockerLabelValue.GetString(),
 	}
@@ -79,7 +78,7 @@ func ConnectReverseProxyToEnclaveNetworks(ctx context.Context, dockerManager *do
 	}
 
 	for _, enclaveNetwork := range enclaveNetworks {
-		if err = ConnectReverseProxyToNetwork(ctx, dockerManager, enclaveNetwork.GetId(), usePodmanBridgeNetwork); err != nil {
+		if err = ConnectReverseProxyToNetwork(ctx, dockerManager, enclaveNetwork.GetId()); err != nil {
 			return stacktrace.Propagate(err, "An error occurred connecting the reverse proxy to the enclave network with id '%v'", enclaveNetwork.GetId())
 		}
 	}

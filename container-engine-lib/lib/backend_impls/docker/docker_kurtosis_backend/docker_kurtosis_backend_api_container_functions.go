@@ -292,7 +292,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	}
 	logrus.Debugf("...APIC is available in enclave '%v'", enclaveUuid)
 
-	bridgeNetworkName := shared_helpers.GetBridgeNetworkName(backend.podmanMode)
+	bridgeNetworkName := backend.dockerManager.GetBridgeNetworkName()
 	bridgeNetworkIpAddress, err := backend.dockerManager.GetContainerIP(ctx, bridgeNetworkName, containerId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while getting bridge network ip address for enclave with id: '%v'", enclaveUuid)
@@ -431,7 +431,7 @@ func (backend *DockerKurtosisBackend) getMatchingApiContainers(ctx context.Conte
 	allMatchingApiContainers := map[string]*api_container.APIContainer{}
 	for _, apiContainer := range allApiContainers {
 		containerId := apiContainer.GetId()
-		bridgeNetworkIpAddress, err := backend.dockerManager.GetContainerIP(ctx, shared_helpers.GetBridgeNetworkName(backend.podmanMode), containerId)
+		bridgeNetworkIpAddress, err := backend.dockerManager.GetContainerIP(ctx, backend.dockerManager.GetBridgeNetworkName(), containerId)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred while getting bridge network ip address for container with id: '%v'", containerId)
 		}

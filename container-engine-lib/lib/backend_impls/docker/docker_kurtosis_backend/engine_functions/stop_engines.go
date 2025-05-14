@@ -15,7 +15,6 @@ func StopEngines(
 	ctx context.Context,
 	filters *engine.EngineFilters,
 	dockerManager *docker_manager.DockerManager,
-	usePodmanBridgeNetwork bool,
 ) (
 	resultSuccessfulEngineGuids map[engine.EngineGUID]bool,
 	resultErroredEngineGuids map[engine.EngineGUID]error,
@@ -71,12 +70,12 @@ func StopEngines(
 	}
 
 	// Stop centralized logging components
-	if err := logs_aggregator_functions.DestroyLogsAggregator(ctx, dockerManager, usePodmanBridgeNetwork); err != nil {
+	if err := logs_aggregator_functions.DestroyLogsAggregator(ctx, dockerManager); err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred removing the logging components.")
 	}
 
 	// Stop reverse proxy
-	if err := reverse_proxy_functions.DestroyReverseProxy(ctx, dockerManager, usePodmanBridgeNetwork); err != nil {
+	if err := reverse_proxy_functions.DestroyReverseProxy(ctx, dockerManager); err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred removing the reverse proxy.")
 	}
 

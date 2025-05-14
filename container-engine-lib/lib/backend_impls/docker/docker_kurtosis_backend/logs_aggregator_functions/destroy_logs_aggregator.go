@@ -14,8 +14,8 @@ const (
 )
 
 // Destroys logs aggregator idempotently, returns nil if no logs aggregator logs aggregator container was found
-func DestroyLogsAggregator(ctx context.Context, dockerManager *docker_manager.DockerManager, usePodmanBridgeNetwork bool) error {
-	_, maybeLogsAggregatorContainerId, err := getLogsAggregatorObjectAndContainerId(ctx, dockerManager, usePodmanBridgeNetwork)
+func DestroyLogsAggregator(ctx context.Context, dockerManager *docker_manager.DockerManager) error {
+	_, maybeLogsAggregatorContainerId, err := getLogsAggregatorObjectAndContainerId(ctx, dockerManager)
 	if err != nil {
 		logrus.Warnf("Attempted to destroy logs aggregator but no logs aggregator container was found.")
 		return nil

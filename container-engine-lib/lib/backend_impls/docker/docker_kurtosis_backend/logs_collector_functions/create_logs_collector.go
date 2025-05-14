@@ -36,7 +36,6 @@ func CreateLogsCollectorForEnclave(
 	logsCollectorParsers []logs_collector.Parser,
 	dockerManager *docker_manager.DockerManager,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
-	usePodmanBridgeNetwork bool,
 ) (
 	*logs_collector.LogsCollector,
 	error,
@@ -117,7 +116,6 @@ func CreateLogsCollectorForEnclave(
 		defaultContainerStatusForNewLogsCollectorContainer,
 		enclaveNetwork,
 		dockerManager,
-		usePodmanBridgeNetwork,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting logs collector object using container ID '%v', labels '%+v', status '%v' and host machine port bindings '%+v'", containerId, containerLabels, defaultContainerStatusForNewLogsCollectorContainer, hostMachinePortBindings)

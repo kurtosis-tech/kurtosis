@@ -49,7 +49,6 @@ func CreateEngine(
 	shouldEnablePersistentVolumeLogsCollection bool,
 	dockerManager *docker_manager.DockerManager,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
-	usePodmanBridgeNetwork bool,
 ) (
 	*engine.Engine,
 	error,
@@ -80,7 +79,7 @@ func CreateEngine(
 		)
 	}
 
-	engineNetwork, err := shared_helpers.GetEngineAndLogsComponentsNetwork(ctx, dockerManager, usePodmanBridgeNetwork)
+	engineNetwork, err := shared_helpers.GetEngineAndLogsComponentsNetwork(ctx, dockerManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the engine network")
 	}
@@ -112,7 +111,6 @@ func CreateEngine(
 		shouldEnablePersistentVolumeLogsCollection,
 		dockerManager,
 		objAttrsProvider,
-		usePodmanBridgeNetwork,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err,
@@ -133,7 +131,6 @@ func CreateEngine(
 		reverseProxyContainer,
 		dockerManager,
 		objAttrsProvider,
-		usePodmanBridgeNetwork,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err,
@@ -145,7 +142,7 @@ func CreateEngine(
 			removeReverseProxyFunc()
 		}
 	}()
-	if err = reverse_proxy_functions.ConnectReverseProxyToEnclaveNetworks(ctx, dockerManager, usePodmanBridgeNetwork); err != nil {
+	if err = reverse_proxy_functions.ConnectReverseProxyToEnclaveNetworks(ctx, dockerManager); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occured connecting the reverse proxy to the enclave networks")
 	}
 	logrus.Infof("Reverse proxy started.")
