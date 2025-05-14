@@ -238,12 +238,12 @@ func getDockerKurtosisBackend(
 		networkIp := network.GetIpAndMask().IP
 		apiContainerIp := optionalApiContainerModeArgs.APIContainerIP
 
-		logsCollectorObj, err := logs_collector_functions.GetLogsCollectorForEnclave(ctx, enclaveUuid, dockerManager)
+		logsCollectorObj, err := logs_collector_functions.GetLogsCollectorForEnclave(ctx, enclaveUuid, dockerManager, true)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred while getting the logs collector object for enclave '%v'; This is a bug in Kurtosis", enclaveUuid)
 		}
 
-		maybeReverseProxy, err := reverse_proxy_functions.GetReverseProxy(ctx, dockerManager)
+		maybeReverseProxy, err := reverse_proxy_functions.GetReverseProxy(ctx, dockerManager, true)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred while getting the reverse proxy, This is a bug in Kurtosis")
 		}

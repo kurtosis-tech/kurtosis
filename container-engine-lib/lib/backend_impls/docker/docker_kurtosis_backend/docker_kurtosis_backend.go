@@ -139,6 +139,7 @@ func (backend *DockerKurtosisBackend) CreateEngine(
 		shouldEnablePersistentVolumeLogsCollection,
 		backend.dockerManager,
 		backend.objAttrsProvider,
+		backend.podmanMode,
 	)
 }
 
@@ -160,7 +161,7 @@ func (backend *DockerKurtosisBackend) StopEngines(
 	resultErroredEngineUuids map[engine.EngineGUID]error,
 	resultErr error,
 ) {
-	return engine_functions.StopEngines(ctx, filters, backend.dockerManager)
+	return engine_functions.StopEngines(ctx, filters, backend.dockerManager, backend.podmanMode)
 }
 
 func (backend *DockerKurtosisBackend) DestroyEngines(
@@ -405,6 +406,7 @@ func (backend *DockerKurtosisBackend) CreateLogsAggregator(
 		defaultShouldEnablePersistentVolumeLogsCollection,
 		backend.dockerManager,
 		backend.objAttrsProvider,
+		backend.podmanMode,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the logs aggregator using the logs aggregator container '%+v'.", logsAggregatorContainer)
@@ -416,6 +418,7 @@ func (backend *DockerKurtosisBackend) GetLogsAggregator(ctx context.Context) (*l
 	maybeLogsAggregator, err := logs_aggregator_functions.GetLogsAggregator(
 		ctx,
 		backend.dockerManager,
+		backend.podmanMode,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator")
@@ -425,7 +428,7 @@ func (backend *DockerKurtosisBackend) GetLogsAggregator(ctx context.Context) (*l
 }
 
 func (backend *DockerKurtosisBackend) DestroyLogsAggregator(ctx context.Context) error {
-	if err := logs_aggregator_functions.DestroyLogsAggregator(ctx, backend.dockerManager); err != nil {
+	if err := logs_aggregator_functions.DestroyLogsAggregator(ctx, backend.dockerManager, backend.podmanMode); err != nil {
 		return stacktrace.Propagate(err, "An error occurred destroying the logs aggregator")
 	}
 
@@ -444,7 +447,7 @@ func (backend *DockerKurtosisBackend) CreateLogsCollectorForEnclave(
 	error,
 ) {
 	var logsAggregator *logs_aggregator.LogsAggregator
-	maybeLogsAggregator, err := logs_aggregator_functions.GetLogsAggregator(ctx, backend.dockerManager)
+	maybeLogsAggregator, err := logs_aggregator_functions.GetLogsAggregator(ctx, backend.dockerManager, backend.podmanMode)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator. The logs collector cannot be run without a logs aggregator.")
 	}
@@ -478,6 +481,7 @@ func (backend *DockerKurtosisBackend) CreateLogsCollectorForEnclave(
 		logsCollectorParsers,
 		backend.dockerManager,
 		backend.objAttrsProvider,
+		backend.podmanMode,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the logs collector using the '%v' TCP port number, the '%v' HTTP port number and the los collector container '%+v'", logsCollectorTcpPortNumber, logsCollectorHttpPortNumber, logsCollectorContainer)
@@ -492,6 +496,7 @@ func (backend *DockerKurtosisBackend) GetLogsCollectorForEnclave(ctx context.Con
 		ctx,
 		enclaveUuid,
 		backend.dockerManager,
+		backend.podmanMode,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
@@ -502,7 +507,7 @@ func (backend *DockerKurtosisBackend) GetLogsCollectorForEnclave(ctx context.Con
 
 func (backend *DockerKurtosisBackend) DestroyLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) error {
 
-	if err := logs_collector_functions.DestroyLogsCollector(ctx, enclaveUuid, backend.dockerManager); err != nil {
+	if err := logs_collector_functions.DestroyLogsCollector(ctx, enclaveUuid, backend.dockerManager, backend.podmanMode); err != nil {
 		return stacktrace.Propagate(err, "An error occurred destroying the logs collector")
 	}
 
@@ -518,6 +523,7 @@ func (backend *DockerKurtosisBackend) CreateReverseProxy(ctx context.Context, en
 		reverseProxyContainer,
 		backend.dockerManager,
 		backend.objAttrsProvider,
+		backend.podmanMode,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the reverse proxy using the reverse proxy container '%+v'.", reverseProxyContainer)
@@ -529,6 +535,7 @@ func (backend *DockerKurtosisBackend) GetReverseProxy(ctx context.Context) (*rev
 	maybeReverseProxy, err := reverse_proxy_functions.GetReverseProxy(
 		ctx,
 		backend.dockerManager,
+		backend.podmanMode,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the reverse proxy")
@@ -538,7 +545,7 @@ func (backend *DockerKurtosisBackend) GetReverseProxy(ctx context.Context) (*rev
 }
 
 func (backend *DockerKurtosisBackend) DestroyReverseProxy(ctx context.Context) error {
-	if err := reverse_proxy_functions.DestroyReverseProxy(ctx, backend.dockerManager); err != nil {
+	if err := reverse_proxy_functions.DestroyReverseProxy(ctx, backend.dockerManager, backend.podmanMode); err != nil {
 		return stacktrace.Propagate(err, "An error occurred destroying the reverse proxy")
 	}
 
@@ -546,7 +553,7 @@ func (backend *DockerKurtosisBackend) DestroyReverseProxy(ctx context.Context) e
 }
 
 func (backend *DockerKurtosisBackend) ConnectReverseProxyToNetwork(ctx context.Context, networkId string) error {
-	if err := reverse_proxy_functions.ConnectReverseProxyToNetwork(ctx, backend.dockerManager, networkId); err != nil {
+	if err := reverse_proxy_functions.ConnectReverseProxyToNetwork(ctx, backend.dockerManager, networkId, backend.podmanMode); err != nil {
 		return stacktrace.Propagate(err, "An error occurred connecting the reverse proxy to the network with ID '%v'", networkId)
 	}
 
@@ -554,7 +561,7 @@ func (backend *DockerKurtosisBackend) ConnectReverseProxyToNetwork(ctx context.C
 }
 
 func (backend *DockerKurtosisBackend) DisconnectReverseProxyFromNetwork(ctx context.Context, networkId string) error {
-	if err := reverse_proxy_functions.DisconnectReverseProxyFromNetwork(ctx, backend.dockerManager, networkId); err != nil {
+	if err := reverse_proxy_functions.DisconnectReverseProxyFromNetwork(ctx, backend.dockerManager, networkId, backend.podmanMode); err != nil {
 		return stacktrace.Propagate(err, "An error occurred disconnecting the reverse proxy from the network with ID '%v'", networkId)
 	}
 

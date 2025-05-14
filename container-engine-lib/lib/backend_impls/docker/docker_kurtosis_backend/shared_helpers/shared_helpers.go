@@ -417,25 +417,29 @@ func WaitForPortAvailabilityUsingNetstat(
 func GetEngineAndLogsComponentsNetwork(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
+	usePodmanBridgeNetwork bool,
 ) (*types.Network, error) {
-	// matchingNetworks, err := dockerManager.GetNetworksByName(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn)
-	// if err != nil {
-	// 	return nil, stacktrace.Propagate(
-	// 		err,
-	// 		"An error occurred getting networks matching the network we want to start the engine in, '%v'",
-	// 		consts.NameOfNetworkToStartEngineAndLogServiceContainersIn,
-	// 	)
-	// }
-	// numMatchingNetworks := len(matchingNetworks)
-	// if numMatchingNetworks == 0 && numMatchingNetworks > 1 {
-	// 	return nil, stacktrace.NewError(
-	// 		"Expected exactly one network matching the name of the network that we want to start the engine in, '%v', but got %v",
-	// 		consts.NameOfNetworkToStartEngineAndLogServiceContainersIn,
-	// 		numMatchingNetworks,
-	// 	)
-	// }
-	// targetNetwork := matchingNetworks[0]
-	return dockerManager.GetDefaultNetwork(ctx)
+	bridgeNetworkName := GetBridgeNetworkName(usePodmanBridgeNetwork)
+	matchingNetworks, err := dockerManager.GetNetworksByName(ctx, bridgeNetworkName)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred getting networks matching the network we want to start the engine in, '%v'",
+			bridgeNetworkName,
+		)
+	}
+	numMatchingNetworks := len(matchingNetworks)
+	if numMatchingNetworks > 1 {
+		return nil, stacktrace.NewError(
+			"Expected exactly one network matching the name of the network that we want to start the engine in, '%v', but got %v",
+			bridgeNetworkName,
+			numMatchingNetworks,
+		)
+	}
+	if numMatchingNetworks == 0 {
+		return nil, stacktrace.NewError(fmt.Sprintf("No matching network found with the configured name: %v", bridgeNetworkName))
+	}
+	return matchingNetworks[0], nil
 }
 
 func DumpContainers(ctx context.Context, dockerManager *docker_manager.DockerManager, containers []*types.Container, outputDirpath string) error {
@@ -768,4 +772,12 @@ func dumpContainerInfo(
 	}
 
 	return nil
+}
+
+// Podman's bridge network is called "podman" by default so return that if we're in podman mode
+func GetBridgeNetworkName(usePodmanBridgeNetwork bool) string {
+	if usePodmanBridgeNetwork {
+		return consts.NameOfNetworkToStartEngineAndLogServiceContainersInPodman
+	}
+	return consts.NameOfNetworkToStartEngineAndLogServiceContainersInDocker
 }

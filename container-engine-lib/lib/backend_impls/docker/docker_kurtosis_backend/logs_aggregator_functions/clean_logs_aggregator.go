@@ -15,6 +15,7 @@ func CleanLogsAggregator(
 	logsAggregatorContainer LogsAggregatorContainer,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	dockerManager *docker_manager.DockerManager,
+	usePodmanBridgeNetwork bool,
 ) error {
 	logsAggregator, found, err := getLogsAggregatorContainer(ctx, dockerManager)
 	if err != nil {
@@ -25,7 +26,7 @@ func CleanLogsAggregator(
 		return nil
 	}
 
-	logsAggregatorNetwork, err := shared_helpers.GetEngineAndLogsComponentsNetwork(ctx, dockerManager)
+	logsAggregatorNetwork, err := shared_helpers.GetEngineAndLogsComponentsNetwork(ctx, dockerManager, usePodmanBridgeNetwork)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the logs aggregator network.")
 	}

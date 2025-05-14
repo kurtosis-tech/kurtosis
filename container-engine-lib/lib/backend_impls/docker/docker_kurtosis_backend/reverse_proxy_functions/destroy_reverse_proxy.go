@@ -2,10 +2,11 @@ package reverse_proxy_functions
 
 import (
 	"context"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"time"
 )
 
 const (
@@ -13,8 +14,12 @@ const (
 )
 
 // Destroys reverse proxy idempotently, returns nil if no reverse proxy reverse proxy container was found
-func DestroyReverseProxy(ctx context.Context, dockerManager *docker_manager.DockerManager) error {
-	_, maybeReverseProxyContainerId, err := getReverseProxyObjectAndContainerId(ctx, dockerManager)
+func DestroyReverseProxy(
+	ctx context.Context,
+	dockerManager *docker_manager.DockerManager,
+	usePodmanBridgeNetwork bool,
+) error {
+	_, maybeReverseProxyContainerId, err := getReverseProxyObjectAndContainerId(ctx, dockerManager, usePodmanBridgeNetwork)
 	if err != nil {
 		logrus.Warnf("Attempted to destroy reverse proxy but no reverse proxy container was found. Error was:\n%s", err.Error())
 		return nil

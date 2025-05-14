@@ -28,8 +28,7 @@ const (
 	HostEngineConfigDirToMount = "/root/engine_config"
 	EngineConfigLocalDir       = "/run/engine"
 
-	//The Docker network name where all the containers in the engine and logs service context will be added
-	NameOfNetworkToStartEngineAndLogServiceContainersIn       = "bridge"
+	//The Docker or Podman network name where all the containers in the engine and logs service context will be added
 	NameOfNetworkToStartEngineAndLogServiceContainersInDocker = "bridge"
 	NameOfNetworkToStartEngineAndLogServiceContainersInPodman = "podman"
 	HttpApplicationProtocol                                   = "http"
@@ -50,10 +49,4 @@ var IsContainerRunningDeterminer = map[types.ContainerStatus]bool{
 	types.ContainerStatus_Dead:       false,
 	types.ContainerStatus_Created:    false,
 	types.ContainerStatus_Exited:     false,
-}
-
-// This maps a bool to the network name to start the engine and log service containers in
-var NetworkToStartEngineAndLogServiceContainersInBasedOnPodmanMode = map[bool]string{
-	true:  NameOfNetworkToStartEngineAndLogServiceContainersInPodman,
-	false: NameOfNetworkToStartEngineAndLogServiceContainersInDocker,
 }

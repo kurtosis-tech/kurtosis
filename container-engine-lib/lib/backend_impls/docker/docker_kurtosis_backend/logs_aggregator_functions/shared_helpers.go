@@ -10,6 +10,7 @@ import (
 
 	"github.com/docker/docker/api/types/volume"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
@@ -57,6 +58,7 @@ func getLogsAggregatorPrivatePorts(containerLabels map[string]string) (*port_spe
 func getLogsAggregatorObjectAndContainerId(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
+	usePodmanBridgeNetwork bool,
 ) (*logs_aggregator.LogsAggregator, string, error) {
 	logsAggregatorContainer, found, err := getLogsAggregatorContainer(ctx, dockerManager)
 	if err != nil {
@@ -74,6 +76,7 @@ func getLogsAggregatorObjectAndContainerId(
 		logsAggregatorContainer.GetLabels(),
 		logsAggregatorContainer.GetStatus(),
 		dockerManager,
+		usePodmanBridgeNetwork,
 	)
 	if err != nil {
 		return nil, "", stacktrace.Propagate(err, "An error occurred getting the logs Aggregator object using container ID '%v', labels '%+v' and the status '%v'", logsAggregatorContainer.GetId(), logsAggregatorContainer.GetLabels(), logsAggregatorContainer.GetStatus())
@@ -109,6 +112,7 @@ func getLogsAggregatorObjectFromContainerInfo(
 	labels map[string]string,
 	containerStatus types.ContainerStatus,
 	dockerManager *docker_manager.DockerManager,
+	usePodmanBridgeNetwork bool,
 ) (*logs_aggregator.LogsAggregator, error) {
 	var privateIpAddr net.IP
 
@@ -127,9 +131,10 @@ func getLogsAggregatorObjectFromContainerInfo(
 	if isContainerRunning {
 		logsAggregatorStatus = container.ContainerStatus_Running
 
-		privateIpAddrStr, err := dockerManager.GetContainerIP(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn, containerId)
+		bridgeNetworkName := shared_helpers.GetBridgeNetworkName(usePodmanBridgeNetwork)
+		privateIpAddrStr, err := dockerManager.GetContainerIP(ctx, bridgeNetworkName, containerId)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting the private IP address of container '%v' in network '%v'", containerId, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn)
+			return nil, stacktrace.Propagate(err, "An error occurred getting the private IP address of container '%v' in network '%v'", containerId, bridgeNetworkName)
 		}
 		privateIpAddr = net.ParseIP(privateIpAddrStr)
 		if privateIpAddr == nil {

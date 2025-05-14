@@ -3,6 +3,11 @@ package grafloki
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"os"
+	"strconv"
+	"time"
+
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/go-yaml/yaml"
@@ -14,10 +19,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"net/http"
-	"os"
-	"strconv"
-	"time"
 )
 
 const (
@@ -44,7 +45,7 @@ var grafanaContainerLabels = map[string]string{
 }
 
 func StartGrafLokiInDocker(ctx context.Context, graflokiConfig resolved_config.GrafanaLokiConfig) (string, string, error) {
-	dockerManager, err := docker_manager.CreateDockerManager(EmptyDockerClientOpts)
+	dockerManager, err := docker_manager.CreateDockerManager(EmptyDockerClientOpts, false)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error occurred creating the docker manager to start grafana and loki.")
 	}
@@ -264,7 +265,7 @@ func checkGrafanaAndLokiContainerExistence(ctx context.Context, dockerManager *d
 }
 
 func StopGrafLokiInDocker(ctx context.Context) error {
-	dockerManager, err := docker_manager.CreateDockerManager(EmptyDockerClientOpts)
+	dockerManager, err := docker_manager.CreateDockerManager(EmptyDockerClientOpts, false)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating Docker manager.")
 	}

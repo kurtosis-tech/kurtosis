@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
@@ -23,6 +24,7 @@ const (
 func getReverseProxyObjectAndContainerId(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
+	usePodmanBridgeNetwork bool,
 ) (*reverse_proxy.ReverseProxy, string, error) {
 	reverseProxyContainer, found, err := getReverseProxyContainer(ctx, dockerManager)
 	if err != nil {
@@ -39,6 +41,7 @@ func getReverseProxyObjectAndContainerId(
 		reverseProxyContainerID,
 		reverseProxyContainer.GetStatus(),
 		dockerManager,
+		usePodmanBridgeNetwork,
 	)
 	if err != nil {
 		return nil, "", stacktrace.Propagate(err, "An error occurred getting the reverse proxy object using container ID '%v', labels '%+v' and the status '%v'", reverseProxyContainer.GetId(), reverseProxyContainer.GetLabels(), reverseProxyContainer.GetStatus())
@@ -72,6 +75,7 @@ func getReverseProxyObjectFromContainerInfo(
 	containerId string,
 	containerStatus types.ContainerStatus,
 	dockerManager *docker_manager.DockerManager,
+	usePodmanBridgeNetwork bool,
 ) (*reverse_proxy.ReverseProxy, error) {
 	var privateIpAddr net.IP
 	var enclaveNetworksIpAddress map[string]net.IP
@@ -86,9 +90,10 @@ func getReverseProxyObjectFromContainerInfo(
 	if isContainerRunning {
 		reverseProxyStatus = container.ContainerStatus_Running
 
-		privateIpAddrStr, err := dockerManager.GetContainerIP(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn, containerId)
+		bridgeNetworkName := shared_helpers.GetBridgeNetworkName(usePodmanBridgeNetwork)
+		privateIpAddrStr, err := dockerManager.GetContainerIP(ctx, bridgeNetworkName, containerId)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting the private IP address of container '%v' in network '%v'", containerId, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn)
+			return nil, stacktrace.Propagate(err, "An error occurred getting the private IP address of container '%v' in network '%v'", containerId, bridgeNetworkName)
 		}
 		privateIpAddr = net.ParseIP(privateIpAddrStr)
 		if privateIpAddr == nil {

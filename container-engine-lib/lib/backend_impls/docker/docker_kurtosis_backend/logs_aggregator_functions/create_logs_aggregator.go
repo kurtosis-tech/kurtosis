@@ -25,6 +25,7 @@ func CreateLogsAggregator(
 	shouldEnablePersistentVolumeLogsCollection bool,
 	dockerManager *docker_manager.DockerManager,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
+	usePodmanBridgeNetwork bool,
 ) (
 	*logs_aggregator.LogsAggregator,
 	func(),
@@ -36,7 +37,7 @@ func CreateLogsAggregator(
 	}
 	if found {
 		logrus.Debugf("Found existing logs aggregator; cannot start a new one.")
-		logsAggregatorObj, containerId, err := getLogsAggregatorObjectAndContainerId(ctx, dockerManager)
+		logsAggregatorObj, containerId, err := getLogsAggregatorObjectAndContainerId(ctx, dockerManager, usePodmanBridgeNetwork)
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred getting existing logs aggregator.")
 		}
@@ -53,7 +54,7 @@ func CreateLogsAggregator(
 		return logsAggregatorObj, removeLogsAggregatorContainerFunc, nil
 	}
 
-	logsAggregatorNetwork, err := shared_helpers.GetEngineAndLogsComponentsNetwork(ctx, dockerManager)
+	logsAggregatorNetwork, err := shared_helpers.GetEngineAndLogsComponentsNetwork(ctx, dockerManager, usePodmanBridgeNetwork)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator network.")
 	}
@@ -88,7 +89,9 @@ func CreateLogsAggregator(
 		containerId,
 		containerLabels,
 		defaultContainerStatusForNewLogsAggregatorContainer,
-		dockerManager)
+		dockerManager,
+		usePodmanBridgeNetwork,
+	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting logs aggregator object using container ID '%v', labels '%+v', status '%v'.", containerId, containerLabels, defaultContainerStatusForNewLogsAggregatorContainer)
 	}
