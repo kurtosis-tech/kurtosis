@@ -504,7 +504,7 @@ Kurtosis is an open source tool maintained by [MAINTAINERS](./MAINTAINERS.md). I
   <a href="https://antithesis.com/">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/tedim52/.github/refs/heads/main/content/sponsors/antithesis-dark.svg">
-      <img alt="antithesis logo" src="https://raw.githubusercontent.com/tedim52/.github/refs/heads/main/content/sponsors/antithesis-light.svg" width="auto" height="70">
+      <img alt="antithesis logo" src="https://raw.githubusercontent.com/tedim52/.github/refs/heads/main/content/sponsors/antithesis-dark.svg" width="auto" height="70">
     </picture>
   </a>
 </p>
