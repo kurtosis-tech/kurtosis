@@ -208,7 +208,7 @@ func CreateDockerManager(dockerClientOpts []client.Opt) (*DockerManager, error) 
 }
 
 func CreatePodmanManager(dockerClientOpts []client.Opt) (*DockerManager, error) {
-	dockerManager, err := newDockerManager(dockerClientOpts)s
+	dockerManager, err := newDockerManager(dockerClientOpts)
 	if err != nil {
 		return nil, err // already wrapped
 	}
