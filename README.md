@@ -497,8 +497,8 @@ Kurtosis is an open source tool maintained by [MAINTAINERS](./MAINTAINERS.md). I
 <p>
   <a href="https://www.bloctopus.io/">
     <picture>
-      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/tedim52/.github/refs/heads/main/content/sponsors/bloctopus-light.svg">
-      <img alt="bloctopus logo" src="https://raw.githubusercontent.com/tedim52/.github/refs/heads/main/content/sponsors/bloctopus-light.svg" width="auto" height="70">
+      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/tedim52/.github/refs/heads/main/content/sponsors/bloctopus-light.png">
+      <img alt="bloctopus logo" src="https://raw.githubusercontent.com/tedim52/.github/refs/heads/main/content/sponsors/bloctopus-light.png" width="auto" height="70">
     </picture>
   </a>
   <a href="https://antithesis.com/">
