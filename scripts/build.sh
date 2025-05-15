@@ -45,14 +45,16 @@ BUILD_DEBUG_SCRIPT_RELATIVE_FILEPATHS=(
 )
 
 DEFAULT_DEBUG_IMAGE="false"
+DEFAULT_PODMAN_MODE="false"
 
 # ==================================================================================================
 #                                       Arg Parsing & Validation
 # ==================================================================================================
 show_helptext_and_exit() {
-    echo "Usage: $(basename "${0}") debug_image..."
+    echo "Usage: $(basename "${0}") debug_image podman_mode..."
     echo ""
     echo "  debug_image   Whether images should contains the debug server and run in debug mode, this will use the Dockerfile.debug image to build the container (configured for the engine server and the APIC server so far)"
+    echo "  podman_mode   Whether images should be built with podman instead of docker. Use if you are developing Kurtosis on Podman cluster type"
     echo ""
     exit 1  # Exit with an error so that if this is accidentally called by CI, the script will fail
 }
@@ -61,6 +63,12 @@ show_helptext_and_exit() {
 debug_image="${1:-"${DEFAULT_DEBUG_IMAGE}"}"
 if [ "${debug_image}" != "true" ] && [ "${debug_image}" != "false" ]; then
     echo "Error: Invalid debug_image arg: '${debug_image}'" >&2
+    show_helptext_and_exit
+fi
+
+podman_mode="${2:-"${DEFAULT_PODMAN_MODE}"}"
+if [ "${podman_mode}" != "true" ] && [ "${podman_mode}" != "false" ]; then
+    echo "Error: Invalid podman_mode arg: '${podman_mode}'" >&2
     show_helptext_and_exit
 fi
 
@@ -84,7 +92,7 @@ fi
 
 for build_script_rel_filepath in "${build_script_rel_filepaths[@]}"; do
     build_script_abs_filepath="${root_dirpath}/${build_script_rel_filepath}"
-    if ! bash "${build_script_abs_filepath}" "${debug_image}" ; then
+    if ! bash "${build_script_abs_filepath}" "${debug_image}" "${podman_mode}" ; then
         echo "Error: Build script '${build_script_abs_filepath}' failed" >&2
         exit 1
     fi
