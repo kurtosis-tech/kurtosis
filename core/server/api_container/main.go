@@ -8,15 +8,16 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_run"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/git_package_content_provider"
 	"net"
 	"os"
 	"path"
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_run"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/git_package_content_provider"
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
@@ -137,18 +138,24 @@ func runMain() error {
 	gitPackageContentProvider := git_package_content_provider.NewGitPackageContentProvider(repositoriesDirPath, tempDirectoriesDirPath, githubAuthProvider, enclaveDb)
 
 	// TODO Extract into own function
+	dockerApiContainerModeArgs := &backend_creator.APIContainerModeArgs{
+		Context:        ctx,
+		EnclaveID:      enclave.EnclaveUUID(serverArgs.EnclaveUUID),
+		APIContainerIP: ownIpAddress,
+		IsProduction:   serverArgs.IsProductionEnclave,
+	}
+
 	var kurtosisBackend backend_interface.KurtosisBackend
 	switch serverArgs.KurtosisBackendType {
 	case args.KurtosisBackendType_Docker:
-		apiContainerModeArgs := &backend_creator.APIContainerModeArgs{
-			Context:        ctx,
-			EnclaveID:      enclave.EnclaveUUID(serverArgs.EnclaveUUID),
-			APIContainerIP: ownIpAddress,
-			IsProduction:   serverArgs.IsProductionEnclave,
-		}
-		kurtosisBackend, err = backend_creator.GetDockerKurtosisBackend(apiContainerModeArgs, configs.NoRemoteBackendConfig)
+		kurtosisBackend, err = backend_creator.GetDockerKurtosisBackend(dockerApiContainerModeArgs, configs.NoRemoteBackendConfig)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
+		}
+	case args.KurtosisBackendType_Podman:
+		kurtosisBackend, err = backend_creator.GetPodmanKurtosisBackend(dockerApiContainerModeArgs, configs.NoRemoteBackendConfig)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting local Podman Kurtosis backend")
 		}
 	case args.KurtosisBackendType_Kubernetes:
 		// TODO Use this value when we have fields for the API container

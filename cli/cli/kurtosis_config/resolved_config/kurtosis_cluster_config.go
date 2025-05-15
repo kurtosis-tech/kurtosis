@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	v6 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v6"
+	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend"
@@ -12,7 +13,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/configs"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
-	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/stacktrace"
 )
@@ -197,6 +197,34 @@ func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesC
 		}
 
 		engineConfigSupplier = engine_server_launcher.NewDockerKurtosisBackendConfigSupplier()
+	case KurtosisClusterType_Podman:
+		if kubernetesConfig != nil {
+			return nil, nil, stacktrace.NewError(
+				"Cluster '%v' defines cluster config, but config must not be provided when cluster type is '%v'",
+				clusterId,
+				clusterType.String(),
+			)
+		}
+
+		backendSupplier = func(_ context.Context) (backend_interface.KurtosisBackend, error) {
+			var remoteBackendConfigMaybe *configs.KurtosisRemoteBackendConfig
+			currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred retrieving the current context")
+			}
+			if store.IsRemote(currentContext) {
+				remoteBackendConfigMaybe = configs.NewRemoteBackendConfigFromRemoteContext(currentContext.GetRemoteContextV0())
+			}
+			// Get a local or remote podman backend based on the existence of the remote backend config.
+			// We do not pass APIC mode args since we are dealing with the engine here.
+			backend, err := backend_creator.GetPodmanKurtosisBackend(backend_creator.NoAPIContainerModeArgs, remoteBackendConfigMaybe)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred creating the Docker Kurtosis backend")
+			}
+			return backend, nil
+		}
+
+		engineConfigSupplier = engine_server_launcher.NewPodmanKurtosisBackendConfigSupplier()
 	case KurtosisClusterType_Kubernetes:
 		if kubernetesConfig == nil {
 			return nil, nil, stacktrace.NewError(

@@ -14,7 +14,7 @@ Below is a fully annotated example of a `kurtosis-config.yml` with explanations 
 
 # Required. The version of the Kurtosis config schema.
 # This ensures compatibility with the CLI. 
-# Latest supported version is 6, supported by Kurtosis engine version 1.7.2.
+# Latest supported version is 6, supported by Kurtosis engine version 1.9.0.
 config-version: 6
 
 # Optional. Whether Kurtosis should send anonymous telemetry (usage) data.
@@ -27,7 +27,7 @@ should-send-metrics: true
 kurtosis-clusters:
   docker:  # Name of the cluster, this can be anything and is used to identify clusters in `kurtosis cluster set/get`
     # Required. Determines the cluster type.
-    # Valid values: "docker", "kubernetes"
+    # Valid values: "docker", "kubernetes", "podman"
     type: docker
 
     # Optional. Controls whether the built-in logs DB (PersistentVolumeLogsDB) is enabled.
