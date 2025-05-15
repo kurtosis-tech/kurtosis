@@ -7,12 +7,12 @@ sidebar_position: 7
 
 This guide assumes that you have [Kurtosis installed](../get-started/installing-the-cli.md).
 
-If you would like more information on Podman and how to set up and manage a Podman environment, check out these official [docs](https://docs.podman.io/en/latest/).
+If you would like more information on Podman and how to set up and manage a Podman environment, check out these official [docs](https://podman.io/).
 
 I. Set Up Podman
 -----------------
 
-1. Install Podman on your system following the [official installation guide](https://docs.podman.io/en/latest/installation.html).
+1. Install Podman on your system following the [official installation guide](https://podman.io/docs/installation).
 
 2. Start the Podman socket service:
 ```bash
@@ -31,7 +31,7 @@ Podman provides a Docker-compatible CLI and API. This means you can use Docker c
 - Using the `podman` command directly (it accepts the same commands as `docker`)
 - Using the `podman-docker` package which creates a symlink from `docker` to `podman`
 
-For more information on Docker compatibility, see the [Podman documentation](https://docs.podman.io/en/latest/markdown/podman-run.1.html#docker-compatibility).
+For more information on Docker compatibility, see the [Podman documentation](https://podman-desktop.io/docs/migrating-from-docker).
 :::
 
 II. Add Podman Cluster to `kurtosis-config.yml`
