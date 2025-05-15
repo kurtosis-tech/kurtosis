@@ -711,7 +711,6 @@ func createStartServiceOperation(
 			user,
 		)
 
-		// Podman doesn't support the Fluentd logging driver, so we turn off logs collection for podman
 		if shouldTurnOnLogsCollection {
 			if logsCollectorAddress == "" {
 				return nil, stacktrace.NewError("Expected to have a logs collector server address value to send the user service logs, but it is empty")

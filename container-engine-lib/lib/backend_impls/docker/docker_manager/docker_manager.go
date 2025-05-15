@@ -204,6 +204,19 @@ Args:
 	dockerClient: The Docker client that will be used when interacting with the underlying Docker engine the Docker engine.
 */
 func CreateDockerManager(dockerClientOpts []client.Opt) (*DockerManager, error) {
+	return newDockerManager(dockerClientOpts)
+}
+
+func CreatePodmanManager(dockerClientOpts []client.Opt) (*DockerManager, error) {
+	dockerManager, err := newDockerManager(dockerClientOpts)s
+	if err != nil {
+		return nil, err // already wrapped
+	}
+	dockerManager.podmanMode = true
+	return dockerManager, nil
+}
+
+func newDockerManager(dockerClientOpts []client.Opt) (*DockerManager, error) {
 	optsWithTimeout := []client.Opt{
 		client.WithTimeout(dockerClientTimeout),
 	}
@@ -221,27 +234,6 @@ func CreateDockerManager(dockerClientOpts []client.Opt) (*DockerManager, error) 
 		dockerClient:          dockerClient,
 		dockerClientNoTimeout: dockerClientNoTimeout,
 		podmanMode:            false,
-	}, nil
-}
-
-func CreatePodmanManager(dockerClientOpts []client.Opt) (*DockerManager, error) {
-	optsWithTimeout := []client.Opt{
-		client.WithTimeout(dockerClientTimeout),
-	}
-	optsWithTimeout = append(optsWithTimeout, dockerClientOpts...)
-	dockerClient, err := client.NewClientWithOpts(optsWithTimeout...)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error creating docker client")
-	}
-	dockerClientNoTimeout, err := client.NewClientWithOpts(dockerClientOpts...)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error creating docker client")
-	}
-
-	return &DockerManager{
-		dockerClient:          dockerClient,
-		dockerClientNoTimeout: dockerClientNoTimeout,
-		podmanMode:            true,
 	}, nil
 }
 
@@ -393,6 +385,7 @@ func (manager *DockerManager) GetBridgeNetworkName() string {
 	return NameOfNetworkToStartEngineAndLogServiceContainersInDocker
 }
 
+// IsPodman returns true if the DockerManager is using Podman as the container runtime
 func (manager *DockerManager) IsPodman() bool {
 	return manager.podmanMode
 }

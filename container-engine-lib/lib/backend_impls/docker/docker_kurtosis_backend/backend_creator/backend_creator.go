@@ -77,9 +77,7 @@ func GetDockerKurtosisBackend(
 	return kurtosisBackend, nil
 }
 
-// GetDockerKurtosisBackend is the entrypoint method we expect users of container-engine-lib to call
-// It creates a local or remote docker backend based on the existence of a remote backend config.
-// ONLY the API container should pass in the extra API container args, which will unlock extra API container functionality
+// GetPodmanKurtosisBackend is the same as GetDockerKurtosisBackend, but it will use Podman as the container runtime
 func GetPodmanKurtosisBackend(
 	optionalApiContainerModeArgs *APIContainerModeArgs,
 	optionalRemoteBackendConfig *configs.KurtosisRemoteBackendConfig,
@@ -226,7 +224,7 @@ func getDockerKurtosisBackend(
 	if usePodmanMode {
 		dockerManager, err = docker_manager.CreatePodmanManager(dockerClientOpts)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred building Podman Dockermanager")
+			return nil, stacktrace.Propagate(err, "An error occurred building Podman manager")
 		}
 	} else {
 		dockerManager, err = docker_manager.CreateDockerManager(dockerClientOpts)
