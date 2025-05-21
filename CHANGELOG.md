@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.1](https://github.com/kurtosis-tech/kurtosis/compare/1.8.0...1.8.1) (2025-05-21)
+
+
+### Bug Fixes
+
+* update package indexer url in enclave manager ui ([#2747](https://github.com/kurtosis-tech/kurtosis/issues/2747)) ([cfcd2e4](https://github.com/kurtosis-tech/kurtosis/commit/cfcd2e415b7f8523d35ba8e2d6b50e1977e10164))
+
 ## [1.8.0](https://github.com/kurtosis-tech/kurtosis/compare/1.7.2...1.8.0) (2025-05-06)
 
 
