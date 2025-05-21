@@ -1,6 +1,6 @@
 import axios from "axios"
 
-const host = "https://cloud.kurtosis.com:9770"
+const host = "https://catalog.kurtosis.com/api"
 const NumberOfRequiredGithubUrlComponents = 3
 export const getKurtosisPackages = async () => {
     try {
