@@ -7,7 +7,12 @@ package inspect
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"strings"
+	"time"
+	"unicode/utf8"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
@@ -21,11 +26,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
-	"sort"
-	"strings"
-	"time"
-	"unicode/utf8"
 )
 
 const (
@@ -39,6 +39,7 @@ const (
 	enclaveCreationTimeTitleName = "Creation Time"
 	flagsTitleName               = "Flags"
 
+	jsonOutput             = "json"
 	fullUuidsFlagKey       = "full-uuids"
 	fullUuidFlagKeyDefault = "false"
 
@@ -54,9 +55,22 @@ const (
 	productionEnclaveFlagStr = "production"
 )
 
-var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisContext, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, showFullUuid bool, isAPIContainerRunning bool) error{
-	userServicesArtifactsHeader: printUserServices,
-	filesArtifactsHeader:        printFilesArtifacts,
+type FilesArtifact struct {
+	UUID string
+	Name string
+}
+
+type UserService struct {
+	UUID   string
+	Name   string
+	Ports  []string
+	Status string
+}
+
+type InspectOutput struct {
+	Basic    map[string]string `json:"Basic"`
+	Files    []FilesArtifact   `json:"FilesArtifacts"`
+	Services []UserService     `json:"UserServices"`
 }
 
 var EnclaveInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -71,6 +85,12 @@ var EnclaveInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtos
 			Usage:   "If true then Kurtosis prints full UUIDs instead of shortened UUIDs. Default false.",
 			Type:    flags.FlagType_Bool,
 			Default: fullUuidFlagKeyDefault,
+		},
+		{
+			Key:     jsonOutput,
+			Usage:   "If true then Kurtosis prints the output in JSON format. Default false.",
+			Type:    flags.FlagType_Bool,
+			Default: "false",
 		},
 	},
 	Args: []*args.ArgConfig{
@@ -107,94 +127,134 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred creating Kurtosis Context from local engine")
 	}
 
-	if err = PrintEnclaveInspect(ctx, kurtosisCtx, enclaveIdentifier, showFullUuids); err != nil {
+	inspectInfo, err := inspect(ctx, kurtosisCtx, enclaveIdentifier, showFullUuids)
+	if err != nil {
 		// this is already wrapped up
 		return err
+	}
+	isjsonOutput, _ := flags.GetBool(jsonOutput)
+	if isjsonOutput {
+		tmp, _ := json.Marshal(inspectInfo)
+		fmt.Println(string(tmp))
+	} else {
+		tablePrint(inspectInfo)
 	}
 	return nil
 }
 
-func PrintEnclaveInspect(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisContext, enclaveIdentifier string, showFullUuids bool) error {
-	enclaveInfo, err := kurtosisCtx.GetEnclave(ctx, enclaveIdentifier)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the enclave for identifier '%v'", enclaveIdentifier)
+func tablePrint(info *InspectOutput) {
+	basicPrinter := output_printers.NewKeyValuePrinter()
+	basicPrinter.AddPair(enclaveNameTitleName, info.Basic[enclaveNameTitleName])
+	basicPrinter.AddPair(enclaveUUIDTitleName, info.Basic[enclaveUUIDTitleName])
+	basicPrinter.AddPair(enclaveStatusTitleName, info.Basic[enclaveStatusTitleName])
+	basicPrinter.AddPair(enclaveCreationTimeTitleName, info.Basic[enclaveCreationTimeTitleName])
+	basicPrinter.AddPair(flagsTitleName, info.Basic[flagsTitleName])
+	basicPrinter.Print()
+	out.PrintOutLn("")
+	numRunesInHeader := utf8.RuneLen(' ') + utf8.RuneCountInString(filesArtifactsHeader) + utf8.RuneLen(' ') // there will be a space before and after the header
+	numPadChars := (headerWidthChars - numRunesInHeader) / 2                                                 //nolint:mnd
+	padStr := strings.Repeat(headerPadChar, numPadChars)
+	fmt.Printf("%v %v %v\n", padStr, filesArtifactsHeader, padStr)
+
+	tablePrinter := output_printers.NewTablePrinter(
+		fileUuidsHeader,
+		fileNameHeader,
+	)
+
+	for _, item := range info.Files {
+		tablePrinter.AddRow(item.UUID, item.Name)
 	}
+	tablePrinter.Print()
+	out.PrintOutLn("")
 
-	keyValuePrinter := output_printers.NewKeyValuePrinter()
+	numRunesInHeader = utf8.RuneLen(' ') + utf8.RuneCountInString(userServicesArtifactsHeader) + utf8.RuneLen(' ') // there will be a space before and after the header
+	numPadChars = (headerWidthChars - numRunesInHeader) / 2                                                        //nolint:mnd
+	padStr = strings.Repeat(headerPadChar, numPadChars)
+	fmt.Printf("%v %v %v\n", padStr, userServicesArtifactsHeader, padStr)
 
-	// Add title row
-	keyValuePrinter.AddPair(enclaveNameTitleName, enclaveInfo.GetName())
+	userServicePrinter := output_printers.NewTablePrinter(
+		userServiceUUIDColHeader,
+		userServiceNameColHeader,
+		userServicePortsColHeader,
+		userServiceStatusColHeader,
+	)
+
+	for _, item := range info.Services {
+		userServicePrinter.AddRow(item.UUID, item.Name, item.Ports[0], item.Status)
+		for i := 1; i < len(item.Ports); i++ {
+			userServicePrinter.AddRow("", "", item.Ports[i], "")
+		}
+	}
+	userServicePrinter.Print()
+	out.PrintOutLn("")
+}
+
+func baseInfo(info *kurtosis_engine_rpc_api_bindings.EnclaveInfo, showFullUuids bool) (map[string]string, error) {
 
 	// Add UUID row
+	uuid := info.GetShortenedUuid()
 	if showFullUuids {
-		keyValuePrinter.AddPair(enclaveUUIDTitleName, enclaveInfo.GetEnclaveUuid())
-	} else {
-		keyValuePrinter.AddPair(enclaveUUIDTitleName, enclaveInfo.GetShortenedUuid())
+		uuid = info.GetEnclaveUuid()
 	}
 
 	// Add status row
-	enclaveContainersStatusStr, err := enclave_status_stringifier.EnclaveContainersStatusStringifier(enclaveInfo.GetContainersStatus())
+	enclaveContainersStatusStr, err := enclave_status_stringifier.EnclaveContainersStatusStringifier(info.GetContainersStatus())
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred when stringify enclave containers status")
+		return nil, stacktrace.Propagate(err, "An error occurred when stringify enclave containers status")
 	}
-	keyValuePrinter.AddPair(enclaveStatusTitleName, enclaveContainersStatusStr)
 
 	// Add creation time row
-	enclaveCreationTime := enclaveInfo.GetCreationTime()
+	enclaveCreationTime := info.GetCreationTime()
 	if enclaveCreationTime == nil {
-		return stacktrace.Propagate(err, "Expected to get the enclave creation time from the enclave info received but it was not received, this is a bug in Kurtosis")
+		return nil, stacktrace.Propagate(err, "Expected to get the enclave creation time from the enclave info received but it was not received, this is a bug in Kurtosis")
 	}
 	enclaveCreationTimeStr := enclaveCreationTime.AsTime().Local().Format(time.RFC1123)
-	keyValuePrinter.AddPair(enclaveCreationTimeTitleName, enclaveCreationTimeStr)
 
-	// Add flags row
-	allEnclaveFlagsStr := getAllEnclaveFlagsStr(enclaveInfo)
+	res := map[string]string{
+		enclaveNameTitleName:         info.GetName(),
+		enclaveUUIDTitleName:         uuid,
+		enclaveStatusTitleName:       enclaveContainersStatusStr,
+		enclaveCreationTimeTitleName: enclaveCreationTimeStr,
+		flagsTitleName:               getAllEnclaveFlagsStr(info),
+	}
+	return res, nil
+}
 
-	keyValuePrinter.AddPair(flagsTitleName, allEnclaveFlagsStr)
+func PrintEnclaveInspect(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisContext, enclaveIdentifier string, showFullUuids bool) error {
+	inspectInfo, err := inspect(ctx, kurtosisCtx, enclaveIdentifier, showFullUuids)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the enclave inspect info")
+	} else {
+		tablePrint(inspectInfo)
+	}
+	return nil
+}
+
+func inspect(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisContext, enclaveIdentifier string, showFullUuids bool) (*InspectOutput, error) {
+	var inspectInfo = InspectOutput{}
+	enclaveInfo, err := kurtosisCtx.GetEnclave(ctx, enclaveIdentifier)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave for identifier '%v'", enclaveIdentifier)
+	}
+
+	inspectInfo.Basic, err = baseInfo(enclaveInfo, showFullUuids)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the base info for enclave '%v'", enclaveIdentifier)
+	}
 
 	isApiContainerRunning := enclaveInfo.GetApiContainerStatus() == kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING
 
-	keyValuePrinter.Print()
-	out.PrintOutLn("")
-
-	sortedEnclaveObjHeaders := []string{}
-	for header := range enclaveObjectPrintingFuncs {
-		sortedEnclaveObjHeaders = append(sortedEnclaveObjHeaders, header)
-	}
-	sort.Strings(sortedEnclaveObjHeaders)
-
-	headersWithPrintErrs := []string{}
-	for _, header := range sortedEnclaveObjHeaders {
-		if header == filesArtifactsHeader && !isApiContainerRunning {
-			// can't fetch files artifact information if APIC isn't running
-			continue
-		}
-
-		printingFunc, found := enclaveObjectPrintingFuncs[header]
-		if !found {
-			return stacktrace.NewError("No printing function found for enclave object '%v'; this is a bug in Kurtosis!", header)
-		}
-
-		numRunesInHeader := utf8.RuneLen(' ') + utf8.RuneCountInString(header) + utf8.RuneLen(' ') // there will be a space before and after the header
-		numPadChars := (headerWidthChars - numRunesInHeader) / 2                                   //nolint:mnd
-		padStr := strings.Repeat(headerPadChar, numPadChars)
-		fmt.Printf("%v %v %v\n", padStr, header, padStr)
-
-		if err := printingFunc(ctx, kurtosisCtx, enclaveInfo, showFullUuids, isApiContainerRunning); err != nil {
-			logrus.Error(err)
-			headersWithPrintErrs = append(headersWithPrintErrs, header)
-		}
-		fmt.Println("")
+	inspectInfo.Files, err = inspectFilesArtifacts(ctx, kurtosisCtx, enclaveInfo, showFullUuids, isApiContainerRunning)
+	if err != nil {
+		return nil, err
 	}
 
-	if len(headersWithPrintErrs) > 0 {
-		return stacktrace.NewError(
-			"Errors occurred printing the following enclave elements: %v",
-			strings.Join(headersWithPrintErrs, ", "),
-		)
+	inspectInfo.Services, err = inspectUserServices(ctx, kurtosisCtx, enclaveInfo, showFullUuids, isApiContainerRunning)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	return &inspectInfo, nil
 }
 
 func getAllEnclaveFlagsStr(enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo) string {
