@@ -1,3 +1,3 @@
 module github.com/kurtosis-tech/kurtosis/benchmark
 
-go 1.23.7
+go 1.23.0
