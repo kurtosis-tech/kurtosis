@@ -3,11 +3,13 @@ package files
 import (
 	"context"
 	"fmt"
+	"os"
+	"path"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/mholt/archiver"
-	"os"
-	"path"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -57,6 +59,7 @@ func DownloadAndExtractFilesArtifact(ctx context.Context, enclaveCtx *enclaves.E
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while writing bytes to file '%v' with permission '%v'", tmpDirPath, filesArtifactPermission)
 	}
+	logrus.Infof("absoluteDestinationPath: %v", absoluteDestinationPath)
 	err = archiver.Unarchive(tmpFileToWriteTo, absoluteDestinationPath)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while extracting '%v' to '%v'", tmpFileToWriteTo, absoluteDestinationPath)
