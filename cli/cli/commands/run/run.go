@@ -5,7 +5,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"os"
+	"os/signal"
+	"path"
+	"path/filepath"
+	"regexp"
+	"strings"
 	"time"
+
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
@@ -16,16 +26,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/user_support_constants"
 	"gopkg.in/yaml.v2"
-	"io"
 	"k8s.io/utils/strings/slices"
-	"net/http"
-	"net/url"
-	"os"
-	"os/signal"
-	"path"
-	"path/filepath"
-	"regexp"
-	"strings"
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
@@ -270,8 +271,8 @@ func run(
 	args *args.ParsedArgs,
 ) error {
 	benchmark := benchmark.RunBenchmark{
-		TimeToRun: time.Duration(0),
-		TimeToCreateEnclave: time.Duration(0),
+		TimeToRun:             time.Duration(0),
+		TimeToCreateEnclave:   time.Duration(0),
 		TimeToExecuteStarlark: time.Duration(0),
 	}
 	beforeRun := time.Now()
@@ -608,6 +609,8 @@ func executeRemotePackage(
 	packageId string,
 	runConfig *starlark_run_config.StarlarkRunConfig,
 ) (<-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
+	logrus.Infof("Executing remote Starlark package with ID '%s'", packageId)
+	logrus.Infof("Executing remote Starlark package with run config '%v'", runConfig)
 	return enclaveCtx.RunStarlarkRemotePackage(ctx, packageId, runConfig)
 }
 

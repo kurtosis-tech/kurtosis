@@ -4,9 +4,11 @@ import (
 	"context"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/benchmark"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
@@ -63,6 +65,14 @@ func (runner *StartosisRunner) Run(
 	starlark_warning.Clear()
 	defer runner.mutex.Unlock()
 
+	benchmark := benchmark.StartosisBenchmark{
+		TimeToRunStartosisScript:    time.Duration(0),
+		TimeToExecuteInstructions:   time.Duration(0),
+		TimeToValidateInstructions:  time.Duration(0),
+		TimeToInterpretInstructions: time.Duration(0),
+	}
+
+	beforeRunStartosisScript := time.Now()
 	// TODO(gb): add metric tracking maybe?
 	starlarkRunResponseLines := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 	go func() {
@@ -97,6 +107,7 @@ func (runner *StartosisRunner) Run(
 			startingInterpretationMsg, defaultCurrentStepNumber, defaultTotalStepsNumber)
 		starlarkRunResponseLines <- progressInfo
 
+		beforeInterpretation := time.Now()
 		// TODO: once we have feature flags, add a switch here to call InterpretAndOptimizePlan if the feature flag is
 		//  turned on
 		var serializedScriptOutput string
@@ -130,6 +141,7 @@ func (runner *StartosisRunner) Run(
 				imageDownloadMode,
 			)
 		}
+		benchmark.TimeToInterpretInstructions = time.Since(beforeInterpretation)
 
 		if interpretationError != nil {
 			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromInterpretationError(interpretationError)
@@ -152,6 +164,7 @@ func (runner *StartosisRunner) Run(
 			startingValidationMsg, defaultCurrentStepNumber, totalNumberOfInstructions)
 		starlarkRunResponseLines <- progressInfo
 
+		beforeValidation := time.Now()
 		validationErrorsChan := runner.startosisValidator.Validate(ctx, instructionsSequence, imageDownloadMode)
 		if isRunFinished, isRunSuccessful := forwardKurtosisResponseLineChannelUntilSourceIsClosed(validationErrorsChan, starlarkRunResponseLines); isRunFinished {
 			if !isRunSuccessful {
@@ -160,12 +173,14 @@ func (runner *StartosisRunner) Run(
 			return
 		}
 		logrus.Debugf("Successfully validated Starlark script")
+		benchmark.TimeToValidateInstructions = time.Since(beforeValidation)
 
 		// Execution starts > send progress info. This will soon be overridden byt the first instruction execution
 		progressInfo = binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
 			startingExecutionMsg, defaultCurrentStepNumber, totalNumberOfInstructions)
 		starlarkRunResponseLines <- progressInfo
 
+		beforeExecution := time.Now()
 		executionResponseLinesChan := runner.startosisExecutor.Execute(ctx, dryRun, parallelism, instructionsPlan.GetIndexOfFirstInstruction(), instructionsSequence, serializedScriptOutput)
 		if isRunFinished, isRunSuccessful := forwardKurtosisResponseLineChannelUntilSourceIsClosed(executionResponseLinesChan, starlarkRunResponseLines); !isRunFinished {
 			logrus.Warnf("Execution finished but no 'RunFinishedEvent' was received through the stream. This is unexpected as every execution should be terminal.")
@@ -174,7 +189,11 @@ func (runner *StartosisRunner) Run(
 		} else {
 			logrus.Debugf("Successfully executed Kurtosis plan composed of %d Kurtosis instructions", totalNumberOfInstructions)
 		}
+		benchmark.TimeToExecuteInstructions = time.Since(beforeExecution)
+		benchmark.TimeToRunStartosisScript = time.Since(beforeRunStartosisScript)
+		benchmark.OutputToFile("/benchmark.txt")
 	}()
+
 	return starlarkRunResponseLines
 }
 

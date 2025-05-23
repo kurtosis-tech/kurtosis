@@ -43,7 +43,7 @@ func TestStartosis(t *testing.T) {
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Infof("Executing Ethereum package benchmark...")
 
-	starlarkRunConfig := starlark_run_config.NewRunStarlarkConfig(starlark_run_config.WithSerializedParams(""))
+	starlarkRunConfig := starlark_run_config.NewRunStarlarkConfig(starlark_run_config.WithSerializedParams("{}"))
 
 	beforeRunStarlarkPackage := time.Now()
 	starlarkResponseLineChan, cancelCtxFunc, err := enclaveCtx.RunStarlarkRemotePackage(ctx, "github.com/ethpandaops/ethereum-package", starlarkRunConfig)

@@ -6,6 +6,7 @@ toolchain go1.23.7
 
 replace (
 	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
+	github.com/kurtosis-tech/kurtosis/benchmark => ../../benchmark
 	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
 	github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander => ../files_artifacts_expander
 	github.com/kurtosis-tech/kurtosis/core/launcher => ../launcher
