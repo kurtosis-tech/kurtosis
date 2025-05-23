@@ -215,7 +215,7 @@ func updateBenchmark(beforeExec time.Time, benchmark *benchmark.KurtosisPlanInst
 	benchmark.TimeToExec += time.Since(beforeExec)
 	benchmark.TotalTimeExecutingInstructions += time.Since(beforeExec)
 	benchmark.NumExec++
-	benchmark.OutputToFile("/kurtosis_instructions_benchmark.txt")
+	benchmark.OutputToFile()
 }
 
 func (builtin *ExecCapabilities) TryResolveWith(instructionsAreEqual bool, _ *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {

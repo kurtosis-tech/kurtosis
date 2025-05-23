@@ -151,8 +151,8 @@ func updateBenchmark(beforeRenderTemplates time.Time, benchmark *benchmark.Kurto
 	benchmark.TotalTimeExecutingInstructions += time.Since(beforeRenderTemplates)
 	benchmark.NumRenderTemplates++
 	logrus.Info("UPDATING KURTOSIS RENDER TEMPLATES BENCHMARK", benchmark.TimeToRenderTemplates)
-	benchmark.OutputToFile("/kurtosis_instructions_benchmark.txt")
-	benchmark.OutputToFile("/kurtosis_instructions_benchmark_render_templates.txt")
+	benchmark.OutputToFile()
+	benchmark.OutputToFile()
 }
 
 func (builtin *RenderTemplatesCapabilities) TryResolveWith(instructionsAreEqual bool, other *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {

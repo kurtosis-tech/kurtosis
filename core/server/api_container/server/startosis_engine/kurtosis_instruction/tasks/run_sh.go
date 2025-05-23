@@ -373,8 +373,8 @@ func updateBenchmark(beforeRunSh time.Time, benchmark *benchmark.KurtosisPlanIns
 	benchmark.TotalTimeExecutingInstructions += time.Since(beforeRunSh)
 	benchmark.NumRunSh++
 	logrus.Info("UPDATING KURTOSIS RUN SH BENCHMARK", benchmark.TimeToRunSh)
-	benchmark.OutputToFile("/kurtosis_instructions_benchmark.txt")
-	benchmark.OutputToFile("/kurtosis_instructions_benchmark_run_sh.txt")
+	benchmark.OutputToFile()
+	benchmark.OutputToFile()
 }
 
 func (builtin *RunShCapabilities) TryResolveWith(instructionsAreEqual bool, _ *enclave_plan_persistence.EnclavePlanInstruction, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {

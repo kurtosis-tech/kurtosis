@@ -247,7 +247,7 @@ func updateBenchmark(beforeAddService time.Time, benchmark *benchmark.KurtosisPl
 	benchmark.TotalTimeExecutingInstructions += time.Since(beforeAddService)
 	benchmark.NumAddServices++
 	logrus.Info("UPDATING KURTOSIS ADD SERVICES BENCHMARK", benchmark.TimeToAddServices)
-	benchmark.OutputToFile("/kurtosis_instructions_benchmark.txt")
+	benchmark.OutputToFile()
 }
 
 func (builtin *AddServiceCapabilities) TryResolveWith(instructionsAreEqual bool, other *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {

@@ -191,7 +191,7 @@ func (runner *StartosisRunner) Run(
 		}
 		benchmark.TimeToExecuteInstructions = time.Since(beforeExecution)
 		benchmark.TimeToRunStartosisScript = time.Since(beforeRunStartosisScript)
-		benchmark.OutputToFile("/benchmark.txt")
+		benchmark.OutputToFile()
 	}()
 
 	return starlarkRunResponseLines

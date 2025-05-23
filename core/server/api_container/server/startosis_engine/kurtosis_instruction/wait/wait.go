@@ -290,7 +290,7 @@ func updateBenchmark(beforeWait time.Time, benchmark *benchmark.KurtosisPlanInst
 	benchmark.TimeToWait += time.Since(beforeWait)
 	benchmark.TotalTimeExecutingInstructions += time.Since(beforeWait)
 	benchmark.NumWait++
-	benchmark.OutputToFile("/kurtosis_instructions_benchmark.txt")
+	benchmark.OutputToFile()
 }
 
 func (builtin *WaitCapabilities) TryResolveWith(instructionsAreEqual bool, _ *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {

@@ -192,7 +192,7 @@ func updateBenchmark(beforeUpload time.Time, benchmark *benchmark.KurtosisPlanIn
 	benchmark.TimeToUploadFiles += time.Since(beforeUpload)
 	benchmark.TotalTimeExecutingInstructions += time.Since(beforeUpload)
 	benchmark.NumUploadFiles++
-	benchmark.OutputToFile("/kurtosis_instructions_benchmark.txt")
+	benchmark.OutputToFile()
 }
 
 func (builtin *UploadFilesCapabilities) TryResolveWith(instructionsAreEqual bool, other *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {

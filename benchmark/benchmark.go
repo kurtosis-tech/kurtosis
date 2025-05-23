@@ -1,8 +1,8 @@
 package benchmark
 
 import (
+	"encoding/csv"
 	"fmt"
-	"log"
 	"os"
 	"time"
 )
@@ -53,49 +53,119 @@ type ServiceNetworkBenchmark struct {
 }
 
 func (benchmark *RunBenchmark) Print() {
-	fmt.Printf("Time to create enclave: %v\n", benchmark.TimeToCreateEnclave)
-	fmt.Printf("Time to execute starlark: %v\n", benchmark.TimeToExecuteStarlark)
-	fmt.Printf("Time to upload starlark package: %v\n", benchmark.TimeToUploadStarlarkPackage)
-	fmt.Printf("Time to run: %v\n", benchmark.TimeToRun)
+	fmt.Printf("Create enclave: %v\n", benchmark.TimeToCreateEnclave)
+	fmt.Printf("Execute starlark: %v\n", benchmark.TimeToExecuteStarlark)
+	fmt.Printf("Upload starlark package: %v\n", benchmark.TimeToUploadStarlarkPackage)
+	fmt.Printf("Run: %v\n", benchmark.TimeToRun)
 }
 
-func (benchmark *StartosisBenchmark) OutputToFile(filePath string) {
-	file, err := os.Create(filePath)
-	if err != nil {
-		log.Fatalf("Failed to create file: %v", err)
-	}
-	defer file.Close()
-
-	file.WriteString(fmt.Sprintf("Time to run startosis script: %v\n", benchmark.TimeToRunStartosisScript))
-	file.WriteString(fmt.Sprintf("Time to execute instructions: %v\n", benchmark.TimeToExecuteInstructions))
-	file.WriteString(fmt.Sprintf("Time to validate instructions: %v\n", benchmark.TimeToValidateInstructions))
-	file.WriteString(fmt.Sprintf("Time to interpret instructions: %v\n", benchmark.TimeToInterpretInstructions))
+func (benchmark *RunBenchmark) OutputToFile(filePath string, format string) error {
+	return benchmark.outputToCSV()
 }
 
-func (benchmark *KurtosisPlanInstructionBenchmark) OutputToFile(filePath string) {
+func (benchmark *RunBenchmark) outputToCSV() error {
+	filePath := "run_benchmark.csv"
 	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		log.Fatalf("Failed to create file: %v", err)
+		return fmt.Errorf("failed to create file: %v", err)
 	}
 	defer file.Close()
 
-	file.WriteString(fmt.Sprintf("Total time executing instructions: %v\n", benchmark.TotalTimeExecutingInstructions))
-	file.WriteString(fmt.Sprintf("Time to add services: %v\n", benchmark.TimeToAddServices))
-	file.WriteString(fmt.Sprintf("Number of add services: %v\n", benchmark.NumAddServices))
-	file.WriteString(fmt.Sprintf("Time to run sh: %v\n", benchmark.TimeToRunSh))
-	file.WriteString(fmt.Sprintf("Number of run sh: %v\n", benchmark.NumRunSh))
-	file.WriteString(fmt.Sprintf("Time to render templates: %v\n", benchmark.TimeToRenderTemplates))
-	file.WriteString(fmt.Sprintf("Number of render templates: %v\n", benchmark.NumRenderTemplates))
-	file.WriteString(fmt.Sprintf("Time to verify: %v\n", benchmark.TimeToVerify))
-	file.WriteString(fmt.Sprintf("Number of verify: %v\n", benchmark.NumVerify))
-	file.WriteString(fmt.Sprintf("Time to wait: %v\n", benchmark.TimeToWait))
-	file.WriteString(fmt.Sprintf("Number of wait: %v\n", benchmark.NumWait))
-	file.WriteString(fmt.Sprintf("Time to exec: %v\n", benchmark.TimeToExec))
-	file.WriteString(fmt.Sprintf("Number of exec: %v\n", benchmark.NumExec))
-	file.WriteString(fmt.Sprintf("Time to store service files: %v\n", benchmark.TimeToStoreServiceFiles))
-	file.WriteString(fmt.Sprintf("Number of store service files: %v\n", benchmark.NumStoreServiceFiles))
-	file.WriteString(fmt.Sprintf("Time to upload files: %v\n", benchmark.TimeToUploadFiles))
-	file.WriteString(fmt.Sprintf("Number of upload files: %v\n", benchmark.NumUploadFiles))
-	file.WriteString(fmt.Sprintf("Time to print: %v\n", benchmark.TimeToPrint))
-	file.WriteString(fmt.Sprintf("Number of print: %v\n", benchmark.NumPrint))
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	// Write header
+	if err := writer.Write([]string{"Metric", "Value"}); err != nil {
+		return fmt.Errorf("failed to write CSV header: %v", err)
+	}
+
+	// Write data
+	records := [][]string{
+		{"Create enclave", benchmark.TimeToCreateEnclave.String()},
+		{"Execute starlark", benchmark.TimeToExecuteStarlark.String()},
+		{"Upload starlark package", benchmark.TimeToUploadStarlarkPackage.String()},
+		{"Run", benchmark.TimeToRun.String()},
+	}
+
+	if err := writer.WriteAll(records); err != nil {
+		return fmt.Errorf("failed to write CSV records: %v", err)
+	}
+
+	return nil
+}
+
+func (benchmark *StartosisBenchmark) OutputToFile() error {
+	return benchmark.outputToCSV()
+}
+
+func (benchmark *StartosisBenchmark) outputToCSV() error {
+	filePath := "startosis_benchmark.csv"
+	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to create file: %v", err)
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	// Write header
+	if err := writer.Write([]string{"Metric", "Value"}); err != nil {
+		return fmt.Errorf("failed to write CSV header: %v", err)
+	}
+
+	// Write data
+	records := [][]string{
+		{"Run startosis script", benchmark.TimeToRunStartosisScript.String()},
+		{"Execute instructions", benchmark.TimeToExecuteInstructions.String()},
+		{"Validate instructions", benchmark.TimeToValidateInstructions.String()},
+		{"Interpret instructions", benchmark.TimeToInterpretInstructions.String()},
+	}
+
+	if err := writer.WriteAll(records); err != nil {
+		return fmt.Errorf("failed to write CSV records: %v", err)
+	}
+
+	return nil
+}
+
+func (benchmark *KurtosisPlanInstructionBenchmark) OutputToFile() error {
+	return benchmark.outputToCSV()
+}
+
+func (benchmark *KurtosisPlanInstructionBenchmark) outputToCSV() error {
+	filePath := "kurtosis_plan_instruction_benchmark.csv"
+	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to create file: %v", err)
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	// Write header
+	if err := writer.Write([]string{"Metric", "Value", "Count"}); err != nil {
+		return fmt.Errorf("failed to write CSV header: %v", err)
+	}
+
+	// Write data
+	records := [][]string{
+		{"Total time executing instructions", benchmark.TotalTimeExecutingInstructions.String(), ""},
+		{"Add services", benchmark.TimeToAddServices.String(), fmt.Sprintf("%d", benchmark.NumAddServices)},
+		{"Run sh", benchmark.TimeToRunSh.String(), fmt.Sprintf("%d", benchmark.NumRunSh)},
+		{"Render templates", benchmark.TimeToRenderTemplates.String(), fmt.Sprintf("%d", benchmark.NumRenderTemplates)},
+		{"Verify", benchmark.TimeToVerify.String(), fmt.Sprintf("%d", benchmark.NumVerify)},
+		{"Wait", benchmark.TimeToWait.String(), fmt.Sprintf("%d", benchmark.NumWait)},
+		{"Exec", benchmark.TimeToExec.String(), fmt.Sprintf("%d", benchmark.NumExec)},
+		{"Store service files", benchmark.TimeToStoreServiceFiles.String(), fmt.Sprintf("%d", benchmark.NumStoreServiceFiles)},
+		{"Upload files", benchmark.TimeToUploadFiles.String(), fmt.Sprintf("%d", benchmark.NumUploadFiles)},
+		{"Print", benchmark.TimeToPrint.String(), fmt.Sprintf("%d", benchmark.NumPrint)},
+	}
+
+	if err := writer.WriteAll(records); err != nil {
+		return fmt.Errorf("failed to write CSV records: %v", err)
+	}
+
+	return nil
 }

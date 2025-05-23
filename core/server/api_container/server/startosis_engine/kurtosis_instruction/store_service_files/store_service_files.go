@@ -149,7 +149,7 @@ func updateBenchmark(beforeStore time.Time, benchmark *benchmark.KurtosisPlanIns
 	benchmark.TimeToStoreServiceFiles += time.Since(beforeStore)
 	benchmark.TotalTimeExecutingInstructions += time.Since(beforeStore)
 	benchmark.NumStoreServiceFiles++
-	benchmark.OutputToFile("/kurtosis_instructions_benchmark.txt")
+	benchmark.OutputToFile()
 }
 
 func (builtin *StoreServiceFilesCapabilities) TryResolveWith(instructionsAreEqual bool, other *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
