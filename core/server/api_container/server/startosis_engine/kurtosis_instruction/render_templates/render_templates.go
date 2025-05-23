@@ -4,6 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
+	"time"
+
+	"github.com/kurtosis-tech/kurtosis/benchmark"
+	"github.com/sirupsen/logrus"
+
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
@@ -20,7 +26,6 @@ import (
 	starlarkjson "go.starlark.net/lib/json"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
-	"reflect"
 )
 
 const (
@@ -37,7 +42,7 @@ const (
 	descriptionFormatStr    = "Rendering a template to a files artifact with name '%v'"
 )
 
-func NewRenderTemplatesInstruction(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+func NewRenderTemplatesInstruction(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore, benchmark *benchmark.KurtosisPlanInstructionBenchmark) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: RenderTemplatesBuiltinName,
@@ -66,6 +71,7 @@ func NewRenderTemplatesInstruction(serviceNetwork service_network.ServiceNetwork
 				artifactName:                      "",  // will be populated at interpretation time
 				templatesAndDataByDestRelFilepath: nil, // will be populated at interpretation time
 				description:                       "",  // populated at interpretation time
+				benchmark:                         benchmark,
 			}
 		},
 
@@ -84,6 +90,7 @@ type RenderTemplatesCapabilities struct {
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
 
 	description string
+	benchmark   *benchmark.KurtosisPlanInstructionBenchmark
 }
 
 func (builtin *RenderTemplatesCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -123,6 +130,7 @@ func (builtin *RenderTemplatesCapabilities) Validate(_ *builtin_argument.Argumen
 }
 
 func (builtin *RenderTemplatesCapabilities) Execute(_ context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
+	beforeRenderTemplates := time.Now()
 	for _, templateData := range builtin.templatesAndDataByDestRelFilepath {
 		if err := templateData.ReplaceRuntimeValues(builtin.runtimeValueStore); err != nil {
 			return "", stacktrace.Propagate(err, "An error occurred replacing runtime values for render_template instruction")
@@ -134,7 +142,17 @@ func (builtin *RenderTemplatesCapabilities) Execute(_ context.Context, _ *builti
 		return "", stacktrace.Propagate(err, "Failed to render templates '%v'", builtin.templatesAndDataByDestRelFilepath)
 	}
 	instructionResult := fmt.Sprintf("Templates artifact name '%s' rendered with artifact UUID '%s'", builtin.artifactName, artifactUUID)
+	updateBenchmark(beforeRenderTemplates, builtin.benchmark)
 	return instructionResult, nil
+}
+
+func updateBenchmark(beforeRenderTemplates time.Time, benchmark *benchmark.KurtosisPlanInstructionBenchmark) {
+	benchmark.TimeToRenderTemplates += time.Since(beforeRenderTemplates)
+	benchmark.TotalTimeExecutingInstructions += time.Since(beforeRenderTemplates)
+	benchmark.NumRenderTemplates++
+	logrus.Info("UPDATING KURTOSIS RENDER TEMPLATES BENCHMARK", benchmark.TimeToRenderTemplates)
+	benchmark.OutputToFile("/kurtosis_instructions_benchmark.txt")
+	benchmark.OutputToFile("/kurtosis_instructions_benchmark_render_templates.txt")
 }
 
 func (builtin *RenderTemplatesCapabilities) TryResolveWith(instructionsAreEqual bool, other *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {

@@ -1,6 +1,9 @@
 package startosis_engine
 
 import (
+	t "time"
+
+	"github.com/kurtosis-tech/kurtosis/benchmark"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins"
@@ -69,8 +72,18 @@ func KurtosisPlanInstructions(
 	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore,
 	imageDownloadMode image_download_mode.ImageDownloadMode,
 ) []*kurtosis_plan_instruction.KurtosisPlanInstruction {
+	benchmark := &benchmark.KurtosisPlanInstructionBenchmark{
+		TimeToAddServices:       t.Duration(0),
+		TimeToRenderTemplates:   t.Duration(0),
+		TimeToVerify:            t.Duration(0),
+		TimeToWait:              t.Duration(0),
+		TimeToExec:              t.Duration(0),
+		TimeToStoreServiceFiles: t.Duration(0),
+		TimeToUploadFiles:       t.Duration(0),
+		TimeToPrint:             t.Duration(0),
+	}
 	return []*kurtosis_plan_instruction.KurtosisPlanInstruction{
-		add_service.NewAddService(serviceNetwork, runtimeValueStore, packageId, packageContentProvider, packageReplaceOptions, interpretationTimeValueStore, imageDownloadMode),
+		add_service.NewAddService(serviceNetwork, runtimeValueStore, packageId, packageContentProvider, packageReplaceOptions, interpretationTimeValueStore, imageDownloadMode, benchmark),
 		add_service.NewAddServices(serviceNetwork, runtimeValueStore, packageId, packageContentProvider, packageReplaceOptions, interpretationTimeValueStore, imageDownloadMode),
 		get_service.NewGetService(interpretationTimeValueStore),
 		get_services.NewGetServices(interpretationTimeValueStore),
@@ -80,11 +93,11 @@ func KurtosisPlanInstructions(
 		exec.NewExec(serviceNetwork, runtimeValueStore),
 		kurtosis_print.NewPrint(serviceNetwork, runtimeValueStore),
 		remove_service.NewRemoveService(serviceNetwork, interpretationTimeValueStore),
-		render_templates.NewRenderTemplatesInstruction(serviceNetwork, runtimeValueStore),
+		render_templates.NewRenderTemplatesInstruction(serviceNetwork, runtimeValueStore, benchmark),
 		request.NewRequest(serviceNetwork, runtimeValueStore),
 		start_service.NewStartService(serviceNetwork),
 		tasks.NewRunPythonService(serviceNetwork, runtimeValueStore, nonBlockingMode, packageId, packageContentProvider, packageReplaceOptions),
-		tasks.NewRunShService(serviceNetwork, runtimeValueStore, nonBlockingMode, packageId, packageContentProvider, packageReplaceOptions),
+		tasks.NewRunShService(serviceNetwork, runtimeValueStore, nonBlockingMode, packageId, packageContentProvider, packageReplaceOptions, benchmark),
 		stop_service.NewStopService(serviceNetwork),
 		store_service_files.NewStoreServiceFiles(serviceNetwork),
 		upload_files.NewUploadFiles(packageId, serviceNetwork, packageContentProvider, packageReplaceOptions),

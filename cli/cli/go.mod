@@ -58,6 +58,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/kurtosis-tech/kurtosis-package-indexer/server v0.0.0-20240222174809-4f74727f5e3b
 	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230818182330-1a86869414d2
+	github.com/kurtosis-tech/kurtosis/benchmark v0.0.0-00010101000000-000000000000
 	github.com/kurtosis-tech/kurtosis/cloud/api/golang v0.0.0
 	github.com/kurtosis-tech/kurtosis/name_generator v0.0.0-20230727152609-768e95d2dbeb
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20230710164206-90b674acb269

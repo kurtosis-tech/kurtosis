@@ -2,6 +2,9 @@ package test_engine
 
 import (
 	"context"
+	"testing"
+
+	"github.com/kurtosis-tech/kurtosis/benchmark"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
@@ -14,7 +17,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
 	"github.com/stretchr/testify/suite"
 	"go.starlark.net/starlark"
-	"testing"
 )
 
 const (
@@ -31,6 +33,7 @@ type KurtosisPlanInstructionTestSuite struct {
 	runtimeValueStore            *runtime_value_store.RuntimeValueStore
 	packageContentProvider       *mock_package_content_provider.MockPackageContentProvider
 	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore
+	benchmark                    *benchmark.KurtosisPlanInstructionBenchmark
 }
 
 func TestKurtosisPlanInstructionSuite(t *testing.T) {

@@ -3,6 +3,12 @@ package add_service
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"time"
+
+	"github.com/sirupsen/logrus"
+
+	"github.com/kurtosis-tech/kurtosis/benchmark"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -23,7 +29,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
-	"reflect"
 )
 
 const (
@@ -42,7 +47,9 @@ func NewAddService(
 	packageContentProvider startosis_packages.PackageContentProvider,
 	packageReplaceOptions map[string]string,
 	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore,
-	imageDownloadMode image_download_mode.ImageDownloadMode) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+	imageDownloadMode image_download_mode.ImageDownloadMode,
+	benchmark *benchmark.KurtosisPlanInstructionBenchmark,
+) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: AddServiceBuiltinName,
@@ -90,6 +97,7 @@ func NewAddService(
 				returnValue:                  nil, // populated at interpretation time
 				imageVal:                     nil, // populated at interpretation time
 				imageDownloadMode:            imageDownloadMode,
+				benchmark:                    benchmark,
 			}
 		},
 
@@ -121,6 +129,7 @@ type AddServiceCapabilities struct {
 	description string
 
 	imageDownloadMode image_download_mode.ImageDownloadMode
+	benchmark         *benchmark.KurtosisPlanInstructionBenchmark
 }
 
 func (builtin *AddServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -186,6 +195,8 @@ func (builtin *AddServiceCapabilities) Validate(_ *builtin_argument.ArgumentValu
 }
 
 func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
+	beforeAddService := time.Now()
+
 	// update service config to use new service config set by a set_service instruction, if one exists
 	if builtin.interpretationTimeValueStore.ExistsNewServiceConfigForService(builtin.serviceName) {
 		newServiceConfig, err := builtin.interpretationTimeValueStore.GetNewServiceConfig(builtin.serviceName)
@@ -226,7 +237,17 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 		return "", stacktrace.Propagate(err, "An error occurred while adding service return values with result key UUID '%s'", builtin.resultUuid)
 	}
 	instructionResult := fmt.Sprintf("Service '%s' added with service UUID '%s'", replacedServiceName, startedService.GetRegistration().GetUUID())
+
+	updateBenchmark(beforeAddService, builtin.benchmark)
 	return instructionResult, nil
+}
+
+func updateBenchmark(beforeAddService time.Time, benchmark *benchmark.KurtosisPlanInstructionBenchmark) {
+	benchmark.TimeToAddServices += time.Since(beforeAddService)
+	benchmark.TotalTimeExecutingInstructions += time.Since(beforeAddService)
+	benchmark.NumAddServices++
+	logrus.Info("UPDATING KURTOSIS ADD SERVICES BENCHMARK", benchmark.TimeToAddServices)
+	benchmark.OutputToFile("/kurtosis_instructions_benchmark.txt")
 }
 
 func (builtin *AddServiceCapabilities) TryResolveWith(instructionsAreEqual bool, other *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {

@@ -30,6 +30,8 @@ require (
 	google.golang.org/protobuf v1.34.1
 )
 
+require github.com/kurtosis-tech/kurtosis/benchmark v0.0.0-00010101000000-000000000000
+
 require (
 	github.com/adrg/xdg v0.4.0 // indirect
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect

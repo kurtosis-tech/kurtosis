@@ -40,6 +40,7 @@ require (
 	github.com/hashicorp/go-envparse v0.1.0
 	github.com/itchyny/gojq v0.12.13
 	github.com/joho/godotenv v1.5.1
+	github.com/kurtosis-tech/kurtosis/benchmark v0.0.0-00010101000000-000000000000
 	github.com/kurtosis-tech/kurtosis/path-compression v0.0.0-20240307154559-64d2929cd265
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20230710164206-90b674acb269
 	github.com/mholt/archiver v3.1.1+incompatible

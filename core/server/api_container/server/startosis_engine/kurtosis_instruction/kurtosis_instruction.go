@@ -2,6 +2,7 @@ package kurtosis_instruction
 
 import (
 	"context"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
@@ -35,6 +36,6 @@ type KurtosisInstruction interface {
 	// itself. In the current case, this is called in the executor, and it sets the UUID and the returned value.
 	GetPersistableAttributes() *enclave_plan_persistence.EnclavePlanInstructionBuilder
 
-	// UpdatePlan updates the plan with the effects of running this instruction.
+	// UpdatePlan updates the plan yaml with the effects of running this instruction.
 	UpdatePlan(plan *plan_yaml.PlanYamlGenerator) error
 }

@@ -3,6 +3,11 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"time"
+
+	"github.com/sirupsen/logrus"
+
+	"github.com/kurtosis-tech/kurtosis/benchmark"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
@@ -42,7 +47,8 @@ func NewRunShService(
 	nonBlockingMode bool,
 	packageId string,
 	packageContentProvider startosis_packages.PackageContentProvider,
-	packageReplaceOptions map[string]string) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+	packageReplaceOptions map[string]string,
+	benchmark *benchmark.KurtosisPlanInstructionBenchmark) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: RunShBuiltinName,
@@ -123,6 +129,7 @@ func NewRunShService(
 				returnValue:            nil, // populated at interpretation time
 				skipCodeCheck:          false,
 				acceptableCodes:        nil, // populated at interpretation time
+				benchmark:              benchmark,
 			}
 		},
 
@@ -158,6 +165,7 @@ type RunShCapabilities struct {
 	description     string
 	acceptableCodes []int64
 	skipCodeCheck   bool
+	benchmark       *benchmark.KurtosisPlanInstructionBenchmark
 }
 
 func (builtin *RunShCapabilities) Interpret(locatorOfModuleInWhichThisBuiltinIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -300,6 +308,8 @@ func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet
 //	Make task as its own entity instead of currently shown under services
 func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
 	// swap env vars with their runtime value
+	beforeRunSh := time.Now()
+
 	serviceConfigWithReplacedEnvVars, err := replaceMagicStringsInEnvVars(builtin.runtimeValueStore, builtin.serviceConfig)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred replacing magic strings in env vars.")
@@ -354,7 +364,17 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 		}
 	}
 
+	updateBenchmark(beforeRunSh, builtin.benchmark)
 	return instructionResult, err
+}
+
+func updateBenchmark(beforeRunSh time.Time, benchmark *benchmark.KurtosisPlanInstructionBenchmark) {
+	benchmark.TimeToRunSh += time.Since(beforeRunSh)
+	benchmark.TotalTimeExecutingInstructions += time.Since(beforeRunSh)
+	benchmark.NumRunSh++
+	logrus.Info("UPDATING KURTOSIS RUN SH BENCHMARK", benchmark.TimeToRunSh)
+	benchmark.OutputToFile("/kurtosis_instructions_benchmark.txt")
+	benchmark.OutputToFile("/kurtosis_instructions_benchmark_run_sh.txt")
 }
 
 func (builtin *RunShCapabilities) TryResolveWith(instructionsAreEqual bool, _ *enclave_plan_persistence.EnclavePlanInstruction, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {

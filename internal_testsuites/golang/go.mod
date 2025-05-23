@@ -5,6 +5,7 @@ go 1.23.0
 toolchain go1.23.7
 
 replace (
+	github.com/kurtosis-tech/kurtosis/benchmark => ../../benchmark
 	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
 	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
 	github.com/kurtosis-tech/kurtosis/path-compression => ./../../path-compression
