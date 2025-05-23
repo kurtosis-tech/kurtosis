@@ -2,14 +2,16 @@ package benchmark_test
 
 import (
 	"context"
+	"testing"
 	"time"
-	"github.com/kurtosis-tech/kurtosis/benchmark"
+
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
+	"github.com/kurtosis-tech/kurtosis/benchmark"
+	command_args_run "github.com/kurtosis-tech/kurtosis/cli/cli/command_args/run"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/run"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 const (
@@ -20,10 +22,10 @@ func TestStartosis(t *testing.T) {
 	ctx := context.Background()
 
 	benchmark := benchmark.RunBenchmark{
-		TimeToRun: time.Duration(0),
-		TimeToCreateEnclave: time.Duration(0),
+		TimeToRun:                   time.Duration(0),
+		TimeToCreateEnclave:         time.Duration(0),
 		TimeToUploadStarlarkPackage: time.Duration(0),
-		TimeToExecuteStarlark: time.Duration(0),
+		TimeToExecuteStarlark:       time.Duration(0),
 	}
 	beforeRun := time.Now()
 
@@ -47,7 +49,7 @@ func TestStartosis(t *testing.T) {
 	starlarkResponseLineChan, cancelCtxFunc, err := enclaveCtx.RunStarlarkRemotePackage(ctx, "github.com/ethpandaops/ethereum-package", starlarkRunConfig)
 	require.NoError(t, err)
 
-	err = run.ReadAndPrintResponseLinesUntilClosed(starlarkResponseLineChan, cancelCtxFunc, nil, false)
+	err = run.ReadAndPrintResponseLinesUntilClosed(starlarkResponseLineChan, cancelCtxFunc, command_args_run.Verbosity(0), false)
 	require.NoError(t, err)
 
 	benchmark.TimeToExecuteStarlark = time.Since(beforeRunStarlarkPackage)
