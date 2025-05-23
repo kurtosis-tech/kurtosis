@@ -6,6 +6,7 @@ toolchain go1.23.7
 
 replace (
 	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
+	github.com/kurtosis-tech/kurtosis/benchmark => ../../benchmark
 	github.com/kurtosis-tech/kurtosis/cloud/api/golang => ../../cloud/api/golang
 	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
 	github.com/kurtosis-tech/kurtosis/contexts-config-store => ../../contexts-config-store

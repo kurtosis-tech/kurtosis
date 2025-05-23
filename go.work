@@ -21,5 +21,6 @@ use (
 	./metrics-library/golang
 	./name_generator
 	./path-compression
+	./benchmark
 	connect-server
 )
