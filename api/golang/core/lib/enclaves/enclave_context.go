@@ -175,6 +175,7 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackage(
 	if err != nil {
 		return nil, nil, err
 	}
+	logrus.Infof("Package name: %s", packageName)
 
 	executeStartosisPackageArgs, err := enclaveCtx.assembleRunStartosisPackageArg(
 		packageName,
