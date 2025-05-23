@@ -3,6 +3,9 @@ package wait
 import (
 	"context"
 	"fmt"
+	"time"
+
+	"github.com/kurtosis-tech/kurtosis/benchmark"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
@@ -19,7 +22,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
-	"time"
 )
 
 const (
@@ -38,7 +40,7 @@ const (
 	descriptionFormatStr = "Waiting for at most '%v' for service '%v' to reach a certain state"
 )
 
-func NewWait(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+func NewWait(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore, benchmark *benchmark.KurtosisPlanInstructionBenchmark) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: WaitBuiltinName,
@@ -105,6 +107,7 @@ func NewWait(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *r
 				timeout:     0,   // populated at interpretation time
 				resultUuid:  "",  // populated at interpretation time
 				description: "",  // populated at interpretation time
+				benchmark:   benchmark,
 			}
 		},
 
@@ -133,6 +136,7 @@ type WaitCapabilities struct {
 
 	resultUuid  string
 	description string
+	benchmark   *benchmark.KurtosisPlanInstructionBenchmark
 }
 
 func (builtin *WaitCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -244,9 +248,7 @@ func (builtin *WaitCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet,
 }
 
 func (builtin *WaitCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
-
-	startTime := time.Now()
-
+	beforeWait := time.Now()
 	lastResult, tries, err := shared_helpers.ExecuteServiceAssertionWithRecipe(
 		ctx,
 		builtin.serviceNetwork,
@@ -274,11 +276,21 @@ func (builtin *WaitCapabilities) Execute(ctx context.Context, _ *builtin_argumen
 	instructionResult := fmt.Sprintf(
 		"Wait took %d tries (%v in total). Assertion passed with following:\n%s",
 		tries,
-		time.Since(startTime),
+		time.Since(beforeWait),
 		builtin.recipe.ResultMapToString(lastResult),
 	)
-
+	updateBenchmark(beforeWait, builtin.benchmark)
 	return instructionResult, nil
+}
+
+func updateBenchmark(beforeWait time.Time, benchmark *benchmark.KurtosisPlanInstructionBenchmark) {
+	if benchmark == nil {
+		return
+	}
+	benchmark.TimeToWait += time.Since(beforeWait)
+	benchmark.TotalTimeExecutingInstructions += time.Since(beforeWait)
+	benchmark.NumWait++
+	benchmark.OutputToFile("/kurtosis_instructions_benchmark.txt")
 }
 
 func (builtin *WaitCapabilities) TryResolveWith(instructionsAreEqual bool, _ *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {

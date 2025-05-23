@@ -3,6 +3,9 @@ package store_service_files
 import (
 	"context"
 	"fmt"
+	"time"
+
+	"github.com/kurtosis-tech/kurtosis/benchmark"
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
@@ -29,7 +32,7 @@ const (
 	descriptionFormatStr = "Storing files from service '%v' at path '%v' to files artifact with name '%v'"
 )
 
-func NewStoreServiceFiles(serviceNetwork service_network.ServiceNetwork) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+func NewStoreServiceFiles(serviceNetwork service_network.ServiceNetwork, benchmark *benchmark.KurtosisPlanInstructionBenchmark) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: StoreServiceFilesBuiltinName,
@@ -64,6 +67,7 @@ func NewStoreServiceFiles(serviceNetwork service_network.ServiceNetwork) *kurtos
 				src:          "", // populated at interpretation time
 				artifactName: "", // populated at interpretation time
 				description:  "", // populated at interpretation time
+				benchmark:    benchmark,
 			}
 		},
 
@@ -82,6 +86,7 @@ type StoreServiceFilesCapabilities struct {
 	src          string
 	artifactName string
 	description  string
+	benchmark    *benchmark.KurtosisPlanInstructionBenchmark
 }
 
 func (builtin *StoreServiceFilesCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -127,12 +132,24 @@ func (builtin *StoreServiceFilesCapabilities) Validate(_ *builtin_argument.Argum
 }
 
 func (builtin *StoreServiceFilesCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
+	beforeStore := time.Now()
 	artifactUuid, err := builtin.serviceNetwork.CopyFilesFromService(ctx, string(builtin.serviceName), builtin.src, builtin.artifactName)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Failed to copy file '%v' from service '%v", builtin.src, builtin.serviceName)
 	}
 	instructionResult := fmt.Sprintf("Files with artifact name '%s' uploaded with artifact UUID '%s'", builtin.artifactName, artifactUuid)
+	updateBenchmark(beforeStore, builtin.benchmark)
 	return instructionResult, nil
+}
+
+func updateBenchmark(beforeStore time.Time, benchmark *benchmark.KurtosisPlanInstructionBenchmark) {
+	if benchmark == nil {
+		return
+	}
+	benchmark.TimeToStoreServiceFiles += time.Since(beforeStore)
+	benchmark.TotalTimeExecutingInstructions += time.Since(beforeStore)
+	benchmark.NumStoreServiceFiles++
+	benchmark.OutputToFile("/kurtosis_instructions_benchmark.txt")
 }
 
 func (builtin *StoreServiceFilesCapabilities) TryResolveWith(instructionsAreEqual bool, other *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {

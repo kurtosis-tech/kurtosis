@@ -3,6 +3,11 @@ package verify
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"strings"
+	"time"
+
+	"github.com/kurtosis-tech/kurtosis/benchmark"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
@@ -16,8 +21,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 	"go.starlark.net/syntax"
-	"reflect"
-	"strings"
 )
 
 const (
@@ -43,7 +46,7 @@ var StringTokenToComparisonStarlarkToken = map[string]syntax.Token{
 	"<":  syntax.LT,
 }
 
-func NewVerify(runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+func NewVerify(runtimeValueStore *runtime_value_store.RuntimeValueStore, benchmark *benchmark.KurtosisPlanInstructionBenchmark) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: VerifyBuiltinName,
@@ -73,11 +76,11 @@ func NewVerify(runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtos
 		Capabilities: func() kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities {
 			return &VerifyCapabilities{
 				runtimeValueStore: runtimeValueStore,
-
-				runtimeValue: "",  // populated at interpretation time
-				assertion:    "",  // populated at interpretation time
-				target:       nil, // populated at interpretation time
-				description:  "",  // populated at interpretation time
+				runtimeValue:      "",  // populated at interpretation time
+				assertion:         "",  // populated at interpretation time
+				target:            nil, // populated at interpretation time
+				description:       "",  // populated at interpretation time
+				benchmark:         benchmark,
 			}
 		},
 
@@ -95,8 +98,8 @@ type VerifyCapabilities struct {
 	runtimeValue string
 	assertion    string
 	target       starlark.Comparable
-
-	description string
+	description  string
+	benchmark    *benchmark.KurtosisPlanInstructionBenchmark
 }
 
 func (builtin *VerifyCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -129,6 +132,7 @@ func (builtin *VerifyCapabilities) Validate(_ *builtin_argument.ArgumentValuesSe
 }
 
 func (builtin *VerifyCapabilities) Execute(_ context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
+	beforeVerify := time.Now()
 	currentValue, err := magic_string_helper.GetOrReplaceRuntimeValueFromString(builtin.runtimeValue, builtin.runtimeValueStore)
 	if err != nil {
 		return "", err
@@ -147,7 +151,18 @@ func (builtin *VerifyCapabilities) Execute(_ context.Context, _ *builtin_argumen
 		return "", err
 	}
 	instructionResult := fmt.Sprintf("Verification succeeded. Value is '%s'.", currentValue.String())
+	updateBenchmark(beforeVerify, builtin.benchmark)
 	return instructionResult, nil
+}
+
+func updateBenchmark(beforeVerify time.Time, benchmark *benchmark.KurtosisPlanInstructionBenchmark) {
+	if benchmark == nil {
+		return
+	}
+	benchmark.TimeToVerify += time.Since(beforeVerify)
+	benchmark.TotalTimeExecutingInstructions += time.Since(beforeVerify)
+	benchmark.NumVerify++
+	benchmark.OutputToFile("/kurtosis_instructions_benchmark.txt")
 }
 
 func (builtin *VerifyCapabilities) TryResolveWith(instructionsAreEqual bool, _ *enclave_plan_persistence.EnclavePlanInstruction, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {

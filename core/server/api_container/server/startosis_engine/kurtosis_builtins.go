@@ -89,8 +89,8 @@ func KurtosisPlanInstructions(
 		get_services.NewGetServices(interpretationTimeValueStore),
 		set_service.NewSetService(serviceNetwork, interpretationTimeValueStore, packageId, packageContentProvider, packageReplaceOptions, imageDownloadMode),
 		get_files_artifact.NewGetFilesArtifact(),
-		verify.NewVerify(runtimeValueStore),
-		exec.NewExec(serviceNetwork, runtimeValueStore),
+		verify.NewVerify(runtimeValueStore, benchmark),
+		exec.NewExec(serviceNetwork, runtimeValueStore, benchmark),
 		kurtosis_print.NewPrint(serviceNetwork, runtimeValueStore),
 		remove_service.NewRemoveService(serviceNetwork, interpretationTimeValueStore),
 		render_templates.NewRenderTemplatesInstruction(serviceNetwork, runtimeValueStore, benchmark),
@@ -99,9 +99,9 @@ func KurtosisPlanInstructions(
 		tasks.NewRunPythonService(serviceNetwork, runtimeValueStore, nonBlockingMode, packageId, packageContentProvider, packageReplaceOptions),
 		tasks.NewRunShService(serviceNetwork, runtimeValueStore, nonBlockingMode, packageId, packageContentProvider, packageReplaceOptions, benchmark),
 		stop_service.NewStopService(serviceNetwork),
-		store_service_files.NewStoreServiceFiles(serviceNetwork),
-		upload_files.NewUploadFiles(packageId, serviceNetwork, packageContentProvider, packageReplaceOptions),
-		wait.NewWait(serviceNetwork, runtimeValueStore),
+		store_service_files.NewStoreServiceFiles(serviceNetwork, benchmark),
+		upload_files.NewUploadFiles(packageId, serviceNetwork, packageContentProvider, packageReplaceOptions, benchmark),
+		wait.NewWait(serviceNetwork, runtimeValueStore, benchmark),
 	}
 }
 

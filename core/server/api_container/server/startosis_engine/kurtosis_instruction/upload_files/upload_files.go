@@ -4,6 +4,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
+	"time"
+
+	"github.com/kurtosis-tech/kurtosis/benchmark"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
@@ -17,7 +21,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/path-compression"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
-	"os"
 )
 
 const (
@@ -37,6 +40,7 @@ func NewUploadFiles(
 	serviceNetwork service_network.ServiceNetwork,
 	packageContentProvider startosis_packages.PackageContentProvider,
 	packageReplaceOptions map[string]string,
+	benchmark *benchmark.KurtosisPlanInstructionBenchmark,
 ) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
@@ -72,6 +76,7 @@ func NewUploadFiles(
 				packageReplaceOptions: packageReplaceOptions,
 				packageId:             packageId,
 				description:           "", // populated at interpretation time
+				benchmark:             benchmark,
 			}
 		},
 
@@ -93,6 +98,7 @@ type UploadFilesCapabilities struct {
 	packageReplaceOptions map[string]string
 	packageId             string
 	description           string
+	benchmark             *benchmark.KurtosisPlanInstructionBenchmark
 }
 
 func (builtin *UploadFilesCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -146,6 +152,7 @@ func (builtin *UploadFilesCapabilities) Validate(_ *builtin_argument.ArgumentVal
 }
 
 func (builtin *UploadFilesCapabilities) Execute(_ context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
+	beforeUpload := time.Now()
 	filesArtifactContentReader, err := os.OpenFile(builtin.archivePathOnDisk, os.O_RDONLY, readOnlyFilePerm)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred opening the files artifact archive at '%s'", builtin.archivePathOnDisk)
@@ -174,7 +181,18 @@ func (builtin *UploadFilesCapabilities) Execute(_ context.Context, _ *builtin_ar
 		}
 		instructionResult = fmt.Sprintf("Files with artifact name '%s' uploaded with artifact UUID '%s'", builtin.artifactName, filesArtifactUuid)
 	}
+	updateBenchmark(beforeUpload, builtin.benchmark)
 	return instructionResult, nil
+}
+
+func updateBenchmark(beforeUpload time.Time, benchmark *benchmark.KurtosisPlanInstructionBenchmark) {
+	if benchmark == nil {
+		return
+	}
+	benchmark.TimeToUploadFiles += time.Since(beforeUpload)
+	benchmark.TotalTimeExecutingInstructions += time.Since(beforeUpload)
+	benchmark.NumUploadFiles++
+	benchmark.OutputToFile("/kurtosis_instructions_benchmark.txt")
 }
 
 func (builtin *UploadFilesCapabilities) TryResolveWith(instructionsAreEqual bool, other *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {

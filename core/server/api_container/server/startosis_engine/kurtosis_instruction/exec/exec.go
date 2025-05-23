@@ -3,6 +3,10 @@ package exec
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
+	"github.com/kurtosis-tech/kurtosis/benchmark"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
@@ -20,7 +24,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
-	"strings"
 )
 
 var defaultAcceptableCodes = []int64{
@@ -41,7 +44,7 @@ const (
 	descriptionFormatStr = "Executing command on service '%v'"
 )
 
-func NewExec(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+func NewExec(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore, benchmark *benchmark.KurtosisPlanInstructionBenchmark) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: ExecBuiltinName,
@@ -88,6 +91,7 @@ func NewExec(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *r
 				description:     "",         // populated at interpretation time
 				cmdList:         []string{}, // populated at interpretation time
 				returnValue:     nil,        // populated at interpretation time
+				benchmark:       benchmark,
 			}
 		},
 
@@ -111,6 +115,7 @@ type ExecCapabilities struct {
 	description     string
 
 	returnValue *starlark.Dict
+	benchmark   *benchmark.KurtosisPlanInstructionBenchmark
 }
 
 func (builtin *ExecCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -185,6 +190,7 @@ func (builtin *ExecCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet,
 }
 
 func (builtin *ExecCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
+	beforeExec := time.Now()
 	result, err := builtin.execRecipe.Execute(ctx, builtin.serviceNetwork, builtin.runtimeValueStore, builtin.serviceName)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Error executing exec recipe")
@@ -198,7 +204,18 @@ func (builtin *ExecCapabilities) Execute(ctx context.Context, _ *builtin_argumen
 		return "", stacktrace.Propagate(err, "An error occurred setting value '%+v' using key UUID '%s' in the runtime value store", result, builtin.resultUuid)
 	}
 	instructionResult := builtin.execRecipe.ResultMapToString(result)
+	updateBenchmark(beforeExec, builtin.benchmark)
 	return instructionResult, err
+}
+
+func updateBenchmark(beforeExec time.Time, benchmark *benchmark.KurtosisPlanInstructionBenchmark) {
+	if benchmark == nil {
+		return
+	}
+	benchmark.TimeToExec += time.Since(beforeExec)
+	benchmark.TotalTimeExecutingInstructions += time.Since(beforeExec)
+	benchmark.NumExec++
+	benchmark.OutputToFile("/kurtosis_instructions_benchmark.txt")
 }
 
 func (builtin *ExecCapabilities) TryResolveWith(instructionsAreEqual bool, _ *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
