@@ -20,10 +20,12 @@ package enclaves
 import (
 	"context"
 	"encoding/json"
+	"github.com/kurtosis-tech/kurtosis/benchmark"
 	"github.com/kurtosis-tech/kurtosis/path-compression"
 	"io"
 	"os"
 	"path"
+	"time"
 	"strings"
 
 	yaml_convert "github.com/ghodss/yaml"
@@ -68,6 +70,8 @@ type EnclaveContext struct {
 
 	enclaveUuid EnclaveUUID
 	enclaveName string
+
+	benchmark *benchmark.RunBenchmark
 }
 
 /*
@@ -80,11 +84,17 @@ func NewEnclaveContext(
 	enclaveUuid EnclaveUUID,
 	enclaveName string,
 ) *EnclaveContext {
-	return &EnclaveContext{
+	enclaveCtx := &EnclaveContext{
 		client:      client,
 		enclaveUuid: enclaveUuid,
 		enclaveName: enclaveName,
+		benchmark:   nil,
 	}
+	return enclaveCtx
+}
+
+func (enclaveCtx *EnclaveContext) SetBenchmark(benchmark *benchmark.RunBenchmark) {
+	enclaveCtx.benchmark = benchmark
 }
 
 func (enclaveCtx *EnclaveContext) GetEnclaveUuid() EnclaveUUID {
@@ -183,10 +193,12 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackage(
 		return nil, nil, stacktrace.Propagate(err, "Error preparing package '%s' for execution", packageRootPath)
 	}
 
+	beforeUploadStarlarkPackage := time.Now()
 	err = enclaveCtx.uploadStarlarkPackage(executeStartosisPackageArgs.PackageId, packageRootPath)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Error uploading package '%s' prior to executing it", packageRootPath)
 	}
+	enclaveCtx.benchmark.TimeToUploadStarlarkPackage = time.Since(beforeUploadStarlarkPackage)
 
 	if len(packageReplaceOptions) > 0 {
 		if err = enclaveCtx.uploadLocalStarlarkPackageDependencies(packageRootPath, packageReplaceOptions); err != nil {

@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
+	"github.com/kurtosis-tech/kurtosis/benchmark"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/configs"
@@ -267,6 +269,13 @@ func run(
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
+	benchmark := benchmark.RunBenchmark{
+		TimeToRun: time.Duration(0),
+		TimeToCreateEnclave: time.Duration(0),
+		TimeToExecuteStarlark: time.Duration(0),
+	}
+	beforeRun := time.Now()
+
 	// Args parsing and validation
 	packageArgs, err := args.GetNonGreedyArg(inputArgsArgKey)
 	if err != nil {
@@ -385,10 +394,12 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
 	}
 
-	enclaveCtx, isNewEnclave, err := getOrCreateEnclaveContext(ctx, userRequestedEnclaveIdentifier, kurtosisCtx, isProduction)
+	beforeCreateEnclave := time.Now()
+	enclaveCtx, isNewEnclave, err := getOrCreateEnclaveContext(ctx, userRequestedEnclaveIdentifier, kurtosisCtx, isProduction, &benchmark)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", userRequestedEnclaveIdentifier)
 	}
+	benchmark.TimeToCreateEnclave = time.Since(beforeCreateEnclave)
 
 	if showEnclaveInspect {
 		defer func() {
@@ -457,6 +468,7 @@ func run(
 		connect = kurtosis_core_rpc_api_bindings.Connect_NO_CONNECT
 	}
 
+	beforeExecuteStarlark := time.Now()
 	if isRemotePackage {
 		responseLineChan, cancelFunc, errRunningKurtosis = executeRemotePackage(ctx, enclaveCtx, starlarkScriptOrPackagePath, starlarkRunConfig)
 	} else {
@@ -488,6 +500,10 @@ func run(
 	}
 
 	errRunningKurtosis = ReadAndPrintResponseLinesUntilClosed(responseLineChan, cancelFunc, verbosity, dryRun)
+	benchmark.TimeToExecuteStarlark = time.Since(beforeExecuteStarlark)
+
+	benchmark.TimeToRun = time.Since(beforeRun)
+	benchmark.Print()
 
 	if err = enclaveCtx.ConnectServices(ctx, connect); err != nil {
 		logrus.Warnf("An error occurred configuring the user services port forwarding\nError was: %v", err)
@@ -642,6 +658,7 @@ func getOrCreateEnclaveContext(
 	enclaveIdentifierOrName string,
 	kurtosisContext *kurtosis_context.KurtosisContext,
 	isProduction bool,
+	benchmark *benchmark.RunBenchmark,
 ) (*enclaves.EnclaveContext, bool, error) {
 
 	if enclaveIdentifierOrName != autogenerateEnclaveIdentifierKeyword {
@@ -665,6 +682,7 @@ func getOrCreateEnclaveContext(
 	if err != nil {
 		return nil, false, stacktrace.Propagate(err, fmt.Sprintf("Unable to create new enclave with name '%s'", enclaveIdentifierOrName))
 	}
+	enclaveContext.SetBenchmark(benchmark)
 	logrus.Infof("Enclave '%v' created successfully", enclaveContext.GetEnclaveName())
 	return enclaveContext, isNewEnclaveFlagWhenCreated, nil
 }
