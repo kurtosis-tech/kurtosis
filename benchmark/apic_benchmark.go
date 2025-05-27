@@ -232,3 +232,4 @@ type APICBenchmark struct {
 }
 
 type ServiceNetworkBenchmark struct {
+}

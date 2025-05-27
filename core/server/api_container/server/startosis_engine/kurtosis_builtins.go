@@ -1,8 +1,6 @@
 package startosis_engine
 
 import (
-	t "time"
-
 	"github.com/kurtosis-tech/kurtosis/benchmark"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -72,16 +70,7 @@ func KurtosisPlanInstructions(
 	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore,
 	imageDownloadMode image_download_mode.ImageDownloadMode,
 ) []*kurtosis_plan_instruction.KurtosisPlanInstruction {
-	benchmark := &benchmark.KurtosisPlanInstructionBenchmark{
-		TimeToAddServices:       t.Duration(0),
-		TimeToRenderTemplates:   t.Duration(0),
-		TimeToVerify:            t.Duration(0),
-		TimeToWait:              t.Duration(0),
-		TimeToExec:              t.Duration(0),
-		TimeToStoreServiceFiles: t.Duration(0),
-		TimeToUploadFiles:       t.Duration(0),
-		TimeToPrint:             t.Duration(0),
-	}
+	benchmark := benchmark.NewKurtosisPlanInstructionBenchmark()
 	return []*kurtosis_plan_instruction.KurtosisPlanInstruction{
 		add_service.NewAddService(serviceNetwork, runtimeValueStore, packageId, packageContentProvider, packageReplaceOptions, interpretationTimeValueStore, imageDownloadMode, benchmark),
 		add_service.NewAddServices(serviceNetwork, runtimeValueStore, packageId, packageContentProvider, packageReplaceOptions, interpretationTimeValueStore, imageDownloadMode),
