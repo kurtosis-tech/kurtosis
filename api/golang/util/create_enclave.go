@@ -2,6 +2,7 @@ package util
 
 import (
 	"context"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
@@ -26,6 +27,14 @@ func CreateEmptyEnclave(ctx context.Context, enclaveName string) (*enclaves.Encl
 	}
 
 	return enclaveCtx, stopEnclaveFunc, destroyEnclaveFunc, nil
+}
+
+func GetEnclave(ctx context.Context, enclaveName string) (*enclaves.EnclaveContext, error) {
+	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to get kurtosis context from local engine. Is the engine running? Try running 'kurtosis engine start'")
+	}
+	return kurtosisCtx.GetEnclaveContext(ctx, enclaveName)
 }
 
 func combineErrors(starlarkResult *enclaves.StarlarkRunResult, err error) error {

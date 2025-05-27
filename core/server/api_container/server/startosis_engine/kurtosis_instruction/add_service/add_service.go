@@ -195,6 +195,9 @@ func (builtin *AddServiceCapabilities) Validate(_ *builtin_argument.ArgumentValu
 }
 
 func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
+	addServiceBenchmark := benchmark.AddServiceBenchmark{
+		ServiceName: string(builtin.serviceName),
+	}
 	beforeAddService := time.Now()
 
 	// update service config to use new service config set by a set_service instruction, if one exists
@@ -214,15 +217,18 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred getting service registration for service '%s'", builtin.serviceName)
 	}
+	beforeAddServiceContainer := time.Now()
 	if exist {
 		startedService, err = builtin.serviceNetwork.UpdateService(ctx, replacedServiceName, replacedServiceConfig)
 	} else {
 		startedService, err = builtin.serviceNetwork.AddService(ctx, replacedServiceName, replacedServiceConfig)
 	}
+	addServiceBenchmark.TimeToAddServiceContainer = time.Since(beforeAddServiceContainer)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Unexpected error occurred starting service '%s'", replacedServiceName)
 	}
 
+	beforeReadinessCheck := time.Now()
 	if err := runServiceReadinessCheck(
 		ctx,
 		builtin.serviceNetwork,
@@ -232,20 +238,22 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 	); err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while checking if service '%v' is ready", replacedServiceName)
 	}
+	addServiceBenchmark.TimeToReadinessCheck = time.Since(beforeReadinessCheck)
 
 	if err := fillAddServiceReturnValueWithRuntimeValues(startedService, builtin.resultUuid, builtin.runtimeValueStore); err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while adding service return values with result key UUID '%s'", builtin.resultUuid)
 	}
 	instructionResult := fmt.Sprintf("Service '%s' added with service UUID '%s'", replacedServiceName, startedService.GetRegistration().GetUUID())
 
-	updateBenchmark(beforeAddService, builtin.benchmark)
+	updateBenchmark(beforeAddService, builtin.benchmark, addServiceBenchmark)
 	return instructionResult, nil
 }
 
-func updateBenchmark(beforeAddService time.Time, benchmark *benchmark.KurtosisPlanInstructionBenchmark) {
+func updateBenchmark(beforeAddService time.Time, benchmark *benchmark.KurtosisPlanInstructionBenchmark, addServiceBenchmark benchmark.AddServiceBenchmark) {
 	benchmark.TimeToAddServices += time.Since(beforeAddService)
 	benchmark.TotalTimeExecutingInstructions += time.Since(beforeAddService)
 	benchmark.NumAddServices++
+	benchmark.AddAddServiceBenchmark(addServiceBenchmark)
 	logrus.Info("UPDATING KURTOSIS ADD SERVICES BENCHMARK", benchmark.TimeToAddServices)
 	benchmark.OutputToFile()
 }
