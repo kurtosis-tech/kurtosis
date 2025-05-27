@@ -9,7 +9,7 @@ if len(sys.argv) != 2:
     print("Usage: python benchmark_viz_customized.py <data_directory>")
     sys.exit(1)
 DATA_DIR = sys.argv[1]  # Change this to your benchmark CSV directory
-os.makedirs("visualizations", exist_ok=True)
+os.makedirs("{0}/visualizations".format(DATA_DIR), exist_ok=True)
 
 def parse_duration(duration_str):
     unit_multipliers = {'s': 1, 'ms': 1e-3, 'µs': 1e-6, 'ns': 1e-9}
@@ -91,6 +91,6 @@ for filename in os.listdir(DATA_DIR):
         elif {"Task Name", "Time To Add Task Container", "Time To Exec With Wait"}.issubset(headers):
             plot_run_sh(df, filename.replace(".csv", ""))
         else:
-            print(f"Unrecognized CSV format: {filename}")
+            benchmark_viz_single_image.pyprint(f"Unrecognized CSV format: {filename}")
     except Exception as e:
         print(f"Error processing {filename}: {e}")

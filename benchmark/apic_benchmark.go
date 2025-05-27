@@ -112,7 +112,7 @@ func (benchmark *KurtosisPlanInstructionBenchmark) outputToCSV() error {
 
 	// Write data
 	records := [][]string{
-		{"Total time executing instructions", benchmark.TotalTimeExecutingInstructions.String(), ""},
+		{"Total time executing instructions", benchmark.TotalTimeExecutingInstructions.String(), fmt.Sprintf("%d", 1)},
 		{"Add services", benchmark.TimeToAddServices.String(), fmt.Sprintf("%d", benchmark.NumAddServices)},
 		{"Run sh", benchmark.TimeToRunSh.String(), fmt.Sprintf("%d", benchmark.NumRunSh)},
 		{"Render templates", benchmark.TimeToRenderTemplates.String(), fmt.Sprintf("%d", benchmark.NumRenderTemplates)},
