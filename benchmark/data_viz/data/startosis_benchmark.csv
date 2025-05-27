@@ -1,5 +1,0 @@
-Metric,Duration,Value
-Run startosis script,53.523676942s
-Execute instructions,51.040203565s
-Validate instructions,1.842683251s
-Interpret instructions,640.315083ms

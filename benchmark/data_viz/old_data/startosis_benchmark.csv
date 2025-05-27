@@ -1,4 +1,4 @@
-Metric,Value
+Operation,Duration
 Run startosis script,46.348741521s
 Execute instructions,43.697273019s
 Validate instructions,2.081134418s

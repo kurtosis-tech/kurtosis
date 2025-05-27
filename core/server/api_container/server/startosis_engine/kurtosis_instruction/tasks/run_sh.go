@@ -307,6 +307,12 @@ func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet
 //	TODO Create an mechanism for other services to retrieve files from the task container
 //	Make task as its own entity instead of currently shown under services
 func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
+	runShBenchmark := benchmark.RunShBenchmark{
+		TaskName:               builtin.name,
+		TimeToAddTaskContainer: time.Duration(0),
+		TimeToExecWithWait:     time.Duration(0),
+	}
+
 	// swap env vars with their runtime value
 	beforeRunSh := time.Now()
 
@@ -315,10 +321,12 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 		return "", stacktrace.Propagate(err, "An error occurred replacing magic strings in env vars.")
 	}
 
+	beforeAddTaskContainer := time.Now()
 	_, err = builtin.serviceNetwork.AddService(ctx, service.ServiceName(builtin.name), serviceConfigWithReplacedEnvVars)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "error occurred while creating a run_sh task with image: %v", builtin.serviceConfig.GetContainerImageName())
 	}
+	runShBenchmark.TimeToAddTaskContainer = time.Since(beforeAddTaskContainer)
 
 	// create work directory and cd into that directory
 	commandToRun, err := getCommandToRun(builtin)
@@ -328,10 +336,12 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 	fullCommandToRun := getCommandToRunForStreamingLogs(commandToRun)
 
 	// run the command passed in by user in the container
+	beforeExecWithWait := time.Now()
 	runShResult, err := executeWithWait(ctx, builtin.serviceNetwork, builtin.name, builtin.wait, fullCommandToRun)
 	if err != nil {
 		return "", stacktrace.Propagate(err, fmt.Sprintf("error occurred while executing one time task command: %v ", builtin.run))
 	}
+	runShBenchmark.TimeToExecWithWait = time.Since(beforeExecWithWait)
 
 	result := map[string]starlark.Comparable{
 		runResultOutputKey: starlark.String(runShResult.GetOutput()),
@@ -364,14 +374,15 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 		}
 	}
 
-	updateBenchmark(beforeRunSh, builtin.benchmark)
+	updateBenchmark(beforeRunSh, builtin.benchmark, runShBenchmark)
 	return instructionResult, err
 }
 
-func updateBenchmark(beforeRunSh time.Time, benchmark *benchmark.KurtosisPlanInstructionBenchmark) {
+func updateBenchmark(beforeRunSh time.Time, benchmark *benchmark.KurtosisPlanInstructionBenchmark, runShBenchmark benchmark.RunShBenchmark) {
 	benchmark.TimeToRunSh += time.Since(beforeRunSh)
 	benchmark.TotalTimeExecutingInstructions += time.Since(beforeRunSh)
 	benchmark.NumRunSh++
+	benchmark.AddRunShBenchmark(runShBenchmark)
 	logrus.Info("UPDATING KURTOSIS RUN SH BENCHMARK", benchmark.TimeToRunSh)
 	benchmark.OutputToFile()
 	benchmark.OutputToFile()

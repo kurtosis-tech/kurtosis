@@ -7,6 +7,10 @@ import (
 	"time"
 )
 
+const (
+	BenchmarkDataDir = "/benchmark_data"
+)
+
 type AddServiceBenchmark struct {
 	ServiceName               string
 	TimeToAddServiceContainer time.Duration
@@ -85,7 +89,7 @@ func (benchmark *KurtosisPlanInstructionBenchmark) OutputToFile() error {
 }
 
 func (benchmark *KurtosisPlanInstructionBenchmark) outputToCSV() error {
-	filePath := "kurtosis_plan_instruction_benchmark.csv"
+	filePath := fmt.Sprintf("%s/kurtosis_plan_instruction_benchmark.csv", BenchmarkDataDir)
 	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to create file: %v", err)
@@ -122,7 +126,7 @@ func (benchmark *KurtosisPlanInstructionBenchmark) outputToCSV() error {
 }
 
 func (benchmark *KurtosisPlanInstructionBenchmark) outputRunShBenchmarksToCsv() error {
-	filePath := "run_sh_benchmark.csv"
+	filePath := fmt.Sprintf("%s/run_sh_benchmark.csv", BenchmarkDataDir)
 	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to create file: %v", err)
@@ -149,7 +153,7 @@ func (benchmark *KurtosisPlanInstructionBenchmark) outputRunShBenchmarksToCsv() 
 }
 
 func (benchmark *KurtosisPlanInstructionBenchmark) outputAddServicesBenchmarksToCsv() error {
-	filePath := "add_services_benchmark.csv"
+	filePath := fmt.Sprintf("%s/add_services_benchmark.csv", BenchmarkDataDir)
 	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to create file: %v", err)
@@ -188,7 +192,7 @@ func (benchmark *StartosisBenchmark) OutputToFile() error {
 }
 
 func (benchmark *StartosisBenchmark) outputToCSV() error {
-	filePath := "startosis_benchmark.csv"
+	filePath := fmt.Sprintf("%s/startosis_benchmark.csv", BenchmarkDataDir)
 	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to create file: %v", err)
