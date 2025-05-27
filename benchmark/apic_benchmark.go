@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"os"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 const (
-	BenchmarkDataDir = "/benchmark_data"
+	BenchmarkDataDir = "/run/benchmark-data"
 )
 
 type AddServiceBenchmark struct {
@@ -57,6 +59,10 @@ type KurtosisPlanInstructionBenchmark struct {
 }
 
 func NewKurtosisPlanInstructionBenchmark() *KurtosisPlanInstructionBenchmark {
+	err := os.MkdirAll(BenchmarkDataDir, 0755)
+	if err != nil {
+		logrus.Errorf("failed to create benchmark datadirectory: %v", err)
+	}
 	return &KurtosisPlanInstructionBenchmark{
 		addServiceBenchmarks:  make([]AddServiceBenchmark, 0),
 		runShBenchmarks:       make([]RunShBenchmark, 0),
@@ -226,4 +232,3 @@ type APICBenchmark struct {
 }
 
 type ServiceNetworkBenchmark struct {
-}
