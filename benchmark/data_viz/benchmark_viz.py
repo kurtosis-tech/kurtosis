@@ -104,7 +104,6 @@ elif rows == 1:
 elif cols == 1:
     axes = [[ax] for ax in axes]
 
-
 # Draw plots and save individual subplot images
 output_dir = "{0}/visualizations".format(DATA_DIR)
 os.makedirs(output_dir, exist_ok=True)
@@ -112,14 +111,14 @@ os.makedirs(output_dir, exist_ok=True)
 for idx, (title, plot_func) in enumerate(plots):
     r, c = divmod(idx, cols)
     ax = axes[r][c]
-    
-plot_func(ax)
-fig_individual, ax_ind = plt.subplots(figsize=(8, 6))
-plot_func(ax_ind)
-fig_individual.tight_layout()
-fig_individual.savefig(os.path.join(output_dir, f"{title}_plot.png"))
-plt.close(fig_individual)
 
+    plot_func(ax)  # ✅ Move this inside the loop
+
+    fig_individual, ax_ind = plt.subplots(figsize=(8, 6))
+    plot_func(ax_ind)
+    fig_individual.tight_layout()
+    fig_individual.savefig(os.path.join(output_dir, f"{title}_plot.png"))
+    plt.close(fig_individual)
 
 # Hide any unused axes
 for idx in range(num_plots, rows * cols):
@@ -129,3 +128,5 @@ for idx in range(num_plots, rows * cols):
 fig.tight_layout()
 fig.suptitle("Benchmark Visualizations", fontsize=16, y=1.02)
 plt.savefig("benchmark_visualizations_combined.png", bbox_inches="tight")
+
+plt.close(fig)
