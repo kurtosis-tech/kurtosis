@@ -9,10 +9,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	BenchmarkDataDir = "/run/benchmark-data"
-)
-
 type AddServiceBenchmark struct {
 	ServiceName               string
 	TimeToAddServiceContainer time.Duration
@@ -61,7 +57,7 @@ type KurtosisPlanInstructionBenchmark struct {
 func NewKurtosisPlanInstructionBenchmark() *KurtosisPlanInstructionBenchmark {
 	err := os.MkdirAll(BenchmarkDataDir, 0755)
 	if err != nil {
-		logrus.Errorf("failed to create benchmark datadirectory: %v", err)
+		logrus.Errorf("failed to create benchmark data directory: %v", err)
 	}
 	return &KurtosisPlanInstructionBenchmark{
 		addServiceBenchmarks:  make([]AddServiceBenchmark, 0),
