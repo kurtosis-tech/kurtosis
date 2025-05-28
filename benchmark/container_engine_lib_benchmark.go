@@ -82,19 +82,21 @@ func (benchmark *KurtosisBackendBenchmark) AddRegisterUserService(registerUserSe
 	benchmark.RegisterUserServicesBenchmark.TimeToRegisterUserServices += registerUserService.Duration
 	benchmark.RegisterUserServicesBenchmark.NumTimesToRegisterUserServices++
 	benchmark.RegisterUserServicesBenchmark.RegisterUserServices = append(benchmark.RegisterUserServicesBenchmark.RegisterUserServices, registerUserService)
+	benchmark.OutputToFile()
 }
 
 func (benchmark *KurtosisBackendBenchmark) AddStartUserService(startUserService StartUserService) {
 	benchmark.StartUserServicesBenchmark.TimeToStartUserServices += startUserService.Duration
 	benchmark.StartUserServicesBenchmark.NumTimesToStartUserServices++
 	benchmark.StartUserServicesBenchmark.StartUserServices = append(benchmark.StartUserServicesBenchmark.StartUserServices, startUserService)
-
+	benchmark.OutputToFile()
 }
 
 func (benchmark *KurtosisBackendBenchmark) AddUserServiceExecCommand(userServiceExecCommand UserServiceExecCommand) {
 	benchmark.RunUserServiceExecCommandsBenchmark.TimeToRunUserServiceExecCommands += userServiceExecCommand.Duration
 	benchmark.RunUserServiceExecCommandsBenchmark.NumTimesToRunUserServiceExecCommands++
 	benchmark.RunUserServiceExecCommandsBenchmark.UserServiceExecCommands = append(benchmark.RunUserServiceExecCommandsBenchmark.UserServiceExecCommands, userServiceExecCommand)
+	benchmark.OutputToFile()
 }
 
 func (benchmark *KurtosisBackendBenchmark) OutputToFile() error {

@@ -1,6 +1,26 @@
 #! /bin/zsh
 
-# set -e pipefail
+# Parse command line arguments
+REBUILD=false
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -r|--rebuild)
+      REBUILD=true
+      shift
+      ;;
+    *)
+      shift
+      ;;
+  esac
+done
+
+# Rebuild API container if requested
+if [ "$REBUILD" = true ]; then
+  echo "Rebuilding API container..."
+  cd ../../core/scripts/
+  ./build.sh
+  cd -
+fi
 
 dkt enclave add --name benchmark-test --api-container-version $(get-devc-img "tag")
 echo "Running test"
@@ -16,5 +36,5 @@ echo "Pulled benchmark data from enclave"
 python3 benchmark_viz.py ${data_directory_name}
 echo "Created visualizations"
 
-dkt enclave rm -f benchmark-test
+# dkt enclave rm -f benchmark-test
 echo "Removed enclave"

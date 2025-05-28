@@ -1,5 +1,0 @@
-Service Name,Time To Add Service Container,Time To Readiness Check
-validator-key-generation-cl-validator-keystore,1.829613875s,6.5µs
-el-1-geth-lighthouse,3.704354169s,334ns
-cl-1-lighthouse-geth,9.085780962s,110.735334ms
-vc-1-geth-lighthouse,2.241837459s,459ns

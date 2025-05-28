@@ -1,6 +1,4 @@
-
 import os
-import re
 import sys
 import math
 import pandas as pd
@@ -13,12 +11,10 @@ if len(sys.argv) != 2:
 DATA_DIR = sys.argv[1]
 
 def parse_duration(duration_str):
-    unit_multipliers = {'s': 1, 'ms': 1e-3, 'µs': 1e-6, 'ns': 1e-9}
-    match = re.match(r"([\d.]+)([a-zµ]+)", str(duration_str))
-    if not match:
+    try:
+        return float(duration_str)
+    except (ValueError, TypeError):
         return 0
-    value, unit = match.groups()
-    return float(value) * unit_multipliers.get(unit, 1)
 
 # Collect plots
 plots = []
@@ -27,15 +23,15 @@ def add_plot(title, plot_func):
     plots.append((title, plot_func))
 
 def plot_add_services(df, ax):
-    df["Add Time (s)"] = df["Time To Add Service Container"].apply(parse_duration)
-    df["Readiness Time (s)"] = df["Time To Readiness Check"].apply(parse_duration)
+    df["Add Time (s)"] = df["Time To Add Service Container (s)"].apply(parse_duration)
+    df["Readiness Time (s)"] = df["Time To Readiness Check (s)"].apply(parse_duration)
     df.plot(x="Service Name", y=["Add Time (s)", "Readiness Time (s)"], kind="bar", ax=ax, legend=True)
     ax.set_title("Add Services Benchmark")
     ax.set_xlabel("Service Name")
     ax.tick_params(axis='x', labelrotation=45)
 
 def plot_startosis(df, ax):
-    df["Duration (s)"] = df["Value"].apply(parse_duration)
+    df["Duration (s)"] = df["Value (s)"].apply(parse_duration)
     df.plot(x="Metric", y="Duration (s)", kind="bar", ax=ax, legend=False)
     ax.set_title("Startosis Benchmark")
     ax.set_xlabel("Metric")
@@ -43,7 +39,7 @@ def plot_startosis(df, ax):
     ax.tick_params(axis='x', labelrotation=45)
 
 def plot_kurtosis_plan(df, ax):
-    df["Total Time (s)"] = df["Total Time in Instruction"].apply(parse_duration)
+    df["Total Time (s)"] = df["Total Time in Instruction (s)"].apply(parse_duration)
     df["Number of Instructions"] = df["Number of Instructions"].astype(int)
 
     ax2 = ax.twinx()
@@ -60,8 +56,8 @@ def plot_kurtosis_plan(df, ax):
     ax.set_xticklabels(df["Instruction Name"], rotation=45, ha="right")
 
 def plot_run_sh(df, ax):
-    df["Add Task Time (s)"] = df["Time To Add Task Container"].apply(parse_duration)
-    df["Exec Time (s)"] = df["Time To Exec With Wait"].apply(parse_duration)
+    df["Add Task Time (s)"] = df["Time To Add Task Container (s)"].apply(parse_duration)
+    df["Exec Time (s)"] = df["Time To Exec With Wait (s)"].apply(parse_duration)
     df.plot(x="Task Name", y=["Add Task Time (s)", "Exec Time (s)"], kind="bar", ax=ax)
     ax.set_title("Run.sh Benchmark")
     ax.set_xlabel("Task Name")
@@ -77,13 +73,13 @@ for filename in os.listdir(DATA_DIR):
     base = filename.replace(".csv", "")
 
     try:
-        if {"Service Name", "Time To Add Service Container", "Time To Readiness Check"}.issubset(headers):
+        if {"Service Name", "Time To Add Service Container (s)", "Time To Readiness Check (s)"}.issubset(headers):
             add_plot(base, lambda ax, df=df: plot_add_services(df, ax))
-        elif {"Metric", "Value"}.issubset(headers):
+        elif {"Metric", "Value (s)"}.issubset(headers):
             add_plot(base, lambda ax, df=df: plot_startosis(df, ax))
-        elif {"Instruction Name", "Total Time in Instruction", "Number of Instructions"}.issubset(headers):
+        elif {"Instruction Name", "Total Time in Instruction (s)", "Number of Instructions"}.issubset(headers):
             add_plot(base, lambda ax, df=df: plot_kurtosis_plan(df, ax))
-        elif {"Task Name", "Time To Add Task Container", "Time To Exec With Wait"}.issubset(headers):
+        elif {"Task Name", "Time To Add Task Container (s)", "Time To Exec With Wait (s)"}.issubset(headers):
             add_plot(base, lambda ax, df=df: plot_run_sh(df, ax))
         else:
             print(f"Unrecognized CSV format: {filename}")
@@ -112,7 +108,7 @@ for idx, (title, plot_func) in enumerate(plots):
     r, c = divmod(idx, cols)
     ax = axes[r][c]
 
-    plot_func(ax)  # ✅ Move this inside the loop
+    plot_func(ax)
 
     fig_individual, ax_ind = plt.subplots(figsize=(8, 6))
     plot_func(ax_ind)
@@ -127,6 +123,6 @@ for idx in range(num_plots, rows * cols):
 
 fig.tight_layout()
 fig.suptitle("Benchmark Visualizations", fontsize=16, y=1.02)
-plt.savefig("benchmark_visualizations_combined.png", bbox_inches="tight")
+plt.savefig(f"{output_dir}/benchmark_visualizations_combined.png", bbox_inches="tight")
 
 plt.close(fig)
