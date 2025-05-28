@@ -63,6 +63,23 @@ def plot_run_sh(df, ax):
     ax.set_xlabel("Task Name")
     ax.tick_params(axis='x', labelrotation=45)
 
+def plot_kurtosis_backend(df, ax):
+    df["Total Time (s)"] = df["Total Time in Operation (s)"].apply(parse_duration)
+    df["Number of Operations"] = df["Number of Operations"].astype(int)
+
+    ax2 = ax.twinx()
+    ax.bar(df["Kurtosis Backend Operation"], df["Total Time (s)"], color='tab:blue', alpha=0.7)
+    ax.set_ylabel("Total Time (s)", color='tab:blue')
+    ax.tick_params(axis='y', labelcolor='tab:blue')
+
+    ax2.plot(df["Kurtosis Backend Operation"], df["Number of Operations"], color='tab:orange', marker='o')
+    ax2.set_ylabel("Num Operations", color='tab:orange')
+    ax2.tick_params(axis='y', labelcolor='tab:orange')
+
+    ax.set_title("Kurtosis Backend Operations")
+    ax.set_xticks(range(len(df["Kurtosis Backend Operation"])))
+    ax.set_xticklabels(df["Kurtosis Backend Operation"], rotation=45, ha="right")
+
 # Dispatch based on headers
 for filename in os.listdir(DATA_DIR):
     if not filename.endswith(".csv"):
@@ -81,6 +98,8 @@ for filename in os.listdir(DATA_DIR):
             add_plot(base, lambda ax, df=df: plot_kurtosis_plan(df, ax))
         elif {"Task Name", "Time To Add Task Container (s)", "Time To Exec With Wait (s)"}.issubset(headers):
             add_plot(base, lambda ax, df=df: plot_run_sh(df, ax))
+        elif {"Kurtosis Backend Operation", "Total Time in Operation (s)", "Number of Operations"}.issubset(headers):
+            add_plot(base, lambda ax, df=df: plot_kurtosis_backend(df, ax))
         else:
             print(f"Unrecognized CSV format: {filename}")
     except Exception as e:
