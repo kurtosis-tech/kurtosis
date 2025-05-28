@@ -106,22 +106,22 @@ func (benchmark *KurtosisPlanInstructionBenchmark) outputToCSV() error {
 	defer writer.Flush()
 
 	// Write header
-	if err := writer.Write([]string{"Instruction Name", "Total Time in Instruction", "Number of Instructions"}); err != nil {
+	if err := writer.Write([]string{"Instruction Name", "Total Time in Instruction (s)", "Number of Instructions"}); err != nil {
 		return fmt.Errorf("failed to write CSV header: %v", err)
 	}
 
 	// Write data
 	records := [][]string{
-		{"Total time executing instructions", benchmark.TotalTimeExecutingInstructions.String(), fmt.Sprintf("%d", 1)},
-		{"Add services", benchmark.TimeToAddServices.String(), fmt.Sprintf("%d", benchmark.NumAddServices)},
-		{"Run sh", benchmark.TimeToRunSh.String(), fmt.Sprintf("%d", benchmark.NumRunSh)},
-		{"Render templates", benchmark.TimeToRenderTemplates.String(), fmt.Sprintf("%d", benchmark.NumRenderTemplates)},
-		{"Verify", benchmark.TimeToVerify.String(), fmt.Sprintf("%d", benchmark.NumVerify)},
-		{"Wait", benchmark.TimeToWait.String(), fmt.Sprintf("%d", benchmark.NumWait)},
-		{"Exec", benchmark.TimeToExec.String(), fmt.Sprintf("%d", benchmark.NumExec)},
-		{"Store service files", benchmark.TimeToStoreServiceFiles.String(), fmt.Sprintf("%d", benchmark.NumStoreServiceFiles)},
-		{"Upload files", benchmark.TimeToUploadFiles.String(), fmt.Sprintf("%d", benchmark.NumUploadFiles)},
-		{"Print", benchmark.TimeToPrint.String(), fmt.Sprintf("%d", benchmark.NumPrint)},
+		{"Total time executing instructions", durationToSeconds(benchmark.TotalTimeExecutingInstructions), fmt.Sprintf("%d", 1)},
+		{"Add services", durationToSeconds(benchmark.TimeToAddServices), fmt.Sprintf("%d", benchmark.NumAddServices)},
+		{"Run sh", durationToSeconds(benchmark.TimeToRunSh), fmt.Sprintf("%d", benchmark.NumRunSh)},
+		{"Render templates", durationToSeconds(benchmark.TimeToRenderTemplates), fmt.Sprintf("%d", benchmark.NumRenderTemplates)},
+		{"Verify", durationToSeconds(benchmark.TimeToVerify), fmt.Sprintf("%d", benchmark.NumVerify)},
+		{"Wait", durationToSeconds(benchmark.TimeToWait), fmt.Sprintf("%d", benchmark.NumWait)},
+		{"Exec", durationToSeconds(benchmark.TimeToExec), fmt.Sprintf("%d", benchmark.NumExec)},
+		{"Store service files", durationToSeconds(benchmark.TimeToStoreServiceFiles), fmt.Sprintf("%d", benchmark.NumStoreServiceFiles)},
+		{"Upload files", durationToSeconds(benchmark.TimeToUploadFiles), fmt.Sprintf("%d", benchmark.NumUploadFiles)},
+		{"Print", durationToSeconds(benchmark.TimeToPrint), fmt.Sprintf("%d", benchmark.NumPrint)},
 	}
 
 	if err := writer.WriteAll(records); err != nil {
@@ -142,13 +142,13 @@ func (benchmark *KurtosisPlanInstructionBenchmark) outputRunShBenchmarksToCsv() 
 	writer := csv.NewWriter(file)
 	defer writer.Flush()
 
-	if err := writer.Write([]string{"Task Name", "Time To Add Task Container", "Time To Exec With Wait"}); err != nil {
+	if err := writer.Write([]string{"Task Name", "Time To Add Task Container (s)", "Time To Exec With Wait (s)"}); err != nil {
 		return fmt.Errorf("failed to write CSV header: %v", err)
 	}
 
 	records := [][]string{}
 	for _, b := range benchmark.runShBenchmarks {
-		records = append(records, []string{b.TaskName, b.TimeToAddTaskContainer.String(), b.TimeToExecWithWait.String()})
+		records = append(records, []string{b.TaskName, durationToSeconds(b.TimeToAddTaskContainer), durationToSeconds(b.TimeToExecWithWait)})
 	}
 
 	if err := writer.WriteAll(records); err != nil {
@@ -170,13 +170,13 @@ func (benchmark *KurtosisPlanInstructionBenchmark) outputAddServicesBenchmarksTo
 	defer writer.Flush()
 
 	// Write header
-	if err := writer.Write([]string{"Service Name", "Time To Add Service Container", "Time To Readiness Check"}); err != nil {
+	if err := writer.Write([]string{"Service Name", "Time To Add Service Container (s)", "Time To Readiness Check (s)"}); err != nil {
 		return fmt.Errorf("failed to write CSV header: %v", err)
 	}
 
 	records := [][]string{}
 	for _, b := range benchmark.addServiceBenchmarks {
-		records = append(records, []string{b.ServiceName, b.TimeToAddServiceContainer.String(), b.TimeToReadinessCheck.String()})
+		records = append(records, []string{b.ServiceName, durationToSeconds(b.TimeToAddServiceContainer), durationToSeconds(b.TimeToReadinessCheck)})
 	}
 
 	if err := writer.WriteAll(records); err != nil {
@@ -209,16 +209,16 @@ func (benchmark *StartosisBenchmark) outputToCSV() error {
 	defer writer.Flush()
 
 	// Write header
-	if err := writer.Write([]string{"Metric", "Value"}); err != nil {
+	if err := writer.Write([]string{"Metric", "Value (s)"}); err != nil {
 		return fmt.Errorf("failed to write CSV header: %v", err)
 	}
 
 	// Write data
 	records := [][]string{
-		{"Run startosis script", benchmark.TimeToRunStartosisScript.String()},
-		{"Execute instructions", benchmark.TimeToExecuteInstructions.String()},
-		{"Validate instructions", benchmark.TimeToValidateInstructions.String()},
-		{"Interpret instructions", benchmark.TimeToInterpretInstructions.String()},
+		{"Run startosis script", durationToSeconds(benchmark.TimeToRunStartosisScript)},
+		{"Execute instructions", durationToSeconds(benchmark.TimeToExecuteInstructions)},
+		{"Validate instructions", durationToSeconds(benchmark.TimeToValidateInstructions)},
+		{"Interpret instructions", durationToSeconds(benchmark.TimeToInterpretInstructions)},
 	}
 
 	if err := writer.WriteAll(records); err != nil {
@@ -226,6 +226,11 @@ func (benchmark *StartosisBenchmark) outputToCSV() error {
 	}
 
 	return nil
+}
+
+// durationToSeconds converts a time.Duration to a string representation in seconds
+func durationToSeconds(d time.Duration) string {
+	return fmt.Sprintf("%.6f", d.Seconds())
 }
 
 type APICBenchmark struct {
