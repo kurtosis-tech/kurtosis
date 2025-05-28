@@ -79,14 +79,21 @@ func NewKurtosisBackendBenchmark() *KurtosisBackendBenchmark {
 }
 
 func (benchmark *KurtosisBackendBenchmark) AddRegisterUserService(registerUserService RegisterUserService) {
+	benchmark.RegisterUserServicesBenchmark.TimeToRegisterUserServices += registerUserService.Duration
+	benchmark.RegisterUserServicesBenchmark.NumTimesToRegisterUserServices++
 	benchmark.RegisterUserServicesBenchmark.RegisterUserServices = append(benchmark.RegisterUserServicesBenchmark.RegisterUserServices, registerUserService)
 }
 
 func (benchmark *KurtosisBackendBenchmark) AddStartUserService(startUserService StartUserService) {
+	benchmark.StartUserServicesBenchmark.TimeToStartUserServices += startUserService.Duration
+	benchmark.StartUserServicesBenchmark.NumTimesToStartUserServices++
 	benchmark.StartUserServicesBenchmark.StartUserServices = append(benchmark.StartUserServicesBenchmark.StartUserServices, startUserService)
+
 }
 
 func (benchmark *KurtosisBackendBenchmark) AddUserServiceExecCommand(userServiceExecCommand UserServiceExecCommand) {
+	benchmark.RunUserServiceExecCommandsBenchmark.TimeToRunUserServiceExecCommands += userServiceExecCommand.Duration
+	benchmark.RunUserServiceExecCommandsBenchmark.NumTimesToRunUserServiceExecCommands++
 	benchmark.RunUserServiceExecCommandsBenchmark.UserServiceExecCommands = append(benchmark.RunUserServiceExecCommandsBenchmark.UserServiceExecCommands, userServiceExecCommand)
 }
 

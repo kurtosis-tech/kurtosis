@@ -2,9 +2,12 @@ package docker_kurtosis_backend
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"sync"
+	"time"
 
+	"github.com/kurtosis-tech/kurtosis/benchmark"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
@@ -68,6 +71,8 @@ type DockerKurtosisBackend struct {
 
 	// Control concurrent access to serviceRegistrations
 	serviceRegistrationMutex *sync.Mutex
+
+	kurtosisBackendBenchmark *benchmark.KurtosisBackendBenchmark
 }
 
 func NewDockerKurtosisBackend(
@@ -76,6 +81,7 @@ func NewDockerKurtosisBackend(
 	serviceRegistrationRepository *service_registration.ServiceRegistrationRepository,
 	productionMode bool,
 ) *DockerKurtosisBackend {
+	kurtosisBackendBenchmark := benchmark.NewKurtosisBackendBenchmark()
 	dockerNetworkAllocator := docker_network_allocator.NewDockerNetworkAllocator(dockerManager)
 	return &DockerKurtosisBackend{
 		dockerManager:                 dockerManager,
@@ -85,6 +91,7 @@ func NewDockerKurtosisBackend(
 		serviceRegistrationRepository: serviceRegistrationRepository,
 		productionMode:                productionMode,
 		serviceRegistrationMutex:      &sync.Mutex{},
+		kurtosisBackendBenchmark:      kurtosisBackendBenchmark,
 	}
 }
 
@@ -179,6 +186,7 @@ func (backend *DockerKurtosisBackend) DumpKurtosis(ctx context.Context, outputDi
 }
 
 func (backend *DockerKurtosisBackend) RegisterUserServices(_ context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceName]bool) (map[service.ServiceName]*service.ServiceRegistration, map[service.ServiceName]error, error) {
+	beforeRegister := time.Now()
 	freeIpAddrProviderForEnclave, found := backend.enclaveFreeIpProviders[enclaveUuid]
 	if !found {
 		return nil, nil, stacktrace.NewError(
@@ -193,6 +201,11 @@ func (backend *DockerKurtosisBackend) RegisterUserServices(_ context.Context, en
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Unexpected error registering services to enclave '%s'", enclaveUuid)
 	}
+
+	backend.kurtosisBackendBenchmark.AddRegisterUserService(benchmark.RegisterUserService{
+		Name:     fmt.Sprintf("Registered %v in Enclave %s", len(services), enclaveUuid),
+		Duration: time.Since(beforeRegister),
+	})
 	return registeredService, failedServices, nil
 }
 
@@ -216,6 +229,7 @@ func (backend *DockerKurtosisBackend) UnregisterUserServices(_ context.Context, 
 }
 
 func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceUUID]*service.ServiceConfig) (map[service.ServiceUUID]*service.Service, map[service.ServiceUUID]error, error) {
+	beforeStart := time.Now()
 	freeIpAddrProviderForEnclave, found := backend.enclaveFreeIpProviders[enclaveUuid]
 	if !found {
 		return nil, nil, stacktrace.NewError(
@@ -260,6 +274,11 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Unexpected error while starting user service")
 	}
+
+	backend.kurtosisBackendBenchmark.AddStartUserService(benchmark.StartUserService{
+		Name:     fmt.Sprintf("Registered %v in Enclave %s", len(services), enclaveUuid),
+		Duration: time.Since(beforeStart),
+	})
 	return successfullyStartedService, failedService, nil
 }
 
@@ -311,7 +330,19 @@ func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 	map[service.ServiceUUID]error,
 	error,
 ) {
-	return user_service_functions.RunUserServiceExecCommands(ctx, enclaveUuid, containerUser, userServiceCommands, backend.dockerManager)
+	beforeRun := time.Now()
+
+	successfulExecs, erroredExecs, err := user_service_functions.RunUserServiceExecCommands(ctx, enclaveUuid, containerUser, userServiceCommands, backend.dockerManager)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "Unexpected error while running user service exec commands")
+	}
+
+	backend.kurtosisBackendBenchmark.AddUserServiceExecCommand(benchmark.UserServiceExecCommand{
+		Name:     fmt.Sprintf("RunUserServiceExecCommands in Enclave %s", enclaveUuid),
+		Duration: time.Since(beforeRun),
+	})
+
+	return successfulExecs, erroredExecs, nil
 }
 
 func (backend *DockerKurtosisBackend) RunUserServiceExecCommandWithStreamedOutput(
