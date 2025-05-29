@@ -7,11 +7,11 @@ import (
 	"strings"
 )
 
-const _KurtosisClusterTypeName = "dockerkubernetes"
+const _KurtosisClusterTypeName = "dockerkubernetespodman"
 
-var _KurtosisClusterTypeIndex = [...]uint8{0, 6, 16}
+var _KurtosisClusterTypeIndex = [...]uint8{0, 6, 16, 22}
 
-const _KurtosisClusterTypeLowerName = "dockerkubernetes"
+const _KurtosisClusterTypeLowerName = "dockerkubernetespodman"
 
 func (i KurtosisClusterType) String() string {
 	if i < 0 || i >= KurtosisClusterType(len(_KurtosisClusterTypeIndex)-1) {
@@ -26,20 +26,24 @@ func _KurtosisClusterTypeNoOp() {
 	var x [1]struct{}
 	_ = x[KurtosisClusterType_Docker-(0)]
 	_ = x[KurtosisClusterType_Kubernetes-(1)]
+	_ = x[KurtosisClusterType_Podman-(2)]
 }
 
-var _KurtosisClusterTypeValues = []KurtosisClusterType{KurtosisClusterType_Docker, KurtosisClusterType_Kubernetes}
+var _KurtosisClusterTypeValues = []KurtosisClusterType{KurtosisClusterType_Docker, KurtosisClusterType_Kubernetes, KurtosisClusterType_Podman}
 
 var _KurtosisClusterTypeNameToValueMap = map[string]KurtosisClusterType{
-	_KurtosisClusterTypeName[0:6]:       KurtosisClusterType_Docker,
-	_KurtosisClusterTypeLowerName[0:6]:  KurtosisClusterType_Docker,
-	_KurtosisClusterTypeName[6:16]:      KurtosisClusterType_Kubernetes,
-	_KurtosisClusterTypeLowerName[6:16]: KurtosisClusterType_Kubernetes,
+	_KurtosisClusterTypeName[0:6]:        KurtosisClusterType_Docker,
+	_KurtosisClusterTypeLowerName[0:6]:   KurtosisClusterType_Docker,
+	_KurtosisClusterTypeName[6:16]:       KurtosisClusterType_Kubernetes,
+	_KurtosisClusterTypeLowerName[6:16]:  KurtosisClusterType_Kubernetes,
+	_KurtosisClusterTypeName[16:22]:      KurtosisClusterType_Podman,
+	_KurtosisClusterTypeLowerName[16:22]: KurtosisClusterType_Podman,
 }
 
 var _KurtosisClusterTypeNames = []string{
 	_KurtosisClusterTypeName[0:6],
 	_KurtosisClusterTypeName[6:16],
+	_KurtosisClusterTypeName[16:22],
 }
 
 // KurtosisClusterTypeString retrieves an enum value from the enum constants string name.

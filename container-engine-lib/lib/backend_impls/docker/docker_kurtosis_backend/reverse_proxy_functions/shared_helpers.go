@@ -86,9 +86,10 @@ func getReverseProxyObjectFromContainerInfo(
 	if isContainerRunning {
 		reverseProxyStatus = container.ContainerStatus_Running
 
-		privateIpAddrStr, err := dockerManager.GetContainerIP(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn, containerId)
+		bridgeNetworkName := dockerManager.GetBridgeNetworkName()
+		privateIpAddrStr, err := dockerManager.GetContainerIP(ctx, bridgeNetworkName, containerId)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting the private IP address of container '%v' in network '%v'", containerId, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn)
+			return nil, stacktrace.Propagate(err, "An error occurred getting the private IP address of container '%v' in network '%v'", containerId, bridgeNetworkName)
 		}
 		privateIpAddr = net.ParseIP(privateIpAddrStr)
 		if privateIpAddr == nil {

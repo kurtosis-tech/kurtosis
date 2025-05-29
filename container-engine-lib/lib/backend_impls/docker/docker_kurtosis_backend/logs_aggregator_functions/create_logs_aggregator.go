@@ -88,7 +88,8 @@ func CreateLogsAggregator(
 		containerId,
 		containerLabels,
 		defaultContainerStatusForNewLogsAggregatorContainer,
-		dockerManager)
+		dockerManager,
+	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting logs aggregator object using container ID '%v', labels '%+v', status '%v'.", containerId, containerLabels, defaultContainerStatusForNewLogsAggregatorContainer)
 	}

@@ -418,24 +418,27 @@ func GetEngineAndLogsComponentsNetwork(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
 ) (*types.Network, error) {
-	matchingNetworks, err := dockerManager.GetNetworksByName(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn)
+	bridgeNetworkName := dockerManager.GetBridgeNetworkName()
+	matchingNetworks, err := dockerManager.GetNetworksByName(ctx, bridgeNetworkName)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred getting networks matching the network we want to start the engine in, '%v'",
-			consts.NameOfNetworkToStartEngineAndLogServiceContainersIn,
+			bridgeNetworkName,
 		)
 	}
 	numMatchingNetworks := len(matchingNetworks)
-	if numMatchingNetworks == 0 && numMatchingNetworks > 1 {
+	if numMatchingNetworks > 1 {
 		return nil, stacktrace.NewError(
 			"Expected exactly one network matching the name of the network that we want to start the engine in, '%v', but got %v",
-			consts.NameOfNetworkToStartEngineAndLogServiceContainersIn,
+			bridgeNetworkName,
 			numMatchingNetworks,
 		)
 	}
-	targetNetwork := matchingNetworks[0]
-	return targetNetwork, nil
+	if numMatchingNetworks == 0 {
+		return nil, stacktrace.NewError(fmt.Sprintf("No matching network found with the configured name: %v", bridgeNetworkName))
+	}
+	return matchingNetworks[0], nil
 }
 
 func DumpContainers(ctx context.Context, dockerManager *docker_manager.DockerManager, containers []*types.Container, outputDirpath string) error {

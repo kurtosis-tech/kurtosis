@@ -110,7 +110,8 @@ func CreateEngine(
 		sinks,
 		shouldEnablePersistentVolumeLogsCollection,
 		dockerManager,
-		objAttrsProvider)
+		objAttrsProvider,
+	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err,
 			"An error occurred attempting to create logging components for engine with GUID '%v' in Docker network with network id '%v'.", engineGuidStr, targetNetworkId)
@@ -129,7 +130,8 @@ func CreateEngine(
 		engineGuid,
 		reverseProxyContainer,
 		dockerManager,
-		objAttrsProvider)
+		objAttrsProvider,
+	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err,
 			"An error occurred attempting to create reverse proxy for engine with GUID '%v' in Docker network with network id '%v'.", engineGuidStr, targetNetworkId)
