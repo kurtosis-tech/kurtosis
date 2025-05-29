@@ -2,6 +2,12 @@ package test_engine
 
 import (
 	"fmt"
+	"io"
+	"net/http"
+	"strings"
+	"testing"
+
+	"github.com/kurtosis-tech/kurtosis/benchmark"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/request"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -9,10 +15,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
-	"io"
-	"net/http"
-	"strings"
-	"testing"
 )
 
 type requestWithPositionalArgsTestCase struct {
@@ -59,7 +61,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestRequestWithPositionalArgs() {
 }
 
 func (t *requestWithPositionalArgsTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	return request.NewRequest(t.serviceNetwork, t.runtimeValueStore)
+	return request.NewRequest(t.serviceNetwork, t.runtimeValueStore, benchmark.NewKurtosisPlanInstructionBenchmark())
 }
 
 func (t *requestWithPositionalArgsTestCase) GetStarlarkCode() string {

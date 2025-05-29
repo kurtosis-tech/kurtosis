@@ -144,6 +144,7 @@ func (benchmark *KurtosisPlanInstructionBenchmark) outputToCSV() error {
 		{"Store service files", durationToSeconds(benchmark.TimeToStoreServiceFiles), fmt.Sprintf("%d", benchmark.NumStoreServiceFiles)},
 		{"Upload files", durationToSeconds(benchmark.TimeToUploadFiles), fmt.Sprintf("%d", benchmark.NumUploadFiles)},
 		{"Print", durationToSeconds(benchmark.TimeToPrint), fmt.Sprintf("%d", benchmark.NumPrint)},
+		{"Request", durationToSeconds(benchmark.TimeToRequest), fmt.Sprintf("%d", benchmark.NumRequest)},
 	}
 
 	if err := writer.WriteAll(records); err != nil {

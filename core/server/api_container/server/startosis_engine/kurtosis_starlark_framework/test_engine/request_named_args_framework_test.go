@@ -2,6 +2,12 @@ package test_engine
 
 import (
 	"fmt"
+	"io"
+	"net/http"
+	"strings"
+	"testing"
+
+	"github.com/kurtosis-tech/kurtosis/benchmark"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/request"
@@ -10,10 +16,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
-	"io"
-	"net/http"
-	"strings"
-	"testing"
 )
 
 const (
@@ -71,7 +73,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestRequestWithNamedArgs() {
 }
 
 func (t *requestWithNamedArgsTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	return request.NewRequest(t.serviceNetwork, t.runtimeValueStore)
+	return request.NewRequest(t.serviceNetwork, t.runtimeValueStore, benchmark.NewKurtosisPlanInstructionBenchmark())
 }
 
 func (t *requestWithNamedArgsTestCase) GetStarlarkCode() string {

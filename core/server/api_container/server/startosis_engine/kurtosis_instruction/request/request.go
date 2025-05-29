@@ -187,7 +187,11 @@ func (builtin *RequestCapabilities) Validate(_ *builtin_argument.ArgumentValuesS
 }
 
 func (builtin *RequestCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
-	startTime := time.Now()
+	requestBenchmark := benchmark.RequestBenchmark{
+		ServiceName: string(builtin.serviceName),
+	}
+	beforeRequest := time.Now()
+
 	result, err := builtin.httpRequestRecipe.Execute(ctx, builtin.serviceNetwork, builtin.runtimeValueStore, builtin.serviceName)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Error executing http recipe")
@@ -200,17 +204,15 @@ func (builtin *RequestCapabilities) Execute(ctx context.Context, _ *builtin_argu
 	}
 
 	instructionResult := builtin.httpRequestRecipe.ResultMapToString(result)
-	updateBenchmark(builtin.benchmark, builtin.serviceName, startTime)
+	requestBenchmark.TimeToRequest = time.Since(beforeRequest)
+	updateBenchmark(builtin.benchmark, requestBenchmark)
 	return instructionResult, err
 }
 
-func updateBenchmark(benchmark *benchmark.KurtosisPlanInstructionBenchmark, serviceName service.ServiceName, startTime time.Time) {
-	benchmark.TimeToRequest += time.Since(startTime)
+func updateBenchmark(benchmark *benchmark.KurtosisPlanInstructionBenchmark, requestBenchmark benchmark.RequestBenchmark) {
+	benchmark.TimeToRequest += requestBenchmark.TimeToRequest
 	benchmark.NumRequest++
-	benchmark.AddRequestBenchmark(benchmark.RequestBenchmark{
-		ServiceName:   string(serviceName),
-		TimeToRequest: time.Since(startTime),
-	})
+	benchmark.AddRequestBenchmark(requestBenchmark)
 	logrus.Info("UPDATING KURTOSIS REQUEST BENCHMARK", benchmark.TimeToRequest)
 	benchmark.OutputToFile()
 }
