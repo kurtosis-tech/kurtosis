@@ -21,6 +21,11 @@ type RunShBenchmark struct {
 	TimeToExecWithWait     time.Duration
 }
 
+type RequestBenchmark struct {
+	ServiceName   string
+	TimeToRequest time.Duration
+}
+
 type KurtosisPlanInstructionBenchmark struct {
 	TimeToAddServices    time.Duration
 	NumAddServices       int
@@ -29,6 +34,10 @@ type KurtosisPlanInstructionBenchmark struct {
 	TimeToRunSh     time.Duration
 	NumRunSh        int
 	runShBenchmarks []RunShBenchmark
+
+	TimeToRequest     time.Duration
+	NumRequest        int
+	requestBenchmarks []RequestBenchmark
 
 	TimeToRenderTemplates time.Duration
 	NumRenderTemplates    int
@@ -60,15 +69,25 @@ func NewKurtosisPlanInstructionBenchmark() *KurtosisPlanInstructionBenchmark {
 		logrus.Errorf("failed to create benchmark data directory: %v", err)
 	}
 	return &KurtosisPlanInstructionBenchmark{
-		addServiceBenchmarks:  make([]AddServiceBenchmark, 0),
-		runShBenchmarks:       make([]RunShBenchmark, 0),
-		TimeToAddServices:     time.Duration(0),
-		NumAddServices:        0,
-		TimeToRunSh:           time.Duration(0),
-		NumRunSh:              0,
-		TimeToRenderTemplates: time.Duration(0),
-		NumRenderTemplates:    0,
-		TimeToVerify:          time.Duration(0),
+		addServiceBenchmarks:           make([]AddServiceBenchmark, 0),
+		runShBenchmarks:                make([]RunShBenchmark, 0),
+		TimeToAddServices:              time.Duration(0),
+		NumAddServices:                 0,
+		TimeToRunSh:                    time.Duration(0),
+		NumRunSh:                       0,
+		TimeToRenderTemplates:          time.Duration(0),
+		NumRenderTemplates:             0,
+		TimeToVerify:                   time.Duration(0),
+		TimeToRequest:                  time.Duration(0),
+		NumRequest:                     0,
+		requestBenchmarks:              make([]RequestBenchmark, 0),
+		TimeToStoreServiceFiles:        time.Duration(0),
+		NumStoreServiceFiles:           0,
+		TimeToUploadFiles:              time.Duration(0),
+		NumUploadFiles:                 0,
+		TimeToPrint:                    time.Duration(0),
+		NumPrint:                       0,
+		TotalTimeExecutingInstructions: time.Duration(0),
 	}
 }
 
@@ -80,11 +99,18 @@ func (benchmark *KurtosisPlanInstructionBenchmark) AddRunShBenchmark(runShBenchm
 	benchmark.runShBenchmarks = append(benchmark.runShBenchmarks, runShBenchmark)
 }
 
+func (benchmark *KurtosisPlanInstructionBenchmark) AddRequestBenchmark(requestBenchmark RequestBenchmark) {
+	benchmark.requestBenchmarks = append(benchmark.requestBenchmarks, requestBenchmark)
+}
+
 func (benchmark *KurtosisPlanInstructionBenchmark) OutputToFile() error {
 	if err := benchmark.outputAddServicesBenchmarksToCsv(); err != nil {
 		return err
 	}
 	if err := benchmark.outputRunShBenchmarksToCsv(); err != nil {
+		return err
+	}
+	if err := benchmark.outputRequestBenchmarksToCsv(); err != nil {
 		return err
 	}
 	return benchmark.outputToCSV()
@@ -173,6 +199,33 @@ func (benchmark *KurtosisPlanInstructionBenchmark) outputAddServicesBenchmarksTo
 	records := [][]string{}
 	for _, b := range benchmark.addServiceBenchmarks {
 		records = append(records, []string{b.ServiceName, durationToSeconds(b.TimeToAddServiceContainer), durationToSeconds(b.TimeToReadinessCheck)})
+	}
+
+	if err := writer.WriteAll(records); err != nil {
+		return fmt.Errorf("failed to write CSV records: %v", err)
+	}
+
+	return nil
+}
+
+func (benchmark *KurtosisPlanInstructionBenchmark) outputRequestBenchmarksToCsv() error {
+	filePath := fmt.Sprintf("%s/request_benchmark.csv", BenchmarkDataDir)
+	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to create file: %v", err)
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	if err := writer.Write([]string{"Service Name", "Time To Request (s)"}); err != nil {
+		return fmt.Errorf("failed to write CSV header: %v", err)
+	}
+
+	records := [][]string{}
+	for _, b := range benchmark.requestBenchmarks {
+		records = append(records, []string{b.ServiceName, durationToSeconds(b.TimeToRequest)})
 	}
 
 	if err := writer.WriteAll(records); err != nil {

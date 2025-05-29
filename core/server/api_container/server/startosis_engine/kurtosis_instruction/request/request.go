@@ -3,6 +3,10 @@ package request
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"time"
+
+	"github.com/kurtosis-tech/kurtosis/benchmark"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
@@ -19,7 +23,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
-	"net/http"
 )
 
 var defaultAcceptableCodes = []int64{
@@ -49,7 +52,7 @@ const (
 	SkipCodeCheckArgName   = "skip_code_check"
 )
 
-func NewRequest(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+func NewRequest(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore, benchmark *benchmark.KurtosisPlanInstructionBenchmark) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: RequestBuiltinName,
@@ -95,6 +98,7 @@ func NewRequest(serviceNetwork service_network.ServiceNetwork, runtimeValueStore
 				acceptableCodes:   nil,   // populated at interpretation time
 				skipCodeCheck:     false, // populated at interpretation time
 				description:       "",    // populated at interpretation time
+				benchmark:         benchmark,
 			}
 		},
 
@@ -115,6 +119,8 @@ type RequestCapabilities struct {
 	skipCodeCheck     bool
 
 	description string
+
+	benchmark *benchmark.KurtosisPlanInstructionBenchmark
 }
 
 func (builtin *RequestCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -181,6 +187,7 @@ func (builtin *RequestCapabilities) Validate(_ *builtin_argument.ArgumentValuesS
 }
 
 func (builtin *RequestCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
+	startTime := time.Now()
 	result, err := builtin.httpRequestRecipe.Execute(ctx, builtin.serviceNetwork, builtin.runtimeValueStore, builtin.serviceName)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Error executing http recipe")
@@ -193,7 +200,19 @@ func (builtin *RequestCapabilities) Execute(ctx context.Context, _ *builtin_argu
 	}
 
 	instructionResult := builtin.httpRequestRecipe.ResultMapToString(result)
+	updateBenchmark(builtin.benchmark, builtin.serviceName, startTime)
 	return instructionResult, err
+}
+
+func updateBenchmark(benchmark *benchmark.KurtosisPlanInstructionBenchmark, serviceName service.ServiceName, startTime time.Time) {
+	benchmark.TimeToRequest += time.Since(startTime)
+	benchmark.NumRequest++
+	benchmark.AddRequestBenchmark(benchmark.RequestBenchmark{
+		ServiceName:   string(serviceName),
+		TimeToRequest: time.Since(startTime),
+	})
+	logrus.Info("UPDATING KURTOSIS REQUEST BENCHMARK", benchmark.TimeToRequest)
+	benchmark.OutputToFile()
 }
 
 func (builtin *RequestCapabilities) TryResolveWith(instructionsAreEqual bool, _ *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {

@@ -83,7 +83,7 @@ func KurtosisPlanInstructions(
 		kurtosis_print.NewPrint(serviceNetwork, runtimeValueStore),
 		remove_service.NewRemoveService(serviceNetwork, interpretationTimeValueStore),
 		render_templates.NewRenderTemplatesInstruction(serviceNetwork, runtimeValueStore, benchmark),
-		request.NewRequest(serviceNetwork, runtimeValueStore),
+		request.NewRequest(serviceNetwork, runtimeValueStore, benchmark),
 		start_service.NewStartService(serviceNetwork),
 		tasks.NewRunPythonService(serviceNetwork, runtimeValueStore, nonBlockingMode, packageId, packageContentProvider, packageReplaceOptions),
 		tasks.NewRunShService(serviceNetwork, runtimeValueStore, nonBlockingMode, packageId, packageContentProvider, packageReplaceOptions, benchmark),
