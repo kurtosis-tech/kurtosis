@@ -1,0 +1,9 @@
+participants_matrix:
+  el:
+    - el_type: besu
+  cl:
+    - cl_type: prysm
+  vc:
+    - vc_type: nimbus
+participants:
+  - count: 1

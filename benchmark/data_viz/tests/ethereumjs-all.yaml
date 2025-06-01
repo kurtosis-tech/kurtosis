@@ -1,0 +1,13 @@
+participants:
+  - el_type: ethereumjs
+    cl_type: teku
+  - el_type: ethereumjs
+    cl_type: prysm
+  - el_type: ethereumjs
+    cl_type: nimbus
+  - el_type: ethereumjs
+    cl_type: lighthouse
+  - el_type: ethereumjs
+    cl_type: lodestar
+  - el_type: ethereumjs
+    cl_type: grandine

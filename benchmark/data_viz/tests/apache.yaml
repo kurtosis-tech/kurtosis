@@ -1,0 +1,4 @@
+participants:
+  - count: 1
+additional_services:
+  - apache

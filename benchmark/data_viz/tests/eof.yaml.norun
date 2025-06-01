@@ -1,0 +1,12 @@
+participants:
+  - el_type: besu
+    el_image: ethpandaops/besu:main
+    count: 3
+    cl_type: teku
+    cl_image: ethpandaops/teku:master
+network_params:
+  fulu_fork_epoch: 1
+  preset: minimal
+additional_services:
+  - dora
+  - blockscout

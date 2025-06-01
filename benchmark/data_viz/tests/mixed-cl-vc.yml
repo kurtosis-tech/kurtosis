@@ -1,0 +1,9 @@
+participants:
+  - el_type: geth
+    cl_type: teku
+    use_separate_vc: true
+    vc_type: lodestar
+  - el_type: besu
+    cl_type: nimbus
+    use_separate_vc: true
+    vc_type: lighthouse

@@ -1,0 +1,55 @@
+participants:
+  # Prysm nodes (33%)
+  - el_type: geth
+    cl_type: prysm
+  - el_type: geth
+    cl_type: prysm
+  - el_type: nethermind
+    cl_type: prysm
+  - el_type: nethermind
+    cl_type: prysm
+  - el_type: besu
+    cl_type: prysm
+
+  # Lighthouse nodes (32%)
+  - el_type: geth
+    cl_type: lighthouse
+  - el_type: geth
+    cl_type: lighthouse
+  - el_type: nethermind
+    cl_type: lighthouse
+  - el_type: nethermind
+    cl_type: lighthouse
+  - el_type: besu
+    cl_type: lighthouse
+
+  # Teku nodes (27%)
+  - el_type: geth
+    cl_type: teku
+  - el_type: nethermind
+    cl_type: teku
+  - el_type: nethermind
+    cl_type: teku
+  - el_type: besu
+    cl_type: teku
+
+  # Nimbus nodes (4%)
+  - el_type: geth
+    cl_type: nimbus
+
+  # One each of Lodestar and Grandine
+  - el_type: reth
+    cl_type: lodestar
+  - el_type: erigon
+    cl_type: grandine
+
+# Enable MEV via the flashbots stack
+mev_type: flashbots
+
+additional_services:
+  - dora
+  - spamoor
+  - tx_fuzz
+  - assertoor
+
+global_log_level: debug

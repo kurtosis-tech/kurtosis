@@ -1,0 +1,9 @@
+participants:
+  - el_type: geth
+network_params:
+  fulu_fork_epoch: 10
+  shadowfork_block_height: 240000
+  network: hoodi-shadowfork
+additional_services:
+  - dora
+persistent: true

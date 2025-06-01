@@ -1,0 +1,26 @@
+participants:
+  - el_type: geth
+    el_image: ethpandaops/geth:kaustinen-with-shapella
+    el_extra_params:
+      - "--override.blockproof=true"
+      - "--override.overlay-stride=100"
+    el_max_mem: 4000
+    cl_type: lighthouse
+    cl_image: ethpandaops/lighthouse:verkle-trees-capella-2ffb8a9
+    count: 2
+  - el_type: geth
+    el_image: ethpandaops/geth:kaustinen-with-shapella
+    el_extra_params:
+      - "--override.blockproof=true"
+      - "--override.overlay-stride=100"
+    el_max_mem: 4000
+    cl_type: lodestar
+    cl_image: ethpandaops/lodestar:g11tech-verge-815364b
+    count: 2
+network_params:
+  electra_fork_epoch: 0
+additional_services:
+  - forkmon
+  - tx_fuzz
+  - dora
+snooper_enabled: true

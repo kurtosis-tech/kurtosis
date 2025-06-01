@@ -1,0 +1,5 @@
+participants:
+  - el_type: geth
+    cl_type: lighthouse
+    count: 3
+        

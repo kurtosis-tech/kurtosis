@@ -1,0 +1,23 @@
+participants:
+  - el_type: geth
+    cl_type: lodestar
+    use_separate_vc: true
+    use_remote_signer: true
+  - el_type: geth
+    cl_type: nimbus
+    use_separate_vc: true
+    use_remote_signer: true
+  - el_type: geth
+    cl_type: prysm
+    use_separate_vc: true
+    use_remote_signer: true
+  - el_type: geth
+    cl_type: teku
+    use_separate_vc: true
+    use_remote_signer: true
+  - el_type: geth
+    cl_type: grandine
+    use_separate_vc: true
+    use_remote_signer: true
+    # Grandine doesn't have a separate VC
+    vc_type: lodestar

@@ -1,0 +1,13 @@
+participants:
+  - el_type: reth
+    cl_type: teku
+  - el_type: reth
+    cl_type: prysm
+  - el_type: reth
+    cl_type: nimbus
+  - el_type: reth
+    cl_type: lighthouse
+  - el_type: reth
+    cl_type: lodestar
+  - el_type: reth
+    cl_type: grandine

@@ -1,0 +1,19 @@
+participants:
+  - el_type: geth
+    el_extra_params: ["--miner.extradata=localGeth"]
+    cl_type: lighthouse
+
+mev_type: flashbots
+mev_params:
+  mev_builder_image: ethpandaops/reth-rbuilder:develop
+  mev_relay_image: ethpandaops/mev-boost-relay:main
+  mev_boost_image: ethpandaops/mev-boost:develop
+
+additional_services:
+  - tx_fuzz
+  - custom_flood
+  - spamoor
+  - dora
+  - prometheus_grafana
+network_params:
+  seconds_per_slot: 6

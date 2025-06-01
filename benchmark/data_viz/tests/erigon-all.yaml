@@ -1,0 +1,13 @@
+participants:
+  - el_type: erigon
+    cl_type: teku
+  - el_type: erigon
+    cl_type: prysm
+  - el_type: erigon
+    cl_type: nimbus
+  - el_type: erigon
+    cl_type: lighthouse
+  - el_type: erigon
+    cl_type: lodestar
+  - el_type: erigon
+    cl_type: grandine

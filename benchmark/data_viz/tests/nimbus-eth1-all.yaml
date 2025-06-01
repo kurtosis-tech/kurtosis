@@ -1,0 +1,15 @@
+participants:
+  - el_type: geth
+    cl_type: teku
+  - el_type: nimbus
+    cl_type: teku
+  - el_type: nimbus
+    cl_type: prysm
+  - el_type: nimbus
+    cl_type: nimbus
+  - el_type: nimbus
+    cl_type: lighthouse
+  - el_type: nimbus
+    cl_type: lodestar
+  - el_type: nimbus
+    cl_type: grandine

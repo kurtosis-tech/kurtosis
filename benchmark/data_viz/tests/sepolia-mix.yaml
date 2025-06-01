@@ -1,0 +1,16 @@
+participants:
+  - el_type: geth
+    cl_type: teku
+  - el_type: nethermind
+    cl_type: prysm
+  - el_type: erigon
+    cl_type: lighthouse
+  - el_type: besu
+    cl_type: lighthouse
+  - el_type: reth
+    cl_type: lodestar
+  - el_type: ethereumjs
+    cl_type: nimbus
+network_params:
+  network: sepolia
+checkpoint_sync_enabled: true

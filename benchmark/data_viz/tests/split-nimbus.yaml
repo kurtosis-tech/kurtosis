@@ -1,0 +1,20 @@
+participants:
+  - el_type: geth
+    cl_type: nimbus
+    use_separate_vc: true
+    validator_count: 0
+  - el_type: nethermind
+    cl_type: nimbus
+    use_separate_vc: true
+  - el_type: erigon
+    cl_type: nimbus
+    use_separate_vc: true
+  - el_type: besu
+    cl_type: nimbus
+    use_separate_vc: true
+  - el_type: reth
+    cl_type: nimbus
+    use_separate_vc: true
+  - el_type: ethereumjs
+    cl_type: nimbus
+    use_separate_vc: true

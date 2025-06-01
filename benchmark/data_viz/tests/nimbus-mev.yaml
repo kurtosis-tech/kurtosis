@@ -1,0 +1,4 @@
+participants:
+  - el_type: geth
+    cl_type: nimbus
+mev_type: flashbots

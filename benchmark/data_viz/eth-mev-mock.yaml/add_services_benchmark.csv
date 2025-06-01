@@ -1,0 +1,16 @@
+Service Name,Time To Add Service Container (s),Time To Readiness Check (s)
+validator-key-generation-cl-validator-keystore,0.693938,0.000000
+el-1-geth-lighthouse,1.289819,0.000001
+el-2-geth-lighthouse,1.269154,0.000001
+el-3-geth-lighthouse,1.317965,0.000001
+cl-1-lighthouse-geth,5.569870,0.113725
+cl-2-lighthouse-geth,5.315858,0.136085
+cl-3-lighthouse-geth,5.300085,60.155740
+vc-1-geth-lighthouse,0.756037,0.000000
+vc-2-geth-lighthouse,0.810551,0.000001
+vc-3-geth-lighthouse,0.793327,0.000000
+mock-mev,1.329274,0.000001
+mev-boost-1-lighthouse-geth,0.838528,0.000001
+mev-boost-2-lighthouse-geth,0.342441,0.000000
+mev-boost-3-lighthouse-geth,0.349313,0.000001
+dora,1.248335,0.000001

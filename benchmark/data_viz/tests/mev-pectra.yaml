@@ -1,0 +1,66 @@
+participants:
+  - el_type: geth
+    el_image: ethereum/client-go:v1.15.11
+    el_extra_params: ["--miner.extradata=pawanRocks"]
+    cl_type: lighthouse
+    cl_image: sigp/lighthouse:v7.0.1
+
+  - el_type: nethermind
+    el_image: nethermindeth/nethermind:release-1.31.9-genesis-pectra
+    el_extra_params: ["--Blocks.ExtraData=TekuFromLocal"]
+    cl_type: teku
+    cl_image: consensys/teku:25.4.1
+
+  - el_type: reth
+    el_image: ghcr.io/paradigmxyz/reth:v1.3.12
+    el_extra_params: ["--builder.extradata=lodestarFromLocal"]
+    cl_type: lodestar
+    cl_image: chainsafe/lodestar:v1.29.0
+
+  - el_type: erigon
+    el_image: erigontech/erigon:v3.0.2
+    el_extra_params: ["--miner.extradata=prysmFromLocal"]
+    cl_type: prysm
+    cl_image: prysmaticlabs/prysm-beacon-chain:v6.0.1
+    vc_image: prysmaticlabs/prysm-validator:v6.0.1
+
+  - el_type: besu
+    el_image: hyperledger/besu:25.4.1
+    el_extra_params: ["--miner-extra-data=0x6E696D62757346726F6D4C6F63616C"]
+    cl_type: nimbus
+    cl_image: statusim/nimbus-eth2:multiarch-v25.4.1
+
+  - el_type: geth
+    el_image: ethereum/client-go:v1.15.11
+    el_extra_params: ["--miner.extradata=pawanRocks"]
+    cl_type: grandine
+    cl_image: sifrai/grandine:1.1.0
+
+additional_services:
+  - dora
+  - tx_fuzz
+  - spamoor
+  - assertoor
+mev_type: flashbots
+
+mev_params:
+  mev_relay_image: flashbots/mev-boost-relay:0.30.2
+  mev_boost_image: flashbots/mev-boost:1.9
+  mev_builder_cl_image: sigp/lighthouse:v7.0.1
+  mev_builder_image: ethpandaops/reth-rbuilder:v1.1.0
+  mev_builder_subsidy: 1
+
+network_params:
+  min_validator_withdrawability_delay: 1
+  shard_committee_period: 1
+  churn_limit_quotient: 16
+  prefunded_accounts: '{"0xb9e79D19f651a941757b35830232E7EFC77E1c79": {"balance": "100000ETH"}}'
+
+assertoor_params:
+  tests:
+    - file: https://raw.githubusercontent.com/ethpandaops/assertoor/refs/heads/master/playbooks/pectra-dev/kurtosis/fillup-all-el-queues.yaml
+      config:
+        requestCount: 1000  # total number of requests
+        walletCount: 2  # number of wallets to send from for each request type
+        throughputPerWallet: 2 # number of transactions per slot, type and wallet
+        maxPendingPerWallet: 10 # max number of pending requests per type

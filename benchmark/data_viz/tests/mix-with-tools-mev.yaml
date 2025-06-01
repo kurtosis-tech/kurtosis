@@ -1,0 +1,32 @@
+participants:
+  - el_type: geth
+    cl_type: teku
+  - el_type: nethermind
+    cl_type: prysm
+  - el_type: erigon
+    cl_type: nimbus
+  - el_type: besu
+    cl_type: lighthouse
+  - el_type: reth
+    cl_type: lodestar
+  - el_type: ethereumjs
+    cl_type: teku
+additional_services:
+  - tx_fuzz
+  - forkmon
+  - dora
+  - prometheus_grafana
+  - custom_flood
+  - blobscan
+  - blockscout
+  - dugtrio
+  - blutgang
+  - apache
+  - tracoor
+  - spamoor
+ethereum_metrics_exporter_enabled: true
+snooper_enabled: true
+mev_type: flashbots
+mev_params:
+  mev_relay_image: ethpandaops/mev-boost-relay:main
+persistent: True

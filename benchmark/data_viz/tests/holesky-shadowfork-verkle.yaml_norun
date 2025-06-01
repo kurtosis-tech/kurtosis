@@ -1,0 +1,16 @@
+participants:
+  - el_type: geth
+    el_image: ethpandaops/geth:transition-post-genesis-04b0304
+    cl_type: lighthouse
+    cl_image: ethpandaops/lighthouse:verkle-trees-capella-2ffb8a9
+  - el_type: geth
+    el_image: ethpandaops/geth:transition-post-genesis-04b0304
+    cl_type: lodestar
+    cl_image: ethpandaops/lodestar:g11tech-verge-815364b
+network_params:
+  electra_fork_epoch: 1
+  network: holesky-shadowfork-verkle
+additional_services:
+  - dora
+snooper_enabled: true
+persistent: true

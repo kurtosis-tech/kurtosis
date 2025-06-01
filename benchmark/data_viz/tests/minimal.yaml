@@ -1,0 +1,15 @@
+participants:
+  - el_type: geth
+    cl_type: teku
+  - el_type: geth
+    cl_type: prysm
+  - el_type: erigon
+    cl_type: nimbus
+  - el_type: besu
+    cl_type: lighthouse
+  - el_type: reth
+    cl_type: lodestar
+  - el_type: geth
+    cl_type: grandine
+network_params:
+  preset: minimal

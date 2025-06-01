@@ -1,0 +1,13 @@
+participants:
+  - el_type: besu
+    cl_type: prysm
+  - el_type: besu
+    cl_type: teku
+  - el_type: besu
+    cl_type: nimbus
+  - el_type: besu
+    cl_type: lighthouse
+  - el_type: besu
+    cl_type: lodestar
+  - el_type: besu
+    cl_type: grandine

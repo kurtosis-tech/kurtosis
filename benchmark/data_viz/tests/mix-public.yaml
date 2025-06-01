@@ -1,0 +1,35 @@
+participants:
+  - el_type: geth
+    cl_type: teku
+  - el_type: nethermind
+    cl_type: prysm
+  - el_type: erigon
+    cl_type: nimbus
+  - el_type: besu
+    cl_type: lighthouse
+  - el_type: reth
+    cl_type: lodestar
+  - el_type: nimbus
+    cl_type: teku
+    el_image: statusim/nimbus-eth1:master
+  - el_type: ethereumjs
+    cl_type: grandine
+port_publisher:
+  el:
+    enabled: true
+    public_port_start: 40000
+  cl:
+    enabled: true
+    public_port_start: 41000
+  vc:
+    enabled: true
+    public_port_start: 42000
+  remote_signer:
+    enabled: true
+    public_port_start: 43000
+  additional_services:
+    enabled: true
+    public_port_start: 44000
+  mev:
+    enabled: true
+    public_port_start: 45000

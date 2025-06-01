@@ -1,0 +1,66 @@
+participants:
+  - el_type: geth
+    el_image: ethpandaops/geth:peerdas-devnet-7
+    el_extra_params: ["--miner.extradata=lighthouseFromLocal"]
+    cl_type: lighthouse
+    cl_image: ethpandaops/lighthouse:peerdas-devnet-7
+    supernode: true
+
+  - el_type: nethermind
+    el_image: ethpandaops/nethermind:feature-peerdas
+    el_extra_params: ["--Blocks.ExtraData=TekuFromLocal"]
+    cl_type: teku
+    cl_image: ethpandaops/teku:das
+
+  - el_type: reth
+    el_image: ethpandaops/reth:rkrasiuk-peerdas
+    el_extra_params: ["--builder.extradata=lodestarFromLocal"]
+    cl_type: lodestar
+    cl_image: ethpandaops/lodestar:peerDAS
+
+  - el_type: geth
+    el_image: ethpandaops/geth:peerdas-devnet-7
+    el_extra_params: ["--miner.extradata=prysmFromLocal"]
+    cl_type: prysm
+    cl_image: ethpandaops/prysm-beacon-chain:peerDAS
+    vc_image: ethpandaops/prysm-validator:peerDAS
+
+  - el_type: nethermind
+    el_image: ethpandaops/nethermind:feature-peerdas
+    el_extra_params: ["--Blocks.ExtraData=nimbusFromLocal"]
+    cl_type: nimbus
+    cl_image: ethpandaops/nimbus-eth2:gbv2
+
+  - el_type: reth
+    el_image: ethpandaops/reth:rkrasiuk-peerdas
+    el_extra_params: ["--builder.extradata=grandineFromLocal"]
+    cl_type: grandine
+    cl_image: ethpandaops/grandine:hangleang-peerdas-devnet-7
+    cl_extra_env_vars: {"RUST_MIN_STACK": "5242880"}
+
+additional_services:
+  - dora
+  - tx_fuzz
+  - spamoor
+  - assertoor
+mev_type: mock
+
+mev_params:
+  mock_mev_image: ethpandaops/rustic-builder:fulu
+  mev_boost_image: ethpandaops/mev-boost:fulu
+  mev_builder_cl_image: sigp/ligthhouse:unstable
+
+network_params:
+  min_validator_withdrawability_delay: 1
+  shard_committee_period: 1
+  churn_limit_quotient: 16
+  fulu_fork_epoch: 1
+
+assertoor_params:
+  tests:
+    - file: https://raw.githubusercontent.com/ethpandaops/assertoor/refs/heads/master/playbooks/pectra-dev/kurtosis/fillup-all-el-queues.yaml
+      config:
+        requestCount: 1000  # total number of requests
+        walletCount: 2  # number of wallets to send from for each request type
+        throughputPerWallet: 2 # number of transactions per slot, type and wallet
+        maxPendingPerWallet: 10 # max number of pending requests per type

@@ -1,0 +1,19 @@
+Service Name,Time To Add Service Container (s),Time To Readiness Check (s)
+validator-key-generation-cl-validator-keystore,0.713905,0.000001
+el-1-geth-teku,1.326452,0.000001
+el-2-nethermind-prysm,10.882554,0.000001
+el-3-erigon-nimbus,2.424194,0.000001
+el-4-besu-lighthouse,6.855413,0.000001
+el-5-reth-lodestar,1.329998,0.000001
+el-6-nimbus-teku,1.375350,0.000001
+el-7-ethereumjs-grandine,6.353896,0.000001
+cl-1-teku-geth,16.867866,0.187038
+cl-2-prysm-nethermind,4.928012,0.236112
+cl-3-nimbus-erigon,4.522849,0.205335
+cl-4-lighthouse-besu,5.418537,0.230337
+cl-5-lodestar-reth,4.481432,0.249556
+cl-6-teku-nimbus,17.500615,0.303409
+cl-7-grandine-ethereumjs,12.139341,0.220649
+vc-2-nethermind-prysm,1.441441,0.000001
+vc-4-besu-lighthouse,0.851467,0.000001
+vc-5-reth-lodestar,3.456353,0.000000

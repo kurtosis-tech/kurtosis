@@ -1,0 +1,11 @@
+participants:
+  - el_type: geth
+    cl_type: lighthouse
+    count: 3
+mev_type: mock
+additional_services:
+  - dora
+  - spamoor
+  - tx_fuzz
+mev_params:
+  mock_mev_image: "ethpandaops/rustic-builder:main"

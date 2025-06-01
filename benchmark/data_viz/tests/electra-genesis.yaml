@@ -1,0 +1,23 @@
+participants:
+  - el_type: geth
+    cl_type: teku
+  - el_type: nethermind
+    cl_type: prysm
+  - el_type: erigon
+    cl_type: nimbus
+  - el_type: besu
+    cl_type: lighthouse
+  - el_type: reth
+    cl_type: lodestar
+  - el_type: ethereumjs
+    cl_type: teku
+network_params:
+  altair_fork_epoch: 0
+  bellatrix_fork_epoch: 0
+  capella_fork_epoch: 0
+  deneb_fork_epoch: 0
+  electra_fork_epoch: 0
+  fulu_fork_epoch: 1
+  genesis_delay: 120
+additional_services:
+  - dora

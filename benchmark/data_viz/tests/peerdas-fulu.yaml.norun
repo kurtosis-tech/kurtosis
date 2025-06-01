@@ -1,0 +1,81 @@
+participants:
+  # Super nodes
+  # -----------
+
+  # Lighthouse
+  - cl_type: lighthouse
+    cl_image: ethpandaops/lighthouse:peerdas-devnet-5
+    cl_max_mem: 4096
+    cl_extra_params:
+      - --subscribe-all-data-column-subnets
+
+  # Prysm
+  - cl_type: prysm
+    cl_image: ethpandaops/prysm-beacon-chain:data-columns-storage
+    cl_max_mem: 4096
+    cl_extra_params:
+      - --subscribe-all-subnets
+
+  # Teku
+  - cl_type: teku
+    cl_image: ethpandaops/teku:nashatyrev-das
+    cl_max_mem: 4096
+    cl_extra_params:
+      - --p2p-subscribe-all-custody-subnets-enabled
+
+  - cl_type: grandine
+    cl_image: ethpandaops/grandine:hangleang-peerdas-fulu
+    cl_max_mem: 4096
+    cl_extra_params:
+      - --subscribe-all-data-column-subnets
+
+  # Nimbus
+  - cl_type: nimbus
+    cl_image: ethpandaops/nimbus-eth2:cs2
+    cl_extra_params:
+      - --debug-peerdas-supernode=true
+      - --sync-light-client=no
+
+  # Full nodes
+  # -----------
+
+  # Lighthouse
+  - cl_type: lighthouse
+    cl_image: ethpandaops/lighthouse:peerdas-devnet-5
+    cl_max_mem: 4096
+
+  # Prysm
+  - cl_type: prysm
+    cl_image: ethpandaops/prysm-beacon-chain:data-columns-storage
+    cl_max_mem: 4096
+
+
+  # Teku
+  - cl_type: teku
+    cl_image: ethpandaops/teku:nashatyrev-das
+
+  # Grandine
+  - cl_type: grandine
+    cl_image: ethpandaops/grandine:hangleang-peerdas-fulu
+
+  # Nimbus
+  - cl_type: nimbus
+    cl_image: ethpandaops/nimbus-eth2:cs2
+    cl_extra_params:
+      - --debug-peerdas-supernode=false
+      - --sync-light-client=no
+
+global_log_level: debug
+
+network_params:
+  fulu_fork_epoch: 1
+
+additional_services:
+  - dora
+  - spamoor
+  - prometheus_grafana
+
+snooper_enabled: false
+
+dora_params:
+  image: ethpandaops/dora:fulu-support

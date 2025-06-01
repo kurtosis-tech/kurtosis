@@ -1,0 +1,13 @@
+participants:
+  - el_type: geth
+    cl_type: nimbus
+  - el_type: nethermind
+    cl_type: nimbus
+  - el_type: erigon
+    cl_type: nimbus
+  - el_type: besu
+    cl_type: nimbus
+  - el_type: reth
+    cl_type: nimbus
+  - el_type: ethereumjs
+    cl_type: nimbus

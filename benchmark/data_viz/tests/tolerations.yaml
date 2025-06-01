@@ -1,0 +1,36 @@
+participants:
+  - el_type: reth
+    cl_type: teku
+    use_separate_vc: true
+    cl_tolerations:
+      - key: "node-role.kubernetes.io/master1"
+        operator: "Exists"
+        effect: "NoSchedule"
+      - key: "node-role.kubernetes.io/master2"
+        operator: "Exists"
+        effect: "NoSchedule"
+    el_tolerations:
+      - key: "node-role.kubernetes.io/master3"
+        operator: "Exists"
+        effect: "NoSchedule"
+    vc_tolerations:
+      - key: "node-role.kubernetes.io/master4"
+        operator: "Exists"
+        effect: "NoSchedule"
+  - el_type: reth
+    cl_type: teku
+    use_separate_vc: true
+    tolerations:
+      - key: "node-role.kubernetes.io/master5"
+        operator: "Exists"
+        effect: "NoSchedule"
+  - el_type: reth
+    cl_type: teku
+    use_separate_vc: true
+additional_services:
+  - dora
+global_tolerations:
+  - key: "node-role.kubernetes.io/master6"
+    value: "true"
+    operator: "Equal"
+    effect: "NoSchedule"

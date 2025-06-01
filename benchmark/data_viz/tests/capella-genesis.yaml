@@ -1,0 +1,23 @@
+participants:
+  - el_type: geth
+    cl_type: teku
+  - el_type: reth
+    cl_type: prysm
+  - el_type: nethermind
+    cl_type: nimbus
+  - el_type: besu
+    cl_type: lighthouse
+  - el_type: nimbus
+    cl_type: lodestar
+  - el_type: erigon
+    cl_type: grandine
+additional_services:
+  - dora
+network_params:
+  altair_fork_epoch: 0
+  bellatrix_fork_epoch: 0
+  capella_fork_epoch: 0
+  deneb_fork_epoch: 1
+  electra_fork_epoch: 2
+  fulu_fork_epoch: 3
+  genesis_delay: 120

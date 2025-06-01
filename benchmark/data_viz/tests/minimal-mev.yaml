@@ -1,0 +1,29 @@
+participants:
+  - el_type: geth
+    cl_type: teku
+  - el_type: geth
+    cl_type: prysm
+  - el_type: erigon
+    cl_type: nimbus
+  - el_type: besu
+    cl_type: lighthouse
+  - el_type: reth
+    cl_type: lodestar
+  - el_type: geth
+    cl_type: grandine
+network_params:
+  preset: minimal
+  electra_fork_epoch: 1
+  prefunded_accounts: '{"0xb9e79D19f651a941757b35830232E7EFC77E1c79": {"balance": "100000ETH"}}'
+
+additional_services:
+  - dora
+  - spamoor
+
+mev_type: flashbots
+mev_params:
+  mev_relay_image: ethpandaops/mev-boost-relay:main
+  mev_boost_image: ethpandaops/mev-boost:develop
+  mev_builder_cl_image: sigp/lighthouse:v7.0.0
+  mev_builder_image: ethpandaops/reth-rbuilder:develop
+  mev_builder_subsidy: 1

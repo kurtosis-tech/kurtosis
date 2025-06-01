@@ -1,0 +1,13 @@
+participants:
+  - el_type: reth
+    cl_type: teku
+    use_separate_vc: true
+    node_selectors: {
+      "kubernetes.io/hostname": testing-1,
+    }
+  - el_type: reth
+    cl_type: teku
+    use_separate_vc: true
+global_node_selectors: {
+  "kubernetes.io/hostname": testing-2,
+}

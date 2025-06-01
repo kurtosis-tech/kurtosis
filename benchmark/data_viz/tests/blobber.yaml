@@ -1,0 +1,16 @@
+participants:
+  - el_type: geth
+    el_image: ethpandaops/geth:master
+    cl_type: lighthouse
+    blobber_enabled: true
+    blobber_extra_params:
+      - --proposal-action-frequency=1
+      - "--proposal-action={\"name\": \"blob_gossip_delay\", \"delay_milliseconds\": 1500}"
+    count: 1
+  - el_type: geth
+    el_image: ethpandaops/geth:master
+    cl_type: lodestar
+    count: 1
+additional_services:
+  - dora
+  - spamoor

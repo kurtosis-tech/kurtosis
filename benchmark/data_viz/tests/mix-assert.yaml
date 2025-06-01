@@ -1,0 +1,19 @@
+participants:
+  - el_type: geth
+    cl_type: teku
+  - el_type: nethermind
+    cl_type: prysm
+  - el_type: geth # temp remove erigon till they fix their bugs
+    cl_type: nimbus
+  - el_type: besu
+    cl_type: lighthouse
+  - el_type: reth
+    cl_type: lodestar
+  - el_type: geth # temp remove nimbus-eth1 till they fix their bugs
+    cl_type: grandine
+additional_services:
+  - assertoor
+  - dora
+assertoor_params:
+  run_stability_check: false
+  run_block_proposal_check: true

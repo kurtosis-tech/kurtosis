@@ -1,0 +1,13 @@
+participants:
+  - el_type: geth
+    cl_type: teku
+  - el_type: geth
+    cl_type: prysm
+  - el_type: geth
+    cl_type: nimbus
+  - el_type: geth
+    cl_type: lighthouse
+  - el_type: geth
+    cl_type: lodestar
+network_params:
+  preregistered_validator_count: 400

@@ -1,0 +1,13 @@
+participants:
+  - el_type: nethermind
+    cl_type: teku
+  - el_type: nethermind
+    cl_type: prysm
+  - el_type: nethermind
+    cl_type: nimbus
+  - el_type: nethermind
+    cl_type: lighthouse
+  - el_type: nethermind
+    cl_type: lodestar
+  - el_type: nethermind
+    cl_type: grandine

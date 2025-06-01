@@ -1,0 +1,9 @@
+participants:
+  - el_type: geth
+    el_image: ethpandaops/geth:kaustinen-with-shapella-89330e4
+    cl_type: lodestar
+    cl_image: ethpandaops/lodestar:g11tech-verge-324c46e
+    count: 3
+network_params:
+  network: verkle-gen-devnet-7
+
