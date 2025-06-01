@@ -1,8 +1,0 @@
-Service Name,Time To Add Service Container (s),Time To Readiness Check (s)
-validator-key-generation-cl-validator-keystore,0.703762,0.000000
-el-1-geth-teku,1.363319,0.000000
-el-2-geth-teku,1.325572,0.000001
-el-3-geth-teku,1.345685,0.000001
-cl-1-teku-geth,16.395785,0.175174
-cl-2-teku-geth,16.467145,0.401471
-cl-3-teku-geth,16.413973,0.185850

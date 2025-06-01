@@ -1,6 +1,0 @@
-Task Name,Time To Add Task Container (s),Time To Exec With Wait (s)
-task-2577c33e-c98e-4375-8c71-caf2afe8c97f,0.408185,0.082919
-run-generate-genesis,0.810008,5.407126
-read-genesis-validators-root,0.785721,0.119202
-read-prague-time,0.804416,0.161393
-read-osaka-time,0.878105,0.163854
