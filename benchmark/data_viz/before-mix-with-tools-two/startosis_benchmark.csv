@@ -1,0 +1,5 @@
+Metric,Value (s)
+Run startosis script,192.529342
+Execute instructions,189.053664
+Validate instructions,2.872880
+Interpret instructions,0.602518

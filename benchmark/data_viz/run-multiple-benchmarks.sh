@@ -3,16 +3,16 @@
 # Parse command line arguments
 REBUILD=false
 ARGS_FILES=(
-    "./tests/mev.yaml"
-    "./tests/mev-mock.yaml"
-    "./tests/mix-with-tools.yaml"
-    "./tests/mix-persistence.yaml"
-    "./tests/mix-public.yaml"
-    "./tests/minimal.yaml"
+    "./tests/mev.yaml",
+    # "./tests/mev-mock.yaml",
+    # "./tests/mix-with-tools.yaml",
+    # "./tests/mix-persistence.yaml",
+    # "./tests/mix-public.yaml",
+    # "./tests/minimal.yaml",
 )
 
 PACKAGE_ID="github.com/ethpandaops/ethereum-package"  # Default package
-OUTPUT_DIR_PREFIX="eth"
+OUTPUT_DIR_PREFIX="non-parallel"
 
 while [[ $# -gt 0 ]]; do
   case $1 in

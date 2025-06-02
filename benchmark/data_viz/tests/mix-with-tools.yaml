@@ -1,6 +1,6 @@
 participants:
   - el_type: geth
-    cl_type: teku
+    cl_type: nimbus
   - el_type: nethermind
     cl_type: prysm
   - el_type: erigon
@@ -19,7 +19,7 @@ additional_services:
   - dora
   - prometheus_grafana
   - custom_flood
-  - blobscan
+  # - blobscan
   - dugtrio
   - blutgang
   - apache

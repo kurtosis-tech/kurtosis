@@ -1,0 +1,21 @@
+Service Name,Time To Add Service Container (s),Time To Readiness Check (s)
+validator-key-generation-cl-validator-keystore,0.834104,0.000001
+el-1-geth-lighthouse,1.530541,0.000001
+el-2-reth-builder-lighthouse,4.631061,0.000002
+cl-1-lighthouse-geth,5.503580,0.164950
+cl-2-lighthouse-reth-builder,5.508161,4.197286
+vc-1-geth-lighthouse,1.036048,0.000001
+mev-flood,0.481702,0.000001
+mev-relay-redis,1.076209,0.000001
+mev-relay-postgres,2.041204,0.000001
+adminer,0.929360,0.000001
+mev-relay-housekeeper,0.401360,0.000001
+mev-relay-api,0.460789,0.000001
+mev-relay-website,0.483950,0.000005
+mev-boost-1-lighthouse-geth,0.404259,0.000001
+tx-fuzz,0.497237,0.000001
+mev-custom-flood,1.433306,0.000001
+spamoor,5.694761,0.000002
+dora,1.463162,0.000001
+prometheus,1.054522,0.000001
+grafana,4.633879,0.000001
