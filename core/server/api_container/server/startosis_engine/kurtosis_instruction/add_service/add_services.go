@@ -3,6 +3,12 @@ package add_service
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/kurtosis-tech/kurtosis/benchmark"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -22,9 +28,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
-	"reflect"
-	"strings"
-	"sync"
 )
 
 const (
@@ -42,7 +45,9 @@ func NewAddServices(
 	packageContentProvider startosis_packages.PackageContentProvider,
 	packageReplaceOptions map[string]string,
 	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore,
-	imageDownloadMode image_download_mode.ImageDownloadMode) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+	imageDownloadMode image_download_mode.ImageDownloadMode,
+	benchmark *benchmark.KurtosisPlanInstructionBenchmark,
+) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: AddServicesBuiltinName,
@@ -78,6 +83,7 @@ func NewAddServices(
 				readyConditions:   nil,                              // populated at interpretation time
 				description:       "",                               // populated at interpretation time
 				imageDownloadMode: imageDownloadMode,
+				benchmark:         benchmark,
 			}
 		},
 
@@ -105,6 +111,8 @@ type AddServicesCapabilities struct {
 	description string
 
 	imageDownloadMode image_download_mode.ImageDownloadMode
+
+	benchmark *benchmark.KurtosisPlanInstructionBenchmark
 }
 
 func (builtin *AddServicesCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -147,6 +155,14 @@ func (builtin *AddServicesCapabilities) Validate(_ *builtin_argument.ArgumentVal
 }
 
 func (builtin *AddServicesCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
+	addServiceBenchmark := benchmark.AddServiceBenchmark{
+		ServiceName: "",
+	}
+	for serviceName, _ := range builtin.serviceConfigs {
+		addServiceBenchmark.ServiceName = string(serviceName)[:2] + "s"
+	}
+	beforeAddServices := time.Now()
+
 	renderedServiceConfigs := make(map[service.ServiceName]*service.ServiceConfig, len(builtin.serviceConfigs))
 	parallelism, ok := ctx.Value(startosis_constants.ParallelismParam).(int)
 	if !ok {
@@ -209,7 +225,9 @@ func (builtin *AddServicesCapabilities) Execute(ctx context.Context, _ *builtin_
 		startedAndUpdatedService[updatedServiceName] = updatedService
 	}
 	shouldDeleteAllStartedServices := true
+	addServiceBenchmark.TimeToAddServiceContainer = time.Since(beforeAddServices)
 
+	beforeReadinessCheck := time.Now()
 	//TODO we should move the readiness check functionality to the default service network to improve performance
 	///TODO because we won't have to wait for all services to start for checking readiness, but first we have to
 	//TODO propagate the Recipes to this layer too and probably move the wait instruction also
@@ -226,6 +244,7 @@ func (builtin *AddServicesCapabilities) Execute(ctx context.Context, _ *builtin_
 			builtin.removeAllStartedServices(ctx, startedAndUpdatedService)
 		}
 	}()
+	addServiceBenchmark.TimeToReadinessCheck = time.Since(beforeReadinessCheck)
 
 	instructionResult := strings.Builder{}
 	instructionResult.WriteString(fmt.Sprintf("Successfully added the following '%d' services:", len(startedServices)))
@@ -236,6 +255,8 @@ func (builtin *AddServicesCapabilities) Execute(ctx context.Context, _ *builtin_
 		instructionResult.WriteString(fmt.Sprintf("\n  Service '%s' added with UUID '%s'", serviceName, serviceObj.GetRegistration().GetUUID()))
 	}
 	shouldDeleteAllStartedServices = false
+
+	updateBenchmark(beforeAddServices, builtin.benchmark, addServiceBenchmark)
 	return instructionResult.String(), nil
 }
 

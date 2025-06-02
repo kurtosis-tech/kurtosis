@@ -1,0 +1,12 @@
+Instruction Name,Total Time in Instruction (s),Number of Instructions
+Total time executing instructions,29.654221,1
+Add services,3.757043,2
+Run sh,20.184105,5
+Render templates,0.002172,1
+Verify,0.000378,2
+Wait,0.190056,1
+Exec,1.369125,2
+Store service files,4.147924,8
+Upload files,0.003414,2
+Print,0.000000,0
+Request,0.000000,0

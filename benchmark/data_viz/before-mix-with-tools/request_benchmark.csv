@@ -1,8 +1,0 @@
-Service Name,Time To Request (s)
-cl-1-teku-geth,0.317985
-cl-2-prysm-nethermind,0.491165
-cl-3-nimbus-erigon,0.445673
-cl-4-lighthouse-besu,0.573610
-cl-5-lodestar-reth,0.476613
-cl-6-grandine-ethereumjs,0.481661
-cl-7-grandine-geth,0.600635

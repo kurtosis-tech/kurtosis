@@ -61,11 +61,12 @@ if [ -z "$OUTPUT_DIR" ]; then
 else
   data_directory_name="$OUTPUT_DIR"
 fi
+mkdir -p ${data_directory_name}
 docker cp ${API_CONTAINER}:/run/benchmark-data/ ${data_directory_name}
 echo "Pulled benchmark data from enclave"
 
 python3 benchmark_viz.py ${data_directory_name}
 echo "Created visualizations"
 
-dkt enclave rm -f benchmark-test
+# dkt enclave rm -f benchmark-test
 echo "Removed enclave"
