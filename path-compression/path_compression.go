@@ -1,15 +1,17 @@
 package path_compression
 
 import (
+	"context"
 	"crypto/md5"
-	"github.com/kurtosis-tech/stacktrace"
-	"github.com/mholt/archiver"
-	"github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/kurtosis-tech/stacktrace"
+	"github.com/mholt/archives"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -72,14 +74,36 @@ func CompressPathToFile(pathToCompress string, enforceMaxFileSizeLimit bool) (st
 	}
 
 	compressedFilePath := filepath.Join(tempDir, filepath.Base(pathToCompress)+compressionExtension)
-	if err = archiver.Archive(filepathsToUpload, compressedFilePath); err != nil {
-		return "", 0, nil, stacktrace.Propagate(err, "Failed to compress '%s'.", pathToCompress)
+
+	// Create output file
+	outFile, err := os.Create(compressedFilePath)
+	if err != nil {
+		return "", 0, nil, stacktrace.Propagate(err, "An error occurred when creating the output file '%s'.", compressedFilePath)
+	}
+	defer outFile.Close()
+
+	ctx := context.Background()
+
+	files, err := archives.FilesFromDisk(
+		ctx,
+		nil, // use default settings
+		getFilenameMappings(pathToCompress, filepathsToUpload))
+	if err != nil {
+		return "", 0, nil, stacktrace.Propagate(err, "An error occurred when creating files list for archive from '%s'.", pathToCompress)
+	}
+
+	format := archives.CompressedArchive{
+		Compression: archives.Gz{},
+		Archival:    archives.Tar{},
+	}
+	if err = format.Archive(ctx, outFile, files); err != nil {
+		return "", 0, nil, stacktrace.Propagate(err, "An error occurred when compressing '%s'.", pathToCompress)
 	}
 
 	compressedFileInfo, err := os.Stat(compressedFilePath)
 	if err != nil {
 		return "", 0, nil, stacktrace.Propagate(err,
-			"Failed to inspect temporary archive file at '%s' during files upload for '%s'.",
+			"An error occurred when inspecting the temporary archive file at '%s' during files upload for '%s'.",
 			tempDir, pathToCompress)
 	}
 
@@ -88,7 +112,7 @@ func CompressPathToFile(pathToCompress string, enforceMaxFileSizeLimit bool) (st
 		compressedFileSize = uint64(compressedFileInfo.Size())
 	} else {
 		return "", 0, nil, stacktrace.Propagate(err,
-			"Failed to compute archive size for temporary file '%s' obtained compressing path '%s'",
+			"An error occurred when computing the archive size for the temporary file '%s' obtained compressing path '%s'",
 			tempDir, pathToCompress)
 	}
 
@@ -169,4 +193,14 @@ func writeFileContent(filePath string, writer io.Writer) error {
 		return stacktrace.Propagate(err, "Unable to hash file content for file '%s'.", filePath)
 	}
 	return nil
+}
+
+func getFilenameMappings(pathToCompress string, filesToUpload []string) map[string]string {
+	filenameMappings := make(map[string]string)
+	for _, filePath := range filesToUpload {
+		relativePath := strings.TrimPrefix(filePath, pathToCompress)
+		relativePath = strings.TrimPrefix(relativePath, string(filepath.Separator))
+		filenameMappings[filePath] = relativePath
+	}
+	return filenameMappings
 }
