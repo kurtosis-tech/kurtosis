@@ -24,7 +24,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/service_registration"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_identifiers"
-	"github.com/kurtosis-tech/kurtosis/path-compression"
+	path_compression "github.com/kurtosis-tech/kurtosis/path-compression"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -864,6 +864,7 @@ func (network *DefaultServiceNetwork) registerService(
 ) {
 	serviceSuccessfullyRegistered := false
 
+	logrus.Infof("Registering service '%s' in enclave '%v'", serviceName, network.enclaveUuid)
 	serviceToRegister := map[service.ServiceName]bool{
 		serviceName: true,
 	}
