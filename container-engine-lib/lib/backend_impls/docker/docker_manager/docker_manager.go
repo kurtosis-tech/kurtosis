@@ -62,7 +62,7 @@ const (
 	//  kill signal"
 	dockerKillSignal = "KILL"
 
-	expectedHostIp = "0.0.0.0"
+	expectedHostIp = "127.0.0.1"
 
 	// When Docker binds a container port to the host machine, it binds it to host interface 0.0.0.0
 	// Linux machines will use 127.0.0.1 for 0.0.0.0, but Windows machines don't
@@ -1776,7 +1776,7 @@ func (manager *DockerManager) getContainerHostConfig(
 			portMap[containerPort] = []nat.PortBinding{
 				// Leaving this struct empty will cause Docker to automatically choose an interface IP & port on the host machine
 				{
-					HostIP:   "",
+					HostIP:   expectedHostIp,
 					HostPort: "",
 				},
 			}
