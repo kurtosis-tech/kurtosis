@@ -285,7 +285,9 @@ If there are any changes to the Protobuf files in the `api` subdirectory, the Pr
 If you are developing Kurtosis over a Podman cluster, run:
 
 ```bash
-./scripts/build.sh false true # run with podman, not debug image
+USE_PODMAN=true
+USE_DEBUG_IMAGE=false
+./scripts/build.sh $USE_DEBUG_IMAGE $USE_PODMAN 
 ```
 
 This will use the Podman image builder for building images. See documentation in scripts for more details on build options.

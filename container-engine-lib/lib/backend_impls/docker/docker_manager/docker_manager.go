@@ -544,9 +544,10 @@ func (manager *DockerManager) GetVolumesByLabels(ctx context.Context, labels map
 	result := []*volume.Volume{}
 	if resp.Volumes != nil {
 		if manager.podmanMode {
-			// TODO: clean up comment
-			// TODO: inspect what the result value is
-			// Podman API inconsistency - filter out the union matches that podman returns while docker only returns the intersect matches when filtering by label
+			// Podman returns volumes that match any of the provided labels (a union match),
+			// whereas Docker only returns volumes that match all labels (an intersection match).
+			// To ensure consistent behavior across both runtimes, we manually filter Podman's results
+			// to include only volumes that match all specified labels.
 			for _, vol := range resp.Volumes {
 				allLabelsMatch := true
 
@@ -1839,7 +1840,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		case automaticPublishing:
 			hostIp := ""
 			if manager.podmanMode {
-				hostIp = "0.0.0.0"
+				hostIp = expectedHostIp // podman requires to be 0.0.0.0
 			}
 			portMap[containerPort] = []nat.PortBinding{
 				// Leaving this struct empty will cause Docker to automatically choose an interface IP & port on the host machine
@@ -1881,7 +1882,11 @@ func (manager *DockerManager) getContainerHostConfig(
 	}
 
 	if manager.podmanMode {
-		// TODO: add a comment explaining why we need to do this
+		// When running in Podman, we need to explicitly disable SELinux and AppArmor
+		// This avoids permission errors/capability restrictions when mounting host volumes or running
+		// privileged workloads.
+		// Podman applies these by default, unlike Docker.
+		// See: https://docs.podman.io/en/latest/markdown/podman-run.1.html#security-options
 		securityOptsSlice = append(securityOptsSlice, "label=disable")
 		securityOptsSlice = append(securityOptsSlice, "apparmor:unconfined")
 	}
