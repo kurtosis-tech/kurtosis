@@ -19,6 +19,7 @@ package services
 
 import (
 	"context"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/stacktrace"
@@ -36,6 +37,9 @@ type ServiceContext struct {
 	// Network location outside the enclave
 	publicIpAddr string
 	publicPorts  map[string]*PortSpec
+
+	// Service labels
+	labels map[string]string
 }
 
 func NewServiceContext(
@@ -46,6 +50,7 @@ func NewServiceContext(
 	privatePorts map[string]*PortSpec,
 	publicIpAddr string,
 	publicPorts map[string]*PortSpec,
+	labels map[string]string,
 ) *ServiceContext {
 	return &ServiceContext{
 		client:        client,
@@ -55,6 +60,7 @@ func NewServiceContext(
 		privatePorts:  privatePorts,
 		publicIpAddr:  publicIpAddr,
 		publicPorts:   publicPorts,
+		labels:        labels,
 	}
 }
 
@@ -80,6 +86,10 @@ func (service *ServiceContext) GetMaybePublicIPAddress() string {
 
 func (service *ServiceContext) GetPublicPorts() map[string]*PortSpec {
 	return service.publicPorts
+}
+
+func (service *ServiceContext) GetLabels() map[string]string {
+	return service.labels
 }
 
 func (service *ServiceContext) ExecCommand(command []string) (int32, string, error) {

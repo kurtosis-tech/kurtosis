@@ -507,14 +507,20 @@ Kurtosis is an open source tool maintained by [MAINTAINERS](./MAINTAINERS.md). I
 <p>
   <a href="https://www.bloctopus.io/">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/tedim52/.github/refs/heads/main/content/sponsors/bloctopus-dark.svg">
-      <img alt="bloctopus logo" src="https://raw.githubusercontent.com/tedim52/.github/refs/heads/main/content/sponsors/bloctopus-light.svg" width="auto" height="70">
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/tedim52/.github/refs/heads/main/content/sponsors/bloctopus-dark.png">
+      <img alt="bloctopus logo" src="https://raw.githubusercontent.com/tedim52/.github/refs/heads/main/content/sponsors/bloctopus-light.png" width="auto" height="70">
     </picture>
   </a>
   <a href="https://antithesis.com/">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/tedim52/.github/refs/heads/main/content/sponsors/antithesis-dark.svg">
       <img alt="antithesis logo" src="https://raw.githubusercontent.com/tedim52/.github/refs/heads/main/content/sponsors/antithesis-light.svg" width="auto" height="70">
+    </picture>
+  </a>
+  <a href="https://ethereum.foundation/">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/tedim52/.github/refs/heads/main/content/sponsors/ethereum.png"></source>
+      <img alt="ethereum logo" src="https://raw.githubusercontent.com/tedim52/.github/refs/heads/main/content/sponsors/ethereum.png" width="auto" height="70"></img>
     </picture>
   </a>
 </p>
