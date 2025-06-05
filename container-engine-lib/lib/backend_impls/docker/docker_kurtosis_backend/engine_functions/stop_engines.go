@@ -2,6 +2,7 @@ package engine_functions
 
 import (
 	"context"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_aggregator_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/reverse_proxy_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
@@ -13,7 +14,8 @@ import (
 func StopEngines(
 	ctx context.Context,
 	filters *engine.EngineFilters,
-	dockerManager *docker_manager.DockerManager) (
+	dockerManager *docker_manager.DockerManager,
+) (
 	resultSuccessfulEngineGuids map[engine.EngineGUID]bool,
 	resultErroredEngineGuids map[engine.EngineGUID]error,
 	resultErr error,

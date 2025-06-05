@@ -244,6 +244,9 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 		restartPolicy = docker_manager.RestartAlways
 	}
 
+	// Podman doesn't support the Fluentd logging driver, so turn off logs collection when using podman
+	shouldTurnOnLogsCollection := !backend.dockerManager.IsPodman()
+
 	successfullyStartedService, failedService, err := user_service_functions.StartRegisteredUserServices(
 		ctx,
 		enclaveUuid,
@@ -256,7 +259,8 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 		backend.objAttrsProvider,
 		freeIpAddrProviderForEnclave,
 		backend.dockerManager,
-		restartPolicy)
+		restartPolicy,
+		shouldTurnOnLogsCollection)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Unexpected error while starting user service")
 	}

@@ -8,10 +8,11 @@ set -euo pipefail   # Bash "strict mode"
 # ==================================================================================================
 
 show_helptext_and_exit() {
-    echo "Usage: $(basename "${0}") push_to_registry_container dockerfile_filepath image_tags..."
+    echo "Usage: $(basename "${0}") push_to_registry_container dockerfile_filepath podman_mode image_tags..."
     echo ""
     echo "  push_to_registry_container     Whether images should be pushed to container registry or just loaded locally"
     echo "  dockerfile_filepath            The absolute path to the Dockerfile to use for this build"
+    echo "  podman_mode                    Whether to build images with podman instead of docker, use if you are developing Kurtosis on Podman cluster type"
     echo "  image_tags                     The tags for this image. Multiple values can be passed"
     echo ""
     exit 1  # Exit with an error so that if this is accidentally called by CI, the script will fail
@@ -30,7 +31,13 @@ if [ ! -f "${dockerfile_filepath}" ]; then
     show_helptext_and_exit
 fi
 
-image_tags="${*:3}"
+podman_mode="${3:-}"
+if [ "${podman_mode}" != "true" ] && [ "${podman_mode}" != "false" ]; then
+    echo "Error: Invalid podman_mode arg: '${podman_mode}'" >&2
+    show_helptext_and_exit
+fi
+
+image_tags="${*:4}"
 if [ -z "${image_tags}" ]; then
     echo "Error: Invalid image_tags arg: '${image_tags}'" >&2
     show_helptext_and_exit
@@ -67,36 +74,40 @@ done
 
 # Build Docker image
 
-## Start by making sure the builder and the context do not already exist. If that's the case remove them
+# Start by making sure the builder and the context do not already exist. If that's the case remove them
 kurtosis_docker_builder="kurtosis-docker-builder"
 docker_buildx_context='kurtosis-docker-builder-context'
 if docker buildx inspect "${kurtosis_docker_builder}" &>/dev/null; then
-  echo "Removing docker buildx builder ${kurtosis_docker_builder} as it seems to already exist"
-  if ! docker buildx rm ${kurtosis_docker_builder} &>/dev/null; then
-    echo "Failed removing docker buildx builder ${kurtosis_docker_builder}. Try removing it manually with 'docker buildx rm ${kurtosis_docker_builder}' before re-running this script"
-    exit 1
-  fi
+ echo "Removing docker buildx builder ${kurtosis_docker_builder} as it seems to already exist"
+ if ! docker buildx rm ${kurtosis_docker_builder} &>/dev/null; then
+   echo "Failed removing docker buildx builder ${kurtosis_docker_builder}. Try removing it manually with 'docker buildx rm ${kurtosis_docker_builder}' before re-running this script"
+   exit 1
+ fi
 fi
 if docker context inspect "${docker_buildx_context}" &>/dev/null; then
-  echo "Removing docker context ${docker_buildx_context} as it seems to already exist"
-  if ! docker context rm ${docker_buildx_context} &>/dev/null; then
-    echo "Failed removing docker context ${docker_buildx_context}. Try removing it manually with 'docker context rm ${docker_buildx_context}' before re-running this script"
-    exit 1
-  fi
+ echo "Removing docker context ${docker_buildx_context} as it seems to already exist"
+ if ! docker context rm ${docker_buildx_context} &>/dev/null; then
+   echo "Failed removing docker context ${docker_buildx_context}. Try removing it manually with 'docker context rm ${docker_buildx_context}' before re-running this script"
+   exit 1
+ fi
 fi
 
-## Create Docker context and buildx builder
+# Create Docker context and buildx builder
 if ! docker context create "${docker_buildx_context}" &>/dev/null; then
-  echo "Error: Docker context creation for buildx failed" >&2
-  exit 1
+ echo "Error: Docker context creation for buildx failed" >&2
+ exit 1
 fi
 if ! docker buildx create --use --name "${kurtosis_docker_builder}" "${docker_buildx_context}" &>/dev/null; then
-  echo "Error: Docker context switch for buildx failed" >&2d
-  exit 1
+ echo "Error: Docker context switch for buildx failed" >&2d
+ exit 1
 fi
 
 ## Actually build the Docker image
-docker_buildx_cmd="docker buildx build ${push_flag} --platform ${buildx_platform_arg} ${image_tags_concatenated} -f ${dockerfile_filepath} ${dockerfile_dirpath}"
+if "${podman_mode}"; then
+  docker_buildx_cmd="sudo podman buildx build ${push_flag} --platform ${buildx_platform_arg} ${image_tags_concatenated} -f ${dockerfile_filepath} ${dockerfile_dirpath}"
+else
+  docker_buildx_cmd="sudo docker buildx build ${push_flag} --platform ${buildx_platform_arg} ${image_tags_concatenated} -f ${dockerfile_filepath} ${dockerfile_dirpath}"
+fi
 echo "Running the following docker buildx command:"
 echo "${docker_buildx_cmd}"
 if ! eval "${docker_buildx_cmd}"; then
@@ -107,11 +118,11 @@ fi
 # Cleanup context and buildx runner
 echo "Cleaning up remaining resources"
 if ! docker buildx rm "${kurtosis_docker_builder}" &>/dev/null; then
-  echo "Warn: Failed removing the buildx builder '${kurtosis_docker_builder}'. Try manually removing it with 'docker buildx rm ${kurtosis_docker_builder}'" >&2
-  exit 1
+ echo "Warn: Failed removing the buildx builder '${kurtosis_docker_builder}'. Try manually removing it with 'docker buildx rm ${kurtosis_docker_builder}'" >&2
+ exit 1
 fi
 if ! docker context rm "${docker_buildx_context}" &>/dev/null; then
-  echo "Warn: Failed removing the buildx context '${docker_buildx_context}'. Try manually removing it with 'docker context rm ${docker_buildx_context}'" >&2
-  exit 1
+ echo "Warn: Failed removing the buildx context '${docker_buildx_context}'. Try manually removing it with 'docker context rm ${docker_buildx_context}'" >&2
+ exit 1
 fi
 echo "Successfully built docker image"

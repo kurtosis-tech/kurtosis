@@ -2,8 +2,9 @@ package logs_collector_functions
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
 	"net"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
 
 	"github.com/docker/docker/api/types/volume"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
@@ -88,13 +89,14 @@ func getLogsCollectorObjectFromContainerInfo(
 			return nil, stacktrace.NewError("Couldn't parse '%v' network ip address string '%v' to an IP", enclaveNetworkId, enclaveNetworkIpAddress)
 		}
 
-		bridgeNetworkIpAddress, err = dockerManager.GetContainerIP(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn, containerId)
+		bridgeNetworkName := dockerManager.GetBridgeNetworkName()
+		bridgeNetworkIpAddress, err = dockerManager.GetContainerIP(ctx, bridgeNetworkName, containerId)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred while getting the '%v' network ip address of container '%v' in network", consts.NameOfNetworkToStartEngineAndLogServiceContainersIn, containerId)
+			return nil, stacktrace.Propagate(err, "An error occurred while getting the '%v' network ip address of container '%v' in network", bridgeNetworkName, containerId)
 		}
 		bridgeNetworkIpAddr = net.ParseIP(bridgeNetworkIpAddress)
 		if bridgeNetworkIpAddr == nil {
-			return nil, stacktrace.Propagate(err, "Couldn't parse '%v' network ip address string '%v' to ip", consts.NameOfNetworkToStartEngineAndLogServiceContainersIn, bridgeNetworkIpAddress)
+			return nil, stacktrace.Propagate(err, "Couldn't parse '%v' network ip address string '%v' to ip", bridgeNetworkName, bridgeNetworkIpAddress)
 		}
 	} else {
 		logsCollectorStatus = container.ContainerStatus_Stopped

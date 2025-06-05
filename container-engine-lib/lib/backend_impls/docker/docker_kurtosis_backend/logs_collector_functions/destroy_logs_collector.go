@@ -2,6 +2,7 @@ package logs_collector_functions
 
 import (
 	"context"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -9,7 +10,11 @@ import (
 )
 
 // DestroyLogsCollector Destroys the logs collector and its volume
-func DestroyLogsCollector(ctx context.Context, enclaveUuid enclave.EnclaveUUID, dockerManager *docker_manager.DockerManager) error {
+func DestroyLogsCollector(
+	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
+	dockerManager *docker_manager.DockerManager,
+) error {
 
 	enclaveNetworkId, err := shared_helpers.GetEnclaveNetworkByEnclaveUuid(ctx, enclaveUuid, dockerManager)
 	if err != nil {

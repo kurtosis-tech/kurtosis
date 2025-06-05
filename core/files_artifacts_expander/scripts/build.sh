@@ -21,6 +21,7 @@ DEFAULT_ARCHITECTURE_TO_BUILD="unknown"
 
 DOCKER_DEBUG_IMAGE_NAME_SUFFIX="debug"
 DEFAULT_DEBUG_IMAGE=false
+DEFAULT_PODMAN_MODE=false
 
 
 if [ "$uname_arch" == "x86_64" ] || [ "$uname_arch" == "amd64" ]; then
@@ -37,11 +38,12 @@ MAIN_BINARY_OUTPUT_FILEPATH="${expander_root_dirpath}/${BUILD_DIRNAME}/${MAIN_BI
 #                                       Arg Parsing & Validation
 # ==================================================================================================
 show_helptext_and_exit() {
-    echo "Usage: $(basename "${0}") skip_docker_image_building, architecture_to_build, debug_image..."
+    echo "Usage: $(basename "${0}") skip_docker_image_building, architecture_to_build, debug_image, podman_mode..."
     echo ""
     echo "  skip_docker_image_building     Whether build the Docker image"
     echo "  architecture_to_build          The desired architecture for the project's binaries"
     echo "  debug_image                    Whether images should contains the debug server and run in debug mode, this will use the Dockerfile.debug image to build the container"
+    echo "  podman_mode                    Whether images should be built with Podman instead of Docker. Use if you are developing Kurtosis on Podman cluster type"
     echo ""
     exit 1  # Exit with an error so that if this is accidentally called by CI, the script will fail
 }
@@ -59,6 +61,12 @@ fi
 debug_image="${3:-"${DEFAULT_DEBUG_IMAGE}"}"
 if [ "${debug_image}" != "true" ] && [ "${debug_image}" != "false" ]; then
     echo "Error: Invalid debug_image arg: '${debug_image}'" >&2
+    show_helptext_and_exit
+fi
+
+podman_mode="${4:-"${DEFAULT_PODMAN_MODE}"}"
+if [ "${podman_mode}" != "true" ] && [ "${podman_mode}" != "false" ]; then
+    echo "Error: Invalid podman_mode arg: '${podman_mode}'" >&2
     show_helptext_and_exit
 fi
 
@@ -115,7 +123,7 @@ if "${debug_image}"; then
 fi
 
 load_not_push_image=false
-docker_build_script_cmd="${git_repo_dirpath}/scripts/docker-image-builder.sh ${load_not_push_image} ${dockerfile_filepath} ${image_name}"
+docker_build_script_cmd="${git_repo_dirpath}/scripts/docker-image-builder.sh ${load_not_push_image} ${dockerfile_filepath} ${podman_mode} ${image_name}"
 if ! eval "${docker_build_script_cmd}"; then
   echo "Error: Docker build failed" >&2
 fi

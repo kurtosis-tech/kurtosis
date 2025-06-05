@@ -3,11 +3,12 @@ package user_service_functions
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/availability_checker"
 	"net"
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/availability_checker"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
@@ -131,6 +132,7 @@ func StartRegisteredUserServices(
 	freeIpProviderForEnclave *free_ip_addr_tracker.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
 	restartPolicy docker_manager.RestartPolicy,
+	shouldTurnOnLogsCollection bool,
 ) (
 	map[service.ServiceUUID]*service.Service,
 	map[service.ServiceUUID]error,
@@ -232,6 +234,7 @@ func StartRegisteredUserServices(
 		restartPolicy,
 		logsCollectorEnclaveAddr,
 		logsCollectorLabels,
+		shouldTurnOnLogsCollection,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while trying to start services in parallel.")
@@ -467,6 +470,7 @@ func runStartServiceOperationsInParallel(
 	restartPolicy docker_manager.RestartPolicy,
 	logsCollectorAddress string,
 	logsCollectorLabels []string,
+	shouldTurnOnLogsCollection bool,
 ) (
 	map[service.ServiceUUID]*service.Service,
 	map[service.ServiceUUID]error,
@@ -494,6 +498,7 @@ func runStartServiceOperationsInParallel(
 			restartPolicy,
 			logsCollectorAddress,
 			logsCollectorLabels,
+			shouldTurnOnLogsCollection,
 		)
 	}
 
@@ -530,6 +535,7 @@ func createStartServiceOperation(
 	restartPolicy docker_manager.RestartPolicy,
 	logsCollectorAddress string,
 	logsCollectorLabels []string,
+	shouldTurnOnLogsCollection bool,
 ) operation_parallelizer.Operation {
 	id := serviceRegistration.GetName()
 	privateIpAddr := serviceRegistration.GetPrivateIP()
@@ -675,16 +681,6 @@ func createStartServiceOperation(
 			}
 		}
 
-		if logsCollectorAddress == "" {
-			return nil, stacktrace.NewError("Expected to have a logs collector server address value to send the user service logs, but it is empty")
-		}
-
-		// The container will be configured to send the logs to the Fluentbit logs collector server
-		fluentdLoggingDriverCnfg := docker_manager.NewFluentdLoggingDriver(
-			logsCollectorAddress,
-			logsCollectorLabels,
-		)
-
 		createAndStartArgsBuilder := docker_manager.NewCreateAndStartContainerArgsBuilder(
 			containerImageName,
 			containerName.GetString(),
@@ -709,13 +705,26 @@ func createStartServiceOperation(
 			tiniEnabled,
 		).WithVolumeMounts(
 			volumeMounts,
-		).WithLoggingDriver(
-			fluentdLoggingDriverCnfg,
 		).WithRestartPolicy(
 			restartPolicy,
 		).WithUser(
 			user,
 		)
+
+		if shouldTurnOnLogsCollection {
+			if logsCollectorAddress == "" {
+				return nil, stacktrace.NewError("Expected to have a logs collector server address value to send the user service logs, but it is empty")
+			}
+
+			// The container will be configured to send the logs to the Fluentbit logs collector server
+			fluentdLoggingDriverCnfg := docker_manager.NewFluentdLoggingDriver(
+				logsCollectorAddress,
+				logsCollectorLabels,
+			)
+			createAndStartArgsBuilder.WithLoggingDriver(
+				fluentdLoggingDriverCnfg,
+			)
+		}
 
 		if entrypointArgs != nil {
 			createAndStartArgsBuilder.WithEntrypointArgs(entrypointArgs)
