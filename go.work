@@ -12,6 +12,7 @@ use (
 	./core/launcher
 	./core/server
 	./enclave-manager/api/golang
+	./enclave-manager/local
 	./enclave-manager/server
 	./engine/launcher
 	./engine/server
