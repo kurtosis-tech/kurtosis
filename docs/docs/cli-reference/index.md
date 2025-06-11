@@ -68,7 +68,7 @@ This flag sets the level of details that the Kurtosis CLI will print logs with -
 `panic|fatal|error|warning|info|debug|trace`. For example, logs with error level can be printed using the command below:-
 
 ```
-kurtosis run --cli-level-log debug github.com/package-author/package-repo 
+kurtosis run --cli-log-level debug github.com/package-author/package-repo 
 ```
 
 <details>
