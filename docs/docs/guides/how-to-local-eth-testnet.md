@@ -24,7 +24,7 @@ In this guide, the Kurtosis ethereum-package spins up a local Ethereum testnet w
 ## Setting up Kurtosis
 
 Before you proceed, make sure you have:
-* [Installed and started the Docker engine](https://docs.kurtosis.com/next/install#i-install--start-docker) on your local machine
+* [Installed and started the Docker engine](https://docs.kurtosis.com/install/#i-install--start-docker) on your local machine
 * [Installed the Kurtosis CLI](https://docs.kurtosis.com/next/install#ii-install-the-cli) (or upgraded it to the latest release, if you already have the CLI installed)
 * Installed [Node.js](https://nodejs.org/en), [yarn](https://classic.yarnpkg.com/lang/en/docs/install/#mac-stable), and [npx](https://www.npmjs.com/package/npx) (for your dApp environment)
 
