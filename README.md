@@ -265,6 +265,14 @@ To build the entire project, run:
 ./scripts/build.sh
 ```
 
+**Note:** If you encounter module import errors related to `github.com/kurtosis-tech/kurtosis/kurtosis_version`, you may need to generate the version constants first:
+
+```bash
+./scripts/generate-kurtosis-version.sh
+```
+
+This script generates the required `kurtosis_version.go` file that contains version constants used throughout the codebase. The file is automatically generated during the build process, but may need to be run manually in some development scenarios.
+
 To only build a specific project, run the script on `./PROJECT/PATH/script/build.sh`, for example:
 
 ```bash
