@@ -498,7 +498,7 @@ func getApiContainerObjectFromContainerInfo(
 	}
 
 	bridgeNetworkIpAddressAddr := net.ParseIP(bridgeNetworkIpAddress)
-	if privateIpAddr == nil {
+	if bridgeNetworkIpAddressAddr == nil {
 		return nil, stacktrace.NewError("Couldn't parse bridge network IP address string '%v' to an IP", bridgeNetworkIpAddressAddr)
 	}
 
