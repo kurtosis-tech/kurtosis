@@ -372,6 +372,8 @@ func NewServiceInfo(
 	nodeSelectors map[string]string,
 	labels map[string]string,
 	tiniEnabled bool,
+	ttyEnabled bool,
+
 ) *kurtosis_core_rpc_api_bindings.ServiceInfo {
 	return &kurtosis_core_rpc_api_bindings.ServiceInfo{
 		ServiceUuid:                         uuid,
@@ -393,6 +395,7 @@ func NewServiceInfo(
 		NodeSelectors:                       nodeSelectors,
 		Labels:                              labels,
 		TiniEnabled:                         &tiniEnabled,
+		TtyEnabled:                          &ttyEnabled,
 	}
 }
 

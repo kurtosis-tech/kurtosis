@@ -2,8 +2,9 @@ package services
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"strings"
+
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 )
 
 type FilesArtifactUUID string
@@ -47,6 +48,7 @@ type ServiceConfig struct {
 	Labels                      map[string]string   `json:"labels,omitempty" yaml:"labels,omitempty"`
 	NodeSelectors               map[string]string   `json:"node_selectors,omitempty" yaml:"node_selectors,omitempty"`
 	TiniEnabled                 *bool               `json:"tini_enabled,omitempty" yaml:"tini_enabled,omitempty"`
+	TtyEnabled                  *bool               `json:"tty_enabled,omitempty" yaml:"tty_enabled,omitempty"`
 }
 
 func portToStarlark(port *kurtosis_core_rpc_api_bindings.Port) string {
@@ -152,6 +154,7 @@ func GetFullServiceConfigStarlark(
 	nodeSelectors map[string]string,
 	labels map[string]string,
 	tiniEnabled *bool,
+	ttyEnabled *bool,
 	privateIpAddrPlaceholder string,
 ) string {
 	starlarkFields := []string{}
@@ -267,6 +270,11 @@ func GetFullServiceConfigStarlark(
 	// Tini
 	if tiniEnabled != nil && !*tiniEnabled {
 		starlarkFields = append(starlarkFields, `tini_enabled=False`)
+	}
+
+	// TTY
+	if ttyEnabled != nil && *ttyEnabled {
+		starlarkFields = append(starlarkFields, `tty_enabled=True`)
 	}
 
 	return fmt.Sprintf("ServiceConfig(%s)", strings.Join(starlarkFields, ", "))

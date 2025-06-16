@@ -247,6 +247,11 @@ export class ServiceInfo extends jspb.Message {
   hasTiniEnabled(): boolean;
   clearTiniEnabled(): ServiceInfo;
 
+  getTtyEnabled(): boolean;
+  setTtyEnabled(value: boolean): ServiceInfo;
+  hasTtyEnabled(): boolean;
+  clearTtyEnabled(): ServiceInfo;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServiceInfo.AsObject;
   static toObject(includeInstance: boolean, msg: ServiceInfo): ServiceInfo.AsObject;
@@ -276,6 +281,7 @@ export namespace ServiceInfo {
     nodeSelectorsMap: Array<[string, string]>,
     labelsMap: Array<[string, string]>,
     tiniEnabled?: boolean,
+    ttyEnabled?: boolean,
   }
 
   export enum UserCase { 
@@ -286,6 +292,11 @@ export namespace ServiceInfo {
   export enum TiniEnabledCase { 
     _TINI_ENABLED_NOT_SET = 0,
     TINI_ENABLED = 19,
+  }
+
+  export enum TtyEnabledCase { 
+    _TTY_ENABLED_NOT_SET = 0,
+    TTY_ENABLED = 20,
   }
 }
 

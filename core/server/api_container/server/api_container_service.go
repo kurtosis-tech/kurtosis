@@ -12,6 +12,15 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
+	"io"
+	"math"
+	"net/http"
+	"os"
+	"path"
+	"strings"
+	"time"
+	"unicode"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/docker_compose_transpiler"
@@ -21,14 +30,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_run"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/git_package_content_provider"
-	"io"
-	"math"
-	"net/http"
-	"os"
-	"path"
-	"strings"
-	"time"
-	"unicode"
 
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 
@@ -1187,6 +1188,7 @@ func getServiceInfoFromServiceObj(serviceObj *service.Service, serviceConfig *se
 		serviceConfig.GetNodeSelectors(),
 		serviceConfig.GetLabels(),
 		serviceConfig.GetTiniEnabled(),
+		serviceConfig.GetTtyEnabled(),
 	)
 
 	return serviceInfoResponse, nil

@@ -40,6 +40,7 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				Labels:                      nil,
 				NodeSelectors:               nil,
 				TiniEnabled:                 nil,
+				TtyEnabled:                  nil,
 			},
 			overrideConfig: &services.ServiceConfig{
 				Image:      "new-image",
@@ -66,6 +67,7 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				Labels:                      nil,
 				NodeSelectors:               nil,
 				TiniEnabled:                 nil,
+				TtyEnabled:                  nil,
 			},
 			expectedUpdatedConfig: &services.ServiceConfig{
 				Image:      "new-image",
@@ -98,6 +100,7 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				Labels:                      nil,
 				NodeSelectors:               nil,
 				TiniEnabled:                 nil,
+				TtyEnabled:                  nil,
 			},
 		},
 		{
@@ -127,6 +130,7 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				Labels:                      nil,
 				NodeSelectors:               nil,
 				TiniEnabled:                 nil,
+				TtyEnabled:                  nil,
 			},
 			overrideConfig: &services.ServiceConfig{
 				Image:                       "",
@@ -146,6 +150,7 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				Labels:                      nil,
 				NodeSelectors:               nil,
 				TiniEnabled:                 nil,
+				TtyEnabled:                  nil,
 			},
 			expectedUpdatedConfig: &services.ServiceConfig{
 				Image:      "base-image",
@@ -171,6 +176,7 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				Labels:                      nil,
 				NodeSelectors:               nil,
 				TiniEnabled:                 nil,
+				TtyEnabled:                  nil,
 			},
 		},
 		{
@@ -200,6 +206,7 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				Labels:                      nil,
 				NodeSelectors:               nil,
 				TiniEnabled:                 nil,
+				TtyEnabled:                  nil,
 			},
 			overrideConfig: &services.ServiceConfig{
 				Image: "",
@@ -226,6 +233,7 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				Labels:                      nil,
 				NodeSelectors:               nil,
 				TiniEnabled:                 nil,
+				TtyEnabled:                  nil,
 			},
 			expectedUpdatedConfig: &services.ServiceConfig{
 				Image: "original",
@@ -252,6 +260,7 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				Labels:                      nil,
 				NodeSelectors:               nil,
 				TiniEnabled:                 nil,
+				TtyEnabled:                  nil,
 			},
 		},
 	}
