@@ -7,9 +7,9 @@ import (
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/verify"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
@@ -306,7 +306,7 @@ func (builtin *WaitCapabilities) Description() string {
 }
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
-func (builtin *WaitCapabilities) UpdateDependencyGraph(dependencyGraph *instructions_plan.InstructionsDependencyGraph) error {
+func (builtin *WaitCapabilities) UpdateDependencyGraph(dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
 	// TODO: Implement dependency graph updates for wait instruction
 	return nil
 }

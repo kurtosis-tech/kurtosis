@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -105,7 +105,7 @@ func (builtin *GetFilesArtifactCapabilities) Description() string {
 }
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
-func (builtin *GetFilesArtifactCapabilities) UpdateDependencyGraph(dependencyGraph *instructions_plan.InstructionsDependencyGraph) error {
+func (builtin *GetFilesArtifactCapabilities) UpdateDependencyGraph(dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
 	// TODO: Implement dependency graph updates for get_files_artifact instruction
 	return nil
 }

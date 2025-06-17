@@ -5,9 +5,9 @@ import (
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
@@ -104,7 +104,7 @@ func (builtin *kurtosisPlanInstructionInternal) UpdatePlan(plan *plan_yaml.PlanY
 	return builtin.capabilities.UpdatePlan(plan)
 }
 
-func (builtin *kurtosisPlanInstructionInternal) UpdateDependencyGraph(dependencyGraph *instructions_plan.InstructionsDependencyGraph) error {
+func (builtin *kurtosisPlanInstructionInternal) UpdateDependencyGraph(dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
 	return builtin.capabilities.UpdateDependencyGraph(dependencyGraph)
 }
 

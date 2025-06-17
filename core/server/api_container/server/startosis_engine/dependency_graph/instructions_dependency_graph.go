@@ -1,4 +1,8 @@
-package instructions_plan
+package dependency_graph
+
+// TODO: This mirror the ScheduledInstructionUuid in instructions_plan.go
+// It should be merged into a single type by refactoring the instructions_plan package to avoid circular dependencies
+type ScheduledInstructionUuid string
 
 type InstructionsDependencyGraph struct {
 	instructionsDependencies map[ScheduledInstructionUuid][]ScheduledInstructionUuid
@@ -18,7 +22,10 @@ type InstructionsDependencyGraph struct {
 
 func NewInstructionsDependencyGraph() *InstructionsDependencyGraph {
 	return &InstructionsDependencyGraph{
-		instructionsDependencies: map[ScheduledInstructionUuid][]ScheduledInstructionUuid{},
+		instructionsDependencies:         map[ScheduledInstructionUuid][]ScheduledInstructionUuid{},
+		filesArtifactToIntructionMap:     map[string]ScheduledInstructionUuid{},
+		serviceNamesToInstructionMap:     map[string]ScheduledInstructionUuid{},
+		futureReferencesToInstructionMap: map[string]ScheduledInstructionUuid{},
 	}
 }
 

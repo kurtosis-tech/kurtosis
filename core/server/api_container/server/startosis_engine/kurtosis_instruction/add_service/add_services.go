@@ -3,9 +3,14 @@ package add_service
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"strings"
+	"sync"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
@@ -22,9 +27,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
-	"reflect"
-	"strings"
-	"sync"
 )
 
 const (
@@ -373,6 +375,12 @@ func (builtin *AddServicesCapabilities) allServicesReadinessCheck(
 func (builtin *AddServicesCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerator) error {
 	// TOOD: Implement
 	logrus.Warn("ADD SERVICES NOT IMPLEMENTED YET FOR UPDATING PLAN YAML.")
+	return nil
+}
+
+func (builtin *AddServicesCapabilities) UpdateDependencyGraph(dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+	// TOOD: Implement
+	logrus.Warn("ADD SERVICES NOT IMPLEMENTED YET FOR UPDATING DEPENDENCY GRAPH.")
 	return nil
 }
 

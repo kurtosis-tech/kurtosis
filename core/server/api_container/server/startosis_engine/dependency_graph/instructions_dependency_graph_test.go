@@ -1,4 +1,4 @@
-package instructions_plan
+package dependency_graph
 
 import (
 	"testing"

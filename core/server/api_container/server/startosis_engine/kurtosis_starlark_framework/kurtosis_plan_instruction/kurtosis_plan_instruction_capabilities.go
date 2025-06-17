@@ -3,9 +3,9 @@ package kurtosis_plan_instruction
 import (
 	"context"
 
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
@@ -33,5 +33,5 @@ type KurtosisPlanInstructionCapabilities interface {
 	UpdatePlan(plan *plan_yaml.PlanYamlGenerator) error
 
 	// UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
-	UpdateDependencyGraph(dependencyGraph *instructions_plan.InstructionsDependencyGraph) error
+	UpdateDependencyGraph(dependencyGraph *dependency_graph.InstructionsDependencyGraph) error
 }

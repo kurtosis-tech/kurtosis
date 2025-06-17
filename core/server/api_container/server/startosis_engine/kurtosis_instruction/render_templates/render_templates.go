@@ -8,9 +8,9 @@ import (
 
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/render_templates"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -193,7 +193,7 @@ func (builtin *RenderTemplatesCapabilities) Description() string {
 }
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
-func (builtin *RenderTemplatesCapabilities) UpdateDependencyGraph(dependencyGraph *instructions_plan.InstructionsDependencyGraph) error {
+func (builtin *RenderTemplatesCapabilities) UpdateDependencyGraph(dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
 	// TODO: Implement dependency graph updates for render_templates instruction
 	return nil
 }
