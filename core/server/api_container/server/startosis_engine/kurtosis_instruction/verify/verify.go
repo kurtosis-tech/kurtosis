@@ -3,8 +3,12 @@ package verify
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"strings"
+
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -16,8 +20,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 	"go.starlark.net/syntax"
-	"reflect"
-	"strings"
 )
 
 const (
@@ -168,6 +170,12 @@ func (builtin *VerifyCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerator)
 
 func (builtin *VerifyCapabilities) Description() string {
 	return builtin.description
+}
+
+// UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
+func (builtin *VerifyCapabilities) UpdateDependencyGraph(dependencyGraph *instructions_plan.InstructionsDependencyGraph) error {
+	// TODO: Implement dependency graph updates for verify instruction
+	return nil
 }
 
 // Verify verifies whether the currentValue matches the targetValue w.r.t. the assertion operator

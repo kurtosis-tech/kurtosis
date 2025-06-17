@@ -22,6 +22,8 @@ type InstructionsPlan struct {
 
 	instructionsSequence []ScheduledInstructionUuid
 
+	instructionsDependencies *InstructionsDependencyGraph
+
 	// list of package names that this instructions plan relies on
 	packageDependencies map[string]bool
 }
@@ -31,6 +33,7 @@ func NewInstructionsPlan() *InstructionsPlan {
 		indexOfFirstInstruction:    0,
 		scheduledInstructionsIndex: map[ScheduledInstructionUuid]*ScheduledInstruction{},
 		instructionsSequence:       []ScheduledInstructionUuid{},
+		instructionsDependencies:   NewInstructionsDependencyGraph(),
 		packageDependencies:        map[string]bool{},
 	}
 }
@@ -54,6 +57,10 @@ func (plan *InstructionsPlan) AddInstruction(instruction kurtosis_instruction.Ku
 
 	plan.scheduledInstructionsIndex[scheduledInstructionUuid] = scheduledInstruction
 	plan.instructionsSequence = append(plan.instructionsSequence, scheduledInstructionUuid)
+
+	// update the dependency graph with the effects of the adding this instruction the plan
+	instruction.UpdateDependencyGraph(plan.instructionsDependencies)
+
 	return nil
 }
 
@@ -78,6 +85,10 @@ func (plan *InstructionsPlan) GeneratePlan() ([]*ScheduledInstruction, *startosi
 		generatedPlan = append(generatedPlan, instruction)
 	}
 	return generatedPlan, nil
+}
+
+func (plan *InstructionsPlan) GenerateInstructionsDependencyGraph() map[ScheduledInstructionUuid][]ScheduledInstructionUuid {
+	return plan.instructionsDependencies.GetDependencyGraph()
 }
 
 // GenerateYaml takes in an existing planYaml (usually empty) and returns a yaml string containing the effects of the plan

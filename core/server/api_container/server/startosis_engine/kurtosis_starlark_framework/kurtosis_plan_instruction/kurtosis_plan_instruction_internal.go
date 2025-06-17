@@ -2,10 +2,12 @@ package kurtosis_plan_instruction
 
 import (
 	"context"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
@@ -100,6 +102,10 @@ func (builtin *kurtosisPlanInstructionInternal) GetPersistableAttributes() *encl
 
 func (builtin *kurtosisPlanInstructionInternal) UpdatePlan(plan *plan_yaml.PlanYamlGenerator) error {
 	return builtin.capabilities.UpdatePlan(plan)
+}
+
+func (builtin *kurtosisPlanInstructionInternal) UpdateDependencyGraph(dependencyGraph *instructions_plan.InstructionsDependencyGraph) error {
+	return builtin.capabilities.UpdateDependencyGraph(dependencyGraph)
 }
 
 func (builtin *kurtosisPlanInstructionInternal) interpret() (starlark.Value, *startosis_errors.InterpretationError) {
