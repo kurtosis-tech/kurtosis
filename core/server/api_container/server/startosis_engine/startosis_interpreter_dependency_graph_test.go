@@ -75,7 +75,7 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TearDownTest() {
 	suite.packageContentProvider.RemoveAll()
 }
 
-func (suite *StartosisIntepreterPlanYamlGeneratorTestSuite) TestAddSingleServiceToDependencyGraph() {
+func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddSingleServiceToDependencyGraph() {
 	script := `def run(plan):
 	config = ServiceConfig(
 		image = "ubuntu",

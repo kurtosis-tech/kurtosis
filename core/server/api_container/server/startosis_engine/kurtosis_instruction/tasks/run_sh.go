@@ -378,8 +378,8 @@ func (builtin *RunShCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerator) 
 	return nil
 }
 
-func (builtin *RunShCapabilities) UpdateDependencyGraph(dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
-	// TODO
+func (builtin *RunShCapabilities) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+	// TODO: Implement dependency graph updates for run_sh instruction
 	return nil
 }
 

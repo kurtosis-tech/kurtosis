@@ -378,7 +378,7 @@ func (builtin *AddServicesCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGener
 	return nil
 }
 
-func (builtin *AddServicesCapabilities) UpdateDependencyGraph(dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+func (builtin *AddServicesCapabilities) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
 	// TOOD: Implement
 	logrus.Warn("ADD SERVICES NOT IMPLEMENTED YET FOR UPDATING DEPENDENCY GRAPH.")
 	return nil

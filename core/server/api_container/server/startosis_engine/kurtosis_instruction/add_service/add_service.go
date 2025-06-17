@@ -327,8 +327,40 @@ func (builtin *AddServiceCapabilities) Description() string {
 	return builtin.description
 }
 
-// UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
-func (builtin *AddServiceCapabilities) UpdateDependencyGraph(dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
-	// TODO: Implement dependency graph updates for add_service instruction
+// UpdateDependencyGraph updates the dependency graph with the effects of running this instruction
+func (builtin *AddServiceCapabilities) UpdateDependencyGraph(instructionsUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+	// store the outputs of this instruction in the dependency graph
+
+	// add service outputs:
+	// - service.name
+	dependencyGraph.StoreServiceName(string(builtin.serviceName), instructionsUuid)
+
+	// - service.ip_addresss
+	ipAddress, err := builtin.returnValue.GetIpAddress()
+	if err != nil {
+		return stacktrace.NewError("An error occurred updating the plan with ip address from services: %v", builtin.serviceName)
+	}
+	dependencyGraph.StoreFutureReference(ipAddress, instructionsUuid)
+
+	// TODO: figure out how to store ports as they're technically future references
+	// - service.ports
+
+	// find the outputs that this instruction depends on
+	// add service can depend on:
+	// - files artifacts in files
+	// for _, filesArtifactNames := range builtin.serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
+	// 	for _, filesArtifactName := range filesArtifactNames {
+	// 		dependencyGraph.DependsOnFilesArtifact(instructionsUuid, filesArtifactName)
+	// 	}
+	// }
+
+	// - future references in entrypoint, cmd, env vars
+	// if the value from this env var contains a future reference, then store it in the dependency graph
+	// for _, v := range builtin.serviceConfig.GetEnvVars() {
+	// 	if strings.Contains(v, "${") {
+	// 		dependencyGraph.DependsOnFutureReference(instructionsUuid, v)
+	// 	}
+	// }
+
 	return nil
 }

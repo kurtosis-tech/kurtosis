@@ -425,7 +425,7 @@ func (builtin *RunPythonCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerat
 	return nil
 }
 
-func (builtin *RunPythonCapabilities) UpdateDependencyGraph(dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+func (builtin *RunPythonCapabilities) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
 	// TODO
 	return nil
 }

@@ -104,8 +104,8 @@ func (builtin *kurtosisPlanInstructionInternal) UpdatePlan(plan *plan_yaml.PlanY
 	return builtin.capabilities.UpdatePlan(plan)
 }
 
-func (builtin *kurtosisPlanInstructionInternal) UpdateDependencyGraph(dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
-	return builtin.capabilities.UpdateDependencyGraph(dependencyGraph)
+func (builtin *kurtosisPlanInstructionInternal) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+	return builtin.capabilities.UpdateDependencyGraph(instructionUuid, dependencyGraph)
 }
 
 func (builtin *kurtosisPlanInstructionInternal) interpret() (starlark.Value, *startosis_errors.InterpretationError) {

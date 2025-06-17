@@ -302,13 +302,13 @@ func (_c *MockKurtosisInstruction_TryResolveWith_Call) RunAndReturn(run func(*en
 	return _c
 }
 
-// UpdateDependencyGraph provides a mock function with given fields: dependencyGraph
-func (_m *MockKurtosisInstruction) UpdateDependencyGraph(dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
-	ret := _m.Called(dependencyGraph)
+// UpdateDependencyGraph provides a mock function with given fields: instructionUuid, dependencyGraph
+func (_m *MockKurtosisInstruction) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+	ret := _m.Called(instructionUuid, dependencyGraph)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*dependency_graph.InstructionsDependencyGraph) error); ok {
-		r0 = rf(dependencyGraph)
+	if rf, ok := ret.Get(0).(func(dependency_graph.ScheduledInstructionUuid, *dependency_graph.InstructionsDependencyGraph) error); ok {
+		r0 = rf(instructionUuid, dependencyGraph)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -322,14 +322,15 @@ type MockKurtosisInstruction_UpdateDependencyGraph_Call struct {
 }
 
 // UpdateDependencyGraph is a helper method to define mock.On call
+//   - instructionUuid dependency_graph.ScheduledInstructionUuid
 //   - dependencyGraph *dependency_graph.InstructionsDependencyGraph
-func (_e *MockKurtosisInstruction_Expecter) UpdateDependencyGraph(dependencyGraph interface{}) *MockKurtosisInstruction_UpdateDependencyGraph_Call {
-	return &MockKurtosisInstruction_UpdateDependencyGraph_Call{Call: _e.mock.On("UpdateDependencyGraph", dependencyGraph)}
+func (_e *MockKurtosisInstruction_Expecter) UpdateDependencyGraph(instructionUuid interface{}, dependencyGraph interface{}) *MockKurtosisInstruction_UpdateDependencyGraph_Call {
+	return &MockKurtosisInstruction_UpdateDependencyGraph_Call{Call: _e.mock.On("UpdateDependencyGraph", instructionUuid, dependencyGraph)}
 }
 
-func (_c *MockKurtosisInstruction_UpdateDependencyGraph_Call) Run(run func(dependencyGraph *dependency_graph.InstructionsDependencyGraph)) *MockKurtosisInstruction_UpdateDependencyGraph_Call {
+func (_c *MockKurtosisInstruction_UpdateDependencyGraph_Call) Run(run func(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph)) *MockKurtosisInstruction_UpdateDependencyGraph_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*dependency_graph.InstructionsDependencyGraph))
+		run(args[0].(dependency_graph.ScheduledInstructionUuid), args[1].(*dependency_graph.InstructionsDependencyGraph))
 	})
 	return _c
 }
@@ -339,7 +340,7 @@ func (_c *MockKurtosisInstruction_UpdateDependencyGraph_Call) Return(_a0 error) 
 	return _c
 }
 
-func (_c *MockKurtosisInstruction_UpdateDependencyGraph_Call) RunAndReturn(run func(*dependency_graph.InstructionsDependencyGraph) error) *MockKurtosisInstruction_UpdateDependencyGraph_Call {
+func (_c *MockKurtosisInstruction_UpdateDependencyGraph_Call) RunAndReturn(run func(dependency_graph.ScheduledInstructionUuid, *dependency_graph.InstructionsDependencyGraph) error) *MockKurtosisInstruction_UpdateDependencyGraph_Call {
 	_c.Call.Return(run)
 	return _c
 }

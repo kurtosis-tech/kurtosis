@@ -30,22 +30,62 @@ func NewInstructionsDependencyGraph() *InstructionsDependencyGraph {
 }
 
 func (graph *InstructionsDependencyGraph) StoreFutureReference(futureReference string, instruction ScheduledInstructionUuid) {
+	graph.addInstruction(instruction)
 	graph.futureReferencesToInstructionMap[futureReference] = instruction
 }
 
-func (graph *InstructionsDependencyGraph) StoreService(serviceName string, instruction ScheduledInstructionUuid) {
+func (graph *InstructionsDependencyGraph) StoreServiceName(serviceName string, instruction ScheduledInstructionUuid) {
+	graph.addInstruction(instruction)
 	graph.serviceNamesToInstructionMap[serviceName] = instruction
 }
 
-func (graph *InstructionsDependencyGraph) StoreFileArtifact(fileArtifactName string, instruction ScheduledInstructionUuid) {
-	graph.filesArtifactToIntructionMap[fileArtifactName] = instruction
+func (graph *InstructionsDependencyGraph) StoreFileArtifact(filesArtifactName string, instruction ScheduledInstructionUuid) {
+	graph.addInstruction(instruction)
+	graph.filesArtifactToIntructionMap[filesArtifactName] = instruction
 }
 
-func (graph *InstructionsDependencyGraph) AddDependency(instruction ScheduledInstructionUuid, dependency ScheduledInstructionUuid) {
+// if [instruction] depends on [filesArtifactName] then the instruction that outputs [fileArtifactName] is stored as a dependency of [instruction]
+func (graph *InstructionsDependencyGraph) DependsOnFilesArtifact(instruction ScheduledInstructionUuid, filesArtifactName string) {
+	instructionThatOutputFileArtifact, ok := graph.filesArtifactToIntructionMap[filesArtifactName]
+	if !ok {
+		panic("smth went wrong")
+	}
+	graph.addDependency(instruction, instructionThatOutputFileArtifact)
+}
+
+// if [instruction] depends on [futureReference] then the instruction that outputs [futureReference] is stored as a dependency of [instruction]
+func (graph *InstructionsDependencyGraph) DependsOnFutureReference(instruction ScheduledInstructionUuid, futureReference string) {
+	instructionThatOutputFutureReference, ok := graph.futureReferencesToInstructionMap[futureReference]
+	if !ok {
+		panic("smth went wrong")
+	}
+	graph.addDependency(instruction, instructionThatOutputFutureReference)
+}
+
+// if [instruction] depends on [serviceName] then the instruction that outputs [serviceName] is stored as a dependency of [instruction]
+func (graph *InstructionsDependencyGraph) DependsOnService(instruction ScheduledInstructionUuid, serviceName string) {
+	instructionThatOutputService, ok := graph.serviceNamesToInstructionMap[serviceName]
+	if !ok {
+		panic("smth went wrong")
+	}
+	graph.addDependency(instruction, instructionThatOutputService)
+}
+
+// if [instruction] depends on [dependency] then [dependency] is stored as a dependency of [instruction]
+func (graph *InstructionsDependencyGraph) DependsOnInstruction(instruction ScheduledInstructionUuid, dependency ScheduledInstructionUuid) {
+	graph.addDependency(instruction, dependency)
+}
+
+func (graph *InstructionsDependencyGraph) addDependency(instruction ScheduledInstructionUuid, dependency ScheduledInstructionUuid) {
+	graph.addInstruction(instruction)
+	graph.addInstruction(dependency)
+	graph.instructionsDependencies[instruction] = append(graph.instructionsDependencies[instruction], dependency)
+}
+
+func (graph *InstructionsDependencyGraph) addInstruction(instruction ScheduledInstructionUuid) {
 	if _, ok := graph.instructionsDependencies[instruction]; !ok {
 		graph.instructionsDependencies[instruction] = []ScheduledInstructionUuid{}
 	}
-	graph.instructionsDependencies[instruction] = append(graph.instructionsDependencies[instruction], dependency)
 }
 
 func (graph *InstructionsDependencyGraph) GetDependencyGraph() map[ScheduledInstructionUuid][]ScheduledInstructionUuid {

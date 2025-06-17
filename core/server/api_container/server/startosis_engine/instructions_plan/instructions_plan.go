@@ -1,12 +1,15 @@
 package instructions_plan
 
 import (
+	"strconv"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 )
 
@@ -27,6 +30,8 @@ type InstructionsPlan struct {
 
 	// list of package names that this instructions plan relies on
 	packageDependencies map[string]bool
+
+	instructionCount int
 }
 
 func NewInstructionsPlan() *InstructionsPlan {
@@ -36,6 +41,7 @@ func NewInstructionsPlan() *InstructionsPlan {
 		instructionsSequence:       []ScheduledInstructionUuid{},
 		instructionsDependencies:   dependency_graph.NewInstructionsDependencyGraph(),
 		packageDependencies:        map[string]bool{},
+		instructionCount:           0,
 	}
 }
 
@@ -48,6 +54,8 @@ func (plan *InstructionsPlan) GetIndexOfFirstInstruction() int {
 }
 
 func (plan *InstructionsPlan) AddInstruction(instruction kurtosis_instruction.KurtosisInstruction, returnedValue starlark.Value) error {
+	// TODO: this is a temporary solution to generate a unique uuid for each instruction for the dependency graph
+	plan.instructionCount++
 	generatedUuid, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
 		return stacktrace.Propagate(err, "Unable to generate a random UUID for instruction '%s' to add it to the plan", instruction.String())
@@ -60,7 +68,9 @@ func (plan *InstructionsPlan) AddInstruction(instruction kurtosis_instruction.Ku
 	plan.instructionsSequence = append(plan.instructionsSequence, scheduledInstructionUuid)
 
 	// update the dependency graph with the effects of the adding this instruction the plan
-	instruction.UpdateDependencyGraph(plan.instructionsDependencies)
+	logrus.Infof("Updating dependency graph with instruction: %v", scheduledInstructionUuid)
+	instruction.UpdateDependencyGraph(dependency_graph.ScheduledInstructionUuid(strconv.Itoa(plan.instructionCount)), plan.instructionsDependencies)
+	// instruction.UpdateDependencyGraph(dependency_graph.ScheduledInstructionUuid(scheduledInstructionUuid), plan.instructionsDependencies)
 
 	return nil
 }

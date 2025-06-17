@@ -40,6 +40,6 @@ type KurtosisInstruction interface {
 	// UpdatePlan updates the plan with the effects of running this instruction.
 	UpdatePlan(plan *plan_yaml.PlanYamlGenerator) error
 
-	// UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
-	UpdateDependencyGraph(dependencyGraph *dependency_graph.InstructionsDependencyGraph) error
+	// UpdateDependencyGraph updates the dependency graph with the effects of running this instruction
+	UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error
 }
