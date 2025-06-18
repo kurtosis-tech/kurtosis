@@ -506,7 +506,7 @@ func getApiContainerObjectFromContainerInfo(
 			return nil, stacktrace.NewError("Couldn't parse bridge network IP address string '%v' to an IP", bridgeNetworkIpAddrStr)
 		}
 	} else {
-		logrus.Debugf("Received empty bridge network IP address for API container '%v' when attempting to onvert to an object. APIContainer is not connected to the bridge network.", containerId)
+		logrus.Debugf("Received empty bridge network IP address for API container '%v' when attempting to convert to APIC info to object. This APIContainer is likely not connected to the bridge network.", containerId)
 	}
 
 	privateGrpcPortSpec, err := getPrivateApiContainerPorts(labels)
