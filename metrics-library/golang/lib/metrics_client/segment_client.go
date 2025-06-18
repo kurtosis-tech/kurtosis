@@ -1,14 +1,15 @@
 package metrics_client
 
 import (
+	"runtime"
+	"strconv"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/event"
 	metrics_source "github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/source"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/segmentio/backo-go"
 	"gopkg.in/segmentio/analytics-go.v3"
-	"runtime"
-	"strconv"
-	"time"
 )
 
 const (
@@ -137,8 +138,8 @@ func (segment *segmentClient) TrackDestroyEnclave(enclaveId string) error {
 	return nil
 }
 
-func (segment *segmentClient) TrackKurtosisRun(packageId string, isRemote bool, isDryRun bool, isScript bool) error {
-	newEvent := event.NewKurtosisRunEvent(packageId, isRemote, isDryRun, isScript)
+func (segment *segmentClient) TrackKurtosisRun(packageId string, isRemote bool, isDryRun bool, isScript bool, serializedParams string) error {
+	newEvent := event.NewKurtosisRunEvent(packageId, isRemote, isDryRun, isScript, serializedParams)
 	if err := segment.track(newEvent); err != nil {
 		return stacktrace.Propagate(err, "An error occurred tracking run kurtosis event")
 	}
@@ -169,8 +170,8 @@ func (segment *segmentClient) TrackStopService(enclaveId string, serviceId strin
 	return nil
 }
 
-func (segment *segmentClient) TrackKurtosisRunFinishedEvent(packageId string, numberOfServices int, isSuccess bool) error {
-	newEvent := event.NewKurtosisRunFinishedEvent(packageId, numberOfServices, isSuccess)
+func (segment *segmentClient) TrackKurtosisRunFinishedEvent(packageId string, numberOfServices int, isSuccess bool, serializedParams string) error {
+	newEvent := event.NewKurtosisRunFinishedEvent(packageId, numberOfServices, isSuccess, serializedParams)
 	if err := segment.track(newEvent); err != nil {
 		return stacktrace.Propagate(err, "An error occurred tracking kurtosis run finished event")
 	}
