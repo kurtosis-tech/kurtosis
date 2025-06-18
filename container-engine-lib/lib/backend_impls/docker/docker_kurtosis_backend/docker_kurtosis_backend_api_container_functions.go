@@ -477,7 +477,7 @@ func getApiContainerObjectFromContainerInfo(
 	labels map[string]string,
 	containerStatus types.ContainerStatus,
 	allHostMachinePortBindings map[nat.Port]*nat.PortBinding,
-	bridgeNetworkIpAddress string,
+	bridgeNetworkIpAddrStr string,
 	isProductionEnclave bool,
 ) (*api_container.APIContainer, error) {
 	enclaveId, found := labels[docker_label_key.EnclaveUUIDDockerLabelKey.GetString()]
@@ -497,12 +497,10 @@ func getApiContainerObjectFromContainerInfo(
 		return nil, stacktrace.NewError("Couldn't parse private IP address string '%v' to an IP", privateIpAddrStr)
 	}
 
-	bridgeNetworkIpAddressAddr := net.ParseIP(bridgeNetworkIpAddress)
-	if bridgeNetworkIpAddress == "" {
-		return nil, stacktrace.NewError("bridgeNetworkIpAddress is empty for container with id: '%v'", containerId)
-	}
-	if bridgeNetworkIpAddressAddr == nil {
-		return nil, stacktrace.NewError("Couldn't parse bridge network IP address string '%v' to an IP", bridgeNetworkIpAddress)
+	// when does the api container get a bridge network ip address?????
+	bridgeNetworkIpAddr := net.ParseIP(bridgeNetworkIpAddrStr)
+	if bridgeNetworkIpAddr == nil {
+		return nil, stacktrace.NewError("Couldn't parse bridge network IP address string '%v' to an IP", bridgeNetworkIpAddrStr)
 	}
 
 	privateGrpcPortSpec, err := getPrivateApiContainerPorts(labels)
@@ -540,7 +538,7 @@ func getApiContainerObjectFromContainerInfo(
 		privateGrpcPortSpec,
 		publicIpAddr,
 		publicGrpcPortSpec,
-		bridgeNetworkIpAddressAddr,
+		bridgeNetworkIpAddr,
 		isProductionEnclave,
 	)
 
