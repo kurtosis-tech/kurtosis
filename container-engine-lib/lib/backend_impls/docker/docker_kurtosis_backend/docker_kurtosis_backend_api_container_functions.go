@@ -497,10 +497,16 @@ func getApiContainerObjectFromContainerInfo(
 		return nil, stacktrace.NewError("Couldn't parse private IP address string '%v' to an IP", privateIpAddrStr)
 	}
 
-	// when does the api container get a bridge network ip address?????
-	bridgeNetworkIpAddr := net.ParseIP(bridgeNetworkIpAddrStr)
-	if bridgeNetworkIpAddr == nil {
-		return nil, stacktrace.NewError("Couldn't parse bridge network IP address string '%v' to an IP", bridgeNetworkIpAddrStr)
+	var bridgeNetworkIpAddr net.IP
+
+	// Parse the bridge network IP address only if present (some APIContainers, e.g. stopped ones, may not be connected to the bridge network)
+	if bridgeNetworkIpAddrStr != "" {
+		bridgeNetworkIpAddr = net.ParseIP(bridgeNetworkIpAddrStr)
+		if bridgeNetworkIpAddr == nil {
+			return nil, stacktrace.NewError("Couldn't parse bridge network IP address string '%v' to an IP", bridgeNetworkIpAddrStr)
+		}
+	} else {
+		logrus.Debugf("Received empty bridge network IP address for API container '%v' when attempting to onvert to an object. APIContainer is not connected to the bridge network.", containerId)
 	}
 
 	privateGrpcPortSpec, err := getPrivateApiContainerPorts(labels)
