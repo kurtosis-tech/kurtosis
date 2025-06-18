@@ -498,8 +498,11 @@ func getApiContainerObjectFromContainerInfo(
 	}
 
 	bridgeNetworkIpAddressAddr := net.ParseIP(bridgeNetworkIpAddress)
+	if bridgeNetworkIpAddress == "" {
+		return nil, stacktrace.NewError("bridgeNetworkIpAddress is empty for container with id: '%v'", containerId)
+	}
 	if bridgeNetworkIpAddressAddr == nil {
-		return nil, stacktrace.NewError("Couldn't parse bridge network IP address string '%v' to an IP", bridgeNetworkIpAddressAddr)
+		return nil, stacktrace.NewError("Couldn't parse bridge network IP address string '%v' to an IP", bridgeNetworkIpAddress)
 	}
 
 	privateGrpcPortSpec, err := getPrivateApiContainerPorts(labels)
