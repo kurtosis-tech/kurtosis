@@ -20,8 +20,8 @@ def run(plan):
 		field="code",
 		assertion="==",
 		target_value=%v,
-		interval="15s",
-		timeout="45s"
+		interval="1s",
+		timeout="40s"
     )
 
 	service_config = ServiceConfig(
@@ -29,7 +29,8 @@ def run(plan):
 		ports = {
 			"http-port": PortSpec(number = 8080, transport_protocol = "TCP")
 		},
-        ready_conditions = ready_conditions
+        ready_conditions = ready_conditions,
+		cmd = ["sh", "-c", "sleep 10 && node ./index.js"]
 	)
 
 	plan.add_service(name = "ws-ready-conditions-%v", config = service_config)
