@@ -101,7 +101,99 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddSingleServiceTo
 		emptyInstructionsPlanMask,
 		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
-	require.Equal(suite.T(), 1, instructionsPlan.Size())
+
+	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+
+	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
+}
+
+func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsOnFilesArtifactFromRenderTemplate() {
+	script := `def run(plan):
+
+	artifact_a = plan.render_templates(
+		name="artifact_a", 
+		config={
+			"hi.txt": struct(
+				template="{{ .fileA }}",
+				data = {
+					"fileA": "hi",
+				},
+			)
+		}
+	)
+
+	config = ServiceConfig(
+		image = "ubuntu",
+		files = {
+			"fileA": artifact_a,
+		}
+	)
+	service = plan.add_service(name = "serviceA", config = config)
+`
+	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
+		instructions_plan.ScheduledInstructionUuid("1"): {},
+		instructions_plan.ScheduledInstructionUuid("2"): {
+			instructions_plan.ScheduledInstructionUuid("1"),
+		},
+	}
+
+	inputArgs := `{}`
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		script,
+		inputArgs,
+		defaultNonBlockingMode,
+		emptyEnclaveComponents,
+		emptyInstructionsPlanMask,
+		image_download_mode.ImageDownloadMode_Always)
+	require.Nil(suite.T(), interpretationError)
+
+	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+
+	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
+}
+
+func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsOnAddServiceTemplate() {
+	script := `def run(plan):
+
+	config = ServiceConfig(
+		image = "ubuntu",
+	)
+	service_a = plan.add_service(name = "serviceA", config = config)
+
+	config = ServiceConfig(
+		image = "ubuntu",
+		cmd = [
+			"echo {0}".format(service_a.ip_address),
+		],
+	)
+	service_b = plan.add_service(name = "serviceB", config = config)
+`
+	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
+		instructions_plan.ScheduledInstructionUuid("1"): {},
+		instructions_plan.ScheduledInstructionUuid("2"): {
+			instructions_plan.ScheduledInstructionUuid("1"),
+		},
+	}
+
+	inputArgs := `{}`
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		script,
+		inputArgs,
+		defaultNonBlockingMode,
+		emptyEnclaveComponents,
+		emptyInstructionsPlanMask,
+		image_download_mode.ImageDownloadMode_Always)
+	require.Nil(suite.T(), interpretationError)
 
 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
 

@@ -8,6 +8,7 @@ type InstructionsDependencyGraph struct {
 	instructionsDependencies map[ScheduledInstructionUuid][]ScheduledInstructionUuid
 
 	// the following data structures tracks artifacts produced by instructions and consumed by downstream instructions
+	outputsToInstructionMap map[string]ScheduledInstructionUuid
 
 	// maps the name of a files artifact to the instruction that produced it
 	filesArtifactToIntructionMap map[string]ScheduledInstructionUuid
@@ -23,10 +24,16 @@ type InstructionsDependencyGraph struct {
 func NewInstructionsDependencyGraph() *InstructionsDependencyGraph {
 	return &InstructionsDependencyGraph{
 		instructionsDependencies:         map[ScheduledInstructionUuid][]ScheduledInstructionUuid{},
+		outputsToInstructionMap:          map[string]ScheduledInstructionUuid{},
 		filesArtifactToIntructionMap:     map[string]ScheduledInstructionUuid{},
 		serviceNamesToInstructionMap:     map[string]ScheduledInstructionUuid{},
 		futureReferencesToInstructionMap: map[string]ScheduledInstructionUuid{},
 	}
+}
+
+func (graph *InstructionsDependencyGraph) StoreOutput(instruction ScheduledInstructionUuid, output string) {
+	graph.addInstruction(instruction)
+	graph.outputsToInstructionMap[output] = instruction
 }
 
 func (graph *InstructionsDependencyGraph) StoreFutureReference(futureReference string, instruction ScheduledInstructionUuid) {
@@ -42,6 +49,14 @@ func (graph *InstructionsDependencyGraph) StoreServiceName(serviceName string, i
 func (graph *InstructionsDependencyGraph) StoreFileArtifact(filesArtifactName string, instruction ScheduledInstructionUuid) {
 	graph.addInstruction(instruction)
 	graph.filesArtifactToIntructionMap[filesArtifactName] = instruction
+}
+
+func (graph *InstructionsDependencyGraph) DependsOnOutput(instruction ScheduledInstructionUuid, output string) {
+	instructionThatOutputOutput, ok := graph.outputsToInstructionMap[output]
+	if !ok {
+		panic("smth went wrong")
+	}
+	graph.addDependency(instruction, instructionThatOutputOutput)
 }
 
 // if [instruction] depends on [filesArtifactName] then the instruction that outputs [fileArtifactName] is stored as a dependency of [instruction]

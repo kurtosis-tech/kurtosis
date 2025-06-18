@@ -1,11 +1,12 @@
 package magic_string_helper
 
 import (
+	"regexp"
+	"strings"
+
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
-	"regexp"
-	"strings"
 )
 
 const (
@@ -27,6 +28,7 @@ const (
 	subExpNotFound = -1
 )
 
+// tedi: is this only used for ip address replacements? or is it used for all runtime value replacements?
 // The compiled regular expression to do IP address replacements
 // Treat this as a constant
 var compiledRuntimeValueReplacementRegex = regexp.MustCompile(runtimeValueReplacementRegex)
@@ -62,6 +64,14 @@ func GetOrReplaceRuntimeValueFromString(originalString string, runtimeValueStore
 		runtimeValue, err := ReplaceRuntimeValueInString(originalString, runtimeValueStore)
 		return starlark.String(runtimeValue), err
 	}
+}
+
+func ContainsRuntimeValue(originalString string) (string, bool) {
+	matches := compiledRuntimeValueReplacementRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
+	if len(matches) == 0 {
+		return "", false
+	}
+	return matches[0][0], true
 }
 
 func getRuntimeValueFromRegexMatch(match []string, runtimeValueStore *runtime_value_store.RuntimeValueStore) (starlark.Comparable, error) {

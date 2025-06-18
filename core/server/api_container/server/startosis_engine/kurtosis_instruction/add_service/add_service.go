@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -333,14 +334,14 @@ func (builtin *AddServiceCapabilities) UpdateDependencyGraph(instructionsUuid de
 
 	// add service outputs:
 	// - service.name
-	dependencyGraph.StoreServiceName(string(builtin.serviceName), instructionsUuid)
+	dependencyGraph.StoreOutput(instructionsUuid, string(builtin.serviceName))
 
 	// - service.ip_addresss
 	ipAddress, err := builtin.returnValue.GetIpAddress()
 	if err != nil {
 		return stacktrace.NewError("An error occurred updating the plan with ip address from services: %v", builtin.serviceName)
 	}
-	dependencyGraph.StoreFutureReference(ipAddress, instructionsUuid)
+	dependencyGraph.StoreOutput(instructionsUuid, ipAddress)
 
 	// TODO: figure out how to store ports as they're technically future references
 	// - service.ports
@@ -348,19 +349,36 @@ func (builtin *AddServiceCapabilities) UpdateDependencyGraph(instructionsUuid de
 	// find the outputs that this instruction depends on
 	// add service can depend on:
 	// - files artifacts in files
-	// for _, filesArtifactNames := range builtin.serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
-	// 	for _, filesArtifactName := range filesArtifactNames {
-	// 		dependencyGraph.DependsOnFilesArtifact(instructionsUuid, filesArtifactName)
-	// 	}
-	// }
+	if builtin.serviceConfig.GetFilesArtifactsExpansion() != nil {
+		for _, filesArtifactNames := range builtin.serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
+			for _, filesArtifactName := range filesArtifactNames {
+				dependencyGraph.DependsOnOutput(instructionsUuid, filesArtifactName)
+			}
+		}
+	}
 
-	// - future references in entrypoint, cmd, env vars
-	// if the value from this env var contains a future reference, then store it in the dependency graph
-	// for _, v := range builtin.serviceConfig.GetEnvVars() {
-	// 	if strings.Contains(v, "${") {
-	// 		dependencyGraph.DependsOnFutureReference(instructionsUuid, v)
-	// 	}
-	// }
+	// if value from env vars, cmd, entrypoint contain future reference, then this instruction depends on the output
+	for _, v := range builtin.serviceConfig.GetEnvVars() {
+		if futureRef, ok := magic_string_helper.ContainsRuntimeValue(v); ok {
+			dependencyGraph.DependsOnOutput(instructionsUuid, futureRef)
+		}
+	}
+
+	if builtin.serviceConfig.GetCmdArgs() != nil {
+		for _, v := range builtin.serviceConfig.GetCmdArgs() {
+			if futureRef, ok := magic_string_helper.ContainsRuntimeValue(v); ok {
+				dependencyGraph.DependsOnOutput(instructionsUuid, futureRef)
+			}
+		}
+	}
+
+	if builtin.serviceConfig.GetEntrypointArgs() != nil {
+		for _, v := range builtin.serviceConfig.GetEntrypointArgs() {
+			if futureRef, ok := magic_string_helper.ContainsRuntimeValue(v); ok {
+				dependencyGraph.DependsOnOutput(instructionsUuid, futureRef)
+			}
+		}
+	}
 
 	return nil
 }
