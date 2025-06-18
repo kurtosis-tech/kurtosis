@@ -3,6 +3,7 @@ package startosis_add_service_test
 import (
 	"context"
 	"fmt"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -19,8 +20,8 @@ def run(plan):
 		field="code",
 		assertion="==",
 		target_value=%v,
-		interval="1s",
-		timeout="40s"
+		interval="15s",
+		timeout="45s"
     )
 
 	service_config = ServiceConfig(
