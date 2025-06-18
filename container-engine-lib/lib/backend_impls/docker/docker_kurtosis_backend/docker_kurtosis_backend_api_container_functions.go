@@ -251,7 +251,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		logrus.Debugf("Error occurred starting the API container. Err:\n%v", err)
 		return nil, stacktrace.Propagate(err, "An error occurred starting the API container")
 	}
-	shouldKillContainer := true
+	shouldKillContainer := false
 	defer func() {
 		if shouldKillContainer {
 			// NOTE: We use the background context here so that the kill will still go off even if the reason for
