@@ -159,7 +159,7 @@ func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rp
 	nonBlockingMode := args.GetNonBlockingMode()
 	downloadMode := convertFromImageDownloadModeAPI(ApiDownloadMode)
 
-	metricsErr := apicService.metricsClient.TrackKurtosisRun(startosis_constants.PackageIdPlaceholderForStandaloneScript, isNotRemote, dryRun, isScript)
+	metricsErr := apicService.metricsClient.TrackKurtosisRun(startosis_constants.PackageIdPlaceholderForStandaloneScript, isNotRemote, dryRun, isScript, serializedParams)
 	if metricsErr != nil {
 		logrus.Warn("An error occurred tracking kurtosis run event")
 	}
@@ -350,7 +350,7 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 	}
 	logrus.Debugf("package replace options received '%+v'", detectedPackageReplaceOptions)
 
-	metricsErr := apicService.metricsClient.TrackKurtosisRun(detectedPackageId, isRemote, dryRun, isNotScript)
+	metricsErr := apicService.metricsClient.TrackKurtosisRun(detectedPackageId, isRemote, dryRun, isNotScript, serializedParams)
 	if metricsErr != nil {
 		logrus.Warn("An error occurred tracking kurtosis run event")
 	}
@@ -1056,7 +1056,7 @@ func (apicService *ApiContainerService) runStarlark(
 				} else {
 					numberOfServicesAfterRunFinished = len(serviceNames)
 				}
-				if err := apicService.metricsClient.TrackKurtosisRunFinishedEvent(packageId, numberOfServicesAfterRunFinished, isSuccessful); err != nil {
+				if err := apicService.metricsClient.TrackKurtosisRunFinishedEvent(packageId, numberOfServicesAfterRunFinished, isSuccessful, serializedParams); err != nil {
 					logrus.Warn("An error occurred tracking the run-finished event")
 				}
 			}

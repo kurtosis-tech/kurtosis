@@ -21,6 +21,7 @@ const (
 	isSubnetworkingEnabledKey      = "is_subnetworking_enabled"
 	userEmailAddressKey            = "user_email"
 	analyticsStatusKey             = "analytics_status"
+	serializedParamsKey            = "serialized_params"
 
 	// Categories
 	installCategory = "install"
@@ -98,16 +99,17 @@ func NewDestroyEnclaveEvent(enclaveId string) *Event {
 	return event
 }
 
-func NewKurtosisRunEvent(packageId string, isRemote bool, isDryRun bool, isScript bool) *Event {
+func NewKurtosisRunEvent(packageId string, isRemote bool, isDryRun bool, isScript bool, serializedParams string) *Event {
 	isRemotePackageStr := fmt.Sprintf("%v", isRemote)
 	isDryRunStr := fmt.Sprintf("%v", isDryRun)
 	isScriptStr := fmt.Sprintf("%v", isScript)
 
 	properties := map[string]string{
-		packageIdKey:       packageId,
-		isRemotePackageKey: isRemotePackageStr,
-		isDryRunKey:        isDryRunStr,
-		isScriptKey:        isScriptStr,
+		packageIdKey:        packageId,
+		isRemotePackageKey:  isRemotePackageStr,
+		isDryRunKey:         isDryRunStr,
+		isScriptKey:         isScriptStr,
+		serializedParamsKey: serializedParams,
 	}
 
 	event := newEvent(kurtosisCategory, runAction, properties)
@@ -144,13 +146,14 @@ func NewUpdateServiceEvent(enclaveId string, serviceId string) *Event {
 	return event
 }
 
-func NewKurtosisRunFinishedEvent(packageId string, numServices int, isSuccess bool) *Event {
+func NewKurtosisRunFinishedEvent(packageId string, numServices int, isSuccess bool, serializedParams string) *Event {
 	numServicesStr := fmt.Sprintf("%v", numServices)
 	isSuccessStr := fmt.Sprintf("%v", isSuccess)
 	properties := map[string]string{
-		packageIdKey:   packageId,
-		numServicesKey: numServicesStr,
-		isSuccessKey:   isSuccessStr,
+		packageIdKey:        packageId,
+		numServicesKey:      numServicesStr,
+		isSuccessKey:        isSuccessStr,
+		serializedParamsKey: serializedParams,
 	}
 
 	event := newEvent(kurtosisCategory, runFinishedAction, properties)
