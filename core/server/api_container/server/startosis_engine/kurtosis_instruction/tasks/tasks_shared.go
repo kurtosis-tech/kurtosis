@@ -3,14 +3,15 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"strings"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
 	"github.com/xtgo/uuid"
-	"reflect"
-	"strings"
-	"time"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -311,9 +312,9 @@ func formatErrorMessage(errorMessage string, errorFromExec string) string {
 }
 
 func removeService(ctx context.Context, serviceNetwork service_network.ServiceNetwork, serviceName string) error {
-	_, err := serviceNetwork.RemoveService(ctx, serviceName)
+	err := serviceNetwork.StopService(ctx, serviceName)
 	if err != nil {
-		return stacktrace.Propagate(err, "error occurred while removing task with name %v", serviceName)
+		return stacktrace.Propagate(err, "error occurred while stopping task with name %v", serviceName)
 	}
 	return nil
 }
