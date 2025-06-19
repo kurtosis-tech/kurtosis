@@ -29,7 +29,7 @@ def run(plan):
 		ports = {
 			"http-port": PortSpec(number = 8080, transport_protocol = "TCP")
 		},
-        ready_conditions = ready_conditions,
+        ready_conditions = ready_conditions
 	)
 
 	plan.add_service(name = "ws-ready-conditions-%v", config = service_config)
