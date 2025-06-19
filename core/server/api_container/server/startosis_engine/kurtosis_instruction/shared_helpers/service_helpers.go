@@ -20,9 +20,10 @@ import (
 )
 
 const (
-	bufferedChannelSize = 2
-	starlarkThreadName  = "starlark-value-serde-for-test-thread"
-	configArgName       = "config"
+	bufferedChannelSize     = 2
+	starlarkThreadName      = "starlark-value-serde-for-test-thread"
+	configArgName           = "config"
+	timeoutExtensionDivider = 4
 )
 
 func NewDummyStarlarkValueSerDeForTest() *kurtosis_types.StarlarkValueSerde {
@@ -69,15 +70,18 @@ func ExecuteServiceAssertionWithRecipe(
 	// 'timeoutChan' serves as an exit signal for the loop repeating the recipe execution.
 	timeoutChan := time.After(timeout)
 
-	// // By passing 'contextWithDeadline' to recipe execution, we can make sure that when timeout is reached, the underlying
-	// // request is aborted.
-	// // We add a buffer to the timeout to ensure the signal from timeoutChan is received before the timeout is reached.
-	// ctxTimeout := timeout + timeout/timeoutExtensionDivider
-	ctxWithCancel, cancelContext := context.WithCancel(ctx)
+	// By passing 'contextWithDeadline' to recipe execution, we can make sure that when timeout is reached, the underlying
+	// request is aborted.
+
+	// tedi(07-19-25): added a buffer to the context timeout to ensure the exit from timeoutChan is received before the context deadline is exceeded.
+	// otherwise, a race condition occurs where the context deadline is exceeded before the timeoutChan is received occurs and the code exits with a context deadline exceeded error
+	// not too sure if this is the best way to do it/why the ctxWithDeadline is needed but fixes flaky CI test for now - more context in original PR for this code here:
+	// https://github.com/kurtosis-tech/kurtosis/pull/480
+	ctxWithDeadline, cancelContext := context.WithTimeout(ctx, timeout+timeout/timeoutExtensionDivider)
 	defer cancelContext()
 
 	execFunc := func() (map[string]starlark.Comparable, error) {
-		return execRequestAndGetValue(ctxWithCancel, serviceNetwork, runtimeValueStore, serviceName, recipe, valueField)
+		return execRequestAndGetValue(ctxWithDeadline, serviceNetwork, runtimeValueStore, serviceName, recipe, valueField)
 	}
 	assertFunc := func(currentResult map[string]starlark.Comparable) error {
 		return assertResult(currentResult[valueField], assertion, target)
