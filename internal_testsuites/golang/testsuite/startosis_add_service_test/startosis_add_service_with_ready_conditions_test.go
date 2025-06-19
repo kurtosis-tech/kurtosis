@@ -3,6 +3,7 @@ package startosis_add_service_test
 import (
 	"context"
 	"fmt"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,7 +36,7 @@ def run(plan):
 `
 
 	okStatusCode          = 200
-	serverErrorStatusCode = 500
+	serverErrorStatusCode = 300
 )
 
 func (suite *StartosisAddServiceTestSuite) TestStartosis_AddServiceWithReadyConditionsCheck() {
