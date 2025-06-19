@@ -183,6 +183,7 @@ export const ServiceInfo = proto3.makeMessageType(
     { no: 17, name: "node_selectors", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "scalar", T: 9 /* ScalarType.STRING */} },
     { no: 18, name: "labels", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "scalar", T: 9 /* ScalarType.STRING */} },
     { no: 19, name: "tini_enabled", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
+    { no: 20, name: "tty_enabled", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
   ],
 );
 

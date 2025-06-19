@@ -2345,7 +2345,8 @@ proto.api_container_api.ServiceInfo.toObject = function(includeInstance, msg) {
     proto.api_container_api.Toleration.toObject, includeInstance),
     nodeSelectorsMap: (f = msg.getNodeSelectorsMap()) ? f.toObject(includeInstance, undefined) : [],
     labelsMap: (f = msg.getLabelsMap()) ? f.toObject(includeInstance, undefined) : [],
-    tiniEnabled: jspb.Message.getBooleanFieldWithDefault(msg, 19, false)
+    tiniEnabled: jspb.Message.getBooleanFieldWithDefault(msg, 19, false),
+    ttyEnabled: jspb.Message.getBooleanFieldWithDefault(msg, 20, false)
   };
 
   if (includeInstance) {
@@ -2470,6 +2471,10 @@ proto.api_container_api.ServiceInfo.deserializeBinaryFromReader = function(msg, 
     case 19:
       var value = /** @type {boolean} */ (reader.readBool());
       msg.setTiniEnabled(value);
+      break;
+    case 20:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setTtyEnabled(value);
       break;
     default:
       reader.skipField();
@@ -2618,6 +2623,13 @@ proto.api_container_api.ServiceInfo.serializeBinaryToWriter = function(message, 
   if (f != null) {
     writer.writeBool(
       19,
+      f
+    );
+  }
+  f = /** @type {boolean} */ (jspb.Message.getField(message, 20));
+  if (f != null) {
+    writer.writeBool(
+      20,
       f
     );
   }
@@ -3059,6 +3071,42 @@ proto.api_container_api.ServiceInfo.prototype.clearTiniEnabled = function() {
  */
 proto.api_container_api.ServiceInfo.prototype.hasTiniEnabled = function() {
   return jspb.Message.getField(this, 19) != null;
+};
+
+
+/**
+ * optional bool tty_enabled = 20;
+ * @return {boolean}
+ */
+proto.api_container_api.ServiceInfo.prototype.getTtyEnabled = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 20, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.api_container_api.ServiceInfo} returns this
+ */
+proto.api_container_api.ServiceInfo.prototype.setTtyEnabled = function(value) {
+  return jspb.Message.setField(this, 20, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.ServiceInfo} returns this
+ */
+proto.api_container_api.ServiceInfo.prototype.clearTtyEnabled = function() {
+  return jspb.Message.setField(this, 20, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.ServiceInfo.prototype.hasTtyEnabled = function() {
+  return jspb.Message.getField(this, 20) != null;
 };
 
 

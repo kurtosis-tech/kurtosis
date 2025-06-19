@@ -226,6 +226,9 @@ pub struct ServiceInfo {
     /// Whether Tini is enabled
     #[prost(bool, optional, tag = "19")]
     pub tini_enabled: ::core::option::Option<bool>,
+    /// Wheter TTy is enabled
+    #[prost(bool, optional, tag = "20")]
+    pub tty_enabled: ::core::option::Option<bool>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]

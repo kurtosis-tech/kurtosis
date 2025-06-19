@@ -469,6 +469,13 @@ export declare class ServiceInfo extends Message<ServiceInfo> {
    */
   tiniEnabled?: boolean;
 
+  /**
+   * Wheter TTy is enabled
+   *
+   * @generated from field: optional bool tty_enabled = 20;
+   */
+  ttyEnabled?: boolean;
+
   constructor(data?: PartialMessage<ServiceInfo>);
 
   static readonly runtime: typeof proto3;

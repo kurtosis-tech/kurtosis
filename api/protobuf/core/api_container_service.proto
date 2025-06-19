@@ -192,6 +192,9 @@ message ServiceInfo {
 
   // Whether Tini is enabled
   optional bool tini_enabled = 19;
+
+  // Wheter TTy is enabled
+  optional bool tty_enabled = 20;
 }
 
 // ==============================================================================================

@@ -62,13 +62,14 @@ func TestServiceConfigMarshallers(t *testing.T) {
 	require.Equal(t, originalServiceConfig.GetLabels(), newServiceConfig.GetLabels())
 	require.Equal(t, originalServiceConfig.GetImageBuildSpec(), newServiceConfig.GetImageBuildSpec())
 	require.Equal(t, originalServiceConfig.GetNodeSelectors(), newServiceConfig.GetNodeSelectors())
+	require.Equal(t, originalServiceConfig.GetTtyEnabled(), newServiceConfig.GetTtyEnabled())
 }
 
 func getServiceConfigForTest(t *testing.T, imageName string) *ServiceConfig {
 	serviceConfig, err := CreateServiceConfig(imageName, testImageBuildSpec(), testImageRegistrySpec(), testNixBuildSpec(), testPrivatePorts(t), testPublicPorts(t), []string{"bin", "bash", "ls"}, []string{"-l", "-a"}, testEnvVars(), testFilesArtifactExpansion(), testPersistentDirectory(), 500, 1024, "IP-ADDRESS", 100, 512, map[string]string{
 		"test-label-key":        "test-label-value",
 		"test-second-label-key": "test-second-label-value",
-	}, testServiceUser(), testToleration(), testNodeSelectors(), testImageDownloadMode(), true)
+	}, testServiceUser(), testToleration(), testNodeSelectors(), testImageDownloadMode(), true, false)
 	require.NoError(t, err)
 	return serviceConfig
 }
@@ -201,4 +202,16 @@ func testNodeSelectors() map[string]string {
 
 func testImageDownloadMode() image_download_mode.ImageDownloadMode {
 	return image_download_mode.ImageDownloadMode_Missing
+}
+
+func TestServiceConfigTtyField(t *testing.T) {
+	// Test TTY enabled
+	ttyEnabledConfig, err := CreateServiceConfig("test-image", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 0, 0, "", 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, true)
+	require.NoError(t, err)
+	require.True(t, ttyEnabledConfig.GetTtyEnabled())
+
+	// Test TTY disabled
+	ttyDisabledConfig, err := CreateServiceConfig("test-image", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 0, 0, "", 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false)
+	require.NoError(t, err)
+	require.False(t, ttyDisabledConfig.GetTtyEnabled())
 }
