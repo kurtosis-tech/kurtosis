@@ -21,9 +21,10 @@ import (
 
 const (
 	bufferedChannelSize = 2
-	timeoutMultiplier   = 2
 	starlarkThreadName  = "starlark-value-serde-for-test-thread"
 	configArgName       = "config"
+
+	timeoutExtensionDivider = 4
 )
 
 func NewDummyStarlarkValueSerDeForTest() *kurtosis_types.StarlarkValueSerde {
@@ -66,14 +67,19 @@ func ExecuteServiceAssertionWithRecipe(
 			executionTickChan <- tick
 		}
 	}()
-	// By passing 'contextWithDeadline' to recipe execution, we can make sure that when timeout is reached, the underlying
-	// request is aborted. 'timeoutChan' serves as an exit signal for the loop repeating the recipe execution.
-	contextWithDeadline, cancelContext := context.WithTimeout(ctx, timeoutMultiplier*timeout)
-	defer cancelContext()
+
+	// 'timeoutChan' serves as an exit signal for the loop repeating the recipe execution.
 	timeoutChan := time.After(timeout)
 
+	// // By passing 'contextWithDeadline' to recipe execution, we can make sure that when timeout is reached, the underlying
+	// // request is aborted.
+	// // We add a buffer to the timeout to ensure the signal from timeoutChan is received before the timeout is reached.
+	// ctxTimeout := timeout + timeout/timeoutExtensionDivider
+	ctxWithCancel, cancelContext := context.WithCancel(ctx)
+	defer cancelContext()
+
 	execFunc := func() (map[string]starlark.Comparable, error) {
-		return execRequestAndGetValue(contextWithDeadline, serviceNetwork, runtimeValueStore, serviceName, recipe, valueField)
+		return execRequestAndGetValue(ctxWithCancel, serviceNetwork, runtimeValueStore, serviceName, recipe, valueField)
 	}
 	assertFunc := func(currentResult map[string]starlark.Comparable) error {
 		return assertResult(currentResult[valueField], assertion, target)
