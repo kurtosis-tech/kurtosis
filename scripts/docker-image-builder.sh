@@ -104,9 +104,9 @@ fi
 
 ## Actually build the Docker image
 if "${podman_mode}"; then
-  docker_buildx_cmd="sudo podman buildx build ${push_flag} --platform ${buildx_platform_arg} ${image_tags_concatenated} -f ${dockerfile_filepath} ${dockerfile_dirpath}"
+  docker_buildx_cmd="podman buildx build ${push_flag} --platform ${buildx_platform_arg} ${image_tags_concatenated} -f ${dockerfile_filepath} ${dockerfile_dirpath}"
 else
-  docker_buildx_cmd="sudo docker buildx build ${push_flag} --platform ${buildx_platform_arg} ${image_tags_concatenated} -f ${dockerfile_filepath} ${dockerfile_dirpath}"
+  docker_buildx_cmd="docker buildx build ${push_flag} --platform ${buildx_platform_arg} ${image_tags_concatenated} -f ${dockerfile_filepath} ${dockerfile_dirpath}"
 fi
 echo "Running the following docker buildx command:"
 echo "${docker_buildx_cmd}"
