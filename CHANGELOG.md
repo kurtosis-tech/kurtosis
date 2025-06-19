@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.9.0](https://github.com/kurtosis-tech/kurtosis/compare/1.8.1...1.9.0) (2025-06-19)
+
+
+### Features
+
+* Add `tty_enabled` field to `ServiceConfig`. ([#2761](https://github.com/kurtosis-tech/kurtosis/issues/2761)) ([4313e31](https://github.com/kurtosis-tech/kurtosis/commit/4313e319e7e6333f2f4da4ac3bd28fb7e641ad4d))
+* support podman ([#2518](https://github.com/kurtosis-tech/kurtosis/issues/2518)) ([fe35eee](https://github.com/kurtosis-tech/kurtosis/commit/fe35eee5452cd7658955751fd01a6f3e7497e7d9))
+
 ## [1.8.1](https://github.com/kurtosis-tech/kurtosis/compare/1.8.0...1.8.1) (2025-05-21)
 
 
