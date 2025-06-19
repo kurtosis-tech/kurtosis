@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.1](https://github.com/kurtosis-tech/kurtosis/compare/1.9.0...1.9.1) (2025-06-19)
+
+
+### Bug Fixes
+
+* add podman mode to publish script ([#2765](https://github.com/kurtosis-tech/kurtosis/issues/2765)) ([b49d2f8](https://github.com/kurtosis-tech/kurtosis/commit/b49d2f8f328f066ca36111f9fd87196d285b0089))
+
 ## [1.9.0](https://github.com/kurtosis-tech/kurtosis/compare/1.8.1...1.9.0) (2025-06-19)
 
 
