@@ -2,6 +2,9 @@ package shared_helpers
 
 import (
 	"context"
+	"reflect"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -14,8 +17,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
-	"reflect"
-	"time"
 )
 
 const (
@@ -66,7 +67,7 @@ func ExecuteServiceAssertionWithRecipe(
 	}()
 	// By passing 'contextWithDeadline' to recipe execution, we can make sure that when timeout is reached, the underlying
 	// request is aborted. 'timeoutChan' serves as an exit signal for the loop repeating the recipe execution.
-	contextWithDeadline, cancelContext := context.WithTimeout(ctx, timeout)
+	contextWithDeadline, cancelContext := context.WithTimeout(ctx, 2*timeout)
 	defer cancelContext()
 	timeoutChan := time.After(timeout)
 
