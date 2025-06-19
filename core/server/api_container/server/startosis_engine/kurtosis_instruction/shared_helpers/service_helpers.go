@@ -74,7 +74,7 @@ func ExecuteServiceAssertionWithRecipe(
 	// request is aborted.
 
 	// tedi(07-19-25): added a buffer to the context timeout to ensure the exit from timeoutChan is received before the context deadline is exceeded.
-	// otherwise, a race condition occurs where the context deadline is exceeded before the timeoutChan is received occurs and the code exits with a context deadline exceeded error
+	// otherwise, a race condition occurs where sometimes, context deadline is exceeded before the timeoutChan signal is received occurs and the code exits with a context deadline exceeded error
 	// not too sure if this is the best way to do it/why the ctxWithDeadline is needed but fixes flaky CI test for now - more context in original PR for this code here:
 	// https://github.com/kurtosis-tech/kurtosis/pull/480
 	ctxWithDeadline, cancelContext := context.WithTimeout(ctx, timeout+timeout/timeoutExtensionDivider)
