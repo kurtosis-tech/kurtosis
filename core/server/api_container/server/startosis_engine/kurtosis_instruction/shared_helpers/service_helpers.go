@@ -2,6 +2,9 @@ package shared_helpers
 
 import (
 	"context"
+	"reflect"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -14,14 +17,13 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
-	"reflect"
-	"time"
 )
 
 const (
-	bufferedChannelSize = 2
-	starlarkThreadName  = "starlark-value-serde-for-test-thread"
-	configArgName       = "config"
+	bufferedChannelSize     = 2
+	starlarkThreadName      = "starlark-value-serde-for-test-thread"
+	configArgName           = "config"
+	timeoutExtensionDivider = 4
 )
 
 func NewDummyStarlarkValueSerDeForTest() *kurtosis_types.StarlarkValueSerde {
@@ -64,14 +66,22 @@ func ExecuteServiceAssertionWithRecipe(
 			executionTickChan <- tick
 		}
 	}()
-	// By passing 'contextWithDeadline' to recipe execution, we can make sure that when timeout is reached, the underlying
-	// request is aborted. 'timeoutChan' serves as an exit signal for the loop repeating the recipe execution.
-	contextWithDeadline, cancelContext := context.WithTimeout(ctx, timeout)
-	defer cancelContext()
+
+	// 'timeoutChan' serves as an exit signal for the loop repeating the recipe execution.
 	timeoutChan := time.After(timeout)
 
+	// By passing 'contextWithDeadline' to recipe execution, we can make sure that when timeout is reached, the underlying
+	// request is aborted.
+
+	// tedi(07-19-25): added a buffer to the context timeout to ensure the exit from timeoutChan is received before the context deadline is exceeded.
+	// otherwise, a race condition occurs where sometimes, context deadline is exceeded before the timeoutChan signal is received occurs and the code exits with a context deadline exceeded error
+	// not too sure if this is the best way to do it/why the ctxWithDeadline is needed but fixes flaky CI test for now - more context in original PR for this code here:
+	// https://github.com/kurtosis-tech/kurtosis/pull/480
+	ctxWithDeadline, cancelContext := context.WithTimeout(ctx, timeout+timeout/timeoutExtensionDivider)
+	defer cancelContext()
+
 	execFunc := func() (map[string]starlark.Comparable, error) {
-		return execRequestAndGetValue(contextWithDeadline, serviceNetwork, runtimeValueStore, serviceName, recipe, valueField)
+		return execRequestAndGetValue(ctxWithDeadline, serviceNetwork, runtimeValueStore, serviceName, recipe, valueField)
 	}
 	assertFunc := func(currentResult map[string]starlark.Comparable) error {
 		return assertResult(currentResult[valueField], assertion, target)
