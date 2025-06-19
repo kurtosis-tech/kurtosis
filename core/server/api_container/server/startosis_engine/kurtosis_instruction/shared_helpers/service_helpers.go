@@ -23,8 +23,6 @@ const (
 	bufferedChannelSize = 2
 	starlarkThreadName  = "starlark-value-serde-for-test-thread"
 	configArgName       = "config"
-
-	timeoutExtensionDivider = 4
 )
 
 func NewDummyStarlarkValueSerDeForTest() *kurtosis_types.StarlarkValueSerde {
