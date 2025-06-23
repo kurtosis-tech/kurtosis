@@ -2,14 +2,15 @@ package service_network
 
 import (
 	"context"
+	"io"
+	"net/http"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_identifiers"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
-	"io"
-	"net/http"
 )
 
 // ServiceNetwork handles the state of the enclave
@@ -89,6 +90,8 @@ type ServiceNetwork interface {
 		map[service.ServiceUUID]error,
 		error,
 	)
+
+	HttpRequestServiceObject(ctx context.Context, service *service.Service, portId string, method string, contentType, endpoint string, body string, header map[string]string) (*http.Response, error)
 
 	HttpRequestService(ctx context.Context, serviceIdentifier string, portId string, method string, contentType string, endpoint string, body string, headers map[string]string) (*http.Response, error)
 

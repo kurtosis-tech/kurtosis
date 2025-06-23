@@ -24,7 +24,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/service_registration"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_identifiers"
-	"github.com/kurtosis-tech/kurtosis/path-compression"
+	path_compression "github.com/kurtosis-tech/kurtosis/path-compression"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -627,6 +627,30 @@ func (network *DefaultServiceNetwork) RunExecs(ctx context.Context, userServiceC
 			"on user services:\n%v", userServiceCommands)
 	}
 	return successfulExecs, failedExecs, nil
+}
+
+func (network *DefaultServiceNetwork) HttpRequestServiceObject(ctx context.Context, userService *service.Service, portId string, method string, contentType, endpoint string, body string, headers map[string]string) (*http.Response, error) {
+	serviceIdentifier := userService.GetRegistration().GetName()
+	port, found := userService.GetPrivatePorts()[portId]
+	if !found {
+		return nil, stacktrace.NewError("An error occurred when getting port '%v' from service '%v' for HTTP request", serviceIdentifier, portId)
+	}
+	url := fmt.Sprintf("http://%v:%v%v", userService.GetRegistration().GetPrivateIP(), port.GetNumber(), endpoint)
+	req, err := http.NewRequestWithContext(ctx, method, url, strings.NewReader(body))
+	if err != nil {
+		return nil, stacktrace.NewError("An error occurred building HTTP request on service '%v', URL '%v'", userService, url)
+	}
+	for header, headerValue := range headers {
+		req.Header.Set(header, headerValue)
+	}
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred on HTTP request on service '%v', URL '%v'", userService, url)
+	}
+	return resp, nil
 }
 
 func (network *DefaultServiceNetwork) HttpRequestService(ctx context.Context, serviceIdentifier string, portId string, method string, contentType string, endpoint string, body string, headers map[string]string) (*http.Response, error) {
