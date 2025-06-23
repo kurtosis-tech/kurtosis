@@ -933,6 +933,11 @@ export class StarlarkRunFinishedEvent extends jspb.Message {
   getIsRunSuccessful(): boolean;
   setIsRunSuccessful(value: boolean): StarlarkRunFinishedEvent;
 
+  getTotalExecutionDuration(): google_protobuf_duration_pb.Duration | undefined;
+  setTotalExecutionDuration(value?: google_protobuf_duration_pb.Duration): StarlarkRunFinishedEvent;
+  hasTotalExecutionDuration(): boolean;
+  clearTotalExecutionDuration(): StarlarkRunFinishedEvent;
+
   getSerializedOutput(): string;
   setSerializedOutput(value: string): StarlarkRunFinishedEvent;
   hasSerializedOutput(): boolean;
@@ -949,12 +954,13 @@ export class StarlarkRunFinishedEvent extends jspb.Message {
 export namespace StarlarkRunFinishedEvent {
   export type AsObject = {
     isRunSuccessful: boolean,
+    totalExecutionDuration?: google_protobuf_duration_pb.Duration.AsObject,
     serializedOutput?: string,
   }
 
   export enum SerializedOutputCase { 
     _SERIALIZED_OUTPUT_NOT_SET = 0,
-    SERIALIZED_OUTPUT = 2,
+    SERIALIZED_OUTPUT = 3,
   }
 }
 

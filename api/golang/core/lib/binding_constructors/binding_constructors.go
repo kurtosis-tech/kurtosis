@@ -265,19 +265,33 @@ func NewStarlarkRunResponseLineFromRunFailureEvent() *kurtosis_core_rpc_api_bind
 	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
 		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_RunFinishedEvent{
 			RunFinishedEvent: &kurtosis_core_rpc_api_bindings.StarlarkRunFinishedEvent{
-				IsRunSuccessful:  false,
-				SerializedOutput: nil,
+				IsRunSuccessful:        false,
+				TotalExecutionDuration: durationpb.New(0),
+				SerializedOutput:       nil,
 			},
 		},
 	}
 }
 
-func NewStarlarkRunResponseLineFromRunSuccessEvent(serializedOutputObject string) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+func NewStarlarkRunResponseLineFromRunFailureEventWithDuration(totalExecutionDuration time.Duration) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
 		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_RunFinishedEvent{
 			RunFinishedEvent: &kurtosis_core_rpc_api_bindings.StarlarkRunFinishedEvent{
-				IsRunSuccessful:  true,
-				SerializedOutput: &serializedOutputObject,
+				IsRunSuccessful:        false,
+				TotalExecutionDuration: durationpb.New(totalExecutionDuration),
+				SerializedOutput:       nil,
+			},
+		},
+	}
+}
+
+func NewStarlarkRunResponseLineFromRunSuccessEvent(serializedOutputObject string, totalExecutionDuration time.Duration) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
+		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_RunFinishedEvent{
+			RunFinishedEvent: &kurtosis_core_rpc_api_bindings.StarlarkRunFinishedEvent{
+				IsRunSuccessful:        true,
+				TotalExecutionDuration: durationpb.New(totalExecutionDuration),
+				SerializedOutput:       &serializedOutputObject,
 			},
 		},
 	}
