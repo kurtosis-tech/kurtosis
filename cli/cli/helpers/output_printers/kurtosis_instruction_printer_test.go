@@ -175,7 +175,7 @@ func TestFormatRunOutput_Failure_ExecutedRun(t *testing.T) {
 func TestFormatRunOutput_Successful_ExecutedRun_Detailed(t *testing.T) {
 	runFinishedEvent := binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(``, testDuration).GetRunFinishedEvent()
 	message := formatRunOutput(runFinishedEvent, executedRun, run.Detailed)
-	expectedMessage := `Starlark code successfully run. No output was returned. Total instruction execution time: 1s.`
+	expectedMessage := `Starlark code successfully run. Total instruction execution time: 1s. No output was returned.`
 	require.Equal(t, expectedMessage, message)
 }
 
@@ -185,6 +185,7 @@ func TestFormatRunOutput_Failure_ExecutedRun_Detailed_WithoutDuration(t *testing
 	expectedMessage := `Error encountered running Starlark code. Total instruction execution time: 0s.`
 	require.Equal(t, expectedMessage, message)
 }
+
 func TestFormatRunOutput_Failure_ExecutedRun_Detailed_WithDuration(t *testing.T) {
 	runFinishedEvent := binding_constructors.NewStarlarkRunResponseLineFromRunFailureEventWithDuration(testDuration).GetRunFinishedEvent()
 	message := formatRunOutput(runFinishedEvent, executedRun, run.Detailed)

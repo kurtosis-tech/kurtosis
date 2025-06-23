@@ -277,15 +277,15 @@ func formatProgressBar(currentStep uint32, totalSteps uint32, progressBarChar st
 }
 
 func formatRunOutput(runFinishedEvent *kurtosis_core_rpc_api_bindings.StarlarkRunFinishedEvent, dryRun bool, verbosity run.Verbosity) string {
-	durationMsg := ""
+	durationMsg := "."
 	if verbosity == run.Detailed {
-		durationMsg = fmt.Sprintf(". Total instruction execution time: %s", runFinishedEvent.GetTotalExecutionDuration().AsDuration().String())
+		durationMsg = durationMsg + fmt.Sprintf(" Total instruction execution time: %s.", runFinishedEvent.GetTotalExecutionDuration().AsDuration().String())
 	}
 	if !runFinishedEvent.GetIsRunSuccessful() {
 		if dryRun {
-			return colorizeError(fmt.Sprintf("Error encountered running Starlark code in dry-run mode.%s", durationMsg))
+			return colorizeError(fmt.Sprintf("Error encountered running Starlark code in dry-run mode%s", durationMsg))
 		}
-		return colorizeError(fmt.Sprintf("Error encountered running Starlark code.%s", durationMsg))
+		return colorizeError(fmt.Sprintf("Error encountered running Starlark code%s", durationMsg))
 	}
 	// run was successful
 	runSuccessMsg := strings.Builder{}
@@ -295,9 +295,9 @@ func formatRunOutput(runFinishedEvent *kurtosis_core_rpc_api_bindings.StarlarkRu
 	}
 	runSuccessMsg.WriteString(durationMsg)
 	if runFinishedEvent.GetSerializedOutput() != "" {
-		runSuccessMsg.WriteString(fmt.Sprintf(". Output was:\n%v", runFinishedEvent.GetSerializedOutput()))
+		runSuccessMsg.WriteString(fmt.Sprintf(" Output was:\n%v", runFinishedEvent.GetSerializedOutput()))
 	} else {
-		runSuccessMsg.WriteString(". No output was returned.")
+		runSuccessMsg.WriteString(" No output was returned.")
 	}
 	return colorizeRunSuccessfulMsg(runSuccessMsg.String())
 }
