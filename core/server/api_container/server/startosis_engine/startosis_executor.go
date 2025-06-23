@@ -3,6 +3,9 @@ package startosis_engine
 import (
 	"context"
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
@@ -14,7 +17,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"sync"
 )
 
 const (
@@ -103,11 +105,14 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 			if !dryRun {
 				var err error
 				var instructionOutput *string
+				var duration time.Duration
 				if scheduledInstruction.IsExecuted() {
 					// instruction already executed within this enclave. Do not run it
 					instructionOutput = &skippedInstructionOutput
 				} else {
+					startTime := time.Now()
 					instructionOutput, err = instruction.Execute(ctxWithParallelism)
+					duration = time.Since(startTime)
 				}
 				if err != nil {
 					sendErrorAndFail(starlarkRunResponseLineStream, err, "An error occurred executing instruction (number %d) at %v:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
@@ -118,7 +123,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 					if len(instructionOutputStr) > outputSizeLimit {
 						instructionOutputStr = fmt.Sprintf("%s%s", instructionOutputStr[0:outputSizeLimit], outputLimitReachedSuffix)
 					}
-					starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(instructionOutputStr)
+					starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(instructionOutputStr, duration)
 				}
 				// add the instruction into the current enclave plan
 				enclavePlanInstruction, err := scheduledInstruction.GetInstruction().GetPersistableAttributes().SetUuid(
