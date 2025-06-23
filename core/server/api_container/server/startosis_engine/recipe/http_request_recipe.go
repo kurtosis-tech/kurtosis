@@ -3,6 +3,11 @@ package recipe
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/http"
+	"reflect"
+	"strings"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
@@ -15,10 +20,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"golang.org/x/exp/maps"
-	"io"
-	"net/http"
-	"reflect"
-	"strings"
 )
 
 const (
@@ -66,10 +67,20 @@ func executeInternal(
 		return nil, stacktrace.NewError("The service name parameter can't be an empty string")
 	}
 
-	response, err = serviceNetwork.HttpRequestService(ctx, serviceNameStr, portId, method, contentType, endpoint, recipeBodyWithRuntimeValue, headers)
+	service, err := serviceNetwork.GetService(ctx, serviceNameStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred when running HTTP request recipe")
+		return nil, stacktrace.Propagate(err, "An error occurred when getting service '%v'", serviceNameStr)
 	}
+
+	response, err = serviceNetwork.HttpRequestServiceObject(ctx, service, portId, method, contentType, endpoint, recipeBodyWithRuntimeValue, headers)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred when running HTTP request recipe.")
+	}
+
+	// response, err = serviceNetwork.HttpRequestService(ctx, serviceNameStr, portId, method, contentType, endpoint, recipeBodyWithRuntimeValue, headers)
+	// if err != nil {
+	// 	return nil, stacktrace.Propagate(err, "An error occurred when running HTTP request recipe")
+	// }
 	defer func() {
 		err := response.Body.Close()
 		if err != nil {
