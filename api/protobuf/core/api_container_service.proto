@@ -388,9 +388,10 @@ message StarlarkRunProgress {
 message StarlarkRunFinishedEvent {
   bool is_run_successful = 1;
 
-  optional google.protobuf.Duration total_execution_duration = 2;
+  optional string serialized_output = 2;
+  
+  optional google.protobuf.Duration total_execution_duration = 3;
 
-  optional string serialized_output = 3;
 }
 
 // ==============================================================================================
