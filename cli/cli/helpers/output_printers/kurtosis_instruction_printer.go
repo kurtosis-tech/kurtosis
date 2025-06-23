@@ -279,7 +279,7 @@ func formatProgressBar(currentStep uint32, totalSteps uint32, progressBarChar st
 func formatRunOutput(runFinishedEvent *kurtosis_core_rpc_api_bindings.StarlarkRunFinishedEvent, dryRun bool, verbosity run.Verbosity) string {
 	durationMsg := ""
 	if verbosity == run.Detailed {
-		durationMsg = fmt.Sprintf(" Total instruction execution time: %s.", runFinishedEvent.GetTotalExecutionDuration().AsDuration().String())
+		durationMsg = fmt.Sprintf(". Total instruction execution time: %s", runFinishedEvent.GetTotalExecutionDuration().AsDuration().String())
 	}
 	if !runFinishedEvent.GetIsRunSuccessful() {
 		if dryRun {
@@ -293,12 +293,12 @@ func formatRunOutput(runFinishedEvent *kurtosis_core_rpc_api_bindings.StarlarkRu
 	if dryRun {
 		runSuccessMsg.WriteString(" in dry-run mode")
 	}
+	runSuccessMsg.WriteString(durationMsg)
 	if runFinishedEvent.GetSerializedOutput() != "" {
 		runSuccessMsg.WriteString(fmt.Sprintf(". Output was:\n%v", runFinishedEvent.GetSerializedOutput()))
 	} else {
 		runSuccessMsg.WriteString(". No output was returned.")
 	}
-	runSuccessMsg.WriteString(durationMsg)
 	return colorizeRunSuccessfulMsg(runSuccessMsg.String())
 }
 
