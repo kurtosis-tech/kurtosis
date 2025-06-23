@@ -12,10 +12,11 @@ import (
 )
 
 const (
-	dryRun       = true
-	executedRun  = false
-	isSkipped    = true
-	testDuration = 1 * time.Second
+	dryRun           = true
+	executedRun      = false
+	isSkipped        = true
+	testDuration     = 1 * time.Second
+	defaultVerbosity = run.Brief
 )
 
 func testInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
@@ -66,7 +67,7 @@ func TestFormatInstruction_Detailed(t *testing.T) {
 
 func TestFormatInstruction_Brief(t *testing.T) {
 	instruction := testInstruction()
-	formattedInstruction := formatInstruction(instruction, run.Brief)
+	formattedInstruction := formatInstruction(instruction, defaultVerbosity)
 	expectedResult := `> my_instruction foo kwarg1=serviceA`
 	require.Equal(t, expectedResult, formattedInstruction)
 }
@@ -96,7 +97,7 @@ func TestFormatError(t *testing.T) {
 func TestFormatResult(t *testing.T) {
 	resultMsg := "Hello world"
 	instructionResult := binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(resultMsg, testDuration).GetInstructionResult()
-	formattedResultMessage := formatInstructionResult(instructionResult, run.Brief)
+	formattedResultMessage := formatInstructionResult(instructionResult, defaultVerbosity)
 	require.Equal(t, resultMsg, formattedResultMessage)
 }
 
@@ -128,30 +129,30 @@ func TestFormatProgressBar_NoTotalSteps(t *testing.T) {
 }
 
 func TestFormatRunOutput_Successful_NoOutput_DryRun(t *testing.T) {
-	runFinishedEvent := binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(``).GetRunFinishedEvent()
-	message := formatRunOutput(runFinishedEvent, dryRun)
+	runFinishedEvent := binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(``, testDuration).GetRunFinishedEvent()
+	message := formatRunOutput(runFinishedEvent, dryRun, defaultVerbosity)
 	expectedMessage := `Starlark code successfully run in dry-run mode. No output was returned.`
 	require.Equal(t, expectedMessage, message)
 }
 
 func TestFormatRunOutput_Successful_WithOutput_DryRun(t *testing.T) {
-	runFinishedEvent := binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(`{"hello": "world"}`).GetRunFinishedEvent()
-	message := formatRunOutput(runFinishedEvent, dryRun)
+	runFinishedEvent := binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(`{"hello": "world"}`, testDuration).GetRunFinishedEvent()
+	message := formatRunOutput(runFinishedEvent, dryRun, defaultVerbosity)
 	expectedMessage := `Starlark code successfully run in dry-run mode. Output was:
 {"hello": "world"}`
 	require.Equal(t, expectedMessage, message)
 }
 
 func TestFormatRunOutput_Successful_NoOutput_ExecutedRun(t *testing.T) {
-	runFinishedEvent := binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(``).GetRunFinishedEvent()
-	message := formatRunOutput(runFinishedEvent, executedRun)
+	runFinishedEvent := binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(``, testDuration).GetRunFinishedEvent()
+	message := formatRunOutput(runFinishedEvent, executedRun, defaultVerbosity)
 	expectedMessage := `Starlark code successfully run. No output was returned.`
 	require.Equal(t, expectedMessage, message)
 }
 
 func TestFormatRunOutput_Successful_WithOutput_ExecutedRun(t *testing.T) {
-	runFinishedEvent := binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(`{"hello": "world"}`).GetRunFinishedEvent()
-	message := formatRunOutput(runFinishedEvent, executedRun)
+	runFinishedEvent := binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(`{"hello": "world"}`, testDuration).GetRunFinishedEvent()
+	message := formatRunOutput(runFinishedEvent, executedRun, defaultVerbosity)
 	expectedMessage := `Starlark code successfully run. Output was:
 {"hello": "world"}`
 	require.Equal(t, expectedMessage, message)
@@ -159,14 +160,34 @@ func TestFormatRunOutput_Successful_WithOutput_ExecutedRun(t *testing.T) {
 
 func TestFormatRunOutput_Failure_DryRun(t *testing.T) {
 	runFinishedEvent := binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent().GetRunFinishedEvent()
-	message := formatRunOutput(runFinishedEvent, dryRun)
+	message := formatRunOutput(runFinishedEvent, dryRun, defaultVerbosity)
 	expectedMessage := `Error encountered running Starlark code in dry-run mode.`
 	require.Equal(t, expectedMessage, message)
 }
 
 func TestFormatRunOutput_Failure_ExecutedRun(t *testing.T) {
 	runFinishedEvent := binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent().GetRunFinishedEvent()
-	message := formatRunOutput(runFinishedEvent, executedRun)
+	message := formatRunOutput(runFinishedEvent, executedRun, defaultVerbosity)
 	expectedMessage := `Error encountered running Starlark code.`
+	require.Equal(t, expectedMessage, message)
+}
+
+func TestFormatRunOutput_Successful_ExecutedRun_Detailed(t *testing.T) {
+	runFinishedEvent := binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(``, testDuration).GetRunFinishedEvent()
+	message := formatRunOutput(runFinishedEvent, executedRun, run.Detailed)
+	expectedMessage := `Starlark code successfully run. No output was returned. Total instruction execution time: 1s.`
+	require.Equal(t, expectedMessage, message)
+}
+
+func TestFormatRunOutput_Failure_ExecutedRun_Detailed_WithoutDuration(t *testing.T) {
+	runFinishedEvent := binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent().GetRunFinishedEvent()
+	message := formatRunOutput(runFinishedEvent, executedRun, run.Detailed)
+	expectedMessage := `Error encountered running Starlark code. Total instruction execution time: 0s.`
+	require.Equal(t, expectedMessage, message)
+}
+func TestFormatRunOutput_Failure_ExecutedRun_Detailed_WithDuration(t *testing.T) {
+	runFinishedEvent := binding_constructors.NewStarlarkRunResponseLineFromRunFailureEventWithDuration(testDuration).GetRunFinishedEvent()
+	message := formatRunOutput(runFinishedEvent, executedRun, run.Detailed)
+	expectedMessage := `Error encountered running Starlark code. Total instruction execution time: 1s.`
 	require.Equal(t, expectedMessage, message)
 }
