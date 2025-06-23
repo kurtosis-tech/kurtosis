@@ -401,6 +401,8 @@ pub struct StarlarkInstruction {
 pub struct StarlarkInstructionResult {
     #[prost(string, tag = "1")]
     pub serialized_instruction_result: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub execution_duration: ::core::option::Option<::prost_types::Duration>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]

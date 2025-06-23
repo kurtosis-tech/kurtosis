@@ -23,6 +23,8 @@ var global = (function() {
 
 var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
 goog.object.extend(proto, google_protobuf_empty_pb);
+var google_protobuf_duration_pb = require('google-protobuf/google/protobuf/duration_pb.js');
+goog.object.extend(proto, google_protobuf_duration_pb);
 goog.exportSymbol('proto.api_container_api.Connect', null, global);
 goog.exportSymbol('proto.api_container_api.ConnectServicesArgs', null, global);
 goog.exportSymbol('proto.api_container_api.ConnectServicesResponse', null, global);
@@ -5655,7 +5657,8 @@ proto.api_container_api.StarlarkInstructionResult.prototype.toObject = function(
  */
 proto.api_container_api.StarlarkInstructionResult.toObject = function(includeInstance, msg) {
   var f, obj = {
-    serializedInstructionResult: jspb.Message.getFieldWithDefault(msg, 1, "")
+    serializedInstructionResult: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    executionDuration: (f = msg.getExecutionDuration()) && google_protobuf_duration_pb.Duration.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -5696,6 +5699,11 @@ proto.api_container_api.StarlarkInstructionResult.deserializeBinaryFromReader = 
       var value = /** @type {string} */ (reader.readString());
       msg.setSerializedInstructionResult(value);
       break;
+    case 2:
+      var value = new google_protobuf_duration_pb.Duration;
+      reader.readMessage(value,google_protobuf_duration_pb.Duration.deserializeBinaryFromReader);
+      msg.setExecutionDuration(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -5732,6 +5740,14 @@ proto.api_container_api.StarlarkInstructionResult.serializeBinaryToWriter = func
       f
     );
   }
+  f = message.getExecutionDuration();
+  if (f != null) {
+    writer.writeMessage(
+      2,
+      f,
+      google_protobuf_duration_pb.Duration.serializeBinaryToWriter
+    );
+  }
 };
 
 
@@ -5750,6 +5766,43 @@ proto.api_container_api.StarlarkInstructionResult.prototype.getSerializedInstruc
  */
 proto.api_container_api.StarlarkInstructionResult.prototype.setSerializedInstructionResult = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
+};
+
+
+/**
+ * optional google.protobuf.Duration execution_duration = 2;
+ * @return {?proto.google.protobuf.Duration}
+ */
+proto.api_container_api.StarlarkInstructionResult.prototype.getExecutionDuration = function() {
+  return /** @type{?proto.google.protobuf.Duration} */ (
+    jspb.Message.getWrapperField(this, google_protobuf_duration_pb.Duration, 2));
+};
+
+
+/**
+ * @param {?proto.google.protobuf.Duration|undefined} value
+ * @return {!proto.api_container_api.StarlarkInstructionResult} returns this
+*/
+proto.api_container_api.StarlarkInstructionResult.prototype.setExecutionDuration = function(value) {
+  return jspb.Message.setWrapperField(this, 2, value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.api_container_api.StarlarkInstructionResult} returns this
+ */
+proto.api_container_api.StarlarkInstructionResult.prototype.clearExecutionDuration = function() {
+  return this.setExecutionDuration(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.StarlarkInstructionResult.prototype.hasExecutionDuration = function() {
+  return jspb.Message.getField(this, 2) != null;
 };
 
 

@@ -1,7 +1,10 @@
 package binding_constructors
 
 import (
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 // The generated bindings don't come with constructors (leaving it up to the user to initialize all the fields), so we
@@ -187,11 +190,12 @@ func NewStarlarkRunResponseLineFromWarning(warningMessage string) *kurtosis_core
 	}
 }
 
-func NewStarlarkRunResponseLineFromInstructionResult(serializedInstructionResult string) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+func NewStarlarkRunResponseLineFromInstructionResult(serializedInstructionResult string, executionDuration time.Duration) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
 		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_InstructionResult{
 			InstructionResult: &kurtosis_core_rpc_api_bindings.StarlarkInstructionResult{
 				SerializedInstructionResult: serializedInstructionResult,
+				ExecutionDuration:           durationpb.New(executionDuration),
 			},
 		},
 	}

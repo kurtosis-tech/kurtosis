@@ -6,6 +6,7 @@ package api_container_api;
 option go_package = "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings";
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/duration.proto";
 
 service ApiContainerService {
   // Executes a Starlark script on the user's behalf
@@ -336,6 +337,8 @@ message StarlarkInstruction {
 
 message StarlarkInstructionResult {
   string serialized_instruction_result = 1;
+
+  google.protobuf.Duration execution_duration = 2;
 }
 
 message StarlarkInstructionArg {

@@ -1,6 +1,7 @@
 import * as jspb from 'google-protobuf'
 
 import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb';
+import * as google_protobuf_duration_pb from 'google-protobuf/google/protobuf/duration_pb';
 
 
 export class Port extends jspb.Message {
@@ -726,6 +727,11 @@ export class StarlarkInstructionResult extends jspb.Message {
   getSerializedInstructionResult(): string;
   setSerializedInstructionResult(value: string): StarlarkInstructionResult;
 
+  getExecutionDuration(): google_protobuf_duration_pb.Duration | undefined;
+  setExecutionDuration(value?: google_protobuf_duration_pb.Duration): StarlarkInstructionResult;
+  hasExecutionDuration(): boolean;
+  clearExecutionDuration(): StarlarkInstructionResult;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StarlarkInstructionResult.AsObject;
   static toObject(includeInstance: boolean, msg: StarlarkInstructionResult): StarlarkInstructionResult.AsObject;
@@ -737,6 +743,7 @@ export class StarlarkInstructionResult extends jspb.Message {
 export namespace StarlarkInstructionResult {
   export type AsObject = {
     serializedInstructionResult: string,
+    executionDuration?: google_protobuf_duration_pb.Duration.AsObject,
   }
 }
 
