@@ -745,6 +745,11 @@ export namespace StarlarkInstructionResult {
     serializedInstructionResult: string,
     executionDuration?: google_protobuf_duration_pb.Duration.AsObject,
   }
+
+  export enum ExecutionDurationCase { 
+    _EXECUTION_DURATION_NOT_SET = 0,
+    EXECUTION_DURATION = 2,
+  }
 }
 
 export class StarlarkInstructionArg extends jspb.Message {
@@ -956,6 +961,11 @@ export namespace StarlarkRunFinishedEvent {
     isRunSuccessful: boolean,
     totalExecutionDuration?: google_protobuf_duration_pb.Duration.AsObject,
     serializedOutput?: string,
+  }
+
+  export enum TotalExecutionDurationCase { 
+    _TOTAL_EXECUTION_DURATION_NOT_SET = 0,
+    TOTAL_EXECUTION_DURATION = 2,
   }
 
   export enum SerializedOutputCase { 

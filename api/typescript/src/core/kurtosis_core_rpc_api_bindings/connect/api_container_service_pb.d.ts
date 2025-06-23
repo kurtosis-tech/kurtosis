@@ -888,7 +888,7 @@ export declare class StarlarkInstructionResult extends Message<StarlarkInstructi
   serializedInstructionResult: string;
 
   /**
-   * @generated from field: google.protobuf.Duration execution_duration = 2;
+   * @generated from field: optional google.protobuf.Duration execution_duration = 2;
    */
   executionDuration?: Duration;
 
@@ -1133,7 +1133,7 @@ export declare class StarlarkRunFinishedEvent extends Message<StarlarkRunFinishe
   isRunSuccessful: boolean;
 
   /**
-   * @generated from field: google.protobuf.Duration total_execution_duration = 2;
+   * @generated from field: optional google.protobuf.Duration total_execution_duration = 2;
    */
   totalExecutionDuration?: Duration;
 

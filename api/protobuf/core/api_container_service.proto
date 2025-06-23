@@ -338,7 +338,7 @@ message StarlarkInstruction {
 message StarlarkInstructionResult {
   string serialized_instruction_result = 1;
 
-  google.protobuf.Duration execution_duration = 2;
+  optional google.protobuf.Duration execution_duration = 2;
 }
 
 message StarlarkInstructionArg {
@@ -388,7 +388,7 @@ message StarlarkRunProgress {
 message StarlarkRunFinishedEvent {
   bool is_run_successful = 1;
 
-  google.protobuf.Duration total_execution_duration = 2;
+  optional google.protobuf.Duration total_execution_duration = 2;
 
   optional string serialized_output = 3;
 }
