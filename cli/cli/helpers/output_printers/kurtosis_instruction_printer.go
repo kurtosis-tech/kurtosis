@@ -117,7 +117,7 @@ func (printer *ExecutionPrinter) PrintKurtosisExecutionResponseLineToStdOut(resp
 			return stacktrace.Propagate(err, "Error printing Kurtosis instruction: \n%v", formattedInstruction)
 		}
 	} else if responseLine.GetInstructionResult() != nil {
-		formattedInstructionResult := formatInstructionResult(responseLine.GetInstructionResult())
+		formattedInstructionResult := formatInstructionResult(responseLine.GetInstructionResult(), verbosity)
 		if err := printer.printPersistentLineToStdOut(formattedInstructionResult); err != nil {
 			return stacktrace.Propagate(err, "Error printing Kurtosis instruction result: \n%v", formattedInstructionResult)
 		}
@@ -205,8 +205,12 @@ func formatInstruction(instruction *kurtosis_core_rpc_api_bindings.StarlarkInstr
 	return colorizeInstruction(serializedInstruction)
 }
 
-func formatInstructionResult(instructionResult *kurtosis_core_rpc_api_bindings.StarlarkInstructionResult) string {
+func formatInstructionResult(instructionResult *kurtosis_core_rpc_api_bindings.StarlarkInstructionResult, verbosity run.Verbosity) string {
 	serializedInstructionResult := fmt.Sprintf("%s%s", resultPrefixString, instructionResult.GetSerializedInstructionResult())
+	if verbosity == run.Detailed {
+		executionDuration := instructionResult.GetExecutionDuration()
+		serializedInstructionResult = fmt.Sprintf("%s (execution duration: %s)", serializedInstructionResult, executionDuration.AsDuration().String())
+	}
 	return colorizeResult(serializedInstructionResult)
 }
 

@@ -2,17 +2,20 @@ package output_printers
 
 import (
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_args/run"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 const (
-	dryRun      = true
-	executedRun = false
-	isSkipped   = true
+	dryRun       = true
+	executedRun  = false
+	isSkipped    = true
+	testDuration = 1 * time.Second
 )
 
 func testInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
@@ -92,9 +95,18 @@ func TestFormatError(t *testing.T) {
 
 func TestFormatResult(t *testing.T) {
 	resultMsg := "Hello world"
-	instructionResult := binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(resultMsg).GetInstructionResult()
-	formattedResultMessage := formatInstructionResult(instructionResult)
+	instructionResult := binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(resultMsg, testDuration).GetInstructionResult()
+	formattedResultMessage := formatInstructionResult(instructionResult, run.Brief)
 	require.Equal(t, resultMsg, formattedResultMessage)
+}
+
+func TestFormatResult_Detailed(t *testing.T) {
+	serializedResult := "Hello world"
+	instructionResult := binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(serializedResult, testDuration).GetInstructionResult()
+	formattedResultMessage := formatInstructionResult(instructionResult, run.Detailed)
+
+	expectedResultMessage := "Hello world (execution duration: 1s)"
+	require.Equal(t, expectedResultMessage, formattedResultMessage)
 }
 
 func TestFormatProgressBar(t *testing.T) {
