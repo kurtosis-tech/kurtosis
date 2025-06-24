@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { proto3 } from "@bufbuild/protobuf";
+import { Duration, proto3 } from "@bufbuild/protobuf";
 
 /**
  * @generated from enum api_container_api.ServiceStatus
@@ -292,6 +292,7 @@ export const StarlarkInstructionResult = proto3.makeMessageType(
   "api_container_api.StarlarkInstructionResult",
   () => [
     { no: 1, name: "serialized_instruction_result", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "execution_duration", kind: "message", T: Duration, opt: true },
   ],
 );
 
@@ -380,7 +381,8 @@ export const StarlarkRunFinishedEvent = proto3.makeMessageType(
   "api_container_api.StarlarkRunFinishedEvent",
   () => [
     { no: 1, name: "is_run_successful", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
-    { no: 2, name: "serialized_output", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 2, name: "total_execution_duration", kind: "message", T: Duration, opt: true },
+    { no: 3, name: "serialized_output", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ],
 );
 

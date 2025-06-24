@@ -1,6 +1,7 @@
 import * as jspb from 'google-protobuf'
 
 import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb';
+import * as google_protobuf_duration_pb from 'google-protobuf/google/protobuf/duration_pb';
 
 
 export class Port extends jspb.Message {
@@ -726,6 +727,11 @@ export class StarlarkInstructionResult extends jspb.Message {
   getSerializedInstructionResult(): string;
   setSerializedInstructionResult(value: string): StarlarkInstructionResult;
 
+  getExecutionDuration(): google_protobuf_duration_pb.Duration | undefined;
+  setExecutionDuration(value?: google_protobuf_duration_pb.Duration): StarlarkInstructionResult;
+  hasExecutionDuration(): boolean;
+  clearExecutionDuration(): StarlarkInstructionResult;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StarlarkInstructionResult.AsObject;
   static toObject(includeInstance: boolean, msg: StarlarkInstructionResult): StarlarkInstructionResult.AsObject;
@@ -737,6 +743,12 @@ export class StarlarkInstructionResult extends jspb.Message {
 export namespace StarlarkInstructionResult {
   export type AsObject = {
     serializedInstructionResult: string,
+    executionDuration?: google_protobuf_duration_pb.Duration.AsObject,
+  }
+
+  export enum ExecutionDurationCase { 
+    _EXECUTION_DURATION_NOT_SET = 0,
+    EXECUTION_DURATION = 2,
   }
 }
 
@@ -926,6 +938,11 @@ export class StarlarkRunFinishedEvent extends jspb.Message {
   getIsRunSuccessful(): boolean;
   setIsRunSuccessful(value: boolean): StarlarkRunFinishedEvent;
 
+  getTotalExecutionDuration(): google_protobuf_duration_pb.Duration | undefined;
+  setTotalExecutionDuration(value?: google_protobuf_duration_pb.Duration): StarlarkRunFinishedEvent;
+  hasTotalExecutionDuration(): boolean;
+  clearTotalExecutionDuration(): StarlarkRunFinishedEvent;
+
   getSerializedOutput(): string;
   setSerializedOutput(value: string): StarlarkRunFinishedEvent;
   hasSerializedOutput(): boolean;
@@ -942,12 +959,18 @@ export class StarlarkRunFinishedEvent extends jspb.Message {
 export namespace StarlarkRunFinishedEvent {
   export type AsObject = {
     isRunSuccessful: boolean,
+    totalExecutionDuration?: google_protobuf_duration_pb.Duration.AsObject,
     serializedOutput?: string,
+  }
+
+  export enum TotalExecutionDurationCase { 
+    _TOTAL_EXECUTION_DURATION_NOT_SET = 0,
+    TOTAL_EXECUTION_DURATION = 2,
   }
 
   export enum SerializedOutputCase { 
     _SERIALIZED_OUTPUT_NOT_SET = 0,
-    SERIALIZED_OUTPUT = 2,
+    SERIALIZED_OUTPUT = 3,
   }
 }
 

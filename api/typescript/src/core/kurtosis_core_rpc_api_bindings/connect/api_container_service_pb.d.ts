@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
+import type { BinaryReadOptions, Duration, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3 } from "@bufbuild/protobuf";
 
 /**
@@ -887,6 +887,11 @@ export declare class StarlarkInstructionResult extends Message<StarlarkInstructi
    */
   serializedInstructionResult: string;
 
+  /**
+   * @generated from field: optional google.protobuf.Duration execution_duration = 2;
+   */
+  executionDuration?: Duration;
+
   constructor(data?: PartialMessage<StarlarkInstructionResult>);
 
   static readonly runtime: typeof proto3;
@@ -1128,7 +1133,12 @@ export declare class StarlarkRunFinishedEvent extends Message<StarlarkRunFinishe
   isRunSuccessful: boolean;
 
   /**
-   * @generated from field: optional string serialized_output = 2;
+   * @generated from field: optional google.protobuf.Duration total_execution_duration = 2;
+   */
+  totalExecutionDuration?: Duration;
+
+  /**
+   * @generated from field: optional string serialized_output = 3;
    */
   serializedOutput?: string;
 
