@@ -45,7 +45,7 @@ func ExecuteServiceAssertionWithRecipe(
 	ctx context.Context,
 	serviceNetwork service_network.ServiceNetwork,
 	runtimeValueStore *runtime_value_store.RuntimeValueStore,
-	serviceName service.ServiceName,
+	service *service.Service,
 	recipe recipe.Recipe,
 	valueField string,
 	assertion string,
@@ -81,13 +81,14 @@ func ExecuteServiceAssertionWithRecipe(
 	defer cancelContext()
 
 	execFunc := func() (map[string]starlark.Comparable, error) {
-		return execRequestAndGetValue(ctxWithDeadline, serviceNetwork, runtimeValueStore, serviceName, recipe, valueField)
+		return execRequestAndGetValue(ctxWithDeadline, serviceNetwork, runtimeValueStore, service, recipe, valueField)
 	}
 	assertFunc := func(currentResult map[string]starlark.Comparable) error {
 		return assertResult(currentResult[valueField], assertion, target)
 	}
-	return executeServiceAssertionWithRecipeWithTicker(serviceName, execFunc, assertFunc, executionTickChan, timeoutChan)
 
+	serviceName := service.GetRegistration().GetName()
+	return executeServiceAssertionWithRecipeWithTicker(serviceName, execFunc, assertFunc, executionTickChan, timeoutChan)
 }
 
 func assertResult(currentResult starlark.Comparable, assertion string, target starlark.Comparable) error {
@@ -101,10 +102,10 @@ func assertResult(currentResult starlark.Comparable, assertion string, target st
 func execRequestAndGetValue(ctx context.Context,
 	serviceNetwork service_network.ServiceNetwork,
 	runtimeValueStore *runtime_value_store.RuntimeValueStore,
-	serviceName service.ServiceName,
+	service *service.Service,
 	recipe recipe.Recipe,
 	valueField string) (map[string]starlark.Comparable, error) {
-	resultMap, err := recipe.Execute(ctx, serviceNetwork, runtimeValueStore, serviceName)
+	resultMap, err := recipe.Execute(ctx, serviceNetwork, runtimeValueStore, service)
 	if err != nil {
 		return resultMap, err
 	}

@@ -2,7 +2,14 @@ package test_engine
 
 import (
 	"fmt"
+	"net"
+	"testing"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/exec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -10,7 +17,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
-	"testing"
 )
 
 type execWithPositionalArgsTestCase struct {
@@ -20,6 +26,32 @@ type execWithPositionalArgsTestCase struct {
 }
 
 func (suite *KurtosisPlanInstructionTestSuite) TestExecWithPositionalArgs() {
+	suite.serviceNetwork.EXPECT().GetService(
+		mock.Anything,
+		string(execServiceName),
+	).Times(1).Return(
+		service.NewService(
+			service.NewServiceRegistration(
+				execServiceName,
+				service.ServiceUUID(""),
+				enclave.EnclaveUUID(""),
+				net.IP{},
+				"",
+			),
+			map[string]*port_spec.PortSpec{},
+			net.IP{},
+			map[string]*port_spec.PortSpec{},
+			container.NewContainer(
+				container.ContainerStatus_Running,
+				"",
+				[]string{},
+				[]string{},
+				map[string]string{},
+			),
+		),
+		nil,
+	)
+
 	suite.serviceNetwork.EXPECT().RunExec(
 		mock.Anything,
 		string(execServiceName),

@@ -3,6 +3,10 @@ package add_service
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"strings"
+	"sync"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -22,9 +26,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
-	"reflect"
-	"strings"
-	"sync"
 )
 
 const (
@@ -346,11 +347,11 @@ func (builtin *AddServicesCapabilities) allServicesReadinessCheck(
 	failedServiceChecksSyncMap := &sync.Map{}
 
 	wg := &sync.WaitGroup{}
-	for serviceName := range startedServices {
+	for serviceName, service := range startedServices {
 		wg.Add(1)
 		// The concurrencyControlChan will block if the buffer is currently full
 		concurrencyControlChan <- true
-		go builtin.runServiceReadinessCheck(ctx, wg, concurrencyControlChan, serviceName, failedServiceChecksSyncMap)
+		go builtin.runServiceReadinessCheck(ctx, wg, concurrencyControlChan, serviceName, service, failedServiceChecksSyncMap)
 	}
 	wg.Wait()
 
@@ -394,6 +395,7 @@ func (builtin *AddServicesCapabilities) runServiceReadinessCheck(
 	wg *sync.WaitGroup,
 	concurrencyControlChan chan bool,
 	serviceName service.ServiceName,
+	service *service.Service,
 	failedServiceChecks *sync.Map,
 ) {
 	var serviceErr error
@@ -415,6 +417,7 @@ func (builtin *AddServicesCapabilities) runServiceReadinessCheck(
 		builtin.serviceNetwork,
 		builtin.runtimeValueStore,
 		serviceName,
+		service,
 		readyConditions,
 	); err != nil {
 		serviceErr = stacktrace.Propagate(err, "An error occurred while checking if service '%v' is ready", serviceName)

@@ -3,6 +3,8 @@ package exec
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
@@ -20,7 +22,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
-	"strings"
 )
 
 var defaultAcceptableCodes = []int64{
@@ -185,7 +186,11 @@ func (builtin *ExecCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet,
 }
 
 func (builtin *ExecCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
-	result, err := builtin.execRecipe.Execute(ctx, builtin.serviceNetwork, builtin.runtimeValueStore, builtin.serviceName)
+	service, err := builtin.serviceNetwork.GetService(ctx, string(builtin.serviceName))
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Error getting service '%s'", builtin.serviceName)
+	}
+	result, err := builtin.execRecipe.Execute(ctx, builtin.serviceNetwork, builtin.runtimeValueStore, service)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Error executing exec recipe")
 	}

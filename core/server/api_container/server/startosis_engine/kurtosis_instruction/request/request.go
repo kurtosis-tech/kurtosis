@@ -3,6 +3,8 @@ package request
 import (
 	"context"
 	"fmt"
+	"net/http"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
@@ -19,7 +21,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
-	"net/http"
 )
 
 var defaultAcceptableCodes = []int64{
@@ -181,7 +182,11 @@ func (builtin *RequestCapabilities) Validate(_ *builtin_argument.ArgumentValuesS
 }
 
 func (builtin *RequestCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
-	result, err := builtin.httpRequestRecipe.Execute(ctx, builtin.serviceNetwork, builtin.runtimeValueStore, builtin.serviceName)
+	service, err := builtin.serviceNetwork.GetService(ctx, string(builtin.serviceName))
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Error getting service '%s'", builtin.serviceName)
+	}
+	result, err := builtin.httpRequestRecipe.Execute(ctx, builtin.serviceNetwork, builtin.runtimeValueStore, service)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Error executing http recipe")
 	}

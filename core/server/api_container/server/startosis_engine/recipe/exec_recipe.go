@@ -3,6 +3,9 @@ package recipe
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"strings"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
@@ -15,8 +18,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"golang.org/x/exp/maps"
-	"reflect"
-	"strings"
 )
 
 const (
@@ -87,7 +88,7 @@ func (recipe *ExecRecipe) Execute(
 	ctx context.Context,
 	serviceNetwork service_network.ServiceNetwork,
 	runtimeValueStore *runtime_value_store.RuntimeValueStore,
-	serviceName service.ServiceName,
+	service *service.Service,
 ) (map[string]starlark.Comparable, error) {
 	// parse argument
 	commandStarlarkList, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.List](
@@ -124,14 +125,11 @@ func (recipe *ExecRecipe) Execute(
 		commandWithRuntimeValue = append(commandWithRuntimeValue, maybeSubCommandWithRuntimeValues)
 	}
 
-	serviceNameStr := string(serviceName)
-	if serviceNameStr == "" {
-		return nil, stacktrace.NewError("The service name parameter can't be an empty string")
-	}
+	serviceNameStr := string(service.GetRegistration().GetName())
 
 	execResult, err := serviceNetwork.RunExec(ctx, serviceNameStr, commandWithRuntimeValue)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to execute command '%v' on service '%s'", command, serviceName)
+		return nil, stacktrace.Propagate(err, "Failed to execute command '%v' on service '%s'", command, serviceNameStr)
 	}
 	commandOutput := execResult.GetOutput()
 	resultDict := map[string]starlark.Comparable{

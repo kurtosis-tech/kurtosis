@@ -224,6 +224,7 @@ func runServiceReadinessCheck(
 	serviceNetwork service_network.ServiceNetwork,
 	runtimeValueStore *runtime_value_store.RuntimeValueStore,
 	serviceName service.ServiceName,
+	service *service.Service,
 	readyConditions *service_config.ReadyCondition,
 ) error {
 	if readyConditions != nil {
@@ -264,7 +265,7 @@ func runServiceReadinessCheck(
 			ctx,
 			serviceNetwork,
 			runtimeValueStore,
-			serviceName,
+			service,
 			recipe,
 			field,
 			assertion,

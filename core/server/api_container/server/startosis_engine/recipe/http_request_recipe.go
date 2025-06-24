@@ -46,7 +46,7 @@ func executeInternal(
 	ctx context.Context,
 	serviceNetwork service_network.ServiceNetwork,
 	runtimeValueStore *runtime_value_store.RuntimeValueStore,
-	serviceName service.ServiceName,
+	service *service.Service,
 	requestBody string,
 	portId string,
 	method string,
@@ -62,15 +62,10 @@ func executeInternal(
 		return nil, stacktrace.Propagate(err, "An error occurred while replacing runtime values in the body of the http recipe")
 	}
 
-	serviceNameStr := string(serviceName)
-	if serviceNameStr == "" {
-		return nil, stacktrace.NewError("The service name parameter can't be an empty string")
-	}
-
-	service, err := serviceNetwork.GetService(ctx, serviceNameStr)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred when getting service '%v'", serviceNameStr)
-	}
+	// service, err := serviceNetwork.GetService(ctx, serviceNameStr)
+	// if err != nil {
+	// 	return nil, stacktrace.Propagate(err, "An error occurred when getting service '%v'", serviceNameStr)
+	// }
 
 	response, err = serviceNetwork.HttpRequestServiceObject(ctx, service, portId, method, contentType, endpoint, recipeBodyWithRuntimeValue, headers)
 	if err != nil {

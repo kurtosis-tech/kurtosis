@@ -3,6 +3,8 @@ package add_service
 import (
 	"context"
 	"fmt"
+	"reflect"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -23,7 +25,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
-	"reflect"
 )
 
 const (
@@ -217,6 +218,7 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 		builtin.serviceNetwork,
 		builtin.runtimeValueStore,
 		replacedServiceName,
+		startedService,
 		builtin.readyCondition,
 	); err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while checking if service '%v' is ready", replacedServiceName)
