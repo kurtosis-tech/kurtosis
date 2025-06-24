@@ -17,7 +17,6 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"runtime/pprof"
 	"strings"
 	"time"
 	"unicode"
@@ -300,16 +299,6 @@ func (apicService *ApiContainerService) InspectFilesArtifactContents(_ context.C
 }
 
 func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_RunStarlarkPackageServer) error {
-	f, err := os.Create("run_package.pprof")
-	if err != nil {
-		logrus.Fatalf("could not create CPU profile: %v", err)
-	}
-	pprof.StartCPUProfile(f)
-	defer func() {
-		pprof.StopCPUProfile()
-		f.Close()
-	}()
-
 	var scriptWithRunFunction string
 	var interpretationError *startosis_errors.InterpretationError
 	var isRemote bool
