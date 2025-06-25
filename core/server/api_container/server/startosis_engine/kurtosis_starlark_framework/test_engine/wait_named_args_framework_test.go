@@ -3,14 +3,10 @@ package test_engine
 import (
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"strings"
 	"testing"
 
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/wait"
@@ -44,25 +40,7 @@ type waitWithNamedArgsTestCase struct {
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
 }
 
-var waitRecipeTestCaseService *service.Service = service.NewService(
-	service.NewServiceRegistration(
-		waitRecipeTestCaseServiceName,
-		service.ServiceUUID(""),
-		enclave.EnclaveUUID(""),
-		net.IP{},
-		"",
-	),
-	map[string]*port_spec.PortSpec{},
-	net.IP{},
-	map[string]*port_spec.PortSpec{},
-	container.NewContainer(
-		container.ContainerStatus_Running,
-		"",
-		[]string{},
-		[]string{},
-		map[string]string{},
-	),
-)
+var waitRecipeTestCaseService *service.Service = getService(waitRecipeTestCaseServiceName)
 
 func (suite *KurtosisPlanInstructionTestSuite) TestWaitWithNamedArgs() {
 	suite.serviceNetwork.EXPECT().GetService(

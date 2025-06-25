@@ -4,14 +4,10 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"strings"
 	"testing"
 
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -21,25 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var testService *service.Service = service.NewService(
-	service.NewServiceRegistration(
-		testServiceName,
-		service.ServiceUUID(""),
-		enclave.EnclaveUUID(""),
-		net.IP{},
-		"",
-	),
-	map[string]*port_spec.PortSpec{},
-	net.IP{},
-	map[string]*port_spec.PortSpec{},
-	container.NewContainer(
-		container.ContainerStatus_Running,
-		"",
-		[]string{},
-		[]string{},
-		map[string]string{},
-	),
-)
+var testService *service.Service = getService(testServiceName)
 
 type getHttpRequestRecipeNoExtractorTestCase struct {
 	*testing.T
