@@ -27,7 +27,7 @@ type getHttpRequestRecipeTestCase struct {
 }
 
 func (suite *KurtosisTypeConstructorTestSuite) TestGetHttpRequestRecipe() {
-	suite.serviceNetwork.EXPECT().HttpRequestServiceObject(
+	suite.serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
 		testService,
 		testPrivatePortId,

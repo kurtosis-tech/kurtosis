@@ -56,7 +56,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestRequestWithPositionalArgs() {
 		nil,
 	)
 
-	suite.serviceNetwork.EXPECT().HttpRequestServiceObject(
+	suite.serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
 		requestTestCaseServicePositional,
 		requestPortId,

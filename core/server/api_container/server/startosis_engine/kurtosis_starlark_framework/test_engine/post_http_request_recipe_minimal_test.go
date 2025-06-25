@@ -23,7 +23,7 @@ type postHttpRequestRecipeMinimalTestCase struct {
 }
 
 func (suite *KurtosisTypeConstructorTestSuite) TestPostHttpRequestRecipeMinimal() {
-	suite.serviceNetwork.EXPECT().HttpRequestServiceObject(
+	suite.serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
 		testService,
 		testPrivatePortId,

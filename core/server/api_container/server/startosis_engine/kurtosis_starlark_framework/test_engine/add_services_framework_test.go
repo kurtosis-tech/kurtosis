@@ -77,7 +77,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 		nil,
 	)
 
-	suite.serviceNetwork.EXPECT().HttpRequestServiceObject(
+	suite.serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
 		testService1,
 		testReadyConditionsRecipePortId,
@@ -106,7 +106,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 		TLS:              nil,
 	}, nil)
 
-	suite.serviceNetwork.EXPECT().HttpRequestServiceObject(
+	suite.serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
 		testService2,
 		testReadyConditions2RecipePortId,

@@ -67,7 +67,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestRequestWithNamedArgs() {
 		nil,
 	)
 
-	suite.serviceNetwork.EXPECT().HttpRequestServiceObject(
+	suite.serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
 		requestTestCaseService,
 		requestPortId,

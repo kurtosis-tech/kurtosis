@@ -48,7 +48,7 @@ type getHttpRequestRecipeNoExtractorTestCase struct {
 }
 
 func (suite *KurtosisTypeConstructorTestSuite) TestGetHttpRequestRecipeNoExtractor() {
-	suite.serviceNetwork.EXPECT().HttpRequestServiceObject(
+	suite.serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
 		testService,
 		testPrivatePortId,

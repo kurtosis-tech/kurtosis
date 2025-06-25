@@ -682,69 +682,8 @@ func (_c *MockServiceNetwork_GetUniqueNameForFileArtifact_Call) RunAndReturn(run
 	return _c
 }
 
-// HttpRequestService provides a mock function with given fields: ctx, serviceIdentifier, portId, method, contentType, endpoint, body, headers
-func (_m *MockServiceNetwork) HttpRequestService(ctx context.Context, serviceIdentifier string, portId string, method string, contentType string, endpoint string, body string, headers map[string]string) (*http.Response, error) {
-	ret := _m.Called(ctx, serviceIdentifier, portId, method, contentType, endpoint, body, headers)
-
-	var r0 *http.Response
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string, map[string]string) (*http.Response, error)); ok {
-		return rf(ctx, serviceIdentifier, portId, method, contentType, endpoint, body, headers)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string, map[string]string) *http.Response); ok {
-		r0 = rf(ctx, serviceIdentifier, portId, method, contentType, endpoint, body, headers)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*http.Response)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string, string, string, map[string]string) error); ok {
-		r1 = rf(ctx, serviceIdentifier, portId, method, contentType, endpoint, body, headers)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// MockServiceNetwork_HttpRequestService_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'HttpRequestService'
-type MockServiceNetwork_HttpRequestService_Call struct {
-	*mock.Call
-}
-
-// HttpRequestService is a helper method to define mock.On call
-//   - ctx context.Context
-//   - serviceIdentifier string
-//   - portId string
-//   - method string
-//   - contentType string
-//   - endpoint string
-//   - body string
-//   - headers map[string]string
-func (_e *MockServiceNetwork_Expecter) HttpRequestService(ctx interface{}, serviceIdentifier interface{}, portId interface{}, method interface{}, contentType interface{}, endpoint interface{}, body interface{}, headers interface{}) *MockServiceNetwork_HttpRequestService_Call {
-	return &MockServiceNetwork_HttpRequestService_Call{Call: _e.mock.On("HttpRequestService", ctx, serviceIdentifier, portId, method, contentType, endpoint, body, headers)}
-}
-
-func (_c *MockServiceNetwork_HttpRequestService_Call) Run(run func(ctx context.Context, serviceIdentifier string, portId string, method string, contentType string, endpoint string, body string, headers map[string]string)) *MockServiceNetwork_HttpRequestService_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(string), args[4].(string), args[5].(string), args[6].(string), args[7].(map[string]string))
-	})
-	return _c
-}
-
-func (_c *MockServiceNetwork_HttpRequestService_Call) Return(_a0 *http.Response, _a1 error) *MockServiceNetwork_HttpRequestService_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *MockServiceNetwork_HttpRequestService_Call) RunAndReturn(run func(context.Context, string, string, string, string, string, string, map[string]string) (*http.Response, error)) *MockServiceNetwork_HttpRequestService_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// HttpRequestServiceObject provides a mock function with given fields: ctx, _a1, portId, method, contentType, endpoint, body, header
-func (_m *MockServiceNetwork) HttpRequestServiceObject(ctx context.Context, _a1 *service.Service, portId string, method string, contentType string, endpoint string, body string, header map[string]string) (*http.Response, error) {
+// HttpRequestService provides a mock function with given fields: ctx, _a1, portId, method, contentType, endpoint, body, header
+func (_m *MockServiceNetwork) HttpRequestService(ctx context.Context, _a1 *service.Service, portId string, method string, contentType string, endpoint string, body string, header map[string]string) (*http.Response, error) {
 	ret := _m.Called(ctx, _a1, portId, method, contentType, endpoint, body, header)
 
 	var r0 *http.Response
@@ -769,12 +708,12 @@ func (_m *MockServiceNetwork) HttpRequestServiceObject(ctx context.Context, _a1 
 	return r0, r1
 }
 
-// MockServiceNetwork_HttpRequestServiceObject_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'HttpRequestServiceObject'
-type MockServiceNetwork_HttpRequestServiceObject_Call struct {
+// MockServiceNetwork_HttpRequestService_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'HttpRequestService'
+type MockServiceNetwork_HttpRequestService_Call struct {
 	*mock.Call
 }
 
-// HttpRequestServiceObject is a helper method to define mock.On call
+// HttpRequestService is a helper method to define mock.On call
 //   - ctx context.Context
 //   - _a1 *service.Service
 //   - portId string
@@ -783,23 +722,23 @@ type MockServiceNetwork_HttpRequestServiceObject_Call struct {
 //   - endpoint string
 //   - body string
 //   - header map[string]string
-func (_e *MockServiceNetwork_Expecter) HttpRequestServiceObject(ctx interface{}, _a1 interface{}, portId interface{}, method interface{}, contentType interface{}, endpoint interface{}, body interface{}, header interface{}) *MockServiceNetwork_HttpRequestServiceObject_Call {
-	return &MockServiceNetwork_HttpRequestServiceObject_Call{Call: _e.mock.On("HttpRequestServiceObject", ctx, _a1, portId, method, contentType, endpoint, body, header)}
+func (_e *MockServiceNetwork_Expecter) HttpRequestService(ctx interface{}, _a1 interface{}, portId interface{}, method interface{}, contentType interface{}, endpoint interface{}, body interface{}, header interface{}) *MockServiceNetwork_HttpRequestService_Call {
+	return &MockServiceNetwork_HttpRequestService_Call{Call: _e.mock.On("HttpRequestService", ctx, _a1, portId, method, contentType, endpoint, body, header)}
 }
 
-func (_c *MockServiceNetwork_HttpRequestServiceObject_Call) Run(run func(ctx context.Context, _a1 *service.Service, portId string, method string, contentType string, endpoint string, body string, header map[string]string)) *MockServiceNetwork_HttpRequestServiceObject_Call {
+func (_c *MockServiceNetwork_HttpRequestService_Call) Run(run func(ctx context.Context, _a1 *service.Service, portId string, method string, contentType string, endpoint string, body string, header map[string]string)) *MockServiceNetwork_HttpRequestService_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(*service.Service), args[2].(string), args[3].(string), args[4].(string), args[5].(string), args[6].(string), args[7].(map[string]string))
 	})
 	return _c
 }
 
-func (_c *MockServiceNetwork_HttpRequestServiceObject_Call) Return(_a0 *http.Response, _a1 error) *MockServiceNetwork_HttpRequestServiceObject_Call {
+func (_c *MockServiceNetwork_HttpRequestService_Call) Return(_a0 *http.Response, _a1 error) *MockServiceNetwork_HttpRequestService_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MockServiceNetwork_HttpRequestServiceObject_Call) RunAndReturn(run func(context.Context, *service.Service, string, string, string, string, string, map[string]string) (*http.Response, error)) *MockServiceNetwork_HttpRequestServiceObject_Call {
+func (_c *MockServiceNetwork_HttpRequestService_Call) RunAndReturn(run func(context.Context, *service.Service, string, string, string, string, string, map[string]string) (*http.Response, error)) *MockServiceNetwork_HttpRequestService_Call {
 	_c.Call.Return(run)
 	return _c
 }
