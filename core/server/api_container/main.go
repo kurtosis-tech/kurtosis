@@ -95,6 +95,7 @@ func main() {
 		os.Exit(failureExitCode)
 	}
 	os.Exit(successExitCode)
+
 }
 
 func runMain() error {
