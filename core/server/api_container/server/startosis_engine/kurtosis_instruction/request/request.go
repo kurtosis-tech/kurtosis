@@ -189,7 +189,7 @@ func (builtin *RequestCapabilities) Execute(ctx context.Context, _ *builtin_argu
 	}
 	result, err := builtin.httpRequestRecipe.Execute(ctx, builtin.serviceNetwork, builtin.runtimeValueStore, service)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while executing http recipe on service '%s'", builtin.serviceName)
+		return "", stacktrace.Propagate(err, "An error occurred while executing http recipe on service '%s'", serviceNameStr)
 	}
 	if !builtin.skipCodeCheck && !builtin.isAcceptableCode(result) {
 		return "", stacktrace.NewError("Request returned status code '%v' that is not part of the acceptable status codes '%v'", result["code"], builtin.acceptableCodes)
