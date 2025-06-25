@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.0](https://github.com/kurtosis-tech/kurtosis/compare/1.9.1...1.10.0) (2025-06-24)
+
+
+### Features
+
+* display instruction execution time for detailed verbosity ([#2767](https://github.com/kurtosis-tech/kurtosis/issues/2767)) ([e8e483e](https://github.com/kurtosis-tech/kurtosis/commit/e8e483ebb6f2cbf01efaaf19b5053b677d193ba5))
+
 ## [1.9.1](https://github.com/kurtosis-tech/kurtosis/compare/1.9.0...1.9.1) (2025-06-19)
 
 
