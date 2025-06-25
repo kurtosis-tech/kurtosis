@@ -629,8 +629,9 @@ func (network *DefaultServiceNetwork) RunExecs(ctx context.Context, userServiceC
 	return successfulExecs, failedExecs, nil
 }
 
-func (network *DefaultServiceNetwork) HttpRequestService(ctx context.Context, userService *service.Service, portId string, method string, contentType, endpoint string, body string, headers map[string]string) (*http.Response, error) {
+func (network *DefaultServiceNetwork) HttpRequestService(ctx context.Context, userService *service.Service, portId string, method string, contentType string, endpoint string, body string, headers map[string]string) (*http.Response, error) {
 	serviceIdentifier := userService.GetRegistration().GetName()
+	logrus.Debugf("Making a request '%v' '%v' '%v' '%v' '%v' '%v'", serviceIdentifier, portId, method, contentType, endpoint, body)
 	port, found := userService.GetPrivatePorts()[portId]
 	if !found {
 		return nil, stacktrace.NewError("An error occurred when getting port '%v' from service '%v' for HTTP request", serviceIdentifier, portId)
