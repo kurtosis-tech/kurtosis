@@ -186,13 +186,14 @@ func (builtin *ExecCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet,
 }
 
 func (builtin *ExecCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
-	service, err := builtin.serviceNetwork.GetService(ctx, string(builtin.serviceName))
+	serviceNameStr := string(builtin.serviceName)
+	service, err := builtin.serviceNetwork.GetService(ctx, serviceNameStr)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "Error getting service '%s'", builtin.serviceName)
+		return "", stacktrace.Propagate(err, "An error occurred while getting service '%s'", serviceNameStr)
 	}
 	result, err := builtin.execRecipe.Execute(ctx, builtin.serviceNetwork, builtin.runtimeValueStore, service)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "Error executing exec recipe")
+		return "", stacktrace.Propagate(err, "An error occurred while executing exec recipe on service '%s'", serviceNameStr)
 	}
 	if !builtin.skipCodeCheck && !builtin.isAcceptableCode(result) {
 		errorMessage := fmt.Sprintf("Exec returned exit code '%v' that is not part of the acceptable status codes '%v', with output:", result["code"], builtin.acceptableCodes)

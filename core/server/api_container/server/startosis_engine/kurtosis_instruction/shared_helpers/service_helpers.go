@@ -53,6 +53,9 @@ func ExecuteServiceAssertionWithRecipe(
 	interval time.Duration,
 	timeout time.Duration,
 ) (map[string]starlark.Comparable, int, error) {
+	if service == nil || service.GetRegistration() == nil {
+		return nil, 0, stacktrace.NewError("Service or service registration is nil. This is unexpected.")
+	}
 	/*
 		We would like to kick an execution right away and after that retry every 'interval' seconds,
 		considering time that took the request to complete.
@@ -87,8 +90,7 @@ func ExecuteServiceAssertionWithRecipe(
 		return assertResult(currentResult[valueField], assertion, target)
 	}
 
-	serviceName := service.GetRegistration().GetName()
-	return executeServiceAssertionWithRecipeWithTicker(serviceName, execFunc, assertFunc, executionTickChan, timeoutChan)
+	return executeServiceAssertionWithRecipeWithTicker(service.GetRegistration().GetName(), execFunc, assertFunc, executionTickChan, timeoutChan)
 }
 
 func assertResult(currentResult starlark.Comparable, assertion string, target starlark.Comparable) error {
