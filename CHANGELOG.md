@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.1](https://github.com/kurtosis-tech/kurtosis/compare/1.10.0...1.10.1) (2025-06-26)
+
+
+### Bug Fixes
+
+* refactor `HttpRequestService ` and `Recipe` to remove unnecessary calls to container engine ([#2768](https://github.com/kurtosis-tech/kurtosis/issues/2768)) ([8101cdc](https://github.com/kurtosis-tech/kurtosis/commit/8101cdcd9e5ec4c6e5eb2c94f8e040bdf6b51421))
+
 ## [1.10.0](https://github.com/kurtosis-tech/kurtosis/compare/1.9.1...1.10.0) (2025-06-24)
 
 
