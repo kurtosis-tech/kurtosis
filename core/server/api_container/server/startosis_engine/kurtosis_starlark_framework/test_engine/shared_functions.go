@@ -62,8 +62,8 @@ func getService(serviceName service.ServiceName) *service.Service {
 	return service.NewService(
 		service.NewServiceRegistration(
 			serviceName,
-			service.ServiceUUID(""),
-			enclave.EnclaveUUID(""),
+			service.ServiceUUID("1234"),
+			enclave.EnclaveUUID("5678"),
 			net.IP{},
 			"",
 		),
