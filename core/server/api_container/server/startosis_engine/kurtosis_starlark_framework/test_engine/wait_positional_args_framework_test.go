@@ -2,6 +2,11 @@ package test_engine
 
 import (
 	"fmt"
+	"io"
+	"net/http"
+	"strings"
+	"testing"
+
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/wait"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -9,10 +14,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
-	"io"
-	"net/http"
-	"strings"
-	"testing"
 )
 
 // This test case is for testing positional arguments retro-compatibility for those script
@@ -24,9 +25,17 @@ type waitWithPositionalArgsTestCase struct {
 }
 
 func (suite *KurtosisPlanInstructionTestSuite) TestWaitWithPositionalArgs() {
-	suite.serviceNetwork.EXPECT().HttpRequestService(
+	suite.serviceNetwork.EXPECT().GetService(
 		mock.Anything,
 		string(waitRecipeTestCaseServiceName),
+	).Times(1).Return(
+		waitRecipeTestCaseService,
+		nil,
+	)
+
+	suite.serviceNetwork.EXPECT().HttpRequestService(
+		mock.Anything,
+		waitRecipeTestCaseService,
 		waitRecipePortId,
 		waitRecipeMethod,
 		waitRecipeContentType,

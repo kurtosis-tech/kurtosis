@@ -3,17 +3,21 @@ package test_engine
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/http"
+	"strings"
+	"testing"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"io"
-	"net/http"
-	"strings"
-	"testing"
 )
+
+var testService *service.Service = getService(testServiceName)
 
 type getHttpRequestRecipeNoExtractorTestCase struct {
 	*testing.T
@@ -24,7 +28,7 @@ type getHttpRequestRecipeNoExtractorTestCase struct {
 func (suite *KurtosisTypeConstructorTestSuite) TestGetHttpRequestRecipeNoExtractor() {
 	suite.serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
-		string(testServiceName),
+		testService,
 		testPrivatePortId,
 		"GET",
 		"",
@@ -66,7 +70,7 @@ func (t *getHttpRequestRecipeNoExtractorTestCase) Assert(typeValue builtin_argum
 	getHttpRequestRecipe, ok := typeValue.(*recipe.GetHttpRequestRecipe)
 	require.True(t, ok)
 
-	_, err := getHttpRequestRecipe.Execute(context.Background(), t.serviceNetwork, t.runtimeValueStore, testServiceName)
+	_, err := getHttpRequestRecipe.Execute(context.Background(), t.serviceNetwork, t.runtimeValueStore, testService)
 	require.NoError(t, err)
 
 	returnValue, interpretationErr := getHttpRequestRecipe.CreateStarlarkReturnValue("result-fake-uuid")

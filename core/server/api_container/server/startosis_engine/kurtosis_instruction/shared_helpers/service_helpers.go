@@ -46,6 +46,7 @@ func ExecuteServiceAssertionWithRecipe(
 	serviceNetwork service_network.ServiceNetwork,
 	runtimeValueStore *runtime_value_store.RuntimeValueStore,
 	serviceName service.ServiceName,
+	service *service.Service,
 	recipe recipe.Recipe,
 	valueField string,
 	assertion string,
@@ -53,6 +54,9 @@ func ExecuteServiceAssertionWithRecipe(
 	interval time.Duration,
 	timeout time.Duration,
 ) (map[string]starlark.Comparable, int, error) {
+	if service == nil || service.GetRegistration() == nil {
+		return nil, 0, stacktrace.NewError("Service or service registration is nil. This is unexpected.")
+	}
 	/*
 		We would like to kick an execution right away and after that retry every 'interval' seconds,
 		considering time that took the request to complete.
@@ -81,13 +85,13 @@ func ExecuteServiceAssertionWithRecipe(
 	defer cancelContext()
 
 	execFunc := func() (map[string]starlark.Comparable, error) {
-		return execRequestAndGetValue(ctxWithDeadline, serviceNetwork, runtimeValueStore, serviceName, recipe, valueField)
+		return execRequestAndGetValue(ctxWithDeadline, serviceNetwork, runtimeValueStore, service, recipe, valueField)
 	}
 	assertFunc := func(currentResult map[string]starlark.Comparable) error {
 		return assertResult(currentResult[valueField], assertion, target)
 	}
-	return executeServiceAssertionWithRecipeWithTicker(serviceName, execFunc, assertFunc, executionTickChan, timeoutChan)
 
+	return executeServiceAssertionWithRecipeWithTicker(serviceName, execFunc, assertFunc, executionTickChan, timeoutChan)
 }
 
 func assertResult(currentResult starlark.Comparable, assertion string, target starlark.Comparable) error {
@@ -101,10 +105,10 @@ func assertResult(currentResult starlark.Comparable, assertion string, target st
 func execRequestAndGetValue(ctx context.Context,
 	serviceNetwork service_network.ServiceNetwork,
 	runtimeValueStore *runtime_value_store.RuntimeValueStore,
-	serviceName service.ServiceName,
+	service *service.Service,
 	recipe recipe.Recipe,
 	valueField string) (map[string]starlark.Comparable, error) {
-	resultMap, err := recipe.Execute(ctx, serviceNetwork, runtimeValueStore, serviceName)
+	resultMap, err := recipe.Execute(ctx, serviceNetwork, runtimeValueStore, service)
 	if err != nil {
 		return resultMap, err
 	}
