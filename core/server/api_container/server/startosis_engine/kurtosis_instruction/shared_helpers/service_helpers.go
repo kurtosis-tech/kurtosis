@@ -45,6 +45,7 @@ func ExecuteServiceAssertionWithRecipe(
 	ctx context.Context,
 	serviceNetwork service_network.ServiceNetwork,
 	runtimeValueStore *runtime_value_store.RuntimeValueStore,
+	serviceName service.ServiceName,
 	service *service.Service,
 	recipe recipe.Recipe,
 	valueField string,
@@ -90,7 +91,7 @@ func ExecuteServiceAssertionWithRecipe(
 		return assertResult(currentResult[valueField], assertion, target)
 	}
 
-	return executeServiceAssertionWithRecipeWithTicker(service.GetRegistration().GetName(), execFunc, assertFunc, executionTickChan, timeoutChan)
+	return executeServiceAssertionWithRecipeWithTicker(serviceName, execFunc, assertFunc, executionTickChan, timeoutChan)
 }
 
 func assertResult(currentResult starlark.Comparable, assertion string, target starlark.Comparable) error {

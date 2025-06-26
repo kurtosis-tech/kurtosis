@@ -257,6 +257,7 @@ func (builtin *WaitCapabilities) Execute(ctx context.Context, _ *builtin_argumen
 		ctx,
 		builtin.serviceNetwork,
 		builtin.runtimeValueStore,
+		builtin.serviceName,
 		service,
 		builtin.recipe,
 		builtin.valueField,

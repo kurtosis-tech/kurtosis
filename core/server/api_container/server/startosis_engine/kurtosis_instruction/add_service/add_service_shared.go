@@ -265,6 +265,7 @@ func runServiceReadinessCheck(
 			ctx,
 			serviceNetwork,
 			runtimeValueStore,
+			serviceName,
 			service,
 			recipe,
 			field,
