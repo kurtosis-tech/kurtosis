@@ -1,6 +1,6 @@
 module github.com/kurtosis-tech/kurtosis/engine/launcher
 
-go 1.23.0
+go 1.23.3
 
 toolchain go1.23.7
 
