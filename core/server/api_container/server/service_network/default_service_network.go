@@ -24,7 +24,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/service_registration"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_identifiers"
-	"github.com/kurtosis-tech/kurtosis/path-compression"
+	path_compression "github.com/kurtosis-tech/kurtosis/path-compression"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -629,12 +629,9 @@ func (network *DefaultServiceNetwork) RunExecs(ctx context.Context, userServiceC
 	return successfulExecs, failedExecs, nil
 }
 
-func (network *DefaultServiceNetwork) HttpRequestService(ctx context.Context, serviceIdentifier string, portId string, method string, contentType string, endpoint string, body string, headers map[string]string) (*http.Response, error) {
+func (network *DefaultServiceNetwork) HttpRequestService(ctx context.Context, userService *service.Service, portId string, method string, contentType string, endpoint string, body string, headers map[string]string) (*http.Response, error) {
+	serviceIdentifier := userService.GetRegistration().GetName()
 	logrus.Debugf("Making a request '%v' '%v' '%v' '%v' '%v' '%v'", serviceIdentifier, portId, method, contentType, endpoint, body)
-	userService, getServiceErr := network.GetService(ctx, serviceIdentifier)
-	if getServiceErr != nil {
-		return nil, stacktrace.Propagate(getServiceErr, "An error occurred when getting service '%v' for HTTP request", serviceIdentifier)
-	}
 	port, found := userService.GetPrivatePorts()[portId]
 	if !found {
 		return nil, stacktrace.NewError("An error occurred when getting port '%v' from service '%v' for HTTP request", serviceIdentifier, portId)

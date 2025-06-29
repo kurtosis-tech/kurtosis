@@ -20,11 +20,12 @@ package enclaves
 import (
 	"context"
 	"encoding/json"
-	"github.com/kurtosis-tech/kurtosis/path-compression"
 	"io"
 	"os"
 	"path"
 	"strings"
+
+	path_compression "github.com/kurtosis-tech/kurtosis/path-compression"
 
 	yaml_convert "github.com/ghodss/yaml"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
@@ -739,6 +740,7 @@ func (enclaveCtx *EnclaveContext) convertServiceInfoToServiceContext(serviceInfo
 		serviceCtxPrivatePorts,
 		serviceInfo.GetMaybePublicIpAddr(),
 		serviceCtxPublicPorts,
+		serviceInfo.Labels,
 	)
 
 	return serviceContext, nil

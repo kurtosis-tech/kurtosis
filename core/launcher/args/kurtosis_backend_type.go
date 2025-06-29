@@ -12,4 +12,5 @@ const (
 	// To add new values, just add a new value to the end WITHOUT WHITESPACE
 	KurtosisBackendType_Docker KurtosisBackendType = iota
 	KurtosisBackendType_Kubernetes
+	KurtosisBackendType_Podman
 )

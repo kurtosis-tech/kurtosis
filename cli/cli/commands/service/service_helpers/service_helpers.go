@@ -3,6 +3,9 @@ package service_helpers
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
@@ -12,8 +15,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/user_services"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"strconv"
-	"strings"
 )
 
 const (
@@ -100,6 +101,7 @@ func GetServiceInfo(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisC
 	}
 
 	isTiniEnabled := service.GetTiniEnabled()
+	isTtyEnabled := service.GetTtyEnabled()
 	serviceConfig := &services.ServiceConfig{
 		Image:                       service.GetContainer().GetImageName(),
 		PrivatePorts:                services.ConvertApiPortToJsonPort(service.GetPrivatePorts()),
@@ -118,6 +120,7 @@ func GetServiceInfo(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisC
 		NodeSelectors:               service.GetNodeSelectors(),
 		Labels:                      service.GetLabels(),
 		TiniEnabled:                 &isTiniEnabled,
+		TtyEnabled:                  &isTtyEnabled,
 	}
 
 	return service, serviceConfig, nil

@@ -230,7 +230,7 @@ func (provider *GitPackageContentProvider) StorePackageContents(packageId string
 
 	tempFile, err := os.CreateTemp(defaultTmpDir, temporaryArchiveFilePattern)
 	if err != nil {
-		return "", startosis_errors.NewInterpretationError("An error occurred while creating temporary file to write compressed '%v' to", packageId)
+		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while creating temporary file to write compressed '%v' to temporary directory '%v' with temporary archive file pattern '%v'.", packageId, defaultTmpDir, temporaryArchiveFilePattern)
 	}
 	defer os.Remove(tempFile.Name())
 

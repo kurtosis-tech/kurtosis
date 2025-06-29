@@ -2,6 +2,8 @@ package test_engine
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -11,12 +13,13 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
-	"testing"
 )
 
 const (
 	execServiceName = service.ServiceName("test-service")
 )
+
+var execWithNamedArgsTestService *service.Service = getService(execServiceName)
 
 type execWithNamedArgsTestCase struct {
 	*testing.T
@@ -25,6 +28,14 @@ type execWithNamedArgsTestCase struct {
 }
 
 func (suite *KurtosisPlanInstructionTestSuite) TestExecWithNamedArgs() {
+	suite.serviceNetwork.EXPECT().GetService(
+		mock.Anything,
+		string(execServiceName),
+	).Times(1).Return(
+		execWithNamedArgsTestService,
+		nil,
+	)
+
 	suite.serviceNetwork.EXPECT().RunExec(
 		mock.Anything,
 		string(execServiceName),

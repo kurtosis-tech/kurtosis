@@ -65,7 +65,7 @@ func TestPutNewServiceConfig(t *testing.T) {
 }
 
 func getTestServiceConfigForService(name service.ServiceName, imageTag string) (*service.ServiceConfig, error) {
-	return service.CreateServiceConfig(fmt.Sprintf("%v-%v:%v", name, testContainerImageName, imageTag), nil, nil, nil, nil, nil, []string{}, []string{}, map[string]string{}, nil, nil, 0, 0, "IP-ADDRESS", 0, 0, map[string]string{}, nil, nil, nil, image_download_mode.ImageDownloadMode_Always, true)
+	return service.CreateServiceConfig(fmt.Sprintf("%v-%v:%v", name, testContainerImageName, imageTag), nil, nil, nil, nil, nil, []string{}, []string{}, map[string]string{}, nil, nil, 0, 0, "IP-ADDRESS", 0, 0, map[string]string{}, nil, nil, nil, image_download_mode.ImageDownloadMode_Always, true, false)
 }
 
 func getEnclaveDBForTest(t *testing.T) *enclave_db.EnclaveDB {

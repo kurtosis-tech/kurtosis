@@ -1,6 +1,8 @@
 module github.com/kurtosis-tech/kurtosis/container-engine-lib
 
-go 1.23
+go 1.23.0
+
+toolchain go1.23.7
 
 replace github.com/kurtosis-tech/kurtosis/path-compression => ./../path-compression
 
@@ -21,7 +23,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.10.0
 	go.etcd.io/bbolt v1.3.7
-	golang.org/x/term v0.29.0
+	golang.org/x/term v0.30.0
 	k8s.io/api v0.27.2
 	k8s.io/apimachinery v0.27.2
 	k8s.io/client-go v0.27.2
@@ -103,11 +105,11 @@ require (
 	go.opentelemetry.io/otel/trace v1.14.0 // indirect
 	go4.org v0.0.0-20230225012048-214862532bf5 // indirect
 	golang.org/x/mod v0.21.0 // indirect
-	golang.org/x/net v0.35.0 // indirect
+	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/oauth2 v0.11.0 // indirect
-	golang.org/x/sync v0.11.0 // indirect
-	golang.org/x/sys v0.30.0 // indirect
-	golang.org/x/text v0.22.0 // indirect
+	golang.org/x/sync v0.12.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/text v0.23.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.26.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect

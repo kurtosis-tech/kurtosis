@@ -226,6 +226,9 @@ pub struct ServiceInfo {
     /// Whether Tini is enabled
     #[prost(bool, optional, tag = "19")]
     pub tini_enabled: ::core::option::Option<bool>,
+    /// Wheter TTy is enabled
+    #[prost(bool, optional, tag = "20")]
+    pub tty_enabled: ::core::option::Option<bool>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -398,6 +401,8 @@ pub struct StarlarkInstruction {
 pub struct StarlarkInstructionResult {
     #[prost(string, tag = "1")]
     pub serialized_instruction_result: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub execution_duration: ::core::option::Option<::prost_types::Duration>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -471,7 +476,9 @@ pub struct StarlarkRunProgress {
 pub struct StarlarkRunFinishedEvent {
     #[prost(bool, tag = "1")]
     pub is_run_successful: bool,
-    #[prost(string, optional, tag = "2")]
+    #[prost(message, optional, tag = "2")]
+    pub total_execution_duration: ::core::option::Option<::prost_types::Duration>,
+    #[prost(string, optional, tag = "3")]
     pub serialized_output: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// ==============================================================================================

@@ -3,13 +3,14 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/google/go-github/v60/github"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/github_auth_storage_creator"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/google/go-github/v60/github"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/github_auth_storage_creator"
 
 	"connectrpc.com/connect"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
@@ -819,6 +820,7 @@ func (c *WebServer) GetStarlarkPackagePlanYaml(
 	request := &connect.Request[kurtosis_core_rpc_api_bindings.StarlarkPackagePlanYamlArgs]{
 		Msg: &kurtosis_core_rpc_api_bindings.StarlarkPackagePlanYamlArgs{
 			PackageId:              req.Msg.StarlarkPackagePlanYamlArgs.PackageId,
+			IsRemote:               req.Msg.StarlarkPackagePlanYamlArgs.IsRemote,
 			SerializedParams:       req.Msg.StarlarkPackagePlanYamlArgs.SerializedParams,
 			RelativePathToMainFile: req.Msg.StarlarkPackagePlanYamlArgs.RelativePathToMainFile,
 			MainFunctionName:       req.Msg.StarlarkPackagePlanYamlArgs.MainFunctionName,
