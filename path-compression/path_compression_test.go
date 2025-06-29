@@ -310,7 +310,7 @@ func TestGetFilenameMappings(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := getFilenameMappings(tt.pathToCompress, tt.filesToUpload)
+			result := mapFilePathOnDiskToRelativePathInArchive(tt.pathToCompress, tt.filesToUpload)
 			require.Equal(t, tt.expected, result)
 		})
 	}

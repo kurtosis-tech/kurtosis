@@ -87,7 +87,7 @@ func CompressPathToFile(pathToCompress string, enforceMaxFileSizeLimit bool) (st
 	files, err := archives.FilesFromDisk(
 		ctx,
 		nil, // use default settings
-		getFilenameMappings(pathToCompress, filepathsToUpload))
+		mapFilePathOnDiskToRelativePathInArchive(pathToCompress, filepathsToUpload))
 	if err != nil {
 		return "", 0, nil, stacktrace.Propagate(err, "An error occurred when creating files list for archive from '%s'.", pathToCompress)
 	}
@@ -195,12 +195,22 @@ func writeFileContent(filePath string, writer io.Writer) error {
 	return nil
 }
 
-func getFilenameMappings(pathToCompress string, filesToUpload []string) map[string]string {
+// getFilenameMappings returns a map of the form {filePathOnDisk: relativePath}
+// where filePathOnDisk is the path of the file on disk and relativePath is the path of the file within the archive, relative to the root of the archive
+func mapFilePathOnDiskToRelativePathInArchive(pathToCompress string, filesToUpload []string) map[string]string {
 	filenameMappings := make(map[string]string)
+
+	// filePath is "./test-dir/file1.txt", pathToCompress is "./test-dir"
 	for _, filePath := range filesToUpload {
+		// "./test-dir/file1.txt" -> "/file1.txt"
 		relativePath := strings.TrimPrefix(filePath, pathToCompress)
+
+		// "./file1.txt" -> "file1.txt", in case `pathToCompress` is "./test-dir" instead of "./test-dir/"
 		relativePath = strings.TrimPrefix(relativePath, string(filepath.Separator))
+
+		// "./test-dir/file1.txt" -> "file1.txt"
 		filenameMappings[filePath] = relativePath
 	}
+
 	return filenameMappings
 }
