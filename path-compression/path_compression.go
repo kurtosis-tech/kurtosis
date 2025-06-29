@@ -222,7 +222,7 @@ func mapFilePathOnDiskToRelativePathInArchive(pathToCompress string, filesToUplo
 // This function is a drop in replacement for mholt/archiver.Unarchive
 // mholt/archiver was updated to mholt/archives in Kurtosis due to https://nvd.nist.gov/vuln/detail/CVE-2025-3445
 // The successor to mholt/archiver is mholt/archives but because it doesn't have an Unarchive funciton, we reimplement it here with the same API
-// Implementation is based on https://github.com/jm33-m0/arc/blob/main/v2/unarchiver.go
+// Implementation is from: https://github.com/jm33-m0/arc
 func Unarchive(source, destination string) error {
 	return arc.Unarchive(source, destination)
 }
