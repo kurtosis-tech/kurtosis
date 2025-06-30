@@ -875,6 +875,140 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRunPythonWithCusto
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
+func (suite *StartosisIntepreterDependencyGraphTestSuite) TestExecDependsOnService() {
+	script := `def run(plan):
+	service_a = plan.add_service(name = "serviceA", config = ServiceConfig(image = "ubuntu"))
+
+	exec_recipe = ExecRecipe(
+		command = ["echo", "Hello, world"],
+	)
+	result = plan.exec(
+		service_name = "serviceA",
+		recipe = exec_recipe,
+	)
+`
+	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
+		instructions_plan.ScheduledInstructionUuid("1"): {},
+		instructions_plan.ScheduledInstructionUuid("2"): {
+			instructions_plan.ScheduledInstructionUuid("1"),
+		},
+	}
+
+	inputArgs := `{}`
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		script,
+		inputArgs,
+		defaultNonBlockingMode,
+		emptyEnclaveComponents,
+		emptyInstructionsPlanMask,
+		image_download_mode.ImageDownloadMode_Always)
+	require.Nil(suite.T(), interpretationError)
+
+	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+
+	outputDependencyGraphVisual(instructionsDependencyGraph)
+	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
+}
+
+func (suite *StartosisIntepreterDependencyGraphTestSuite) TestExecOnServiceBDependsOnServiceA() {
+	script := `def run(plan):
+	service_a = plan.add_service(name = "serviceA", config = ServiceConfig(image = "ubuntu"))
+	service_b = plan.add_service(name = "serviceB", config = ServiceConfig(image = "ubuntu"))
+
+	exec_recipe = ExecRecipe(
+		command = ["echo", service_a.ip_address],
+	)
+	result = plan.exec(
+		service_name = "serviceB",
+		recipe = exec_recipe,
+	)
+`
+	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
+		instructions_plan.ScheduledInstructionUuid("1"): {},
+		instructions_plan.ScheduledInstructionUuid("2"): {},
+		instructions_plan.ScheduledInstructionUuid("3"): {
+			instructions_plan.ScheduledInstructionUuid("2"),
+			instructions_plan.ScheduledInstructionUuid("1"),
+		},
+	}
+
+	inputArgs := `{}`
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		script,
+		inputArgs,
+		defaultNonBlockingMode,
+		emptyEnclaveComponents,
+		emptyInstructionsPlanMask,
+		image_download_mode.ImageDownloadMode_Always)
+	require.Nil(suite.T(), interpretationError)
+
+	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+
+	outputDependencyGraphVisual(instructionsDependencyGraph)
+	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
+}
+
+func (suite *StartosisIntepreterDependencyGraphTestSuite) TestServiceCDependsOnExecCode() {
+	script := `def run(plan):
+	service_a = plan.add_service(name = "serviceA", config = ServiceConfig(image = "ubuntu"))
+
+	exec_recipe = ExecRecipe(
+		command = ["echo", "Hello, world"],
+	)
+	exec_result = plan.exec(
+		service_name = "serviceA",
+		recipe = exec_recipe,
+	)
+
+	config = ServiceConfig(
+		image = "ubuntu",
+		cmd = [
+			"echo {0}".format(exec_result["code"]),
+		],
+	)
+	service_c = plan.add_service(name = "serviceC", config = config)
+`
+	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
+		instructions_plan.ScheduledInstructionUuid("1"): {},
+		instructions_plan.ScheduledInstructionUuid("2"): {
+			instructions_plan.ScheduledInstructionUuid("1"),
+		},
+		instructions_plan.ScheduledInstructionUuid("3"): {
+			instructions_plan.ScheduledInstructionUuid("2"),
+		},
+	}
+
+	inputArgs := `{}`
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		script,
+		inputArgs,
+		defaultNonBlockingMode,
+		emptyEnclaveComponents,
+		emptyInstructionsPlanMask,
+		image_download_mode.ImageDownloadMode_Always)
+	require.Nil(suite.T(), interpretationError)
+
+	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+
+	outputDependencyGraphVisual(instructionsDependencyGraph)
+	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
+}
+
 func outputDependencyGraphVisual(dependencyGraph map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid) {
 	g := simple.NewDirectedGraph()
 

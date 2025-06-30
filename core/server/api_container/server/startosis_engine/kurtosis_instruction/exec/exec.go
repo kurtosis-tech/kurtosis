@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/tasks"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -116,7 +117,6 @@ type ExecCapabilities struct {
 }
 
 func (builtin *ExecCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
-
 	serviceNameArgumentValue, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ServiceNameArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceNameArgName)
@@ -252,6 +252,27 @@ func formatErrorMessage(errorMessage string, errorFromExec string) string {
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
 func (builtin *ExecCapabilities) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
-	// TODO: Implement dependency graph updates for exec instruction
+	// store outputs
+	// - output
+	// - code
+	dependencyGraph.StoreOutput(instructionUuid, builtin.resultUuid)
+	for _, v := range builtin.returnValue.Items() {
+		output := v.Index(1).String()
+		dependencyGraph.StoreOutput(instructionUuid, output)
+	}
+
+	// depends on outputs
+	// - service name
+	dependencyGraph.DependsOnOutput(instructionUuid, string(builtin.serviceName))
+
+	// - cmd list
+	for _, v := range builtin.cmdList {
+		if futureRefs, ok := magic_string_helper.ContainsRuntimeValue(v); ok {
+			for _, futureRef := range futureRefs {
+				dependencyGraph.DependsOnOutput(instructionUuid, futureRef)
+			}
+		}
+	}
+
 	return nil
 }
