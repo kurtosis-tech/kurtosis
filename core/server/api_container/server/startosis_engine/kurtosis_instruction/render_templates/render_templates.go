@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -194,7 +195,17 @@ func (builtin *RenderTemplatesCapabilities) Description() string {
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
 func (builtin *RenderTemplatesCapabilities) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+	// render template outputs a files artifact
 	dependencyGraph.StoreOutput(instructionUuid, builtin.artifactName)
+
+	// render template depends on data that is used to render the template
+	for _, templateData := range builtin.templatesAndDataByDestRelFilepath {
+		if outputs, ok := magic_string_helper.ContainsRuntimeValue(templateData.GetDataAsSerializedJson()); ok {
+			for _, output := range outputs {
+				dependencyGraph.DependsOnOutput(instructionUuid, output)
+			}
+		}
+	}
 
 	return nil
 }

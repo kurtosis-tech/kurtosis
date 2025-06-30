@@ -66,13 +66,26 @@ func GetOrReplaceRuntimeValueFromString(originalString string, runtimeValueStore
 	}
 }
 
-func ContainsRuntimeValue(originalString string) (string, bool) {
+func ContainsRuntimeValue(originalString string) ([]string, bool) {
 	matches := compiledRuntimeValueReplacementRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
 	if len(matches) == 0 {
-		return "", false
+		return []string{}, false
 	}
-	return matches[0][0], true
+	runtimeValues := make([]string, len(matches))
+	for i, match := range matches {
+		runtimeValues[i] = match[0]
+	}
+	return runtimeValues, true
 }
+
+// func ContainsRuntimeValue(originalString string) (string, bool) {
+// 	matches := compiledRuntimeValueReplacementRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
+// 	if len(matches) == 0 {
+// 		return "", false
+// 	}
+
+// 	return matches[0][0], true
+// }
 
 func getRuntimeValueFromRegexMatch(match []string, runtimeValueStore *runtime_value_store.RuntimeValueStore) (starlark.Comparable, error) {
 	runtimeValueMatchIndex := compiledRuntimeValueReplacementRegex.SubexpIndex(runtimeValueSubgroupName)

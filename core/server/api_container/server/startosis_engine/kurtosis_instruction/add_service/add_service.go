@@ -343,10 +343,10 @@ func (builtin *AddServiceCapabilities) UpdateDependencyGraph(instructionsUuid de
 	}
 	dependencyGraph.StoreOutput(instructionsUuid, ipAddress)
 
-	// TODO: figure out how to store ports as they're technically future references
+	// TODO: figure out how to store ports as an instruciton output as they're technically future references
 	// - service.ports
 
-	// find the outputs that this instruction depends on
+	// Find the outputs that this instruction depends on
 	// add service can depend on:
 	// - files artifacts in files
 	if builtin.serviceConfig.GetFilesArtifactsExpansion() != nil {
@@ -359,23 +359,29 @@ func (builtin *AddServiceCapabilities) UpdateDependencyGraph(instructionsUuid de
 
 	// if value from env vars, cmd, entrypoint contain future reference, then this instruction depends on the output
 	for _, v := range builtin.serviceConfig.GetEnvVars() {
-		if futureRef, ok := magic_string_helper.ContainsRuntimeValue(v); ok {
-			dependencyGraph.DependsOnOutput(instructionsUuid, futureRef)
+		if futureRefs, ok := magic_string_helper.ContainsRuntimeValue(v); ok {
+			for _, futureRef := range futureRefs {
+				dependencyGraph.DependsOnOutput(instructionsUuid, futureRef)
+			}
 		}
 	}
 
 	if builtin.serviceConfig.GetCmdArgs() != nil {
 		for _, v := range builtin.serviceConfig.GetCmdArgs() {
-			if futureRef, ok := magic_string_helper.ContainsRuntimeValue(v); ok {
-				dependencyGraph.DependsOnOutput(instructionsUuid, futureRef)
+			if futureRefs, ok := magic_string_helper.ContainsRuntimeValue(v); ok {
+				for _, futureRef := range futureRefs {
+					dependencyGraph.DependsOnOutput(instructionsUuid, futureRef)
+				}
 			}
 		}
 	}
 
 	if builtin.serviceConfig.GetEntrypointArgs() != nil {
 		for _, v := range builtin.serviceConfig.GetEntrypointArgs() {
-			if futureRef, ok := magic_string_helper.ContainsRuntimeValue(v); ok {
-				dependencyGraph.DependsOnOutput(instructionsUuid, futureRef)
+			if futureRefs, ok := magic_string_helper.ContainsRuntimeValue(v); ok {
+				for _, futureRef := range futureRefs {
+					dependencyGraph.DependsOnOutput(instructionsUuid, futureRef)
+				}
 			}
 		}
 	}
