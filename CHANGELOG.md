@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.10.1](https://github.com/kurtosis-tech/kurtosis/compare/1.10.0...1.10.1) (2025-06-26)
+
+
+### Bug Fixes
+
+* refactor `HttpRequestService ` and `Recipe` to remove unnecessary calls to container engine ([#2768](https://github.com/kurtosis-tech/kurtosis/issues/2768)) ([8101cdc](https://github.com/kurtosis-tech/kurtosis/commit/8101cdcd9e5ec4c6e5eb2c94f8e040bdf6b51421))
+
+## [1.10.0](https://github.com/kurtosis-tech/kurtosis/compare/1.9.1...1.10.0) (2025-06-24)
+
+
+### Features
+
+* display instruction execution time for detailed verbosity ([#2767](https://github.com/kurtosis-tech/kurtosis/issues/2767)) ([e8e483e](https://github.com/kurtosis-tech/kurtosis/commit/e8e483ebb6f2cbf01efaaf19b5053b677d193ba5))
+
+## [1.9.1](https://github.com/kurtosis-tech/kurtosis/compare/1.9.0...1.9.1) (2025-06-19)
+
+
+### Bug Fixes
+
+* add podman mode to publish script ([#2765](https://github.com/kurtosis-tech/kurtosis/issues/2765)) ([b49d2f8](https://github.com/kurtosis-tech/kurtosis/commit/b49d2f8f328f066ca36111f9fd87196d285b0089))
+
+## [1.9.0](https://github.com/kurtosis-tech/kurtosis/compare/1.8.1...1.9.0) (2025-06-19)
+
+
+### Features
+
+* Add `tty_enabled` field to `ServiceConfig`. ([#2761](https://github.com/kurtosis-tech/kurtosis/issues/2761)) ([4313e31](https://github.com/kurtosis-tech/kurtosis/commit/4313e319e7e6333f2f4da4ac3bd28fb7e641ad4d))
+* support podman ([#2518](https://github.com/kurtosis-tech/kurtosis/issues/2518)) ([fe35eee](https://github.com/kurtosis-tech/kurtosis/commit/fe35eee5452cd7658955751fd01a6f3e7497e7d9))
+
 ## [1.8.1](https://github.com/kurtosis-tech/kurtosis/compare/1.8.0...1.8.1) (2025-05-21)
 
 

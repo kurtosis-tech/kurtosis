@@ -249,11 +249,17 @@ func (builtin *WaitCapabilities) Execute(ctx context.Context, _ *builtin_argumen
 
 	startTime := time.Now()
 
+	service, err := builtin.serviceNetwork.GetService(ctx, string(builtin.serviceName))
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while getting service '%s'", builtin.serviceName)
+	}
+
 	lastResult, tries, err := shared_helpers.ExecuteServiceAssertionWithRecipe(
 		ctx,
 		builtin.serviceNetwork,
 		builtin.runtimeValueStore,
 		builtin.serviceName,
+		service,
 		builtin.recipe,
 		builtin.valueField,
 		builtin.assertion,

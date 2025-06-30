@@ -214,12 +214,12 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Unexpected error occurred starting service '%s'", replacedServiceName)
 	}
-
 	if err := runServiceReadinessCheck(
 		ctx,
 		builtin.serviceNetwork,
 		builtin.runtimeValueStore,
 		replacedServiceName,
+		startedService,
 		builtin.readyCondition,
 	); err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while checking if service '%v' is ready", replacedServiceName)

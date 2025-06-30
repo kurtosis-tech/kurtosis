@@ -255,7 +255,13 @@ config = ServiceConfig(
     # The tini_enabled field allows you to set the `--init` options when a container is started in Docker.
     # OPTIONAL
     # Default (true)
-    tini_enabled = True
+    tini_enabled = True,
+
+    # The tty_enabled field enables TTY mode for the container, allowing interactive terminal sessions.
+    # When set to True, the container will be created with TTY support enabled for interactive use.
+    # OPTIONAL
+    # Default (false)
+    tty_enabled = False
 )
 ```
 Note that `ImageBuildSpec` can only be used in packages and not standalone scripts as it relies on build context in package. More info on [`ImageBuildSpec`](./image-build-spec.md) here.
