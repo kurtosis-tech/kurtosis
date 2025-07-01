@@ -196,6 +196,8 @@ func (builtin *StoreServiceFilesCapabilities) Description() string {
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
 func (builtin *StoreServiceFilesCapabilities) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
-	// TODO: Implement dependency graph updates for store_service_files instruction
+	dependencyGraph.StoreOutput(instructionUuid, string(builtin.artifactName))
+
+	dependencyGraph.DependsOnOutput(instructionUuid, string(builtin.serviceName))
 	return nil
 }

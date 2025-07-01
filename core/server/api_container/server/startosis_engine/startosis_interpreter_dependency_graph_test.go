@@ -1230,6 +1230,54 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRemoveServiceDepen
 // 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 // }
 
+func (suite *StartosisIntepreterDependencyGraphTestSuite) TestVerifyDependsOnExec() {
+	script := `def run(plan):
+	service_a = plan.add_service(name = "serviceA", config = ServiceConfig(image = "ubuntu"))
+	
+	result = plan.exec(
+		service_name = "serviceA",
+		recipe = ExecRecipe(
+			command = ["echo", "Hello, world"],
+		),
+	)
+
+	plan.verify(
+		value = result["code"],
+		assertion = "==",
+		target_value = 0,
+	)
+`
+	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
+		instructions_plan.ScheduledInstructionUuid("1"): {},
+		instructions_plan.ScheduledInstructionUuid("2"): {
+			instructions_plan.ScheduledInstructionUuid("1"),
+		},
+		instructions_plan.ScheduledInstructionUuid("3"): {
+			instructions_plan.ScheduledInstructionUuid("2"),
+		},
+	}
+
+	inputArgs := `{}`
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		script,
+		inputArgs,
+		defaultNonBlockingMode,
+		emptyEnclaveComponents,
+		emptyInstructionsPlanMask,
+		image_download_mode.ImageDownloadMode_Always)
+	require.Nil(suite.T(), interpretationError)
+
+	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+
+	outputDependencyGraphVisual(instructionsDependencyGraph)
+	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
+}
+
 func outputDependencyGraphVisual(dependencyGraph map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid) {
 	g := simple.NewDirectedGraph()
 

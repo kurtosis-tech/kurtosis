@@ -174,6 +174,8 @@ func (builtin *VerifyCapabilities) Description() string {
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
 func (builtin *VerifyCapabilities) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+	dependencyGraph.DependsOnOutput(instructionUuid, string(builtin.runtimeValue))
+
 	// TODO: Implement dependency graph updates for verify instruction
 	return nil
 }
