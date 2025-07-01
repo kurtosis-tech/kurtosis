@@ -197,8 +197,8 @@ func writeFileContent(filePath string, writer io.Writer) error {
 	return nil
 }
 
-// getFilenameMappings returns a map of the form {filePathOnDisk: relativePath}
-// where filePathOnDisk is the path of the file on disk and relativePath is the path of the file within the archive, relative to the root of the archive
+// mapFilePathOnDiskToRelativePathInArchive returns a map of the form {filePathOnDisk: relativePath}
+// where filePathOnDisk is the path of the file on disk and relativePath is the path of the file within the archive
 func mapFilePathOnDiskToRelativePathInArchive(pathToCompress string, filesToUpload []string) map[string]string {
 	filenameMappings := make(map[string]string)
 
