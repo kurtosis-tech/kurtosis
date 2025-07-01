@@ -1,6 +1,10 @@
 package dependency_graph
 
-import "github.com/sirupsen/logrus"
+import (
+	"slices"
+
+	"github.com/sirupsen/logrus"
+)
 
 // TODO: This mirrors the ScheduledInstructionUuid in instructions_plan.go
 // It should be merged into a single type by refactoring the instructions_plan package to avoid circular dependencies
@@ -27,7 +31,7 @@ func (graph *InstructionsDependencyGraph) StoreOutput(instruction ScheduledInstr
 }
 
 func (graph *InstructionsDependencyGraph) DependsOnOutput(instruction ScheduledInstructionUuid, output string) {
-	logrus.Infof("Attemptin to depend instruction %s on output %s", instruction, output)
+	logrus.Infof("Attempting to depend instruction %s on output %s", instruction, output)
 	instructionThatProducedOutput, ok := graph.outputsToInstructionMap[output]
 	if !ok {
 		panic("smth went wrong")
@@ -57,10 +61,12 @@ func (graph *InstructionsDependencyGraph) addInstruction(instruction ScheduledIn
 func (graph *InstructionsDependencyGraph) GetDependencyGraph() map[ScheduledInstructionUuid][]ScheduledInstructionUuid {
 	dependencyGraph := map[ScheduledInstructionUuid][]ScheduledInstructionUuid{}
 	for instruction, dependencies := range graph.instructionsDependencies {
-		dependencyGraph[instruction] = []ScheduledInstructionUuid{}
+		instructionDependencies := []ScheduledInstructionUuid{}
 		for dependency := range dependencies {
-			dependencyGraph[instruction] = append(dependencyGraph[instruction], dependency)
+			instructionDependencies = append(instructionDependencies, dependency)
 		}
+		slices.Sort(instructionDependencies)
+		dependencyGraph[instruction] = instructionDependencies
 	}
 	return dependencyGraph
 }

@@ -492,8 +492,8 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 			instructions_plan.ScheduledInstructionUuid("1"),
 		},
 		instructions_plan.ScheduledInstructionUuid("3"): {
-			instructions_plan.ScheduledInstructionUuid("2"),
 			instructions_plan.ScheduledInstructionUuid("1"),
+			instructions_plan.ScheduledInstructionUuid("2"),
 		},
 	}
 
@@ -668,8 +668,8 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 			instructions_plan.ScheduledInstructionUuid("1"),
 		},
 		instructions_plan.ScheduledInstructionUuid("3"): {
-			instructions_plan.ScheduledInstructionUuid("2"),
 			instructions_plan.ScheduledInstructionUuid("1"),
+			instructions_plan.ScheduledInstructionUuid("2"),
 		},
 	}
 
@@ -933,8 +933,8 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestExecOnServiceBDepe
 		instructions_plan.ScheduledInstructionUuid("1"): {},
 		instructions_plan.ScheduledInstructionUuid("2"): {},
 		instructions_plan.ScheduledInstructionUuid("3"): {
-			instructions_plan.ScheduledInstructionUuid("2"),
 			instructions_plan.ScheduledInstructionUuid("1"),
+			instructions_plan.ScheduledInstructionUuid("2"),
 		},
 	}
 
@@ -1278,7 +1278,7 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestVerifyDependsOnExe
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
-func (suite *StartosisIntepreterDependencyGraphTestSuite) TestWaitDependsOnExec() {
+func (suite *StartosisIntepreterDependencyGraphTestSuite) TestWaitDependsOnAddService() {
 	script := `def run(plan):
 	service_a = plan.add_service(name = "serviceA", config = ServiceConfig(image = "ubuntu"))
 	
@@ -1292,6 +1292,55 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestWaitDependsOnExec(
 		field = "code",
 		assertion = "==",
 		target_value = 0,
+	)
+`
+	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
+		instructions_plan.ScheduledInstructionUuid("1"): {},
+		instructions_plan.ScheduledInstructionUuid("2"): {
+			instructions_plan.ScheduledInstructionUuid("1"),
+		},
+	}
+
+	inputArgs := `{}`
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		script,
+		inputArgs,
+		defaultNonBlockingMode,
+		emptyEnclaveComponents,
+		emptyInstructionsPlanMask,
+		image_download_mode.ImageDownloadMode_Always)
+	require.Nil(suite.T(), interpretationError)
+
+	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+
+	outputDependencyGraphVisual(instructionsDependencyGraph)
+	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
+}
+
+func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRequestDependsOnAddService() {
+	script := `def run(plan):
+	config = ServiceConfig(
+		image = "ubuntu",
+		ports = {
+			"http": PortSpec(
+			 	number = 8080,
+				application_protocol = "http",
+				),
+		},
+	)
+	service_a = plan.add_service(name = "serviceA", config = config)
+	
+	response = plan.request(
+		service_name = "serviceA",
+		recipe = GetHttpRequestRecipe(
+			port_id = "http",
+			endpoint = "/health",
+		)
 	)
 `
 	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{

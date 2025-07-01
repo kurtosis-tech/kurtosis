@@ -26,8 +26,6 @@ type InstructionsPlan struct {
 
 	instructionsSequence []ScheduledInstructionUuid
 
-	instructionsDependencies *dependency_graph.InstructionsDependencyGraph
-
 	// list of package names that this instructions plan relies on
 	packageDependencies map[string]bool
 
@@ -39,7 +37,6 @@ func NewInstructionsPlan() *InstructionsPlan {
 		indexOfFirstInstruction:    0,
 		scheduledInstructionsIndex: map[ScheduledInstructionUuid]*ScheduledInstruction{},
 		instructionsSequence:       []ScheduledInstructionUuid{},
-		instructionsDependencies:   dependency_graph.NewInstructionsDependencyGraph(),
 		packageDependencies:        map[string]bool{},
 		instructionCount:           0,
 	}
@@ -54,8 +51,6 @@ func (plan *InstructionsPlan) GetIndexOfFirstInstruction() int {
 }
 
 func (plan *InstructionsPlan) AddInstruction(instruction kurtosis_instruction.KurtosisInstruction, returnedValue starlark.Value) error {
-	// TODO: this is a temporary solution to generate a unique uuid for each instruction for the dependency graph
-	plan.instructionCount++
 	generatedUuid, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
 		return stacktrace.Propagate(err, "Unable to generate a random UUID for instruction '%s' to add it to the plan", instruction.String())
@@ -66,12 +61,6 @@ func (plan *InstructionsPlan) AddInstruction(instruction kurtosis_instruction.Ku
 
 	plan.scheduledInstructionsIndex[scheduledInstructionUuid] = scheduledInstruction
 	plan.instructionsSequence = append(plan.instructionsSequence, scheduledInstructionUuid)
-
-	// update the dependency graph with the effects of the adding this instruction the plan
-	logrus.Infof("Updating dependency graph with instruction: %v", scheduledInstructionUuid)
-	instruction.UpdateDependencyGraph(dependency_graph.ScheduledInstructionUuid(strconv.Itoa(plan.instructionCount)), plan.instructionsDependencies)
-	// instruction.UpdateDependencyGraph(dependency_graph.ScheduledInstructionUuid(scheduledInstructionUuid), plan.instructionsDependencies)
-
 	return nil
 }
 
@@ -99,13 +88,27 @@ func (plan *InstructionsPlan) GeneratePlan() ([]*ScheduledInstruction, *startosi
 }
 
 func (plan *InstructionsPlan) GenerateInstructionsDependencyGraph() map[ScheduledInstructionUuid][]ScheduledInstructionUuid {
-	dependencyGraph := plan.instructionsDependencies.GetDependencyGraph()
+	// update the dependency graph with the effects of the adding this instruction the plan
+	instructionPlan, err := plan.GeneratePlan() // same api
+	if err != nil {
+		// return nil, err
+		panic(err)
+	}
+
+	instructionsDependencies := dependency_graph.NewInstructionsDependencyGraph()
+
+	count := 1
+	for _, instruction := range instructionPlan {
+		logrus.Infof("Updating dependency graph with instruction: %v", count)
+		instruction.kurtosisInstruction.UpdateDependencyGraph(dependency_graph.ScheduledInstructionUuid(strconv.Itoa(count)), instructionsDependencies)
+		count++
+	}
 
 	// conversion
 	// TODO: This is a temporary solution to convert the dependency graph to a map[ScheduledInstructionUuid][]ScheduledInstructionUuid
 	// Should likely not use ScheduledInstructionUuid as the key type for the dependency graph
 	dependencyGraphMap := make(map[ScheduledInstructionUuid][]ScheduledInstructionUuid)
-	for instructionUuid, dependencies := range dependencyGraph {
+	for instructionUuid, dependencies := range instructionsDependencies.GetDependencyGraph() {
 		dependencyGraphMap[ScheduledInstructionUuid(instructionUuid)] = make([]ScheduledInstructionUuid, len(dependencies))
 		for i, dependency := range dependencies {
 			dependencyGraphMap[ScheduledInstructionUuid(instructionUuid)][i] = ScheduledInstructionUuid(dependency)
