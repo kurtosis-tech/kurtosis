@@ -538,7 +538,7 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRunShDependsOnServ
 		}
 	)
 
-	task_a_result = plan.run_sh(name = "taskA", run = "echo Hi")
+	task_a_result = plan.run_sh(name = "taskA", run = "echo Hi", files = { "/root/hi.txt": artifact_a })
 `
 	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
 		instructions_plan.ScheduledInstructionUuid("1"): {},
@@ -1009,6 +1009,226 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestServiceCDependsOnE
 	outputDependencyGraphVisual(instructionsDependencyGraph)
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
+
+func (suite *StartosisIntepreterDependencyGraphTestSuite) TestStartServiceDependsOnService() {
+	script := `def run(plan):
+	service_a = plan.add_service(name = "serviceA", config = ServiceConfig(image = "ubuntu"))
+	
+	# Start service depends on service_a being available
+	plan.start_service(name = "serviceA")
+`
+	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
+		instructions_plan.ScheduledInstructionUuid("1"): {},
+		instructions_plan.ScheduledInstructionUuid("2"): {
+			instructions_plan.ScheduledInstructionUuid("1"),
+		},
+	}
+
+	inputArgs := `{}`
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		script,
+		inputArgs,
+		defaultNonBlockingMode,
+		emptyEnclaveComponents,
+		emptyInstructionsPlanMask,
+		image_download_mode.ImageDownloadMode_Always)
+	require.Nil(suite.T(), interpretationError)
+
+	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+
+	outputDependencyGraphVisual(instructionsDependencyGraph)
+	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
+}
+
+func (suite *StartosisIntepreterDependencyGraphTestSuite) TestStopServiceDependsOnService() {
+	script := `def run(plan):
+	service_a = plan.add_service(name = "serviceA", config = ServiceConfig(image = "ubuntu"))
+	
+	# Stop service depends on service_a being available
+	plan.stop_service(name = "serviceA")
+`
+	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
+		instructions_plan.ScheduledInstructionUuid("1"): {},
+		instructions_plan.ScheduledInstructionUuid("2"): {
+			instructions_plan.ScheduledInstructionUuid("1"),
+		},
+	}
+
+	inputArgs := `{}`
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		script,
+		inputArgs,
+		defaultNonBlockingMode,
+		emptyEnclaveComponents,
+		emptyInstructionsPlanMask,
+		image_download_mode.ImageDownloadMode_Always)
+	require.Nil(suite.T(), interpretationError)
+
+	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+
+	outputDependencyGraphVisual(instructionsDependencyGraph)
+	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
+}
+
+// func (suite *StartosisIntepreterDependencyGraphTestSuite) TestGetServiceDependsOnAddService() {
+// 	script := `def run(plan):
+// 	service_a = plan.add_service(name = "serviceA", config = ServiceConfig(image = "ubuntu"))
+
+// 	# Get service depends on service_a being available
+// 	plan.get_service(name = "serviceA")
+// `
+// 	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
+// 		instructions_plan.ScheduledInstructionUuid("1"): {},
+// 		instructions_plan.ScheduledInstructionUuid("2"): {
+// 			instructions_plan.ScheduledInstructionUuid("1"),
+// 		},
+// 	}
+
+// 	inputArgs := `{}`
+// 	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
+// 		context.Background(),
+// 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+// 		useDefaultMainFunctionName,
+// 		noPackageReplaceOptions,
+// 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+// 		script,
+// 		inputArgs,
+// 		defaultNonBlockingMode,
+// 		emptyEnclaveComponents,
+// 		emptyInstructionsPlanMask,
+// 		image_download_mode.ImageDownloadMode_Always)
+// 	require.Nil(suite.T(), interpretationError)
+
+// 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+
+// 	outputDependencyGraphVisual(instructionsDependencyGraph)
+// 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
+// }
+
+func (suite *StartosisIntepreterDependencyGraphTestSuite) TestGetFilesArtifactsDependsOnRenderTemplate() {
+	script := `def run(plan):
+	artifact_a = plan.render_templates(
+		name = "another-artifact", 
+		config = {
+			"hi.txt": struct(
+				template="{{ .Message }}",
+				data={
+					"Message": "Hello, world",
+				}
+			),
+		}
+	)
+	
+	artifact_a = plan.get_files_artifact(name = "another-artifact")
+`
+	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
+		instructions_plan.ScheduledInstructionUuid("1"): {},
+		instructions_plan.ScheduledInstructionUuid("2"): {
+			instructions_plan.ScheduledInstructionUuid("1"),
+		},
+	}
+
+	inputArgs := `{}`
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		script,
+		inputArgs,
+		defaultNonBlockingMode,
+		emptyEnclaveComponents,
+		emptyInstructionsPlanMask,
+		image_download_mode.ImageDownloadMode_Always)
+	require.Nil(suite.T(), interpretationError)
+
+	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+
+	outputDependencyGraphVisual(instructionsDependencyGraph)
+	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
+}
+
+func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRemoveServiceDependsOnService() {
+	script := `def run(plan):
+	service_a = plan.add_service(name = "serviceA", config = ServiceConfig(image = "ubuntu"))
+	
+	# Remove service depends on service_a being available
+	plan.remove_service(name = "serviceA")
+`
+	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
+		instructions_plan.ScheduledInstructionUuid("1"): {},
+		instructions_plan.ScheduledInstructionUuid("2"): {
+			instructions_plan.ScheduledInstructionUuid("1"),
+		},
+	}
+
+	inputArgs := `{}`
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		script,
+		inputArgs,
+		defaultNonBlockingMode,
+		emptyEnclaveComponents,
+		emptyInstructionsPlanMask,
+		image_download_mode.ImageDownloadMode_Always)
+	require.Nil(suite.T(), interpretationError)
+
+	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+
+	outputDependencyGraphVisual(instructionsDependencyGraph)
+	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
+}
+
+// func (suite *StartosisIntepreterDependencyGraphTestSuite) TestGetServicesDependsOnMultipleAddService() {
+// 	script := `def run(plan):
+// 	plan.add_service(name = "serviceA", config = ServiceConfig(image = "ubuntu"))
+
+// 	services = plan.get_services()
+// `
+// 	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
+// 		instructions_plan.ScheduledInstructionUuid("1"): {},
+// 		instructions_plan.ScheduledInstructionUuid("2"): {},
+// 		instructions_plan.ScheduledInstructionUuid("3"): {
+// 			instructions_plan.ScheduledInstructionUuid("2"),
+// 			instructions_plan.ScheduledInstructionUuid("1"),
+// 		},
+// 	}
+
+// 	inputArgs := `{}`
+// 	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
+// 		context.Background(),
+// 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+// 		useDefaultMainFunctionName,
+// 		noPackageReplaceOptions,
+// 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+// 		script,
+// 		inputArgs,
+// 		defaultNonBlockingMode,
+// 		emptyEnclaveComponents,
+// 		emptyInstructionsPlanMask,
+// 		image_download_mode.ImageDownloadMode_Always)
+// 	require.Nil(suite.T(), interpretationError)
+
+// 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+
+// 	outputDependencyGraphVisual(instructionsDependencyGraph)
+// 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
+// }
 
 func outputDependencyGraphVisual(dependencyGraph map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid) {
 	g := simple.NewDirectedGraph()

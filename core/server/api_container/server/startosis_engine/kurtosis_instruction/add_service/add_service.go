@@ -13,7 +13,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -330,61 +329,9 @@ func (builtin *AddServiceCapabilities) Description() string {
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction
 func (builtin *AddServiceCapabilities) UpdateDependencyGraph(instructionsUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
-	// store the outputs of this instruction in the dependency graph
-
-	// add service outputs:
-	// - service.name
-	dependencyGraph.StoreOutput(instructionsUuid, string(builtin.serviceName))
-
-	// - service.ip_addresss
-	ipAddress, err := builtin.returnValue.GetIpAddress()
+	err := addServiceToDependencyGraph(instructionsUuid, dependencyGraph, string(builtin.serviceName), builtin.returnValue, builtin.serviceConfig)
 	if err != nil {
-		return stacktrace.NewError("An error occurred updating the plan with ip address from services: %v", builtin.serviceName)
+		return stacktrace.Propagate(err, "An error occurred updating the dependency graph with service '%s'", builtin.serviceName)
 	}
-	dependencyGraph.StoreOutput(instructionsUuid, ipAddress)
-
-	// TODO: figure out how to store ports as an instruciton output as they're technically future references
-	// - service.ports
-
-	// Find the outputs that this instruction depends on
-	// add service can depend on:
-	// - files artifacts in files
-	if builtin.serviceConfig.GetFilesArtifactsExpansion() != nil {
-		for _, filesArtifactNames := range builtin.serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
-			for _, filesArtifactName := range filesArtifactNames {
-				dependencyGraph.DependsOnOutput(instructionsUuid, filesArtifactName)
-			}
-		}
-	}
-
-	// if value from env vars, cmd, entrypoint contain future reference, then this instruction depends on the output
-	for _, v := range builtin.serviceConfig.GetEnvVars() {
-		if futureRefs, ok := magic_string_helper.ContainsRuntimeValue(v); ok {
-			for _, futureRef := range futureRefs {
-				dependencyGraph.DependsOnOutput(instructionsUuid, futureRef)
-			}
-		}
-	}
-
-	if builtin.serviceConfig.GetCmdArgs() != nil {
-		for _, v := range builtin.serviceConfig.GetCmdArgs() {
-			if futureRefs, ok := magic_string_helper.ContainsRuntimeValue(v); ok {
-				for _, futureRef := range futureRefs {
-					dependencyGraph.DependsOnOutput(instructionsUuid, futureRef)
-				}
-			}
-		}
-	}
-
-	if builtin.serviceConfig.GetEntrypointArgs() != nil {
-		for _, v := range builtin.serviceConfig.GetEntrypointArgs() {
-			if futureRefs, ok := magic_string_helper.ContainsRuntimeValue(v); ok {
-				for _, futureRef := range futureRefs {
-					dependencyGraph.DependsOnOutput(instructionsUuid, futureRef)
-				}
-			}
-		}
-	}
-
 	return nil
 }

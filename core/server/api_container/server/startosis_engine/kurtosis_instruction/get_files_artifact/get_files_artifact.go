@@ -106,6 +106,6 @@ func (builtin *GetFilesArtifactCapabilities) Description() string {
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
 func (builtin *GetFilesArtifactCapabilities) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
-	// TODO: Implement dependency graph updates for get_files_artifact instruction
+	dependencyGraph.DependsOnOutput(instructionUuid, string(builtin.artifactName))
 	return nil
 }

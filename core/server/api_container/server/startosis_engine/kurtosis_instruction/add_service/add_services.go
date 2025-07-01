@@ -17,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
@@ -104,6 +105,7 @@ type AddServicesCapabilities struct {
 	readyConditions map[service.ServiceName]*service_config.ReadyCondition
 
 	resultUuids map[service.ServiceName]string
+	returnValue *starlark.Dict
 	description string
 
 	imageDownloadMode image_download_mode.ImageDownloadMode
@@ -136,6 +138,7 @@ func (builtin *AddServicesCapabilities) Interpret(locatorOfModuleInWhichThisBuil
 		return nil, interpretationErr
 	}
 	builtin.resultUuids = resultUuids
+	builtin.returnValue = returnValue
 	return returnValue, nil
 }
 
@@ -379,8 +382,27 @@ func (builtin *AddServicesCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGener
 }
 
 func (builtin *AddServicesCapabilities) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
-	// TOOD: Implement
-	logrus.Warn("ADD SERVICES NOT IMPLEMENTED YET FOR UPDATING DEPENDENCY GRAPH.")
+	for _, serviceTuple := range builtin.returnValue.Items() {
+		serviceNameVal := serviceTuple.Index(0)
+		serviceNameStarlarkStr, ok := serviceNameVal.(starlark.String)
+		if !ok {
+			return stacktrace.NewError("Expected to find a string in the return value for service '%s', but none was found; this is a bug in Kurtosis", serviceNameStarlarkStr.String())
+		}
+		serviceNameStr := serviceNameStarlarkStr.GoString()
+
+		serviceStarlarkVal := serviceTuple.Index(1)
+		serviceObj, ok := serviceStarlarkVal.(*kurtosis_types.Service)
+		if !ok {
+			return stacktrace.NewError("Expected to find a Service object in the return value for service '%s', but none was found; this is a bug in Kurtosis", serviceNameStr)
+		}
+
+		serviceConfig := builtin.serviceConfigs[service.ServiceName(serviceNameStr)]
+
+		err := addServiceToDependencyGraph(instructionUuid, dependencyGraph, serviceNameStr, serviceObj, serviceConfig)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred updating the dependency graph with service '%s'", serviceNameStr)
+		}
+	}
 	return nil
 }
 
