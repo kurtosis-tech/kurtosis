@@ -887,6 +887,7 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestExecDependsOnServi
 		recipe = exec_recipe,
 	)
 `
+
 	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
 		instructions_plan.ScheduledInstructionUuid("1"): {},
 		instructions_plan.ScheduledInstructionUuid("2"): {

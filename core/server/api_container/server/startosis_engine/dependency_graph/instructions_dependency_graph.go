@@ -2,7 +2,7 @@ package dependency_graph
 
 import "github.com/sirupsen/logrus"
 
-// TODO: This mirror the ScheduledInstructionUuid in instructions_plan.go
+// TODO: This mirrors the ScheduledInstructionUuid in instructions_plan.go
 // It should be merged into a single type by refactoring the instructions_plan package to avoid circular dependencies
 type ScheduledInstructionUuid string
 
@@ -27,6 +27,7 @@ func (graph *InstructionsDependencyGraph) StoreOutput(instruction ScheduledInstr
 }
 
 func (graph *InstructionsDependencyGraph) DependsOnOutput(instruction ScheduledInstructionUuid, output string) {
+	logrus.Infof("Attemptin to depend instruction %s on output %s", instruction, output)
 	instructionThatProducedOutput, ok := graph.outputsToInstructionMap[output]
 	if !ok {
 		panic("smth went wrong")

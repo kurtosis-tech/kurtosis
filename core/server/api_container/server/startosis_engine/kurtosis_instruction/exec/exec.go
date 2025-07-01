@@ -251,14 +251,17 @@ func formatErrorMessage(errorMessage string, errorFromExec string) string {
 }
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
-func (builtin *ExecCapabilities) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+func (builtin *ExecCapabilities) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error { // store outputs
 	// store outputs
 	// - output
 	// - code
-	dependencyGraph.StoreOutput(instructionUuid, builtin.resultUuid)
-	for _, v := range builtin.returnValue.Items() {
-		output := v.Index(1).String()
-		dependencyGraph.StoreOutput(instructionUuid, output)
+	for _, keyAndValueTuple := range builtin.returnValue.Items() { // iterate through tuples in dict to get output and code
+		value := keyAndValueTuple.Index(1) // 1 is the index to access the value of the tuple
+		valueStr, ok := value.(starlark.String)
+		if !ok {
+			return stacktrace.NewError("Expected starlark value %s to be a string.", value.String())
+		}
+		dependencyGraph.StoreOutput(instructionUuid, valueStr.GoString())
 	}
 
 	// depends on outputs
