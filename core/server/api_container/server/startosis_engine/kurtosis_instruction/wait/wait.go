@@ -315,6 +315,6 @@ func (builtin *WaitCapabilities) Description() string {
 func (builtin *WaitCapabilities) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
 	dependencyGraph.DependsOnOutput(instructionUuid, string(builtin.serviceName))
 
-	// TODO: Find a way to access runtime values used inside of recipe's
+	// TODO: Find a way to access runtime values used inside of recipes
 	return nil
 }

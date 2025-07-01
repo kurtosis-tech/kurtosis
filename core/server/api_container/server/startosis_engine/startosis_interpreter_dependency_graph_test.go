@@ -166,6 +166,68 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
+func (suite *StartosisIntepreterDependencyGraphTestSuite) TestExecDependsOnRequest() {
+	script := `def run(plan):
+	config = ServiceConfig(
+		image = "ubuntu",
+		ports = {
+			"http": PortSpec(
+				number = 8080,
+			),
+		}
+	)
+	plan.add_service(name = "serviceA", config = config)
+	
+	result = plan.request(
+		service_name = "serviceA",
+		recipe = GetHttpRequestRecipe(
+			port_id = "http",
+			endpoint = "/",
+			extract = {
+				"name" : ".name.id",
+			},
+		),
+	)
+
+	plan.exec(
+		service_name = "serviceA",
+		recipe = ExecRecipe(
+			command = ["echo {0}".format(result["extract.name"])],
+		),
+	)
+`
+	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
+		instructions_plan.ScheduledInstructionUuid("1"): {},
+		instructions_plan.ScheduledInstructionUuid("2"): {
+			instructions_plan.ScheduledInstructionUuid("1"),
+		},
+		instructions_plan.ScheduledInstructionUuid("3"): {
+			instructions_plan.ScheduledInstructionUuid("1"),
+			instructions_plan.ScheduledInstructionUuid("2"),
+		},
+	}
+
+	inputArgs := `{}`
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		script,
+		inputArgs,
+		defaultNonBlockingMode,
+		emptyEnclaveComponents,
+		emptyInstructionsPlanMask,
+		image_download_mode.ImageDownloadMode_Always)
+	require.Nil(suite.T(), interpretationError)
+
+	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+
+	outputDependencyGraphVisual(instructionsDependencyGraph)
+	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
+}
+
 func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsOnAddServiceTemplate() {
 	script := `def run(plan):
 
