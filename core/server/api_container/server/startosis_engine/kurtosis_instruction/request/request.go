@@ -239,6 +239,9 @@ func (builtin *RequestCapabilities) isAcceptableCode(recipeResult map[string]sta
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
 func (builtin *RequestCapabilities) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
-	// TODO: Implement dependency graph updates for request instruction
+
+	dependencyGraph.DependsOnOutput(instructionUuid, string(builtin.serviceName))
+	// TODO: Find a way to access runtime values used inside of recipe's
 	return nil
+
 }

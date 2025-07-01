@@ -1278,6 +1278,50 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestVerifyDependsOnExe
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
+func (suite *StartosisIntepreterDependencyGraphTestSuite) TestWaitDependsOnExec() {
+	script := `def run(plan):
+	service_a = plan.add_service(name = "serviceA", config = ServiceConfig(image = "ubuntu"))
+	
+	recipe = ExecRecipe(
+		command = ["echo", "Hello, world"],
+	)
+	
+	plan.wait(
+		service_name = "serviceA",
+		recipe = recipe,
+		field = "code",
+		assertion = "==",
+		target_value = 0,
+	)
+`
+	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
+		instructions_plan.ScheduledInstructionUuid("1"): {},
+		instructions_plan.ScheduledInstructionUuid("2"): {
+			instructions_plan.ScheduledInstructionUuid("1"),
+		},
+	}
+
+	inputArgs := `{}`
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		script,
+		inputArgs,
+		defaultNonBlockingMode,
+		emptyEnclaveComponents,
+		emptyInstructionsPlanMask,
+		image_download_mode.ImageDownloadMode_Always)
+	require.Nil(suite.T(), interpretationError)
+
+	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+
+	outputDependencyGraphVisual(instructionsDependencyGraph)
+	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
+}
+
 func outputDependencyGraphVisual(dependencyGraph map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid) {
 	g := simple.NewDirectedGraph()
 
