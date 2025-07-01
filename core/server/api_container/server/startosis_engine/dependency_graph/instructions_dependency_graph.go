@@ -10,6 +10,27 @@ import (
 // It should be merged into a single type by refactoring the instructions_plan package to avoid circular dependencies
 type ScheduledInstructionUuid string
 
+// InstructionsDependencyGraph tracks dependencies between Kurtosis instructions.
+//
+// Dependencies can be:
+// - **Implicit**: An instruction uses outputs (e.g. service info, file artifacts, runtime values) from a prior instruction.
+// - **Explicit**: An instruction lists another in its `depends_on` field.
+//
+// The graph is built by iterating through plan instructions, each of which calls:
+//   kurtosisInstruction.UpdateDependencyGraph(instructionUuid, dependencyGraph)
+//
+// Each instruction can:
+// 1. `StoreOutput` — Register outputs it produces.
+// 2. `DependsOnOutput` — Declare dependencies on outputs from earlier instructions.
+// 3. `DependsOnInstruction` — Add explicitly declared dependencies (`depends_on`).
+//
+// TODO: Implement `depends_on` for all instructions.
+
+// For example,
+// TODO: add an example here
+// What does the another developor have to know about storing outputs?
+// there is a link between the output and the depends on format
+// need to find a way to explain a) when something is an output (e.g.) give an exhaustive list: Files Artifacts, Service Information, Runtime Values
 type InstructionsDependencyGraph struct {
 	instructionsDependencies map[ScheduledInstructionUuid]map[ScheduledInstructionUuid]bool
 
