@@ -1,9 +1,14 @@
 package dependency_graph
 
 import (
+	"os"
+	"os/exec"
 	"slices"
+	"strconv"
 
 	"github.com/sirupsen/logrus"
+	"gonum.org/v1/gonum/graph/encoding/dot"
+	"gonum.org/v1/gonum/graph/simple"
 )
 
 // TODO: This mirrors the ScheduledInstructionUuid in instructions_plan.go
@@ -90,4 +95,47 @@ func (graph *InstructionsDependencyGraph) GetDependencyGraph() map[ScheduledInst
 		dependencyGraph[instruction] = instructionDependencies
 	}
 	return dependencyGraph
+}
+
+func OutputDependencyGraphVisual(dependencyGraph map[ScheduledInstructionUuid][]ScheduledInstructionUuid) {
+	g := simple.NewDirectedGraph()
+
+	nodes := make(map[string]int64)
+
+	for to, fromList := range dependencyGraph {
+		if _, ok := nodes[string(to)]; !ok {
+			nextID, err := strconv.ParseInt(string(to), 10, 64)
+			if err != nil {
+				panic(err)
+			}
+			nodes[string(to)] = nextID
+			g.AddNode(simple.Node(nextID))
+		}
+		for _, from := range fromList {
+			if _, ok := nodes[string(from)]; !ok {
+				nextID, err := strconv.ParseInt(string(from), 10, 64)
+				if err != nil {
+					panic(err)
+				}
+				nodes[string(from)] = nextID
+				g.AddNode(simple.Node(nextID))
+			}
+			g.SetEdge(g.NewEdge(simple.Node(nodes[string(to)]), simple.Node(nodes[string(from)])))
+		}
+	}
+
+	b, err := dot.Marshal(g, "InstructionsDependencyGraph", "", "  ")
+	if err != nil {
+		panic(err)
+	}
+
+	// Write to file
+	if err := os.WriteFile("/Users/tewodrosmitiku/craft/graphs/dependency.dot", b, 0644); err != nil {
+		panic(err)
+	}
+
+	cmd := exec.Command("dot", "-Tpng", "/Users/tewodrosmitiku/craft/graphs/dependency.dot", "-o", "/Users/tewodrosmitiku/craft/graphs/graph.png")
+	if err := cmd.Run(); err != nil {
+		panic(err)
+	}
 }
