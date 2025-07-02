@@ -107,6 +107,7 @@ func (graph *InstructionsDependencyGraph) addInstruction(instruction ScheduledIn
 // This description will be used as the node label in the visual graph.
 // Example: AddInstructionShortDescriptor("instruction-1", "add_service(database)")
 func (graph *InstructionsDependencyGraph) AddInstructionShortDescriptor(instruction ScheduledInstructionUuid, shortDescriptor string) {
+	graph.addInstruction(instruction)
 	graph.instructionShortDescriptors[instruction] = shortDescriptor
 }
 
@@ -250,7 +251,7 @@ func (graph *InstructionsDependencyGraph) OutputDependencyGraphVisualWithShortDe
 		panic(err)
 	}
 
-	// Generate PNG
+	// // Generate PNG
 	// cmd := exec.Command("dot", "-Tpng", fmt.Sprintf("%s/dependency.dot", path), "-o", fmt.Sprintf("%s/graph.png", path))
 	// if err := cmd.Run(); err != nil {
 	// 	panic(err)

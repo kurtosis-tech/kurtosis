@@ -282,8 +282,8 @@ func formatRunOutput(runFinishedEvent *kurtosis_core_rpc_api_bindings.StarlarkRu
 		totalExecutionDuration := runFinishedEvent.GetTotalExecutionDuration().AsDuration()
 		totalParallelExecutionDuration := runFinishedEvent.GetTotalParallelExecutionDuration().AsDuration()
 		if totalParallelExecutionDuration > 0 {
-			percentageFaster := (totalExecutionDuration - totalParallelExecutionDuration) / totalParallelExecutionDuration * 100
-			durationMsg = durationMsg + fmt.Sprintf(" Total instruction execution time: %s. Total parallel execution time: %s. Parallel execution is %d%% faster", totalExecutionDuration.String(), totalParallelExecutionDuration.String(), percentageFaster)
+			percentageFaster := (totalExecutionDuration.Seconds() - totalParallelExecutionDuration.Seconds()) / totalParallelExecutionDuration.Seconds() * 100
+			durationMsg = durationMsg + fmt.Sprintf(" Total instruction execution time: %s. Total parallel execution time: %s. Parallel execution is %f%% faster", totalExecutionDuration.String(), totalParallelExecutionDuration.String(), percentageFaster)
 		} else {
 			durationMsg = durationMsg + fmt.Sprintf(" Total instruction execution time: %s. Total parallel execution time: %s.", totalExecutionDuration.String(), totalParallelExecutionDuration.String())
 		}
