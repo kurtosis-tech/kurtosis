@@ -206,8 +206,17 @@ func (graph *InstructionsDependencyGraph) OutputDependencyGraphVisualWithShortDe
 		if !exists {
 			descriptor = string(instruction)
 		}
+
+		if len(descriptor) > 20 {
+			descriptor = descriptor[:17] + "..."
+		}
+
 		nodeIDToDescriptor[nextNodeID] = descriptor
 
+		// don't display prints in the graph
+		if strings.Contains(descriptor, "print") {
+			continue
+		}
 		g.AddNode(simple.Node(nextNodeID))
 	}
 	logrus.Infof("nodeIDToDescriptor: %v", nodeIDToDescriptor)
