@@ -146,7 +146,9 @@ func (runner *StartosisRunner) Run(
 			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent()
 			return
 		}
+		logrus.Infof("Generating instructions dependency graph")
 		instructionDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+		logrus.Infof("Generated instructions dependency graph")
 
 		// Validation starts > send progress info
 		progressInfo = binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(

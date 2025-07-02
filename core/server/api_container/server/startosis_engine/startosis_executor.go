@@ -151,7 +151,9 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 			}
 		}
 
+		logrus.Infof("Computing parallel execution time for instructionsDependencyGraph")
 		totalParallelExecutionDuration := dependency_graph.ComputeParallelExecutionTime(instructionsDependencyGraph, instructionNumToDuration)
+		logrus.Infof("totalParallelExecutionDuration: %v", totalParallelExecutionDuration)
 
 		if !dryRun {
 			logrus.Debugf("Serialized script output before runtime value replace: '%v'", serializedScriptOutput)

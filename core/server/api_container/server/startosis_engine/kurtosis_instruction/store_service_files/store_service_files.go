@@ -199,5 +199,6 @@ func (builtin *StoreServiceFilesCapabilities) UpdateDependencyGraph(instructionU
 	dependencyGraph.StoreOutput(instructionUuid, string(builtin.artifactName))
 
 	dependencyGraph.DependsOnOutput(instructionUuid, string(builtin.serviceName))
+	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("store_service_files(%s, %s, %s)", builtin.serviceName, builtin.src, builtin.artifactName))
 	return nil
 }

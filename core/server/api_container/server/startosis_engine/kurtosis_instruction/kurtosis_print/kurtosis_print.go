@@ -119,6 +119,17 @@ func (builtin *PrintCapabilities) Description() string {
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
 func (builtin *PrintCapabilities) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
-	// TODO: Implement dependency graph updates for print instruction
+	msgStr, ok := builtin.msg.(starlark.String)
+	if !ok {
+		return stacktrace.NewError("msg is not a string")
+	}
+
+	if futureRefs, ok := magic_string_helper.ContainsRuntimeValue(msgStr.GoString()); ok {
+		for _, futureRef := range futureRefs {
+			dependencyGraph.DependsOnOutput(instructionUuid, futureRef)
+		}
+	}
+
+	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, "print")
 	return nil
 }

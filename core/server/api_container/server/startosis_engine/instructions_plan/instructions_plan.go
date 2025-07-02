@@ -91,6 +91,7 @@ func (plan *InstructionsPlan) GenerateInstructionsDependencyGraph() map[Schedule
 	// update the dependency graph with the effects of the adding this instruction the plan
 	instructionPlan, err := plan.GeneratePlan() // same api
 	if err != nil {
+		logrus.Errorf("error generating instructions dependency graph: %v", err)
 		// return nil, err
 		panic(err)
 	}

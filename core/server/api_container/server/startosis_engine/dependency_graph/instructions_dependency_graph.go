@@ -195,6 +195,7 @@ func (graph *InstructionsDependencyGraph) OutputDependencyGraphVisualWithShortDe
 	for instruction := range dependencyGraph {
 		nextNodeID, err := strconv.ParseInt(string(instruction), 10, 64)
 		if err != nil {
+			logrus.Errorf("error parsing instruction %s to int64: %v", instruction, err)
 			panic(err)
 		}
 		instructionToNodeID[instruction] = nextNodeID
@@ -250,8 +251,8 @@ func (graph *InstructionsDependencyGraph) OutputDependencyGraphVisualWithShortDe
 	}
 
 	// Generate PNG
-	cmd := exec.Command("dot", "-Tpng", fmt.Sprintf("%s/dependency.dot", path), "-o", fmt.Sprintf("%s/graph.png", path))
-	if err := cmd.Run(); err != nil {
-		panic(err)
-	}
+	// cmd := exec.Command("dot", "-Tpng", fmt.Sprintf("%s/dependency.dot", path), "-o", fmt.Sprintf("%s/graph.png", path))
+	// if err := cmd.Run(); err != nil {
+	// 	panic(err)
+	// }
 }
