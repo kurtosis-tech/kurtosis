@@ -461,6 +461,7 @@ func (builtin *RunPythonCapabilities) UpdateDependencyGraph(instructionUuid depe
 		}
 	}
 
+	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("run_python %s", builtin.run))
 	return nil
 }
 

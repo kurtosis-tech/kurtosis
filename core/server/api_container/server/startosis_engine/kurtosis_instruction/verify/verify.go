@@ -176,6 +176,7 @@ func (builtin *VerifyCapabilities) Description() string {
 func (builtin *VerifyCapabilities) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
 	dependencyGraph.DependsOnOutput(instructionUuid, string(builtin.runtimeValue))
 
+	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("verify %s", builtin.runtimeValue))
 	// TODO: Implement dependency graph updates for verify instruction
 	return nil
 }

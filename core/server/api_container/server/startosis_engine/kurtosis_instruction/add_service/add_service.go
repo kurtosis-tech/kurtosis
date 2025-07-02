@@ -333,5 +333,6 @@ func (builtin *AddServiceCapabilities) UpdateDependencyGraph(instructionsUuid de
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred updating the dependency graph with service '%s'", builtin.serviceName)
 	}
+	dependencyGraph.AddInstructionShortDescriptor(instructionsUuid, fmt.Sprintf("add_service %s", builtin.serviceName))
 	return nil
 }

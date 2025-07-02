@@ -255,5 +255,7 @@ func (builtin *RequestCapabilities) UpdateDependencyGraph(instructionUuid depend
 
 	// depends on outputs
 	dependencyGraph.DependsOnOutput(instructionUuid, string(builtin.serviceName))
+
+	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("request %s", builtin.serviceName))
 	return nil
 }

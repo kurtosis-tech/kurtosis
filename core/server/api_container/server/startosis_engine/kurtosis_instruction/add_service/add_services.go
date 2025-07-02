@@ -403,6 +403,7 @@ func (builtin *AddServicesCapabilities) UpdateDependencyGraph(instructionUuid de
 			return stacktrace.Propagate(err, "An error occurred updating the dependency graph with service '%s'", serviceNameStr)
 		}
 	}
+	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("add_services %s", getNamesAsCommaSeparatedList(builtin.serviceConfigs)))
 	return nil
 }
 

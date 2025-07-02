@@ -115,6 +115,7 @@ func (plan *InstructionsPlan) GenerateInstructionsDependencyGraph() map[Schedule
 		}
 	}
 
+	instructionsDependencies.OutputDependencyGraphVisualWithShortDescriptors("/Users/tewodrosmitiku/craft/graphs")
 	return dependencyGraphMap
 }
 

@@ -277,5 +277,7 @@ func (builtin *ExecCapabilities) UpdateDependencyGraph(instructionUuid dependenc
 		}
 	}
 
+	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("exec(%s %s)", builtin.serviceName, strings.Join(builtin.cmdList, " ")))
+
 	return nil
 }

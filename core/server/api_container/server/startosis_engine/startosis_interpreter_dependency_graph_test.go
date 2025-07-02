@@ -4,9 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"os"
-	"os/exec"
-	"strconv"
 	"testing"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -21,8 +18,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"gonum.org/v1/gonum/graph/encoding/dot"
-	"gonum.org/v1/gonum/graph/simple"
 )
 
 type StartosisIntepreterDependencyGraphTestSuite struct {
@@ -104,7 +99,6 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddSingleServiceTo
 
 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
 
-	outputDependencyGraphVisual(instructionsDependencyGraph)
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
@@ -162,7 +156,6 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 
 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
 
-	outputDependencyGraphVisual(instructionsDependencyGraph)
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
@@ -224,7 +217,6 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestExecDependsOnReque
 
 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
 
-	outputDependencyGraphVisual(instructionsDependencyGraph)
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
@@ -268,7 +260,6 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 
 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
 
-	outputDependencyGraphVisual(instructionsDependencyGraph)
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
@@ -324,7 +315,6 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 
 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
 
-	outputDependencyGraphVisual(instructionsDependencyGraph)
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
@@ -385,7 +375,6 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 
 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
 
-	outputDependencyGraphVisual(instructionsDependencyGraph)
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
@@ -450,7 +439,6 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 
 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
 
-	outputDependencyGraphVisual(instructionsDependencyGraph)
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
@@ -512,7 +500,6 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 
 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
 
-	outputDependencyGraphVisual(instructionsDependencyGraph)
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
@@ -576,7 +563,6 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 
 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
 
-	outputDependencyGraphVisual(instructionsDependencyGraph)
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
@@ -626,7 +612,6 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRunShDependsOnServ
 
 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
 
-	outputDependencyGraphVisual(instructionsDependencyGraph)
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
@@ -688,7 +673,6 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 
 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
 
-	outputDependencyGraphVisual(instructionsDependencyGraph)
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
@@ -752,7 +736,6 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 
 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
 
-	outputDependencyGraphVisual(instructionsDependencyGraph)
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
@@ -802,7 +785,6 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRunPythonDependsOn
 
 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
 
-	outputDependencyGraphVisual(instructionsDependencyGraph)
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
@@ -840,7 +822,6 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRunPythonWithArgsD
 
 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
 
-	outputDependencyGraphVisual(instructionsDependencyGraph)
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
@@ -897,7 +878,6 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRunPythonWithPacka
 
 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
 
-	outputDependencyGraphVisual(instructionsDependencyGraph)
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
@@ -933,7 +913,6 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRunPythonWithCusto
 
 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
 
-	outputDependencyGraphVisual(instructionsDependencyGraph)
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
@@ -974,7 +953,6 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestExecDependsOnServi
 
 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
 
-	outputDependencyGraphVisual(instructionsDependencyGraph)
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
@@ -1017,7 +995,6 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestExecOnServiceBDepe
 
 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
 
-	outputDependencyGraphVisual(instructionsDependencyGraph)
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
@@ -1068,7 +1045,6 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestServiceCDependsOnE
 
 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
 
-	outputDependencyGraphVisual(instructionsDependencyGraph)
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
@@ -1103,7 +1079,6 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestStartServiceDepend
 
 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
 
-	outputDependencyGraphVisual(instructionsDependencyGraph)
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
@@ -1138,7 +1113,6 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestStopServiceDepends
 
 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
 
-	outputDependencyGraphVisual(instructionsDependencyGraph)
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
@@ -1173,7 +1147,6 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestStopServiceDepends
 
 // 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
 
-// 	outputDependencyGraphVisual(instructionsDependencyGraph)
 // 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 // }
 
@@ -1217,7 +1190,6 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestGetFilesArtifactsD
 
 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
 
-	outputDependencyGraphVisual(instructionsDependencyGraph)
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
@@ -1252,7 +1224,6 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRemoveServiceDepen
 
 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
 
-	outputDependencyGraphVisual(instructionsDependencyGraph)
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
@@ -1288,7 +1259,6 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRemoveServiceDepen
 
 // 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
 
-// 	outputDependencyGraphVisual(instructionsDependencyGraph)
 // 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 // }
 
@@ -1336,7 +1306,6 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestVerifyDependsOnExe
 
 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
 
-	outputDependencyGraphVisual(instructionsDependencyGraph)
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
@@ -1380,7 +1349,6 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestWaitDependsOnAddSe
 
 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
 
-	outputDependencyGraphVisual(instructionsDependencyGraph)
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
@@ -1429,49 +1397,5 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRequestDependsOnAd
 
 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
 
-	outputDependencyGraphVisual(instructionsDependencyGraph)
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
-}
-
-func outputDependencyGraphVisual(dependencyGraph map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid) {
-	g := simple.NewDirectedGraph()
-
-	nodes := make(map[string]int64)
-
-	for to, fromList := range dependencyGraph {
-		if _, ok := nodes[string(to)]; !ok {
-			nextID, err := strconv.ParseInt(string(to), 10, 64)
-			if err != nil {
-				panic(err)
-			}
-			nodes[string(to)] = nextID
-			g.AddNode(simple.Node(nextID))
-		}
-		for _, from := range fromList {
-			if _, ok := nodes[string(from)]; !ok {
-				nextID, err := strconv.ParseInt(string(from), 10, 64)
-				if err != nil {
-					panic(err)
-				}
-				nodes[string(from)] = nextID
-				g.AddNode(simple.Node(nextID))
-			}
-			g.SetEdge(g.NewEdge(simple.Node(nodes[string(to)]), simple.Node(nodes[string(from)])))
-		}
-	}
-
-	b, err := dot.Marshal(g, "InstructionsDependencyGraph", "", "  ")
-	if err != nil {
-		panic(err)
-	}
-
-	// Write to file
-	if err := os.WriteFile("/Users/tewodrosmitiku/craft/graphs/dependency.dot", b, 0644); err != nil {
-		panic(err)
-	}
-
-	cmd := exec.Command("dot", "-Tpng", "/Users/tewodrosmitiku/craft/graphs/dependency.dot", "-o", "/Users/tewodrosmitiku/craft/graphs/graph.png")
-	if err := cmd.Run(); err != nil {
-		panic(err)
-	}
 }

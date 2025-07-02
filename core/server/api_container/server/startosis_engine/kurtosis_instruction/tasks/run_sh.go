@@ -413,6 +413,8 @@ func (builtin *RunShCapabilities) UpdateDependencyGraph(instructionUuid dependen
 		}
 	}
 
+	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("run_sh %s", builtin.run))
+
 	return nil
 }
 

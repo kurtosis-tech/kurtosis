@@ -136,7 +136,7 @@ func TestExtractInstructionNumber(t *testing.T) {
 		{
 			name:     "UUID with multiple digits",
 			uuid:     "123",
-			expected: 3, // This is a limitation of the current implementation
+			expected: 123,
 			ok:       true,
 		},
 		{

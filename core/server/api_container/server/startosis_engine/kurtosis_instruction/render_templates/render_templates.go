@@ -207,6 +207,8 @@ func (builtin *RenderTemplatesCapabilities) UpdateDependencyGraph(instructionUui
 		}
 	}
 
+	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("render_templates %s", builtin.artifactName))
+
 	return nil
 }
 

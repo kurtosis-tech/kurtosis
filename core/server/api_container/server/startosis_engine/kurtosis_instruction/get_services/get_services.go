@@ -2,6 +2,7 @@ package get_services
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
@@ -108,5 +109,6 @@ func (builtin *GetServicesCapabilities) UpdateDependencyGraph(instructionUuid de
 	for _, serviceName := range builtin.serviceNames {
 		dependencyGraph.DependsOnOutput(instructionUuid, string(serviceName))
 	}
+	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("get_services"))
 	return nil
 }
