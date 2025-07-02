@@ -135,6 +135,7 @@ type WaitCapabilities struct {
 
 	resultUuid  string
 	description string
+	returnValue *starlark.Dict
 }
 
 func (builtin *WaitCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -225,6 +226,7 @@ func (builtin *WaitCapabilities) Interpret(_ string, arguments *builtin_argument
 	builtin.timeout = timeout
 	builtin.resultUuid = resultUuid
 	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, fmt.Sprintf(descriptionFormatStr, builtin.timeout, builtin.serviceName))
+	builtin.returnValue = returnValue
 
 	return returnValue, nil
 }
@@ -313,10 +315,18 @@ func (builtin *WaitCapabilities) Description() string {
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
 func (builtin *WaitCapabilities) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+	for _, keyAndValueTuple := range builtin.returnValue.Items() {
+		value := keyAndValueTuple.Index(1)
+
+		valueStarlarkStr, ok := value.(starlark.String)
+		if !ok {
+			return stacktrace.NewError("Expected value to be a string, but got %v", value.String())
+		}
+		dependencyGraph.StoreOutput(instructionUuid, valueStarlarkStr.GoString())
+	}
+
 	dependencyGraph.DependsOnOutput(instructionUuid, string(builtin.serviceName))
 
 	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("wait %s", builtin.serviceName))
-
-	// TODO: Find a way to access runtime values used inside of recipes
 	return nil
 }
