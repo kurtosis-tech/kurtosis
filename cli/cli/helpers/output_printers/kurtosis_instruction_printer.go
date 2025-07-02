@@ -279,7 +279,14 @@ func formatProgressBar(currentStep uint32, totalSteps uint32, progressBarChar st
 func formatRunOutput(runFinishedEvent *kurtosis_core_rpc_api_bindings.StarlarkRunFinishedEvent, dryRun bool, verbosity run.Verbosity) string {
 	durationMsg := "."
 	if verbosity == run.Detailed {
-		durationMsg = durationMsg + fmt.Sprintf(" Total instruction execution time: %s.", runFinishedEvent.GetTotalExecutionDuration().AsDuration().String())
+		totalExecutionDuration := runFinishedEvent.GetTotalExecutionDuration().AsDuration()
+		totalParallelExecutionDuration := runFinishedEvent.GetTotalParallelExecutionDuration().AsDuration()
+		if totalParallelExecutionDuration > 0 {
+			percentageFaster := (totalExecutionDuration - totalParallelExecutionDuration) / totalParallelExecutionDuration * 100
+			durationMsg = durationMsg + fmt.Sprintf(" Total instruction execution time: %s. Total parallel execution time: %s. Parallel execution is %d%% faster", totalExecutionDuration.String(), totalParallelExecutionDuration.String(), percentageFaster)
+		} else {
+			durationMsg = durationMsg + fmt.Sprintf(" Total instruction execution time: %s. Total parallel execution time: %s.", totalExecutionDuration.String(), totalParallelExecutionDuration.String())
+		}
 	}
 	if !runFinishedEvent.GetIsRunSuccessful() {
 		if dryRun {

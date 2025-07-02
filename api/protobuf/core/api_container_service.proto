@@ -391,7 +391,8 @@ message StarlarkRunFinishedEvent {
   optional string serialized_output = 2;
   
   optional google.protobuf.Duration total_execution_duration = 3;
-
+  
+  optional google.protobuf.Duration total_parallel_execution_duration = 4;
 }
 
 // ==============================================================================================
