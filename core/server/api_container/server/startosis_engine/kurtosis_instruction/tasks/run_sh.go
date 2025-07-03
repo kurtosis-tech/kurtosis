@@ -26,6 +26,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
 )
@@ -385,16 +386,28 @@ func (builtin *RunShCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerator) 
 func (builtin *RunShCapabilities) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
 	// outputs
 	dependencyGraph.StoreOutput(instructionUuid, builtin.runCodeValue)
+	if instructionUuid == "82" {
+		logrus.Infof("run sh %v runCodeValue: %v", builtin.description, builtin.runCodeValue)
+	}
 	dependencyGraph.StoreOutput(instructionUuid, builtin.runOutputValue)
+	if instructionUuid == "82" {
+		logrus.Infof("run sh %v runOutputValue: %v", builtin.description, builtin.runOutputValue)
+	}
 
 	for _, storeSpec := range builtin.storeSpecList {
 		dependencyGraph.StoreOutput(instructionUuid, storeSpec.GetName())
+		if instructionUuid == "82" {
+			logrus.Infof("run sh %v storeSpec: %v", builtin.description, storeSpec.GetName())
+		}
 	}
 
 	if builtin.serviceConfig.GetFilesArtifactsExpansion() != nil {
 		for _, filesArtifactNames := range builtin.serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
 			for _, filesArtifactName := range filesArtifactNames {
 				dependencyGraph.DependsOnOutput(instructionUuid, filesArtifactName)
+				if instructionUuid == "82" {
+					logrus.Infof("run sh %v filesArtifactName: %v", builtin.description, filesArtifactName)
+				}
 			}
 		}
 	}
@@ -403,6 +416,9 @@ func (builtin *RunShCapabilities) UpdateDependencyGraph(instructionUuid dependen
 		if futureRefs, ok := magic_string_helper.ContainsRuntimeValue(v); ok {
 			for _, futureRef := range futureRefs {
 				dependencyGraph.DependsOnOutput(instructionUuid, futureRef)
+				if instructionUuid == "82" {
+					logrus.Infof("run sh %v futureRef: %v", builtin.description, futureRef)
+				}
 			}
 		}
 	}
@@ -410,6 +426,9 @@ func (builtin *RunShCapabilities) UpdateDependencyGraph(instructionUuid dependen
 	if futureRefs, ok := magic_string_helper.ContainsRuntimeValue(builtin.run); ok {
 		for _, futureRef := range futureRefs {
 			dependencyGraph.DependsOnOutput(instructionUuid, futureRef)
+			if instructionUuid == "82" {
+				logrus.Infof("run sh %v futureRef: %v", builtin.description, futureRef)
+			}
 		}
 	}
 

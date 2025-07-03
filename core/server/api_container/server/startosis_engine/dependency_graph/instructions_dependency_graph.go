@@ -77,6 +77,10 @@ func (graph *InstructionsDependencyGraph) DependsOnInstruction(instruction Sched
 
 func (graph *InstructionsDependencyGraph) addDependency(instruction ScheduledInstructionUuid, dependency ScheduledInstructionUuid) {
 	// idempotently add the instruction and the dependency to the graph
+	if instruction == dependency {
+
+		return
+	}
 	graph.addInstruction(instruction)
 	graph.addInstruction(dependency)
 	graph.instructionsDependencies[instruction][dependency] = true
@@ -207,17 +211,16 @@ func (graph *InstructionsDependencyGraph) OutputDependencyGraphVisualWithShortDe
 			descriptor = string(instruction)
 		}
 
-		if len(descriptor) > 20 {
-			descriptor = descriptor[:17] + "..."
+		if len(descriptor) > 30 {
+			descriptor = descriptor[:27] + "..."
 		}
 
 		nodeIDToDescriptor[nextNodeID] = descriptor
 
 		// don't display prints in the graph
-		if strings.Contains(descriptor, "print") {
-			continue
+		if descriptor != "print" {
+			g.AddNode(simple.Node(nextNodeID))
 		}
-		g.AddNode(simple.Node(nextNodeID))
 	}
 	logrus.Infof("nodeIDToDescriptor: %v", nodeIDToDescriptor)
 
@@ -226,6 +229,7 @@ func (graph *InstructionsDependencyGraph) OutputDependencyGraphVisualWithShortDe
 		toNodeID := instructionToNodeID[to]
 		for _, from := range fromList {
 			fromNodeID := instructionToNodeID[from]
+			logrus.Infof("Adding edge from %d to %d", toNodeID, fromNodeID)
 			g.SetEdge(g.NewEdge(simple.Node(toNodeID), simple.Node(fromNodeID)))
 		}
 	}

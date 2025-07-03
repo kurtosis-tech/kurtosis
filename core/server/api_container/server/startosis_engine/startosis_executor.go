@@ -2,7 +2,9 @@ package startosis_engine
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -154,6 +156,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 		logrus.Infof("Computing parallel execution time for instructionsDependencyGraph")
 		totalParallelExecutionDuration := dependency_graph.ComputeParallelExecutionTime(instructionsDependencyGraph, instructionNumToDuration)
 		logrus.Infof("totalParallelExecutionDuration: %v", totalParallelExecutionDuration)
+		printInstructionToDuration(instructionNumToDuration)
 
 		if !dryRun {
 			logrus.Debugf("Serialized script output before runtime value replace: '%v'", serializedScriptOutput)
@@ -180,4 +183,25 @@ func sendErrorAndFail(starlarkRunResponseLineStream chan<- *kurtosis_core_rpc_ap
 	serializedError := binding_constructors.NewStarlarkExecutionError(propagatedErr.Error())
 	starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromExecutionError(serializedError)
 	starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEventWithDuration(totalExecutionDuration)
+}
+
+func printInstructionToDuration(instructionNumToDuration map[int]time.Duration) {
+	// Convert durations to string representations for JSON marshaling
+	stringDurations := make(map[int]string)
+	for num, duration := range instructionNumToDuration {
+		stringDurations[num] = duration.String()
+	}
+
+	jsonBytes, err := json.MarshalIndent(stringDurations, "", "  ")
+	if err != nil {
+		logrus.Errorf("Failed to marshal instruction durations to JSON: %v", err)
+		return
+	}
+
+	err = os.WriteFile("/tmp/instruction_durations.json", jsonBytes, 0644)
+	if err != nil {
+		logrus.Errorf("Failed to write instruction durations to file: %v", err)
+		return
+	}
+	logrus.Infof("Wrote instruction durations to /tmp/instruction_durations.json")
 }

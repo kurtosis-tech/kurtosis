@@ -106,6 +106,30 @@ func TestComputeParallelExecutionTime(t *testing.T) {
 			},
 			expectedParallelTime: 20 * time.Second, // 10 + 10 (parallel)
 		},
+		// {
+		// 	name: "Eth network",
+		// 	dependencyGraph: map[ScheduledInstructionUuid][]ScheduledInstructionUuid{
+		// 		"1": {},         // generate genesis
+		// 		"2": {"1"},      // start el bootnode
+		// 		"3": {"2"},      // start second el node
+		// 		"4": {"2"},      // start third el node
+		// 		"5": {"4", "3"}, // start cl bootnode
+		// 		"6": {"5"},      // start second cl node
+		// 		"7": {"5"},      // start third cl node
+		// 		"8": {"1"},      // a random run sh
+		// 	},
+		// 	instructionNumToDuration: map[int]time.Duration{
+		// 		1: 5 * time.Second,
+		// 		2: 3 * time.Second,
+		// 		3: 3 * time.Second,
+		// 		4: 3 * time.Second,
+		// 		5: 20 * time.Second,
+		// 		6: 20 * time.Second,
+		// 		7: 20 * time.Second,
+		// 		8: 2 * time.Second,
+		// 	},
+		// 	expectedParallelTime: 20 * time.Second, // 5 + 3 + 3 + 20 + 20
+		// },
 	}
 
 	for _, tt := range tests {
