@@ -162,26 +162,26 @@ func (service *EngineGatewayServiceServer) GetEnclave(ctx context.Context, in *k
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting info for enclaves from the remote engine")
 	}
-	// responseEnclaves := remoteEngineResponse.GetEnclaveInfo()
-	// cleanUpRunningGateways := true
-	// for enclaveId, enclaveInfo := range responseEnclaves {
-	// 	var runningApiContainerGateway *runningApiContainerGateway
-	// 	runningApiContainerGateway, isRunning := service.enclaveIdToRunningGatewayMap[enclaveId]
-	// 	// If the gateway isn't running, start it
-	// 	if !isRunning {
-	// 		runningApiContainerGateway, err = service.startRunningGatewayForEnclave(enclaveInfo)
-	// 		defer func() {
-	// 			if cleanUpRunningGateways {
-	// 				service.idempotentKillRunningGatewayForEnclaveId(enclaveId)
-	// 			}
-	// 		}()
-	// 		if err != nil {
-	// 			return nil, stacktrace.Propagate(err, "Expected to be able to start a local gateway for enclave '%v', instead a non-nil error was returned", enclaveId)
-	// 		}
-	// 	}
-	// 	remoteEngineResponse.EnclaveInfo[enclaveId].ApiContainerHostMachineInfo = runningApiContainerGateway.hostMachineInfo
-	// }
-	// cleanUpRunningGateways = false
+	enclaveUuid := remoteEngineResponse.EnclaveInfo.EnclaveUuid
+
+	cleanUpRunningGateways := true
+	var runningApiContainerGateway *runningApiContainerGateway
+	runningApiContainerGateway, isRunning := service.enclaveIdToRunningGatewayMap[enclaveUuid]
+	// If the gateway isn't running, start it
+	if !isRunning {
+		runningApiContainerGateway, err = service.startRunningGatewayForEnclave(remoteEngineResponse.EnclaveInfo)
+		defer func() {
+			if cleanUpRunningGateways {
+				service.idempotentKillRunningGatewayForEnclaveId(enclaveUuid)
+			}
+		}()
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Expected to be able to start a local gateway for enclave '%v', instead a non-nil error was returned", enclaveUuid)
+		}
+	}
+	remoteEngineResponse.EnclaveInfo.ApiContainerHostMachineInfo = runningApiContainerGateway.hostMachineInfo
+
+	cleanUpRunningGateways = false
 	return remoteEngineResponse, nil
 }
 
