@@ -181,12 +181,10 @@ func PrintEnclaveInspect(ctx context.Context, kurtosisCtx *kurtosis_context.Kurt
 		padStr := strings.Repeat(headerPadChar, numPadChars)
 		fmt.Printf("%v %v %v\n", padStr, header, padStr)
 
-		startTime := time.Now()
 		if err := printingFunc(ctx, kurtosisCtx, enclaveInfo, showFullUuids, isApiContainerRunning); err != nil {
 			logrus.Error(err)
 			headersWithPrintErrs = append(headersWithPrintErrs, header)
 		}
-		logrus.Infof("Time taken in printingFunc %v: %v", header, time.Since(startTime))
 		fmt.Println("")
 	}
 
