@@ -516,10 +516,12 @@ func getEnclaveApiContainerInformation(
 	error,
 ) {
 	apiContainerByEnclaveIdFilter := getApiContainerByEnclaveIdFilter(enclaveId)
+	startTime := time.Now()
 	enclaveApiContainers, err := kurtosisBackend.GetAPIContainers(ctx, apiContainerByEnclaveIdFilter)
 	if err != nil {
 		return types.ContainerStatus_NONEXISTENT, nil, nil, stacktrace.Propagate(err, "An error occurred getting the containers for enclave '%v'", enclaveId)
 	}
+	logrus.Infof("Time taken to get api containers from kurtosis backend: %v", time.Since(startTime))
 	numOfFoundApiContainers := len(enclaveApiContainers)
 	if numOfFoundApiContainers == 0 {
 		return types.ContainerStatus_NONEXISTENT,
