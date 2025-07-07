@@ -228,9 +228,28 @@ func (kurtosisCtx *KurtosisContext) GetEnclaves(ctx context.Context) (*Enclaves,
 }
 
 func (kurtosisCtx *KurtosisContext) GetEnclave(ctx context.Context, enclaveIdentifier string) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
-	// what happens if you call by name or shortened uuid?
+	existingAndHistoricalEnclaveIdentifiers, err := kurtosisCtx.engineClient.GetExistingAndHistoricalEnclaveIdentifiers(ctx, &emptypb.Empty{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting existing and historical enclave identifiers.")
+	}
+	matchingEnclaveUuid := ""
+	for _, enclaveInfo := range existingAndHistoricalEnclaveIdentifiers.AllIdentifiers {
+		if enclaveInfo.Name == enclaveIdentifier {
+			matchingEnclaveUuid = enclaveInfo.EnclaveUuid
+		}
+		if enclaveInfo.ShortenedUuid == enclaveIdentifier {
+			matchingEnclaveUuid = enclaveInfo.EnclaveUuid
+		}
+		if enclaveInfo.EnclaveUuid == enclaveIdentifier {
+			matchingEnclaveUuid = enclaveInfo.EnclaveUuid
+		}
+	}
+	if matchingEnclaveUuid == "" {
+		return nil, stacktrace.NewError("No enclave found with identifier '%v'", enclaveIdentifier)
+	}
+
 	getEnclaveResponse, err := kurtosisCtx.engineClient.GetEnclave(ctx, &kurtosis_engine_rpc_api_bindings.GetEnclaveArgs{
-		EnclaveIdentifier: enclaveIdentifier,
+		EnclaveIdentifier: matchingEnclaveUuid,
 	})
 	if err != nil {
 		return nil, stacktrace.Propagate(
