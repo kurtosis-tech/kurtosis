@@ -108,22 +108,18 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred creating Kurtosis Context from local engine")
 	}
 
-	startTime := time.Now()
 	if err = PrintEnclaveInspect(ctx, kurtosisCtx, enclaveIdentifier, showFullUuids); err != nil {
 		// this is already wrapped up
 		return err
 	}
-	logrus.Infof("Time taken to inspect: %v", time.Since(startTime))
 	return nil
 }
 
 func PrintEnclaveInspect(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisContext, enclaveIdentifier string, showFullUuids bool) error {
-	startTime := time.Now()
 	enclaveInfo, err := kurtosisCtx.GetEnclave(ctx, enclaveIdentifier)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave for identifier '%v'", enclaveIdentifier)
 	}
-	logrus.Infof("Time taken to get enclave info: %v", time.Since(startTime))
 
 	keyValuePrinter := output_printers.NewKeyValuePrinter()
 

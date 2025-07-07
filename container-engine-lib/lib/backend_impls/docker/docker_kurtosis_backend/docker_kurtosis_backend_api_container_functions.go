@@ -441,7 +441,7 @@ func (backend *DockerKurtosisBackend) getMatchingApiContainers(ctx context.Conte
 			apiContainer.GetLabels(),
 			apiContainer.GetStatus(),
 			apiContainer.GetHostPortBindings(),
-			// Bridge network IP address will be filled in later if this APIContainer passes the ID filter.
+			// Bridge network IP address will be filled in later if this APIContainer passes the post-filter.
 			// This avoids unnessarily calling GetContainerIP/InspectContainer on all API containers
 			"",
 			isProductionEnclave,

@@ -516,12 +516,10 @@ func getEnclaveApiContainerInformation(
 	error,
 ) {
 	apiContainerByEnclaveIdFilter := getApiContainerByEnclaveIdFilter(enclaveId)
-	startTime := time.Now()
 	enclaveApiContainers, err := kurtosisBackend.GetAPIContainers(ctx, apiContainerByEnclaveIdFilter)
 	if err != nil {
 		return types.ContainerStatus_NONEXISTENT, nil, nil, stacktrace.Propagate(err, "An error occurred getting the containers for enclave '%v'", enclaveId)
 	}
-	logrus.Infof("Time taken to get api containers from kurtosis backend: %v", time.Since(startTime))
 	numOfFoundApiContainers := len(enclaveApiContainers)
 	if numOfFoundApiContainers == 0 {
 		return types.ContainerStatus_NONEXISTENT,
@@ -667,12 +665,10 @@ func (manager *EnclaveManager) getEnclaveWithoutMutex(
 	ctx context.Context,
 	enclaveIdentifier string,
 ) (*types.EnclaveInfo, error) {
-	startTime := time.Now()
 	enclaves, err := manager.kurtosisBackend.GetEnclaves(ctx, getEnclaveFilter(enclaveIdentifier))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave '%v'", enclaveIdentifier)
 	}
-	logrus.Infof("Time taken to get enclave from kurtosis backend: %v", time.Since(startTime))
 
 	enclaveObj, existsEnclave := enclaves[enclave.EnclaveUUID(enclaveIdentifier)]
 	if !existsEnclave {
@@ -684,12 +680,10 @@ func (manager *EnclaveManager) getEnclaveWithoutMutex(
 		return nil, nil
 	}
 
-	startTime = time.Now()
 	enclaveInfo, err := getEnclaveInfoForEnclave(ctx, manager.kurtosisBackend, enclaveObj)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting information about enclave '%v'", enclaveIdentifier)
 	}
-	logrus.Infof("Time taken to get enclave info for enclave '%v': %v", enclaveIdentifier, time.Since(startTime))
 
 	return enclaveInfo, nil
 }

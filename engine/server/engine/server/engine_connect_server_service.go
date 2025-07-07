@@ -194,12 +194,10 @@ func (service *EngineConnectServerService) CreateEnclave(ctx context.Context, co
 }
 
 func (service *EngineConnectServerService) GetEnclaves(ctx context.Context, _ *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
-	startTime := time.Now()
 	infoForEnclaves, err := service.enclaveManager.GetEnclaves(ctx)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting info for enclaves")
 	}
-	logrus.Infof("Time to get enclaves: %v", time.Since(startTime))
 	response := &kurtosis_engine_rpc_api_bindings.GetEnclavesResponse{
 		EnclaveInfo: utils.MapMapValues(
 			infoForEnclaves,
@@ -210,12 +208,10 @@ func (service *EngineConnectServerService) GetEnclaves(ctx context.Context, _ *c
 }
 
 func (service *EngineConnectServerService) GetEnclave(ctx context.Context, getEnclaveArgs *connect.Request[kurtosis_engine_rpc_api_bindings.GetEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclaveResponse], error) {
-	startTime := time.Now()
 	enclaveInfo, err := service.enclaveManager.GetEnclave(ctx, getEnclaveArgs.Msg.GetEnclaveIdentifier())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting info for enclave")
 	}
-	logrus.Infof("Time get enclave: %v", time.Since(startTime))
 	response := &kurtosis_engine_rpc_api_bindings.GetEnclaveResponse{
 		EnclaveInfo: utils.MapPointer(enclaveInfo, toGrpcEnclaveInfo),
 	}
