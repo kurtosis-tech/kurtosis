@@ -253,6 +253,21 @@ func (manager *EnclaveManager) GetEnclaves(
 	return enclaveMapKeyedWithUuidStr, nil
 }
 
+func (manager *EnclaveManager) GetEnclave(
+	ctx context.Context,
+	enclaveIdentifier string,
+) (*types.EnclaveInfo, error) {
+	manager.mutex.Lock()
+	defer manager.mutex.Unlock()
+
+	enclaveInfo, err := manager.getEnclaveWithoutMutex(ctx, enclaveIdentifier)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave '%v' without mutex", enclaveIdentifier)
+	}
+
+	return enclaveInfo, nil
+}
+
 // StopEnclave
 func (manager *EnclaveManager) StopEnclave(ctx context.Context, enclaveIdentifier string) error {
 	manager.mutex.Lock()
@@ -644,7 +659,37 @@ func (manager *EnclaveManager) getEnclavesWithoutMutex(
 		result[enclaveId] = enclaveInfo
 	}
 	return result, nil
+}
 
+func (manager *EnclaveManager) getEnclaveWithoutMutex(
+	ctx context.Context,
+	enclaveIdentifier string,
+) (*types.EnclaveInfo, error) {
+	startTime := time.Now()
+	enclaves, err := manager.kurtosisBackend.GetEnclaves(ctx, getEnclaveFilter(enclaveIdentifier))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave '%v'", enclaveIdentifier)
+	}
+	logrus.Infof("Time taken to get enclave from kurtosis backend: %v", time.Since(startTime))
+
+	enclaveObj, existsEnclave := enclaves[enclave.EnclaveUUID(enclaveIdentifier)]
+	if !existsEnclave {
+		return nil, stacktrace.NewError("Enclave '%v' not found", enclaveIdentifier)
+	}
+
+	// filter idle enclaves because these were not created by users
+	if isIdleEnclave(*enclaveObj) {
+		return nil, nil
+	}
+
+	startTime = time.Now()
+	enclaveInfo, err := getEnclaveInfoForEnclave(ctx, manager.kurtosisBackend, enclaveObj)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting information about enclave '%v'", enclaveIdentifier)
+	}
+	logrus.Infof("Time taken to get enclave info for enclave '%v': %v", enclaveIdentifier, time.Since(startTime))
+
+	return enclaveInfo, nil
 }
 
 func (manager *EnclaveManager) Close() error {
@@ -667,6 +712,15 @@ func getEnclaveByEnclaveIdFilter(enclaveUuid enclave.EnclaveUUID) *enclave.Encla
 func getAllEnclavesFilter() *enclave.EnclaveFilters {
 	return &enclave.EnclaveFilters{
 		UUIDs:    map[enclave.EnclaveUUID]bool{},
+		Statuses: nil,
+	}
+}
+
+func getEnclaveFilter(enclaveIdentifier string) *enclave.EnclaveFilters {
+	return &enclave.EnclaveFilters{
+		UUIDs: map[enclave.EnclaveUUID]bool{
+			enclave.EnclaveUUID(enclaveIdentifier): true,
+		},
 		Statuses: nil,
 	}
 }
