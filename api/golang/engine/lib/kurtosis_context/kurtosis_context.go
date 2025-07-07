@@ -196,9 +196,8 @@ func (kurtosisCtx *KurtosisContext) GetEnclaveContext(ctx context.Context, encla
 func (kurtosisCtx *KurtosisContext) GetEnclaveContextFromEnclaveInfo(ctx context.Context, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo) (*enclaves.EnclaveContext, error) {
 	enclaveCtx, err := newEnclaveContextFromEnclaveInfo(ctx, kurtosisCtx.portalClient, enclaveInfo)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating an enclave context from the returned enclave info")
+		return nil, stacktrace.Propagate(err, "An error occurred creating an enclave context from the provided enclave info")
 	}
-
 	return enclaveCtx, nil
 }
 
