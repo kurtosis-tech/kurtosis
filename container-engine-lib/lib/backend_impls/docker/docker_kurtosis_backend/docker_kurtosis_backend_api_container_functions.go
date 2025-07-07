@@ -470,7 +470,7 @@ func (backend *DockerKurtosisBackend) getMatchingApiContainers(ctx context.Conte
 		}
 		apicObjWithBridgeNetworkIpAddress, err := getApiContainerObjectFromContainerInfoWithBridgeNetworkIpAddress(apicObj, bridgeNetworkIpAddress)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred while getting bridge network ip address for container with id: '%v'", containerId)
+			return nil, stacktrace.Propagate(err, "An error occurred while getting API container object with bridge network ip address for container with id: '%v'", containerId)
 		}
 
 		allMatchingApiContainers[containerId] = apicObjWithBridgeNetworkIpAddress

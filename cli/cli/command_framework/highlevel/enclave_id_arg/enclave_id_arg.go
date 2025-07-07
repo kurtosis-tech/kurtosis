@@ -2,13 +2,14 @@ package enclave_id_arg
 
 import (
 	"context"
+	"sort"
+	"strings"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/stacktrace"
-	"sort"
-	"strings"
 )
 
 const (
@@ -112,33 +113,39 @@ func getValidationFunc(argKey string, _ string, isGreedy bool) func(context.Cont
 			enclaveIdentifiersToValidate = []string{enclaveIdentifier}
 		}
 
-		enclaves, err := kurtosisCtx.GetEnclaves(ctx)
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred getting enclaves, which is necessary to check if the enclaves exist")
-		}
+		// if there are multiple enclave identifiers, we need to get all the enclaves to check if they exist
+		// otherwise, just get a single enclave
+		if len(enclaveIdentifiersToValidate) > 1 {
+			enclaves, err := kurtosisCtx.GetEnclaves(ctx)
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred getting enclaves, which is necessary to check if the enclaves exist")
+			}
 
-		enclavesByShortenedUuid := enclaves.GetEnclavesByShortenedUuid()
-		enclavesByUuid := enclaves.GetEnclavesByUuid()
-		enclavesByName := enclaves.GetEnclavesByName()
+			enclavesByShortenedUuid := enclaves.GetEnclavesByShortenedUuid()
+			enclavesByUuid := enclaves.GetEnclavesByUuid()
+			enclavesByName := enclaves.GetEnclavesByName()
 
-		for _, enclaveIdentifier := range enclaveIdentifiersToValidate {
-			if _, found := enclavesByUuid[enclaveIdentifier]; found {
-				continue
-			}
-			if matches, found := enclavesByShortenedUuid[enclaveIdentifier]; found {
-				if len(matches) > validShortenedUuidOrNameMatches {
-					return stacktrace.NewError("Found multiple matching uuids '%v' for shortened uuid '%v' which is ambiguous", enclaveInfosToUuidsStr(matches), enclaveIdentifier)
+			for _, enclaveIdentifier := range enclaveIdentifiersToValidate {
+				if _, found := enclavesByUuid[enclaveIdentifier]; found {
+					continue
 				}
-				continue
-			}
-			if matches, found := enclavesByName[enclaveIdentifier]; found {
-				if len(matches) > validShortenedUuidOrNameMatches {
-					return stacktrace.NewError("Found multiple matching uuids '%v' for name '%v' which is ambiguous", enclaveInfosToUuidsStr(matches), enclaveIdentifier)
+				if matches, found := enclavesByShortenedUuid[enclaveIdentifier]; found {
+					if len(matches) > validShortenedUuidOrNameMatches {
+						return stacktrace.NewError("Found multiple matching uuids '%v' for shortened uuid '%v' which is ambiguous", enclaveInfosToUuidsStr(matches), enclaveIdentifier)
+					}
+					continue
 				}
-				continue
+				if matches, found := enclavesByName[enclaveIdentifier]; found {
+					if len(matches) > validShortenedUuidOrNameMatches {
+						return stacktrace.NewError("Found multiple matching uuids '%v' for name '%v' which is ambiguous", enclaveInfosToUuidsStr(matches), enclaveIdentifier)
+					}
+					continue
+				}
+				return stacktrace.NewError("No enclave found for identifier '%v'", enclaveIdentifier)
 			}
-			return stacktrace.NewError("No enclave found for identifier '%v'", enclaveIdentifier)
 		}
+		// TODO: get enclave for one identifier
+
 		return nil
 	}
 }
