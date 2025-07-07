@@ -2441,7 +2441,6 @@ func pullImage(dockerClient *client.Client, imageName string, registrySpec *imag
 	}
 
 	out, err := dockerClient.ImagePull(pullImageCtx, imageName, imagePullOptions)
-	logrus.Infof("ImagePull LOL: %v", imagePullOptions.RegistryAuth)
 	if err != nil {
 		return stacktrace.Propagate(err, "Tried pulling image '%v' with platform '%v' but failed", imageName, platform), false
 	}
