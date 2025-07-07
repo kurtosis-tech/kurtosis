@@ -30,6 +30,13 @@ export class EngineServiceClient {
                response: engine_service_pb.GetEnclavesResponse) => void
   ): grpcWeb.ClientReadableStream<engine_service_pb.GetEnclavesResponse>;
 
+  getEnclave(
+    request: engine_service_pb.GetEnclaveArgs,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: engine_service_pb.GetEnclaveResponse) => void
+  ): grpcWeb.ClientReadableStream<engine_service_pb.GetEnclaveResponse>;
+
   getExistingAndHistoricalEnclaveIdentifiers(
     request: google_protobuf_empty_pb.Empty,
     metadata: grpcWeb.Metadata | undefined,
@@ -84,6 +91,11 @@ export class EngineServicePromiseClient {
     request: google_protobuf_empty_pb.Empty,
     metadata?: grpcWeb.Metadata
   ): Promise<engine_service_pb.GetEnclavesResponse>;
+
+  getEnclave(
+    request: engine_service_pb.GetEnclaveArgs,
+    metadata?: grpcWeb.Metadata
+  ): Promise<engine_service_pb.GetEnclaveResponse>;
 
   getExistingAndHistoricalEnclaveIdentifiers(
     request: google_protobuf_empty_pb.Empty,
