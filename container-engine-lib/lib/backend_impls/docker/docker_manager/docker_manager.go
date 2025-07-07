@@ -2409,30 +2409,39 @@ func pullImage(dockerClient *client.Client, imageName string, registrySpec *imag
 			logrus.Warnf("Falling back to pulling image with no auth config.")
 		} else {
 			imagePullOptions.RegistryAuth = authFromConfig
-			logrus.Infof("Using authentication to pull image: %s", imageName)
+			logrus.Infof("Using system authentication to pull image: %s", imageName)
 		}
 	}
 
 	// If the registry spec is defined, use that for authentication
 	if registrySpec != nil {
-		authConfig := registry.AuthConfig{
-			Username:      registrySpec.GetUsername(),
-			Password:      registrySpec.GetPassword(),
-			Email:         "",
-			Auth:          "",
-			ServerAddress: registrySpec.GetRegistryAddr(),
-			IdentityToken: "",
-			RegistryToken: "",
+		username := registrySpec.GetUsername()
+		password := registrySpec.GetPassword()
+		registryAddr := registrySpec.GetRegistryAddr()
+		// Verify that the username, password, and registry address are not empty
+		if username != "" && password != "" && registryAddr != "" {
+			authConfig := registry.AuthConfig{
+				Username:      username,
+				Password:      password,
+				Email:         "",
+				Auth:          "",
+				ServerAddress: registryAddr,
+				IdentityToken: "",
+				RegistryToken: "",
+			}
+			encodedAuthConfig, err := registry.EncodeAuthConfig(authConfig)
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred while converting registry auth to base64"), false
+			}
+			imagePullOptions.RegistryAuth = encodedAuthConfig
+			logrus.Infof("Using ImageRegistrySpec authentication to pull image: %s", imageName)
+		} else {
+			logrus.Warnf("Registry spec is defined but username, password, or registry address is empty")
 		}
-		encodedAuthConfig, err := registry.EncodeAuthConfig(authConfig)
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred while converting registry auth to base64"), false
-		}
-		imagePullOptions.RegistryAuth = encodedAuthConfig
-
 	}
 
 	out, err := dockerClient.ImagePull(pullImageCtx, imageName, imagePullOptions)
+	logrus.Infof("ImagePull LOL: %v", imagePullOptions.RegistryAuth)
 	if err != nil {
 		return stacktrace.Propagate(err, "Tried pulling image '%v' with platform '%v' but failed", imageName, platform), false
 	}

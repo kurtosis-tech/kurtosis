@@ -64,40 +64,88 @@ func TestGetAuthConfigForRepoPlain(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	testCases := []struct {
-		repo         string
-		expectedAuth string
+		repo                  string
+		expectedAuth          string
+		expectedUser          string
+		expectedPassword      string
+		expectedServerAddress string
 	}{
 		{
-			repo:         "docker.io/my-repo/my-image:latest",
-			expectedAuth: encodedAuthDockerHub,
+			repo:                  "alpine:3.17",
+			expectedAuth:          encodedAuthDockerHub,
+			expectedUser:          expectedUserDockerHub,
+			expectedPassword:      expectedPasswordDockerHub,
+			expectedServerAddress: "https://index.docker.io/v1/",
 		},
 		{
-			repo:         "my-repo/my-image:latest",
-			expectedAuth: encodedAuthDockerHub,
+			repo:                  "traefik",
+			expectedAuth:          encodedAuthDockerHub,
+			expectedUser:          expectedUserDockerHub,
+			expectedPassword:      expectedPasswordDockerHub,
+			expectedServerAddress: "https://index.docker.io/v1/",
 		},
 		{
-			repo:         "https://registry-1.docker.io/my-repo/my-image:latest",
-			expectedAuth: encodedAuthDockerHub,
+			repo:                  "ubuntu:latest",
+			expectedAuth:          encodedAuthDockerHub,
+			expectedUser:          expectedUserDockerHub,
+			expectedPassword:      expectedPasswordDockerHub,
+			expectedServerAddress: "https://index.docker.io/v1/",
 		},
 		{
-			repo:         "https://index.docker.io/v1/",
-			expectedAuth: encodedAuthDockerHub,
+			repo:                  "docker.io/my-repo/my-image:latest",
+			expectedAuth:          encodedAuthDockerHub,
+			expectedUser:          expectedUserDockerHub,
+			expectedPassword:      expectedPasswordDockerHub,
+			expectedServerAddress: "https://index.docker.io/v1/",
 		},
 		{
-			repo:         "https://index.docker.io/v1",
-			expectedAuth: encodedAuthDockerHub,
+			repo:                  "my-repo/my-image:latest",
+			expectedAuth:          encodedAuthDockerHub,
+			expectedUser:          expectedUserDockerHub,
+			expectedPassword:      expectedPasswordDockerHub,
+			expectedServerAddress: "https://index.docker.io/v1/",
 		},
 		{
-			repo:         "ghcr.io/my-repo/my-image:latest",
-			expectedAuth: encodedAuthGithub,
+			repo:                  "https://registry-1.docker.io/my-repo/my-image:latest",
+			expectedAuth:          encodedAuthDockerHub,
+			expectedUser:          expectedUserDockerHub,
+			expectedPassword:      expectedPasswordDockerHub,
+			expectedServerAddress: "https://index.docker.io/v1/",
 		},
 		{
-			repo:         "ghcr.io",
-			expectedAuth: encodedAuthGithub,
+			repo:                  "https://index.docker.io/v1/",
+			expectedAuth:          encodedAuthDockerHub,
+			expectedUser:          expectedUserDockerHub,
+			expectedPassword:      expectedPasswordDockerHub,
+			expectedServerAddress: "https://index.docker.io/v1/",
 		},
 		{
-			repo:         "ghcr.io/",
-			expectedAuth: encodedAuthGithub,
+			repo:                  "https://index.docker.io/v1",
+			expectedAuth:          encodedAuthDockerHub,
+			expectedUser:          expectedUserDockerHub,
+			expectedPassword:      expectedPasswordDockerHub,
+			expectedServerAddress: "https://index.docker.io/v1/",
+		},
+		{
+			repo:                  "ghcr.io/my-repo/my-image:latest",
+			expectedAuth:          encodedAuthGithub,
+			expectedUser:          expectedUserGithub,
+			expectedPassword:      expectedPasswordGithub,
+			expectedServerAddress: "https://ghcr.io/",
+		},
+		{
+			repo:                  "ghcr.io",
+			expectedAuth:          encodedAuthGithub,
+			expectedUser:          expectedUserGithub,
+			expectedPassword:      expectedPasswordGithub,
+			expectedServerAddress: "https://ghcr.io/",
+		},
+		{
+			repo:                  "ghcr.io/",
+			expectedAuth:          encodedAuthGithub,
+			expectedUser:          expectedUserGithub,
+			expectedPassword:      expectedPasswordGithub,
+			expectedServerAddress: "https://ghcr.io/",
 		},
 	}
 
@@ -106,6 +154,9 @@ func TestGetAuthConfigForRepoPlain(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, authConfig, "Auth config should not be nil")
 		assert.Equal(t, testCase.expectedAuth, authConfig.Auth, "Auth for Docker Hub should match")
+		assert.Equal(t, testCase.expectedUser, authConfig.Username, "Username should match")
+		assert.Equal(t, testCase.expectedPassword, authConfig.Password, "Password should match")
+		assert.Equal(t, testCase.expectedServerAddress, authConfig.ServerAddress, "Server address should match")
 	}
 
 	authConfig, err := GetAuthFromDockerConfig("something-else.local")
