@@ -8,6 +8,11 @@ package inspect
 import (
 	"context"
 	"fmt"
+	"sort"
+	"strings"
+	"time"
+	"unicode/utf8"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
@@ -22,10 +27,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"sort"
-	"strings"
-	"time"
-	"unicode/utf8"
 )
 
 const (
@@ -107,18 +108,22 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred creating Kurtosis Context from local engine")
 	}
 
+	startTime := time.Now()
 	if err = PrintEnclaveInspect(ctx, kurtosisCtx, enclaveIdentifier, showFullUuids); err != nil {
 		// this is already wrapped up
 		return err
 	}
+	logrus.Infof("Time taken to inspect: %v", time.Since(startTime))
 	return nil
 }
 
 func PrintEnclaveInspect(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisContext, enclaveIdentifier string, showFullUuids bool) error {
+	startTime := time.Now()
 	enclaveInfo, err := kurtosisCtx.GetEnclave(ctx, enclaveIdentifier)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave for identifier '%v'", enclaveIdentifier)
 	}
+	logrus.Infof("Time taken to get enclave info: %v", time.Since(startTime))
 
 	keyValuePrinter := output_printers.NewKeyValuePrinter()
 
@@ -180,10 +185,12 @@ func PrintEnclaveInspect(ctx context.Context, kurtosisCtx *kurtosis_context.Kurt
 		padStr := strings.Repeat(headerPadChar, numPadChars)
 		fmt.Printf("%v %v %v\n", padStr, header, padStr)
 
+		startTime := time.Now()
 		if err := printingFunc(ctx, kurtosisCtx, enclaveInfo, showFullUuids, isApiContainerRunning); err != nil {
 			logrus.Error(err)
 			headersWithPrintErrs = append(headersWithPrintErrs, header)
 		}
+		logrus.Infof("Time taken in printingFunc %v: %v", header, time.Since(startTime))
 		fmt.Println("")
 	}
 
