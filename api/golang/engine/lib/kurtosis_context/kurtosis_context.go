@@ -227,19 +227,22 @@ func (kurtosisCtx *KurtosisContext) GetEnclaves(ctx context.Context) (*Enclaves,
 }
 
 func (kurtosisCtx *KurtosisContext) GetEnclave(ctx context.Context, enclaveIdentifier string) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
+	// [enclaveIdentifier] could be an enclave name, shortened uuid, or full uuid so we pull known identifiers for known enclaves and check if any match
+	// with the provided identifier
 	existingAndHistoricalEnclaveIdentifiers, err := kurtosisCtx.engineClient.GetExistingAndHistoricalEnclaveIdentifiers(ctx, &emptypb.Empty{})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting existing and historical enclave identifiers.")
+		return nil, stacktrace.Propagate(err, "An error occurred getting existing and historical enclave identifiers ")
 	}
 	matchingEnclaveUuid := ""
 	for _, enclaveInfo := range existingAndHistoricalEnclaveIdentifiers.AllIdentifiers {
-		if enclaveInfo.Name == enclaveIdentifier {
-			matchingEnclaveUuid = enclaveInfo.EnclaveUuid
+		if matchingEnclaveUuid != "" {
+			break
 		}
-		if enclaveInfo.ShortenedUuid == enclaveIdentifier {
-			matchingEnclaveUuid = enclaveInfo.EnclaveUuid
-		}
-		if enclaveInfo.EnclaveUuid == enclaveIdentifier {
+
+		// if the provided identifier matches any of the known identifiers for an enclave, use that enclaves full uuid to get the enclave info
+		if enclaveInfo.Name == enclaveIdentifier ||
+			enclaveInfo.ShortenedUuid == enclaveIdentifier ||
+			enclaveInfo.EnclaveUuid == enclaveIdentifier {
 			matchingEnclaveUuid = enclaveInfo.EnclaveUuid
 		}
 	}
