@@ -105,16 +105,9 @@ func getValidationFunc(argKey string, _ string, isGreedy bool) func(context.Cont
 				return stacktrace.Propagate(err, "Expected a value for greedy arg '%v' but didn't find one", argKey)
 			}
 			enclaveIdentifiersToValidate = enclaveIds
-		} else {
-			enclaveIdentifier, err := args.GetNonGreedyArg(argKey)
-			if err != nil {
-				return stacktrace.Propagate(err, "Expected a value for non-greedy arg '%v' but didn't find one", argKey)
-			}
-			enclaveIdentifiersToValidate = []string{enclaveIdentifier}
 		}
 
-		// if there are multiple enclave identifiers, we need to get all the enclaves to check if they exist
-		// otherwise, just get a single enclave
+		// only validate enclave identifer if this is a greedy enclave identifier arg
 		if len(enclaveIdentifiersToValidate) > 1 {
 			enclaves, err := kurtosisCtx.GetEnclaves(ctx)
 			if err != nil {
@@ -144,7 +137,6 @@ func getValidationFunc(argKey string, _ string, isGreedy bool) func(context.Cont
 				return stacktrace.NewError("No enclave found for identifier '%v'", enclaveIdentifier)
 			}
 		}
-		// TODO: get enclave for one identifier
 
 		return nil
 	}
