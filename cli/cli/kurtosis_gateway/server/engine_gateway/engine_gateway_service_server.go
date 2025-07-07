@@ -3,6 +3,9 @@ package engine_gateway
 import (
 	"context"
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/connection"
@@ -16,8 +19,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"
 	restclient "k8s.io/client-go/rest"
-	"sync"
-	"time"
 )
 
 const (
@@ -149,6 +150,38 @@ func (service *EngineGatewayServiceServer) GetEnclaves(ctx context.Context, in *
 	}
 
 	cleanUpRunningGateways = false
+	return remoteEngineResponse, nil
+}
+
+func (service *EngineGatewayServiceServer) GetEnclave(ctx context.Context, in *kurtosis_engine_rpc_api_bindings.GetEnclaveArgs) (*kurtosis_engine_rpc_api_bindings.GetEnclaveResponse, error) {
+	remoteEngineClient, err := service.engineClientSupplier.GetEngineClient()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get a client for a live Kurtosis engine, instead a non nil error was returned")
+	}
+	remoteEngineResponse, err := remoteEngineClient.GetEnclave(ctx, in)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting info for enclaves from the remote engine")
+	}
+	// responseEnclaves := remoteEngineResponse.GetEnclaveInfo()
+	// cleanUpRunningGateways := true
+	// for enclaveId, enclaveInfo := range responseEnclaves {
+	// 	var runningApiContainerGateway *runningApiContainerGateway
+	// 	runningApiContainerGateway, isRunning := service.enclaveIdToRunningGatewayMap[enclaveId]
+	// 	// If the gateway isn't running, start it
+	// 	if !isRunning {
+	// 		runningApiContainerGateway, err = service.startRunningGatewayForEnclave(enclaveInfo)
+	// 		defer func() {
+	// 			if cleanUpRunningGateways {
+	// 				service.idempotentKillRunningGatewayForEnclaveId(enclaveId)
+	// 			}
+	// 		}()
+	// 		if err != nil {
+	// 			return nil, stacktrace.Propagate(err, "Expected to be able to start a local gateway for enclave '%v', instead a non-nil error was returned", enclaveId)
+	// 		}
+	// 	}
+	// 	remoteEngineResponse.EnclaveInfo[enclaveId].ApiContainerHostMachineInfo = runningApiContainerGateway.hostMachineInfo
+	// }
+	// cleanUpRunningGateways = false
 	return remoteEngineResponse, nil
 }
 

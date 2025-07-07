@@ -228,7 +228,10 @@ func (kurtosisCtx *KurtosisContext) GetEnclaves(ctx context.Context) (*Enclaves,
 }
 
 func (kurtosisCtx *KurtosisContext) GetEnclave(ctx context.Context, enclaveIdentifier string) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
-	enclaves, err := kurtosisCtx.GetEnclaves(ctx)
+	// what happens if you call by name or shortened uuid?
+	getEnclaveResponse, err := kurtosisCtx.engineClient.GetEnclave(ctx, &kurtosis_engine_rpc_api_bindings.GetEnclaveArgs{
+		EnclaveIdentifier: enclaveIdentifier,
+	})
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -236,28 +239,7 @@ func (kurtosisCtx *KurtosisContext) GetEnclave(ctx context.Context, enclaveIdent
 			enclaveIdentifier,
 		)
 	}
-
-	if enclaveInfo, found := enclaves.enclavesByUuid[enclaveIdentifier]; found {
-		return enclaveInfo, nil
-	}
-
-	if enclaveInfos, found := enclaves.enclavesByShortenedUuid[enclaveIdentifier]; found {
-		if len(enclaveInfos) == validUuidMatchesAllowed {
-			return enclaveInfos[0], nil
-		} else if len(enclaveInfos) > validUuidMatchesAllowed {
-			return nil, stacktrace.NewError("Found multiple enclaves '%v' matching shortened uuid '%v'. Please use a uuid to be more specific", enclaveInfos, enclaveIdentifier)
-		}
-	}
-
-	if enclaveInfos, found := enclaves.enclavesByName[enclaveIdentifier]; found {
-		if len(enclaveInfos) == validUuidMatchesAllowed {
-			return enclaveInfos[0], nil
-		} else if len(enclaveInfos) > validUuidMatchesAllowed {
-			return nil, stacktrace.NewError("Found multiple enclaves '%v' matching name '%v'. Please use a uuid to be more specific", enclaveInfos, enclaveIdentifier)
-		}
-	}
-
-	return nil, stacktrace.NewError("Couldn't find an enclave for identifier '%v'", enclaveIdentifier)
+	return getEnclaveResponse.EnclaveInfo, nil
 }
 
 func (kurtosisCtx *KurtosisContext) StopEnclave(ctx context.Context, enclaveIdentifier string) error {
