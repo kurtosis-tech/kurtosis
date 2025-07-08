@@ -423,6 +423,9 @@ func (backend *DockerKurtosisBackend) getMatchingApiContainers(ctx context.Conte
 		docker_label_key.ContainerTypeDockerLabelKey.GetString(): label_value_consts.APIContainerContainerTypeDockerLabelValue.GetString(),
 		// NOTE: we do NOT use the enclave UUID label here, and instead do postfiltering, because Docker has no way to do disjunctive search!
 	}
+
+	// TODO: dockerManager.GetContainersByLabels lists all APIContainers and inspects them so the performance of any upstream call to retrieve even a single APIContainer will always scale with the number of enclaves
+	// TODO: Consider caching enclave ID -> container ID mapping to avoid inspecting all API containers
 	allApiContainers, err := backend.dockerManager.GetContainersByLabels(ctx, apiContainerSearchLabels, consts.ShouldFetchAllContainersWhenRetrievingContainers)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred fetching API containers using labels: %+v", apiContainerSearchLabels)
