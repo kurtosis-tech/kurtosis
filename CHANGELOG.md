@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.2](https://github.com/kurtosis-tech/kurtosis/compare/1.10.1...1.10.2) (2025-07-08)
+
+
+### Bug Fixes
+
+* docker auth bugs ([#2773](https://github.com/kurtosis-tech/kurtosis/issues/2773)) ([45ada05](https://github.com/kurtosis-tech/kurtosis/commit/45ada05521586ee6d2a1e3f48c1c3ae3a297c9e1))
+
 ## [1.10.1](https://github.com/kurtosis-tech/kurtosis/compare/1.10.0...1.10.1) (2025-06-26)
 
 
