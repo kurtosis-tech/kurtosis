@@ -39,7 +39,46 @@ func TestGetAuthWithNoAuthSetReturnsNilAndNoError(t *testing.T) {
 	assert.Nil(t, authConfig, "Auth config should be nil")
 }
 
-func TestGetAuthConfigForRepoPlain(t *testing.T) {
+func TestGetAuthConfigForRepoUserPassword(t *testing.T) {
+	expectedUser := "user"
+	expectedPassword := "password"
+
+	cfg := fmt.Sprintf(`
+	{
+		"auths": {
+			"https://index.docker.io/v1/": {
+				"username": "%s",
+				"password": "%s"
+			},
+			"https://ghcr.io": {
+				"password": "pasads"
+			},
+			"https://example.io": {
+				"username": "blabla"
+			}
+		}
+	}`, expectedUser, expectedPassword)
+
+	tmpDir := writeStaticConfig(t, cfg)
+	defer os.RemoveAll(tmpDir)
+
+	authConfig, err := GetAuthFromDockerConfig("ubuntu:latest")
+	assert.NoError(t, err)
+	assert.NotNil(t, authConfig, "Auth config should not be nil")
+	assert.Equal(t, expectedUser, authConfig.Username, "Username should match")
+	assert.Equal(t, expectedPassword, authConfig.Password, "Password should match")
+	assert.Equal(t, "https://index.docker.io/v1/", authConfig.ServerAddress, "Server address should match")
+
+	authConfig, err = GetAuthFromDockerConfig("ghcr.io/my-repo/my-image:latest")
+	assert.Nil(t, authConfig, "Auth config should be nil")
+	assert.Error(t, err)
+
+	authConfig, err = GetAuthFromDockerConfig("example.io/my-repo/my-image:latest")
+	assert.Nil(t, authConfig, "Auth config should be nil")
+	assert.Error(t, err)
+}
+
+func TestGetAuthConfigForRepoBase64Auth(t *testing.T) {
 	expectedUserDockerHub := "dhuser"
 	expectedPasswordDockerHub := "dhpassword"
 	expectedUserGithub := "ghuser"
