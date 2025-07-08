@@ -4,6 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
@@ -16,8 +20,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"sort"
-	"strings"
 )
 
 const (
@@ -92,6 +94,7 @@ func run(
 	phasesWithErrors := []string{}
 	for phaseTitle, cleaningFunc := range cleaningPhaseFunctions {
 		logrus.Infof("Cleaning %v...", phaseTitle)
+		start := time.Now()
 		successfullyRemovedArtifactUuids, removalErrors, err := cleaningFunc()
 		if err != nil {
 			logrus.Errorf("Errors occurred cleaning %v:\n%v", phaseTitle, err)
@@ -117,6 +120,7 @@ func run(
 			continue
 		}
 		logrus.Infof("Successfully cleaned %v", phaseTitle)
+		logrus.Infof("Time taken to clean %v: %v", phaseTitle, time.Since(start))
 	}
 
 	if len(phasesWithErrors) > 0 {

@@ -405,6 +405,7 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 	}
 
 	// if destroy is deleting ALL enclaves, now's a good time to clean up log stuff
+	start := time.Now()
 	if filters.Statuses[enclave.EnclaveStatus_Running] {
 		// TODO: Potentially clean logs collector as well, similar to Kubernetes backend
 
@@ -412,6 +413,7 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 			return nil, nil, stacktrace.Propagate(err, "An error occurred cleaning logs aggregator container.")
 		}
 	}
+	logrus.Infof("Time taken to clean logs aggregator: %v", time.Since(start))
 
 	return successfulNetworkRemovalEnclaveUuids, erroredEnclaveUuids, nil
 }

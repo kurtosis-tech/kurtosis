@@ -615,11 +615,13 @@ func (manager *DockerManager) CreateAndStartContainer(
 		dockerImage = dockerImage + dockerTagSeparatorChar + dockerDefaultTag
 	}
 
+	start := time.Now()
 	_, _, err := manager.FetchImage(ctx, dockerImage, args.imageRegistrySpec, args.imageDownloadMode)
 	if err != nil {
 		logrus.Debugf("Error occurred fetching image '%v'. Err:\n%v", dockerImage, err)
 		return "", nil, stacktrace.Propagate(err, "An error occurred fetching image '%v'", dockerImage)
 	}
+	logrus.Infof("Time taken to fetch image '%v': %v", dockerImage, time.Since(start))
 
 	idFilterArgs := filters.NewArgs(
 		filters.KeyValuePair{

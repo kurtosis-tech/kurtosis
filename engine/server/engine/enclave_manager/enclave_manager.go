@@ -599,10 +599,12 @@ func (manager *EnclaveManager) cleanEnclaves(
 		UUIDs:    enclaveUUIDs,
 		Statuses: enclaveStatusFilters,
 	}
+	start := time.Now()
 	successfullyDestroyedEnclaves, erroredEnclaves, err := manager.kurtosisBackend.DestroyEnclaves(ctx, destroyEnclaveFilters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying enclaves during cleaning")
 	}
+	logrus.Infof("Time taken to destroy enclaves: %v", time.Since(start))
 
 	enclaveDestructionErrors := []error{}
 	for _, destructionError := range erroredEnclaves {
