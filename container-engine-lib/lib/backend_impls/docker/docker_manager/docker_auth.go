@@ -238,6 +238,8 @@ func GetAuthFromDockerConfig(repo string) (*registry.AuthConfig, error) {
 				ac.Username = string(decodedAuth[:usernamePasswordSeparatorIndex])
 				ac.Password = string(decodedAuth[usernamePasswordSeparatorIndex+1:])
 			}
+		} else {
+			return nil, stacktrace.NewError("no username or password or auth found for registry '%s'", registryHost)
 		}
 
 		return &ac, nil
