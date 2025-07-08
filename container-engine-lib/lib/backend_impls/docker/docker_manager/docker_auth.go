@@ -232,7 +232,6 @@ func GetAuthFromDockerConfig(repo string) (*registry.AuthConfig, error) {
 			}
 			ac.Username = string(decodedAuth[:strings.IndexByte(string(decodedAuth), ':')])
 			ac.Password = string(decodedAuth[strings.IndexByte(string(decodedAuth), ':')+1:])
-			ac.Auth = auth.Auth
 		}
 
 		// If the username or password fields are set, set them in the AuthConfig (Overrides the decoded auth)
