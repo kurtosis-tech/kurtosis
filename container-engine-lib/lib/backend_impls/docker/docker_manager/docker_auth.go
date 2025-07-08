@@ -223,9 +223,12 @@ func GetAuthFromDockerConfig(repo string) (*registry.AuthConfig, error) {
 			RegistryToken: auth.RegistryToken,
 		}
 
-		// If the base64 encoded auth field is set, decode it and also set the Username and Password
-		if auth.Auth != "" {
-			// Base64 decode it and set the Username and Password
+		// If the username or password fields are set, set them in the AuthConfig (Overrides the decoded auth)
+		if auth.Username != "" && auth.Password != "" {
+			ac.Username = auth.Username
+			ac.Password = auth.Password
+		} else if auth.Auth != "" {
+			// If the base64 encoded auth field is set, decode it and also set the Username and Password
 			decodedAuth, err := base64.StdEncoding.DecodeString(auth.Auth)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "error decoding auth for registry '%s'", registryHost)
@@ -235,14 +238,6 @@ func GetAuthFromDockerConfig(repo string) (*registry.AuthConfig, error) {
 				ac.Username = string(decodedAuth[:usernamePasswordSeparatorIndex])
 				ac.Password = string(decodedAuth[usernamePasswordSeparatorIndex+1:])
 			}
-		}
-
-		// If the username or password fields are set, set them in the AuthConfig (Overrides the decoded auth)
-		if auth.Username != "" {
-			ac.Username = auth.Username
-		}
-		if auth.Password != "" {
-			ac.Password = auth.Password
 		}
 
 		return &ac, nil
