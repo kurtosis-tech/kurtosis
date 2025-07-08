@@ -136,6 +136,12 @@ func getValidationFunc(argKey string, _ string, isGreedy bool) func(context.Cont
 				}
 				return stacktrace.NewError("No enclave found for identifier '%v'", enclaveIdentifier)
 			}
+		} else if len(enclaveIdentifiersToValidate) == 1 {
+			// enclave identifier is validated in GetEnclave, so checking no err is enough
+			_, err = kurtosisCtx.GetEnclave(ctx, enclaveIdentifiersToValidate[0])
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred getting enclave with identifier '%v'.", enclaveIdentifiersToValidate[0])
+			}
 		}
 
 		return nil
