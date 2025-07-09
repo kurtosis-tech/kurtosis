@@ -28,7 +28,7 @@ const (
 	fluentBitSourceType      = "fluent"
 	fluentBitSourceIpAddress = "0.0.0.0"
 	fileSinkType             = "file"
-	bufferSize               = 268435488 // 256 MB is min for vector
+	bufferSize               = 4 * 268435488 // 256 MB is min for vector
 
 	////////////////////////--FINISH--VECTOR CONFIGURATION SECTION--/////////////////////////////
 )
