@@ -100,6 +100,8 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 
 		for index, scheduledInstruction := range instructionsSequence {
 			instructionNumber := uint32(index + 1)
+
+			instruction := scheduledInstruction.GetInstruction()
 			// add the instruction into the current enclave plan
 			enclavePlanInstruction, err := scheduledInstruction.GetInstruction().GetPersistableAttributes().SetUuid(
 				string(scheduledInstruction.GetUuid()),
