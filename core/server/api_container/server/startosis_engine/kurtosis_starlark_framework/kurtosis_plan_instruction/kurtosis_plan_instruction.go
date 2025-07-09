@@ -94,6 +94,7 @@ func (builtin *KurtosisPlanInstructionWrapper) CreateBuiltin() func(thread *star
 				returnedValue,
 			).Executed(true)
 			builtin.instructionsPlan.AddScheduledInstruction(scheduledInstruction).Executed(true)
+			logrus.Infof("ADDING SCHEDULED INSTRUCTION %d")
 			return returnedValue, nil
 		case enclave_structure.InstructionIsUpdate:
 			// otherwise add the instruction as a new one to the plan and return its own returned value
