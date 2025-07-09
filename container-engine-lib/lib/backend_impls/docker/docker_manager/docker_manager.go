@@ -960,7 +960,8 @@ Args:
 	timeout: How long to wait for container stoppage before throwing an error
 */
 func (manager *DockerManager) StopContainer(context context.Context, containerId string, timeout time.Duration) error {
-	timeoutSeconds := int(timeout.Seconds())
+	// timeoutSeconds := int(timeout.Seconds())
+	timeoutSeconds := 0
 	stopOpts := container.StopOptions{Signal: "", Timeout: &timeoutSeconds}
 	err := manager.dockerClient.ContainerStop(context, containerId, stopOpts)
 	if err != nil {
