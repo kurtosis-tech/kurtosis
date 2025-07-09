@@ -98,7 +98,8 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 		totalExecutionDuration := time.Duration(0)
 		// instructionNumToDuration := make(map[int]time.Duration)
 
-		for _, scheduledInstruction := range instructionsSequence {
+		for index, scheduledInstruction := range instructionsSequence {
+			instructionNumber := uint32(index + 1)
 			// add the instruction into the current enclave plan
 			enclavePlanInstruction, err := scheduledInstruction.GetInstruction().GetPersistableAttributes().SetUuid(
 				string(scheduledInstruction.GetUuid()),
