@@ -98,6 +98,19 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 		totalExecutionDuration := time.Duration(0)
 		// instructionNumToDuration := make(map[int]time.Duration)
 
+		for _, scheduledInstruction := range instructionsSequence {
+			// add the instruction into the current enclave plan
+			enclavePlanInstruction, err := scheduledInstruction.GetInstruction().GetPersistableAttributes().SetUuid(
+				string(scheduledInstruction.GetUuid()),
+			).SetReturnedValue(
+				executor.starlarkValueSerde.Serialize(scheduledInstruction.GetReturnedValue()),
+			).Build()
+			if err != nil {
+				sendErrorAndFail(starlarkRunResponseLineStream, totalExecutionDuration, err, "An error occurred persisting instruction (number %d) at %v after it's been executed:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
+			}
+			executor.enclavePlan.AppendInstruction(enclavePlanInstruction)
+		}
+
 		wgSenders := sync.WaitGroup{}
 		for index, scheduledInstruction := range instructionsSequence {
 			wgSenders.Add(1)
@@ -140,15 +153,15 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 						starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(instructionOutputStr, duration)
 					}
 					// add the instruction into the current enclave plan
-					enclavePlanInstruction, err := scheduledInstruction.GetInstruction().GetPersistableAttributes().SetUuid(
-						string(scheduledInstruction.GetUuid()),
-					).SetReturnedValue(
-						executor.starlarkValueSerde.Serialize(scheduledInstruction.GetReturnedValue()),
-					).Build()
-					if err != nil {
-						sendErrorAndFail(starlarkRunResponseLineStream, totalExecutionDuration, err, "An error occurred persisting instruction (number %d) at %v after it's been executed:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
-					}
-					executor.enclavePlan.AppendInstruction(enclavePlanInstruction)
+					// enclavePlanInstruction, err := scheduledInstruction.GetInstruction().GetPersistableAttributes().SetUuid(
+					// 	string(scheduledInstruction.GetUuid()),
+					// ).SetReturnedValue(
+					// 	executor.starlarkValueSerde.Serialize(scheduledInstruction.GetReturnedValue()),
+					// ).Build()
+					// if err != nil {
+					// 	sendErrorAndFail(starlarkRunResponseLineStream, totalExecutionDuration, err, "An error occurred persisting instruction (number %d) at %v after it's been executed:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
+					// }
+					// executor.enclavePlan.AppendInstruction(enclavePlanInstruction)
 				}
 
 				instructionsDependencyGraph := make(map[dependency_graph.ScheduledInstructionUuid][]dependency_graph.ScheduledInstructionUuid)
