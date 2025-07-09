@@ -264,6 +264,67 @@ proto.engine_api.EngineServicePromiseClient.prototype.getEnclaves =
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
+ *   !proto.engine_api.GetEnclaveArgs,
+ *   !proto.engine_api.GetEnclaveResponse>}
+ */
+const methodDescriptor_EngineService_GetEnclave = new grpc.web.MethodDescriptor(
+  '/engine_api.EngineService/GetEnclave',
+  grpc.web.MethodType.UNARY,
+  proto.engine_api.GetEnclaveArgs,
+  proto.engine_api.GetEnclaveResponse,
+  /**
+   * @param {!proto.engine_api.GetEnclaveArgs} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.engine_api.GetEnclaveResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.engine_api.GetEnclaveArgs} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.engine_api.GetEnclaveResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.engine_api.GetEnclaveResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.engine_api.EngineServiceClient.prototype.getEnclave =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/engine_api.EngineService/GetEnclave',
+      request,
+      metadata || {},
+      methodDescriptor_EngineService_GetEnclave,
+      callback);
+};
+
+
+/**
+ * @param {!proto.engine_api.GetEnclaveArgs} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.engine_api.GetEnclaveResponse>}
+ *     Promise that resolves to the response
+ */
+proto.engine_api.EngineServicePromiseClient.prototype.getEnclave =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/engine_api.EngineService/GetEnclave',
+      request,
+      metadata || {},
+      methodDescriptor_EngineService_GetEnclave);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
  *   !proto.google.protobuf.Empty,
  *   !proto.engine_api.GetExistingAndHistoricalEnclaveIdentifiersResponse>}
  */

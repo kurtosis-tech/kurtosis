@@ -4,7 +4,7 @@
 // @ts-nocheck
 
 import { Empty, MethodKind } from "@bufbuild/protobuf";
-import { CleanArgs, CleanResponse, CreateEnclaveArgs, CreateEnclaveResponse, DestroyEnclaveArgs, GetEnclavesResponse, GetEngineInfoResponse, GetExistingAndHistoricalEnclaveIdentifiersResponse, GetServiceLogsArgs, GetServiceLogsResponse, StopEnclaveArgs } from "./engine_service_pb.js";
+import { CleanArgs, CleanResponse, CreateEnclaveArgs, CreateEnclaveResponse, DestroyEnclaveArgs, GetEnclaveArgs, GetEnclaveResponse, GetEnclavesResponse, GetEngineInfoResponse, GetExistingAndHistoricalEnclaveIdentifiersResponse, GetServiceLogsArgs, GetServiceLogsResponse, StopEnclaveArgs } from "./engine_service_pb.js";
 
 /**
  * @generated from service engine_api.EngineService
@@ -46,6 +46,17 @@ export declare const EngineService: {
       readonly name: "GetEnclaves",
       readonly I: typeof Empty,
       readonly O: typeof GetEnclavesResponse,
+      readonly kind: MethodKind.Unary,
+    },
+    /**
+     * Returns information about an existing enclave
+     *
+     * @generated from rpc engine_api.EngineService.GetEnclave
+     */
+    readonly getEnclave: {
+      readonly name: "GetEnclave",
+      readonly I: typeof GetEnclaveArgs,
+      readonly O: typeof GetEnclaveResponse,
       readonly kind: MethodKind.Unary,
     },
     /**
