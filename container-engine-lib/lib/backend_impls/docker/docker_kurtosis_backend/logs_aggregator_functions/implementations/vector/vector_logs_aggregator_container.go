@@ -146,7 +146,7 @@ func (vector *vectorLogsAggregatorContainer) Clean(
 	dockerManager *docker_manager.DockerManager,
 ) error {
 	start := time.Now()
-	if err := dockerManager.KillContainer(ctx, logsAggregator.GetId()); err != nil {
+	if err := dockerManager.StopContainer(ctx, logsAggregator.GetId(), stopLogsAggregatorContainerTimeout); err != nil {
 		return stacktrace.Propagate(err, "An error occurred stopping the logs aggregator container with ID %s", logsAggregator.GetId())
 	}
 	logrus.Infof("Time taken to stop logs aggregator: %v", time.Since(start))
