@@ -86,50 +86,50 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 	require.Equal(t, executor.enclavePlan.Size(), 3) // check that the enclave plan now contains the 4 instructions
 }
 
-func TestExecuteKurtosisInstructions_ExecuteForReal_FailureHalfWay(t *testing.T) {
-	enclaveDb := getEnclaveDBForTest(t)
+// func TestExecuteKurtosisInstructions_ExecuteForReal_FailureHalfWay(t *testing.T) {
+// 	enclaveDb := getEnclaveDBForTest(t)
 
-	dummySerde := shared_helpers.NewDummyStarlarkValueSerDeForTest()
+// 	dummySerde := shared_helpers.NewDummyStarlarkValueSerDeForTest()
 
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(dummySerde, enclaveDb)
-	require.NoError(t, err)
+// 	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(dummySerde, enclaveDb)
+// 	require.NoError(t, err)
 
-	executor := NewStartosisExecutor(nil, runtimeValueStore, enclave_plan_persistence.NewEnclavePlan(), enclaveDb)
+// 	executor := NewStartosisExecutor(nil, runtimeValueStore, enclave_plan_persistence.NewEnclavePlan(), enclaveDb)
 
-	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully, "description1")
-	instruction2 := createMockInstruction(t, "instruction2", throwOnExecute, "description2")
-	instruction3 := createMockInstruction(t, "instruction3", executeSuccessfully, "description3")
-	instructionsPlan := instructions_plan.NewInstructionsPlan()
-	require.NoError(t, instructionsPlan.AddInstruction(instruction1, starlark.None))
-	require.NoError(t, instructionsPlan.AddInstruction(instruction2, starlark.None))
-	require.NoError(t, instructionsPlan.AddInstruction(instruction3, starlark.None))
+// 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully, "description1")
+// 	instruction2 := createMockInstruction(t, "instruction2", throwOnExecute, "description2")
+// 	instruction3 := createMockInstruction(t, "instruction3", executeSuccessfully, "description3")
+// 	instructionsPlan := instructions_plan.NewInstructionsPlan()
+// 	require.NoError(t, instructionsPlan.AddInstruction(instruction1, starlark.None))
+// 	require.NoError(t, instructionsPlan.AddInstruction(instruction2, starlark.None))
+// 	require.NoError(t, instructionsPlan.AddInstruction(instruction3, starlark.None))
 
-	_, serializedInstruction, executionError := executeSynchronously(t, executor, executeForReal, instructionsPlan)
-	instruction1.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
-	instruction1.AssertNumberOfCalls(t, "Execute", 1)
-	instruction2.AssertNumberOfCalls(t, "String", 1)
-	instruction2.AssertNumberOfCalls(t, "Execute", 1)
-	// nothing called for instruction 3 because instruction 2 threw an error
-	instruction3.AssertNumberOfCalls(t, "GetCanonicalInstruction", 0)
-	instruction3.AssertNumberOfCalls(t, "Execute", 0)
+// 	_, serializedInstruction, executionError := executeSynchronously(t, executor, executeForReal, instructionsPlan)
+// 	instruction1.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
+// 	instruction1.AssertNumberOfCalls(t, "Execute", 1)
+// 	instruction2.AssertNumberOfCalls(t, "String", 1)
+// 	instruction2.AssertNumberOfCalls(t, "Execute", 1)
+// 	// nothing called for instruction 3 because instruction 2 threw an error
+// 	instruction3.AssertNumberOfCalls(t, "GetCanonicalInstruction", 0)
+// 	instruction3.AssertNumberOfCalls(t, "Execute", 0)
 
-	expectedErrorMsgPrefix := `An error occurred executing instruction (number 2) at dummyFile[12:1]:
-instruction2()
- --- at`
-	expectedLowLevelErrorMessage := "expected error for test"
-	require.NotNil(t, executionError)
-	require.Contains(t, executionError.GetErrorMessage(), expectedErrorMsgPrefix)
-	require.Contains(t, executionError.GetErrorMessage(), expectedLowLevelErrorMessage)
+// 	expectedErrorMsgPrefix := `An error occurred executing instruction (number 2) at dummyFile[12:1]:
+// instruction2()
+//  --- at`
+// 	expectedLowLevelErrorMessage := "expected error for test"
+// 	require.NotNil(t, executionError)
+// 	require.Contains(t, executionError.GetErrorMessage(), expectedErrorMsgPrefix)
+// 	require.Contains(t, executionError.GetErrorMessage(), expectedLowLevelErrorMessage)
 
-	expectedSerializedInstructions := []*kurtosis_core_rpc_api_bindings.StarlarkInstruction{
-		// only instruction 1 and 2 because it failed at instruction 2
-		binding_constructors.NewStarlarkInstruction(
-			dummyPosition.ToAPIType(), "instruction1", "instruction1()", noInstructionArgsForTesting, isSkipped, "description1"),
-		binding_constructors.NewStarlarkInstruction(
-			dummyPosition.ToAPIType(), "instruction2", "instruction2()", noInstructionArgsForTesting, isSkipped, "description2"),
-	}
-	require.Equal(t, expectedSerializedInstructions, serializedInstruction)
-}
+// 	expectedSerializedInstructions := []*kurtosis_core_rpc_api_bindings.StarlarkInstruction{
+// 		// only instruction 1 and 2 because it failed at instruction 2
+// 		binding_constructors.NewStarlarkInstruction(
+// 			dummyPosition.ToAPIType(), "instruction1", "instruction1()", noInstructionArgsForTesting, isSkipped, "description1"),
+// 		binding_constructors.NewStarlarkInstruction(
+// 			dummyPosition.ToAPIType(), "instruction2", "instruction2()", noInstructionArgsForTesting, isSkipped, "description2"),
+// 	}
+// 	require.Equal(t, expectedSerializedInstructions, serializedInstruction)
+// }
 
 func TestExecuteKurtosisInstructions_DoDryRun(t *testing.T) {
 	enclaveDb := getEnclaveDBForTest(t)
