@@ -19,7 +19,7 @@ const (
 	maxCleanRetries                    = 2
 	timeBetweenCleanRetries            = 200 * time.Millisecond
 	cleaningSuccessStatusCode          = 0
-	stopLogsAggregatorContainerTimeout = 10 * time.Second
+	stopLogsAggregatorContainerTimeout = 1 * time.Second
 )
 
 type vectorLogsAggregatorContainer struct{}
