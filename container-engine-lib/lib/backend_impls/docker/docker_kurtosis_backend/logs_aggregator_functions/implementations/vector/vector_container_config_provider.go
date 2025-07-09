@@ -61,7 +61,7 @@ func (vector *vectorContainerConfigProvider) GetContainerArgs(
 			binaryFilepath,
 			configFileFlag,
 			configFilepath,
-			"-v",
+			"-vv",
 		),
 	}
 

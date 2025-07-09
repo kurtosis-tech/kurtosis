@@ -38,9 +38,9 @@ func newVectorConfig(
 			// Note: we set buffer to block so that we don't drop any logs, however this could apply backpressure up the topology
 			// if we start noticing slowdown due to vector buffer blocking, we might want to revisit our architecture
 			"buffer": map[string]interface{}{
-				"type": "memory",
-				// "max_size":  bufferSize,
-				// "when_full": "block",
+				"type":      "disk",
+				"max_size":  bufferSize,
+				"when_full": "block",
 			},
 		}
 	}
