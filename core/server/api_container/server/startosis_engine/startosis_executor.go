@@ -118,6 +118,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 					var instructionOutput *string
 					var duration time.Duration
 					if scheduledInstruction.IsExecuted() {
+						logrus.Infof("INSTRUCTION %d ALREADY EXECUTED", instructionNumber)
 						// instruction already executed within this enclave. Do not run it
 						instructionOutput = &skippedInstructionOutput
 					} else {
@@ -181,6 +182,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 
 		wgSenders.Wait()
 	}()
+
 	return starlarkRunResponseLineStream
 }
 
