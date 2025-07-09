@@ -85,6 +85,10 @@ func (vector *vectorContainerConfigProvider) GetContainerArgs(
 		overrideCmd,
 	).WithRestartPolicy(
 		restartPolicy,
+	).WithEnvironmentVariables(
+		map[string]string{
+			"VECTOR_GRACEFUL_SHUTDOWN_LIMIT_SECS": "1",
+		},
 	).Build()
 
 	return createAndStartArgs, nil
