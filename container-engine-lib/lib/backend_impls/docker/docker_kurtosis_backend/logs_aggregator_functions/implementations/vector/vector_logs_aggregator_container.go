@@ -146,9 +146,9 @@ func (vector *vectorLogsAggregatorContainer) Clean(
 	dockerManager *docker_manager.DockerManager,
 ) error {
 	start := time.Now()
-	// if err := dockerManager.StopContainer(ctx, logsAggregator.GetId(), stopLogsAggregatorContainerTimeout); err != nil {
-	// 	return stacktrace.Propagate(err, "An error occurred stopping the logs aggregator container with ID %s", logsAggregator.GetId())
-	// }
+	if err := dockerManager.StopContainer(ctx, logsAggregator.GetId(), stopLogsAggregatorContainerTimeout); err != nil {
+		return stacktrace.Propagate(err, "An error occurred stopping the logs aggregator container with ID %s", logsAggregator.GetId())
+	}
 	logrus.Infof("Time taken to stop logs aggregator: %v", time.Since(start))
 
 	logsAggregatorDataDirVolumeAttrs, err := objAttrsProvider.ForLogsAggregatorDataVolume()
@@ -162,9 +162,9 @@ func (vector *vectorLogsAggregatorContainer) Clean(
 	}
 	logrus.Infof("Time taken to empty logs aggregator data volume: %v", time.Since(start))
 
-	// if err := dockerManager.StartContainer(ctx, logsAggregator.GetId()); err != nil {
-	// 	return stacktrace.Propagate(err, "An error occurred restarting the logs aggregator container with ID %s", logsAggregator.GetId())
-	// }
+	if err := dockerManager.StartContainer(ctx, logsAggregator.GetId()); err != nil {
+		return stacktrace.Propagate(err, "An error occurred restarting the logs aggregator container with ID %s", logsAggregator.GetId())
+	}
 	logrus.Infof("Time taken to start logs aggregator: %v", time.Since(start))
 
 	return nil

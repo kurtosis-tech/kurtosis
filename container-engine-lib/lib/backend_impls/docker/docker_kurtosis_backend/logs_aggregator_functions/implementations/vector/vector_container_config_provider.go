@@ -57,10 +57,12 @@ func (vector *vectorContainerConfigProvider) GetContainerArgs(
 	overrideCmd := []string{
 		shCmdFlag,
 		fmt.Sprintf(
-			"%v %v=%v",
+			"%v %v=%v %v=%v",
 			binaryFilepath,
 			configFileFlag,
 			configFilepath,
+			"-v",
+			"debug",
 		),
 	}
 
