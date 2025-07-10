@@ -90,7 +90,7 @@ func (printer *ExecutionPrinter) StartWithVerbosity(verbosity run.Verbosity, dry
 		return stacktrace.NewError("printer already started")
 	}
 	printer.isStarted = true
-	
+
 	if printer.isInteractive {
 		// Initialize bubbletea model and program
 		printer.bubbletteaModel = NewExecutionModel(verbosity, dryRun, true)
@@ -99,14 +99,14 @@ func (printer *ExecutionPrinter) StartWithVerbosity(verbosity run.Verbosity, dry
 			tea.WithAltScreen(),
 			tea.WithMouseCellMotion(),
 		)
-		
+
 		// Start the bubbletea program in a goroutine
 		go func() {
 			if _, err := printer.bubbletteaProgram.Run(); err != nil {
 				logrus.Errorf("Error running bubbletea program: %v", err)
 			}
 		}()
-		
+
 		// Start message processing goroutine
 		go printer.processMessages()
 	} else {
@@ -329,16 +329,14 @@ func (printer *ExecutionPrinter) processMessages() {
 func (printer *ExecutionPrinter) convertResponseLineToMessage(responseLine *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, verbosity run.Verbosity, dryRun bool) (tea.Msg, error) {
 	if responseLine.GetInstruction() != nil && verbosity != run.OutputOnly {
 		instruction := responseLine.GetInstruction()
-		// TODO: Replace with instruction.GetInstructionId() when protocol is updated
-		instructionId := fmt.Sprintf("instr_%s_%d", instruction.GetInstructionName(), time.Now().UnixNano())
+		instructionId := instruction.GetInstructionId()
 		return InstructionStartedMsg{
 			ID:   instructionId,
 			Name: formatInstruction(instruction, verbosity),
 		}, nil
 	} else if responseLine.GetInstructionResult() != nil {
 		result := responseLine.GetInstructionResult()
-		// TODO: Replace with result.GetInstructionId() when protocol is updated
-		instructionId := fmt.Sprintf("result_%d", time.Now().UnixNano())
+		instructionId := result.GetInstructionId()
 		return InstructionCompletedMsg{
 			ID:     instructionId,
 			Result: formatInstructionResult(result, verbosity),
@@ -346,23 +344,20 @@ func (printer *ExecutionPrinter) convertResponseLineToMessage(responseLine *kurt
 	} else if responseLine.GetError() != nil {
 		var errorMsg string
 		var instructionId string
-		
+
 		if responseLine.GetError().GetInterpretationError() != nil {
 			errorMsg = fmt.Sprintf("There was an error interpreting Starlark code \n%v", responseLine.GetError().GetInterpretationError().GetErrorMessage())
-			// TODO: Replace with actual instruction ID from protocol
-			instructionId = fmt.Sprintf("error_interp_%d", time.Now().UnixNano())
+			instructionId = "interpretation"
 		} else if responseLine.GetError().GetValidationError() != nil {
 			errorMsg = fmt.Sprintf("There was an error validating Starlark code \n%v", responseLine.GetError().GetValidationError().GetErrorMessage())
-			// TODO: Replace with actual instruction ID from protocol
-			instructionId = fmt.Sprintf("error_valid_%d", time.Now().UnixNano())
+			instructionId = "validation"
 		} else if responseLine.GetError().GetExecutionError() != nil {
 			errorMsgWithStackTrace := errors.New(responseLine.GetError().GetExecutionError().GetErrorMessage())
 			cleanedErrorFromStarlark := out.GetErrorMessageToBeDisplayedOnCli(errorMsgWithStackTrace)
 			errorMsg = fmt.Sprintf("There was an error executing Starlark code \n%v", cleanedErrorFromStarlark)
-			// TODO: Replace with actual instruction ID from protocol
-			instructionId = fmt.Sprintf("error_exec_%d", time.Now().UnixNano())
+			instructionId = "execution"
 		}
-		
+
 		return InstructionFailedMsg{
 			ID:    instructionId,
 			Error: FormatError(errorMsg),
@@ -370,8 +365,7 @@ func (printer *ExecutionPrinter) convertResponseLineToMessage(responseLine *kurt
 	} else if responseLine.GetProgressInfo() != nil {
 		progress := responseLine.GetProgressInfo()
 		progressRatio := float64(progress.GetCurrentStepNumber()) / float64(progress.GetTotalSteps())
-		// TODO: Replace with progress.GetInstructionId() when protocol is updated
-		instructionId := fmt.Sprintf("progress_%d_%d", progress.GetCurrentStepNumber(), time.Now().UnixNano())
+		instructionId := progress.GetInstructionId()
 		return InstructionProgressMsg{
 			ID:       instructionId,
 			Progress: progressRatio,
@@ -385,22 +379,20 @@ func (printer *ExecutionPrinter) convertResponseLineToMessage(responseLine *kurt
 		}, nil
 	} else if responseLine.GetWarning() != nil {
 		warning := responseLine.GetWarning()
-		// TODO: Replace with warning.GetInstructionId() when protocol is updated
-		instructionId := fmt.Sprintf("warning_%d", time.Now().UnixNano())
+		instructionId := "execution"
 		return InstructionWarningMsg{
 			ID:      instructionId,
 			Warning: formatWarning(warning.GetWarningMessage()),
 		}, nil
 	} else if responseLine.GetInfo() != nil {
 		info := responseLine.GetInfo()
-		// TODO: Replace with info.GetInstructionId() when protocol is updated
-		instructionId := fmt.Sprintf("info_%d", time.Now().UnixNano())
+		instructionId := "execution"
 		return InstructionInfoMsg{
 			ID:   instructionId,
 			Info: formatInfo(info.GetInfoMessage()),
 		}, nil
 	}
-	
+
 	// No message to send for unknown response types
 	return nil, nil
 }
