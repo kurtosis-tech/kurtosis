@@ -327,21 +327,6 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 					}
 				}
 
-				totalParallelExecutionDuration := time.Duration(0)
-
-				if !dryRun {
-					logrus.Debugf("Serialized script output before runtime value replace: '%v'", serializedScriptOutput)
-					scriptWithValuesReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(serializedScriptOutput, executor.runtimeValueStore)
-					if err != nil {
-						sendErrorAndFail(starlarkRunResponseLineStream, totalExecutionDuration, err, "An error occurred while replacing the runtime values in the output of the script")
-						return
-					}
-					starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(scriptWithValuesReplaced, totalExecutionDuration, totalParallelExecutionDuration)
-					logrus.Debugf("Current enclave plan has been updated. It now contains %d instructions", executor.enclavePlan.Size())
-				} else {
-					logrus.Debugf("Current enclave plan remained the same as the it was a dry-run. It contains %d instructions", executor.enclavePlan.Size())
-				}
-
 				// signal that this instruction has completed
 				logrus.Infof("Signaling that instruction %v has completed", instructionUuidStr)
 				close(completionChannels[instructionUuidStr])
@@ -354,6 +339,20 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 		}
 
 		wgSenders.Wait()
+
+		if !dryRun {
+			logrus.Debugf("Serialized script output before runtime value replace: '%v'", serializedScriptOutput)
+			scriptWithValuesReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(serializedScriptOutput, executor.runtimeValueStore)
+			if err != nil {
+				sendErrorAndFail(starlarkRunResponseLineStream, totalExecutionDuration, err, "An error occurred while replacing the runtime values in the output of the script")
+				return
+			}
+			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(scriptWithValuesReplaced, totalExecutionDuration, totalExecutionDuration)
+			logrus.Debugf("Current enclave plan has been updated. It now contains %d instructions", executor.enclavePlan.Size())
+		} else {
+			logrus.Debugf("Current enclave plan remained the same as the it was a dry-run. It contains %d instructions", executor.enclavePlan.Size())
+		}
+
 	}()
 
 	return starlarkRunResponseLineStream
