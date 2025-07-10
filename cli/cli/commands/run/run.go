@@ -606,7 +606,7 @@ func ReadAndPrintResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core
 	defer close(interruptChan)
 
 	printer := output_printers.NewExecutionPrinter()
-	if err := printer.Start(); err != nil {
+	if err := printer.StartWithVerbosity(verbosity, dryRun); err != nil {
 		return stacktrace.Propagate(err, "Unable to start the printer for this execution. The execution will continue in the background but nothing will be printed.")
 	}
 	defer printer.Stop()
