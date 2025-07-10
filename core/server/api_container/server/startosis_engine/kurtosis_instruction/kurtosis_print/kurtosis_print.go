@@ -2,6 +2,7 @@ package kurtosis_print
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
@@ -130,6 +131,6 @@ func (builtin *PrintCapabilities) UpdateDependencyGraph(instructionUuid dependen
 		}
 	}
 
-	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, "print")
+	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("print %s", msgStr.GoString()))
 	return nil
 }
