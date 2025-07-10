@@ -272,15 +272,15 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 			go func(scheduledInstruction *instructions_plan.ScheduledInstruction) {
 				defer wgSenders.Done()
 
-				instructionUuid := scheduledInstruction.GetUuid()
-				logrus.Infof("Processing instruction %v", string(instructionUuid))
-
 				indexStr := strconv.Itoa(index)
-				for _, depUuid := range instructionDependencyGraph[instructions_plan.ScheduledInstructionUuid(indexStr)] {
+				instructionUuidStr := instructions_plan.ScheduledInstructionUuid(indexStr)
+				logrus.Infof("Processing instruction %v", instructionUuidStr)
+
+				for _, depUuid := range instructionDependencyGraph[instructionUuidStr] {
 					// wait for dependency to complete
-					logrus.Infof("Waiting for instruction %v dependency on %v to complete", instructionUuid, depUuid)
+					logrus.Infof("Waiting for instruction %v dependency on %v to complete", instructionUuidStr, depUuid)
 					<-completionChannels[depUuid]
-					logrus.Infof("Instruction %v dependency on %v completed", instructionUuid, depUuid)
+					logrus.Infof("Instruction %v dependency on %v completed", instructionUuidStr, depUuid)
 				}
 
 				instructionNumber := uint32(index + 1)
@@ -315,14 +315,6 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 					}
 				}
 
-				instructionsDependencyGraph := make(map[dependency_graph.ScheduledInstructionUuid][]dependency_graph.ScheduledInstructionUuid)
-				for instructionUuid, dependencies := range instructionDependencyGraph {
-					instructionsDependencyGraph[dependency_graph.ScheduledInstructionUuid(instructionUuid)] = make([]dependency_graph.ScheduledInstructionUuid, len(dependencies))
-					for i, dependency := range dependencies {
-						instructionsDependencyGraph[dependency_graph.ScheduledInstructionUuid(instructionUuid)][i] = dependency_graph.ScheduledInstructionUuid(dependency)
-					}
-				}
-
 				totalParallelExecutionDuration := time.Duration(0)
 
 				if !dryRun {
@@ -339,8 +331,8 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 				}
 
 				// signal that this instruction has completed
-				logrus.Infof("Signaling that instruction %v has completed", string(instructionUuid))
-				close(completionChannels[instructions_plan.ScheduledInstructionUuid(indexStr)])
+				logrus.Infof("Signaling that instruction %v has completed", instructionUuidStr)
+				close(completionChannels[instructionUuidStr])
 			}(scheduledInstruction)
 		}
 
