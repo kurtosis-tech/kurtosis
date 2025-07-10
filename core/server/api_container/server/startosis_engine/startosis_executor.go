@@ -215,7 +215,6 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 	if err != nil {
 		logrus.Errorf("Failed to create execution.txt file: %v", err)
 	}
-	defer file.Close()
 
 	starlarkRunResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 	ctxWithParallelism := context.WithValue(ctx, startosis_constants.ParallelismParam, parallelism)
@@ -355,6 +354,7 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 		}
 
 		wgSenders.Wait()
+		file.Close()
 	}()
 
 	return starlarkRunResponseLineStream
