@@ -121,7 +121,7 @@ func (builtin *StoreServiceFilesCapabilities) Interpret(_ string, arguments *bui
 	}
 
 	var dependsOn starlark.String
-	if arguments.IsSet(ArtifactNameArgName) {
+	if arguments.IsSet(DependsOnArgName) {
 		dependsOn, err = builtin_argument.ExtractArgumentValue[starlark.String](arguments, DependsOnArgName)
 		if err != nil {
 			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", DependsOnArgName)
