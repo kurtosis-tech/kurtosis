@@ -3,6 +3,7 @@ package output_printers
 import (
 	"time"
 
+	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_args/run"
@@ -24,6 +25,7 @@ type InstructionState struct {
 	Name            string
 	Status          InstructionStatus
 	Progress        float64
+	ProgressBar     progress.Model
 	StartTime       time.Time
 	EndTime         *time.Time
 	ErrorMessage    string
@@ -106,15 +108,15 @@ func NewExecutionModel(verbosity run.Verbosity, dryRun bool, isInteractive bool)
 		instructions:     make(map[string]*InstructionState),
 		instructionOrder: make([]string, 0),
 		verbosity:        verbosity,
-		dryRun:          dryRun,
-		isInteractive:   isInteractive,
-		done:            false,
+		dryRun:           dryRun,
+		isInteractive:    isInteractive,
+		done:             false,
 	}
 }
 
 // Init implements tea.Model
 func (m *ExecutionModel) Init() tea.Cmd {
-	return tea.WindowSize()
+	return nil
 }
 
 // Update implements tea.Model
@@ -215,9 +217,9 @@ func (m *ExecutionModel) renderInteractive() string {
 		Render("Kurtosis Execution")
 	content = append(content, header)
 
-	// Instructions
-	for _, id := range m.instructionOrder {
-		instruction := m.instructions[id]
+	// Instructions with special ordering: execution always last
+	orderedInstructions := m.getOrderedInstructions()
+	for _, instruction := range orderedInstructions {
 		content = append(content, m.renderInstruction(instruction))
 	}
 
@@ -239,30 +241,30 @@ func (m *ExecutionModel) renderNonInteractive() string {
 // renderInstruction renders a single instruction
 func (m *ExecutionModel) renderInstruction(instruction *InstructionState) string {
 	var style lipgloss.Style
-	var statusIcon string
+	var statusText string
 
 	switch instruction.Status {
 	case StatusPending:
 		style = lipgloss.NewStyle().Foreground(lipgloss.Color("8")) // Gray
-		statusIcon = "⏳"
+		statusText = "PENDING"
 	case StatusRunning:
 		style = lipgloss.NewStyle().Foreground(lipgloss.Color("11")) // Yellow
-		statusIcon = "🔄"
+		statusText = "RUNNING"
 	case StatusCompleted:
 		style = lipgloss.NewStyle().Foreground(lipgloss.Color("10")) // Green
-		statusIcon = "✅"
+		statusText = "COMPLETED"
 	case StatusFailed:
 		style = lipgloss.NewStyle().Foreground(lipgloss.Color("9")) // Red
-		statusIcon = "❌"
+		statusText = "FAILED"
 	}
 
-	// Build instruction line
-	line := style.Render(statusIcon + " " + instruction.Name)
+	// Build instruction line with status
+	line := style.Render("[" + statusText + "] " + instruction.Name)
 
-	// Add progress if running
-	if instruction.Status == StatusRunning && instruction.Progress > 0 {
-		progressBar := m.renderProgressBar(instruction.Progress)
-		line += " " + progressBar
+	// Add progress bar if running
+	if instruction.Status == StatusRunning {
+		progressDisplay := instruction.ProgressBar.ViewAs(instruction.Progress)
+		line += "\n" + progressDisplay
 	}
 
 	// Add timing if completed
@@ -277,32 +279,12 @@ func (m *ExecutionModel) renderInstruction(instruction *InstructionState) string
 	return line
 }
 
-// renderProgressBar renders a progress bar for running instructions
-func (m *ExecutionModel) renderProgressBar(progress float64) string {
-	const barWidth = 20
-	filled := int(progress * barWidth)
-	
-	bar := "["
-	for i := 0; i < barWidth; i++ {
-		if i < filled {
-			bar += "█"
-		} else {
-			bar += "░"
-		}
-	}
-	bar += "]"
-
-	percentage := int(progress * 100)
-	return lipgloss.NewStyle().
-		Foreground(lipgloss.Color("12")).
-		Render(bar + " " + string(rune(percentage)) + "%")
-}
 
 // renderSummary renders the execution summary
 func (m *ExecutionModel) renderSummary() string {
 	completed := 0
 	failed := 0
-	
+
 	for _, instruction := range m.instructions {
 		switch instruction.Status {
 		case StatusCompleted:
@@ -314,7 +296,7 @@ func (m *ExecutionModel) renderSummary() string {
 
 	var summaryStyle lipgloss.Style
 	var message string
-	
+
 	if failed > 0 {
 		summaryStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Bold(true)
 		message = "❌ Execution failed"
@@ -328,4 +310,29 @@ func (m *ExecutionModel) renderSummary() string {
 		Render(" (" + string(rune(completed)) + " completed, " + string(rune(failed)) + " failed)")
 
 	return summaryStyle.Render(message) + stats
+}
+
+// getOrderedInstructions returns instructions in the proper display order:
+// interpretation, validation, regular instructions, execution (always last)
+func (m *ExecutionModel) getOrderedInstructions() []*InstructionState {
+	var orderedInstructions []*InstructionState
+	var executionInstruction *InstructionState
+
+	// First pass: collect all non-execution instructions in original order
+	for _, id := range m.instructionOrder {
+		instruction := m.instructions[id]
+		if id == "execution" {
+			// Save execution instruction for last
+			executionInstruction = instruction
+		} else {
+			orderedInstructions = append(orderedInstructions, instruction)
+		}
+	}
+
+	// Add execution instruction at the end if it exists
+	if executionInstruction != nil {
+		orderedInstructions = append(orderedInstructions, executionInstruction)
+	}
+
+	return orderedInstructions
 }
