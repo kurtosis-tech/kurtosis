@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -274,7 +275,8 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 				instructionUuid := scheduledInstruction.GetUuid()
 				logrus.Infof("Processing instruction %v", string(instructionUuid))
 
-				for _, depUuid := range instructionDependencyGraph[instructionUuid] {
+				indexStr := strconv.Itoa(index)
+				for _, depUuid := range instructionDependencyGraph[instructions_plan.ScheduledInstructionUuid(indexStr)] {
 					// wait for dependency to complete
 					logrus.Infof("Waiting for instruction %v dependency on %v to complete", instructionUuid, depUuid)
 					<-completionChannels[depUuid]
@@ -337,7 +339,8 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 				}
 
 				// signal that this instruction has completed
-				close(completionChannels[instructionUuid])
+				logrus.Infof("Signaling that instruction %v has completed", string(instructionUuid))
+				close(completionChannels[instructions_plan.ScheduledInstructionUuid(indexStr)])
 			}(scheduledInstruction)
 		}
 
