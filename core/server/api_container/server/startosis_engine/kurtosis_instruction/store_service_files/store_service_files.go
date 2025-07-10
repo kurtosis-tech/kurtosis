@@ -25,6 +25,7 @@ const (
 	ServiceNameArgName  = "service_name"
 	SrcArgName          = "src"
 	ArtifactNameArgName = "name"
+	DependsOnArgName    = "depends_on"
 )
 
 const (
@@ -55,6 +56,12 @@ func NewStoreServiceFiles(serviceNetwork service_network.ServiceNetwork) *kurtos
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator:         nil,
 				},
+				{
+					Name:              DependsOnArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
+					Validator:         nil,
+				},
 			},
 		},
 
@@ -65,6 +72,7 @@ func NewStoreServiceFiles(serviceNetwork service_network.ServiceNetwork) *kurtos
 				serviceName:  "", // populated at interpretation time
 				src:          "", // populated at interpretation time
 				artifactName: "", // populated at interpretation time
+				dependsOn:    "", // populated at interpretation time
 				description:  "", // populated at interpretation time
 			}
 		},
@@ -84,6 +92,7 @@ type StoreServiceFilesCapabilities struct {
 	src          string
 	artifactName string
 	description  string
+	dependsOn    string
 }
 
 func (builtin *StoreServiceFilesCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -111,9 +120,15 @@ func (builtin *StoreServiceFilesCapabilities) Interpret(_ string, arguments *bui
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", SrcArgName)
 	}
 
+	dependsOn, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, DependsOnArgName)
+	if err != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", DependsOnArgName)
+	}
+
 	builtin.serviceName = kurtosis_backend_service.ServiceName(serviceName.GoString())
 	builtin.src = src.GoString()
 	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, fmt.Sprintf(descriptionFormatStr, builtin.serviceName, builtin.src, builtin.artifactName))
+	builtin.dependsOn = dependsOn.GoString()
 	return starlark.String(builtin.artifactName), nil
 }
 
@@ -200,6 +215,10 @@ func (builtin *StoreServiceFilesCapabilities) UpdateDependencyGraph(instructionU
 
 	dependencyGraph.DependsOnOutput(instructionUuid, string(builtin.serviceName))
 	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("store_service_files(%s, %s)", builtin.serviceName, builtin.description))
+
+	if builtin.dependsOn != "" {
+		dependencyGraph.DependsOnOutput(instructionUuid, builtin.dependsOn)
+	}
 
 	return nil
 }
