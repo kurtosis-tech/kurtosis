@@ -260,7 +260,8 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 		}
 
 		completionChannels := make(map[instructions_plan.ScheduledInstructionUuid]chan struct{})
-		for instructionUuid, _ := range instructionDependencyGraph {
+		for instructionUuid := range instructionDependencyGraph {
+			logrus.Infof("Adding completion channel for instruction %v", string(instructionUuid))
 			completionChannels[instructionUuid] = make(chan struct{})
 		}
 
@@ -271,6 +272,7 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 				defer wgSenders.Done()
 
 				instructionUuid := scheduledInstruction.GetUuid()
+				logrus.Infof("Processing instruction %v", string(instructionUuid))
 
 				for _, depUuid := range instructionDependencyGraph[instructionUuid] {
 					// wait for dependency to complete
