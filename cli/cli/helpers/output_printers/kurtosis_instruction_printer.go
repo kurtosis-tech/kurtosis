@@ -202,10 +202,10 @@ func formatInstruction(instruction *kurtosis_core_rpc_api_bindings.StarlarkInstr
 
 func formatInstructionResult(instructionResult *kurtosis_core_rpc_api_bindings.StarlarkInstructionResult, verbosity run.Verbosity) string {
 	serializedInstructionResult := fmt.Sprintf("%s%s", resultPrefixString, instructionResult.GetSerializedInstructionResult())
-	if verbosity == run.Detailed {
-		executionDuration := instructionResult.GetExecutionDuration()
-		serializedInstructionResult = fmt.Sprintf("%s (execution duration: %s)", serializedInstructionResult, executionDuration.AsDuration().String())
-	}
+	// if verbosity == run.Detailed {
+	executionDuration := instructionResult.GetExecutionDuration()
+	serializedInstructionResult = fmt.Sprintf("%s (execution duration: %s)", serializedInstructionResult, executionDuration.AsDuration().String())
+	// }
 	return colorizeResult(serializedInstructionResult)
 }
 

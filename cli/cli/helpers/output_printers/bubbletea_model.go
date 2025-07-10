@@ -1,4 +1,5 @@
-e
+package output_printers
+
 import (
 	"time"
 
@@ -131,7 +132,7 @@ func (m *ExecutionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			ID:              msg.ID,
 			Name:            msg.Name,
 			Status:          StatusRunning,
-			Progress:        0.0,
+			Progress:        0.25,
 			StartTime:       time.Now(),
 			WarningMessages: make([]string, 0),
 			InfoMessages:    make([]string, 0),
@@ -266,6 +267,10 @@ func (m *ExecutionModel) renderInstruction(instruction *InstructionState) string
 		line += "\n" + progressDisplay
 	}
 
+	if instruction.Status == StatusCompleted {
+		line += "\n" + instruction.Result
+	}
+
 	// Add timing if completed
 	if instruction.EndTime != nil {
 		duration := instruction.EndTime.Sub(instruction.StartTime)
@@ -277,7 +282,6 @@ func (m *ExecutionModel) renderInstruction(instruction *InstructionState) string
 
 	return line
 }
-
 
 // renderSummary renders the execution summary
 func (m *ExecutionModel) renderSummary() string {
