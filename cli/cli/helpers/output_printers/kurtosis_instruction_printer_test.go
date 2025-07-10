@@ -29,7 +29,7 @@ func testInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
 			binding_constructors.NewStarlarkInstructionKwarg(`struct(bonjour=42, hello="world")`, "kwarg2", false),
 		},
 		isSkipped,
-		"description")
+		"description", "")
 }
 
 // func TestFormatInstruction_Executable(t *testing.T) {

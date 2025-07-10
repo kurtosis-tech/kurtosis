@@ -863,6 +863,11 @@ export declare class StarlarkInstruction extends Message<StarlarkInstruction> {
    */
   description: string;
 
+  /**
+   * @generated from field: optional string instruction_id = 7;
+   */
+  instructionId?: string;
+
   constructor(data?: PartialMessage<StarlarkInstruction>);
 
   static readonly runtime: typeof proto3;
@@ -891,6 +896,11 @@ export declare class StarlarkInstructionResult extends Message<StarlarkInstructi
    * @generated from field: optional google.protobuf.Duration execution_duration = 2;
    */
   executionDuration?: Duration;
+
+  /**
+   * @generated from field: optional string instruction_id = 3;
+   */
+  instructionId?: string;
 
   constructor(data?: PartialMessage<StarlarkInstructionResult>);
 
@@ -1107,6 +1117,11 @@ export declare class StarlarkRunProgress extends Message<StarlarkRunProgress> {
    * @generated from field: uint32 current_step_number = 3;
    */
   currentStepNumber: number;
+
+  /**
+   * @generated from field: optional string instruction_id = 4;
+   */
+  instructionId?: string;
 
   constructor(data?: PartialMessage<StarlarkRunProgress>);
 

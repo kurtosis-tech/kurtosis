@@ -333,12 +333,16 @@ message StarlarkInstruction {
   bool is_skipped = 5;
 
   string description = 6;
+  
+  optional string instruction_id = 7;
 }
 
 message StarlarkInstructionResult {
   string serialized_instruction_result = 1;
 
   optional google.protobuf.Duration execution_duration = 2;
+
+  optional string instruction_id = 3;
 }
 
 message StarlarkInstructionArg {
@@ -383,6 +387,8 @@ message StarlarkRunProgress {
   uint32 total_steps = 2;
 
   uint32 current_step_number = 3;
+
+  optional string instruction_id = 4;
 }
 
 message StarlarkRunFinishedEvent {

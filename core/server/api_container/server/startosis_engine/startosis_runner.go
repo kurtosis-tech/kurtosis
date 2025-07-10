@@ -94,7 +94,7 @@ func (runner *StartosisRunner) Run(
 
 		// Interpretation starts > send progress info (this line will be invisible as interpretation is super quick)
 		progressInfo := binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
-			startingInterpretationMsg, defaultCurrentStepNumber, defaultTotalStepsNumber)
+			startingInterpretationMsg, defaultCurrentStepNumber, defaultTotalStepsNumber, "interpretation")
 		starlarkRunResponseLines <- progressInfo
 
 		// TODO: once we have feature flags, add a switch here to call InterpretAndOptimizePlan if the feature flag is
@@ -152,7 +152,7 @@ func (runner *StartosisRunner) Run(
 
 		// Validation starts > send progress info
 		progressInfo = binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
-			startingValidationMsg, defaultCurrentStepNumber, totalNumberOfInstructions)
+			startingValidationMsg, defaultCurrentStepNumber, totalNumberOfInstructions, "validation")
 		starlarkRunResponseLines <- progressInfo
 
 		validationErrorsChan := runner.startosisValidator.Validate(ctx, instructionsSequence, imageDownloadMode)
@@ -166,7 +166,7 @@ func (runner *StartosisRunner) Run(
 
 		// Execution starts > send progress info. This will soon be overridden byt the first instruction execution
 		progressInfo = binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
-			startingExecutionMsg, defaultCurrentStepNumber, totalNumberOfInstructions)
+			startingExecutionMsg, defaultCurrentStepNumber, totalNumberOfInstructions, "execution")
 		starlarkRunResponseLines <- progressInfo
 
 		executionResponseLinesChan := runner.startosisExecutor.ExecuteInParallel(ctx, dryRun, parallelism, instructionsPlan.GetIndexOfFirstInstruction(), instructionsSequence, serializedScriptOutput, instructionDependencyGraph)

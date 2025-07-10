@@ -122,12 +122,14 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 				defer wgSenders.Done()
 
 				instructionNumber := uint32(index + 1)
+				instructionNumberInt := int(instructionNumber)
+				insructionNumberStr := strconv.Itoa(instructionNumberInt)
 				progress := binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
-					progressMsg, instructionNumber, totalNumberOfInstructions)
+					progressMsg, instructionNumber, totalNumberOfInstructions, insructionNumberStr)
 				starlarkRunResponseLineStream <- progress
 
 				instruction := scheduledInstruction.GetInstruction()
-				canonicalInstruction := binding_constructors.NewStarlarkRunResponseLineFromInstruction(instruction.GetCanonicalInstruction(scheduledInstruction.IsExecuted()))
+				canonicalInstruction := binding_constructors.NewStarlarkRunResponseLineFromInstruction(instruction.GetCanonicalInstruction(scheduledInstruction.IsExecuted()), insructionNumberStr)
 				starlarkRunResponseLineStream <- canonicalInstruction
 
 				if !dryRun {
@@ -154,7 +156,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 						if len(instructionOutputStr) > outputSizeLimit {
 							instructionOutputStr = fmt.Sprintf("%s%s", instructionOutputStr[0:outputSizeLimit], outputLimitReachedSuffix)
 						}
-						starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(instructionOutputStr, duration)
+						starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(instructionOutputStr, duration, "")
 					}
 					// add the instruction into the current enclave plan
 					// enclavePlanInstruction, err := scheduledInstruction.GetInstruction().GetPersistableAttributes().SetUuid(
@@ -296,12 +298,14 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 				}
 
 				instructionNumber := uint32(index + 1)
+				instructionNumberInt := int(instructionNumber)
+				instructionNumberStr := strconv.Itoa(instructionNumberInt)
 				progress := binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
-					progressMsg, instructionNumber, totalNumberOfInstructions)
+					progressMsg, instructionNumber, totalNumberOfInstructions, instructionNumberStr)
 				starlarkRunResponseLineStream <- progress
 
 				instruction := scheduledInstruction.GetInstruction()
-				canonicalInstruction := binding_constructors.NewStarlarkRunResponseLineFromInstruction(instruction.GetCanonicalInstruction(scheduledInstruction.IsExecuted()))
+				canonicalInstruction := binding_constructors.NewStarlarkRunResponseLineFromInstruction(instruction.GetCanonicalInstruction(scheduledInstruction.IsExecuted()), instructionNumberStr)
 				starlarkRunResponseLineStream <- canonicalInstruction
 
 				if !dryRun {
@@ -323,7 +327,7 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 						if len(instructionOutputStr) > outputSizeLimit {
 							instructionOutputStr = fmt.Sprintf("%s%s", instructionOutputStr[0:outputSizeLimit], outputLimitReachedSuffix)
 						}
-						starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(instructionOutputStr, duration)
+						starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(instructionOutputStr, duration, instructionNumberStr)
 					}
 				}
 
