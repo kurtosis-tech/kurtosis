@@ -1,5 +1,4 @@
-package output_printers
-
+e
 import (
 	"time"
 
