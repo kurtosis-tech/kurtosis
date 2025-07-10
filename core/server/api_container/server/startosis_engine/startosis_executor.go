@@ -290,7 +290,7 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 
 				logrus.Infof("Running instruction %v", instructionUuidStr)
 
-				_, err = file.WriteString(fmt.Sprintf("Running instruction %v\n", instructionUuidStr))
+				_, err = file.WriteString(fmt.Sprintf("Running instruction %v: %v\n", instructionUuidStr, scheduledInstruction.GetInstruction().String()))
 				if err != nil {
 					logrus.Errorf("Failed to write to execution.txt file: %v", err)
 				}
@@ -346,7 +346,7 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 				logrus.Infof("Signaling that instruction %v has completed", instructionUuidStr)
 				close(completionChannels[instructionUuidStr])
 
-				_, err = file.WriteString(fmt.Sprintf("Instruction %v completed\n", instructionUuidStr))
+				_, err = file.WriteString(fmt.Sprintf("Instruction %v completed: %v\n", instructionUuidStr, scheduledInstruction.GetInstruction().String()))
 				if err != nil {
 					logrus.Errorf("Failed to write to execution.txt file: %v", err)
 				}
