@@ -216,14 +216,15 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 		logrus.Errorf("Failed to create execution.txt file: %v", err)
 	}
 
+	executor.mutex.Lock()
 	starlarkRunResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 	ctxWithParallelism := context.WithValue(ctx, startosis_constants.ParallelismParam, parallelism)
 	go func() {
 		defer func() {
 			executor.mutex.Unlock()
 			close(starlarkRunResponseLineStream)
-
 		}()
+
 		// TODO: for now the plan is append only, as each Starlark run happens on top of whatever exists in the enclave
 		logrus.Debugf("Current enclave plan contains %d instuctions. About to process a new plan with %d instructions starting at index %d (dry-run: %v)",
 			executor.enclavePlan.Size(), len(instructionsSequence), indexOfFirstInstructionInEnclavePlan, dryRun)
@@ -349,12 +350,10 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 				if err != nil {
 					logrus.Errorf("Failed to write to execution.txt file: %v", err)
 				}
-
 			}(scheduledInstruction)
 		}
 
 		wgSenders.Wait()
-		file.Close()
 	}()
 
 	return starlarkRunResponseLineStream
