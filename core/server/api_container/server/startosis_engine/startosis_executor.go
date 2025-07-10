@@ -272,7 +272,7 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 			go func(scheduledInstruction *instructions_plan.ScheduledInstruction) {
 				defer wgSenders.Done()
 
-				indexStr := strconv.Itoa(index)
+				indexStr := strconv.Itoa(index + 1)
 				instructionUuidStr := instructions_plan.ScheduledInstructionUuid(indexStr)
 				logrus.Infof("Processing instruction %v", instructionUuidStr)
 
