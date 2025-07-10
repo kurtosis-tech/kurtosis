@@ -293,7 +293,7 @@ func NewStarlarkRunResponseLineFromRunSuccessEvent(serializedOutputObject string
 			RunFinishedEvent: &kurtosis_core_rpc_api_bindings.StarlarkRunFinishedEvent{
 				IsRunSuccessful:                true,
 				TotalExecutionDuration:         durationpb.New(totalExecutionDuration),
-				TotalParallelExecutionDuration: durationpb.New(totalParallelExecutionDuration),
+				TotalParallelExecutionDuration: durationpb.New(0),
 				SerializedOutput:               &serializedOutputObject,
 			},
 		},

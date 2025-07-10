@@ -347,12 +347,12 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 				sendErrorAndFail(starlarkRunResponseLineStream, totalExecutionDuration, err, "An error occurred while replacing the runtime values in the output of the script")
 				return
 			}
+			// scriptWithValuesReplaced := ""
 			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(scriptWithValuesReplaced, totalExecutionDuration, totalExecutionDuration)
 			logrus.Debugf("Current enclave plan has been updated. It now contains %d instructions", executor.enclavePlan.Size())
 		} else {
 			logrus.Debugf("Current enclave plan remained the same as the it was a dry-run. It contains %d instructions", executor.enclavePlan.Size())
 		}
-
 	}()
 
 	return starlarkRunResponseLineStream
