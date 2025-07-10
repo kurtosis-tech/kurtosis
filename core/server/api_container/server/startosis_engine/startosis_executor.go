@@ -217,8 +217,8 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 		defer func() {
 			executor.mutex.Unlock()
 			close(starlarkRunResponseLineStream)
-		}()
 
+		}()
 		// TODO: for now the plan is append only, as each Starlark run happens on top of whatever exists in the enclave
 		logrus.Debugf("Current enclave plan contains %d instuctions. About to process a new plan with %d instructions starting at index %d (dry-run: %v)",
 			executor.enclavePlan.Size(), len(instructionsSequence), indexOfFirstInstructionInEnclavePlan, dryRun)
