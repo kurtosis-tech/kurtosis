@@ -120,9 +120,12 @@ func (builtin *StoreServiceFilesCapabilities) Interpret(_ string, arguments *bui
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", SrcArgName)
 	}
 
-	dependsOn, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, DependsOnArgName)
-	if err != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", DependsOnArgName)
+	var dependsOn starlark.String
+	if arguments.IsSet(ArtifactNameArgName) {
+		dependsOn, err = builtin_argument.ExtractArgumentValue[starlark.String](arguments, DependsOnArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", DependsOnArgName)
+		}
 	}
 
 	builtin.serviceName = kurtosis_backend_service.ServiceName(serviceName.GoString())
