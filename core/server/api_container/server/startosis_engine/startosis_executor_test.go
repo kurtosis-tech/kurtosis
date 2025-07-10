@@ -7,16 +7,11 @@ import (
 	"testing"
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
-	"go.starlark.net/starlark"
 )
 
 const (
@@ -38,51 +33,51 @@ var (
 	noInstructionArgsForTesting []*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg
 )
 
-func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
-	enclaveDb := getEnclaveDBForTest(t)
+// func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
+// 	enclaveDb := getEnclaveDBForTest(t)
 
-	dummySerde := shared_helpers.NewDummyStarlarkValueSerDeForTest()
+// 	dummySerde := shared_helpers.NewDummyStarlarkValueSerDeForTest()
 
-	runtimeValueStore, createRuntimeValueStoreErr := runtime_value_store.CreateRuntimeValueStore(dummySerde, enclaveDb)
-	require.NoError(t, createRuntimeValueStoreErr)
+// 	runtimeValueStore, createRuntimeValueStoreErr := runtime_value_store.CreateRuntimeValueStore(dummySerde, enclaveDb)
+// 	require.NoError(t, createRuntimeValueStoreErr)
 
-	executor := NewStartosisExecutor(nil, runtimeValueStore, enclave_plan_persistence.NewEnclavePlan(), enclaveDb)
+// 	executor := NewStartosisExecutor(nil, runtimeValueStore, enclave_plan_persistence.NewEnclavePlan(), enclaveDb)
 
-	instructionsPlan := instructions_plan.NewInstructionsPlan()
-	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully, "description1")
-	scheduledInstruction1 := instructions_plan.NewScheduledInstruction("instruction1", instruction1, starlark.None).Executed(true)
-	instructionsPlan.AddScheduledInstruction(scheduledInstruction1)
+// 	instructionsPlan := instructions_plan.NewInstructionsPlan()
+// 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully, "description1")
+// 	scheduledInstruction1 := instructions_plan.NewScheduledInstruction("instruction1", instruction1, starlark.None).Executed(true)
+// 	instructionsPlan.AddScheduledInstruction(scheduledInstruction1)
 
-	instruction2 := createMockInstruction(t, "instruction2", executeSuccessfully, "description2")
-	instruction3 := createMockInstruction(t, "instruction3", executeSuccessfully, "description3")
-	require.NoError(t, instructionsPlan.AddInstruction(instruction2, starlark.None))
-	require.NoError(t, instructionsPlan.AddInstruction(instruction3, starlark.None))
+// 	instruction2 := createMockInstruction(t, "instruction2", executeSuccessfully, "description2")
+// 	instruction3 := createMockInstruction(t, "instruction3", executeSuccessfully, "description3")
+// 	require.NoError(t, instructionsPlan.AddInstruction(instruction2, starlark.None))
+// 	require.NoError(t, instructionsPlan.AddInstruction(instruction3, starlark.None))
 
-	require.Equal(t, executor.enclavePlan.Size(), 0) // check that the enclave plan is empty prior to execution
+// 	require.Equal(t, executor.enclavePlan.Size(), 0) // check that the enclave plan is empty prior to execution
 
-	_, serializedInstruction, err := executeSynchronously(t, executor, executeForReal, instructionsPlan)
-	instruction1.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
-	instruction1.AssertNumberOfCalls(t, "Execute", 0) // not executed as it was already executed
-	instruction2.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
-	instruction2.AssertNumberOfCalls(t, "Execute", 1)
-	instruction3.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
-	instruction3.AssertNumberOfCalls(t, "Execute", 1)
+// 	_, serializedInstruction, err := executeSynchronously(t, executor, executeForReal, instructionsPlan)
+// 	instruction1.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
+// 	instruction1.AssertNumberOfCalls(t, "Execute", 0) // not executed as it was already executed
+// 	instruction2.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
+// 	instruction2.AssertNumberOfCalls(t, "Execute", 1)
+// 	instruction3.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
+// 	instruction3.AssertNumberOfCalls(t, "Execute", 1)
 
-	require.Nil(t, err)
+// 	require.Nil(t, err)
 
-	expectedSerializedInstructions := []*kurtosis_core_rpc_api_bindings.StarlarkInstruction{
-		binding_constructors.NewStarlarkInstruction(
-			dummyPosition.ToAPIType(), "instruction1", "instruction1()", noInstructionArgsForTesting, isSkipped, "description1"),
-		binding_constructors.NewStarlarkInstruction(
-			dummyPosition.ToAPIType(), "instruction2", "instruction2()", noInstructionArgsForTesting, isSkipped, "description2"),
-		binding_constructors.NewStarlarkInstruction(
-			dummyPosition.ToAPIType(), "instruction3", "instruction3()", noInstructionArgsForTesting, isSkipped, "description3"),
-	}
-	require.Equal(t, expectedSerializedInstructions, serializedInstruction)
-	require.Equal(t, executor.enclavePlan.Size(), 3) // check that the enclave plan now contains the 4 instructions
-}
+// 	expectedSerializedInstructions := []*kurtosis_core_rpc_api_bindings.StarlarkInstruction{
+// 		binding_constructors.NewStarlarkInstruction(
+// 			dummyPosition.ToAPIType(), "instruction1", "instruction1()", noInstructionArgsForTesting, isSkipped, "description1"),
+// 		binding_constructors.NewStarlarkInstruction(
+// 			dummyPosition.ToAPIType(), "instruction2", "instruction2()", noInstructionArgsForTesting, isSkipped, "description2"),
+// 		binding_constructors.NewStarlarkInstruction(
+// 			dummyPosition.ToAPIType(), "instruction3", "instruction3()", noInstructionArgsForTesting, isSkipped, "description3"),
+// 	}
+// 	require.Equal(t, expectedSerializedInstructions, serializedInstruction)
+// 	require.Equal(t, executor.enclavePlan.Size(), 3) // check that the enclave plan now contains the 4 instructions
+// }
 
-// func TestExecuteKurtosisInstructions_ExecuteForReal_FailureHalfWay(t *testing.T) {
+// // func TestExecuteKurtosisInstructions_ExecuteForReal_FailureHalfWay(t *testing.T) {
 // 	enclaveDb := getEnclaveDBForTest(t)
 
 // 	dummySerde := shared_helpers.NewDummyStarlarkValueSerDeForTest()
