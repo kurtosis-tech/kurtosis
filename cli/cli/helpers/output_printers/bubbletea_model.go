@@ -222,9 +222,9 @@ func (m *ExecutionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			instruction.Progress = 1.0
 		}
 
-		m.done = true
-		m.error = msg.Error
-		
+		// m.done = true
+		// m.error = msg.Error
+
 		// Force immediate re-render by batching multiple render triggers
 		return m, tea.Batch(
 			tea.Tick(50*time.Millisecond, func(time.Time) tea.Msg {
@@ -236,9 +236,9 @@ func (m *ExecutionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			tea.Tick(500*time.Millisecond, func(time.Time) tea.Msg {
 				return tea.WindowSizeMsg{Width: m.width, Height: m.height}
 			}),
-			tea.Tick(3*time.Second, func(time.Time) tea.Msg {
-				return tea.Quit
-			}),
+			// tea.Tick(3*time.Second, func(time.Time) tea.Msg {
+			// 	return tea.Quit
+			// }),
 		)
 
 	case tea.KeyMsg:
