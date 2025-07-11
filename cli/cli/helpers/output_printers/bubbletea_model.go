@@ -1,6 +1,8 @@
 package output_printers
 
 import (
+	"time"
+
 	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
@@ -101,6 +103,11 @@ type ExecutionCompleteMsg struct {
 	Error   error
 }
 
+// ProgressTickMsg is sent periodically to update progress bars
+type ProgressTickMsg struct {
+	Time time.Time
+}
+
 // NewExecutionModel creates a new ExecutionModel
 func NewExecutionModel(verbosity run.Verbosity, dryRun bool, isInteractive bool) *ExecutionModel {
 	instructions := make(map[string]*InstructionState)
@@ -111,6 +118,7 @@ func NewExecutionModel(verbosity run.Verbosity, dryRun bool, isInteractive bool)
 		ID:              "execution",
 		Name:            "Executing Starlark code",
 		Status:          StatusRunning,
+		Progress:        0.1, // Start with 10% progress
 		Result:          "",
 		ProgressBar:     progress.New(progress.WithGradient("#008000", "#C0C0C0")),
 		Spinner:         s,
@@ -130,11 +138,16 @@ func NewExecutionModel(verbosity run.Verbosity, dryRun bool, isInteractive bool)
 
 // Init implements tea.Model
 func (m *ExecutionModel) Init() tea.Cmd {
-	// Start the execution spinner
+	// Start the execution spinner and progress ticker
+	var cmds []tea.Cmd
 	if execution, exists := m.instructions["execution"]; exists {
-		return execution.Spinner.Tick
+		cmds = append(cmds, execution.Spinner.Tick)
 	}
-	return nil
+	// Start periodic progress updates
+	cmds = append(cmds, tea.Tick(500*time.Millisecond, func(t time.Time) tea.Msg {
+		return ProgressTickMsg{Time: t}
+	}))
+	return tea.Batch(cmds...)
 }
 
 // Update implements tea.Model
@@ -166,7 +179,7 @@ func (m *ExecutionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			ID:              msg.ID,
 			Name:            msg.Name,
 			Status:          StatusRunning,
-			Progress:        0.25,
+			Progress:        0.3, // Start at 30% for visual feedback
 			ProgressBar:     progress.New(progress.WithGradient("#008000", "#C0C0C0")),
 			Spinner:         s,
 			WarningMessages: make([]string, 0),
@@ -223,6 +236,22 @@ func (m *ExecutionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// m.done = true
 		// m.error = msg.Error
 		return m, tea.Batch(cmds...)
+
+	case ProgressTickMsg:
+		// Gradually increase progress for running instructions
+		for _, instruction := range m.instructions {
+			if instruction.Status == StatusRunning && instruction.Progress < 0.9 {
+				// Slowly increase progress, max out at 90% until completion
+				instruction.Progress += 0.02
+				if instruction.Progress > 0.9 {
+					instruction.Progress = 0.9
+				}
+			}
+		}
+		// Schedule next progress tick
+		return m, tea.Batch(append(cmds, tea.Tick(500*time.Millisecond, func(t time.Time) tea.Msg {
+			return ProgressTickMsg{Time: t}
+		}))...)
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
