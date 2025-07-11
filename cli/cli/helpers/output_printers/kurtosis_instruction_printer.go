@@ -374,7 +374,7 @@ func (printer *ExecutionPrinter) convertResponseLineToMessage(responseLine *kurt
 		runFinished := responseLine.GetRunFinishedEvent()
 		return ExecutionCompleteMsg{
 			ID:      "execution",
-			Result:  formatInfo(runFinished.GetSerializedOutput()),
+			Result:  formatRunOutput(runFinished, dryRun, verbosity),
 			Success: runFinished.GetIsRunSuccessful(),
 			Error:   nil,
 		}, nil

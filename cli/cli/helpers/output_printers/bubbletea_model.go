@@ -106,20 +106,23 @@ type ExecutionCompleteMsg struct {
 // NewExecutionModel creates a new ExecutionModel
 func NewExecutionModel(verbosity run.Verbosity, dryRun bool, isInteractive bool) *ExecutionModel {
 	instructions := make(map[string]*InstructionState)
+	s := spinner.New()
+	s.Spinner = spinner.Dot
+	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("11"))
 	instructions["execution"] = &InstructionState{
 		ID:              "execution",
-		Name:            "execution",
+		Name:            "Executing Starlark code",
 		Status:          StatusRunning,
 		Result:          "",
 		ProgressBar:     progress.New(progress.WithGradient("#008000", "#C0C0C0")),
-		Spinner:         spinner.New(),
+		Spinner:         s,
 		WarningMessages: make([]string, 0),
 		InfoMessages:    make([]string, 0),
 		ErrorMessage:    "",
 	}
 	return &ExecutionModel{
 		instructions:     instructions,
-		instructionOrder: make([]string, 0),
+		instructionOrder: []string{"execution"},
 		verbosity:        verbosity,
 		dryRun:           dryRun,
 		isInteractive:    isInteractive,
@@ -129,6 +132,10 @@ func NewExecutionModel(verbosity run.Verbosity, dryRun bool, isInteractive bool)
 
 // Init implements tea.Model
 func (m *ExecutionModel) Init() tea.Cmd {
+	// Start the execution spinner
+	if execution, exists := m.instructions["execution"]; exists {
+		return execution.Spinner.Tick
+	}
 	return nil
 }
 
@@ -216,7 +223,12 @@ func (m *ExecutionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		// Add a delay before quitting to allow the final message to be displayed
+		m.done = true
+		m.error = msg.Error
 		return m, tea.Sequence(
+			tea.Tick(100*time.Millisecond, func(time.Time) tea.Msg {
+				return tea.WindowSizeMsg{Width: m.width, Height: m.height}
+			}),
 			tea.Tick(4*time.Second, func(time.Time) tea.Msg {
 				return tea.Quit
 			}),
@@ -297,7 +309,11 @@ func (m *ExecutionModel) renderInstruction(instruction *InstructionState) string
 	}
 
 	if instruction.Status == StatusCompleted {
-		line += "\n" + instruction.Result
+		if instruction.Result != "" {
+			line += "\n" + instruction.Result
+		} else {
+			line += "\n" + "Execution completed successfully"
+		}
 	}
 
 	return line
