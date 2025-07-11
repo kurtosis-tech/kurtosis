@@ -118,6 +118,10 @@ func (printer *ExecutionPrinter) StartWithVerbosity(verbosity run.Verbosity, dry
 
 func (printer *ExecutionPrinter) Stop() {
 	if printer.isInteractive && printer.bubbletteaProgram != nil {
+		// Force print the final execution result regardless of bubbletea state
+		if execution, exists := printer.bubbletteaModel.instructions["execution"]; exists && execution.Result != "" {
+			out.PrintOutLn(execution.Result)
+		}
 		printer.bubbletteaProgram.Quit()
 		close(printer.messageChan)
 	} else {
