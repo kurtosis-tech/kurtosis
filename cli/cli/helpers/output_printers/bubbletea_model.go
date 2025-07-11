@@ -98,15 +98,27 @@ type WindowSizeMsg struct {
 // ExecutionCompleteMsg is sent when the entire execution is complete
 type ExecutionCompleteMsg struct {
 	ID      string
-	Info    string
+	Result  string
 	Success bool
 	Error   error
 }
 
 // NewExecutionModel creates a new ExecutionModel
 func NewExecutionModel(verbosity run.Verbosity, dryRun bool, isInteractive bool) *ExecutionModel {
+	instructions := make(map[string]*InstructionState)
+	instructions["execution"] = &InstructionState{
+		ID:              "execution",
+		Name:            "execution",
+		Status:          StatusRunning,
+		Result:          "",
+		ProgressBar:     progress.New(progress.WithGradient("#008000", "#C0C0C0")),
+		Spinner:         spinner.New(),
+		WarningMessages: make([]string, 0),
+		InfoMessages:    make([]string, 0),
+		ErrorMessage:    "",
+	}
 	return &ExecutionModel{
-		instructions:     make(map[string]*InstructionState),
+		instructions:     instructions,
 		instructionOrder: make([]string, 0),
 		verbosity:        verbosity,
 		dryRun:           dryRun,
@@ -197,16 +209,16 @@ func (m *ExecutionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(cmds...)
 
 	case ExecutionCompleteMsg:
-		if instruction, exists := m.instructions[msg.ID]; exists {
-			instruction.InfoMessages = append(instruction.InfoMessages, msg.Info)
+		if instruction, exists := m.instructions["execution"]; exists {
+			instruction.Status = StatusCompleted
+			instruction.Result = msg.Result
+			instruction.Progress = 1.0
 		}
 
-		m.done = true
-		m.error = msg.Error
 		// Add a delay before quitting to allow the final message to be displayed
 		return m, tea.Sequence(
-			tea.Tick(2*time.Second, func(time.Time) tea.Msg {
-				return tea.QuitMsg{}
+			tea.Tick(4*time.Second, func(time.Time) tea.Msg {
+				return tea.Quit
 			}),
 		)
 

@@ -272,16 +272,16 @@ func formatProgressBar(currentStep uint32, totalSteps uint32, progressBarChar st
 
 func formatRunOutput(runFinishedEvent *kurtosis_core_rpc_api_bindings.StarlarkRunFinishedEvent, dryRun bool, verbosity run.Verbosity) string {
 	durationMsg := "."
-	if verbosity == run.Detailed {
-		totalExecutionDuration := runFinishedEvent.GetTotalExecutionDuration().AsDuration()
-		totalParallelExecutionDuration := runFinishedEvent.GetTotalParallelExecutionDuration().AsDuration()
-		if totalParallelExecutionDuration > 0 {
-			percentageFaster := (totalExecutionDuration.Seconds() - totalParallelExecutionDuration.Seconds()) / totalParallelExecutionDuration.Seconds() * 100
-			durationMsg = durationMsg + fmt.Sprintf(" Total instruction execution time: %s. Total parallel execution time: %s. Parallel execution is %f%% faster", totalExecutionDuration.String(), totalParallelExecutionDuration.String(), percentageFaster)
-		} else {
-			durationMsg = durationMsg + fmt.Sprintf(" Total instruction execution time: %s. Total parallel execution time: %s.", totalExecutionDuration.String(), totalParallelExecutionDuration.String())
-		}
+	// if verbosity == run.Detailed {
+	totalExecutionDuration := runFinishedEvent.GetTotalExecutionDuration().AsDuration()
+	totalParallelExecutionDuration := runFinishedEvent.GetTotalParallelExecutionDuration().AsDuration()
+	if totalParallelExecutionDuration > 0 {
+		percentageFaster := (totalExecutionDuration.Seconds() - totalParallelExecutionDuration.Seconds()) / totalParallelExecutionDuration.Seconds() * 100
+		durationMsg = durationMsg + fmt.Sprintf(" Total instruction execution time: %s. Total parallel execution time: %s. Parallel execution is %f%% faster", totalExecutionDuration.String(), totalParallelExecutionDuration.String(), percentageFaster)
+	} else {
+		durationMsg = durationMsg + fmt.Sprintf(" Total instruction execution time: %s. Total parallel execution time: %s.", totalExecutionDuration.String(), totalParallelExecutionDuration.String())
 	}
+	// }
 	if !runFinishedEvent.GetIsRunSuccessful() {
 		if dryRun {
 			return colorizeError(fmt.Sprintf("Error encountered running Starlark code in dry-run mode%s", durationMsg))
@@ -374,7 +374,7 @@ func (printer *ExecutionPrinter) convertResponseLineToMessage(responseLine *kurt
 		runFinished := responseLine.GetRunFinishedEvent()
 		return ExecutionCompleteMsg{
 			ID:      "execution",
-			Info:    formatInfo(runFinished.GetSerializedOutput()),
+			Result:  formatInfo(runFinished.GetSerializedOutput()),
 			Success: runFinished.GetIsRunSuccessful(),
 			Error:   nil,
 		}, nil
