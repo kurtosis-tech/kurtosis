@@ -222,14 +222,21 @@ func (m *ExecutionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			instruction.Progress = 1.0
 		}
 
-		// Add a delay before quitting to allow the final message to be displayed
 		m.done = true
 		m.error = msg.Error
-		return m, tea.Sequence(
-			tea.Tick(100*time.Millisecond, func(time.Time) tea.Msg {
+		
+		// Force immediate re-render by batching multiple render triggers
+		return m, tea.Batch(
+			tea.Tick(50*time.Millisecond, func(time.Time) tea.Msg {
 				return tea.WindowSizeMsg{Width: m.width, Height: m.height}
 			}),
-			tea.Tick(4*time.Second, func(time.Time) tea.Msg {
+			tea.Tick(200*time.Millisecond, func(time.Time) tea.Msg {
+				return tea.WindowSizeMsg{Width: m.width, Height: m.height}
+			}),
+			tea.Tick(500*time.Millisecond, func(time.Time) tea.Msg {
+				return tea.WindowSizeMsg{Width: m.width, Height: m.height}
+			}),
+			tea.Tick(3*time.Second, func(time.Time) tea.Msg {
 				return tea.Quit
 			}),
 		)
