@@ -96,7 +96,6 @@ func (printer *ExecutionPrinter) StartWithVerbosity(verbosity run.Verbosity, dry
 		printer.bubbletteaModel = NewExecutionModel(verbosity, dryRun, true)
 		printer.bubbletteaProgram = tea.NewProgram(
 			printer.bubbletteaModel,
-			tea.WithAltScreen(),
 			tea.WithMouseCellMotion(),
 		)
 
