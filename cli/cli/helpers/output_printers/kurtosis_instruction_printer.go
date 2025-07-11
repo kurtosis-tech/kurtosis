@@ -118,8 +118,6 @@ func (printer *ExecutionPrinter) StartWithVerbosity(verbosity run.Verbosity, dry
 
 func (printer *ExecutionPrinter) Stop() {
 	if printer.isInteractive && printer.bubbletteaProgram != nil {
-		// Send completion message and quit
-		printer.messageChan <- ExecutionCompleteMsg{Success: true, Error: nil}
 		printer.bubbletteaProgram.Quit()
 		close(printer.messageChan)
 	} else {
