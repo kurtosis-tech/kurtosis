@@ -1,8 +1,6 @@
 package output_printers
 
 import (
-	"time"
-
 	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
@@ -178,8 +176,6 @@ func (m *ExecutionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case InstructionFailedMsg:
 		if instruction, exists := m.instructions[msg.ID]; exists {
 			instruction.Status = StatusFailed
-			now := time.Now()
-			instruction.EndTime = &now
 			instruction.ErrorMessage = msg.Error
 		}
 		return m, tea.Batch(cmds...)
