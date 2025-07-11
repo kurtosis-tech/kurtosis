@@ -122,8 +122,8 @@ func (printer *ExecutionPrinter) Stop() {
 		// if execution, exists := printer.bubbletteaModel.instructions["execution"]; exists && execution.Result != "" {
 		// 	out.PrintOutLn(execution.Result)
 		// }
-		printer.bubbletteaProgram.Quit()
-		close(printer.messageChan)
+		// printer.bubbletteaProgram.Quit()
+		// close(printer.messageChan)
 	} else {
 		printer.stopSpinnerIfUsed()
 	}
