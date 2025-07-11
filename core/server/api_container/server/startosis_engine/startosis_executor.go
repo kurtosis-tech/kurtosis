@@ -37,6 +37,7 @@ var (
 
 type StartosisExecutor struct {
 	mutex              *sync.Mutex
+	durationMutex      *sync.Mutex
 	starlarkValueSerde *kurtosis_types.StarlarkValueSerde
 	enclavePlan        *enclave_plan_persistence.EnclavePlan
 	enclaveDb          *enclave_db.EnclaveDB
@@ -131,7 +132,6 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 				instruction := scheduledInstruction.GetInstruction()
 				canonicalInstruction := binding_constructors.NewStarlarkRunResponseLineFromInstruction(instruction.GetCanonicalInstruction(scheduledInstruction.IsExecuted()), insructionNumberStr)
 				starlarkRunResponseLineStream <- canonicalInstruction
-
 				if !dryRun {
 					var err error
 					var instructionOutput *string
@@ -250,6 +250,7 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 
 		totalNumberOfInstructions := uint32(len(instructionsSequence))
 		totalExecutionDuration := time.Duration(0)
+		instructionNumToDuration := make(map[int]time.Duration)
 
 		for index, scheduledInstruction := range instructionsSequence {
 			instructionNumber := uint32(index + 1)
@@ -316,7 +317,14 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 						// instruction already executed within this enclave. Do not run it
 						instructionOutput = &skippedInstructionOutput
 					} else {
+						startTime := time.Now()
 						instructionOutput, err = instruction.Execute(ctxWithParallelism)
+						duration = time.Since(startTime)
+
+						executor.durationMutex.Lock()
+						totalExecutionDuration += duration
+						instructionNumToDuration[index+1] = duration
+						executor.durationMutex.Unlock()
 					}
 					if err != nil {
 						sendErrorAndFail(starlarkRunResponseLineStream, totalExecutionDuration, err, "An error occurred executing instruction (number %d) at %v:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
@@ -344,6 +352,19 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 
 		wgSenders.Wait()
 
+		instructionsDependencyGraph := make(map[dependency_graph.ScheduledInstructionUuid][]dependency_graph.ScheduledInstructionUuid)
+		for instructionUuid, dependencies := range instructionDependencyGraph {
+			instructionsDependencyGraph[dependency_graph.ScheduledInstructionUuid(instructionUuid)] = make([]dependency_graph.ScheduledInstructionUuid, len(dependencies))
+			for i, dependency := range dependencies {
+				instructionsDependencyGraph[dependency_graph.ScheduledInstructionUuid(instructionUuid)][i] = dependency_graph.ScheduledInstructionUuid(dependency)
+			}
+		}
+
+		logrus.Infof("Computing parallel execution time for instructionsDependencyGraph")
+		totalParallelExecutionDuration := dependency_graph.ComputeParallelExecutionTime(instructionsDependencyGraph, instructionNumToDuration)
+		logrus.Infof("totalParallelExecutionDuration: %v", totalParallelExecutionDuration)
+		printInstructionToDuration(instructionNumToDuration)
+
 		if !dryRun {
 			logrus.Debugf("Serialized script output before runtime value replace: '%v'", serializedScriptOutput)
 			scriptWithValuesReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(serializedScriptOutput, executor.runtimeValueStore)
@@ -352,7 +373,7 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 				return
 			}
 			// scriptWithValuesReplaced := ""
-			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(scriptWithValuesReplaced, totalExecutionDuration, totalExecutionDuration)
+			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(scriptWithValuesReplaced, totalExecutionDuration, totalParallelExecutionDuration)
 			logrus.Debugf("Current enclave plan has been updated. It now contains %d instructions", executor.enclavePlan.Size())
 		} else {
 			logrus.Debugf("Current enclave plan remained the same as the it was a dry-run. It contains %d instructions", executor.enclavePlan.Size())
