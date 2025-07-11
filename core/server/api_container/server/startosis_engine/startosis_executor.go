@@ -51,6 +51,7 @@ type ExecutionError struct {
 func NewStartosisExecutor(starlarkValueSerde *kurtosis_types.StarlarkValueSerde, runtimeValueStore *runtime_value_store.RuntimeValueStore, enclavePlan *enclave_plan_persistence.EnclavePlan, enclaveDb *enclave_db.EnclaveDB) *StartosisExecutor {
 	return &StartosisExecutor{
 		mutex:              &sync.Mutex{},
+		durationMutex:      &sync.Mutex{},
 		starlarkValueSerde: starlarkValueSerde,
 		enclaveDb:          enclaveDb,
 		enclavePlan:        enclavePlan,
