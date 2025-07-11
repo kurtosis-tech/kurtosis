@@ -1,6 +1,8 @@
 package output_printers
 
 import (
+	"time"
+
 	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
@@ -201,7 +203,12 @@ func (m *ExecutionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.done = true
 		m.error = msg.Error
-		return m, tea.Quit
+		// Add a delay before quitting to allow the final message to be displayed
+		return m, tea.Sequence(
+			tea.Tick(2*time.Second, func(time.Time) tea.Msg {
+				return tea.QuitMsg{}
+			}),
+		)
 
 	case tea.KeyMsg:
 		switch msg.String() {
