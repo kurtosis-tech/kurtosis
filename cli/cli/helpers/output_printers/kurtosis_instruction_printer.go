@@ -124,7 +124,7 @@ func (printer *ExecutionPrinter) Stop() {
 		// }
 		time.Sleep(3 * time.Second)
 		printer.bubbletteaProgram.Quit()
-		// close(printer.messageChan)
+		close(printer.messageChan)
 	} else {
 		printer.stopSpinnerIfUsed()
 	}
