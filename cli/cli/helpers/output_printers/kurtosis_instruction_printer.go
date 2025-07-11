@@ -3,6 +3,7 @@ package output_printers
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -376,6 +377,10 @@ func (printer *ExecutionPrinter) convertResponseLineToMessage(responseLine *kurt
 	} else if responseLine.GetRunFinishedEvent() != nil {
 		runFinished := responseLine.GetRunFinishedEvent()
 		output := formatRunOutput(runFinished, dryRun, verbosity)
+		err := os.WriteFile("/Users/tewodrosmitiku/craft/kurtosis/output.txt", []byte(output), 0644)
+		if err != nil {
+			logrus.Errorf("Error writing output to file: %v", err)
+		}
 		return ExecutionCompleteMsg{
 			ID:      "execution",
 			Result:  output,
