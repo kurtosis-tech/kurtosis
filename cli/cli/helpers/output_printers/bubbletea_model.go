@@ -1,8 +1,6 @@
 package output_printers
 
 import (
-	"time"
-
 	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
@@ -222,23 +220,9 @@ func (m *ExecutionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			instruction.Progress = 1.0
 		}
 
-		// m.done = true
+		m.done = true
 		m.error = msg.Error
-		return m, tea.Batch(
-			tea.Tick(100*time.Millisecond, func(time.Time) tea.Msg {
-				return tea.WindowSizeMsg{Width: m.width, Height: m.height}
-			}),
-			tea.Tick(100*time.Millisecond, func(time.Time) tea.Msg {
-				return tea.WindowSizeMsg{Width: m.width, Height: m.height}
-			}),
-			tea.Tick(100*time.Millisecond, func(time.Time) tea.Msg {
-				return tea.WindowSizeMsg{Width: m.width, Height: m.height}
-			}),
-			// tea.Tick(4*time.Second, func(time.Time) tea.Msg {
-			// 	return tea.Quit
-			// }),
-		)
-
+		return m, nil
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
