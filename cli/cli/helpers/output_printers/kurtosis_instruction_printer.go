@@ -364,7 +364,7 @@ func (printer *ExecutionPrinter) convertResponseLineToMessage(responseLine *kurt
 		}, nil
 	} else if responseLine.GetProgressInfo() != nil {
 		progress := responseLine.GetProgressInfo()
-		progressRatio := 0.25
+		progressRatio := float64(progress.GetCurrentStepNumber()) / float64(progress.GetTotalSteps())
 		instructionId := progress.GetInstructionId()
 		return InstructionProgressMsg{
 			ID:       instructionId,

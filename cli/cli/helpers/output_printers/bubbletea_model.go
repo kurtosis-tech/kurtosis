@@ -132,7 +132,7 @@ func (m *ExecutionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			Name:            msg.Name,
 			Status:          StatusRunning,
 			Progress:        0.25,
-			ProgressBar:     progress.New(progress.WithDefaultGradient()),
+			ProgressBar:     progress.New(progress.WithGradient("#008000", "#C0C0C0")),
 			StartTime:       time.Now(),
 			WarningMessages: make([]string, 0),
 			InfoMessages:    make([]string, 0),
