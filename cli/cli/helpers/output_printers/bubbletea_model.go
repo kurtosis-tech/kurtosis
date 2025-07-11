@@ -123,7 +123,7 @@ func (m *ExecutionModel) Init() tea.Cmd {
 // Update implements tea.Model
 func (m *ExecutionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
-	
+
 	// Update all running spinners
 	for _, instruction := range m.instructions {
 		if instruction.Status == StatusRunning {
@@ -134,7 +134,7 @@ func (m *ExecutionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 	}
-	
+
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
@@ -283,7 +283,7 @@ func (m *ExecutionModel) renderInstruction(instruction *InstructionState) string
 
 	// Add progress bar if running
 	if instruction.Status == StatusRunning {
-		progressDisplay := instruction.ProgressBar.ViewAs(0.50)
+		progressDisplay := instruction.ProgressBar.ViewAs(instruction.Progress)
 		line += "\n" + progressDisplay + "\n\n"
 	}
 
