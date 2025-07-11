@@ -206,9 +206,9 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 		logrus.Debugf("Transfered %d instructions from previous enclave plan to keep the enclave state consistent", executor.enclavePlan.Size())
 
 		totalNumberOfInstructions := uint32(len(instructionsSequence))
-		totalExecutionDuration := time.Duration(0)
 		instructionNumToDuration := make(map[int]time.Duration)
 
+		parallelStart := time.Now()
 		for index, scheduledInstruction := range instructionsSequence {
 			instructionNumber := uint32(index + 1)
 
@@ -276,15 +276,14 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 					} else {
 						startTime := time.Now()
 						instructionOutput, err = instruction.Execute(ctxWithParallelism)
-						duration = time.Since(startTime)
 
 						executor.durationMutex.Lock()
-						totalExecutionDuration += duration
+						duration = time.Since(startTime)
 						instructionNumToDuration[index+1] = duration
 						executor.durationMutex.Unlock()
 					}
 					if err != nil {
-						sendErrorAndFail(starlarkRunResponseLineStream, totalExecutionDuration, err, "An error occurred executing instruction (number %d) at %v:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
+						sendErrorAndFail(starlarkRunResponseLineStream, duration, err, "An error occurred executing instruction (number %d) at %v:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
 						return
 					}
 					if instructionOutput != nil {
@@ -308,6 +307,7 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 		}
 
 		wgSenders.Wait()
+		totalParallelExecutionDuration := time.Since(parallelStart)
 
 		instructionsDependencyGraph := make(map[dependency_graph.ScheduledInstructionUuid][]dependency_graph.ScheduledInstructionUuid)
 		for instructionUuid, dependencies := range instructionDependencyGraph {
@@ -317,10 +317,15 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 			}
 		}
 
-		logrus.Infof("Computing parallel execution time for instructionsDependencyGraph")
-		totalParallelExecutionDuration := dependency_graph.ComputeParallelExecutionTime(instructionsDependencyGraph, instructionNumToDuration)
-		logrus.Infof("totalParallelExecutionDuration: %v", totalParallelExecutionDuration)
-		printInstructionToDuration(instructionNumToDuration)
+		// logrus.Infof("Computing parallel execution time for instructionsDependencyGraph")
+		// totalParallelExecutionDuration := dependency_graph.ComputeParallelExecutionTime(instructionsDependencyGraph, instructionNumToDuration)
+		// logrus.Infof("totalParallelExecutionDuration: %v", totalParallelExecutionDuration)
+		// printInstructionToDuration(instructionNumToDuration)
+
+		totalExecutionDuration := time.Duration(0)
+		for _, duration := range instructionNumToDuration {
+			totalExecutionDuration += duration
+		}
 
 		if !dryRun {
 			logrus.Debugf("Serialized script output before runtime value replace: '%v'", serializedScriptOutput)
@@ -329,7 +334,6 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 				sendErrorAndFail(starlarkRunResponseLineStream, totalExecutionDuration, err, "An error occurred while replacing the runtime values in the output of the script")
 				return
 			}
-			// scriptWithValuesReplaced := ""
 			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(scriptWithValuesReplaced, totalExecutionDuration, totalParallelExecutionDuration)
 			logrus.Debugf("Current enclave plan has been updated. It now contains %d instructions", executor.enclavePlan.Size())
 		} else {
