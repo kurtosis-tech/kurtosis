@@ -374,9 +374,11 @@ func (printer *ExecutionPrinter) convertResponseLineToMessage(responseLine *kurt
 		}, nil
 	} else if responseLine.GetRunFinishedEvent() != nil {
 		runFinished := responseLine.GetRunFinishedEvent()
+		output := formatRunOutput(runFinished, dryRun, verbosity)
+		printer.bubbletteaModel.instructions["execution"].Result = output
 		return ExecutionCompleteMsg{
 			ID:      "execution",
-			Result:  formatRunOutput(runFinished, dryRun, verbosity),
+			Result:  output,
 			Success: runFinished.GetIsRunSuccessful(),
 			Error:   nil,
 		}, nil

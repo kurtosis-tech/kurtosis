@@ -609,6 +609,7 @@ func ReadAndPrintResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core
 	if err := printer.StartWithVerbosity(verbosity, dryRun); err != nil {
 		return stacktrace.Propagate(err, "Unable to start the printer for this execution. The execution will continue in the background but nothing will be printed.")
 	}
+	defer printer.Stop()
 
 	isRunSuccessful := false // defaults to false such that we fail loudly if something unexpected happens
 	for {
@@ -621,7 +622,6 @@ func ReadAndPrintResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core
 					// the CLI output. We should still use stacktrace.Propagate for other errors.
 					return stacktrace.Propagate(command_str_consts.ErrorMessageDueToStarlarkFailure, "Error occurred while running kurtosis package")
 				}
-				printer.Stop()
 				return nil
 			}
 			err := printer.PrintKurtosisExecutionResponseLineToStdOut(responseLine, verbosity, dryRun)
