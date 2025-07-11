@@ -220,9 +220,9 @@ func (m *ExecutionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			instruction.Progress = 1.0
 		}
 
-		m.done = true
-		m.error = msg.Error
-		return m, nil
+		// m.done = true
+		// m.error = msg.Error
+		return m, tea.Batch(cmds...)
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
