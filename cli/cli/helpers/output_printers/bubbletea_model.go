@@ -222,15 +222,21 @@ func (m *ExecutionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			instruction.Progress = 1.0
 		}
 
-		m.done = true
+		// m.done = true
 		m.error = msg.Error
-		return m, tea.Sequence(
+		return m, tea.Batch(
 			tea.Tick(100*time.Millisecond, func(time.Time) tea.Msg {
 				return tea.WindowSizeMsg{Width: m.width, Height: m.height}
 			}),
-			tea.Tick(4*time.Second, func(time.Time) tea.Msg {
-				return tea.Quit
+			tea.Tick(100*time.Millisecond, func(time.Time) tea.Msg {
+				return tea.WindowSizeMsg{Width: m.width, Height: m.height}
 			}),
+			tea.Tick(100*time.Millisecond, func(time.Time) tea.Msg {
+				return tea.WindowSizeMsg{Width: m.width, Height: m.height}
+			}),
+			// tea.Tick(4*time.Second, func(time.Time) tea.Msg {
+			// 	return tea.Quit
+			// }),
 		)
 
 	case tea.KeyMsg:
