@@ -126,6 +126,30 @@ func NewExecutionModel(verbosity run.Verbosity, dryRun bool, isInteractive bool)
 		InfoMessages:    make([]string, 0),
 		ErrorMessage:    "",
 	}
+	instructions["validation"] = &InstructionState{
+		ID:              "validation",
+		Name:            "Validating Starlark code",
+		Status:          StatusRunning,
+		Progress:        0.1, // Start with 10% progress
+		Result:          "",
+		ProgressBar:     progress.New(progress.WithGradient("#008000", "#C0C0C0")),
+		Spinner:         s,
+		WarningMessages: make([]string, 0),
+		InfoMessages:    make([]string, 0),
+		ErrorMessage:    "",
+	}
+	instructions["interpretation"] = &InstructionState{
+		ID:              "interpretation",
+		Name:            "Interpreting Starlark code",
+		Status:          StatusRunning,
+		Progress:        0.1, // Start with 10% progress
+		Result:          "",
+		ProgressBar:     progress.New(progress.WithGradient("#008000", "#C0C0C0")),
+		Spinner:         s,
+		WarningMessages: make([]string, 0),
+		InfoMessages:    make([]string, 0),
+		ErrorMessage:    "",
+	}
 	return &ExecutionModel{
 		instructions:     instructions,
 		instructionOrder: []string{"execution"},
@@ -324,6 +348,10 @@ func (m *ExecutionModel) renderInstruction(instruction *InstructionState) string
 	if instruction.Status == StatusRunning {
 		progressDisplay := instruction.ProgressBar.ViewAs(instruction.Progress)
 		line += "\n" + progressDisplay + "\n\n"
+	}
+
+	if instruction.Status == StatusFailed {
+		line += "\n" + instruction.ErrorMessage
 	}
 
 	if instruction.Status == StatusCompleted {
