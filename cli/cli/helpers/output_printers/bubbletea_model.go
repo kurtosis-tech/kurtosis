@@ -47,9 +47,8 @@ type ExecutionModel struct {
 	isInteractive bool
 
 	// Program control
-	program *tea.Program
-	done    bool
-	error   error
+	done  bool
+	error error
 }
 
 // Message types for bubbletea
@@ -263,8 +262,8 @@ func (m *ExecutionModel) renderInstruction(instruction *InstructionState) string
 
 	// Add progress bar if running
 	if instruction.Status == StatusRunning {
-		progressDisplay := instruction.ProgressBar.ViewAs(instruction.Progress)
-		line += "\n" + progressDisplay
+		progressDisplay := instruction.ProgressBar.ViewAs(0.50)
+		line += "\n" + progressDisplay + "\n\n"
 	}
 
 	if instruction.Status == StatusCompleted {
