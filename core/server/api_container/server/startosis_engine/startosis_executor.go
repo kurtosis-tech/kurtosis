@@ -98,110 +98,66 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 
 		totalNumberOfInstructions := uint32(len(instructionsSequence))
 		totalExecutionDuration := time.Duration(0)
-		// instructionNumToDuration := make(map[int]time.Duration)
-
 		for index, scheduledInstruction := range instructionsSequence {
 			instructionNumber := uint32(index + 1)
+			progress := binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
+				progressMsg, instructionNumber, totalNumberOfInstructions, strconv.Itoa(index+1))
+			starlarkRunResponseLineStream <- progress
 
 			instruction := scheduledInstruction.GetInstruction()
-			// add the instruction into the current enclave plan
-			enclavePlanInstruction, err := scheduledInstruction.GetInstruction().GetPersistableAttributes().SetUuid(
-				string(scheduledInstruction.GetUuid()),
-			).SetReturnedValue(
-				executor.starlarkValueSerde.Serialize(scheduledInstruction.GetReturnedValue()),
-			).Build()
-			if err != nil {
-				sendErrorAndFail(starlarkRunResponseLineStream, totalExecutionDuration, err, "An error occurred persisting instruction (number %d) at %v after it's been executed:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
-			}
-			executor.enclavePlan.AppendInstruction(enclavePlanInstruction)
-		}
+			canonicalInstruction := binding_constructors.NewStarlarkRunResponseLineFromInstruction(instruction.GetCanonicalInstruction(scheduledInstruction.IsExecuted()), strconv.Itoa(index+1))
+			starlarkRunResponseLineStream <- canonicalInstruction
 
-		wgSenders := sync.WaitGroup{}
-		for index, scheduledInstruction := range instructionsSequence {
-			wgSenders.Add(1)
-			go func() {
-				defer wgSenders.Done()
-
-				instructionNumber := uint32(index + 1)
-				instructionNumberInt := int(instructionNumber)
-				insructionNumberStr := strconv.Itoa(instructionNumberInt)
-				progress := binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
-					progressMsg, instructionNumber, totalNumberOfInstructions, insructionNumberStr)
-				starlarkRunResponseLineStream <- progress
-
-				instruction := scheduledInstruction.GetInstruction()
-				canonicalInstruction := binding_constructors.NewStarlarkRunResponseLineFromInstruction(instruction.GetCanonicalInstruction(scheduledInstruction.IsExecuted()), insructionNumberStr)
-				starlarkRunResponseLineStream <- canonicalInstruction
-				if !dryRun {
-					var err error
-					var instructionOutput *string
-					var duration time.Duration
-					if scheduledInstruction.IsExecuted() {
-						logrus.Infof("INSTRUCTION %d ALREADY EXECUTED", instructionNumber)
-						// instruction already executed within this enclave. Do not run it
-						instructionOutput = &skippedInstructionOutput
-					} else {
-						// startTime := time.Now()
-						instructionOutput, err = instruction.Execute(ctxWithParallelism)
-						// duration = time.Since(startTime)
-						// totalExecutionDuration += duration
-						// instructionNumToDuration[index+1] = duration
-					}
-					if err != nil {
-						sendErrorAndFail(starlarkRunResponseLineStream, totalExecutionDuration, err, "An error occurred executing instruction (number %d) at %v:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
-						return
-					}
-					if instructionOutput != nil {
-						instructionOutputStr := *instructionOutput
-						if len(instructionOutputStr) > outputSizeLimit {
-							instructionOutputStr = fmt.Sprintf("%s%s", instructionOutputStr[0:outputSizeLimit], outputLimitReachedSuffix)
-						}
-						starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(instructionOutputStr, duration, "")
-					}
-					// add the instruction into the current enclave plan
-					// enclavePlanInstruction, err := scheduledInstruction.GetInstruction().GetPersistableAttributes().SetUuid(
-					// 	string(scheduledInstruction.GetUuid()),
-					// ).SetReturnedValue(
-					// 	executor.starlarkValueSerde.Serialize(scheduledInstruction.GetReturnedValue()),
-					// ).Build()
-					// if err != nil {
-					// 	sendErrorAndFail(starlarkRunResponseLineStream, totalExecutionDuration, err, "An error occurred persisting instruction (number %d) at %v after it's been executed:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
-					// }
-					// executor.enclavePlan.AppendInstruction(enclavePlanInstruction)
-				}
-
-				instructionsDependencyGraph := make(map[dependency_graph.ScheduledInstructionUuid][]dependency_graph.ScheduledInstructionUuid)
-				for instructionUuid, dependencies := range instructionDependencyGraph {
-					instructionsDependencyGraph[dependency_graph.ScheduledInstructionUuid(instructionUuid)] = make([]dependency_graph.ScheduledInstructionUuid, len(dependencies))
-					for i, dependency := range dependencies {
-						instructionsDependencyGraph[dependency_graph.ScheduledInstructionUuid(instructionUuid)][i] = dependency_graph.ScheduledInstructionUuid(dependency)
-					}
-				}
-
-				// logrus.Infof("Computing parallel execution time for instructionsDependencyGraph")
-				totalParallelExecutionDuration := time.Duration(0)
-				// totalParallelExecutionDuration := dependency_graph.ComputeParallelExecutionTime(instructionsDependencyGraph, instructionNumToDuration)
-				// logrus.Infof("totalParallelExecutionDuration: %v", totalParallelExecutionDuration)
-				// printInstructionToDuration(instructionNumToDuration)
-
-				if !dryRun {
-					logrus.Debugf("Serialized script output before runtime value replace: '%v'", serializedScriptOutput)
-					scriptWithValuesReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(serializedScriptOutput, executor.runtimeValueStore)
-					if err != nil {
-						sendErrorAndFail(starlarkRunResponseLineStream, totalExecutionDuration, err, "An error occurred while replacing the runtime values in the output of the script")
-						return
-					}
-					starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(scriptWithValuesReplaced, totalExecutionDuration, totalParallelExecutionDuration)
-					logrus.Debugf("Current enclave plan has been updated. It now contains %d instructions", executor.enclavePlan.Size())
+			if !dryRun {
+				var err error
+				var instructionOutput *string
+				var duration time.Duration
+				if scheduledInstruction.IsExecuted() {
+					// instruction already executed within this enclave. Do not run it
+					instructionOutput = &skippedInstructionOutput
 				} else {
-					logrus.Debugf("Current enclave plan remained the same as the it was a dry-run. It contains %d instructions", executor.enclavePlan.Size())
+					startTime := time.Now()
+					instructionOutput, err = instruction.Execute(ctxWithParallelism)
+					duration = time.Since(startTime)
+					totalExecutionDuration += duration
 				}
-			}()
+				if err != nil {
+					sendErrorAndFail(starlarkRunResponseLineStream, totalExecutionDuration, err, "An error occurred executing instruction (number %d) at %v:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
+					return
+				}
+				if instructionOutput != nil {
+					instructionOutputStr := *instructionOutput
+					if len(instructionOutputStr) > outputSizeLimit {
+						instructionOutputStr = fmt.Sprintf("%s%s", instructionOutputStr[0:outputSizeLimit], outputLimitReachedSuffix)
+					}
+					starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(instructionOutputStr, duration, strconv.Itoa(index+1))
+				}
+				// add the instruction into the current enclave plan
+				enclavePlanInstruction, err := scheduledInstruction.GetInstruction().GetPersistableAttributes().SetUuid(
+					string(scheduledInstruction.GetUuid()),
+				).SetReturnedValue(
+					executor.starlarkValueSerde.Serialize(scheduledInstruction.GetReturnedValue()),
+				).Build()
+				if err != nil {
+					sendErrorAndFail(starlarkRunResponseLineStream, totalExecutionDuration, err, "An error occurred persisting instruction (number %d) at %v after it's been executed:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
+				}
+				executor.enclavePlan.AppendInstruction(enclavePlanInstruction)
+			}
 		}
 
-		wgSenders.Wait()
+		if !dryRun {
+			logrus.Debugf("Serialized script output before runtime value replace: '%v'", serializedScriptOutput)
+			scriptWithValuesReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(serializedScriptOutput, executor.runtimeValueStore)
+			if err != nil {
+				sendErrorAndFail(starlarkRunResponseLineStream, totalExecutionDuration, err, "An error occurred while replacing the runtime values in the output of the script")
+				return
+			}
+			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(scriptWithValuesReplaced, totalExecutionDuration, totalExecutionDuration)
+			logrus.Debugf("Current enclave plan has been updated. It now contains %d instructions", executor.enclavePlan.Size())
+		} else {
+			logrus.Debugf("Current enclave plan remained the same as the it was a dry-run. It contains %d instructions", executor.enclavePlan.Size())
+		}
 	}()
-
 	return starlarkRunResponseLineStream
 }
 
