@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/charmbracelet/bubbles/progress"
+	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_args/run"
@@ -26,6 +27,7 @@ type InstructionState struct {
 	Status          InstructionStatus
 	Progress        float64
 	ProgressBar     progress.Model
+	Spinner         spinner.Model
 	StartTime       time.Time
 	EndTime         *time.Time
 	ErrorMessage    string
@@ -120,26 +122,44 @@ func (m *ExecutionModel) Init() tea.Cmd {
 
 // Update implements tea.Model
 func (m *ExecutionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmds []tea.Cmd
+	
+	// Update all running spinners
+	for _, instruction := range m.instructions {
+		if instruction.Status == StatusRunning {
+			var cmd tea.Cmd
+			instruction.Spinner, cmd = instruction.Spinner.Update(msg)
+			if cmd != nil {
+				cmds = append(cmds, cmd)
+			}
+		}
+	}
+	
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		return m, nil
+		return m, tea.Batch(cmds...)
 
 	case InstructionStartedMsg:
+		s := spinner.New()
+		s.Spinner = spinner.Dot
+		s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("11"))
 		instruction := &InstructionState{
 			ID:              msg.ID,
 			Name:            msg.Name,
 			Status:          StatusRunning,
 			Progress:        0.25,
 			ProgressBar:     progress.New(progress.WithGradient("#008000", "#C0C0C0")),
+			Spinner:         s,
 			StartTime:       time.Now(),
 			WarningMessages: make([]string, 0),
 			InfoMessages:    make([]string, 0),
 		}
 		m.instructions[msg.ID] = instruction
 		m.instructionOrder = append(m.instructionOrder, msg.ID)
-		return m, nil
+		cmds = append(cmds, instruction.Spinner.Tick)
+		return m, tea.Batch(cmds...)
 
 	case InstructionProgressMsg:
 		if instruction, exists := m.instructions[msg.ID]; exists {
@@ -148,7 +168,7 @@ func (m *ExecutionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				instruction.InfoMessages = append(instruction.InfoMessages, msg.Message)
 			}
 		}
-		return m, nil
+		return m, tea.Batch(cmds...)
 
 	case InstructionCompletedMsg:
 		if instruction, exists := m.instructions[msg.ID]; exists {
@@ -158,7 +178,7 @@ func (m *ExecutionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			instruction.EndTime = &now
 			instruction.Result = msg.Result
 		}
-		return m, nil
+		return m, tea.Batch(cmds...)
 
 	case InstructionFailedMsg:
 		if instruction, exists := m.instructions[msg.ID]; exists {
@@ -167,19 +187,19 @@ func (m *ExecutionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			instruction.EndTime = &now
 			instruction.ErrorMessage = msg.Error
 		}
-		return m, nil
+		return m, tea.Batch(cmds...)
 
 	case InstructionWarningMsg:
 		if instruction, exists := m.instructions[msg.ID]; exists {
 			instruction.WarningMessages = append(instruction.WarningMessages, msg.Warning)
 		}
-		return m, nil
+		return m, tea.Batch(cmds...)
 
 	case InstructionInfoMsg:
 		if instruction, exists := m.instructions[msg.ID]; exists {
 			instruction.InfoMessages = append(instruction.InfoMessages, msg.Info)
 		}
-		return m, nil
+		return m, tea.Batch(cmds...)
 
 	case ExecutionCompleteMsg:
 		m.done = true
@@ -193,7 +213,7 @@ func (m *ExecutionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	return m, nil
+	return m, tea.Batch(cmds...)
 }
 
 // View implements tea.Model
@@ -246,20 +266,20 @@ func (m *ExecutionModel) renderInstruction(instruction *InstructionState) string
 	switch instruction.Status {
 	case StatusPending:
 		style = lipgloss.NewStyle().Foreground(lipgloss.Color("8")) // Gray
-		statusText = "PENDING"
+		statusText = "⏳ " + instruction.Name
 	case StatusRunning:
 		style = lipgloss.NewStyle().Foreground(lipgloss.Color("11")) // Yellow
-		statusText = "RUNNING"
+		statusText = instruction.Spinner.View() + " " + instruction.Name
 	case StatusCompleted:
 		style = lipgloss.NewStyle().Foreground(lipgloss.Color("10")) // Green
-		statusText = "COMPLETED"
+		statusText = "✅ " + instruction.Name
 	case StatusFailed:
 		style = lipgloss.NewStyle().Foreground(lipgloss.Color("9")) // Red
-		statusText = "FAILED"
+		statusText = "❌ " + instruction.Name
 	}
 
 	// Build instruction line with status
-	line := style.Render("[" + statusText + "] " + instruction.Name)
+	line := style.Render(statusText)
 
 	// Add progress bar if running
 	if instruction.Status == StatusRunning {
