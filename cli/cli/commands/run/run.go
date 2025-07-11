@@ -621,7 +621,7 @@ func ReadAndPrintResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core
 					// the CLI output. We should still use stacktrace.Propagate for other errors.
 					return stacktrace.Propagate(command_str_consts.ErrorMessageDueToStarlarkFailure, "Error occurred while running kurtosis package")
 				}
-				// printer.Stop()
+				printer.Stop()
 				return nil
 			}
 			err := printer.PrintKurtosisExecutionResponseLineToStdOut(responseLine, verbosity, dryRun)
