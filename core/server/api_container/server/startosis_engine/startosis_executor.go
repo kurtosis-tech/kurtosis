@@ -208,7 +208,6 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 		totalNumberOfInstructions := uint32(len(instructionsSequence))
 		instructionNumToDuration := make(map[int]time.Duration)
 
-		parallelStart := time.Now()
 		for index, scheduledInstruction := range instructionsSequence {
 			instructionNumber := uint32(index + 1)
 
@@ -220,7 +219,7 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 				executor.starlarkValueSerde.Serialize(scheduledInstruction.GetReturnedValue()),
 			).Build()
 			if err != nil {
-				sendErrorAndFail(starlarkRunResponseLineStream, totalExecutionDuration, err, "An error occurred persisting instruction (number %d) at %v after it's been executed:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
+				sendErrorAndFail(starlarkRunResponseLineStream, time.Duration(0), err, "An error occurred persisting instruction (number %d) at %v after it's been executed:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
 			}
 			executor.enclavePlan.AppendInstruction(enclavePlanInstruction)
 		}
@@ -231,6 +230,7 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 			completionChannels[instructionUuid] = make(chan struct{})
 		}
 
+		parallelStart := time.Now()
 		wgSenders := sync.WaitGroup{}
 		for index, scheduledInstruction := range instructionsSequence {
 			wgSenders.Add(1)
