@@ -28,8 +28,6 @@ type InstructionState struct {
 	Progress        float64
 	ProgressBar     progress.Model
 	Spinner         spinner.Model
-	StartTime       time.Time
-	EndTime         *time.Time
 	ErrorMessage    string
 	Result          string
 	WarningMessages []string
@@ -152,7 +150,6 @@ func (m *ExecutionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			Progress:        0.25,
 			ProgressBar:     progress.New(progress.WithGradient("#008000", "#C0C0C0")),
 			Spinner:         s,
-			StartTime:       time.Now(),
 			WarningMessages: make([]string, 0),
 			InfoMessages:    make([]string, 0),
 		}
@@ -174,8 +171,6 @@ func (m *ExecutionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if instruction, exists := m.instructions[msg.ID]; exists {
 			instruction.Status = StatusCompleted
 			instruction.Progress = 1.0
-			now := time.Now()
-			instruction.EndTime = &now
 			instruction.Result = msg.Result
 		}
 		return m, tea.Batch(cmds...)
@@ -289,15 +284,6 @@ func (m *ExecutionModel) renderInstruction(instruction *InstructionState) string
 
 	if instruction.Status == StatusCompleted {
 		line += "\n" + instruction.Result
-	}
-
-	// Add timing if completed
-	if instruction.EndTime != nil {
-		duration := instruction.EndTime.Sub(instruction.StartTime)
-		timing := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("8")).
-			Render(" (" + duration.Round(time.Millisecond).String() + ")")
-		line += timing
 	}
 
 	return line
