@@ -95,6 +95,8 @@ type WindowSizeMsg struct {
 
 // ExecutionCompleteMsg is sent when the entire execution is complete
 type ExecutionCompleteMsg struct {
+	ID      string
+	Info    string
 	Success bool
 	Error   error
 }
@@ -193,6 +195,10 @@ func (m *ExecutionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(cmds...)
 
 	case ExecutionCompleteMsg:
+		if instruction, exists := m.instructions[msg.ID]; exists {
+			instruction.InfoMessages = append(instruction.InfoMessages, msg.Info)
+		}
+
 		m.done = true
 		m.error = msg.Error
 		return m, tea.Quit
@@ -220,13 +226,6 @@ func (m *ExecutionModel) View() string {
 // renderInteractive renders the full TUI interface
 func (m *ExecutionModel) renderInteractive() string {
 	var content []string
-
-	// Header
-	header := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(lipgloss.Color("12")).
-		Render("Kurtosis Execution")
-	content = append(content, header)
 
 	// Instructions with special ordering: execution always last
 	orderedInstructions := m.getOrderedInstructions()

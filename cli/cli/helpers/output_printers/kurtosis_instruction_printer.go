@@ -373,6 +373,8 @@ func (printer *ExecutionPrinter) convertResponseLineToMessage(responseLine *kurt
 	} else if responseLine.GetRunFinishedEvent() != nil {
 		runFinished := responseLine.GetRunFinishedEvent()
 		return ExecutionCompleteMsg{
+			ID:      "execution",
+			Info:    formatInfo(runFinished.GetSerializedOutput()),
 			Success: runFinished.GetIsRunSuccessful(),
 			Error:   nil,
 		}, nil
