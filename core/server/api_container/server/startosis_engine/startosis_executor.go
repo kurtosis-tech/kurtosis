@@ -206,7 +206,7 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 		logrus.Debugf("Transfered %d instructions from previous enclave plan to keep the enclave state consistent", executor.enclavePlan.Size())
 
 		totalNumberOfInstructions := uint32(len(instructionsSequence))
-		instructionNumToDuration := make(map[int]time.Duration)
+		// instructionNumToDuration := make(map[int]time.Duration)
 
 		for index, scheduledInstruction := range instructionsSequence {
 			instructionNumber := uint32(index + 1)
