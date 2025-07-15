@@ -193,6 +193,24 @@ Now that you've use the Kurtosis CLI to run a package, inspect the resulting env
 - To learn how to write your own package, check out our guide on [writing your first package][write-your-first-package].
 
 
+Shut down and cleanup
+----------
+
+To shut down all services of the quickstart example, run the following:
+
+```console
+kurtosis enclave stop quickstart
+```
+
+Optionally you can then choose to remove the resources created for the quickstart:
+
+```console
+kurtosis enclave rm quickstart
+```
+
+Please note that this will not remove any helpers like the kurtosis log aggregator, engine and reverse proxy. 
+
+
 <!-- !!!!!!!!!!!!!!!!!!!!!!!!!!! ONLY LINKS BELOW HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
 
 <!--------------------------- Guides ------------------------------------>
