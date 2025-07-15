@@ -861,6 +861,7 @@ func (network *DefaultServiceNetwork) registerService(
 ) {
 	serviceSuccessfullyRegistered := false
 
+	logrus.Infof("Registering service '%s' in enclave '%v'", serviceName, network.enclaveUuid)
 	serviceToRegister := map[service.ServiceName]bool{
 		serviceName: true,
 	}
