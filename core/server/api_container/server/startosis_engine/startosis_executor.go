@@ -206,7 +206,10 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 		logrus.Debugf("Transfered %d instructions from previous enclave plan to keep the enclave state consistent", executor.enclavePlan.Size())
 
 		totalNumberOfInstructions := uint32(len(instructionsSequence))
-		// instructionNumToDuration := make(map[int]time.Duration)
+
+		// Thread-safe map to store instruction durations
+		instructionDurations := make(map[instructions_plan.ScheduledInstructionUuid]time.Duration)
+		var durationMutex sync.RWMutex
 
 		for index, scheduledInstruction := range instructionsSequence {
 			instructionNumber := uint32(index + 1)
@@ -234,10 +237,10 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 		wgSenders := sync.WaitGroup{}
 		for index, scheduledInstruction := range instructionsSequence {
 			wgSenders.Add(1)
-			go func(scheduledInstruction *instructions_plan.ScheduledInstruction) {
+			go func(scheduledInstruction *instructions_plan.ScheduledInstruction, instructionIndex int) {
 				defer wgSenders.Done()
 
-				indexStr := strconv.Itoa(index + 1)
+				indexStr := strconv.Itoa(instructionIndex + 1)
 				instructionUuidStr := instructions_plan.ScheduledInstructionUuid(indexStr)
 				logrus.Infof("Processing instruction %v", instructionUuidStr)
 
@@ -255,7 +258,7 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 					logrus.Errorf("Failed to write to execution.txt file: %v", err)
 				}
 
-				instructionNumber := uint32(index + 1)
+				instructionNumber := uint32(instructionIndex + 1)
 				instructionNumberInt := int(instructionNumber)
 				instructionNumberStr := strconv.Itoa(instructionNumberInt)
 				progress := binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
@@ -269,18 +272,20 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 				if !dryRun {
 					var err error
 					var instructionOutput *string
-					// var duration time.Duration
+					var duration time.Duration
 					if scheduledInstruction.IsExecuted() {
 						// instruction already executed within this enclave. Do not run it
 						instructionOutput = &skippedInstructionOutput
+						duration = time.Duration(0) // Skipped instructions take no time
 					} else {
-						// startTime := time.Now()
+						startTime := time.Now()
 						instructionOutput, err = instruction.Execute(ctxWithParallelism)
+						duration = time.Since(startTime)
 
-						// executor.durationMutex.Lock()
-						// duration = time.Since(startTime)
-						// instructionNumToDuration[index+1] = duration
-						// executor.durationMutex.Unlock()
+						// Store the duration in a thread-safe manner
+						durationMutex.Lock()
+						instructionDurations[instructionUuidStr] = duration
+						durationMutex.Unlock()
 					}
 					if err != nil {
 						sendErrorAndFail(starlarkRunResponseLineStream, time.Duration(0), err, "An error occurred executing instruction (number %d) at %v:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
@@ -291,7 +296,7 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 						if len(instructionOutputStr) > outputSizeLimit {
 							instructionOutputStr = fmt.Sprintf("%s%s", instructionOutputStr[0:outputSizeLimit], outputLimitReachedSuffix)
 						}
-						starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(instructionOutputStr, time.Duration(0), instructionNumberStr)
+						starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(instructionOutputStr, duration, instructionNumberStr)
 					}
 				}
 
@@ -303,11 +308,30 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 				if err != nil {
 					logrus.Errorf("Failed to write to execution.txt file: %v", err)
 				}
-			}(scheduledInstruction)
+			}(scheduledInstruction, index)
 		}
 
 		wgSenders.Wait()
 		totalParallelExecutionDuration := time.Since(parallelStart)
+
+		// Calculate total sequential execution time by summing all individual instruction durations
+		durationMutex.RLock()
+		totalSequentialDuration := time.Duration(0)
+		for _, duration := range instructionDurations {
+			totalSequentialDuration += duration
+		}
+		durationMutex.RUnlock()
+
+		logrus.Infof("Total parallel execution time: %v", totalParallelExecutionDuration)
+		logrus.Infof("Total sequential execution time (sum of individual instructions): %v", totalSequentialDuration)
+		logrus.Infof("Parallel speedup: %.2fx", float64(totalSequentialDuration)/float64(totalParallelExecutionDuration))
+
+		// Log individual instruction durations
+		durationMutex.RLock()
+		for instructionUuid, duration := range instructionDurations {
+			logrus.Infof("Instruction %v took: %v", instructionUuid, duration)
+		}
+		durationMutex.RUnlock()
 
 		instructionsDependencyGraph := make(map[dependency_graph.ScheduledInstructionUuid][]dependency_graph.ScheduledInstructionUuid)
 		for instructionUuid, dependencies := range instructionDependencyGraph {
@@ -334,7 +358,7 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 				sendErrorAndFail(starlarkRunResponseLineStream, totalParallelExecutionDuration, err, "An error occurred while replacing the runtime values in the output of the script")
 				return
 			}
-			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(scriptWithValuesReplaced, totalParallelExecutionDuration, totalParallelExecutionDuration)
+			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(scriptWithValuesReplaced, totalParallelExecutionDuration, totalSequentialDuration)
 			logrus.Debugf("Current enclave plan has been updated. It now contains %d instructions", executor.enclavePlan.Size())
 		} else {
 			logrus.Debugf("Current enclave plan remained the same as the it was a dry-run. It contains %d instructions", executor.enclavePlan.Size())
