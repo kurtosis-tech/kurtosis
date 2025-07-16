@@ -112,7 +112,10 @@ func NewDefaultServiceNetwork(
 		enclaveDataDir:  enclaveDataDir,
 
 		serviceRegistrationRepository: serviceRegistrationRepository,
-		serviceIdentifiersRepository:  serviceIdentifiersRepository,
+		serviceRegistrationMutex:      &sync.Mutex{},
+
+		serviceIdentifiersRepository: serviceIdentifiersRepository,
+		serviceIdentifiersMutex:      &sync.Mutex{},
 	}, nil
 }
 
@@ -403,19 +406,23 @@ func (network *DefaultServiceNetwork) RemoveService(
 	ctx context.Context,
 	serviceIdentifier string,
 ) (service.ServiceUUID, error) {
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
+	// network.mutex.Lock()
+	// defer network.mutex.Unlock()
 
+	network.serviceIdentifiersMutex.Lock()
 	serviceName, err := network.getServiceNameForIdentifierUnlocked(serviceIdentifier)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while fetching name for service identifier '%v'", serviceIdentifier)
 	}
+	network.serviceIdentifiersMutex.Unlock()
 
+	network.serviceRegistrationMutex.Lock()
 	serviceToRemove, err := network.serviceRegistrationRepository.Get(serviceName)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred getting the service registration for service '%s'", serviceName)
 	}
 	serviceUuid := serviceToRemove.GetUUID()
+	network.serviceRegistrationMutex.Unlock()
 
 	// We stop the service, rather than destroying it, so that we can keep logs around
 	stopServiceFilters := &service.ServiceFilters{
@@ -433,9 +440,11 @@ func (network *DefaultServiceNetwork) RemoveService(
 		return "", stacktrace.Propagate(err, "An error occurred stopping service '%v'", serviceUuid)
 	}
 
+	network.serviceRegistrationMutex.Lock()
 	if err := network.serviceRegistrationRepository.Delete(serviceName); err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred deleting the service registration for service '%v' from the repository", serviceName)
 	}
+	network.serviceRegistrationMutex.Unlock()
 
 	return serviceUuid, nil
 }
@@ -578,13 +587,15 @@ func (network *DefaultServiceNetwork) StopServices(
 func (network *DefaultServiceNetwork) RunExec(ctx context.Context, serviceIdentifier string, userServiceCommand []string) (*exec_result.ExecResult, error) {
 	// NOTE: This will block all other operations while this command is running!!!! We might need to change this so it's
 	// asynchronous
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
+	// network.mutex.Lock()
+	// defer network.mutex.Unlock()
 
+	network.serviceRegistrationMutex.Lock()
 	serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while getting service registration for identifier '%v'", serviceIdentifier)
 	}
+	network.serviceRegistrationMutex.Unlock()
 
 	serviceUuid := serviceRegistration.GetUUID()
 	userServiceCommands := map[service.ServiceUUID][]string{
@@ -622,9 +633,10 @@ func (network *DefaultServiceNetwork) RunExec(ctx context.Context, serviceIdenti
 func (network *DefaultServiceNetwork) RunExecs(ctx context.Context, userServiceCommands map[string][]string) (map[service.ServiceUUID]*exec_result.ExecResult, map[service.ServiceUUID]error, error) {
 	// NOTE: This will block all other operations while this command is running!!!! We might need to change this so it's
 	// asynchronous
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
+	// network.mutex.Lock()
+	// defer network.mutex.Unlock()
 
+	network.serviceRegistrationMutex.Lock()
 	userServiceCommandsByServiceUuid := map[service.ServiceUUID][]string{}
 	for serviceIdentifier, userServiceCommand := range userServiceCommands {
 		serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
@@ -634,6 +646,7 @@ func (network *DefaultServiceNetwork) RunExecs(ctx context.Context, userServiceC
 		serviceUuid := serviceRegistration.GetUUID()
 		userServiceCommandsByServiceUuid[serviceUuid] = userServiceCommand
 	}
+	network.serviceRegistrationMutex.Unlock()
 
 	successfulExecs, failedExecs, err := network.kurtosisBackend.RunUserServiceExecCommands(ctx, network.enclaveUuid, "", userServiceCommandsByServiceUuid)
 	if err != nil {
@@ -708,13 +721,15 @@ func (network *DefaultServiceNetwork) GetServices(ctx context.Context) (map[serv
 }
 
 func (network *DefaultServiceNetwork) GetService(ctx context.Context, serviceIdentifier string) (*service.Service, error) {
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
+	// network.mutex.Lock()
+	// defer network.mutex.Unlock()
 
+	network.serviceRegistrationMutex.Lock()
 	serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while fetching registration for service identifier '%v'", serviceIdentifier)
 	}
+	network.serviceRegistrationMutex.Unlock()
 
 	serviceUuid := serviceRegistration.GetUUID()
 
