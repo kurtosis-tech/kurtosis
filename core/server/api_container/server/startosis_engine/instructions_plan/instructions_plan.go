@@ -87,7 +87,7 @@ func (plan *InstructionsPlan) GeneratePlan() ([]*ScheduledInstruction, *startosi
 	return generatedPlan, nil
 }
 
-func (plan *InstructionsPlan) GenerateInstructionsDependencyGraph() map[ScheduledInstructionUuid][]ScheduledInstructionUuid {
+func (plan *InstructionsPlan) GenerateInstructionsDependencyGraph() (map[ScheduledInstructionUuid][]ScheduledInstructionUuid, map[int]string) {
 	// update the dependency graph with the effects of the adding this instruction the plan
 	instructionPlan, err := plan.GeneratePlan() // same api
 	if err != nil {
@@ -118,7 +118,7 @@ func (plan *InstructionsPlan) GenerateInstructionsDependencyGraph() map[Schedule
 
 	// instructionsDependencies.OutputDependencyGraphVisualWithShortDescriptors("/Users/tewodrosmitiku/craft/graphs")
 	instructionsDependencies.OutputDependencyGraphVisualWithShortDescriptors("/tmp")
-	return dependencyGraphMap
+	return dependencyGraphMap, instructionsDependencies.GetInstructionNumToDescription()
 }
 
 // GenerateYaml takes in an existing planYaml (usually empty) and returns a yaml string containing the effects of the plan

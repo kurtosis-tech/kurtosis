@@ -137,6 +137,18 @@ func (graph *InstructionsDependencyGraph) GetDependencyGraph() map[ScheduledInst
 	return dependencyGraph
 }
 
+func (graph *InstructionsDependencyGraph) GetInstructionNumToDescription() map[int]string {
+	instructionNumToDescription := map[int]string{}
+	for instruction, description := range graph.instructionShortDescriptors {
+		instructionNum, err := strconv.Atoi(string(instruction))
+		if err != nil {
+			panic(err)
+		}
+		instructionNumToDescription[instructionNum] = description
+	}
+	return instructionNumToDescription
+}
+
 func (graph *InstructionsDependencyGraph) GetInstructionShortDescriptors() map[ScheduledInstructionUuid]string {
 	return graph.instructionShortDescriptors
 }

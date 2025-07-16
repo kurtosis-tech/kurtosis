@@ -97,7 +97,7 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddSingleServiceTo
 		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -154,7 +154,7 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -215,7 +215,7 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestExecDependsOnReque
 		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -258,7 +258,7 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -313,7 +313,7 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -373,7 +373,7 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -437,7 +437,7 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -498,7 +498,7 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -561,7 +561,7 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -610,7 +610,7 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRunShDependsOnServ
 		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -671,7 +671,7 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -734,7 +734,7 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -783,7 +783,7 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRunPythonDependsOn
 		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -820,7 +820,7 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRunPythonWithArgsD
 		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -876,7 +876,7 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRunPythonWithPacka
 		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -911,7 +911,7 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRunPythonWithCusto
 		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -951,7 +951,7 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestExecDependsOnServi
 		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -993,7 +993,7 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestExecOnServiceBDepe
 		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -1043,7 +1043,7 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestServiceCDependsOnE
 		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -1077,7 +1077,7 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestStartServiceDepend
 		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -1111,7 +1111,7 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestStopServiceDepends
 		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -1188,7 +1188,7 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestGetFilesArtifactsD
 		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -1222,7 +1222,7 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRemoveServiceDepen
 		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -1304,7 +1304,7 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestVerifyDependsOnExe
 		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -1347,7 +1347,7 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestWaitDependsOnAddSe
 		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -1395,7 +1395,7 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRequestDependsOnAd
 		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }

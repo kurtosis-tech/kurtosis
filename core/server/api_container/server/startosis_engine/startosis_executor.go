@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"sync"
 	"time"
@@ -169,7 +170,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 // - A regular KurtosisInstruction that was successfully executed
 // - A KurtosisExecutionError if the execution failed
 // - A ProgressInfo to update the current "state" of the execution
-func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun bool, parallelism int, indexOfFirstInstructionInEnclavePlan int, instructionsSequence []*instructions_plan.ScheduledInstruction, serializedScriptOutput string, instructionDependencyGraph map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun bool, parallelism int, indexOfFirstInstructionInEnclavePlan int, instructionsSequence []*instructions_plan.ScheduledInstruction, serializedScriptOutput string, instructionDependencyGraph map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid, instructionNumToDescription map[int]string) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	file, err := os.Create("/tmp/execution.txt")
 	if err != nil {
 		logrus.Errorf("Failed to create execution.txt file: %v", err)
@@ -340,12 +341,8 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 		// logrus.Infof("Computing parallel execution time for instructionsDependencyGraph")
 		// totalParallelExecutionDuration := dependency_graph.ComputeParallelExecutionTime(instructionsDependencyGraph, instructionNumToDuration)
 		// logrus.Infof("totalParallelExecutionDuration: %v", totalParallelExecutionDuration)
-		// printInstructionToDuration(instructionNumToDuration)
-
-		// totalExecutionDuration := time.Duration(0)
-		// for _, duration := range instructionNumToDuration {
-		// 	totalExecutionDuration += duration
-		// }
+		// map of ints to instruciton descriptions
+		printInstructionToDuration(&instructionDurations, instructionNumToDescription)
 
 		if !dryRun {
 			logrus.Debugf("Serialized script output before runtime value replace: '%v'", serializedScriptOutput)
@@ -374,15 +371,54 @@ func sendErrorAndFail(starlarkRunResponseLineStream chan<- *kurtosis_core_rpc_ap
 	starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromExecutionError(serializedError)
 	starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEventWithDuration(totalExecutionDuration)
 }
-
-func printInstructionToDuration(instructionNumToDuration map[int]time.Duration) {
-	// Convert durations to string representations for JSON marshaling
-	stringDurations := make(map[int]string)
-	for num, duration := range instructionNumToDuration {
-		stringDurations[num] = duration.String()
+func printInstructionToDuration(instructionNumToDuration *sync.Map, instructionNumToDescription map[int]string) {
+	type InstructionInfo struct {
+		Duration    string `json:"duration"`
+		Description string `json:"description"`
 	}
 
-	jsonBytes, err := json.MarshalIndent(stringDurations, "", "  ")
+	// Convert durations to structured format for JSON marshaling
+	instructionData := make(map[int]InstructionInfo)
+	instructionNumToDuration.Range(func(key, value interface{}) bool {
+		numId := key.(instructions_plan.ScheduledInstructionUuid)
+		num, err := strconv.Atoi(string(numId))
+		if err != nil {
+			logrus.Errorf("Failed to convert instruction UUID to number: %v", err)
+			return true
+		}
+
+		duration := value.(time.Duration)
+		description := instructionNumToDescription[num]
+
+		instructionData[num] = InstructionInfo{
+			Duration:    duration.String(),
+			Description: description,
+		}
+		return true
+	})
+
+	// Get sorted keys
+	var keys []int
+	for k := range instructionData {
+		keys = append(keys, k)
+	}
+	sort.Ints(keys)
+
+	// Instead of creating a map, create a slice of key-value pairs
+	type KeyValuePair struct {
+		Key   string          `json:"key"`
+		Value InstructionInfo `json:"value"`
+	}
+
+	var sortedPairs []KeyValuePair
+	for _, k := range keys {
+		sortedPairs = append(sortedPairs, KeyValuePair{
+			Key:   strconv.Itoa(k),
+			Value: instructionData[k],
+		})
+	}
+
+	jsonBytes, err := json.MarshalIndent(sortedPairs, "", "  ")
 	if err != nil {
 		logrus.Errorf("Failed to marshal instruction durations to JSON: %v", err)
 		return

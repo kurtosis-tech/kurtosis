@@ -147,7 +147,7 @@ func (runner *StartosisRunner) Run(
 			return
 		}
 		logrus.Infof("Generating instructions dependency graph")
-		instructionDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
+		instructionDependencyGraph, instructionNumToDescription := instructionsPlan.GenerateInstructionsDependencyGraph()
 		logrus.Infof("Generated instructions dependency graph")
 
 		// Validation starts > send progress info
@@ -172,7 +172,7 @@ func (runner *StartosisRunner) Run(
 		var executionResponseLinesChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine
 		if parallelism > 1 {
 			logrus.Infof("Executing Kurtosis instructions in parallel with parallelism: %d", parallelism)
-			executionResponseLinesChan = runner.startosisExecutor.ExecuteInParallel(ctx, dryRun, parallelism, instructionsPlan.GetIndexOfFirstInstruction(), instructionsSequence, serializedScriptOutput, instructionDependencyGraph)
+			executionResponseLinesChan = runner.startosisExecutor.ExecuteInParallel(ctx, dryRun, parallelism, instructionsPlan.GetIndexOfFirstInstruction(), instructionsSequence, serializedScriptOutput, instructionDependencyGraph, instructionNumToDescription)
 		} else {
 			logrus.Infof("Executing Kurtosis instructions in serial")
 			executionResponseLinesChan = runner.startosisExecutor.Execute(ctx, dryRun, parallelism, instructionsPlan.GetIndexOfFirstInstruction(), instructionsSequence, serializedScriptOutput, instructionDependencyGraph)
