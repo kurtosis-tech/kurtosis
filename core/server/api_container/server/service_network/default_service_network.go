@@ -80,9 +80,11 @@ type DefaultServiceNetwork struct {
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory
 
 	serviceRegistrationRepository *service_registration.ServiceRegistrationRepository
+	serviceRegistrationMutex      *sync.Mutex // VERY IMPORTANT TO CHECK AT THE START OF EVERY METHOD!
 
 	// This contains all service identifiers ever successfully created
 	serviceIdentifiersRepository *service_identifiers.ServiceIdentifiersRepository
+	serviceIdentifiersMutex      *sync.Mutex // VERY IMPORTANT TO CHECK AT THE START OF EVERY METHOD!
 }
 
 func NewDefaultServiceNetwork(
@@ -159,8 +161,8 @@ func (network *DefaultServiceNetwork) AddServices(
 	map[service.ServiceName]error,
 	error,
 ) {
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
+	// network.mutex.Lock()
+	// defer network.mutex.Unlock()
 	serviceNames := []service.ServiceName{}
 	for serviceName := range serviceConfigs {
 		serviceNames = append(serviceNames, serviceName)
@@ -174,6 +176,7 @@ func (network *DefaultServiceNetwork) AddServices(
 	}
 
 	// Save the services currently running in enclave for later
+	network.serviceRegistrationMutex.Lock()
 	currentlyRunningServicesInEnclave := map[service.ServiceName]bool{}
 	allServiceNamesFromServiceRegistrations, err := network.serviceRegistrationRepository.GetAllServiceNames()
 	if err != nil {
@@ -182,6 +185,7 @@ func (network *DefaultServiceNetwork) AddServices(
 	for serviceName := range allServiceNamesFromServiceRegistrations {
 		currentlyRunningServicesInEnclave[serviceName] = true
 	}
+	network.serviceRegistrationMutex.Unlock()
 
 	// We register all the services one by one
 	serviceSuccessfullyRegistered := map[service.ServiceName]*service.ServiceRegistration{}
@@ -256,6 +260,8 @@ func (network *DefaultServiceNetwork) AddServices(
 		return nil, nil, stacktrace.NewError("This is a Kurtosis internal bug. The batch of services being started does not fit the number of services that were requested. (service started: '%v', requested: '%v')", result, requested)
 	}
 
+	network.serviceIdentifiersMutex.Lock()
+	network.serviceRegistrationMutex.Lock()
 	for _, startedService := range startedServices {
 		serviceRegistration := startedService.GetRegistration()
 		serviceIdentifier := service_identifiers.NewServiceIdentifier(serviceRegistration.GetUUID(), serviceRegistration.GetName())
@@ -268,6 +274,8 @@ func (network *DefaultServiceNetwork) AddServices(
 			return nil, nil, stacktrace.Propagate(err, "An error occurred while updating service status to '%s' in service registration for service '%s' after the service was started", serviceStatus, serviceName)
 		}
 	}
+	network.serviceRegistrationMutex.Unlock()
+	network.serviceIdentifiersMutex.Unlock()
 
 	batchSuccessfullyStarted = true
 	logrus.Info("IN SERVICE NETWORK: finished adding services", serviceNames)
