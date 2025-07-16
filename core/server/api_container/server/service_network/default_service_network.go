@@ -161,6 +161,10 @@ func (network *DefaultServiceNetwork) AddServices(
 ) {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
+	serviceNames := []service.ServiceName{}
+	for serviceName := range serviceConfigs {
+		serviceNames = append(serviceNames, serviceName)
+	}
 	batchSuccessfullyStarted := false
 	startedServices := map[service.ServiceName]*service.Service{}
 	failedServices := map[service.ServiceName]error{}
@@ -183,6 +187,7 @@ func (network *DefaultServiceNetwork) AddServices(
 	serviceSuccessfullyRegistered := map[service.ServiceName]*service.ServiceRegistration{}
 	servicesToStart := map[service.ServiceUUID]*service.ServiceConfig{}
 	for serviceName, serviceConfig := range serviceConfigs {
+		logrus.Info("IN SERVICE NETWORK: adding services", serviceNames)
 
 		serviceRegistration, err := network.registerService(ctx, serviceName)
 		if err != nil {
@@ -265,6 +270,7 @@ func (network *DefaultServiceNetwork) AddServices(
 	}
 
 	batchSuccessfullyStarted = true
+	logrus.Info("IN SERVICE NETWORK: finished adding services", serviceNames)
 	return startedServices, map[service.ServiceName]error{}, nil
 }
 

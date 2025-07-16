@@ -208,8 +208,8 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 		totalNumberOfInstructions := uint32(len(instructionsSequence))
 
 		// Thread-safe map to store instruction durations
-		instructionDurations := make(map[instructions_plan.ScheduledInstructionUuid]time.Duration)
-		var durationMutex sync.RWMutex
+		// instructionDurations := make(map[instructions_plan.ScheduledInstructionUuid]time.Duration)
+		var instructionDurations sync.Map
 
 		for index, scheduledInstruction := range instructionsSequence {
 			instructionNumber := uint32(index + 1)
@@ -283,9 +283,7 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 						duration = time.Since(startTime)
 
 						// Store the duration in a thread-safe manner
-						durationMutex.Lock()
-						instructionDurations[instructionUuidStr] = duration
-						durationMutex.Unlock()
+						instructionDurations.Store(instructionUuidStr, duration)
 					}
 					if err != nil {
 						sendErrorAndFail(starlarkRunResponseLineStream, time.Duration(0), err, "An error occurred executing instruction (number %d) at %v:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
@@ -315,23 +313,21 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 		totalParallelExecutionDuration := time.Since(parallelStart)
 
 		// Calculate total sequential execution time by summing all individual instruction durations
-		durationMutex.RLock()
 		totalSequentialDuration := time.Duration(0)
-		for _, duration := range instructionDurations {
-			totalSequentialDuration += duration
-		}
-		durationMutex.RUnlock()
+		instructionDurations.Range(func(key, value interface{}) bool {
+			totalSequentialDuration += value.(time.Duration)
+			return true
+		})
 
 		logrus.Infof("Total parallel execution time: %v", totalParallelExecutionDuration)
 		logrus.Infof("Total sequential execution time (sum of individual instructions): %v", totalSequentialDuration)
 		logrus.Infof("Parallel speedup: %.2fx", float64(totalSequentialDuration)/float64(totalParallelExecutionDuration))
 
 		// Log individual instruction durations
-		durationMutex.RLock()
-		for instructionUuid, duration := range instructionDurations {
-			logrus.Infof("Instruction %v took: %v", instructionUuid, duration)
-		}
-		durationMutex.RUnlock()
+		instructionDurations.Range(func(key, value interface{}) bool {
+			logrus.Infof("Instruction %v took: %v", key, value)
+			return true
+		})
 
 		instructionsDependencyGraph := make(map[dependency_graph.ScheduledInstructionUuid][]dependency_graph.ScheduledInstructionUuid)
 		for instructionUuid, dependencies := range instructionDependencyGraph {
