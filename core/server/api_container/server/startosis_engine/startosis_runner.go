@@ -175,7 +175,7 @@ func (runner *StartosisRunner) Run(
 			executionResponseLinesChan = runner.startosisExecutor.ExecuteInParallel(ctx, dryRun, parallelism, instructionsPlan.GetIndexOfFirstInstruction(), instructionsSequence, serializedScriptOutput, instructionDependencyGraph, instructionNumToDescription)
 		} else {
 			logrus.Infof("Executing Kurtosis instructions in serial")
-			executionResponseLinesChan = runner.startosisExecutor.Execute(ctx, dryRun, parallelism, instructionsPlan.GetIndexOfFirstInstruction(), instructionsSequence, serializedScriptOutput, instructionDependencyGraph)
+			executionResponseLinesChan = runner.startosisExecutor.Execute(ctx, dryRun, parallelism, instructionsPlan.GetIndexOfFirstInstruction(), instructionsSequence, serializedScriptOutput, instructionDependencyGraph, instructionNumToDescription)
 		}
 		if isRunFinished, isRunSuccessful := forwardKurtosisResponseLineChannelUntilSourceIsClosed(executionResponseLinesChan, starlarkRunResponseLines); !isRunFinished {
 			logrus.Warnf("Execution finished but no 'RunFinishedEvent' was received through the stream. This is unexpected as every execution should be terminal.")

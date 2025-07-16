@@ -196,7 +196,7 @@ func executeSynchronously(t *testing.T, executor *StartosisExecutor, dryRun bool
 	require.Nil(t, err)
 
 	instructionDependencyGraph := make(map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid)
-	executionResponseLines := executor.Execute(context.Background(), dryRun, noParallelism, 0, scheduledInstructions, noScriptOutputObject, instructionDependencyGraph)
+	executionResponseLines := executor.Execute(context.Background(), dryRun, noParallelism, 0, scheduledInstructions, noScriptOutputObject, instructionDependencyGraph, nil)
 	for executionResponseLine := range executionResponseLines {
 		if executionResponseLine.GetError() != nil {
 			return scriptOutput.String(), serializedInstructions, executionResponseLine.GetError().GetExecutionError()
