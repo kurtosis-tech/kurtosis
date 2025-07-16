@@ -67,7 +67,7 @@ func NewStartosisExecutor(starlarkValueSerde *kurtosis_types.StarlarkValueSerde,
 // - A regular KurtosisInstruction that was successfully executed
 // - A KurtosisExecutionError if the execution failed
 // - A ProgressInfo to update the current "state" of the execution
-func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, parallelism int, indexOfFirstInstructionInEnclavePlan int, instructionsSequence []*instructions_plan.ScheduledInstruction, serializedScriptOutput string, instructionDependencyGraph map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, parallelism int, indexOfFirstInstructionInEnclavePlan int, instructionsSequence []*instructions_plan.ScheduledInstruction, serializedScriptOutput string, instructionDependencyGraph map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid, instructionNumToDescription map[int]string) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	executor.mutex.Lock()
 	starlarkRunResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 	ctxWithParallelism := context.WithValue(ctx, startosis_constants.ParallelismParam, parallelism)
@@ -100,11 +100,15 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 
 		totalNumberOfInstructions := uint32(len(instructionsSequence))
 		totalExecutionDuration := time.Duration(0)
+		instructionDurations := sync.Map{}
 		for index, scheduledInstruction := range instructionsSequence {
 			instructionNumber := uint32(index + 1)
 			progress := binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
 				progressMsg, instructionNumber, totalNumberOfInstructions, strconv.Itoa(index+1))
 			starlarkRunResponseLineStream <- progress
+
+			indexStr := strconv.Itoa(index + 1)
+			instructionUuidStr := instructions_plan.ScheduledInstructionUuid(indexStr)
 
 			instruction := scheduledInstruction.GetInstruction()
 			canonicalInstruction := binding_constructors.NewStarlarkRunResponseLineFromInstruction(instruction.GetCanonicalInstruction(scheduledInstruction.IsExecuted()), strconv.Itoa(index+1))
@@ -122,6 +126,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 					instructionOutput, err = instruction.Execute(ctxWithParallelism)
 					duration = time.Since(startTime)
 					totalExecutionDuration += duration
+					instructionDurations.Store(instructionUuidStr, duration)
 				}
 				if err != nil {
 					sendErrorAndFail(starlarkRunResponseLineStream, totalExecutionDuration, err, "An error occurred executing instruction (number %d) at %v:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
@@ -159,6 +164,8 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 		} else {
 			logrus.Debugf("Current enclave plan remained the same as the it was a dry-run. It contains %d instructions", executor.enclavePlan.Size())
 		}
+
+		printInstructionToDuration(&instructionDurations, instructionNumToDescription)
 	}()
 	return starlarkRunResponseLineStream
 }
