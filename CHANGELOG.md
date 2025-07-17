@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.10.3](https://github.com/kurtosis-tech/kurtosis/compare/1.10.2...1.10.3) (2025-07-17)
+
+
+### Bug Fixes
+
+* empty bridge network addr check ([#2770](https://github.com/kurtosis-tech/kurtosis/issues/2770)) ([4422ce8](https://github.com/kurtosis-tech/kurtosis/commit/4422ce8784c140d16c8642270700f5b222aabff4))
+* reduce logs agg container timeout ([#2777](https://github.com/kurtosis-tech/kurtosis/issues/2777)) ([1dc6ca4](https://github.com/kurtosis-tech/kurtosis/commit/1dc6ca424e810d4abe7b5507c32f3d0c7bd745e7))
+
 ## [1.10.2](https://github.com/kurtosis-tech/kurtosis/compare/1.10.1...1.10.2) (2025-07-08)
 
 
