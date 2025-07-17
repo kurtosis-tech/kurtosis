@@ -193,6 +193,8 @@ func (network *DefaultServiceNetwork) AddServices(
 	network.serviceRegistrationMutex.Unlock()
 
 	// We register all the services one by one
+	logrus.Infof("IN SERVICE NETWORK: registering services %v", serviceNames)
+	registeringServicesStart := time.Now()
 	serviceSuccessfullyRegistered := map[service.ServiceName]*service.ServiceRegistration{}
 	servicesToStart := map[service.ServiceUUID]*service.ServiceConfig{}
 	for serviceName, serviceConfig := range serviceConfigs {
@@ -218,7 +220,9 @@ func (network *DefaultServiceNetwork) AddServices(
 	if len(failedServices) > 0 {
 		return map[service.ServiceName]*service.Service{}, failedServices, nil
 	}
+	logrus.Infof("IN SERVICE NETWORK: finished registering services %v in %v", serviceNames, time.Since(registeringServicesStart))
 
+	startServicesStart := time.Now()
 	startedServicesPerUuid, failedServicePerUuid := network.startRegisteredServices(ctx, servicesToStart, batchSize)
 
 	for serviceName, serviceRegistration := range serviceSuccessfullyRegistered {
@@ -263,6 +267,7 @@ func (network *DefaultServiceNetwork) AddServices(
 		}
 		return nil, nil, stacktrace.NewError("This is a Kurtosis internal bug. The batch of services being started does not fit the number of services that were requested. (service started: '%v', requested: '%v')", result, requested)
 	}
+	logrus.Infof("IN SERVICE NETWORK: starting registered services %v in %v", serviceNames, time.Since(startServicesStart))
 
 	network.serviceIdentifiersMutex.Lock()
 	network.serviceRegistrationMutex.Lock()

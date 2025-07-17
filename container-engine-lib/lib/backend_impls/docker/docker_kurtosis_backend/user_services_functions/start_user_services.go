@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/availability_checker"
 
@@ -580,6 +581,7 @@ func createStartServiceOperation(
 			}
 		}
 
+		filesArtifactsExpansionStart := time.Now()
 		volumeMounts := map[string]string{}
 		shouldDeleteVolumes := true
 		if filesArtifactsExpansion != nil {
@@ -616,6 +618,7 @@ func createStartServiceOperation(
 				volumeMounts[dirpath] = volumeName
 			}
 		}
+		logrus.Infof("IN START SERVICE OPERATION: finished files artifacts expansion [%v] in %v", serviceUUID, time.Since(filesArtifactsExpansionStart))
 
 		if persistentDirectories != nil {
 			candidateVolumeMounts, err := getOrCreatePersistentDirectories(
@@ -742,6 +745,7 @@ func createStartServiceOperation(
 
 		createAndStartArgs := createAndStartArgsBuilder.Build()
 
+		createAndStartContainerStart := time.Now()
 		containerId, hostMachinePortBindings, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred starting the user service container for user service with UUID '%v'", serviceUUID)
@@ -763,6 +767,7 @@ func createStartServiceOperation(
 				}
 			}
 		}()
+		logrus.Infof("IN START SERVICE OPERATION: finished creating and starting container for service %v in %v", serviceUUID, time.Since(createAndStartContainerStart))
 
 		_, _, maybePublicIp, maybePublicPortSpecs, err := shared_helpers.GetIpAndPortInfoFromContainer(
 			containerName.GetString(),
