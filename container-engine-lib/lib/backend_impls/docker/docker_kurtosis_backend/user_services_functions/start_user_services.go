@@ -623,7 +623,7 @@ func createStartServiceOperation(
 			}
 		}
 		filesArtifactsExpansionEnd := time.Now()
-		logrus.Infof("IN START SERVICE OPERATION: finished filesArtifactsExpansion [%v] started at %v, finished at %v, took %v", serviceUUID, filesArtifactsExpansionStart, filesArtifactsExpansionEnd, filesArtifactsExpansionEnd.Sub(filesArtifactsExpansionStart))
+		logrus.Infof("IN START SERVICE OPERATION: finished filesArtifactsExpansion [%v] started at %v, finished at %v, took %v", serviceUUID, filesArtifactsExpansionStart, filesArtifactsExpansionEnd, filesArtifactsExpansionEnd.Sub(filesArtifactsExpansionStart).Seconds())
 
 		if persistentDirectories != nil {
 			candidateVolumeMounts, err := getOrCreatePersistentDirectories(
@@ -774,7 +774,7 @@ func createStartServiceOperation(
 			}
 		}()
 		createAndStartContainerEnd := time.Now()
-		logrus.Infof("IN START SERVICE OPERATION [%v]: finished createAndStartContainer started at %v, finished at %v, took %v", serviceUUID, createAndStartContainerStart, createAndStartContainerEnd, createAndStartContainerEnd.Sub(createAndStartContainerStart))
+		logrus.Infof("IN START SERVICE OPERATION [%v]: finished createAndStartContainer started at %v, finished at %v, took %v", serviceUUID, createAndStartContainerStart, createAndStartContainerEnd, createAndStartContainerEnd.Sub(createAndStartContainerStart).Seconds())
 
 		_, _, maybePublicIp, maybePublicPortSpecs, err := shared_helpers.GetIpAndPortInfoFromContainer(
 			containerName.GetString(),
@@ -799,7 +799,7 @@ func createStartServiceOperation(
 		)
 
 		wholeCreateStartServiceOperationEnd := time.Now()
-		logrus.Infof("IN START SERVICE OPERATION [%v]: finished createStartServiceOperation started at %v, finished at %v, took %v", serviceUUID, wholeCreateStartServiceOperationStart, wholeCreateStartServiceOperationEnd, wholeCreateStartServiceOperationEnd.Sub(wholeCreateStartServiceOperationStart))
+		logrus.Infof("IN START SERVICE OPERATION [%v]: finished createStartServiceOperation started at %v, finished at %v, took %v", serviceUUID, wholeCreateStartServiceOperationStart, wholeCreateStartServiceOperationEnd, wholeCreateStartServiceOperationEnd.Sub(wholeCreateStartServiceOperationStart).Seconds())
 		shouldDeleteVolumes = false
 		shouldKillContainer = false
 		return serviceObjectPtr, nil
