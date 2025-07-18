@@ -2,6 +2,8 @@ package test_engine
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	render_templates2 "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
@@ -9,7 +11,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
-	"testing"
 )
 
 const (

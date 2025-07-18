@@ -1255,6 +1255,7 @@ Connects the container with the given container ID to the network with the given
 If the IP address passed is nil then we get a random ip address
 */
 func (manager *DockerManager) ConnectContainerToNetwork(ctx context.Context, networkId string, containerId string, staticIpAddr net.IP, alias string) (err error) {
+	logrus.Infof("IN CONNECT CONTAINER TO NETWORK: connecting container ID %v to network ID %v using static IP %v", containerId, networkId, staticIpAddr.String())
 	logrus.Tracef(
 		"Connecting container ID %v to network ID %v using static IP %v",
 		containerId,
