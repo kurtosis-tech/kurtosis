@@ -171,7 +171,7 @@ func (network *DefaultServiceNetwork) AddServices(
 		serviceNames = append(serviceNames, serviceName)
 	}
 	start := time.Now()
-	logrus.Infof("IN SERVICE NETWORK: adding services %v", serviceNames)
+	logrus.Infof("IN SERVICE NETWORK%v: started addServices at %v", serviceNames, start)
 	batchSuccessfullyStarted := false
 	startedServices := map[service.ServiceName]*service.Service{}
 	failedServices := map[service.ServiceName]error{}
@@ -193,8 +193,8 @@ func (network *DefaultServiceNetwork) AddServices(
 	network.serviceRegistrationMutex.Unlock()
 
 	// We register all the services one by one
-	logrus.Infof("IN SERVICE NETWORK: registering services %v", serviceNames)
 	registeringServicesStart := time.Now()
+	logrus.Infof("IN SERVICE NETWORK%v: started registeringServices at %v", serviceNames, registeringServicesStart)
 	serviceSuccessfullyRegistered := map[service.ServiceName]*service.ServiceRegistration{}
 	servicesToStart := map[service.ServiceUUID]*service.ServiceConfig{}
 	for serviceName, serviceConfig := range serviceConfigs {
@@ -220,9 +220,11 @@ func (network *DefaultServiceNetwork) AddServices(
 	if len(failedServices) > 0 {
 		return map[service.ServiceName]*service.Service{}, failedServices, nil
 	}
-	logrus.Infof("IN SERVICE NETWORK: finished registering services %v in %v", serviceNames, time.Since(registeringServicesStart))
+	registeringServicesEnd := time.Now()
+	logrus.Infof("IN SERVICE NETWORK%v: finished registeringServices at %v, took %v", serviceNames, registeringServicesEnd, registeringServicesEnd.Sub(registeringServicesStart).Seconds())
 
 	startServicesStart := time.Now()
+	logrus.Infof("IN SERVICE NETWORK%v: started startRegisteredServices at %v", serviceNames, startServicesStart)
 	startedServicesPerUuid, failedServicePerUuid := network.startRegisteredServices(ctx, servicesToStart, batchSize)
 
 	for serviceName, serviceRegistration := range serviceSuccessfullyRegistered {
@@ -267,7 +269,8 @@ func (network *DefaultServiceNetwork) AddServices(
 		}
 		return nil, nil, stacktrace.NewError("This is a Kurtosis internal bug. The batch of services being started does not fit the number of services that were requested. (service started: '%v', requested: '%v')", result, requested)
 	}
-	logrus.Infof("IN SERVICE NETWORK: starting registered services %v in %v", serviceNames, time.Since(startServicesStart))
+	startServicesEnd := time.Now()
+	logrus.Infof("IN SERVICE NETWORK%v: finished startRegisteredServices at %v, took %v", serviceNames, startServicesEnd, startServicesEnd.Sub(startServicesStart).Seconds())
 
 	network.serviceIdentifiersMutex.Lock()
 	network.serviceRegistrationMutex.Lock()
@@ -287,7 +290,8 @@ func (network *DefaultServiceNetwork) AddServices(
 	network.serviceIdentifiersMutex.Unlock()
 
 	batchSuccessfullyStarted = true
-	logrus.Infof("IN SERVICE NETWORK: finished adding services %v in %v", serviceNames, time.Since(start))
+	addServicesEnd := time.Now()
+	logrus.Infof("IN SERVICE NETWORK%v: finished addServices at %v, took %v", serviceNames, addServicesEnd, addServicesEnd.Sub(start).Seconds())
 	return startedServices, map[service.ServiceName]error{}, nil
 }
 

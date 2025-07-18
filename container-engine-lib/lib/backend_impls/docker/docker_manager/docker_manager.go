@@ -617,11 +617,15 @@ func (manager *DockerManager) CreateAndStartContainerWithServiceUuid(
 		dockerImage = dockerImage + dockerTagSeparatorChar + dockerDefaultTag
 	}
 
+	fetchImageStart := time.Now()
+	logrus.Infof("IN CREATE AND START CONTAINER[%v]: starting fetchImage started at %v", serviceUuid, fetchImageStart)
 	_, _, err := manager.FetchImage(ctx, dockerImage, args.imageRegistrySpec, args.imageDownloadMode)
 	if err != nil {
 		logrus.Debugf("Error occurred fetching image '%v'. Err:\n%v", dockerImage, err)
 		return "", nil, stacktrace.Propagate(err, "An error occurred fetching image '%v'", dockerImage)
 	}
+	fetchImageEnd := time.Now()
+	logrus.Infof("IN CREATE AND START CONTAINER[%v]: finished fetchImage started at %v, finished at %v, took %v", serviceUuid, fetchImageStart, fetchImageEnd, fetchImageEnd.Sub(fetchImageStart).Seconds())
 
 	idFilterArgs := filters.NewArgs(
 		filters.KeyValuePair{
@@ -629,10 +633,14 @@ func (manager *DockerManager) CreateAndStartContainerWithServiceUuid(
 			Value: args.networkId,
 		},
 	)
+	getNetworksByFilterArgsStart := time.Now()
+	logrus.Infof("IN CREATE AND START CONTAINER[%v]: starting getNetworksByFilterArgs started at %v", serviceUuid, getNetworksByFilterArgsStart)
 	networks, err := manager.getNetworksByFilterArgs(ctx, idFilterArgs)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred checking for the existence of network with ID %v", args.networkId)
 	}
+	getNetworksByFilterArgsEnd := time.Now()
+	logrus.Infof("IN CREATE AND START CONTAINER[%v]: finished getNetworksByFilterArgs started at %v, finished at %v, took %v", serviceUuid, getNetworksByFilterArgsStart, getNetworksByFilterArgsEnd, getNetworksByFilterArgsEnd.Sub(getNetworksByFilterArgsStart).Seconds())
 	if len(networks) == 0 {
 		return "", nil, stacktrace.NewError(
 			"Kurtosis Docker network with ID %v was never created before trying to launch containers. Please call DockerManager.CreateNetwork first.",
@@ -702,7 +710,12 @@ func (manager *DockerManager) CreateAndStartContainerWithServiceUuid(
 	// While starting the enclave, adding both bridge & enclave network to the networkConfig just fails
 	// I tried creating the container with networkConfig - nil & args.NetworkMode set to none but that stopped me from adding the container to a network
 	// using manager.ConnectContainerToNetwork
+
+	containerCreateStart := time.Now()
+	logrus.Infof("IN CREATE AND START CONTAINER[%v]: starting containerCreate started at %v", serviceUuid, containerCreateStart)
 	containerCreateResp, err := manager.dockerClient.ContainerCreate(ctx, containerConfigPtr, containerHostConfigPtr, networkConfig, nil, args.name)
+	containerCreateEnd := time.Now()
+	logrus.Infof("IN CREATE AND START CONTAINER[%v]: finished containerCreate started at %v, finished at %v, took %v", serviceUuid, containerCreateStart, containerCreateEnd, containerCreateEnd.Sub(containerCreateStart).Seconds())
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Could not create Docker container '%v' from image '%v'", args.name, dockerImage)
 	}
@@ -861,6 +874,7 @@ func (manager *DockerManager) CreateAndStartContainerWithServiceUuid(
 	functionFinishedSuccessfully = true
 	return containerId, resultHostPortBindings, nil
 }
+
 func (manager *DockerManager) CreateAndStartContainer(
 	ctx context.Context,
 	args *CreateAndStartContainerArgs,
@@ -957,7 +971,6 @@ func (manager *DockerManager) CreateAndStartContainer(
 	// If a person doesn't need either of them, and we pass a nil(or empty) we get the bridge network for free
 	// While starting the enclave, adding both bridge & enclave network to the networkConfig just fails
 	// I tried creating the container with networkConfig - nil & args.NetworkMode set to none but that stopped me from adding the container to a network
-	// using manager.ConnectContainerToNetwork
 	containerCreateResp, err := manager.dockerClient.ContainerCreate(ctx, containerConfigPtr, containerHostConfigPtr, networkConfig, nil, args.name)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Could not create Docker container '%v' from image '%v'", args.name, dockerImage)
@@ -970,7 +983,6 @@ func (manager *DockerManager) CreateAndStartContainer(
 			dockerImage,
 		)
 	}
-	logrus.Debugf("Created container with ID '%v' from image '%v'", containerId, dockerImage)
 
 	// static ip is provided and the user wants the connection to bridge network to happen
 	// in the container start the bridge network got connected and now we connect to target network
