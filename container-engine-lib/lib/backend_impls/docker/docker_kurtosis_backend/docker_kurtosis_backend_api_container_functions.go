@@ -423,6 +423,9 @@ func (backend *DockerKurtosisBackend) getMatchingApiContainers(ctx context.Conte
 		docker_label_key.ContainerTypeDockerLabelKey.GetString(): label_value_consts.APIContainerContainerTypeDockerLabelValue.GetString(),
 		// NOTE: we do NOT use the enclave UUID label here, and instead do postfiltering, because Docker has no way to do disjunctive search!
 	}
+
+	// TODO: dockerManager.GetContainersByLabels lists all APIContainers and inspects them so the performance of any upstream call to retrieve even a single APIContainer will always scale with the number of enclaves
+	// TODO: Consider caching enclave ID -> container ID mapping to avoid inspecting all API containers
 	allApiContainers, err := backend.dockerManager.GetContainersByLabels(ctx, apiContainerSearchLabels, consts.ShouldFetchAllContainersWhenRetrievingContainers)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred fetching API containers using labels: %+v", apiContainerSearchLabels)
@@ -431,10 +434,6 @@ func (backend *DockerKurtosisBackend) getMatchingApiContainers(ctx context.Conte
 	allMatchingApiContainers := map[string]*api_container.APIContainer{}
 	for _, apiContainer := range allApiContainers {
 		containerId := apiContainer.GetId()
-		bridgeNetworkIpAddress, err := backend.dockerManager.GetContainerIP(ctx, backend.dockerManager.GetBridgeNetworkName(), containerId)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred while getting bridge network ip address for container with id: '%v'", containerId)
-		}
 
 		isProductionEnclave, err := getProductionMode(apiContainer)
 		if err != nil {
@@ -445,7 +444,9 @@ func (backend *DockerKurtosisBackend) getMatchingApiContainers(ctx context.Conte
 			apiContainer.GetLabels(),
 			apiContainer.GetStatus(),
 			apiContainer.GetHostPortBindings(),
-			bridgeNetworkIpAddress,
+			// Bridge network IP address will be filled in later if this APIContainer passes the post-filter.
+			// This avoids unnessarily calling GetContainerIP/InspectContainer on all API containers
+			"",
 			isProductionEnclave,
 		)
 		if err != nil {
@@ -466,7 +467,16 @@ func (backend *DockerKurtosisBackend) getMatchingApiContainers(ctx context.Conte
 			}
 		}
 
-		allMatchingApiContainers[containerId] = apicObj
+		bridgeNetworkIpAddress, err := backend.dockerManager.GetContainerIP(ctx, backend.dockerManager.GetBridgeNetworkName(), containerId)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred while getting bridge network ip address for container with id: '%v'", containerId)
+		}
+		apicObjWithBridgeNetworkIpAddress, err := getApiContainerObjectFromContainerInfoWithBridgeNetworkIpAddress(apicObj, bridgeNetworkIpAddress)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred while getting API container object with bridge network ip address for container with id: '%v'", containerId)
+		}
+
+		allMatchingApiContainers[containerId] = apicObjWithBridgeNetworkIpAddress
 	}
 
 	return allMatchingApiContainers, nil
@@ -548,6 +558,23 @@ func getApiContainerObjectFromContainerInfo(
 		isProductionEnclave,
 	)
 
+	return result, nil
+}
+
+func getApiContainerObjectFromContainerInfoWithBridgeNetworkIpAddress(
+	apicObj *api_container.APIContainer,
+	bridgeNetworkIpAddress string,
+) (*api_container.APIContainer, error) {
+	result := api_container.NewAPIContainer(
+		apicObj.GetEnclaveID(),
+		apicObj.GetStatus(),
+		apicObj.GetPrivateIPAddress(),
+		apicObj.GetPrivateGRPCPort(),
+		apicObj.GetPublicIPAddress(),
+		apicObj.GetPublicGRPCPort(),
+		net.ParseIP(bridgeNetworkIpAddress),
+		apicObj.IsProductionEnclave(),
+	)
 	return result, nil
 }
 
