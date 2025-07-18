@@ -752,7 +752,7 @@ func createStartServiceOperation(
 
 		createAndStartContainerStart := time.Now()
 		logrus.Infof("IN START SERVICE OPERATION [%v]: starting createAndStartContainer started at %v", serviceUUID, createAndStartContainerStart)
-		containerId, hostMachinePortBindings, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
+		containerId, hostMachinePortBindings, err := dockerManager.CreateAndStartContainerWithServiceUuid(ctx, serviceUUID, createAndStartArgs)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred starting the user service container for user service with UUID '%v'", serviceUUID)
 		}

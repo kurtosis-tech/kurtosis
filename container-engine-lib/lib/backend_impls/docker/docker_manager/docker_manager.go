@@ -41,6 +41,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/image_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
@@ -603,6 +604,263 @@ Returns:
 	hostMachinePortBindings: For every port in the args' "usedPorts" object that has publishing turned on, an entry
 		will be generated in this map with the binding on the host machine where the port can be found
 */
+func (manager *DockerManager) CreateAndStartContainerWithServiceUuid(
+	ctx context.Context,
+	serviceUuid service.ServiceUUID,
+	args *CreateAndStartContainerArgs,
+) (string, map[nat.Port]*nat.PortBinding, error) {
+
+	// If the user passed in a Docker image that doesn't have a tag separator (indicating no tag was specified), manually append
+	//  the Docker default tag so that when we search for the image we're searching for a very specific image
+	dockerImage := args.dockerImage
+	if !strings.Contains(dockerImage, dockerTagSeparatorChar) {
+		dockerImage = dockerImage + dockerTagSeparatorChar + dockerDefaultTag
+	}
+
+	_, _, err := manager.FetchImage(ctx, dockerImage, args.imageRegistrySpec, args.imageDownloadMode)
+	if err != nil {
+		logrus.Debugf("Error occurred fetching image '%v'. Err:\n%v", dockerImage, err)
+		return "", nil, stacktrace.Propagate(err, "An error occurred fetching image '%v'", dockerImage)
+	}
+
+	idFilterArgs := filters.NewArgs(
+		filters.KeyValuePair{
+			Key:   networkIdSearchFilterKey,
+			Value: args.networkId,
+		},
+	)
+	networks, err := manager.getNetworksByFilterArgs(ctx, idFilterArgs)
+	if err != nil {
+		return "", nil, stacktrace.Propagate(err, "An error occurred checking for the existence of network with ID %v", args.networkId)
+	}
+	if len(networks) == 0 {
+		return "", nil, stacktrace.NewError(
+			"Kurtosis Docker network with ID %v was never created before trying to launch containers. Please call DockerManager.CreateNetwork first.",
+			args.networkId,
+		)
+	} else if len(networks) > 1 {
+		return "", nil, stacktrace.NewError("Kurtosis Docker network with ID %v matches several networks!", args.networkId)
+	}
+
+	isInteractiveMode := args.interactiveModeTtySize != nil
+
+	usedPortsSet := nat.PortSet{}
+	for port := range args.usedPorts {
+		usedPortsSet[port] = struct{}{}
+	}
+
+	var userStr string
+	if args.user != nil {
+		userStr = args.user.GetUIDGIDPairAsStr()
+	}
+
+	containerConfigPtr, err := manager.getContainerCfg(
+		dockerImage,
+		isInteractiveMode,
+		usedPortsSet,
+		args.entrypointArgs,
+		args.cmdArgs,
+		args.envVariables,
+		args.labels,
+		userStr,
+	)
+	if err != nil {
+		return "", nil, stacktrace.Propagate(err, "Failed to configure container from service.")
+	}
+	containerHostConfigPtr, err := manager.getContainerHostConfig(
+		args.addedCapabilities,
+		args.securityOpts,
+		args.networkMode,
+		args.bindMounts,
+		args.volumeMounts,
+		args.usedPorts,
+		args.needsAccessToDockerHostMachine,
+		args.cpuAllocationMillicpus,
+		args.memoryAllocationMegabytes,
+		args.loggingDriverConfig,
+		args.containerInitEnabled,
+		args.restartPolicy)
+	if err != nil {
+		return "", nil, stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
+	}
+
+	// note a nil network config would connect to bridge network by default
+	var networkConfig *network.NetworkingConfig
+	if args.staticIp != nil && args.skipAddingToBridgeNetworkIfStaticIpIsSet {
+		targetNetworkEndPointSettings := getEndpointSettingsForIpAddress(args.staticIp.String(), args.alias)
+		endpointSettingsByNetworkId := map[string]*network.EndpointSettings{}
+		endpointSettingsByNetworkId[args.networkId] = targetNetworkEndPointSettings
+		networkConfig = &network.NetworkingConfig{
+			EndpointsConfig: endpointSettingsByNetworkId,
+		}
+	}
+
+	// This function dockerClient.ContainerCreate adds the container to the bridge network if the networkConfig is nil or if its empty
+	// Ideally we'd start with an empty network config, add the target network if its supplied and add the bridge network if the person needs it
+	// This logic breaks at two places
+	// If a person doesn't need either of them, and we pass a nil(or empty) we get the bridge network for free
+	// While starting the enclave, adding both bridge & enclave network to the networkConfig just fails
+	// I tried creating the container with networkConfig - nil & args.NetworkMode set to none but that stopped me from adding the container to a network
+	// using manager.ConnectContainerToNetwork
+	containerCreateResp, err := manager.dockerClient.ContainerCreate(ctx, containerConfigPtr, containerHostConfigPtr, networkConfig, nil, args.name)
+	if err != nil {
+		return "", nil, stacktrace.Propagate(err, "Could not create Docker container '%v' from image '%v'", args.name, dockerImage)
+	}
+	containerId := containerCreateResp.ID
+	if containerId == "" {
+		return "", nil, stacktrace.NewError(
+			"Creation of container '%v' from image '%v' succeeded without error, but we didn't get a container ID back - this is VERY strange!",
+			args.name,
+			dockerImage,
+		)
+	}
+	logrus.Debugf("Created container with ID '%v' from image '%v'", containerId, dockerImage)
+
+	// static ip is provided and the user wants the connection to bridge network to happen
+	// in the container start the bridge network got connected and now we connect to target network
+	connectContainerToNetworkStart := time.Now()
+	logrus.Infof("IN CREATE AND START CONTAINER[%v]: starting connectContainerToNetwork started at %v", serviceUuid, connectContainerToNetworkStart)
+	if args.staticIp != nil && !args.skipAddingToBridgeNetworkIfStaticIpIsSet {
+		if err = manager.ConnectContainerToNetwork(ctx, args.networkId, containerId, args.staticIp, args.alias); err != nil {
+			return "", nil, stacktrace.Propagate(err, "Failed to connect container %s to network.", containerId)
+		}
+	}
+	connectContainerToNetworkEnd := time.Now()
+	logrus.Infof("IN CREATE AND START CONTAINER[%v]: finished connectContainerToNetwork started at %v, finished at %v, took %v", serviceUuid, connectContainerToNetworkStart, connectContainerToNetworkEnd, connectContainerToNetworkEnd.Sub(connectContainerToNetworkStart).Seconds())
+	// TODO defer a disconnct-from-network if this function doesn't succeed??
+
+	err = manager.StartContainer(ctx, containerId)
+	if err != nil {
+		return "", nil, stacktrace.Propagate(err, "Could not start Docker container from image '%v'.", dockerImage)
+	}
+
+	functionFinishedSuccessfully := false
+	defer func() {
+		if !functionFinishedSuccessfully {
+			if err := manager.KillContainer(ctx, containerId); err != nil {
+				logrus.Error("The container creation function didn't finish successfully, meaning we needed to kill the container we created. However, the killing threw an error:")
+				fmt.Fprintln(logrus.StandardLogger().Out, err)
+				logrus.Errorf("ACTION NEEDED: You'll need to manually kill this container with ID '%v'", containerId)
+			}
+		}
+	}()
+
+	//Check if the container dies because sometimes users starts containers with a wrong configuration and these quickly dies
+	didContainerStartSuccessfully, err := manager.didContainerStartSuccessfully(ctx, containerId, dockerImage)
+	if err != nil {
+		return "", nil, stacktrace.Propagate(err, "An error occurred checking if container '%v' is running", containerId)
+	}
+
+	if isInteractiveMode {
+		/*
+			Two notes:
+			 1) Container resizing must be done after the container is started
+			 2) This resize is very important - if we don't do it, then the output will look garbled for
+				 lines longer than the user's terminal
+		*/
+		resizeOpts := types.ResizeOptions{
+			Height: args.interactiveModeTtySize.Height,
+			Width:  args.interactiveModeTtySize.Width,
+		}
+		if err := manager.dockerClient.ContainerResize(ctx, containerId, resizeOpts); err != nil {
+			return "", nil, stacktrace.Propagate(
+				err,
+				"An error occurred resizing the new container's TTY size to height %v and width %v to match the user's terminal",
+				args.interactiveModeTtySize.Height,
+				args.interactiveModeTtySize.Width,
+			)
+		}
+	}
+
+	publishedPortsSet := map[nat.Port]bool{}
+	for containerPort, publishSpec := range args.usedPorts {
+		if publishSpec.mustBeFoundAfterContainerStart() {
+			publishedPortsSet[containerPort] = true
+		}
+	}
+	logrus.Tracef("Published ports set: %+v", publishedPortsSet)
+
+	// If the user wanted their ports exposed, Docker will have auto-assigned the ports to ports in the ephemeral range
+	// on the host. We need to look up what those ports are, so we can return report them back to the user.
+	resultHostPortBindings := map[nat.Port]*nat.PortBinding{}
+	numPublishedPorts := len(publishedPortsSet)
+	if numPublishedPorts > 0 {
+		// Thanks to https://github.com/moby/moby/issues/42860, we have to retry several times to get the host port bindings
+		//  from Docker
+		for i := 0; i < maxNumHostPortBindingChecks; i++ {
+			logrus.Tracef("Trying to get host machine port bindings (%v previous attempts)...", i)
+			containerInspectResp, err := manager.dockerClient.ContainerInspect(ctx, containerId)
+			if err != nil {
+				return "", nil, stacktrace.Propagate(
+					err,
+					"%v ports were published to the host machine, but an error occurred inspecting the newly-started "+
+						"container which is necessary for determining which host machine ports the container's ports were bound to",
+					numPublishedPorts,
+				)
+			}
+			logrus.Tracef("Container inspect response: %+v", containerInspectResp)
+			networkSettings := containerInspectResp.NetworkSettings
+			if networkSettings == nil {
+				return "", nil, stacktrace.NewError(
+					"We got a response from inspecting container '%v' which is necessary for determining the "+
+						"ports published to the host machine, but the network settings object was nil",
+					containerId,
+				)
+			}
+			logrus.Tracef("Network settings: %+v", networkSettings)
+			allInterfaceHostPortBindings := networkSettings.Ports
+			if allInterfaceHostPortBindings == nil {
+				return "", nil, stacktrace.NewError(
+					"%v ports on container '%v' were to be published to the host machine, but the container host port bindings were null",
+					numPublishedPorts,
+					containerId,
+				)
+			}
+			logrus.Tracef("Network settings -> ports: %+v", allInterfaceHostPortBindings)
+
+			allHostPortBindingsOnExpectedInterface := getHostPortBindingsOnExpectedInterface(allInterfaceHostPortBindings)
+
+			// Filter to the ports matching the ports we wanted to publish
+			usedHostPortBindingsOnExpectedInterface := map[nat.Port]*nat.PortBinding{}
+			for port, hostPortBinding := range allHostPortBindingsOnExpectedInterface {
+				if _, found := usedPortsSet[port]; !found {
+					logrus.Tracef("Port '%v' isn't in used port set, so we're skipping its host port binding", port)
+					continue
+				}
+
+				usedHostPortBindingsOnExpectedInterface[port] = hostPortBinding
+			}
+
+			// If we're missing a host port binding, it's likely because of https://github.com/moby/moby/issues/42860
+			// We'll retry after a sleep
+			if len(usedHostPortBindingsOnExpectedInterface) == numPublishedPorts {
+				resultHostPortBindings = usedHostPortBindingsOnExpectedInterface
+				break
+			}
+			time.Sleep(timeBetweenHostPortBindingChecks)
+		}
+
+		// Final verification that all published ports get a host machine port bindings
+		if len(resultHostPortBindings) != numPublishedPorts {
+
+			if !didContainerStartSuccessfully {
+				//Then, if the container is running, show the error related to the ports problem
+				return "", nil, stacktrace.NewError(
+					"%v ports were to be published to the host machine, but container '%v' never got host machine port"+
+						" bindings on interface %v for all published ports even after %v checks with %v between checks.",
+					numPublishedPorts,
+					containerId,
+					expectedHostIp,
+					maxNumHostPortBindingChecks,
+					timeBetweenHostPortBindingChecks,
+				)
+			}
+		}
+	}
+
+	functionFinishedSuccessfully = true
+	return containerId, resultHostPortBindings, nil
+}
 func (manager *DockerManager) CreateAndStartContainer(
 	ctx context.Context,
 	args *CreateAndStartContainerArgs,
