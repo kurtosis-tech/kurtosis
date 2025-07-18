@@ -716,11 +716,15 @@ func (manager *DockerManager) CreateAndStartContainer(
 
 	// static ip is provided and the user wants the connection to bridge network to happen
 	// in the container start the bridge network got connected and now we connect to target network
+	connectContainerToNetworkStart := time.Now()
+	logrus.Infof("IN CREATE AND START CONTAINER[%v]: starting connectContainerToNetwork started at %v", containerId, connectContainerToNetworkStart)
 	if args.staticIp != nil && !args.skipAddingToBridgeNetworkIfStaticIpIsSet {
 		if err = manager.ConnectContainerToNetwork(ctx, args.networkId, containerId, args.staticIp, args.alias); err != nil {
 			return "", nil, stacktrace.Propagate(err, "Failed to connect container %s to network.", containerId)
 		}
 	}
+	connectContainerToNetworkEnd := time.Now()
+	logrus.Infof("IN CREATE AND START CONTAINER[%v]: finished connectContainerToNetwork started at %v, finished at %v, took %v", containerId, connectContainerToNetworkStart, connectContainerToNetworkEnd, connectContainerToNetworkEnd.Sub(connectContainerToNetworkStart).Seconds())
 	// TODO defer a disconnct-from-network if this function doesn't succeed??
 
 	err = manager.StartContainer(ctx, containerId)

@@ -775,6 +775,7 @@ func createStartServiceOperation(
 		}()
 		createAndStartContainerEnd := time.Now()
 		logrus.Infof("IN START SERVICE OPERATION [%v]: finished createAndStartContainer started at %v, finished at %v, took %v", serviceUUID, createAndStartContainerStart, createAndStartContainerEnd, createAndStartContainerEnd.Sub(createAndStartContainerStart).Seconds())
+		logrus.Infof("IN START SERVICE OPERATION [%v]: containerId for service", containerId)
 
 		_, _, maybePublicIp, maybePublicPortSpecs, err := shared_helpers.GetIpAndPortInfoFromContainer(
 			containerName.GetString(),
