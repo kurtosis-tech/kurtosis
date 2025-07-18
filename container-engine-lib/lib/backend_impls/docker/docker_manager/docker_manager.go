@@ -742,10 +742,14 @@ func (manager *DockerManager) CreateAndStartContainerWithServiceUuid(
 	logrus.Infof("IN CREATE AND START CONTAINER[%v]: finished connectContainerToNetwork started at %v, finished at %v, took %v", serviceUuid, connectContainerToNetworkStart, connectContainerToNetworkEnd, connectContainerToNetworkEnd.Sub(connectContainerToNetworkStart).Seconds())
 	// TODO defer a disconnct-from-network if this function doesn't succeed??
 
+	startContainerStart := time.Now()
+	logrus.Infof("IN CREATE AND START CONTAINER[%v]: starting startContainer started at %v", serviceUuid, startContainerStart)
 	err = manager.StartContainer(ctx, containerId)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Could not start Docker container from image '%v'.", dockerImage)
 	}
+	startContainerEnd := time.Now()
+	logrus.Infof("IN CREATE AND START CONTAINER[%v]: finished startContainer started at %v, finished at %v, took %v", serviceUuid, startContainerStart, startContainerEnd, startContainerEnd.Sub(startContainerStart).Seconds())
 
 	functionFinishedSuccessfully := false
 	defer func() {
