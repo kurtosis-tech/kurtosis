@@ -80,6 +80,7 @@ func instantiateGetHttpRequestRecipe(arguments *builtin_argument.ArgumentValuesS
 
 type GetHttpRequestRecipe struct {
 	*kurtosis_type_constructor.KurtosisValueTypeDefault
+	runtimeValues []string
 }
 
 func (recipe *GetHttpRequestRecipe) Copy() (builtin_argument.KurtosisValueType, error) {

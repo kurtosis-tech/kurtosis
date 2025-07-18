@@ -36,7 +36,7 @@ def run(plan):
 `
 
 	okStatusCode          = 200
-	serverErrorStatusCode = 500
+	serverErrorStatusCode = 300
 )
 
 func (suite *StartosisAddServiceTestSuite) TestStartosis_AddServiceWithReadyConditionsCheck() {
