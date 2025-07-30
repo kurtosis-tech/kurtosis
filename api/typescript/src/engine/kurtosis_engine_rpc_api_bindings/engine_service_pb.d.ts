@@ -237,6 +237,26 @@ export namespace GetEnclavesResponse {
   }
 }
 
+export class GetEnclaveResponse extends jspb.Message {
+  getEnclaveInfo(): EnclaveInfo | undefined;
+  setEnclaveInfo(value?: EnclaveInfo): GetEnclaveResponse;
+  hasEnclaveInfo(): boolean;
+  clearEnclaveInfo(): GetEnclaveResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GetEnclaveResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: GetEnclaveResponse): GetEnclaveResponse.AsObject;
+  static serializeBinaryToWriter(message: GetEnclaveResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetEnclaveResponse;
+  static deserializeBinaryFromReader(message: GetEnclaveResponse, reader: jspb.BinaryReader): GetEnclaveResponse;
+}
+
+export namespace GetEnclaveResponse {
+  export type AsObject = {
+    enclaveInfo?: EnclaveInfo.AsObject,
+  }
+}
+
 export class EnclaveIdentifiers extends jspb.Message {
   getEnclaveUuid(): string;
   setEnclaveUuid(value: string): EnclaveIdentifiers;
@@ -296,6 +316,24 @@ export class StopEnclaveArgs extends jspb.Message {
 }
 
 export namespace StopEnclaveArgs {
+  export type AsObject = {
+    enclaveIdentifier: string,
+  }
+}
+
+export class GetEnclaveArgs extends jspb.Message {
+  getEnclaveIdentifier(): string;
+  setEnclaveIdentifier(value: string): GetEnclaveArgs;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GetEnclaveArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: GetEnclaveArgs): GetEnclaveArgs.AsObject;
+  static serializeBinaryToWriter(message: GetEnclaveArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetEnclaveArgs;
+  static deserializeBinaryFromReader(message: GetEnclaveArgs, reader: jspb.BinaryReader): GetEnclaveArgs;
+}
+
+export namespace GetEnclaveArgs {
   export type AsObject = {
     enclaveIdentifier: string,
   }

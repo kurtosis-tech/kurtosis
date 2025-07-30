@@ -207,6 +207,17 @@ func (service *EngineConnectServerService) GetEnclaves(ctx context.Context, _ *c
 	return connect.NewResponse(response), nil
 }
 
+func (service *EngineConnectServerService) GetEnclave(ctx context.Context, getEnclaveArgs *connect.Request[kurtosis_engine_rpc_api_bindings.GetEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclaveResponse], error) {
+	enclaveInfo, err := service.enclaveManager.GetEnclave(ctx, getEnclaveArgs.Msg.GetEnclaveIdentifier())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting info for enclave")
+	}
+	response := &kurtosis_engine_rpc_api_bindings.GetEnclaveResponse{
+		EnclaveInfo: utils.MapPointer(enclaveInfo, toGrpcEnclaveInfo),
+	}
+	return connect.NewResponse(response), nil
+}
+
 func (service *EngineConnectServerService) GetExistingAndHistoricalEnclaveIdentifiers(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetExistingAndHistoricalEnclaveIdentifiersResponse], error) {
 	allIdentifiers, err := service.enclaveManager.GetExistingAndHistoricalEnclaveIdentifiers()
 	if err != nil {

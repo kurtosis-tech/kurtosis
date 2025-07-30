@@ -476,10 +476,10 @@ pub struct StarlarkRunProgress {
 pub struct StarlarkRunFinishedEvent {
     #[prost(bool, tag = "1")]
     pub is_run_successful: bool,
-    #[prost(message, optional, tag = "2")]
-    pub total_execution_duration: ::core::option::Option<::prost_types::Duration>,
-    #[prost(string, optional, tag = "3")]
+    #[prost(string, optional, tag = "2")]
     pub serialized_output: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(message, optional, tag = "3")]
+    pub total_execution_duration: ::core::option::Option<::prost_types::Duration>,
 }
 /// ==============================================================================================
 ///                                           Get Services
