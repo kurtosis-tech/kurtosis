@@ -160,6 +160,8 @@ const (
 	//The Docker or Podman network name where all the containers in the engine and logs service context will be added
 	NameOfNetworkToStartEngineAndLogServiceContainersInDocker = "bridge"
 	NameOfNetworkToStartEngineAndLogServiceContainersInPodman = "podman"
+
+	defaultContainerStopTimeout = 1 * time.Second
 )
 
 type RestartPolicy string
@@ -731,7 +733,8 @@ func (manager *DockerManager) CreateAndStartContainer(
 	functionFinishedSuccessfully := false
 	defer func() {
 		if !functionFinishedSuccessfully {
-			if err := manager.KillContainer(ctx, containerId); err != nil {
+			// Instead of killing the container, stop it so that logs are still available
+			if err := manager.StopContainer(ctx, containerId, defaultContainerStopTimeout); err != nil {
 				logrus.Error("The container creation function didn't finish successfully, meaning we needed to kill the container we created. However, the killing threw an error:")
 				fmt.Fprintln(logrus.StandardLogger().Out, err)
 				logrus.Errorf("ACTION NEEDED: You'll need to manually kill this container with ID '%v'", containerId)
