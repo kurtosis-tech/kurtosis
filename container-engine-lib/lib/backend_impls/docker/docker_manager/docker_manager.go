@@ -161,7 +161,7 @@ const (
 	NameOfNetworkToStartEngineAndLogServiceContainersInDocker = "bridge"
 	NameOfNetworkToStartEngineAndLogServiceContainersInPodman = "podman"
 
-	defaultContainerStopTimeout = 1 * time.Second
+	defaultContainerStopTimeout = -1 * time.Second
 )
 
 type RestartPolicy string
