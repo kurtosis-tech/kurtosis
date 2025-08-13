@@ -3,6 +3,8 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
@@ -27,7 +29,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
-	"strings"
 )
 
 const (
@@ -119,6 +120,14 @@ func NewRunPythonService(
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Bool],
 					Validator:         nil,
+				},
+				{
+					Name:              NodeSelectorsArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return builtin_argument.StringMappingToString(value, NodeSelectorsArgName)
+					},
 				},
 			},
 		},
@@ -270,6 +279,12 @@ func (builtin *RunPythonCapabilities) Interpret(locatorOfModuleInWhichThisBuilti
 
 	envVars, interpretationErr := extractEnvVarsIfDefined(arguments)
 	if err != nil {
+		return nil, interpretationErr
+	}
+
+	nodeSelectors := map[string]string{}
+	nodeSelectorsStarlark, interpretationErr := builtin_argument.ExtractArgumentValue[*starlark.Dict](arguments, NodeSelectorsArgName)
+	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 
