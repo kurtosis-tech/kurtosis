@@ -2,6 +2,8 @@ package user_service_functions
 
 import (
 	"context"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
@@ -9,6 +11,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/service_registration"
 	"github.com/kurtosis-tech/stacktrace"
+)
+
+const (
+	stopContainerTimeout = 10 * time.Second
 )
 
 func StopUserServices(
@@ -43,8 +49,8 @@ func StopUserServices(
 		dockerManager *docker_manager.DockerManager,
 		dockerObjectId string,
 	) error {
-		if err := dockerManager.KillContainer(ctx, dockerObjectId); err != nil {
-			return stacktrace.Propagate(err, "An error occurred killing user service container with ID '%v'", dockerObjectId)
+		if err := dockerManager.StopContainer(ctx, dockerObjectId, stopContainerTimeout); err != nil {
+			return stacktrace.Propagate(err, "An error occurred stopping user service container with ID '%v'", dockerObjectId)
 		}
 		return nil
 	}
