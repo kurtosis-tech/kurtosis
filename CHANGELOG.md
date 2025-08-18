@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.4](https://github.com/kurtosis-tech/kurtosis/compare/1.10.3...1.10.4) (2025-08-18)
+
+
+### Bug Fixes
+
+* dont kill container ([#2780](https://github.com/kurtosis-tech/kurtosis/issues/2780)) ([d6df15b](https://github.com/kurtosis-tech/kurtosis/commit/d6df15b5b5a3b2537f8c066c92bc37fc8d2dcc2c))
+
 ## [1.10.3](https://github.com/kurtosis-tech/kurtosis/compare/1.10.2...1.10.3) (2025-07-17)
 
 
