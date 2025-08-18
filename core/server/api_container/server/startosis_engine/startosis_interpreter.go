@@ -3,6 +3,10 @@ package startosis_engine
 import (
 	"context"
 	"fmt"
+	"path"
+	"strings"
+	"sync"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -25,9 +29,6 @@ import (
 	"go.starlark.net/resolve"
 	"go.starlark.net/starlark"
 	"go.starlark.net/syntax"
-	"path"
-	"strings"
-	"sync"
 )
 
 const (
@@ -168,6 +169,8 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 			// -> Then recopy all instructions past this match from the enclave state to the mask
 			// Those instructions are the instructions that will mask the instructions for the newly submitted plan
 			numberOfInstructionCopiedToMask := 0
+			// TODO: here once we have InstructionDependencyGraph, we can use it to recopy only the instructions that are dependent on the matching instruction
+			// TODO: we need something like graph.GetInstructionDependencies(matchingInstruction)
 			for copyIdx := matchingInstructionIdx; copyIdx < len(currentEnclavePlanSequence); copyIdx++ {
 				if numberOfInstructionCopiedToMask >= potentialMask.Size() {
 					// the mask is already full, can't recopy more instructions, stop here
