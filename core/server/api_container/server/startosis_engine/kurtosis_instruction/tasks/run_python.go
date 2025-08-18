@@ -278,18 +278,22 @@ func (builtin *RunPythonCapabilities) Interpret(locatorOfModuleInWhichThisBuilti
 	}
 
 	envVars, interpretationErr := extractEnvVarsIfDefined(arguments)
-	if err != nil {
+	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 
-	nodeSelectors := map[string]string{}
-	nodeSelectorsStarlark, interpretationErr := builtin_argument.ExtractArgumentValue[*starlark.Dict](arguments, NodeSelectorsArgName)
+	nodeSelectors, interpretationErr := extractNodeSelectorsIfDefined(arguments)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	tolerations, interpretationErr := extractTolerationsIfDefined(arguments)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 
 	// build a service config from image and files artifacts expansion.
-	builtin.serviceConfig, err = getServiceConfig(maybeImageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, filesArtifactExpansion, envVars)
+	builtin.serviceConfig, err = getServiceConfig(maybeImageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, filesArtifactExpansion, envVars, nodeSelectors, tolerations)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating service config for run python.")
 	}

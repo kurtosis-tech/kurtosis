@@ -17,7 +17,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
@@ -112,6 +111,14 @@ func NewRunShService(
 						return builtin_argument.StringMappingToString(value, NodeSelectorsArgName)
 					},
 				},
+				{
+					Name:              NodeSelectorsArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return builtin_argument.StringMappingToString(value, NodeSelectorsArgName)
+					},
+				},
 			},
 		},
 
@@ -137,12 +144,14 @@ func NewRunShService(
 		},
 
 		DefaultDisplayArguments: map[string]bool{
-			RunArgName:        true,
-			ImageNameArgName:  true,
-			FilesArgName:      true,
-			StoreFilesArgName: true,
-			WaitArgName:       true,
-			EnvVarsArgName:    true,
+			RunArgName:           true,
+			ImageNameArgName:     true,
+			FilesArgName:         true,
+			StoreFilesArgName:    true,
+			WaitArgName:          true,
+			EnvVarsArgName:       true,
+			NodeSelectorsArgName: true,
+			TolerationsArgName:   true,
 		},
 	}
 }
@@ -230,24 +239,22 @@ func (builtin *RunShCapabilities) Interpret(locatorOfModuleInWhichThisBuiltinIsB
 	}
 
 	envVars, interpretationErr := extractEnvVarsIfDefined(arguments)
-	if err != nil {
-		return nil, interpretationErr
-	}
-
-	nodeSelectors := map[string]string{}
-	nodeSelectorsStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](config.KurtosisValueTypeDefault, NodeSelectorsAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
-	if found && nodeSelectorsStarlark.Len() > 0 {
-		nodeSelectors, interpretationErr = kurtosis_types.SafeCastToMapStringString(nodeSelectorsStarlark, NodeSelectorsAttr)
-		if interpretationErr != nil {
-			return nil, interpretationErr
-		}
+
+	nodeSelectors, interpretationErr := extractNodeSelectorsIfDefined(arguments)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	tolerations, interpretationErr := extractTolerationsIfDefined(arguments)
+	if interpretationErr != nil {
+		return nil, interpretationErr
 	}
 
 	// build a service config from image and files artifacts expansion.
-	builtin.serviceConfig, err = getServiceConfig(maybeImageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, filesArtifactExpansion, envVars)
+	builtin.serviceConfig, err = getServiceConfig(maybeImageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, filesArtifactExpansion, envVars, nodeSelectors, tolerations)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating service config using for run sh task.")
 	}
