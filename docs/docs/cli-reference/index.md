@@ -65,10 +65,10 @@ Use "kurtosis service [command] --help" for more information about a command.
 
 #### cli-log-level
 This flag sets the level of details that the Kurtosis CLI will print logs with - by default it only logs `info` level logs to the CLI. The following other log levels are supported by Kurtosis -
-`panic|fatal|error|warning|info|debug|trace`. For example, logs with error level can be printed using the command below:-
+`panic|fatal|error|warning|info|debug|trace`. For example, logs with error level can be printed using the command below:
 
 ```
-kurtosis run --cli-level-log debug github.com/package-author/package-repo 
+kurtosis run --cli-log-level debug github.com/package-author/package-repo 
 ```
 
 <details>
