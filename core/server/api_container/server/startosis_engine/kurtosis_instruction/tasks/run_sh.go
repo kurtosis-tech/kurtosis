@@ -116,7 +116,7 @@ func NewRunShService(
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.StringMappingToString(value, TolerationsArgName)
+						return nil
 					},
 				},
 			},
