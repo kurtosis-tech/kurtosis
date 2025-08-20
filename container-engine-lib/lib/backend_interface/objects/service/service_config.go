@@ -81,8 +81,30 @@ type privateServiceConfig struct {
 	TtyEnabled bool
 }
 
-func CreateServiceConfig(containerImageName string, imageBuildSpec *image_build_spec.ImageBuildSpec, imageRegistrySpec *image_registry_spec.ImageRegistrySpec, nixBuildSpec *nix_build_spec.NixBuildSpec, privatePorts map[string]*port_spec.PortSpec, publicPorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, envVars map[string]string, filesArtifactExpansion *service_directory.FilesArtifactsExpansion, persistentDirectories *service_directory.PersistentDirectories, cpuAllocationMillicpus uint64, memoryAllocationMegabytes uint64, privateIPAddrPlaceholder string, minCpuMilliCpus uint64, minMemoryMegaBytes uint64, labels map[string]string, user *service_user.ServiceUser, tolerations []v1.Toleration, nodeSelectors map[string]string, imageDownloadMode image_download_mode.ImageDownloadMode, tiniEnabled bool, ttyEnabled bool) (*ServiceConfig, error) {
-
+func CreateServiceConfig(
+	containerImageName string,
+	imageBuildSpec *image_build_spec.ImageBuildSpec,
+	imageRegistrySpec *image_registry_spec.ImageRegistrySpec,
+	nixBuildSpec *nix_build_spec.NixBuildSpec,
+	privatePorts map[string]*port_spec.PortSpec,
+	publicPorts map[string]*port_spec.PortSpec,
+	entrypointArgs []string,
+	cmdArgs []string,
+	envVars map[string]string,
+	filesArtifactExpansion *service_directory.FilesArtifactsExpansion,
+	persistentDirectories *service_directory.PersistentDirectories,
+	cpuAllocationMillicpus uint64,
+	memoryAllocationMegabytes uint64,
+	privateIPAddrPlaceholder string,
+	minCpuMilliCpus uint64,
+	minMemoryMegaBytes uint64,
+	labels map[string]string,
+	user *service_user.ServiceUser,
+	tolerations []v1.Toleration,
+	nodeSelectors map[string]string,
+	imageDownloadMode image_download_mode.ImageDownloadMode,
+	tiniEnabled bool,
+	ttyEnabled bool) (*ServiceConfig, error) {
 	if err := ValidateServiceConfigLabels(labels); err != nil {
 		return nil, stacktrace.Propagate(err, "Invalid service config labels '%+v'", labels)
 	}
