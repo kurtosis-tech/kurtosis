@@ -112,11 +112,11 @@ func NewRunShService(
 					},
 				},
 				{
-					Name:              NodeSelectorsArgName,
+					Name:              TolerationsArgName,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.StringMappingToString(value, NodeSelectorsArgName)
+						return builtin_argument.StringMappingToString(value, TolerationsArgName)
 					},
 				},
 			},
