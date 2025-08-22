@@ -3,8 +3,9 @@ package user_services_functions
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"strings"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
 
@@ -20,7 +21,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/operation_parallelizer"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
@@ -47,6 +47,8 @@ const (
 	unboundPortNumber = 1
 
 	unlimitedReplacements = -1
+
+	K8sPodIPAddrPlaceholder = "K8S_POD_IP_ADDR_PLACEHOLDER"
 )
 
 // Completeness enforced via unit test
@@ -320,23 +322,24 @@ func createStartServiceOperation(
 			return nil, stacktrace.NewError("Even though we pulled back some Kubernetes resources, no Kubernetes resources were available for requested service UUID '%v'; this is a bug in Kurtosis", serviceUuid)
 		}
 		kubernetesService := matchingObjectAndResources.KubernetesResources.Service
+		kubernetesPod := matchingObjectAndResources.KubernetesResources.Pod
 
 		// We replace the placeholder value with the actual private IP address
 		privateIPAddr := matchingObjectAndResources.ServiceRegistration.GetPrivateIP().String()
 		for index := range entrypointArgs {
 			entrypointArgs[index] = strings.Replace(entrypointArgs[index], privateIPAddrPlaceholder, privateIPAddr, unlimitedReplacements)
 			// Replace pod IP placeholder with environment variable reference
-			entrypointArgs[index] = strings.Replace(entrypointArgs[index], service_config.K8sPodIPAddrPlaceholder, "${K8S_POD_IP}", unlimitedReplacements)
+			entrypointArgs[index] = strings.Replace(entrypointArgs[index], K8sPodIPAddrPlaceholder, kubernetesPod.Status.PodIP, unlimitedReplacements)
 		}
 		for index := range cmdArgs {
 			cmdArgs[index] = strings.Replace(cmdArgs[index], privateIPAddrPlaceholder, privateIPAddr, unlimitedReplacements)
 			// Replace pod IP placeholder with environment variable reference
-			cmdArgs[index] = strings.Replace(cmdArgs[index], service_config.K8sPodIPAddrPlaceholder, "${K8S_POD_IP}", unlimitedReplacements)
+			cmdArgs[index] = strings.Replace(cmdArgs[index], K8sPodIPAddrPlaceholder, kubernetesPod.Status.PodIP, unlimitedReplacements)
 		}
 		for key := range envVars {
 			envVars[key] = strings.Replace(envVars[key], privateIPAddrPlaceholder, privateIPAddr, unlimitedReplacements)
 			// Replace pod IP placeholder with environment variable reference
-			envVars[key] = strings.Replace(envVars[key], service_config.K8sPodIPAddrPlaceholder, "${K8S_POD_IP}", unlimitedReplacements)
+			envVars[key] = strings.Replace(envVars[key], K8sPodIPAddrPlaceholder, kubernetesPod.Status.PodIP, unlimitedReplacements)
 		}
 
 		namespaceName := kubernetesService.GetNamespace()
@@ -662,16 +665,16 @@ func getUserServicePodContainerSpecs(
 	}
 
 	// Add K8S_POD_IP environment variable using Kubernetes Downward API
-	podIPEnvVar := apiv1.EnvVar{
-		Name:  "K8S_POD_IP",
-		Value: "",
-		ValueFrom: &apiv1.EnvVarSource{
-			FieldRef: &apiv1.ObjectFieldSelector{
-				FieldPath: "status.podIP",
-			},
-		},
-	}
-	containerEnvVars = append(containerEnvVars, podIPEnvVar)
+	// podIPEnvVar := apiv1.EnvVar{
+	// 	Name:  "K8S_POD_IP",
+	// 	Value: "",
+	// 	ValueFrom: &apiv1.EnvVarSource{
+	// 		FieldRef: &apiv1.ObjectFieldSelector{
+	// 			FieldPath: "status.podIP",
+	// 		},
+	// 	},
+	// }
+	// containerEnvVars = append(containerEnvVars, podIPEnvVar)
 
 	kubernetesContainerPorts, err := getKubernetesContainerPortsFromPrivatePortSpecs(privatePorts)
 	if err != nil {
