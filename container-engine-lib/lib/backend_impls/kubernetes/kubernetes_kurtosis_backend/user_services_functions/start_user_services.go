@@ -323,23 +323,27 @@ func createStartServiceOperation(
 		}
 		kubernetesService := matchingObjectAndResources.KubernetesResources.Service
 		kubernetesPod := matchingObjectAndResources.KubernetesResources.Pod
+		kurtosisPodIP := ""
+		if kubernetesPod != nil {
+			kurtosisPodIP = kubernetesPod.Status.PodIP
+		}
 
 		// We replace the placeholder value with the actual private IP address
 		privateIPAddr := matchingObjectAndResources.ServiceRegistration.GetPrivateIP().String()
 		for index := range entrypointArgs {
 			entrypointArgs[index] = strings.Replace(entrypointArgs[index], privateIPAddrPlaceholder, privateIPAddr, unlimitedReplacements)
 			// Replace pod IP placeholder with environment variable reference
-			entrypointArgs[index] = strings.Replace(entrypointArgs[index], K8sPodIPAddrPlaceholder, kubernetesPod.Status.PodIP, unlimitedReplacements)
+			entrypointArgs[index] = strings.Replace(entrypointArgs[index], K8sPodIPAddrPlaceholder, kurtosisPodIP, unlimitedReplacements)
 		}
 		for index := range cmdArgs {
 			cmdArgs[index] = strings.Replace(cmdArgs[index], privateIPAddrPlaceholder, privateIPAddr, unlimitedReplacements)
 			// Replace pod IP placeholder with environment variable reference
-			cmdArgs[index] = strings.Replace(cmdArgs[index], K8sPodIPAddrPlaceholder, kubernetesPod.Status.PodIP, unlimitedReplacements)
+			cmdArgs[index] = strings.Replace(cmdArgs[index], K8sPodIPAddrPlaceholder, kurtosisPodIP, unlimitedReplacements)
 		}
 		for key := range envVars {
 			envVars[key] = strings.Replace(envVars[key], privateIPAddrPlaceholder, privateIPAddr, unlimitedReplacements)
 			// Replace pod IP placeholder with environment variable reference
-			envVars[key] = strings.Replace(envVars[key], K8sPodIPAddrPlaceholder, kubernetesPod.Status.PodIP, unlimitedReplacements)
+			envVars[key] = strings.Replace(envVars[key], K8sPodIPAddrPlaceholder, kurtosisPodIP, unlimitedReplacements)
 		}
 
 		namespaceName := kubernetesService.GetNamespace()
