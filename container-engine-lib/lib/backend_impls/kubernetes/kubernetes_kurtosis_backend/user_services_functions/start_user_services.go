@@ -47,8 +47,6 @@ const (
 	unboundPortNumber = 1
 
 	unlimitedReplacements = -1
-
-	K8sPodIPAddrPlaceholder = "K8S_POD_IP_ADDR_PLACEHOLDER"
 )
 
 // Completeness enforced via unit test
@@ -327,15 +325,12 @@ func createStartServiceOperation(
 		privateIPAddr := matchingObjectAndResources.ServiceRegistration.GetPrivateIP().String()
 		for index := range entrypointArgs {
 			entrypointArgs[index] = strings.Replace(entrypointArgs[index], privateIPAddrPlaceholder, privateIPAddr, unlimitedReplacements)
-			entrypointArgs[index] = strings.Replace(entrypointArgs[index], K8sPodIPAddrPlaceholder, "K8S_POD_IP", unlimitedReplacements)
 		}
 		for index := range cmdArgs {
 			cmdArgs[index] = strings.Replace(cmdArgs[index], privateIPAddrPlaceholder, privateIPAddr, unlimitedReplacements)
-			cmdArgs[index] = strings.Replace(cmdArgs[index], K8sPodIPAddrPlaceholder, "K8S_POD_IP", unlimitedReplacements)
 		}
 		for key := range envVars {
 			envVars[key] = strings.Replace(envVars[key], privateIPAddrPlaceholder, privateIPAddr, unlimitedReplacements)
-			envVars[key] = strings.Replace(envVars[key], K8sPodIPAddrPlaceholder, "K8S_POD_IP", unlimitedReplacements)
 		}
 
 		namespaceName := kubernetesService.GetNamespace()
