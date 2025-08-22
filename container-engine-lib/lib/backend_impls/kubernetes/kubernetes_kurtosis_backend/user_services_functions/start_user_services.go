@@ -657,7 +657,7 @@ func getUserServicePodContainerSpecs(
 		containerEnvVars = append(containerEnvVars, envVar)
 	}
 
-	Add K8S_POD_IP environment variable using Kubernetes Downward API
+	// Add K8S_POD_IP environment variable using Kubernetes Downward API
 	podIPEnvVar := apiv1.EnvVar{
 		Name:  "K8S_POD_IP",
 		Value: "",
