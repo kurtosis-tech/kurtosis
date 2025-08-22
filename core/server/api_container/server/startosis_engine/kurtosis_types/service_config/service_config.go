@@ -56,6 +56,7 @@ const (
 	TtyEnabledAttr                  = "tty_enabled"
 
 	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
+	K8sPodIPAddrPlaceholder         = "K8S_POD_IP_ADDR_PLACEHOLDER"
 
 	filesArtifactExpansionDirsParentDirpath string = "/files-artifacts"
 	// TODO This should be populated from the build flow that builds the files-artifacts-expander Docker image
