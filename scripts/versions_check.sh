@@ -5,7 +5,7 @@ set -euo pipefail   # Bash "strict mode"
 # FOR GO WE EXPECT _AT LEAST_ THIS VERSION, BUT WE ARE OK WITH SUPERIOR VERSIONS
 REQUIRED_GO_VERSION=1.20
 
-# FOR NODE, WE PIN THE EXACT VERSION NUMBER
+# FOR NODE, WE EXPECT _AT LEAST_ THIS VERSION, BUT WE ARE OK WITH SUPERIOR VERSIONS
 REQUIRED_NODE_VERSION=20.11
 
 
@@ -27,8 +27,8 @@ check_node_version() {
   local local_node_version=$(node --version)
   # stripped_local_node_version should only contain node's {major.minor} versions to compare it with REQUIRED_NODE_VERSION.
   local stripped_local_node_version=$(echo "$local_node_version" | cut -d 'v' -f 2 | awk -F '.' '{print $1"."$2}')
-  if [ "$stripped_local_node_version" != "$REQUIRED_NODE_VERSION" ]; then
-    echo "${RED_BG}${WHITE_FG}${BOLD}node "${REQUIRED_NODE_VERSION}" not installed. Found ${stripped_local_node_version}${NORMAL_BG}"
+  if [ "$(version_lte "${REQUIRED_NODE_VERSION}" "${stripped_local_node_version}")" != 1 ]; then
+    echo "${RED_BG}${WHITE_FG}${BOLD}node "${REQUIRED_NODE_VERSION}" or higher not installed. Found ${stripped_local_node_version}${NORMAL_BG}"
     exit 1
   else
     echo "${BLUE_BG}${WHITE_FG}${BOLD}Minimum node version "${REQUIRED_NODE_VERSION}" expected. Found ${stripped_local_node_version} ... ok${NORMAL_BG}"
