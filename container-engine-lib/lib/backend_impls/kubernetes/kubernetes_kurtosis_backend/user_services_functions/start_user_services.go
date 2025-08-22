@@ -322,28 +322,17 @@ func createStartServiceOperation(
 			return nil, stacktrace.NewError("Even though we pulled back some Kubernetes resources, no Kubernetes resources were available for requested service UUID '%v'; this is a bug in Kurtosis", serviceUuid)
 		}
 		kubernetesService := matchingObjectAndResources.KubernetesResources.Service
-		kubernetesPod := matchingObjectAndResources.KubernetesResources.Pod
-		kurtosisPodIP := ""
-		if kubernetesPod != nil {
-			kurtosisPodIP = kubernetesPod.Status.PodIP
-		}
 
 		// We replace the placeholder value with the actual private IP address
 		privateIPAddr := matchingObjectAndResources.ServiceRegistration.GetPrivateIP().String()
 		for index := range entrypointArgs {
 			entrypointArgs[index] = strings.Replace(entrypointArgs[index], privateIPAddrPlaceholder, privateIPAddr, unlimitedReplacements)
-			// Replace pod IP placeholder with environment variable reference
-			entrypointArgs[index] = strings.Replace(entrypointArgs[index], K8sPodIPAddrPlaceholder, kurtosisPodIP, unlimitedReplacements)
 		}
 		for index := range cmdArgs {
 			cmdArgs[index] = strings.Replace(cmdArgs[index], privateIPAddrPlaceholder, privateIPAddr, unlimitedReplacements)
-			// Replace pod IP placeholder with environment variable reference
-			cmdArgs[index] = strings.Replace(cmdArgs[index], K8sPodIPAddrPlaceholder, kurtosisPodIP, unlimitedReplacements)
 		}
 		for key := range envVars {
 			envVars[key] = strings.Replace(envVars[key], privateIPAddrPlaceholder, privateIPAddr, unlimitedReplacements)
-			// Replace pod IP placeholder with environment variable reference
-			envVars[key] = strings.Replace(envVars[key], K8sPodIPAddrPlaceholder, kurtosisPodIP, unlimitedReplacements)
 		}
 
 		namespaceName := kubernetesService.GetNamespace()
@@ -668,17 +657,17 @@ func getUserServicePodContainerSpecs(
 		containerEnvVars = append(containerEnvVars, envVar)
 	}
 
-	// Add K8S_POD_IP environment variable using Kubernetes Downward API
-	// podIPEnvVar := apiv1.EnvVar{
-	// 	Name:  "K8S_POD_IP",
-	// 	Value: "",
-	// 	ValueFrom: &apiv1.EnvVarSource{
-	// 		FieldRef: &apiv1.ObjectFieldSelector{
-	// 			FieldPath: "status.podIP",
-	// 		},
-	// 	},
-	// }
-	// containerEnvVars = append(containerEnvVars, podIPEnvVar)
+	Add K8S_POD_IP environment variable using Kubernetes Downward API
+	podIPEnvVar := apiv1.EnvVar{
+		Name:  "K8S_POD_IP",
+		Value: "",
+		ValueFrom: &apiv1.EnvVarSource{
+			FieldRef: &apiv1.ObjectFieldSelector{
+				FieldPath: "status.podIP",
+			},
+		},
+	}
+	containerEnvVars = append(containerEnvVars, podIPEnvVar)
 
 	kubernetesContainerPorts, err := getKubernetesContainerPortsFromPrivatePortSpecs(privatePorts)
 	if err != nil {
