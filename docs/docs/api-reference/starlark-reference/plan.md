@@ -891,13 +891,15 @@ get_cluster_type
 The `get_cluster_type` instruction returns the type of cluster backend that Kurtosis is currently running on.
 
 ```python
-# Returns a string representing the cluster type (e.g., "docker", "kubernetes")
+# Returns a string representing the cluster type ("docker", "kubernetes", "podman")
 cluster_type = plan.get_cluster_type()
+if cluster_type == "docker":
+    ...
 
 plan.print("Running on cluster type: " + cluster_type)
 ```
 
-This instruction takes no arguments and returns a string indicating the backend cluster type. This is useful when you need to conditionally execute different logic based on whether you're running on Docker, Kubernetes, or other supported backends.
+This instruction takes no arguments and returns a string indicating the backend cluster type. This is useful when you need to conditionally execute different logic based on whether you're running on Docker, Kubernetes, or other supported backends. Possi
 
 
 
