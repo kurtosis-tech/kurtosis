@@ -1740,7 +1740,7 @@ func (manager *DockerManager) pullImage(context context.Context, imageName strin
 	if err == nil {
 		return nil
 	}
-	if !retryWithLinuxAmd64 {
+	if err != nil && !retryWithLinuxAmd64 {
 		return stacktrace.Propagate(err, "Tried pulling image '%v' but failed", imageName)
 	}
 	// we retry with linux/amd64
