@@ -590,6 +590,24 @@ The `run_python` instruction executes a one-time execution task. It runs the Pyt
         # OPTIONAL (Default: "180s")
         wait="180s"
 
+        # Defines Kubernetes node selectors for scheduling the task on specific nodes
+        # OPTIONAL (Default: {})
+        node_selectors = {
+            "node-type": "high-memory",
+            "zone": "us-west-1a",
+        },
+
+        # Defines Kubernetes tolerations for scheduling the task on nodes with matching taints
+        # OPTIONAL (Default: [])
+        tolerations = [
+            Toleration(
+                key="high-memory",
+                operator="Equal",
+                value="true", 
+                effect="NoSchedule"
+            ),
+        ],
+
         # A human friendly description for the end user of the package
         # OPTIONAL (Default: Running Python script)
         description = "running python script"
@@ -683,6 +701,24 @@ The `run_sh` instruction executes a one-time execution task. It runs the bash co
         # The feature is enabled by default with a default timeout of 180s
         # OPTIONAL (Default: "180s")
         wait="180s"
+
+        # Defines Kubernetes node selectors for scheduling the task on specific nodes
+        # OPTIONAL (Default: {})
+        node_selectors = {
+            "node-type": "high-memory",
+            "zone": "us-west-1a",
+        },
+
+        # Defines Kubernetes tolerations for scheduling the task on nodes with matching taints
+        # OPTIONAL (Default: [])
+        tolerations = [
+            Toleration(
+                key="high-memory",
+                operator="Equal",
+                value="true", 
+                effect="NoSchedule"
+            ),
+        ],
 
         # A human friendly description for the end user of the package
         # OPTIONAL (Default: Running sh script)
