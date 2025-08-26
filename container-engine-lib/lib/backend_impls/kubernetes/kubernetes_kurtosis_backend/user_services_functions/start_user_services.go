@@ -3,8 +3,9 @@ package user_services_functions
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"strings"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
 
@@ -653,6 +654,22 @@ func getUserServicePodContainerSpecs(
 		}
 		containerEnvVars = append(containerEnvVars, envVar)
 	}
+
+	// Add K8S_POD_IP environment variable using Kubernetes Downward API
+	podIPEnvVar := apiv1.EnvVar{
+		Name:  "K8S_POD_IP",
+		Value: "",
+		ValueFrom: &apiv1.EnvVarSource{
+			FieldRef: &apiv1.ObjectFieldSelector{
+				FieldPath:  "status.podIP",
+				APIVersion: "",
+			},
+			ResourceFieldRef: nil,
+			ConfigMapKeyRef:  nil,
+			SecretKeyRef:     nil,
+		},
+	}
+	containerEnvVars = append(containerEnvVars, podIPEnvVar)
 
 	kubernetesContainerPorts, err := getKubernetesContainerPortsFromPrivatePortSpecs(privatePorts)
 	if err != nil {
