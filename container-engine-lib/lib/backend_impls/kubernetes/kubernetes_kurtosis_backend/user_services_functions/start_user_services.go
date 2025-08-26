@@ -661,8 +661,12 @@ func getUserServicePodContainerSpecs(
 		Value: "",
 		ValueFrom: &apiv1.EnvVarSource{
 			FieldRef: &apiv1.ObjectFieldSelector{
-				FieldPath: "status.podIP",
+				FieldPath:  "status.podIP",
+				APIVersion: "",
 			},
+			ResourceFieldRef: nil,
+			ConfigMapKeyRef:  nil,
+			SecretKeyRef:     nil,
 		},
 	}
 	containerEnvVars = append(containerEnvVars, podIPEnvVar)
