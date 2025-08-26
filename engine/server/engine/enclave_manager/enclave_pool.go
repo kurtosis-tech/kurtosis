@@ -8,6 +8,7 @@ import (
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/types"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
@@ -39,6 +40,8 @@ type EnclavePool struct {
 	isCI                        bool
 	cloudUserID                 metrics_client.CloudUserID
 	cloudInstanceID             metrics_client.CloudInstanceID
+	logsCollectorFilters        []logs_collector.Filter
+	logsCollectorParsers        []logs_collector.Parser
 }
 
 // CreateEnclavePool will do the following:
@@ -48,7 +51,6 @@ type EnclavePool struct {
 // 3- Will start a subroutine in charge of filling the pool
 func CreateEnclavePool(
 	kurtosisBackend backend_interface.KurtosisBackend,
-
 	enclaveCreator *EnclaveCreator,
 	poolSize uint8,
 	engineVersion string,
@@ -58,6 +60,8 @@ func CreateEnclavePool(
 	isCI bool,
 	cloudUserID metrics_client.CloudUserID,
 	cloudInstanceID metrics_client.CloudInstanceID,
+	logsCollectorFilters []logs_collector.Filter,
+	logsCollectorParsers []logs_collector.Parser,
 ) (*EnclavePool, error) {
 
 	//TODO the current implementation only removes the previous idle enclave, it's pending to implement the reusable feature
@@ -105,6 +109,8 @@ func CreateEnclavePool(
 		isCI:                        isCI,
 		cloudUserID:                 cloudUserID,
 		cloudInstanceID:             cloudInstanceID,
+		logsCollectorFilters:        logsCollectorFilters,
+		logsCollectorParsers:        logsCollectorParsers,
 	}
 
 	go enclavePool.run(ctxWithCancel)
@@ -295,6 +301,8 @@ func (pool *EnclavePool) createNewIdleEnclave(ctx context.Context) (*types.Encla
 		pool.cloudInstanceID,
 		args.KurtosisBackendType_Kubernetes, // enclave pool only available for k8s
 		defaultApicDebugModeForEnclavesInThePool,
+		pool.logsCollectorFilters,
+		pool.logsCollectorParsers,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(

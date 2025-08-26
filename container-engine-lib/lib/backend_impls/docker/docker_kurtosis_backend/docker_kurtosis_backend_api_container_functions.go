@@ -292,7 +292,8 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	}
 	logrus.Debugf("...APIC is available in enclave '%v'", enclaveUuid)
 
-	bridgeNetworkIpAddress, err := backend.dockerManager.GetContainerIP(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn, containerId)
+	bridgeNetworkName := backend.dockerManager.GetBridgeNetworkName()
+	bridgeNetworkIpAddress, err := backend.dockerManager.GetContainerIP(ctx, bridgeNetworkName, containerId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while getting bridge network ip address for enclave with id: '%v'", enclaveUuid)
 	}
@@ -430,7 +431,7 @@ func (backend *DockerKurtosisBackend) getMatchingApiContainers(ctx context.Conte
 	allMatchingApiContainers := map[string]*api_container.APIContainer{}
 	for _, apiContainer := range allApiContainers {
 		containerId := apiContainer.GetId()
-		bridgeNetworkIpAddress, err := backend.dockerManager.GetContainerIP(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn, containerId)
+		bridgeNetworkIpAddress, err := backend.dockerManager.GetContainerIP(ctx, backend.dockerManager.GetBridgeNetworkName(), containerId)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred while getting bridge network ip address for container with id: '%v'", containerId)
 		}
@@ -476,7 +477,7 @@ func getApiContainerObjectFromContainerInfo(
 	labels map[string]string,
 	containerStatus types.ContainerStatus,
 	allHostMachinePortBindings map[nat.Port]*nat.PortBinding,
-	bridgeNetworkIpAddress string,
+	bridgeNetworkIpAddrStr string,
 	isProductionEnclave bool,
 ) (*api_container.APIContainer, error) {
 	enclaveId, found := labels[docker_label_key.EnclaveUUIDDockerLabelKey.GetString()]
@@ -496,9 +497,16 @@ func getApiContainerObjectFromContainerInfo(
 		return nil, stacktrace.NewError("Couldn't parse private IP address string '%v' to an IP", privateIpAddrStr)
 	}
 
-	bridgeNetworkIpAddressAddr := net.ParseIP(bridgeNetworkIpAddress)
-	if privateIpAddr == nil {
-		return nil, stacktrace.NewError("Couldn't parse bridge network IP address string '%v' to an IP", bridgeNetworkIpAddressAddr)
+	var bridgeNetworkIpAddr net.IP
+
+	// Parse the bridge network IP address only if present (some APIContainers, e.g. stopped ones, may not be connected to the bridge network)
+	if bridgeNetworkIpAddrStr != "" {
+		bridgeNetworkIpAddr = net.ParseIP(bridgeNetworkIpAddrStr)
+		if bridgeNetworkIpAddr == nil {
+			return nil, stacktrace.NewError("Couldn't parse bridge network IP address string '%v' to an IP", bridgeNetworkIpAddrStr)
+		}
+	} else {
+		logrus.Debugf("Received empty bridge network IP address for API container '%v' when attempting to convert to APIC info to object. This APIContainer is likely not connected to the bridge network.", containerId)
 	}
 
 	privateGrpcPortSpec, err := getPrivateApiContainerPorts(labels)
@@ -536,7 +544,7 @@ func getApiContainerObjectFromContainerInfo(
 		privateGrpcPortSpec,
 		publicIpAddr,
 		publicGrpcPortSpec,
-		bridgeNetworkIpAddressAddr,
+		bridgeNetworkIpAddr,
 		isProductionEnclave,
 	)
 

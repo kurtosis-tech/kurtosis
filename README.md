@@ -265,6 +265,14 @@ To build the entire project, run:
 ./scripts/build.sh
 ```
 
+**Note:** If you encounter module import errors related to `github.com/kurtosis-tech/kurtosis/kurtosis_version`, you may need to generate the version constants first:
+
+```bash
+./scripts/generate-kurtosis-version.sh
+```
+
+This script generates the required `kurtosis_version.go` file that contains version constants used throughout the codebase. The file is automatically generated during the build process, but may need to be run manually in some development scenarios.
+
 To only build a specific project, run the script on `./PROJECT/PATH/script/build.sh`, for example:
 
 ```bash
@@ -281,6 +289,14 @@ If there are any changes to the Protobuf files in the `api` subdirectory, the Pr
 ```bash
 ./api/scripts/regenerate-protobuf-bindings.sh
 ```
+
+If you are developing Kurtosis over a Podman cluster, run:
+
+```bash
+./scripts/build.sh false true # no debug image, use podman
+```
+
+This will use the Podman image builder for building images. See documentation in scripts for more details on build options.
 
 Running Dev Version
 ----------------------
@@ -489,6 +505,31 @@ ktdev gateway
 ```
 
 </details>
+
+Sponsoring Kurtosis
+========================
+Kurtosis is an open source tool maintained by [MAINTAINERS](./MAINTAINERS.md). If you find Kurtosis useful or use it for work, please consider [supporting the continued development of Kurtosis](https://github.com/sponsors/tedim52). Thank you 🙏 
+
+<p>
+  <a href="https://www.bloctopus.io/">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/tedim52/.github/refs/heads/main/content/sponsors/bloctopus-dark.png">
+      <img alt="bloctopus logo" src="https://raw.githubusercontent.com/tedim52/.github/refs/heads/main/content/sponsors/bloctopus-light.png" width="auto" height="70">
+    </picture>
+  </a>
+  <a href="https://antithesis.com/">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/tedim52/.github/refs/heads/main/content/sponsors/antithesis-dark.svg">
+      <img alt="antithesis logo" src="https://raw.githubusercontent.com/tedim52/.github/refs/heads/main/content/sponsors/antithesis-light.svg" width="auto" height="70">
+    </picture>
+  </a>
+  <a href="https://ethereum.foundation/">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/tedim52/.github/refs/heads/main/content/sponsors/ethereum.png"></source>
+      <img alt="ethereum logo" src="https://raw.githubusercontent.com/tedim52/.github/refs/heads/main/content/sponsors/ethereum.png" width="auto" height="70"></img>
+    </picture>
+  </a>
+</p>
 
 <!-------- ONLY LINKS BELOW THIS POINT -------->
 [enclave]: https://docs.kurtosis.com/advanced-concepts/enclaves

@@ -3,6 +3,7 @@ package tasks
 import (
 	"context"
 	"fmt"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
@@ -102,6 +103,22 @@ func NewRunShService(
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Bool],
 					Validator:         nil,
 				},
+				{
+					Name:              NodeSelectorsArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return builtin_argument.StringMappingToString(value, NodeSelectorsArgName)
+					},
+				},
+				{
+					Name:              TolerationsArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return nil
+					},
+				},
 			},
 		},
 
@@ -127,12 +144,14 @@ func NewRunShService(
 		},
 
 		DefaultDisplayArguments: map[string]bool{
-			RunArgName:        true,
-			ImageNameArgName:  true,
-			FilesArgName:      true,
-			StoreFilesArgName: true,
-			WaitArgName:       true,
-			EnvVarsArgName:    true,
+			RunArgName:           true,
+			ImageNameArgName:     true,
+			FilesArgName:         true,
+			StoreFilesArgName:    true,
+			WaitArgName:          true,
+			EnvVarsArgName:       true,
+			NodeSelectorsArgName: true,
+			TolerationsArgName:   true,
 		},
 	}
 }
@@ -220,12 +239,22 @@ func (builtin *RunShCapabilities) Interpret(locatorOfModuleInWhichThisBuiltinIsB
 	}
 
 	envVars, interpretationErr := extractEnvVarsIfDefined(arguments)
-	if err != nil {
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	nodeSelectors, interpretationErr := extractNodeSelectorsIfDefined(arguments)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	tolerations, interpretationErr := extractTolerationsIfDefined(arguments)
+	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 
 	// build a service config from image and files artifacts expansion.
-	builtin.serviceConfig, err = getServiceConfig(maybeImageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, filesArtifactExpansion, envVars)
+	builtin.serviceConfig, err = getServiceConfig(maybeImageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, filesArtifactExpansion, envVars, nodeSelectors, tolerations)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating service config using for run sh task.")
 	}
@@ -405,7 +434,7 @@ func replaceMagicStringsInEnvVars(runtimeValueStore *runtime_value_store.Runtime
 		}
 	}
 
-	renderedServiceConfig, err := service.CreateServiceConfig(serviceConfig.GetContainerImageName(), serviceConfig.GetImageBuildSpec(), serviceConfig.GetImageRegistrySpec(), serviceConfig.GetNixBuildSpec(), serviceConfig.GetPrivatePorts(), serviceConfig.GetPublicPorts(), serviceConfig.GetEntrypointArgs(), serviceConfig.GetCmdArgs(), envVars, serviceConfig.GetFilesArtifactsExpansion(), serviceConfig.GetPersistentDirectories(), serviceConfig.GetCPUAllocationMillicpus(), serviceConfig.GetMemoryAllocationMegabytes(), serviceConfig.GetPrivateIPAddrPlaceholder(), serviceConfig.GetMinCPUAllocationMillicpus(), serviceConfig.GetMinMemoryAllocationMegabytes(), serviceConfig.GetLabels(), serviceConfig.GetUser(), serviceConfig.GetTolerations(), serviceConfig.GetNodeSelectors(), serviceConfig.GetImageDownloadMode(), tiniEnabled)
+	renderedServiceConfig, err := service.CreateServiceConfig(serviceConfig.GetContainerImageName(), serviceConfig.GetImageBuildSpec(), serviceConfig.GetImageRegistrySpec(), serviceConfig.GetNixBuildSpec(), serviceConfig.GetPrivatePorts(), serviceConfig.GetPublicPorts(), serviceConfig.GetEntrypointArgs(), serviceConfig.GetCmdArgs(), envVars, serviceConfig.GetFilesArtifactsExpansion(), serviceConfig.GetPersistentDirectories(), serviceConfig.GetCPUAllocationMillicpus(), serviceConfig.GetMemoryAllocationMegabytes(), serviceConfig.GetPrivateIPAddrPlaceholder(), serviceConfig.GetMinCPUAllocationMillicpus(), serviceConfig.GetMinMemoryAllocationMegabytes(), serviceConfig.GetLabels(), serviceConfig.GetUser(), serviceConfig.GetTolerations(), serviceConfig.GetNodeSelectors(), serviceConfig.GetImageDownloadMode(), tiniEnabled, serviceConfig.GetTtyEnabled())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a service config with env var magric strings replaced.")
 	}

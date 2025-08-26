@@ -3,6 +3,11 @@ package grafloki
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"os"
+	"strconv"
+	"time"
+
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/go-yaml/yaml"
@@ -14,10 +19,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"net/http"
-	"os"
-	"strconv"
-	"time"
 )
 
 const (
@@ -43,12 +44,7 @@ var grafanaContainerLabels = map[string]string{
 	docker_label_key.ContainerTypeDockerLabelKey.GetString(): GrafanaContainerLabel,
 }
 
-func StartGrafLokiInDocker(ctx context.Context, graflokiConfig resolved_config.GrafanaLokiConfig) (string, string, error) {
-	dockerManager, err := docker_manager.CreateDockerManager(EmptyDockerClientOpts)
-	if err != nil {
-		return "", "", stacktrace.Propagate(err, "An error occurred creating the docker manager to start grafana and loki.")
-	}
-
+func StartGrafLokiInDocker(ctx context.Context, graflokiConfig resolved_config.GrafanaLokiConfig, dockerManager *docker_manager.DockerManager) (string, string, error) {
 	var lokiHost string
 	var removeGrafanaAndLokiFunc func()
 	shouldRemoveGrafanaAndLoki := false
@@ -263,12 +259,7 @@ func checkGrafanaAndLokiContainerExistence(ctx context.Context, dockerManager *d
 	return existsLoki && existsGrafana, fmt.Sprintf("http://%v:%v", lokiBridgeNetworkIpAddress, lokiPort), nil
 }
 
-func StopGrafLokiInDocker(ctx context.Context) error {
-	dockerManager, err := docker_manager.CreateDockerManager(EmptyDockerClientOpts)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating Docker manager.")
-	}
-
+func StopGrafLokiInDocker(ctx context.Context, dockerManager *docker_manager.DockerManager) error {
 	grafanaContainer, err := getContainerByLabel(ctx, dockerManager, grafanaContainerLabels)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting Grafana container by labels: +%v", grafanaContainerLabels)

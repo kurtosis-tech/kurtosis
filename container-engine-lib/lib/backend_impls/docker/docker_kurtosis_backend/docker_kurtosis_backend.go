@@ -117,6 +117,8 @@ func (backend *DockerKurtosisBackend) CreateEngine(
 	gitAuthToken string,
 	sinks logs_aggregator.Sinks,
 	shouldEnablePersistentVolumeLogsCollection bool,
+	logsCollectorFilters []logs_collector.Filter, // ignored on docker backend for create engine
+	logsCollectorParsers []logs_collector.Parser, // ignored on docker backend for create engine
 ) (
 	*engine.Engine,
 	error,
@@ -242,6 +244,9 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 		restartPolicy = docker_manager.RestartAlways
 	}
 
+	// Podman doesn't support the Fluentd logging driver, so turn off logs collection when using podman
+	shouldTurnOnLogsCollection := !backend.dockerManager.IsPodman()
+
 	successfullyStartedService, failedService, err := user_service_functions.StartRegisteredUserServices(
 		ctx,
 		enclaveUuid,
@@ -254,7 +259,8 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 		backend.objAttrsProvider,
 		freeIpAddrProviderForEnclave,
 		backend.dockerManager,
-		restartPolicy)
+		restartPolicy,
+		shouldTurnOnLogsCollection)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Unexpected error while starting user service")
 	}
@@ -427,6 +433,8 @@ func (backend *DockerKurtosisBackend) CreateLogsCollectorForEnclave(
 	enclaveUuid enclave.EnclaveUUID,
 	logsCollectorTcpPortNumber uint16,
 	logsCollectorHttpPortNumber uint16,
+	logsCollectorFilters []logs_collector.Filter,
+	logsCollectorParsers []logs_collector.Parser,
 ) (
 	*logs_collector.LogsCollector,
 	error,
@@ -462,6 +470,8 @@ func (backend *DockerKurtosisBackend) CreateLogsCollectorForEnclave(
 		logsCollectorHttpPortNumber,
 		logsCollectorContainer,
 		logsAggregator,
+		logsCollectorFilters,
+		logsCollectorParsers,
 		backend.dockerManager,
 		backend.objAttrsProvider,
 	)

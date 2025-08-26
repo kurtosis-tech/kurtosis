@@ -20,11 +20,12 @@ package enclaves
 import (
 	"context"
 	"encoding/json"
-	"github.com/kurtosis-tech/kurtosis/path-compression"
 	"io"
 	"os"
 	"path"
 	"strings"
+
+	path_compression "github.com/kurtosis-tech/kurtosis/path-compression"
 
 	yaml_convert "github.com/ghodss/yaml"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
@@ -63,7 +64,6 @@ var supportedDockerComposeYmlFilenames = []string{
 	"docker_compose.yaml",
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#enclavecontext
 type EnclaveContext struct {
 	client kurtosis_core_rpc_api_bindings.ApiContainerServiceClient
 
@@ -88,17 +88,14 @@ func NewEnclaveContext(
 	}
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#getenclaveuuid---enclaveuuid
 func (enclaveCtx *EnclaveContext) GetEnclaveUuid() EnclaveUUID {
 	return enclaveCtx.enclaveUuid
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#getenclavename---string
 func (enclaveCtx *EnclaveContext) GetEnclaveName() string {
 	return enclaveCtx.enclaveName
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#runstarlarkscriptstring-serializedstarlarkscript-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
 func (enclaveCtx *EnclaveContext) RunStarlarkScript(
 	ctx context.Context,
 	serializedScript string,
@@ -133,7 +130,6 @@ func (enclaveCtx *EnclaveContext) RunStarlarkScript(
 	return starlarkResponseLineChan, cancelCtxFunc, nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#runstarlarkscriptblockingstring-serializedstarlarkscript-boolean-dryrun---starlarkrunresult-runresult-error-error
 func (enclaveCtx *EnclaveContext) RunStarlarkScriptBlocking(
 	ctx context.Context,
 	serializedScript string,
@@ -147,7 +143,6 @@ func (enclaveCtx *EnclaveContext) RunStarlarkScriptBlocking(
 	return starlarkResponse, getErrFromStarlarkRunResult(starlarkResponse)
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#runstarlarkpackagestring-packagerootpath-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
 func (enclaveCtx *EnclaveContext) RunStarlarkPackage(
 	ctx context.Context,
 	packageRootPath string,
@@ -261,7 +256,6 @@ func (enclaveCtx *EnclaveContext) uploadLocalStarlarkPackageDependencies(package
 	return nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#runstarlarkpackageblockingstring-packagerootpath-string-serializedparams-boolean-dryrun---starlarkrunresult-runresult-error-error
 func (enclaveCtx *EnclaveContext) RunStarlarkPackageBlocking(
 	ctx context.Context,
 	packageRootPath string,
@@ -290,7 +284,6 @@ func maybeParseYaml(serializedParams string) (string, error) {
 	return serializedParamsStr, nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#runstarlarkremotepackagestring-packageid-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
 func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(
 	ctx context.Context,
 	packageId string,
@@ -330,7 +323,6 @@ func isValidJSON(maybeJson string) bool {
 	return true
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#runstarlarkremotepackageblockingstring-packageid-string-serializedparams-boolean-dryrun---starlarkrunresult-runresult-error-error
 func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackageBlocking(
 	ctx context.Context,
 	packageId string,
@@ -344,7 +336,6 @@ func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackageBlocking(
 	return starlarkResponse, getErrFromStarlarkRunResult(starlarkResponse)
 }
 
-// Docs available at https://docs.kurtosis.com/sdk#getservicecontextstring-serviceidentifier---servicecontext-servicecontext
 func (enclaveCtx *EnclaveContext) GetServiceContext(serviceIdentifier string) (*services.ServiceContext, error) {
 	serviceIdentifierMapForArgs := map[string]bool{serviceIdentifier: true}
 	getServiceInfoArgs := binding_constructors.NewGetServicesArgs(serviceIdentifierMapForArgs)
@@ -373,7 +364,6 @@ func (enclaveCtx *EnclaveContext) GetServiceContext(serviceIdentifier string) (*
 	return serviceContext, nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk#getservicecontexts--mapstring--bool---servicecontext-servicecontext
 func (enclaveCtx *EnclaveContext) GetServiceContexts(serviceIdentifiers map[string]bool) (map[services.ServiceName]*services.ServiceContext, error) {
 	getServiceInfoArgs := binding_constructors.NewGetServicesArgs(serviceIdentifiers)
 	response, err := enclaveCtx.client.GetServices(context.Background(), getServiceInfoArgs)
@@ -396,7 +386,6 @@ func (enclaveCtx *EnclaveContext) GetServiceContexts(serviceIdentifiers map[stri
 	return serviceContexts, nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk#getservices---mapservicename--serviceuuid-serviceidentifiers
 func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceName]services.ServiceUUID, error) {
 	getServicesArgs := binding_constructors.NewGetServicesArgs(map[string]bool{})
 	response, err := enclaveCtx.client.GetServices(context.Background(), getServicesArgs)
@@ -413,7 +402,6 @@ func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceName]servic
 	return serviceInfos, nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk#uploadfilesstring-pathtoupload-string-artifactname
 func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string, artifactName string) (services.FilesArtifactUUID, services.FileArtifactName, error) {
 	content, contentSize, _, err := path_compression.CompressPath(pathToUpload, enforceMaxFileSizeLimit)
 	if err != nil {
@@ -449,7 +437,6 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string, artifactName 
 	return services.FilesArtifactUUID(response.GetUuid()), services.FileArtifactName(response.GetName()), nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk#storewebfilesstring-urltodownload-string-artifactname
 func (enclaveCtx *EnclaveContext) StoreWebFiles(ctx context.Context, urlToStoreWeb string, artifactName string) (services.FilesArtifactUUID, error) {
 	args := binding_constructors.NewStoreWebFilesArtifactArgs(urlToStoreWeb, artifactName)
 	response, err := enclaveCtx.client.StoreWebFilesArtifact(ctx, args)
@@ -459,7 +446,6 @@ func (enclaveCtx *EnclaveContext) StoreWebFiles(ctx context.Context, urlToStoreW
 	return services.FilesArtifactUUID(response.Uuid), nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk#downloadfilesartifact-fileidentifier-string
 func (enclaveCtx *EnclaveContext) DownloadFilesArtifact(ctx context.Context, artifactIdentifier string) ([]byte, error) {
 	args := binding_constructors.DownloadFilesArtifactArgs(artifactIdentifier)
 
@@ -494,7 +480,6 @@ func (enclaveCtx *EnclaveContext) InspectFilesArtifact(ctx context.Context, arti
 	return response, nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk#getexistingandhistoricalserviceidentifiers---serviceidentifiers-serviceidentifiers
 func (enclaveCtx *EnclaveContext) GetExistingAndHistoricalServiceIdentifiers(ctx context.Context) (*services.ServiceIdentifiers, error) {
 	response, err := enclaveCtx.client.GetExistingAndHistoricalServiceIdentifiers(ctx, &emptypb.Empty{})
 	if err != nil {
@@ -503,7 +488,6 @@ func (enclaveCtx *EnclaveContext) GetExistingAndHistoricalServiceIdentifiers(ctx
 	return services.NewServiceIdentifiers(enclaveCtx.enclaveName, response.AllIdentifiers), nil
 }
 
-// Docs available at https://docs.kurtosis.com/#getallfilesartifactnamesanduuids---filesartifactnameanduuid-filesartifactnamesanduuids
 func (enclaveCtx *EnclaveContext) GetAllFilesArtifactNamesAndUuids(ctx context.Context) ([]*kurtosis_core_rpc_api_bindings.FilesArtifactNameAndUuid, error) {
 	response, err := enclaveCtx.client.ListFilesArtifactNamesAndUuids(ctx, &emptypb.Empty{})
 	if err != nil {
@@ -512,7 +496,6 @@ func (enclaveCtx *EnclaveContext) GetAllFilesArtifactNamesAndUuids(ctx context.C
 	return response.GetFileNamesAndUuids(), nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk#connectservices
 func (enclaveCtx *EnclaveContext) ConnectServices(ctx context.Context, connect kurtosis_core_rpc_api_bindings.Connect) error {
 	args := binding_constructors.NewConnectServicesArgs(connect)
 	_, err := enclaveCtx.client.ConnectServices(ctx, args)
@@ -522,7 +505,6 @@ func (enclaveCtx *EnclaveContext) ConnectServices(ctx context.Context, connect k
 	return nil
 }
 
-// Docs available at https://docs.kurtosis.com/#getstarlarkrun
 func (enclaveCtx *EnclaveContext) GetStarlarkRun(ctx context.Context) (*kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse, error) {
 	response, err := enclaveCtx.client.GetStarlarkRun(ctx, &emptypb.Empty{})
 	if err != nil {
@@ -758,6 +740,7 @@ func (enclaveCtx *EnclaveContext) convertServiceInfoToServiceContext(serviceInfo
 		serviceCtxPrivatePorts,
 		serviceInfo.GetMaybePublicIpAddr(),
 		serviceCtxPublicPorts,
+		serviceInfo.Labels,
 	)
 
 	return serviceContext, nil

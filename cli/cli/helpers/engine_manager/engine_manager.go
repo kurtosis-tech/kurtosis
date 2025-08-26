@@ -2,10 +2,11 @@ package engine_manager
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/grafloki"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"strings"
 	"time"
+
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/grafloki"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 
 	portal_constructors "github.com/kurtosis-tech/kurtosis-portal/api/golang/constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
@@ -231,6 +232,8 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(
 		logRetentionPeriodStr,
 		combineSinks(additionalSinks, manager.clusterConfig.GetLogsAggregatorConfig().Sinks),
 		manager.clusterConfig.ShouldEnableDefaultLogsSink(),
+		manager.clusterConfig.GetLogsCollectorConfig().Filters,
+		manager.clusterConfig.GetLogsCollectorConfig().Parsers,
 	)
 	// TODO Need to handle the Kubernetes case, where a gateway needs to be started after the engine is started but
 	//  before we can return an EngineClient
@@ -297,6 +300,8 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 		logRetentionPeriodStr,
 		combineSinks(manager.clusterConfig.GetLogsAggregatorConfig().Sinks, additionalSinks),
 		manager.clusterConfig.ShouldEnableDefaultLogsSink(),
+		manager.clusterConfig.GetLogsCollectorConfig().Filters,
+		manager.clusterConfig.GetLogsCollectorConfig().Parsers,
 	)
 	engineClient, engineClientCloseFunc, err := manager.startEngineWithGuarantor(ctx, status, engineGuarantor)
 	if err != nil {

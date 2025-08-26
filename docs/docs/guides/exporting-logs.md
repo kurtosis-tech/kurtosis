@@ -404,12 +404,116 @@ kurtosis-clusters:
             codec: "json"
 ```
 
+### Configuring Log Filters
+
+Kurtosis allows you to configure filters that get passed through to the logs collector, currently implemented using [Fluentbit][fluentbit]. These filters can be used to modify or filter logs before they are sent to the configured sinks from export logs.
+
+The filters are configured in the `logs-collector` section of your Kurtosis config using version 6 or higher. Each filter has a `name`, `match` pattern, and parameters from the corresponding Fluentbit [filter][fluentbit-filters] used.
+
+Here are some examples of common configurations that might be useful in Kurtosis.
+
+#### Basic Grep Filter
+This example shows how to filter out logs containing specific patterns:
+
+```yaml
+config-version: 6
+should-send-metrics: true
+kurtosis-clusters:
+  docker:
+    type: "docker"
+    logs-collector:
+      filters:
+        - name: "grep"
+          match: "*"
+          params:
+           - key: "exclude"
+             value: "log .*DEBUG.*"
+           - key: "logical_op"
+             value: "&"
+```
+
+This configuration will exclude all logs containing the word "DEBUG" using the [grep][fluentbit-grep] filter.
+
+#### Multiple Filters
+You can chain multiple filters together:
+
+```yaml
+config-version: 6
+should-send-metrics: true
+kurtosis-clusters:
+  docker:
+    type: "docker"
+    logs-collector:
+      filters:
+        - name: "grep"
+          match: "*"
+          params:
+           - key: "exclude"
+             value: ".*DEBUG.*"
+        - name: "modify"
+          match: "*"
+          params:
+           - key: "Add"
+             value: "timestamp ${time}"
+```
+
+This configuration first filters out DEBUG logs, then adds a timestamp to the remaining logs using the [modify][fluentbit-modify] filter.
+
+#### Using Parsers with Filters
+You can use parsers to structure your logs before applying filters. This is particularly useful when working with structured log formats like JSON:
+
+```yaml
+config-version: 6
+should-send-metrics: true
+kurtosis-clusters:
+  docker:
+    type: "docker"
+    logs-collector:
+      parsers:
+        - name: "json_parser"
+          format: "json"
+          params:
+            - key: "Time_Key"
+              value: "timestamp"
+            - key: "Time_Format"
+              value: "%Y-%m-%dT%H:%M:%S.%L"
+      filters:
+        - name: "parser"
+          match: "*"
+          params:
+            - key: "Parser"
+              value: "json_parser"
+        - name: "grep"
+          match: "*"
+          params:
+            - key: "exclude"
+              value: "level=DEBUG"
+```
+
+This configuration:
+1. Defines a JSON parser that extracts the timestamp field and parses it
+2. Uses the parser filter to apply the JSON parser to all logs
+3. Filters out logs with DEBUG level
+
+:::info
+The [`match`][fluentbit-match] pattern uses Fluentbit's pattern matching syntax. `"*"` matches all logs, while more specific patterns can be used to target particular services or log types.
+:::
+
+:::tip
+For more information about available filters and their parameters, refer to the [Fluentbit documentation][fluentbit-filters].
+:::
+
 ### Grafloki
 
 For ease of setup, Kurtosis CLI comes with a feature to start a local Grafana and Loki instance that the engine gets configured to send logs to. See [grafloki start][grafloki-start] for more info.
 
 <!-------------------- ONLY LINKS BELOW THIS POINT ----------------------->
 [grafloki-start]: ../cli-reference/grafloki-start.md
-
+[fluentbit]: https://docs.fluentbit.io/manual
+[fluentbit-filters]: https://docs.fluentbit.io/manual/pipeline/filters
+[fluentbit-modify]: https://docs.fluentbit.io/manual/pipeline/filters/modify
+[fluentbit-grep]: https://docs.fluentbit.io/manual/pipeline/filters/grep
+[fluentbit-parsers]: https://docs.fluentbit.io/manual/pipeline/parsers
+[fluentbit-match]: https://docs.fluentbit.io/manual/concepts/key-concepts#match
 
 

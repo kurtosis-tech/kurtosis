@@ -11,4 +11,5 @@ const (
 	ConfigVersion_v3 // adds logs aggregator config
 	ConfigVersion_v4 // adds engine-node-name to KubernetesClusterConfig
 	ConfigVersion_v5 // adds GrafanaLokiConfig to KurtosisClusterConfig
+	ConfigVersion_v6 // adds logs collector config
 )

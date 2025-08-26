@@ -2,6 +2,7 @@ package logs_collector_functions
 
 import (
 	"context"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
@@ -26,6 +27,8 @@ func CreateLogsCollector(
 	logsCollectorHttpPortNumber uint16,
 	logsCollectorDaemonSet LogsCollectorDaemonSet,
 	logsAggregator *logs_aggregator.LogsAggregator,
+	logsCollectorFilters []logs_collector.Filter,
+	logsCollectorParsers []logs_collector.Parser,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
 ) (
@@ -36,7 +39,7 @@ func CreateLogsCollector(
 	var logsCollectorObj *logs_collector.LogsCollector
 	var kubernetesResources *logsCollectorKubernetesResources
 	shouldRemoveLogsCollector := false // only gets set to true if a logs collector is created (and might need to be removed)
-	var removeLogsCollectorFunc func()
+	removeLogsCollectorFunc := func() {}
 	var err error
 
 	logsCollectorObj, kubernetesResources, err = getLogsCollectorObjAndResourcesForCluster(ctx, kubernetesManager)
@@ -45,7 +48,6 @@ func CreateLogsCollector(
 	}
 
 	if logsCollectorObj != nil {
-		removeLogsCollectorFunc = func() {} // can't create remove in this situation so jus make it a no op
 		logrus.Debug("Found existing logs collector daemon set.")
 	} else {
 		logrus.Debug("Did not find existing log collector, creating one...")
@@ -57,6 +59,8 @@ func CreateLogsCollector(
 			logsCollectorHttpPortNumber,
 			logsCollectorTcpPortId,
 			logsCollectorHttpPortId,
+			logsCollectorFilters,
+			logsCollectorParsers,
 			objAttrsProvider,
 			kubernetesManager,
 		)

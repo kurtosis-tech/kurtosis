@@ -3,6 +3,8 @@ package update
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
@@ -20,7 +22,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"strings"
 )
 
 const (
@@ -264,6 +265,7 @@ func run(
 		updatedServiceConfig.NodeSelectors,
 		updatedServiceConfig.Labels,
 		updatedServiceConfig.TiniEnabled,
+		updatedServiceConfig.TtyEnabled,
 		updatedServiceConfig.PrivateIPAddressPlaceholder,
 	)
 
@@ -357,6 +359,7 @@ func parseOverridesServiceConfigFromFlags(
 		Labels:                      nil,
 		NodeSelectors:               nil,
 		TiniEnabled:                 nil,
+		TtyEnabled:                  nil,
 	}, nil
 }
 
@@ -430,5 +433,6 @@ func createUpdatedServiceConfigFromOverrides(overridesServiceConfig, currService
 		Labels:                      nil,
 		NodeSelectors:               nil,
 		TiniEnabled:                 nil,
+		TtyEnabled:                  nil,
 	}
 }

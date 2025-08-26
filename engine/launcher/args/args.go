@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args/kurtosis_backend_config"
@@ -69,6 +70,10 @@ type EngineServerArgs struct {
 	Domain string `json:"domain"`
 
 	LogRetentionPeriod string `json:"logRetentionPeriod"`
+
+	LogsCollectorFilters []logs_collector.Filter `json:"logsCollectorFilters"`
+
+	LogsCollectorParsers []logs_collector.Parser `json:"logsCollectorParsers"`
 }
 
 var skipValidation = map[string]bool{
@@ -95,6 +100,12 @@ func (args *EngineServerArgs) UnmarshalJSON(data []byte) error {
 			return stacktrace.Propagate(err, "Failed to unmarshal backend config '%+v' with type '%v'", engineServerArgsMirror.KurtosisLocalBackendConfig, engineServerArgsMirror.KurtosisBackendType.String())
 		}
 		engineServerArgsMirror.KurtosisLocalBackendConfig = dockerConfig
+	case KurtosisBackendType_Podman:
+		var podmanConfig kurtosis_backend_config.PodmanBackendConfig
+		if err := json.Unmarshal(byteArray, &podmanConfig); err != nil {
+			return stacktrace.Propagate(err, "Failed to unmarshal backend config '%+v' with type '%v'", engineServerArgsMirror.KurtosisLocalBackendConfig, engineServerArgsMirror.KurtosisBackendType.String())
+		}
+		engineServerArgsMirror.KurtosisLocalBackendConfig = podmanConfig
 	case KurtosisBackendType_Kubernetes:
 		var kubernetesConfig kurtosis_backend_config.KubernetesBackendConfig
 		if err := json.Unmarshal(byteArray, &kubernetesConfig); err != nil {
@@ -128,6 +139,8 @@ func NewEngineServerArgs(
 	restartAPIContainers bool,
 	domain string,
 	logRetentionPeriod string,
+	logsCollectorFilters []logs_collector.Filter,
+	logsCollectorParsers []logs_collector.Parser,
 ) (*EngineServerArgs, error) {
 	if enclaveEnvVars == "" {
 		enclaveEnvVars = emptyJsonField
@@ -150,6 +163,8 @@ func NewEngineServerArgs(
 		RestartAPIContainers:        restartAPIContainers,
 		Domain:                      domain,
 		LogRetentionPeriod:          logRetentionPeriod,
+		LogsCollectorFilters:        logsCollectorFilters,
+		LogsCollectorParsers:        logsCollectorParsers,
 	}
 	if err := result.validate(); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred validating engine server args")

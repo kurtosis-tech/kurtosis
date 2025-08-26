@@ -3,6 +3,8 @@ package wait
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
@@ -19,7 +21,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
-	"time"
 )
 
 const (
@@ -247,11 +248,17 @@ func (builtin *WaitCapabilities) Execute(ctx context.Context, _ *builtin_argumen
 
 	startTime := time.Now()
 
+	service, err := builtin.serviceNetwork.GetService(ctx, string(builtin.serviceName))
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while getting service '%s'", builtin.serviceName)
+	}
+
 	lastResult, tries, err := shared_helpers.ExecuteServiceAssertionWithRecipe(
 		ctx,
 		builtin.serviceNetwork,
 		builtin.runtimeValueStore,
 		builtin.serviceName,
+		service,
 		builtin.recipe,
 		builtin.valueField,
 		builtin.assertion,

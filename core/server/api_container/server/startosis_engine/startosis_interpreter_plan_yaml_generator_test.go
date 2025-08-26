@@ -3,9 +3,13 @@ package startosis_engine
 import (
 	"context"
 	"fmt"
+	"net"
+	"testing"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/core/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
@@ -15,8 +19,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"net"
-	"testing"
 )
 
 const (
@@ -69,7 +71,7 @@ func (suite *StartosisIntepreterPlanYamlGeneratorTestSuite) SetupTest() {
 		mockApicVersion)
 	suite.serviceNetwork.EXPECT().GetApiContainerInfo().Return(apiContainerInfo)
 
-	suite.interpreter = NewStartosisInterpreter(suite.serviceNetwork, suite.packageContentProvider, suite.runtimeValueStore, nil, "", suite.interpretationTimeValueStore)
+	suite.interpreter = NewStartosisInterpreter(suite.serviceNetwork, suite.packageContentProvider, suite.runtimeValueStore, nil, "", suite.interpretationTimeValueStore, args.KurtosisBackendType_Docker)
 }
 
 func TestRunStartosisIntepreterPlanYamlGeneratorTestSuite(t *testing.T) {

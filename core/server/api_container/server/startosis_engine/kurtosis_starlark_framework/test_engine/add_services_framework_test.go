@@ -2,24 +2,23 @@ package test_engine
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"testing"
 
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
-
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
@@ -34,6 +33,9 @@ type addServicesTestCase struct {
 }
 
 func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
+	testService1 := service.NewService(service.NewServiceRegistration(testServiceName, testServiceUuid, testEnclaveUuid, nil, string(testServiceName)), nil, nil, nil, container.NewContainer(container.ContainerStatus_Running, testContainerImageName, nil, nil, nil))
+	testService2 := service.NewService(service.NewServiceRegistration(testServiceName2, testServiceUuid2, testEnclaveUuid, nil, string(testServiceName2)), nil, nil, nil, container.NewContainer(container.ContainerStatus_Running, testContainerImageName, nil, nil, nil))
+
 	suite.serviceNetwork.EXPECT().ExistServiceRegistration(testServiceName).Times(1).Return(false, nil)
 	suite.serviceNetwork.EXPECT().ExistServiceRegistration(testServiceName2).Times(1).Return(false, nil)
 	suite.serviceNetwork.EXPECT().UpdateServices(
@@ -52,13 +54,13 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 			suite.Require().Contains(configs, testServiceName)
 			suite.Require().Contains(configs, testServiceName2)
 
-			expectedServiceConfig1, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, map[string]*port_spec.PortSpec{}, map[string]*port_spec.PortSpec{}, nil, nil, map[string]string{}, nil, nil, 0, 0, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true)
+			expectedServiceConfig1, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, map[string]*port_spec.PortSpec{}, map[string]*port_spec.PortSpec{}, nil, nil, map[string]string{}, nil, nil, 0, 0, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false)
 			require.NoError(suite.T(), err)
 
 			actualServiceConfig1 := configs[testServiceName]
 			suite.Assert().Equal(expectedServiceConfig1, actualServiceConfig1)
 
-			expectedServiceConfig2, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, map[string]*port_spec.PortSpec{}, map[string]*port_spec.PortSpec{}, nil, nil, map[string]string{}, nil, nil, testCpuAllocation, testMemoryAllocation, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true)
+			expectedServiceConfig2, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, map[string]*port_spec.PortSpec{}, map[string]*port_spec.PortSpec{}, nil, nil, map[string]string{}, nil, nil, testCpuAllocation, testMemoryAllocation, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false)
 			require.NoError(suite.T(), err)
 
 			actualServiceConfig2 := configs[testServiceName2]
@@ -68,8 +70,8 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 		mock.Anything,
 	).Times(1).Return(
 		map[service.ServiceName]*service.Service{
-			testServiceName:  service.NewService(service.NewServiceRegistration(testServiceName, testServiceUuid, testEnclaveUuid, nil, string(testServiceName)), nil, nil, nil, container.NewContainer(container.ContainerStatus_Running, testContainerImageName, nil, nil, nil)),
-			testServiceName2: service.NewService(service.NewServiceRegistration(testServiceName2, testServiceUuid2, testEnclaveUuid, nil, string(testServiceName2)), nil, nil, nil, container.NewContainer(container.ContainerStatus_Running, testContainerImageName, nil, nil, nil)),
+			testServiceName:  testService1,
+			testServiceName2: testService2,
 		},
 		map[service.ServiceName]error{},
 		nil,
@@ -77,7 +79,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 
 	suite.serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
-		string(testServiceName),
+		testService1,
 		testReadyConditionsRecipePortId,
 		testGetRequestMethod,
 		"",
@@ -106,7 +108,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 
 	suite.serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
-		string(testServiceName2),
+		testService2,
 		testReadyConditions2RecipePortId,
 		testGetRequestMethod,
 		"",

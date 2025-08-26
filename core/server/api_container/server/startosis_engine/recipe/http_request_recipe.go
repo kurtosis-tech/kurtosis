@@ -3,6 +3,11 @@ package recipe
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/http"
+	"reflect"
+	"strings"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
@@ -15,10 +20,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"golang.org/x/exp/maps"
-	"io"
-	"net/http"
-	"reflect"
-	"strings"
 )
 
 const (
@@ -45,7 +46,7 @@ func executeInternal(
 	ctx context.Context,
 	serviceNetwork service_network.ServiceNetwork,
 	runtimeValueStore *runtime_value_store.RuntimeValueStore,
-	serviceName service.ServiceName,
+	service *service.Service,
 	requestBody string,
 	portId string,
 	method string,
@@ -61,14 +62,9 @@ func executeInternal(
 		return nil, stacktrace.Propagate(err, "An error occurred while replacing runtime values in the body of the http recipe")
 	}
 
-	serviceNameStr := string(serviceName)
-	if serviceNameStr == "" {
-		return nil, stacktrace.NewError("The service name parameter can't be an empty string")
-	}
-
-	response, err = serviceNetwork.HttpRequestService(ctx, serviceNameStr, portId, method, contentType, endpoint, recipeBodyWithRuntimeValue, headers)
+	response, err = serviceNetwork.HttpRequestService(ctx, service, portId, method, contentType, endpoint, recipeBodyWithRuntimeValue, headers)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred when running HTTP request recipe")
+		return nil, stacktrace.Propagate(err, "An error occurred when running HTTP request recipe.")
 	}
 	defer func() {
 		err := response.Body.Close()

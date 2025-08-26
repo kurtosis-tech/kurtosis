@@ -2,7 +2,7 @@ import { isDefined } from "kurtosis-ui-components";
 
 // Configurable:
 export const KURTOSIS_CLOUD_PROTOCOL = "https";
-export const KURTOSIS_CLOUD_HOST = "cloud.kurtosis.com";
+export const KURTOSIS_CLOUD_HOST = "catalog.kurtosis.com";
 export const KURTOSIS_CLOUD_CONNECT_PAGE = "connect";
 export const KURTOSIS_CLOUD_EM_PAGE = "enclave-manager";
 export const KURTOSIS_CLOUD_SUBSCRIPTION_PAGE = "subscription";
@@ -15,7 +15,7 @@ export const KURTOSIS_CLOUD_CONNECT_URL = `${KURTOSIS_CLOUD_UI_URL}/${KURTOSIS_C
 export const KURTOSIS_CLOUD_SUBSCRIPTION_URL = `${KURTOSIS_CLOUD_UI_URL}/${KURTOSIS_CLOUD_SUBSCRIPTION_PAGE}`;
 export const KURTOSIS_CLOUD_EM_URL = `${KURTOSIS_CLOUD_UI_URL}/${KURTOSIS_CLOUD_EM_PAGE}`;
 export const KURTOSIS_PACKAGE_INDEXER_URL =
-  process.env.REACT_APP_KURTOSIS_PACKAGE_INDEXER_URL || `${KURTOSIS_CLOUD_PROTOCOL}://${KURTOSIS_CLOUD_HOST}:9770`;
+  process.env.REACT_APP_KURTOSIS_PACKAGE_INDEXER_URL || `${KURTOSIS_CLOUD_PROTOCOL}://${KURTOSIS_CLOUD_HOST}/api`;
 
 // EM API
 export const KURTOSIS_EM_DEFAULT_HOST = process.env.REACT_APP_KURTOSIS_DEFAULT_HOST || "localhost";

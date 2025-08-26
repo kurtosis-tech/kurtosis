@@ -1,7 +1,10 @@
 package binding_constructors
 
 import (
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 // The generated bindings don't come with constructors (leaving it up to the user to initialize all the fields), so we
@@ -187,11 +190,12 @@ func NewStarlarkRunResponseLineFromWarning(warningMessage string) *kurtosis_core
 	}
 }
 
-func NewStarlarkRunResponseLineFromInstructionResult(serializedInstructionResult string) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+func NewStarlarkRunResponseLineFromInstructionResult(serializedInstructionResult string, executionDuration time.Duration) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
 		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_InstructionResult{
 			InstructionResult: &kurtosis_core_rpc_api_bindings.StarlarkInstructionResult{
 				SerializedInstructionResult: serializedInstructionResult,
+				ExecutionDuration:           durationpb.New(executionDuration),
 			},
 		},
 	}
@@ -261,19 +265,33 @@ func NewStarlarkRunResponseLineFromRunFailureEvent() *kurtosis_core_rpc_api_bind
 	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
 		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_RunFinishedEvent{
 			RunFinishedEvent: &kurtosis_core_rpc_api_bindings.StarlarkRunFinishedEvent{
-				IsRunSuccessful:  false,
-				SerializedOutput: nil,
+				IsRunSuccessful:        false,
+				TotalExecutionDuration: durationpb.New(0),
+				SerializedOutput:       nil,
 			},
 		},
 	}
 }
 
-func NewStarlarkRunResponseLineFromRunSuccessEvent(serializedOutputObject string) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+func NewStarlarkRunResponseLineFromRunFailureEventWithDuration(totalExecutionDuration time.Duration) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
 		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_RunFinishedEvent{
 			RunFinishedEvent: &kurtosis_core_rpc_api_bindings.StarlarkRunFinishedEvent{
-				IsRunSuccessful:  true,
-				SerializedOutput: &serializedOutputObject,
+				IsRunSuccessful:        false,
+				TotalExecutionDuration: durationpb.New(totalExecutionDuration),
+				SerializedOutput:       nil,
+			},
+		},
+	}
+}
+
+func NewStarlarkRunResponseLineFromRunSuccessEvent(serializedOutputObject string, totalExecutionDuration time.Duration) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
+		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_RunFinishedEvent{
+			RunFinishedEvent: &kurtosis_core_rpc_api_bindings.StarlarkRunFinishedEvent{
+				IsRunSuccessful:        true,
+				TotalExecutionDuration: durationpb.New(totalExecutionDuration),
+				SerializedOutput:       &serializedOutputObject,
 			},
 		},
 	}
@@ -372,6 +390,8 @@ func NewServiceInfo(
 	nodeSelectors map[string]string,
 	labels map[string]string,
 	tiniEnabled bool,
+	ttyEnabled bool,
+
 ) *kurtosis_core_rpc_api_bindings.ServiceInfo {
 	return &kurtosis_core_rpc_api_bindings.ServiceInfo{
 		ServiceUuid:                         uuid,
@@ -393,6 +413,7 @@ func NewServiceInfo(
 		NodeSelectors:                       nodeSelectors,
 		Labels:                              labels,
 		TiniEnabled:                         &tiniEnabled,
+		TtyEnabled:                          &ttyEnabled,
 	}
 }
 

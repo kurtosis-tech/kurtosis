@@ -52,6 +52,10 @@ type KurtosisBackend interface {
 		githubAuthToken string,
 		sinks logs_aggregator.Sinks,
 		shouldTurnOffPersistentVolumeLogsCollection bool,
+		// logsCollectorFilters and logsCollectorParsers needs to be passed into both CreateEngine and CreateLogsCollectorForEnclave
+		// this is because over Docker, CreateLogsCollectorForEnclave creates the logs collector and over k8s CreateEngine does
+		logsCollectorFilters []logs_collector.Filter,
+		logsCollectorParsers []logs_collector.Parser,
 	) (
 		*engine.Engine,
 		error,
@@ -343,7 +347,17 @@ type KurtosisBackend interface {
 	DestroyLogsAggregator(ctx context.Context) error
 
 	// Create a new Logs Collector for sending container's logs to the logs aggregator server
-	CreateLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, logsCollectorHttpPortNumber uint16, logsCollectorTcpPortNumber uint16) (*logs_collector.LogsCollector, error)
+	CreateLogsCollectorForEnclave(
+		ctx context.Context,
+		enclaveUuid enclave.EnclaveUUID,
+		logsCollectorHttpPortNumber uint16,
+		logsCollectorTcpPortNumber uint16,
+		logsCollectorFilters []logs_collector.Filter,
+		logsCollectorParsers []logs_collector.Parser,
+	) (
+		*logs_collector.LogsCollector,
+		error,
+	)
 
 	// Gets the logs collector, if nothing is found returns nil
 	GetLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (*logs_collector.LogsCollector, error)

@@ -4,10 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
+	"strings"
+	"testing"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/core/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/print_builtin"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/time_now_builtin"
@@ -29,9 +34,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.starlark.net/starlark"
-	"net"
-	"strings"
-	"testing"
 )
 
 var (
@@ -83,7 +85,7 @@ func (suite *StartosisInterpreterTestSuite) SetupTest() {
 	suite.interpretationTimeValueStore = interpretationTimeValueStore
 	require.NotNil(suite.T(), interpretationTimeValueStore)
 
-	suite.interpreter = NewStartosisInterpreter(suite.serviceNetwork, suite.packageContentProvider, suite.runtimeValueStore, nil, "", suite.interpretationTimeValueStore)
+	suite.interpreter = NewStartosisInterpreter(suite.serviceNetwork, suite.packageContentProvider, suite.runtimeValueStore, nil, "", suite.interpretationTimeValueStore, args.KurtosisBackendType_Docker)
 
 	service.NewServiceRegistration(
 		testServiceName,
@@ -1100,7 +1102,7 @@ def run(plan):
 	}
 
 	// We'll create a new interpreter using the processBuiltins transformer above
-	interpreter := NewStartosisInterpreterWithBuiltinsProcessor(suite.serviceNetwork, suite.packageContentProvider, suite.runtimeValueStore, nil, "", suite.interpretationTimeValueStore, processBuiltins)
+	interpreter := NewStartosisInterpreterWithBuiltinsProcessor(suite.serviceNetwork, suite.packageContentProvider, suite.runtimeValueStore, nil, "", suite.interpretationTimeValueStore, processBuiltins, args.KurtosisBackendType_Docker)
 
 	_, _, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, noPackageReplaceOptions, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, script, startosis_constants.EmptyInputArgs, defaultNonBlockingMode, emptyEnclaveComponents, emptyInstructionsPlanMask, defaultImageDownloadMode)
 
@@ -1125,7 +1127,7 @@ def run(plan):
 	}
 
 	// We'll create a new interpreter using the processBuiltins transformer above
-	interpreter := NewStartosisInterpreterWithBuiltinsProcessor(suite.serviceNetwork, suite.packageContentProvider, suite.runtimeValueStore, nil, "", suite.interpretationTimeValueStore, processBuiltins)
+	interpreter := NewStartosisInterpreterWithBuiltinsProcessor(suite.serviceNetwork, suite.packageContentProvider, suite.runtimeValueStore, nil, "", suite.interpretationTimeValueStore, processBuiltins, args.KurtosisBackendType_Docker)
 
 	// If everything goes well we should see no error & message on the output
 	_, instructionsPlan, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, noPackageReplaceOptions, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, script, startosis_constants.EmptyInputArgs, defaultNonBlockingMode, emptyEnclaveComponents, emptyInstructionsPlanMask, defaultImageDownloadMode)

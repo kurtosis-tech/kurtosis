@@ -4,8 +4,8 @@ const (
 	healthCheckEndpointPath = "api/v1/health"
 
 	fluentBitContainerName = "fluent-bit"
-	// using debug image for now with testing toolkit (curl, netstat) eventually will move to latest regular img
-	fluentBitImage = "fluent/fluent-bit:latest-debug"
+	// fluentbit uses debug img for access to `sh` as clean up pods execute clean up using `sh`
+	fluentBitImage = "fluent/fluent-bit:4.0.0-debug"
 
 	// volumes pulled from official fluent bit helm chart: https://github.com/fluent/helm-charts/blob/main/charts/fluent-bit/values.yaml
 	varLogVolumeName                 = "varlog"
@@ -33,7 +33,6 @@ const (
 	// in case it needs to be configured by the user down the line
 	k8sApiServerUrl = "https://kubernetes.default.svc:443"
 
-	// TODO: construct fluentbit config via go templating based on inputs
 	fluentBitConfigFileName = "fluent-bit.conf"
 	fluentBitConfigTemplate = `
 [SERVICE]
@@ -41,6 +40,7 @@ const (
     HTTP_Listen       0.0.0.0
     HTTP_PORT         {{ .HTTPPort }}
     Parsers_File      /fluent-bit/etc/parsers.conf
+    Parsers_File      {{ .KurtosisParsersConfigFilepath }}
 
 [INPUT]
     Name              tail
@@ -51,30 +51,30 @@ const (
     DB.sync           normal
     Read_from_Head    true
     Refresh_Interval  10
-
+    
 [FILTER]
     Name              kubernetes
     Match             *
     Labels            On
     Annotations       Off
     Kube_Tag_Prefix   kurtosis.var.log.containers.
-
+    
 [FILTER]
     Name lua
     Match *
     call flatten_kubernetes_labels
     code function flatten_kubernetes_labels(tag, timestamp, record) record["{{ .LogsEnclaveUUIDLabel }}"] = record["kubernetes"]["labels"]["{{ .LogsEnclaveUUIDLabel }}"] record["{{ .LogsServiceUUIDLabel }}"] = record["kubernetes"]["labels"]["{{ .LogsServiceUUIDLabel }}"] return 1, timestamp, record end
-
+    
 [FILTER]
     Name record_modifier
     Match *
     Remove_key kubernetes
-
+    
 [FILTER]
     Name modify
     Match *
     Rename time timestamp
-
+    
 [FILTER]
     Name              kubernetes
     Match             *
@@ -83,16 +83,31 @@ const (
     Keep_Log          On
     Annotations       Off
     Labels            On
-
+    {{range .Filters}}
+    
+[FILTER]
+    Name              {{.Name}}
+    Match             {{.Match}}
+    {{- range .Params}}
+    {{.Key}} {{.Value}}
+    {{- end}}{{end}}
+    
 [OUTPUT]
     Name              stdout
     Match             *
     Format            json_lines
-
+    
 [OUTPUT]
     Name              forward
     Match             *
     Host              {{ .LogsAggregatorHost }}
     Port              {{ .LogsAggregatorPortNum }}
+    `
+
+	parsersFileName          = "kurtosis-parsers.conf"
+	parserConfigFileTemplate = `{{- range .Parsers}}[PARSER]
+{{- range $key, $value := . }}
+    {{$key}} {{$value}}
+{{- end }}{{ end }}
 `
 )
