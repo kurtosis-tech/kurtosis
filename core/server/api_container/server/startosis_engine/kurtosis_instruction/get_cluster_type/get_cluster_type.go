@@ -65,6 +65,7 @@ func (builtin *GetClusterTypeCapabilities) TryResolveWith(instructionsAreEqual b
 }
 
 func (builtin *GetClusterTypeCapabilities) FillPersistableAttributes(builder *enclave_plan_persistence.EnclavePlanInstructionBuilder) {
+	builder.SetType(GetClusterTypeBuiltinName)
 }
 
 func (builtin *GetClusterTypeCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYamlGenerator) error {
