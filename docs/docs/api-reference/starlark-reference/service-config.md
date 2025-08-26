@@ -182,6 +182,13 @@ config = ServiceConfig(
     # OPTIONAL (Default: "KURTOSIS_IP_ADDR_PLACEHOLDER")
     private_ip_address_placeholder = "KURTOSIS_IP_ADDRESS_PLACEHOLDER",
 
+    # ENTRYPOINT, CMD, and ENV variables sometimes need to refer to the Kubernetes pod's IP address.
+    # If this placeholder string is referenced inside the 'entrypoint', 'cmd', or 'env_vars' properties, the Kurtosis engine will replace it at launch time
+    # with the Kubernetes pod's IP address (only works on Kubernetes backend).
+    # This is useful for networking configurations that need to bind to the pod's IP rather than the service IP.
+    # OPTIONAL (Default: "K8S_POD_IP_ADDR_PLACEHOLDER")
+    k8s_pod_ip_address_placeholder = "K8S_POD_IP_ADDR_PLACEHOLDER",
+
     # The maximum amount of CPUs the service can use, in millicpu/millicore.
     # OPTIONAL (Default: no limit)
     max_cpu = 1000,

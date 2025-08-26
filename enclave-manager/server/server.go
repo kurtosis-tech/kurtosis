@@ -125,7 +125,9 @@ func (c *WebServer) CreateRepositoryWebhook(ctx context.Context, req *connect.Re
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "an error occurred while creating the webhook")
 	}
-	return &connect.Response[emptypb.Empty]{}, nil
+	return &connect.Response[emptypb.Empty]{
+		Msg: &emptypb.Empty{},
+	}, nil
 }
 
 func (c *WebServer) ValidateRequestAuthorization(
@@ -422,7 +424,9 @@ func (c *WebServer) AddAlias(ctx context.Context, req *connect.Request[kurtosis_
 		return nil, stacktrace.Propagate(err, "an error occurred while sending add alias request to the cloud backend")
 	}
 
-	return &connect.Response[emptypb.Empty]{}, nil
+	return &connect.Response[emptypb.Empty]{
+		Msg: &emptypb.Empty{},
+	}, nil
 
 }
 
@@ -464,7 +468,9 @@ func (c *WebServer) LockPort(ctx context.Context, req *connect.Request[kurtosis_
 		return nil, stacktrace.Propagate(err, "an error occurred while sending lock port request to the cloud backend")
 	}
 
-	return &connect.Response[emptypb.Empty]{}, nil
+	return &connect.Response[emptypb.Empty]{
+		Msg: &emptypb.Empty{},
+	}, nil
 }
 
 func (c *WebServer) UnlockPort(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest]) (*connect.Response[emptypb.Empty], error) {
@@ -502,7 +508,9 @@ func (c *WebServer) UnlockPort(ctx context.Context, req *connect.Request[kurtosi
 		return nil, stacktrace.Propagate(err, "an error occurred while sending unlock port request to the cloud backend")
 	}
 
-	return &connect.Response[emptypb.Empty]{}, nil
+	return &connect.Response[emptypb.Empty]{
+		Msg: &emptypb.Empty{},
+	}, nil
 }
 
 func (c *WebServer) GetServiceLogs(
@@ -631,7 +639,9 @@ func (c *WebServer) DestroyEnclave(ctx context.Context, req *connect.Request[kur
 		return nil, err
 	}
 	// nolint: exhaustruct
-	return &connect.Response[emptypb.Empty]{}, nil
+	return &connect.Response[emptypb.Empty]{
+		Msg: &emptypb.Empty{},
+	}, nil
 
 }
 

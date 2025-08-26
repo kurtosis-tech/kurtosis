@@ -81,6 +81,11 @@ build/
 dist/
 cli/cli/scripts/completions/
 
+# Binaries
+api-container
+engine/engine
+kurtosis-cli
+
 # Java
 .gradle
 

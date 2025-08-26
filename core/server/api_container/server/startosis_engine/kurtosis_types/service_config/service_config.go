@@ -40,6 +40,7 @@ const (
 	CmdAttr                         = "cmd"
 	EnvVarsAttr                     = "env_vars"
 	PrivateIpAddressPlaceholderAttr = "private_ip_address_placeholder"
+	K8sPodIpAddressPlaceholderAttr  = "k8s_pod_ip_address_placeholder"
 	CpuAllocationAttr               = "cpu_allocation"
 	MemoryAllocationAttr            = "memory_allocation"
 	ReadyConditionsAttr             = "ready_conditions"
@@ -119,6 +120,14 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.NonEmptyString(value, PrivateIpAddressPlaceholderAttr)
+					},
+				},
+				{
+					Name:              K8sPodIpAddressPlaceholderAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return builtin_argument.NonEmptyString(value, K8sPodIpAddressPlaceholderAttr)
 					},
 				},
 				{
@@ -396,6 +405,17 @@ func (config *ServiceConfig) ToKurtosisType(
 		privateIpAddressPlaceholder = DefaultPrivateIPAddrPlaceholder
 	}
 
+	var k8sPodIpAddressPlaceholder string
+	k8sPodIpAddressPlaceholderStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](config.KurtosisValueTypeDefault, K8sPodIpAddressPlaceholderAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found && k8sPodIpAddressPlaceholderStarlark.GoString() != "" {
+		k8sPodIpAddressPlaceholder = k8sPodIpAddressPlaceholderStarlark.GoString()
+	} else {
+		k8sPodIpAddressPlaceholder = K8sPodIPAddrPlaceholder
+	}
+
 	var maxCpu uint64
 	maxCpuStarlark, foundMaxCpu, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Int](config.KurtosisValueTypeDefault, MaxCpuMilliCoresAttr)
 	if interpretationErr != nil {
@@ -573,6 +593,7 @@ func (config *ServiceConfig) ToKurtosisType(
 		maxCpu,
 		maxMemory,
 		privateIpAddressPlaceholder,
+		k8sPodIpAddressPlaceholder,
 		minCpu,
 		minMemory,
 		labels,

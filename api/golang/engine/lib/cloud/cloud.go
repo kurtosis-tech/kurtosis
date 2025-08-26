@@ -14,37 +14,9 @@ func CreateCloudClient(connectionStr string, caCertChain string) (api.KurtosisCl
 	p := x509.NewCertPool()
 	p.AppendCertsFromPEM(caCertChainBytes)
 
+	// nolint: exhaustruct
 	tlsConfig := &tls.Config{
-		Rand:                                nil,
-		Time:                                nil,
-		Certificates:                        nil,
-		NameToCertificate:                   nil,
-		GetCertificate:                      nil,
-		GetClientCertificate:                nil,
-		GetConfigForClient:                  nil,
-		VerifyPeerCertificate:               nil,
-		VerifyConnection:                    nil,
-		RootCAs:                             nil,
-		NextProtos:                          nil,
-		ServerName:                          "",
-		ClientAuth:                          0,
-		ClientCAs:                           nil,
-		InsecureSkipVerify:                  false,
-		CipherSuites:                        nil,
-		PreferServerCipherSuites:            false,
-		SessionTicketsDisabled:              false,
-		SessionTicketKey:                    [32]byte{},
-		ClientSessionCache:                  nil,
-		UnwrapSession:                       nil,
-		WrapSession:                         nil,
-		MinVersion:                          0,
-		MaxVersion:                          0,
-		CurvePreferences:                    nil,
-		DynamicRecordSizingDisabled:         false,
-		Renegotiation:                       0,
-		KeyLogWriter:                        nil,
-		EncryptedClientHelloConfigList:      nil,
-		EncryptedClientHelloRejectionVerify: nil,
+		RootCAs: p,
 	}
 	conn, err := grpc.Dial(connectionStr, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
 	if err != nil {

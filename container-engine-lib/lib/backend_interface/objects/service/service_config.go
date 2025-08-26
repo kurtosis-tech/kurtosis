@@ -59,6 +59,8 @@ type privateServiceConfig struct {
 
 	PrivateIPAddrPlaceholder string
 
+	K8sPodIPAddrPlaceholder string
+
 	MinCpuAllocationMilliCpus uint64
 
 	MinMemoryAllocationMegabytes uint64
@@ -81,7 +83,7 @@ type privateServiceConfig struct {
 	TtyEnabled bool
 }
 
-func CreateServiceConfig(containerImageName string, imageBuildSpec *image_build_spec.ImageBuildSpec, imageRegistrySpec *image_registry_spec.ImageRegistrySpec, nixBuildSpec *nix_build_spec.NixBuildSpec, privatePorts map[string]*port_spec.PortSpec, publicPorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, envVars map[string]string, filesArtifactExpansion *service_directory.FilesArtifactsExpansion, persistentDirectories *service_directory.PersistentDirectories, cpuAllocationMillicpus uint64, memoryAllocationMegabytes uint64, privateIPAddrPlaceholder string, minCpuMilliCpus uint64, minMemoryMegaBytes uint64, labels map[string]string, user *service_user.ServiceUser, tolerations []v1.Toleration, nodeSelectors map[string]string, imageDownloadMode image_download_mode.ImageDownloadMode, tiniEnabled bool, ttyEnabled bool) (*ServiceConfig, error) {
+func CreateServiceConfig(containerImageName string, imageBuildSpec *image_build_spec.ImageBuildSpec, imageRegistrySpec *image_registry_spec.ImageRegistrySpec, nixBuildSpec *nix_build_spec.NixBuildSpec, privatePorts map[string]*port_spec.PortSpec, publicPorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, envVars map[string]string, filesArtifactExpansion *service_directory.FilesArtifactsExpansion, persistentDirectories *service_directory.PersistentDirectories, cpuAllocationMillicpus uint64, memoryAllocationMegabytes uint64, privateIPAddrPlaceholder string, k8sPodIPAddrPlaceholder string, minCpuMilliCpus uint64, minMemoryMegaBytes uint64, labels map[string]string, user *service_user.ServiceUser, tolerations []v1.Toleration, nodeSelectors map[string]string, imageDownloadMode image_download_mode.ImageDownloadMode, tiniEnabled bool, ttyEnabled bool) (*ServiceConfig, error) {
 
 	if err := ValidateServiceConfigLabels(labels); err != nil {
 		return nil, stacktrace.Propagate(err, "Invalid service config labels '%+v'", labels)
@@ -102,6 +104,7 @@ func CreateServiceConfig(containerImageName string, imageBuildSpec *image_build_
 		CpuAllocationMillicpus:    cpuAllocationMillicpus,
 		MemoryAllocationMegabytes: memoryAllocationMegabytes,
 		PrivateIPAddrPlaceholder:  privateIPAddrPlaceholder,
+		K8sPodIPAddrPlaceholder:   k8sPodIPAddrPlaceholder,
 		// The minimum resources specification is only available for kubernetes
 		MinCpuAllocationMilliCpus:    minCpuMilliCpus,
 		MinMemoryAllocationMegabytes: minMemoryMegaBytes,
@@ -195,6 +198,10 @@ func (serviceConfig *ServiceConfig) SetMemoryAllocationMegabytes(memoryAllocatio
 
 func (serviceConfig *ServiceConfig) GetPrivateIPAddrPlaceholder() string {
 	return serviceConfig.privateServiceConfig.PrivateIPAddrPlaceholder
+}
+
+func (serviceConfig *ServiceConfig) GetK8sPodIPAddrPlaceholder() string {
+	return serviceConfig.privateServiceConfig.K8sPodIPAddrPlaceholder
 }
 
 // only available for Kubernetes
@@ -306,6 +313,7 @@ func GetEmptyServiceConfig() *ServiceConfig {
 		},
 		0,
 		0,
+		"",
 		"",
 		0,
 		0,

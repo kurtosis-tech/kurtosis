@@ -29,7 +29,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestSetService() {
 	require.NoError(suite.T(), err)
 	suite.interpretationTimeValueStore = interpretationTimeValueStore
 
-	testServiceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, nil, nil, []string{}, []string{}, map[string]string{}, nil, nil, 0, 0, "IP-ADDRESS", 0, 0, map[string]string{}, nil, nil, nil, image_download_mode.ImageDownloadMode_Always, true, false)
+	testServiceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, nil, nil, []string{}, []string{}, map[string]string{}, nil, nil, 0, 0, "IP-ADDRESS", "K8S-POD-IP", 0, 0, map[string]string{}, nil, nil, nil, image_download_mode.ImageDownloadMode_Always, true, false)
 	require.NoError(suite.T(), err)
 	suite.interpretationTimeValueStore.PutServiceConfig(testServiceName, testServiceConfig)
 

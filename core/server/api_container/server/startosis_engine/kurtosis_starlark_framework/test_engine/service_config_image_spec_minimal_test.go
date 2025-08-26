@@ -54,7 +54,7 @@ func (t *serviceConfigImageSpecMinimalTest) Assert(typeValue builtin_argument.Ku
 	require.Nil(t, interpretationErr)
 
 	expectedImageRegistrySpec := image_registry_spec.NewImageRegistrySpec(testContainerImageName, "", "", "")
-	expectedServiceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, expectedImageRegistrySpec, nil, map[string]*port_spec.PortSpec{}, map[string]*port_spec.PortSpec{}, nil, nil, map[string]string{}, nil, nil, 0, 0, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false)
+	expectedServiceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, expectedImageRegistrySpec, nil, map[string]*port_spec.PortSpec{}, map[string]*port_spec.PortSpec{}, nil, nil, map[string]string{}, nil, nil, 0, 0, service_config.DefaultPrivateIPAddrPlaceholder, service_config.K8sPodIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false)
 	require.NoError(t, err)
 	require.Equal(t, expectedServiceConfig, serviceConfig)
 	require.Equal(t, expectedImageRegistrySpec, serviceConfig.GetImageRegistrySpec())

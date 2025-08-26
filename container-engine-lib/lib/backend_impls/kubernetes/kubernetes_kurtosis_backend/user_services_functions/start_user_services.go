@@ -20,7 +20,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/operation_parallelizer"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
@@ -308,6 +307,7 @@ func createStartServiceOperation(
 		cpuAllocationMillicpus := serviceConfig.GetCPUAllocationMillicpus()
 		memoryAllocationMegabytes := serviceConfig.GetMemoryAllocationMegabytes()
 		privateIPAddrPlaceholder := serviceConfig.GetPrivateIPAddrPlaceholder()
+		k8sPodIPAddrPlaceholder := serviceConfig.GetK8sPodIPAddrPlaceholder()
 		minCpuAllocationMilliCpus := serviceConfig.GetMinCPUAllocationMillicpus()
 		minMemoryAllocationMegabytes := serviceConfig.GetMinMemoryAllocationMegabytes()
 		user := serviceConfig.GetUser()
@@ -326,17 +326,17 @@ func createStartServiceOperation(
 		for index := range entrypointArgs {
 			entrypointArgs[index] = strings.Replace(entrypointArgs[index], privateIPAddrPlaceholder, privateIPAddr, unlimitedReplacements)
 			// Replace pod IP placeholder with environment variable reference
-			entrypointArgs[index] = strings.Replace(entrypointArgs[index], service_config.K8sPodIPAddrPlaceholder, "${K8S_POD_IP}", unlimitedReplacements)
+			entrypointArgs[index] = strings.Replace(entrypointArgs[index], k8sPodIPAddrPlaceholder, "${K8S_POD_IP}", unlimitedReplacements)
 		}
 		for index := range cmdArgs {
 			cmdArgs[index] = strings.Replace(cmdArgs[index], privateIPAddrPlaceholder, privateIPAddr, unlimitedReplacements)
 			// Replace pod IP placeholder with environment variable reference
-			cmdArgs[index] = strings.Replace(cmdArgs[index], service_config.K8sPodIPAddrPlaceholder, "${K8S_POD_IP}", unlimitedReplacements)
+			cmdArgs[index] = strings.Replace(cmdArgs[index], k8sPodIPAddrPlaceholder, "${K8S_POD_IP}", unlimitedReplacements)
 		}
 		for key := range envVars {
 			envVars[key] = strings.Replace(envVars[key], privateIPAddrPlaceholder, privateIPAddr, unlimitedReplacements)
 			// Replace pod IP placeholder with environment variable reference
-			envVars[key] = strings.Replace(envVars[key], service_config.K8sPodIPAddrPlaceholder, "${K8S_POD_IP}", unlimitedReplacements)
+			envVars[key] = strings.Replace(envVars[key], k8sPodIPAddrPlaceholder, "${K8S_POD_IP}", unlimitedReplacements)
 		}
 
 		namespaceName := kubernetesService.GetNamespace()
@@ -667,8 +667,12 @@ func getUserServicePodContainerSpecs(
 		Value: "",
 		ValueFrom: &apiv1.EnvVarSource{
 			FieldRef: &apiv1.ObjectFieldSelector{
-				FieldPath: "status.podIP",
+				FieldPath:  "status.podIP",
+				APIVersion: "",
 			},
+			ResourceFieldRef: nil,
+			ConfigMapKeyRef:  nil,
+			SecretKeyRef:     nil,
 		},
 	}
 	containerEnvVars = append(containerEnvVars, podIPEnvVar)
