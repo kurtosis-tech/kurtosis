@@ -287,7 +287,7 @@ func run(
 			serviceConfigJson.EnvVars,
 			serviceConfigJson.MaxMillicpus,
 			serviceConfigJson.MaxMemory,
-			serviceConfigJson.MaxMemory,
+			serviceConfigJson.MinMillicpus,
 			serviceConfigJson.MinMemory,
 			serviceConfigJson.User,
 			serviceConfigJson.Tolerations,
