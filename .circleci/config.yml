@@ -1386,7 +1386,7 @@ workflows:
                         "pattern": "http://localhost/.*"
                     },
                     {
-                        "pattern": "https://react-hook-form.com/.*"
+                       "pattern": "https://react-hook-form.com/.*"
                     }
                 ]
             }
