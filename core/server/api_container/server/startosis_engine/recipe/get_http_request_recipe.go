@@ -2,6 +2,7 @@ package recipe
 
 import (
 	"context"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
@@ -95,7 +96,7 @@ func (recipe *GetHttpRequestRecipe) Execute(
 	ctx context.Context,
 	serviceNetwork service_network.ServiceNetwork,
 	runtimeValueStore *runtime_value_store.RuntimeValueStore,
-	serviceName service.ServiceName,
+	service *service.Service,
 ) (map[string]starlark.Comparable, error) {
 	logrus.Debugf("Running get HTTP request recipe '%s'", recipe.String())
 
@@ -137,16 +138,11 @@ func (recipe *GetHttpRequestRecipe) Execute(
 		return nil, interpretationErr
 	}
 
-	serviceNameStr := string(serviceName)
-	if serviceNameStr == "" {
-		return nil, stacktrace.NewError("The service name parameter can't be an empty string")
-	}
-
 	requestResultDict, err := executeInternal(
 		ctx,
 		serviceNetwork,
 		runtimeValueStore,
-		serviceName,
+		service,
 		emptyRequestBody,
 		portId.GoString(),
 		getMethod,

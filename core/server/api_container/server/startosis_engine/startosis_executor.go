@@ -3,6 +3,9 @@ package startosis_engine
 import (
 	"context"
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
@@ -14,7 +17,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"sync"
 )
 
 const (
@@ -90,6 +92,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 		logrus.Debugf("Transfered %d instructions from previous enclave plan to keep the enclave state consistent", executor.enclavePlan.Size())
 
 		totalNumberOfInstructions := uint32(len(instructionsSequence))
+		totalExecutionDuration := time.Duration(0)
 		for index, scheduledInstruction := range instructionsSequence {
 			instructionNumber := uint32(index + 1)
 			progress := binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
@@ -103,14 +106,18 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 			if !dryRun {
 				var err error
 				var instructionOutput *string
+				var duration time.Duration
 				if scheduledInstruction.IsExecuted() {
 					// instruction already executed within this enclave. Do not run it
 					instructionOutput = &skippedInstructionOutput
 				} else {
+					startTime := time.Now()
 					instructionOutput, err = instruction.Execute(ctxWithParallelism)
+					duration = time.Since(startTime)
+					totalExecutionDuration += duration
 				}
 				if err != nil {
-					sendErrorAndFail(starlarkRunResponseLineStream, err, "An error occurred executing instruction (number %d) at %v:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
+					sendErrorAndFail(starlarkRunResponseLineStream, totalExecutionDuration, err, "An error occurred executing instruction (number %d) at %v:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
 					return
 				}
 				if instructionOutput != nil {
@@ -118,7 +125,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 					if len(instructionOutputStr) > outputSizeLimit {
 						instructionOutputStr = fmt.Sprintf("%s%s", instructionOutputStr[0:outputSizeLimit], outputLimitReachedSuffix)
 					}
-					starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(instructionOutputStr)
+					starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(instructionOutputStr, duration)
 				}
 				// add the instruction into the current enclave plan
 				enclavePlanInstruction, err := scheduledInstruction.GetInstruction().GetPersistableAttributes().SetUuid(
@@ -127,7 +134,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 					executor.starlarkValueSerde.Serialize(scheduledInstruction.GetReturnedValue()),
 				).Build()
 				if err != nil {
-					sendErrorAndFail(starlarkRunResponseLineStream, err, "An error occurred persisting instruction (number %d) at %v after it's been executed:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
+					sendErrorAndFail(starlarkRunResponseLineStream, totalExecutionDuration, err, "An error occurred persisting instruction (number %d) at %v after it's been executed:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
 				}
 				executor.enclavePlan.AppendInstruction(enclavePlanInstruction)
 			}
@@ -137,10 +144,10 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 			logrus.Debugf("Serialized script output before runtime value replace: '%v'", serializedScriptOutput)
 			scriptWithValuesReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(serializedScriptOutput, executor.runtimeValueStore)
 			if err != nil {
-				sendErrorAndFail(starlarkRunResponseLineStream, err, "An error occurred while replacing the runtime values in the output of the script")
+				sendErrorAndFail(starlarkRunResponseLineStream, totalExecutionDuration, err, "An error occurred while replacing the runtime values in the output of the script")
 				return
 			}
-			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(scriptWithValuesReplaced)
+			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(scriptWithValuesReplaced, totalExecutionDuration)
 			logrus.Debugf("Current enclave plan has been updated. It now contains %d instructions", executor.enclavePlan.Size())
 		} else {
 			logrus.Debugf("Current enclave plan remained the same as the it was a dry-run. It contains %d instructions", executor.enclavePlan.Size())
@@ -153,9 +160,9 @@ func (executor *StartosisExecutor) GetCurrentEnclavePLan() *enclave_plan_persist
 	return executor.enclavePlan
 }
 
-func sendErrorAndFail(starlarkRunResponseLineStream chan<- *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, err error, msg string, msgArgs ...interface{}) {
+func sendErrorAndFail(starlarkRunResponseLineStream chan<- *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, totalExecutionDuration time.Duration, err error, msg string, msgArgs ...interface{}) {
 	propagatedErr := stacktrace.Propagate(err, msg, msgArgs...)
 	serializedError := binding_constructors.NewStarlarkExecutionError(propagatedErr.Error())
 	starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromExecutionError(serializedError)
-	starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent()
+	starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEventWithDuration(totalExecutionDuration)
 }

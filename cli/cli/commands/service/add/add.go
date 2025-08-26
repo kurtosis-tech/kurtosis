@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/inspect"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/service_helpers"
 	"io"
 	"os"
 	"strings"
+
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/inspect"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/service_helpers"
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
@@ -293,6 +294,7 @@ func run(
 			serviceConfigJson.NodeSelectors,
 			serviceConfigJson.Labels,
 			serviceConfigJson.TiniEnabled,
+			serviceConfigJson.TtyEnabled,
 			serviceConfigJson.PrivateIPAddressPlaceholder,
 		)
 	} else {
@@ -460,6 +462,7 @@ func GetServiceConfigStarlark(
 		emptyNodeSelecors,
 		emptyLabels,
 		&tiniEnabled,
+		nil, // tty defaults to false
 		privateIPAddressPlaceholder), nil
 }
 

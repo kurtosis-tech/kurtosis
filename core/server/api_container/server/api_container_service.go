@@ -1188,6 +1188,7 @@ func getServiceInfoFromServiceObj(serviceObj *service.Service, serviceConfig *se
 		serviceConfig.GetNodeSelectors(),
 		serviceConfig.GetLabels(),
 		serviceConfig.GetTiniEnabled(),
+		serviceConfig.GetTtyEnabled(),
 	)
 
 	return serviceInfoResponse, nil

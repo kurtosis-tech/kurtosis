@@ -117,7 +117,7 @@ func (printer *ExecutionPrinter) PrintKurtosisExecutionResponseLineToStdOut(resp
 			return stacktrace.Propagate(err, "Error printing Kurtosis instruction: \n%v", formattedInstruction)
 		}
 	} else if responseLine.GetInstructionResult() != nil {
-		formattedInstructionResult := formatInstructionResult(responseLine.GetInstructionResult())
+		formattedInstructionResult := formatInstructionResult(responseLine.GetInstructionResult(), verbosity)
 		if err := printer.printPersistentLineToStdOut(formattedInstructionResult); err != nil {
 			return stacktrace.Propagate(err, "Error printing Kurtosis instruction result: \n%v", formattedInstructionResult)
 		}
@@ -144,7 +144,7 @@ func (printer *ExecutionPrinter) PrintKurtosisExecutionResponseLineToStdOut(resp
 			printer.spinner.Suffix = fmt.Sprintf("   %s %s", progressBarStr, progressMessageStr)
 		}
 	} else if responseLine.GetRunFinishedEvent() != nil {
-		formattedRunOutputMessage := formatRunOutput(responseLine.GetRunFinishedEvent(), dryRun)
+		formattedRunOutputMessage := formatRunOutput(responseLine.GetRunFinishedEvent(), dryRun, verbosity)
 		formattedRunOutputMessageWithNewline := fmt.Sprintf("\n%s", formattedRunOutputMessage)
 		if err := printer.printPersistentLineToStdOut(formattedRunOutputMessageWithNewline); err != nil {
 			return stacktrace.Propagate(err, "Unable to print the success output message containing the serialized output object. Message was: \n%v", formattedRunOutputMessage)
@@ -205,8 +205,12 @@ func formatInstruction(instruction *kurtosis_core_rpc_api_bindings.StarlarkInstr
 	return colorizeInstruction(serializedInstruction)
 }
 
-func formatInstructionResult(instructionResult *kurtosis_core_rpc_api_bindings.StarlarkInstructionResult) string {
+func formatInstructionResult(instructionResult *kurtosis_core_rpc_api_bindings.StarlarkInstructionResult, verbosity run.Verbosity) string {
 	serializedInstructionResult := fmt.Sprintf("%s%s", resultPrefixString, instructionResult.GetSerializedInstructionResult())
+	if verbosity == run.Detailed {
+		executionDuration := instructionResult.GetExecutionDuration()
+		serializedInstructionResult = fmt.Sprintf("%s (execution duration: %s)", serializedInstructionResult, executionDuration.AsDuration().String())
+	}
 	return colorizeResult(serializedInstructionResult)
 }
 
@@ -272,12 +276,16 @@ func formatProgressBar(currentStep uint32, totalSteps uint32, progressBarChar st
 	return fmt.Sprintf("%s%s", isDone, remaining)
 }
 
-func formatRunOutput(runFinishedEvent *kurtosis_core_rpc_api_bindings.StarlarkRunFinishedEvent, dryRun bool) string {
+func formatRunOutput(runFinishedEvent *kurtosis_core_rpc_api_bindings.StarlarkRunFinishedEvent, dryRun bool, verbosity run.Verbosity) string {
+	durationMsg := "."
+	if verbosity == run.Detailed {
+		durationMsg = durationMsg + fmt.Sprintf(" Total instruction execution time: %s.", runFinishedEvent.GetTotalExecutionDuration().AsDuration().String())
+	}
 	if !runFinishedEvent.GetIsRunSuccessful() {
 		if dryRun {
-			return colorizeError("Error encountered running Starlark code in dry-run mode.")
+			return colorizeError(fmt.Sprintf("Error encountered running Starlark code in dry-run mode%s", durationMsg))
 		}
-		return colorizeError("Error encountered running Starlark code.")
+		return colorizeError(fmt.Sprintf("Error encountered running Starlark code%s", durationMsg))
 	}
 	// run was successful
 	runSuccessMsg := strings.Builder{}
@@ -285,10 +293,11 @@ func formatRunOutput(runFinishedEvent *kurtosis_core_rpc_api_bindings.StarlarkRu
 	if dryRun {
 		runSuccessMsg.WriteString(" in dry-run mode")
 	}
+	runSuccessMsg.WriteString(durationMsg)
 	if runFinishedEvent.GetSerializedOutput() != "" {
-		runSuccessMsg.WriteString(fmt.Sprintf(". Output was:\n%v", runFinishedEvent.GetSerializedOutput()))
+		runSuccessMsg.WriteString(fmt.Sprintf(" Output was:\n%v", runFinishedEvent.GetSerializedOutput()))
 	} else {
-		runSuccessMsg.WriteString(". No output was returned.")
+		runSuccessMsg.WriteString(" No output was returned.")
 	}
 	return colorizeRunSuccessfulMsg(runSuccessMsg.String())
 }

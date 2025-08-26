@@ -146,7 +146,7 @@ version: 2.1
 
 orbs:
   npm-publisher: uraway/npm-publisher@0.2.0
-  kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.9
+  kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.10
   slack: circleci/slack@4.10.1
 
 executors:
@@ -1214,7 +1214,8 @@ jobs:
           image_name_to_publish_semver="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           image_name_to_publish_latest="${IMAGE_ORG_AND_REPO}:latest"
           push_to_dockerhub=true
-          scripts/docker-image-builder.sh "${push_to_dockerhub}" "${dockerfile_filepath}" "${image_name_with_version}" "${image_name_to_publish_semver}" "${image_name_to_publish_latest}"
+          podman_mode=false
+          scripts/docker-image-builder.sh "${push_to_dockerhub}" "${dockerfile_filepath}" "${podman_mode}" "${image_name_with_version}" "${image_name_to_publish_semver}" "${image_name_to_publish_latest}"
 
   publish_api_container_server_image:
     docker:
@@ -1256,7 +1257,8 @@ jobs:
           image_name_to_publish_semver="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           image_name_to_publish_latest="${IMAGE_ORG_AND_REPO}:latest"
           push_to_dockerhub=true
-          scripts/docker-image-builder.sh "${push_to_dockerhub}" "${dockerfile_filepath}" "${image_name_with_version}" "${image_name_to_publish_semver}" "${image_name_to_publish_latest}"
+          podman_mode=false
+          scripts/docker-image-builder.sh "${push_to_dockerhub}" "${dockerfile_filepath}" "${podman_mode}" "${image_name_with_version}" "${image_name_to_publish_semver}" "${image_name_to_publish_latest}"
 
   publish_engine_server_image:
     docker:
@@ -1303,7 +1305,8 @@ jobs:
           image_name_to_publish_semver="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           image_name_to_publish_latest="${IMAGE_ORG_AND_REPO}:latest"
           push_to_dockerhub=true
-          scripts/docker-image-builder.sh "${push_to_dockerhub}" "${dockerfile_filepath}" "${image_name_with_version}" "${image_name_to_publish_semver}" "${image_name_to_publish_latest}"
+          podman_mode=false
+          scripts/docker-image-builder.sh "${push_to_dockerhub}" "${dockerfile_filepath}" "${podman_mode}" "${image_name_with_version}" "${image_name_to_publish_semver}" "${image_name_to_publish_latest}"
 
   push_cli_artifacts:
     # we use this docker/tilt-releaser image for cli jobs because starlark-lsp requires it to build
@@ -1381,6 +1384,9 @@ workflows:
                     },
                     {
                         "pattern": "http://localhost/.*"
+                    },
+                    {
+                       "pattern": "https://react-hook-form.com/.*"
                     }
                 ]
             }

@@ -2,9 +2,13 @@ package startosis_engine
 
 import (
 	"context"
+	"net"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
+	"github.com/kurtosis-tech/kurtosis/core/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
@@ -20,8 +24,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
-	"net"
-	"testing"
 )
 
 const (
@@ -72,7 +74,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) SetupTest() {
 		service_network.NewApiContainerInfo(net.IPv4(0, 0, 0, 0), uint16(1234), "0.0.0"),
 	)
 	serviceNetwork.EXPECT().GetEnclaveUuid().Maybe().Return(enclaveUuid)
-	suite.interpreter = NewStartosisInterpreter(serviceNetwork, suite.packageContentProvider, runtimeValueStore, starlarkValueSerde, "", interpretationTimeValueStore)
+	suite.interpreter = NewStartosisInterpreter(serviceNetwork, suite.packageContentProvider, runtimeValueStore, starlarkValueSerde, "", interpretationTimeValueStore, args.KurtosisBackendType_Docker)
 }
 
 func TestRunStartosisInterpreterIdempotentTestSuite(t *testing.T) {

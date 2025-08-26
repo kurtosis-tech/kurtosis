@@ -2,6 +2,11 @@ package test_engine
 
 import (
 	"fmt"
+	"io"
+	"net/http"
+	"strings"
+	"testing"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/wait"
@@ -10,10 +15,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
-	"io"
-	"net/http"
-	"strings"
-	"testing"
 )
 
 const (
@@ -39,10 +40,20 @@ type waitWithNamedArgsTestCase struct {
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
 }
 
+var waitRecipeTestCaseService *service.Service = getService(waitRecipeTestCaseServiceName)
+
 func (suite *KurtosisPlanInstructionTestSuite) TestWaitWithNamedArgs() {
-	suite.serviceNetwork.EXPECT().HttpRequestService(
+	suite.serviceNetwork.EXPECT().GetService(
 		mock.Anything,
 		string(waitRecipeTestCaseServiceName),
+	).Times(1).Return(
+		waitRecipeTestCaseService,
+		nil,
+	)
+
+	suite.serviceNetwork.EXPECT().HttpRequestService(
+		mock.Anything,
+		waitRecipeTestCaseService,
 		waitRecipePortId,
 		waitRecipeMethod,
 		waitRecipeContentType,

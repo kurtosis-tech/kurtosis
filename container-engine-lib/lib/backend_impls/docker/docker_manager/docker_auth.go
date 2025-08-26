@@ -179,6 +179,9 @@ func GetAuthFromDockerConfig(repo string) (*registry.AuthConfig, error) {
 		repo = "library/" + repo
 	}
 
+	// Remove tag from repo if it exists
+	repo = strings.Split(repo, ":")[0]
+
 	registryHost := dockerregistry.ConvertToHostname(repo)
 
 	// Deal with the default Docker Hub registry.
@@ -206,7 +209,40 @@ func GetAuthFromDockerConfig(repo string) (*registry.AuthConfig, error) {
 
 	// 3. Fallback to credentials in "auths" if no credStore is available
 	if auth, exists := authConfig.Auths[registryHost]; exists {
-		return &auth, nil
+		// Apply '/' to the end of the registry host if it doesn't have it
+		if !strings.HasSuffix(registryHost, "/") {
+			registryHost = registryHost + "/"
+		}
+		ac := registry.AuthConfig{
+			ServerAddress: registryHost,
+			Username:      auth.Username,
+			Password:      auth.Password,
+			Auth:          auth.Auth,
+			Email:         auth.Email,
+			IdentityToken: auth.IdentityToken,
+			RegistryToken: auth.RegistryToken,
+		}
+
+		// If the username or password fields are set, set them in the AuthConfig (Overrides the decoded auth)
+		if auth.Username != "" && auth.Password != "" {
+			ac.Username = auth.Username
+			ac.Password = auth.Password
+		} else if auth.Auth != "" {
+			// If the base64 encoded auth field is set, decode it and also set the Username and Password
+			decodedAuth, err := base64.StdEncoding.DecodeString(auth.Auth)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "error decoding auth for registry '%s'", registryHost)
+			}
+			usernamePasswordSeparatorIndex := strings.IndexByte(string(decodedAuth), ':')
+			if usernamePasswordSeparatorIndex != -1 {
+				ac.Username = string(decodedAuth[:usernamePasswordSeparatorIndex])
+				ac.Password = string(decodedAuth[usernamePasswordSeparatorIndex+1:])
+			}
+		} else {
+			return nil, stacktrace.NewError("no username or password or auth found for registry '%s'", registryHost)
+		}
+
+		return &ac, nil
 	}
 
 	// Return no AuthConfig if no credentials were found
