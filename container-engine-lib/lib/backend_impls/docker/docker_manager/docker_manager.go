@@ -744,7 +744,6 @@ func (manager *DockerManager) CreateAndStartContainer(
 
 	//Check if the container dies because sometimes users starts containers with a wrong configuration and these quickly dies
 	didContainerStartSuccessfully, err := manager.didContainerStartSuccessfully(ctx, containerId, dockerImage)
-	logrus.Infof("didContainerStartSuccessfully: %v", didContainerStartSuccessfully)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred checking if container '%v' is running", containerId)
 	}
