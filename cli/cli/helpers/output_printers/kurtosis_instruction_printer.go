@@ -222,7 +222,9 @@ func formatInstructionToReadableString(instruction *kurtosis_core_rpc_api_bindin
 			} else {
 				serializedArg = arg.GetSerializedArgValue()
 			}
-			serializedInstructionComponents = append(serializedInstructionComponents, serializedArg)
+			if serializedArg != "" {
+				serializedInstructionComponents = append(serializedInstructionComponents, serializedArg)
+			}
 		}
 	}
 

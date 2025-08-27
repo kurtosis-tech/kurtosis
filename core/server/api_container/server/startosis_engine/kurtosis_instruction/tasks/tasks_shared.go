@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
 	"github.com/xtgo/uuid"
+	v1 "k8s.io/api/core/v1"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -42,6 +43,8 @@ const (
 	EnvVarsArgName         = "env_vars"
 	AcceptableCodesArgName = "acceptable_codes"
 	SkipCodeCheckArgName   = "skip_code_check"
+	NodeSelectorsArgName   = "node_selectors"
+	TolerationsArgName     = "tolerations"
 	defaultSkipCodeCheck   = false
 
 	newlineChar = "\n"
@@ -297,8 +300,33 @@ func getServiceConfig(
 	maybeNixBuildSpec *nix_build_spec.NixBuildSpec,
 	filesArtifactExpansion *service_directory.FilesArtifactsExpansion,
 	envVars *map[string]string,
+	nodeSelectors *map[string]string,
+	tolerations []v1.Toleration,
 ) (*service.ServiceConfig, error) {
-	serviceConfig, err := service.CreateServiceConfig(maybeImageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, nil, nil, runCommandToStreamTaskLogs, nil, *envVars, filesArtifactExpansion, nil, 0, 0, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, tiniEnabled, false)
+	serviceConfig, err := service.CreateServiceConfig(
+		maybeImageName,
+		maybeImageBuildSpec,
+		maybeImageRegistrySpec,
+		maybeNixBuildSpec,
+		nil,
+		nil,
+		runCommandToStreamTaskLogs,
+		nil,
+		*envVars,
+		filesArtifactExpansion,
+		nil,
+		0,
+		0,
+		service_config.DefaultPrivateIPAddrPlaceholder,
+		0,
+		0,
+		map[string]string{},
+		nil,
+		tolerations,
+		*nodeSelectors,
+		image_download_mode.ImageDownloadMode_Missing,
+		tiniEnabled,
+		false)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating service config")
 	}
@@ -335,6 +363,42 @@ func extractEnvVarsIfDefined(arguments *builtin_argument.ArgumentValuesSet) (*ma
 		}
 	}
 	return &envVars, nil
+}
+
+func extractNodeSelectorsIfDefined(arguments *builtin_argument.ArgumentValuesSet) (*map[string]string, *startosis_errors.InterpretationError) {
+	nodeSelectors := map[string]string{}
+	if arguments.IsSet(NodeSelectorsArgName) {
+		nodeSelectorsStarlark, err := builtin_argument.ExtractArgumentValue[*starlark.Dict](arguments, NodeSelectorsArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", EnvVarsArgName)
+		}
+		if nodeSelectorsStarlark != nil && nodeSelectorsStarlark.Len() > 0 {
+			var interpretationErr *startosis_errors.InterpretationError
+			nodeSelectors, interpretationErr = kurtosis_types.SafeCastToMapStringString(nodeSelectorsStarlark, NodeSelectorsArgName)
+			if interpretationErr != nil {
+				return nil, interpretationErr
+			}
+		}
+	}
+	return &nodeSelectors, nil
+}
+
+func extractTolerationsIfDefined(arguments *builtin_argument.ArgumentValuesSet) ([]v1.Toleration, *startosis_errors.InterpretationError) {
+	tolerations := []v1.Toleration{}
+	if arguments.IsSet(TolerationsArgName) {
+		tolerationsStarlark, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, TolerationsArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", TolerationsArgName)
+		}
+		if tolerationsStarlark != nil && tolerationsStarlark.Len() > 0 {
+			var interpretationErr *startosis_errors.InterpretationError
+			tolerations, interpretationErr = service_config.ConvertTolerations(tolerationsStarlark)
+			if interpretationErr != nil {
+				return nil, interpretationErr
+			}
+		}
+	}
+	return tolerations, nil
 }
 
 func getTaskNameFromArgs(arguments *builtin_argument.ArgumentValuesSet) (string, error) {

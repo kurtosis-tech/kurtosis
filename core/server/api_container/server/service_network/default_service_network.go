@@ -1029,13 +1029,13 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 			},
 			Statuses: nil,
 		}
-		_, failedToDestroyUuids, err := network.kurtosisBackend.DestroyUserServices(context.Background(), network.enclaveUuid, userServiceFilters)
+		_, failedToDestroyUuids, err := network.kurtosisBackend.StopUserServices(context.Background(), network.enclaveUuid, userServiceFilters)
 		if err != nil {
-			logrus.Errorf("Attempted to destroy the services with UUIDs '%v' but had no success. You must manually destroy the services! The following error had occurred:\n'%v'", serviceToDestroyUuid, err)
+			logrus.Errorf("Attempted to stop the services with UUIDs '%v' but had no success. You must manually stop the services! The following error had occurred:\n'%v'", serviceToDestroyUuid, err)
 			return
 		}
 		if failedToDestroyErr, found := failedToDestroyUuids[serviceToDestroyUuid]; found {
-			logrus.Errorf("Attempted to destroy the services with UUIDs '%v' but had no success. You must manually destroy the services! The following error had occurred:\n'%v'", serviceToDestroyUuid, failedToDestroyErr)
+			logrus.Errorf("Attempted to stop the services with UUIDs '%v' but had no success. You must manually stop the services! The following error had occurred:\n'%v'", serviceToDestroyUuid, failedToDestroyErr)
 		}
 	}()
 

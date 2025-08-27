@@ -146,7 +146,7 @@ version: 2.1
 
 orbs:
   npm-publisher: uraway/npm-publisher@0.2.0
-  kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.9
+  kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.10
   slack: circleci/slack@4.10.1
 
 executors:
@@ -1384,6 +1384,9 @@ workflows:
                     },
                     {
                         "pattern": "http://localhost/.*"
+                    },
+                    {
+                       "pattern": "https://react-hook-form.com/.*"
                     }
                 ]
             }

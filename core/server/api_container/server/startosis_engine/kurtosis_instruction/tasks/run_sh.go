@@ -104,6 +104,22 @@ func NewRunShService(
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Bool],
 					Validator:         nil,
 				},
+				{
+					Name:              NodeSelectorsArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return builtin_argument.StringMappingToString(value, NodeSelectorsArgName)
+					},
+				},
+				{
+					Name:              TolerationsArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return nil
+					},
+				},
 			},
 		},
 
@@ -131,12 +147,14 @@ func NewRunShService(
 		},
 
 		DefaultDisplayArguments: map[string]bool{
-			RunArgName:        true,
-			ImageNameArgName:  true,
-			FilesArgName:      true,
-			StoreFilesArgName: true,
-			WaitArgName:       true,
-			EnvVarsArgName:    true,
+			RunArgName:           true,
+			ImageNameArgName:     true,
+			FilesArgName:         true,
+			StoreFilesArgName:    true,
+			WaitArgName:          true,
+			EnvVarsArgName:       true,
+			NodeSelectorsArgName: true,
+			TolerationsArgName:   true,
 		},
 	}
 }
@@ -226,12 +244,22 @@ func (builtin *RunShCapabilities) Interpret(locatorOfModuleInWhichThisBuiltinIsB
 	}
 
 	envVars, interpretationErr := extractEnvVarsIfDefined(arguments)
-	if err != nil {
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	nodeSelectors, interpretationErr := extractNodeSelectorsIfDefined(arguments)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	tolerations, interpretationErr := extractTolerationsIfDefined(arguments)
+	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 
 	// build a service config from image and files artifacts expansion.
-	builtin.serviceConfig, err = getServiceConfig(maybeImageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, filesArtifactExpansion, envVars)
+	builtin.serviceConfig, err = getServiceConfig(maybeImageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, filesArtifactExpansion, envVars, nodeSelectors, tolerations)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating service config using for run sh task.")
 	}
