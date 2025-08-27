@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.11.0](https://github.com/kurtosis-tech/kurtosis/compare/1.10.3...1.11.0) (2025-08-26)
+
+
+### Features
+
+* add get cluster type ([#2792](https://github.com/kurtosis-tech/kurtosis/issues/2792)) ([3548179](https://github.com/kurtosis-tech/kurtosis/commit/3548179e33c5506c9c85cd32508b33eefd841fe9))
+* add k8s pod ip env var ([#2791](https://github.com/kurtosis-tech/kurtosis/issues/2791)) ([17e97d6](https://github.com/kurtosis-tech/kurtosis/commit/17e97d6c6aa34aba465321bbab4be83faf108f22))
+* tolerations and node selectors on tasks ([#2788](https://github.com/kurtosis-tech/kurtosis/issues/2788)) ([3b3c90c](https://github.com/kurtosis-tech/kurtosis/commit/3b3c90c065236977b903104a63cdc98b5dfaa7ca))
+
+
+### Bug Fixes
+
+* **docs:** typo in CLI docs `--cli-level-log` -&gt; `--cli-log-level` ([#2757](https://github.com/kurtosis-tech/kurtosis/issues/2757)) ([99ed25d](https://github.com/kurtosis-tech/kurtosis/commit/99ed25d1802e0da484572e127daaf76f20926207))
+* dont kill container ([#2780](https://github.com/kurtosis-tech/kurtosis/issues/2780)) ([d6df15b](https://github.com/kurtosis-tech/kurtosis/commit/d6df15b5b5a3b2537f8c066c92bc37fc8d2dcc2c))
+* in `GetFullServiceConfigStarlark` use `MinMillicpus` instead of `MaxMemory` ([#2760](https://github.com/kurtosis-tech/kurtosis/issues/2760)) ([f30f1f8](https://github.com/kurtosis-tech/kurtosis/commit/f30f1f868b68a19f47a17c7442246047cbbf96d3))
+* remove rate limited website ([#2796](https://github.com/kurtosis-tech/kurtosis/issues/2796)) ([d5cf14b](https://github.com/kurtosis-tech/kurtosis/commit/d5cf14b33d54c599a36428e86ae988fbee8883d5))
+
+## [1.10.3](https://github.com/kurtosis-tech/kurtosis/compare/1.10.2...1.10.3) (2025-07-17)
+
+
+### Bug Fixes
+
+* empty bridge network addr check ([#2770](https://github.com/kurtosis-tech/kurtosis/issues/2770)) ([4422ce8](https://github.com/kurtosis-tech/kurtosis/commit/4422ce8784c140d16c8642270700f5b222aabff4))
+* reduce logs agg container timeout ([#2777](https://github.com/kurtosis-tech/kurtosis/issues/2777)) ([1dc6ca4](https://github.com/kurtosis-tech/kurtosis/commit/1dc6ca424e810d4abe7b5507c32f3d0c7bd745e7))
+
+## [1.10.2](https://github.com/kurtosis-tech/kurtosis/compare/1.10.1...1.10.2) (2025-07-08)
+
+
+### Bug Fixes
+
+* docker auth bugs ([#2773](https://github.com/kurtosis-tech/kurtosis/issues/2773)) ([45ada05](https://github.com/kurtosis-tech/kurtosis/commit/45ada05521586ee6d2a1e3f48c1c3ae3a297c9e1))
+
 ## [1.10.1](https://github.com/kurtosis-tech/kurtosis/compare/1.10.0...1.10.1) (2025-06-26)
 
 

@@ -91,7 +91,7 @@ You don’t have to ever use `eject`. The curated feature set is suitable for sm
 - React router (v6) - we avoid using route actions and loaders as they didn't seem to have good Typescript support, created codepaths that were tricky to follow (by excessively fragmenting code) and generally seemed to increase complexity rather than improve development velocity.
 - Chakra UI
 - TanStack table - used for managing the state of tables throughout the application
-- React hook form - used for forms where any validation is required. Generally the [Smart Form Component pattern](https://react-hook-form.com/advanced-usage#SmartFormComponent) is followed to create form components that can be composed together arbitrarily.
+- React hook form - used for forms where any validation is required. Generally the Smart Form Component pattern is followed to create form components that can be composed together arbitrarily.
 - Reactflow - used for the graph in the enclave builder.
 - Virtuoso - used for rendering streams of logs without dumping all of the text into the DOM.
 - Monaco - used anywhere we want to display blocks of code, or for editing code in the browser.

@@ -3,8 +3,13 @@ package startosis_engine
 import (
 	"context"
 	"fmt"
+	"path"
+	"strings"
+	"sync"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
+	"github.com/kurtosis-tech/kurtosis/core/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/print_builtin"
@@ -25,9 +30,6 @@ import (
 	"go.starlark.net/resolve"
 	"go.starlark.net/starlark"
 	"go.starlark.net/syntax"
-	"path"
-	"strings"
-	"sync"
 )
 
 const (
@@ -67,6 +69,8 @@ type StartosisInterpreter struct {
 	// It is useful when external libraries or helpers need to be plugged in to kurtosis,
 	// for example when running unit tests using the starlarktest package
 	processBuiltins StartosisInterpreterBuiltinsProcessor
+
+	kurtosisBackendType args.KurtosisBackendType
 }
 
 // StartosisInterpreterBuiltinsProcessor is a builtins transformer function
@@ -74,11 +78,11 @@ type StartosisInterpreterBuiltinsProcessor func(thread *starlark.Thread, predecl
 
 type SerializedInterpretationOutput string
 
-func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, packageContentProvider startosis_packages.PackageContentProvider, runtimeValueStore *runtime_value_store.RuntimeValueStore, starlarkValueSerde *kurtosis_types.StarlarkValueSerde, enclaveVarEnvs string, interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore) *StartosisInterpreter {
-	return NewStartosisInterpreterWithBuiltinsProcessor(serviceNetwork, packageContentProvider, runtimeValueStore, starlarkValueSerde, enclaveVarEnvs, interpretationTimeValueStore, nil)
+func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, packageContentProvider startosis_packages.PackageContentProvider, runtimeValueStore *runtime_value_store.RuntimeValueStore, starlarkValueSerde *kurtosis_types.StarlarkValueSerde, enclaveVarEnvs string, interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore, kurtosisBackendType args.KurtosisBackendType) *StartosisInterpreter {
+	return NewStartosisInterpreterWithBuiltinsProcessor(serviceNetwork, packageContentProvider, runtimeValueStore, starlarkValueSerde, enclaveVarEnvs, interpretationTimeValueStore, nil, kurtosisBackendType)
 }
 
-func NewStartosisInterpreterWithBuiltinsProcessor(serviceNetwork service_network.ServiceNetwork, packageContentProvider startosis_packages.PackageContentProvider, runtimeValueStore *runtime_value_store.RuntimeValueStore, starlarkValueSerde *kurtosis_types.StarlarkValueSerde, enclaveVarEnvs string, interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore, processBuiltins StartosisInterpreterBuiltinsProcessor) *StartosisInterpreter {
+func NewStartosisInterpreterWithBuiltinsProcessor(serviceNetwork service_network.ServiceNetwork, packageContentProvider startosis_packages.PackageContentProvider, runtimeValueStore *runtime_value_store.RuntimeValueStore, starlarkValueSerde *kurtosis_types.StarlarkValueSerde, enclaveVarEnvs string, interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore, processBuiltins StartosisInterpreterBuiltinsProcessor, kurtosisBackendType args.KurtosisBackendType) *StartosisInterpreter {
 	return &StartosisInterpreter{
 		mutex:                        &sync.Mutex{},
 		serviceNetwork:               serviceNetwork,
@@ -88,6 +92,7 @@ func NewStartosisInterpreterWithBuiltinsProcessor(serviceNetwork service_network
 		starlarkValueSerde:           starlarkValueSerde,
 		interpretationTimeValueStore: interpretationTimeValueStore,
 		processBuiltins:              processBuiltins,
+		kurtosisBackendType:          kurtosisBackendType,
 	}
 }
 
@@ -288,7 +293,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 	if mainFuncParamsNum >= minimumParamsRequiredForPlan {
 		firstParamName, _ := mainFunction.Param(planParamIndex)
 		if firstParamName == planParamName {
-			kurtosisPlanInstructions := KurtosisPlanInstructions(packageId, interpreter.serviceNetwork, interpreter.recipeExecutor, interpreter.packageContentProvider, packageReplaceOptions, nonBlockingMode, interpreter.interpretationTimeValueStore, imageDownloadMode)
+			kurtosisPlanInstructions := KurtosisPlanInstructions(packageId, interpreter.serviceNetwork, interpreter.recipeExecutor, interpreter.packageContentProvider, packageReplaceOptions, nonBlockingMode, interpreter.interpretationTimeValueStore, imageDownloadMode, interpreter.kurtosisBackendType)
 			planModule := plan_module.PlanModule(newInstructionsPlan, enclaveComponents, interpreter.starlarkValueSerde, instructionsPlanMask, kurtosisPlanInstructions)
 			argsTuple = append(argsTuple, planModule)
 		}

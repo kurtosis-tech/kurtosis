@@ -590,6 +590,24 @@ The `run_python` instruction executes a one-time execution task. It runs the Pyt
         # OPTIONAL (Default: "180s")
         wait="180s"
 
+        # Defines Kubernetes node selectors for scheduling the task on specific nodes
+        # OPTIONAL (Default: {})
+        node_selectors = {
+            "node-type": "high-memory",
+            "zone": "us-west-1a",
+        },
+
+        # Defines Kubernetes tolerations for scheduling the task on nodes with matching taints
+        # OPTIONAL (Default: [])
+        tolerations = [
+            Toleration(
+                key="high-memory",
+                operator="Equal",
+                value="true", 
+                effect="NoSchedule"
+            ),
+        ],
+
         # A human friendly description for the end user of the package
         # OPTIONAL (Default: Running Python script)
         description = "running python script"
@@ -683,6 +701,24 @@ The `run_sh` instruction executes a one-time execution task. It runs the bash co
         # The feature is enabled by default with a default timeout of 180s
         # OPTIONAL (Default: "180s")
         wait="180s"
+
+        # Defines Kubernetes node selectors for scheduling the task on specific nodes
+        # OPTIONAL (Default: {})
+        node_selectors = {
+            "node-type": "high-memory",
+            "zone": "us-west-1a",
+        },
+
+        # Defines Kubernetes tolerations for scheduling the task on nodes with matching taints
+        # OPTIONAL (Default: [])
+        tolerations = [
+            Toleration(
+                key="high-memory",
+                operator="Equal",
+                value="true", 
+                effect="NoSchedule"
+            ),
+        ],
 
         # A human friendly description for the end user of the package
         # OPTIONAL (Default: Running sh script)
@@ -884,6 +920,24 @@ recipe_result = plan.wait(
 # The assertion has passed, so we can use `recipe_result` just like the result of `plan.request` or `plan.exec`
 plan.print(recipe_result["code"])
 ```
+
+get_cluster_type
+----------------
+
+The `get_cluster_type` instruction returns the type of cluster backend that Kurtosis is currently running on.
+
+```python
+# Returns a string representing the cluster type ("docker", "kubernetes", "podman")
+cluster_type = plan.get_cluster_type()
+if cluster_type == "docker":
+    ...
+
+plan.print("Running on cluster type: " + cluster_type)
+```
+
+This instruction takes no arguments and returns a string indicating the backend cluster type. This is useful when you need to conditionally execute different logic based on whether you're running on Docker, Kubernetes, or other supported backends. Possi
+
+
 
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
