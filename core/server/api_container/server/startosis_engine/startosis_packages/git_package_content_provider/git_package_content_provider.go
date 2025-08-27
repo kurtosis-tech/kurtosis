@@ -2,6 +2,13 @@ package git_package_content_provider
 
 import (
 	"errors"
+	"io"
+	"os"
+	"path"
+	"path/filepath"
+	"strings"
+	"time"
+
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport"
@@ -14,14 +21,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
-	"github.com/mholt/archiver"
+	"github.com/kurtosis-tech/kurtosis/path-compression"
 	"github.com/sirupsen/logrus"
-	"io"
-	"os"
-	"path"
-	"path/filepath"
-	"strings"
-	"time"
 )
 
 const (
@@ -238,7 +239,7 @@ func (provider *GitPackageContentProvider) StorePackageContents(packageId string
 	if err != nil {
 		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while writing contents of '%v' to '%v'", packageId, tempFile.Name())
 	}
-	err = archiver.Unarchive(tempFile.Name(), packageAbsolutePathOnDisk)
+	err = path_compression.Unarchive(tempFile.Name(), packageAbsolutePathOnDisk)
 	if err != nil {
 		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while unarchiving '%v' to '%v'", tempFile.Name(), packageAbsolutePathOnDisk)
 	}
