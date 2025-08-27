@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.11.1](https://github.com/kurtosis-tech/kurtosis/compare/1.11.0...1.11.1) (2025-08-27)
+
+
+### Bug Fixes
+
+* don't print empty args on detailed verbosity ([#2799](https://github.com/kurtosis-tech/kurtosis/issues/2799)) ([60c1776](https://github.com/kurtosis-tech/kurtosis/commit/60c17762e8ea5e7501699504902a67af642fe7cc))
+* remove noisy log ([#2798](https://github.com/kurtosis-tech/kurtosis/issues/2798)) ([5657e20](https://github.com/kurtosis-tech/kurtosis/commit/5657e20e528049b5d4c0953505f5b9ab52a96ed2))
+
 ## [1.11.0](https://github.com/kurtosis-tech/kurtosis/compare/1.10.3...1.11.0) (2025-08-26)
 
 
