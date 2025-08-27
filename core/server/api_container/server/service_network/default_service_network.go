@@ -80,9 +80,11 @@ type DefaultServiceNetwork struct {
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory
 
 	serviceRegistrationRepository *service_registration.ServiceRegistrationRepository
+	serviceRegistrationMutex      *sync.Mutex // VERY IMPORTANT TO CHECK AT THE START OF EVERY METHOD!
 
 	// This contains all service identifiers ever successfully created
 	serviceIdentifiersRepository *service_identifiers.ServiceIdentifiersRepository
+	serviceIdentifiersMutex      *sync.Mutex // VERY IMPORTANT TO CHECK AT THE START OF EVERY METHOD!
 }
 
 func NewDefaultServiceNetwork(
@@ -110,7 +112,10 @@ func NewDefaultServiceNetwork(
 		enclaveDataDir:  enclaveDataDir,
 
 		serviceRegistrationRepository: serviceRegistrationRepository,
-		serviceIdentifiersRepository:  serviceIdentifiersRepository,
+		serviceRegistrationMutex:      &sync.Mutex{},
+
+		serviceIdentifiersRepository: serviceIdentifiersRepository,
+		serviceIdentifiersMutex:      &sync.Mutex{},
 	}, nil
 }
 
@@ -159,8 +164,14 @@ func (network *DefaultServiceNetwork) AddServices(
 	map[service.ServiceName]error,
 	error,
 ) {
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
+	// network.mutex.Lock()
+	// defer network.mutex.Unlock()
+	serviceNames := []service.ServiceName{}
+	for serviceName := range serviceConfigs {
+		serviceNames = append(serviceNames, serviceName)
+	}
+	start := time.Now()
+	logrus.Infof("IN SERVICE NETWORK%v: started addServices at %v", serviceNames, start)
 	batchSuccessfullyStarted := false
 	startedServices := map[service.ServiceName]*service.Service{}
 	failedServices := map[service.ServiceName]error{}
@@ -170,6 +181,7 @@ func (network *DefaultServiceNetwork) AddServices(
 	}
 
 	// Save the services currently running in enclave for later
+	network.serviceRegistrationMutex.Lock()
 	currentlyRunningServicesInEnclave := map[service.ServiceName]bool{}
 	allServiceNamesFromServiceRegistrations, err := network.serviceRegistrationRepository.GetAllServiceNames()
 	if err != nil {
@@ -178,8 +190,11 @@ func (network *DefaultServiceNetwork) AddServices(
 	for serviceName := range allServiceNamesFromServiceRegistrations {
 		currentlyRunningServicesInEnclave[serviceName] = true
 	}
+	network.serviceRegistrationMutex.Unlock()
 
 	// We register all the services one by one
+	registeringServicesStart := time.Now()
+	logrus.Infof("IN SERVICE NETWORK%v: started registeringServices at %v", serviceNames, registeringServicesStart)
 	serviceSuccessfullyRegistered := map[service.ServiceName]*service.ServiceRegistration{}
 	servicesToStart := map[service.ServiceUUID]*service.ServiceConfig{}
 	for serviceName, serviceConfig := range serviceConfigs {
@@ -205,7 +220,11 @@ func (network *DefaultServiceNetwork) AddServices(
 	if len(failedServices) > 0 {
 		return map[service.ServiceName]*service.Service{}, failedServices, nil
 	}
+	registeringServicesEnd := time.Now()
+	logrus.Infof("IN SERVICE NETWORK%v: finished registeringServices at %v, took %v", serviceNames, registeringServicesEnd, registeringServicesEnd.Sub(registeringServicesStart).Seconds())
 
+	startServicesStart := time.Now()
+	logrus.Infof("IN SERVICE NETWORK%v: started startRegisteredServices at %v", serviceNames, startServicesStart)
 	startedServicesPerUuid, failedServicePerUuid := network.startRegisteredServices(ctx, servicesToStart, batchSize)
 
 	for serviceName, serviceRegistration := range serviceSuccessfullyRegistered {
@@ -250,7 +269,11 @@ func (network *DefaultServiceNetwork) AddServices(
 		}
 		return nil, nil, stacktrace.NewError("This is a Kurtosis internal bug. The batch of services being started does not fit the number of services that were requested. (service started: '%v', requested: '%v')", result, requested)
 	}
+	startServicesEnd := time.Now()
+	logrus.Infof("IN SERVICE NETWORK%v: finished startRegisteredServices at %v, took %v", serviceNames, startServicesEnd, startServicesEnd.Sub(startServicesStart).Seconds())
 
+	network.serviceIdentifiersMutex.Lock()
+	network.serviceRegistrationMutex.Lock()
 	for _, startedService := range startedServices {
 		serviceRegistration := startedService.GetRegistration()
 		serviceIdentifier := service_identifiers.NewServiceIdentifier(serviceRegistration.GetUUID(), serviceRegistration.GetName())
@@ -263,8 +286,12 @@ func (network *DefaultServiceNetwork) AddServices(
 			return nil, nil, stacktrace.Propagate(err, "An error occurred while updating service status to '%s' in service registration for service '%s' after the service was started", serviceStatus, serviceName)
 		}
 	}
+	network.serviceRegistrationMutex.Unlock()
+	network.serviceIdentifiersMutex.Unlock()
 
 	batchSuccessfullyStarted = true
+	addServicesEnd := time.Now()
+	logrus.Infof("IN SERVICE NETWORK%v: finished addServices at %v, took %v", serviceNames, addServicesEnd, addServicesEnd.Sub(start).Seconds())
 	return startedServices, map[service.ServiceName]error{}, nil
 }
 
@@ -389,19 +416,23 @@ func (network *DefaultServiceNetwork) RemoveService(
 	ctx context.Context,
 	serviceIdentifier string,
 ) (service.ServiceUUID, error) {
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
+	// network.mutex.Lock()
+	// defer network.mutex.Unlock()
 
+	network.serviceIdentifiersMutex.Lock()
 	serviceName, err := network.getServiceNameForIdentifierUnlocked(serviceIdentifier)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while fetching name for service identifier '%v'", serviceIdentifier)
 	}
+	network.serviceIdentifiersMutex.Unlock()
 
+	network.serviceRegistrationMutex.Lock()
 	serviceToRemove, err := network.serviceRegistrationRepository.Get(serviceName)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred getting the service registration for service '%s'", serviceName)
 	}
 	serviceUuid := serviceToRemove.GetUUID()
+	network.serviceRegistrationMutex.Unlock()
 
 	// We stop the service, rather than destroying it, so that we can keep logs around
 	stopServiceFilters := &service.ServiceFilters{
@@ -419,9 +450,11 @@ func (network *DefaultServiceNetwork) RemoveService(
 		return "", stacktrace.Propagate(err, "An error occurred stopping service '%v'", serviceUuid)
 	}
 
+	network.serviceRegistrationMutex.Lock()
 	if err := network.serviceRegistrationRepository.Delete(serviceName); err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred deleting the service registration for service '%v' from the repository", serviceName)
 	}
+	network.serviceRegistrationMutex.Unlock()
 
 	return serviceUuid, nil
 }
@@ -564,13 +597,15 @@ func (network *DefaultServiceNetwork) StopServices(
 func (network *DefaultServiceNetwork) RunExec(ctx context.Context, serviceIdentifier string, userServiceCommand []string) (*exec_result.ExecResult, error) {
 	// NOTE: This will block all other operations while this command is running!!!! We might need to change this so it's
 	// asynchronous
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
+	// network.mutex.Lock()
+	// defer network.mutex.Unlock()
 
+	network.serviceRegistrationMutex.Lock()
 	serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while getting service registration for identifier '%v'", serviceIdentifier)
 	}
+	network.serviceRegistrationMutex.Unlock()
 
 	serviceUuid := serviceRegistration.GetUUID()
 	userServiceCommands := map[service.ServiceUUID][]string{
@@ -608,9 +643,10 @@ func (network *DefaultServiceNetwork) RunExec(ctx context.Context, serviceIdenti
 func (network *DefaultServiceNetwork) RunExecs(ctx context.Context, userServiceCommands map[string][]string) (map[service.ServiceUUID]*exec_result.ExecResult, map[service.ServiceUUID]error, error) {
 	// NOTE: This will block all other operations while this command is running!!!! We might need to change this so it's
 	// asynchronous
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
+	// network.mutex.Lock()
+	// defer network.mutex.Unlock()
 
+	network.serviceRegistrationMutex.Lock()
 	userServiceCommandsByServiceUuid := map[service.ServiceUUID][]string{}
 	for serviceIdentifier, userServiceCommand := range userServiceCommands {
 		serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
@@ -620,6 +656,7 @@ func (network *DefaultServiceNetwork) RunExecs(ctx context.Context, userServiceC
 		serviceUuid := serviceRegistration.GetUUID()
 		userServiceCommandsByServiceUuid[serviceUuid] = userServiceCommand
 	}
+	network.serviceRegistrationMutex.Unlock()
 
 	successfulExecs, failedExecs, err := network.kurtosisBackend.RunUserServiceExecCommands(ctx, network.enclaveUuid, "", userServiceCommandsByServiceUuid)
 	if err != nil {
@@ -694,13 +731,15 @@ func (network *DefaultServiceNetwork) GetServices(ctx context.Context) (map[serv
 }
 
 func (network *DefaultServiceNetwork) GetService(ctx context.Context, serviceIdentifier string) (*service.Service, error) {
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
+	// network.mutex.Lock()
+	// defer network.mutex.Unlock()
 
+	network.serviceRegistrationMutex.Lock()
 	serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while fetching registration for service identifier '%v'", serviceIdentifier)
 	}
+	network.serviceRegistrationMutex.Unlock()
 
 	serviceUuid := serviceRegistration.GetUUID()
 

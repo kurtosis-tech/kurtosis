@@ -4,10 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
+
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/render_templates"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -20,7 +24,6 @@ import (
 	starlarkjson "go.starlark.net/lib/json"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
-	"reflect"
 )
 
 const (
@@ -188,6 +191,25 @@ func (builtin *RenderTemplatesCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlG
 
 func (builtin *RenderTemplatesCapabilities) Description() string {
 	return builtin.description
+}
+
+// UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
+func (builtin *RenderTemplatesCapabilities) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+	// render template outputs a files artifact
+	dependencyGraph.StoreOutput(instructionUuid, builtin.artifactName)
+
+	// render template depends on data that is used to render the template
+	for _, templateData := range builtin.templatesAndDataByDestRelFilepath {
+		if outputs, ok := magic_string_helper.ContainsRuntimeValue(templateData.GetDataAsSerializedJson()); ok {
+			for _, output := range outputs {
+				dependencyGraph.DependsOnOutput(instructionUuid, output)
+			}
+		}
+	}
+
+	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("render_templates %s %s", builtin.artifactName, builtin.description))
+
+	return nil
 }
 
 func parseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*render_templates.TemplateData, *startosis_errors.InterpretationError) {

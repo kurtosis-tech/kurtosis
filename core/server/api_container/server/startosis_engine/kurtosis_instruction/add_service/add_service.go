@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
@@ -324,4 +325,14 @@ func (builtin *AddServiceCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYamlGe
 
 func (builtin *AddServiceCapabilities) Description() string {
 	return builtin.description
+}
+
+// UpdateDependencyGraph updates the dependency graph with the effects of running this instruction
+func (builtin *AddServiceCapabilities) UpdateDependencyGraph(instructionsUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+	err := addServiceToDependencyGraph(instructionsUuid, dependencyGraph, string(builtin.serviceName), builtin.returnValue, builtin.serviceConfig)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred updating the dependency graph with service '%s'", builtin.serviceName)
+	}
+	dependencyGraph.AddInstructionShortDescriptor(instructionsUuid, fmt.Sprintf("add_service %s", builtin.serviceName))
+	return nil
 }

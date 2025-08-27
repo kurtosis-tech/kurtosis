@@ -2,7 +2,10 @@ package kurtosis_print
 
 import (
 	"context"
+	"fmt"
+
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
@@ -113,4 +116,21 @@ func (builitin *PrintCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerator)
 
 func (builtin *PrintCapabilities) Description() string {
 	return builtin.description
+}
+
+// UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
+func (builtin *PrintCapabilities) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+	msgStr, ok := builtin.msg.(starlark.String)
+	if !ok {
+		return stacktrace.NewError("msg is not a string")
+	}
+
+	if futureRefs, ok := magic_string_helper.ContainsRuntimeValue(msgStr.GoString()); ok {
+		for _, futureRef := range futureRefs {
+			dependencyGraph.DependsOnOutput(instructionUuid, futureRef)
+		}
+	}
+
+	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("print %s", msgStr.GoString()))
+	return nil
 }
