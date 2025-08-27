@@ -81,7 +81,7 @@ fi
 # fi
 
 if [ "$SEQUENTIAL" = true ]; then
-    source /Users/tewodrosmitiku/craft/kurtosis-parallelism-debugging/extract-times.sh /Users/tewodrosmitiku/craft/kurtosis/${filename}-sequential-apilogs.txt ${num_services} "sequential"
+    source /Users/tewodrosmitiku/craft/kurtosis-parallelism-debugging/extract-times.sh /Users/tewodrosmitiku/craft/kurtosis-parallelism-debugging/${filename}-sequential-apilogs.txt ${num_services} "sequential"
 else 
-    source /Users/tewodrosmitiku/craft/kurtosis-parallelism-debugging/extract-times.sh /Users/tewodrosmitiku/craft/kurtosis/${filename}-parallel-apilogs.txt ${num_services} "parallel"
+    source /Users/tewodrosmitiku/craft/kurtosis-parallelism-debugging/extract-times.sh /Users/tewodrosmitiku/craft/kurtosis-parallelism-debugging/${filename}-parallel-apilogs.txt ${num_services} "parallel"
 fi
