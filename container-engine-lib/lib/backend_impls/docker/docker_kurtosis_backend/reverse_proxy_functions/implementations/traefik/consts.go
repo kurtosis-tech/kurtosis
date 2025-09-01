@@ -28,7 +28,7 @@ entryPoints:
 
 providers:
   docker:
-    endpoint: "unix:///var/run/docker.sock"
+    endpoint: "unix://{{ .SocketPath }}"
     exposedByDefault: false
     network: "{{ .NetworkId }}"
 `
