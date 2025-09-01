@@ -279,9 +279,11 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred creating Docker config storage.")
 	}
 
+	// Get the correct socket path based on DOCKER_HOST or runtime (Docker/Podman)
+	socketPath := shared_helpers.GetDockerSocketPath(dockerManager)
 	bindMounts := map[string]string{
-		// Necessary so that the engine server can interact with the Docker engine
-		consts.DockerSocketFilepath: consts.DockerSocketFilepath,
+		// Necessary so that the engine server can interact with the Docker/Podman engine
+		socketPath: socketPath,
 	}
 
 	volumeMounts := map[string]string{

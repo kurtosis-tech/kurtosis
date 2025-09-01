@@ -191,9 +191,11 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		usedPorts[debugServerDockerPort] = docker_manager.NewManualPublishingSpec(uint16(apicDebugServerPort))
 	}
 
+	// Get the correct socket path based on DOCKER_HOST or runtime (Docker/Podman)
+	socketPath := shared_helpers.GetDockerSocketPath(backend.dockerManager)
 	bindMounts := map[string]string{
-		// Necessary so that the API container can interact with the Docker engine
-		consts.DockerSocketFilepath: consts.DockerSocketFilepath,
+		// Necessary so that the API container can interact with the Docker/Podman engine
+		socketPath: socketPath,
 	}
 
 	volumeMounts := map[string]string{
