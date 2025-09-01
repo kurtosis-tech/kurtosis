@@ -10,10 +10,10 @@ import (
 
 func createTraefikContainerConfigProvider(httpPort uint16, dashboardPort uint16, networkId string, dockerManager *docker_manager.DockerManager) *traefikContainerConfigProvider {
 	config := reverse_proxy.NewDefaultReverseProxyConfig(httpPort, dashboardPort, networkId)
-	
+
 	// Determine socket path, prioritizing DOCKER_HOST environment variable
 	socketPath := getSocketPath(dockerManager)
-	
+
 	return newTraefikContainerConfigProvider(config, socketPath)
 }
 
