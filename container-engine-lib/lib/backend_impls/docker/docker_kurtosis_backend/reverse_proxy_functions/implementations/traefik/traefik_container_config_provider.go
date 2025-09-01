@@ -1,7 +1,9 @@
 package traefik
 
 import (
+	"bytes"
 	"fmt"
+	"text/template"
 
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
@@ -19,12 +21,20 @@ const (
 	shCmdFlag        = "-c"
 )
 
-type traefikContainerConfigProvider struct {
-	config *reverse_proxy.ReverseProxyConfig
+type traefikTemplateConfig struct {
+	HttpPort      uint16
+	DashboardPort uint16
+	NetworkId     string
+	SocketPath    string
 }
 
-func newTraefikContainerConfigProvider(config *reverse_proxy.ReverseProxyConfig) *traefikContainerConfigProvider {
-	return &traefikContainerConfigProvider{config: config}
+type traefikContainerConfigProvider struct {
+	config     *reverse_proxy.ReverseProxyConfig
+	socketPath string
+}
+
+func newTraefikContainerConfigProvider(config *reverse_proxy.ReverseProxyConfig, socketPath string) *traefikContainerConfigProvider {
+	return &traefikContainerConfigProvider{config: config, socketPath: socketPath}
 }
 
 func (traefik *traefikContainerConfigProvider) GetContainerArgs(
@@ -36,14 +46,29 @@ func (traefik *traefikContainerConfigProvider) GetContainerArgs(
 ) (*docker_manager.CreateAndStartContainerArgs, error) {
 
 	bindMounts := map[string]string{
-		// Necessary so that the reverse proxy can interact with the Docker engine
-		consts.DockerSocketFilepath: consts.DockerSocketFilepath,
+		// Necessary so that the reverse proxy can interact with the Docker/Podman engine
+		// Use the same socket path for both host and container since it's already determined correctly
+		traefik.socketPath: traefik.socketPath,
 	}
 
-	traefikConfigContentStr, err := traefik.config.GetConfigFileContent(configFileTemplate)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the traefik configuration content")
+	// Create template config with socket path
+	templateConfig := &traefikTemplateConfig{
+		HttpPort:      traefik.config.HttpPort,
+		DashboardPort: traefik.config.DashboardPort,
+		NetworkId:     traefik.config.NetworkId,
+		SocketPath:    traefik.socketPath,
 	}
+
+	cfgFileTemplate, err := template.New("traefikConfig").Parse(configFileTemplate)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred parsing the traefik config template")
+	}
+
+	templateStrBuffer := &bytes.Buffer{}
+	if err := cfgFileTemplate.Execute(templateStrBuffer, templateConfig); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred executing the traefik config template")
+	}
+	traefikConfigContentStr := templateStrBuffer.String()
 
 	// Create cmd to
 	// 1. create config file in appropriate location in the traefik container
