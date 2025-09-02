@@ -192,10 +192,11 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	}
 
 	// Get the correct socket path based on DOCKER_HOST or runtime (Docker/Podman)
-	socketPath := shared_helpers.GetDockerSocketPath(backend.dockerManager)
+	hostSocketPath := shared_helpers.GetDockerSocketPath(backend.dockerManager)
 	bindMounts := map[string]string{
 		// Necessary so that the API container can interact with the Docker/Podman engine
-		socketPath: socketPath,
+		// Map the host socket to the standard location inside the container
+		hostSocketPath: consts.DockerSocketFilepath,
 	}
 
 	volumeMounts := map[string]string{
