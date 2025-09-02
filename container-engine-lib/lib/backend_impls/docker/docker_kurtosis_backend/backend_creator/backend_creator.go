@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 
@@ -221,7 +222,11 @@ func getDockerKurtosisBackend(
 ) (backend_interface.KurtosisBackend, error) {
 	var dockerManager *docker_manager.DockerManager
 	var err error
-	if usePodmanMode {
+
+	// Check if DOCKER_HOST points to Podman, even if usePodmanMode is false
+	shouldUsePodmanMode := usePodmanMode || isPodmanFromDockerHost()
+
+	if shouldUsePodmanMode {
 		dockerManager, err = docker_manager.CreatePodmanManager(dockerClientOpts)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred building Podman manager")
@@ -321,4 +326,16 @@ func getDockerKurtosisBackend(
 	wrappedBackend := metrics_reporting.NewMetricsReportingKurtosisBackend(dockerKurtosisBackend)
 
 	return wrappedBackend, nil
+}
+
+// isPodmanFromDockerHost detects if DOCKER_HOST points to a Podman socket
+func isPodmanFromDockerHost() bool {
+	dockerHost := os.Getenv("DOCKER_HOST")
+	if dockerHost == "" {
+		return false
+	}
+
+	// Check if DOCKER_HOST contains "podman" in the path
+	// Common patterns: unix:///run/user/1020/podman/podman.sock, unix:///run/podman/podman.sock
+	return strings.Contains(strings.ToLower(dockerHost), "podman")
 }
