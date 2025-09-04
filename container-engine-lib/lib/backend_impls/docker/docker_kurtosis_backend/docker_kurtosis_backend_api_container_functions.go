@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net"
+	"os"
 	"time"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
@@ -127,11 +128,16 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	if _, found := customEnvVars[ownIpAddressEnvVar]; found {
 		return nil, stacktrace.NewError("Requested own IP environment variable '%v' conflicts with custom environment variable", ownIpAddressEnvVar)
 	}
-	envVarsWithOwnIp := map[string]string{
+	envVars := map[string]string{
 		ownIpAddressEnvVar: ipAddr.String(),
 	}
 	for key, value := range customEnvVars {
-		envVarsWithOwnIp[key] = value
+		envVars[key] = value
+	}
+
+	// Pass DOCKER_HOST environment variable if it exists
+	if dockerHost := os.Getenv("DOCKER_HOST"); dockerHost != "" {
+		envVars["DOCKER_HOST"] = dockerHost
 	}
 
 	defaultWait, err := port_spec.CreateWaitWithDefaultValues()
@@ -216,7 +222,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		apiContainerAttrs.GetName().GetString(),
 		enclaveNetwork.GetId(),
 	).WithEnvironmentVariables(
-		envVarsWithOwnIp,
+		envVars,
 	).WithBindMounts(
 		bindMounts,
 	).WithVolumeMounts(
