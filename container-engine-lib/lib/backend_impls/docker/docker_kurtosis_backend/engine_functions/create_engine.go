@@ -314,9 +314,9 @@ func CreateEngine(
 	if coreImage := os.Getenv("KURTOSIS_CORE_IMAGE"); coreImage != "" {
 		envVars["KURTOSIS_CORE_IMAGE"] = coreImage
 	}
-	// if dockerHost := os.Getenv("DOCKER_HOST"); dockerHost != "" {
-	// 	envVars["DOCKER_HOST"] = dockerHost
-	// }
+	if dockerHost := os.Getenv("DOCKER_HOST"); dockerHost != "" {
+		envVars["DOCKER_HOST"] = dockerHost
+	}
 
 	createAndStartArgsBuilder := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		containerImageAndTag,
