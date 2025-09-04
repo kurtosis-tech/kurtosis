@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"net"
-	"os"
 	"time"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
@@ -133,11 +132,6 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	}
 	for key, value := range customEnvVars {
 		envVars[key] = value
-	}
-
-	// Pass DOCKER_HOST environment variable if it exists
-	if dockerHost := os.Getenv("DOCKER_HOST"); dockerHost != "" {
-		envVars["DOCKER_HOST"] = dockerHost
 	}
 
 	defaultWait, err := port_spec.CreateWaitWithDefaultValues()
