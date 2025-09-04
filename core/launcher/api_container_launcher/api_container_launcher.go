@@ -7,6 +7,8 @@ package api_container_launcher
 import (
 	"context"
 	"fmt"
+	"os"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -20,9 +22,21 @@ import (
 const (
 	enclaveDataVolumeDirpath = "/kurtosis-data"
 
-	// TODO This should come from the same logic that builds the server image!!!!!
-	containerImage = "kurtosistech/core"
+	// Default core image, can be overridden via KURTOSIS_CORE_IMAGE env var
+	defaultContainerImage = "kurtosistech/core"
+	coreImageEnvVar       = "KURTOSIS_CORE_IMAGE"
 )
+
+// containerImage is the actual image to use, checking env var override first
+var containerImage = getImageWithEnvOverride(coreImageEnvVar, defaultContainerImage)
+
+func getImageWithEnvOverride(envVar, defaultImage string) string {
+	if override := os.Getenv(envVar); override != "" {
+		logrus.Infof("Using custom core image from %s: %s", envVar, override)
+		return override
+	}
+	return defaultImage
+}
 
 type ApiContainerLauncher struct {
 	kurtosisBackend backend_interface.KurtosisBackend
