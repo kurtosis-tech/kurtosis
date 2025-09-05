@@ -788,7 +788,7 @@ func GetDockerSocketPath(dockerManager *docker_manager.DockerManager) string {
 
 	// Fall back to default paths based on Docker/Podman
 	if dockerManager.IsPodman() {
-		return "/run/podman/podman.sock"
+		return "/run/user/1020/podman/podman.sock"
 	}
 	return consts.DockerSocketFilepath
 }

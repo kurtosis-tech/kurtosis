@@ -3,6 +3,7 @@ package engine_functions
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/docker_config_storage_creator"
@@ -307,6 +308,14 @@ func CreateEngine(
 	labelStrs := map[string]string{}
 	for labelKey, labelValue := range engineAttrs.GetLabels() {
 		labelStrs[labelKey.GetString()] = labelValue.GetString()
+	}
+
+	// Forward environment variables from CLI to Engine container
+	if coreImage := os.Getenv("KURTOSIS_CORE_IMAGE"); coreImage != "" {
+		envVars["KURTOSIS_CORE_IMAGE"] = coreImage
+	}
+	if dockerHost := os.Getenv("DOCKER_HOST"); dockerHost != "" {
+		envVars["DOCKER_HOST"] = dockerHost
 	}
 
 	createAndStartArgsBuilder := docker_manager.NewCreateAndStartContainerArgsBuilder(
