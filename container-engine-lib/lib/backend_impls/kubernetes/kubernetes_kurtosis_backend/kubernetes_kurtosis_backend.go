@@ -572,10 +572,7 @@ func (backend *KubernetesKurtosisBackend) GetLogsCollectorForEnclave(ctx context
 }
 
 func (backend *KubernetesKurtosisBackend) DestroyLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) error {
-	if err := logs_collector_functions.DestroyLogsCollector(ctx, backend.kubernetesManager); err != nil {
-		return stacktrace.Propagate(err, "An error occurred destroying logs collector.")
-	}
-	logrus.Debug("Successfully destroyed logs collector.")
+	logrus.Debug("The logs collector in K8s backend is per engine as opposed to per enclave there's no way to destroy it per enclave. Skipping destroy logs collector for enclave...")
 	return nil
 }
 
