@@ -221,6 +221,13 @@ func getDockerKurtosisBackend(
 ) (backend_interface.KurtosisBackend, error) {
 	var dockerManager *docker_manager.DockerManager
 	var err error
+<<<<<<< Updated upstream
+=======
+
+	// Check if DOCKER_HOST points to Podman, even if usePodmanMode is false
+	// shouldUsePodmanMode := usePodmanMode || isPodmanFromDockerHost()
+
+>>>>>>> Stashed changes
 	if usePodmanMode {
 		dockerManager, err = docker_manager.CreatePodmanManager(dockerClientOpts)
 		if err != nil {
@@ -322,3 +329,18 @@ func getDockerKurtosisBackend(
 
 	return wrappedBackend, nil
 }
+<<<<<<< Updated upstream
+=======
+
+// isPodmanFromDockerHost detects if DOCKER_HOST points to a Podman socket
+// func isPodmanFromDockerHost() bool {
+// 	dockerHost := os.Getenv("DOCKER_HOST")
+// 	if dockerHost == "" {
+// 		return false
+// 	}
+
+// 	// Check if DOCKER_HOST contains "podman" in the path
+// 	// Common patterns: unix:///run/user/1020/podman/podman.sock, unix:///run/podman/podman.sock
+// 	return strings.Contains(strings.ToLower(dockerHost), "podman")
+// }
+>>>>>>> Stashed changes
