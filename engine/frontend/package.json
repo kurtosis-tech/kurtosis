@@ -51,7 +51,7 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "prebuild": "rm -r ../server/webapp",
+    "prebuild": "rm -rf ../server/webapp || true",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "postbuild": "cp -r build/ ../server/webapp",

@@ -314,9 +314,11 @@ func CreateEngine(
 	if coreImage := os.Getenv("KURTOSIS_CORE_IMAGE"); coreImage != "" {
 		envVars["KURTOSIS_CORE_IMAGE"] = coreImage
 	}
-	if dockerHost := os.Getenv("DOCKER_HOST"); dockerHost != "" {
-		envVars["DOCKER_HOST"] = dockerHost
-	}
+
+	// Pass the host's Docker socket path to the engine for API container bind mounts
+	// We use a separate env var because DOCKER_HOST inside the engine should point to /var/run/docker.sock
+	hostSocketPath = shared_helpers.GetDockerSocketPath(dockerManager)
+	envVars["HOST_DOCKER_SOCKET"] = hostSocketPath
 
 	createAndStartArgsBuilder := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		containerImageAndTag,

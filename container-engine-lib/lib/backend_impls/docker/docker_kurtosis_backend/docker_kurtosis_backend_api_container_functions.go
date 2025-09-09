@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net"
+	"os"
 	"time"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
@@ -191,8 +192,13 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		usedPorts[debugServerDockerPort] = docker_manager.NewManualPublishingSpec(uint16(apicDebugServerPort))
 	}
 
-	// Get the correct socket path based on DOCKER_HOST or runtime (Docker/Podman)
-	hostSocketPath := shared_helpers.GetDockerSocketPath(backend.dockerManager)
+	// Get the correct host socket path from the environment variable passed by the CLI
+	// This is the actual host socket path that needs to be bind mounted
+	hostSocketPath := os.Getenv("HOST_DOCKER_SOCKET")
+	if hostSocketPath == "" {
+		// Fallback to detecting it if not provided (shouldn't happen in normal operation)
+		hostSocketPath = shared_helpers.GetDockerSocketPath(backend.dockerManager)
+	}
 	bindMounts := map[string]string{
 		// Necessary so that the API container can interact with the Docker/Podman engine
 		// Map the host socket to the standard location inside the container
