@@ -543,7 +543,7 @@ func (backend *KubernetesKurtosisBackend) CreateLogsCollectorForEnclave(
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector.")
 	}
 	if logsCollector == nil {
-		return nil, stacktrace.NewError("No logs collector found. This is unexpected as the logs collector should already be running during enclave creation. This is a bug in Kurtosis.")
+		return nil, stacktrace.NewError("No logs collector found. This is unexpected as the logs collector should already be running during enclave creation. Please restart the engine using `kurtosis engine restart` and attempt to create the enclave again.")
 	}
 
 	return nil, nil
