@@ -7,7 +7,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_aggregator_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_aggregator_functions/implementations/vector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_collector_functions"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_collector_functions/implementations/fluentbit"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
@@ -506,6 +505,7 @@ func (backend *KubernetesKurtosisBackend) DestroyLogsAggregator(ctx context.Cont
 	return nil
 }
 
+// The logs collector in K8s backend is per engine as opposed to per enclave so instead of creating it, we just ensure both the logs aggregator and the logs collector are already running
 func (backend *KubernetesKurtosisBackend) CreateLogsCollectorForEnclave(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
@@ -538,26 +538,15 @@ func (backend *KubernetesKurtosisBackend) CreateLogsCollectorForEnclave(
 	}
 	logsAggregator = maybeLogsAggregator
 
-	//Declaring the implementation
-	logsCollectorDaemonSet := fluentbit.NewFluentbitLogsCollector()
-
-	logrus.Info("Creating logs collector...")
-	logsCollector, _, err := logs_collector_functions.CreateLogsCollector(
-		ctx,
-		logsCollectorTcpPortNumber,
-		logsCollectorHttpPortNumber,
-		logsCollectorDaemonSet,
-		logsAggregator,
-		logsCollectorFilters,
-		logsCollectorParsers,
-		backend.kubernetesManager,
-		backend.objAttrsProvider,
-	)
+	logsCollector, err := logs_collector_functions.GetLogsCollector(ctx, backend.kubernetesManager)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the logs collector using the '%v' TCP port number, the '%v' HTTP port number and the logs collector daemon set '%+v'", logsCollectorTcpPortNumber, logsCollectorHttpPortNumber, logsCollectorDaemonSet)
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector.")
+	}
+	if logsCollector == nil {
+		return nil, stacktrace.NewError("No logs collector found. This is unexpected as the logs collecot should already be running during enclave creation. This is a bug in Kurtosis.")
 	}
 
-	return logsCollector, nil
+	return nil, nil
 }
 
 func (backend *KubernetesKurtosisBackend) GetLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (*logs_collector.LogsCollector, error) {
