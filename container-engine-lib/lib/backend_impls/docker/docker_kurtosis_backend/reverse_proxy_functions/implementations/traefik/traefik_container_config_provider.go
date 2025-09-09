@@ -20,11 +20,12 @@ const (
 )
 
 type traefikContainerConfigProvider struct {
-	config *reverse_proxy.ReverseProxyConfig
+	config     *reverse_proxy.ReverseProxyConfig
+	socketPath string
 }
 
-func newTraefikContainerConfigProvider(config *reverse_proxy.ReverseProxyConfig) *traefikContainerConfigProvider {
-	return &traefikContainerConfigProvider{config: config}
+func newTraefikContainerConfigProvider(config *reverse_proxy.ReverseProxyConfig, socketPath string) *traefikContainerConfigProvider {
+	return &traefikContainerConfigProvider{config: config, socketPath: socketPath}
 }
 
 func (traefik *traefikContainerConfigProvider) GetContainerArgs(
@@ -35,11 +36,15 @@ func (traefik *traefikContainerConfigProvider) GetContainerArgs(
 	networkId string,
 ) (*docker_manager.CreateAndStartContainerArgs, error) {
 
+	// Get the host socket path (which may be different from the container path)
+	hostSocketPath := traefik.socketPath
 	bindMounts := map[string]string{
-		// Necessary so that the reverse proxy can interact with the Docker engine
-		consts.DockerSocketFilepath: consts.DockerSocketFilepath,
+		// Necessary so that the reverse proxy can interact with the Docker/Podman engine
+		// Map the host socket to the standard location inside the container
+		hostSocketPath: consts.DockerSocketFilepath,
 	}
 
+	// Get the Traefik config content using the standard reverse proxy config
 	traefikConfigContentStr, err := traefik.config.GetConfigFileContent(configFileTemplate)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the traefik configuration content")
