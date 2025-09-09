@@ -517,14 +517,13 @@ func (backend *KubernetesKurtosisBackend) CreateLogsCollectorForEnclave(
 	*logs_collector.LogsCollector,
 	error,
 ) {
-	var logsAggregator *logs_aggregator.LogsAggregator
 	maybeLogsAggregator, err := logs_aggregator_functions.GetLogsAggregator(ctx, backend.kubernetesManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator. The logs collector cannot be run without a logs aggregator.")
 	}
 	if maybeLogsAggregator == nil {
 		logrus.Warnf("Logs aggregator does not exist. This is unexpected as Kubernetes should have restarted the deployment automatically.")
-		logrus.Warnf("This can be fixed by restarting the engine using `kurto engine restart` and attempting to create the enclave again.")
+		logrus.Warnf("This can be fixed by restarting the engine using `kurtosis engine restart` and attempting to create the enclave again.")
 		return nil, stacktrace.NewError("No logs aggregator exists. The logs collector cannot be run without a logs aggregator.")
 	}
 	if maybeLogsAggregator.GetStatus() != container.ContainerStatus_Running {
@@ -536,14 +535,15 @@ func (backend *KubernetesKurtosisBackend) CreateLogsCollectorForEnclave(
 			maybeLogsAggregator.GetStatus(),
 		)
 	}
-	logsAggregator = maybeLogsAggregator
 
 	logsCollector, err := logs_collector_functions.GetLogsCollector(ctx, backend.kubernetesManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector.")
 	}
 	if logsCollector == nil {
-		return nil, stacktrace.NewError("No logs collector found. This is unexpected as the logs collector should already be running during enclave creation. Please restart the engine using `kurtosis engine restart` and attempt to create the enclave again.")
+		logrus.Warnf("Logs collector does not exist. This is unexpected as Kubernetes should have restarted the deployment automatically.")
+		logrus.Warnf("This can be fixed by restarting the engine using `kurtosis engine restart` and attempting to create the enclave again.")
+		return nil, stacktrace.NewError("No logs collector exists. An enclave cannot be created without a logs collector.")
 	}
 
 	return nil, nil
