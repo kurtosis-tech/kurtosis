@@ -522,7 +522,7 @@ func (backend *KubernetesKurtosisBackend) CreateLogsCollectorForEnclave(
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator. The logs collector cannot be run without a logs aggregator.")
 	}
 	if maybeLogsAggregator == nil {
-		logrus.Warnf("Logs aggregator does not exist. This is unexpected as Kubernetes should have restarted the deployment automatically.")
+		logrus.Warnf("Logs aggregator does not exist. This is unexpected as the logs aggregator should already be running during enclave creation.")
 		logrus.Warnf("This can be fixed by restarting the engine using `kurtosis engine restart` and attempting to create the enclave again.")
 		return nil, stacktrace.NewError("No logs aggregator exists. The logs collector cannot be run without a logs aggregator.")
 	}
@@ -541,9 +541,18 @@ func (backend *KubernetesKurtosisBackend) CreateLogsCollectorForEnclave(
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector.")
 	}
 	if logsCollector == nil {
-		logrus.Warnf("Logs collector does not exist. This is unexpected as Kubernetes should have restarted the deployment automatically.")
+		logrus.Warnf("Logs collector does not exist. This is unexpected as the logs collector should already be running during enclave creation.")
 		logrus.Warnf("This can be fixed by restarting the engine using `kurtosis engine restart` and attempting to create the enclave again.")
 		return nil, stacktrace.NewError("No logs collector exists. An enclave cannot be created without a logs collector.")
+	}
+	if logsCollector.GetStatus() != container.ContainerStatus_Running {
+		logrus.Warnf("Logs collector exists but is not running. Instead status is '%v'. This is unexpected.",
+			logsCollector.GetStatus())
+		logrus.Warnf("This can be fixed by restarting the engine using `kurtosis engine restart` and attempting to create the enclave again.")
+		return nil, stacktrace.NewError(
+			"The logs collector daemon set exists but is not running. Instead logs collector status is '%v'. An enclave cannot be created without a logs collector.",
+			logsCollector.GetStatus(),
+		)
 	}
 
 	return nil, nil
