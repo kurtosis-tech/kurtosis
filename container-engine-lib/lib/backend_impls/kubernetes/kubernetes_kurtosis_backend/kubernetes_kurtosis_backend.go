@@ -7,7 +7,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_aggregator_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_aggregator_functions/implementations/vector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_collector_functions"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_collector_functions/implementations/fluentbit"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
@@ -506,6 +505,7 @@ func (backend *KubernetesKurtosisBackend) DestroyLogsAggregator(ctx context.Cont
 	return nil
 }
 
+// The logs collector in K8s backend is per engine as opposed to per enclave so instead of creating it, we just ensure both the logs aggregator and the logs collector are already running
 func (backend *KubernetesKurtosisBackend) CreateLogsCollectorForEnclave(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
@@ -517,14 +517,13 @@ func (backend *KubernetesKurtosisBackend) CreateLogsCollectorForEnclave(
 	*logs_collector.LogsCollector,
 	error,
 ) {
-	var logsAggregator *logs_aggregator.LogsAggregator
 	maybeLogsAggregator, err := logs_aggregator_functions.GetLogsAggregator(ctx, backend.kubernetesManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator. The logs collector cannot be run without a logs aggregator.")
 	}
 	if maybeLogsAggregator == nil {
-		logrus.Warnf("Logs aggregator does not exist. This is unexpected as Kubernetes should have restarted the deployment automatically.")
-		logrus.Warnf("This can be fixed by restarting the engine using `kurto engine restart` and attempting to create the enclave again.")
+		logrus.Warnf("Logs aggregator does not exist. This is unexpected as the logs aggregator should already be running during enclave creation.")
+		logrus.Warnf("This can be fixed by restarting the engine using `kurtosis engine restart` and attempting to create the enclave again.")
 		return nil, stacktrace.NewError("No logs aggregator exists. The logs collector cannot be run without a logs aggregator.")
 	}
 	if maybeLogsAggregator.GetStatus() != container.ContainerStatus_Running {
@@ -536,28 +535,27 @@ func (backend *KubernetesKurtosisBackend) CreateLogsCollectorForEnclave(
 			maybeLogsAggregator.GetStatus(),
 		)
 	}
-	logsAggregator = maybeLogsAggregator
 
-	//Declaring the implementation
-	logsCollectorDaemonSet := fluentbit.NewFluentbitLogsCollector()
-
-	logrus.Info("Creating logs collector...")
-	logsCollector, _, err := logs_collector_functions.CreateLogsCollector(
-		ctx,
-		logsCollectorTcpPortNumber,
-		logsCollectorHttpPortNumber,
-		logsCollectorDaemonSet,
-		logsAggregator,
-		logsCollectorFilters,
-		logsCollectorParsers,
-		backend.kubernetesManager,
-		backend.objAttrsProvider,
-	)
+	logsCollector, err := logs_collector_functions.GetLogsCollector(ctx, backend.kubernetesManager)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the logs collector using the '%v' TCP port number, the '%v' HTTP port number and the logs collector daemon set '%+v'", logsCollectorTcpPortNumber, logsCollectorHttpPortNumber, logsCollectorDaemonSet)
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs collector.")
+	}
+	if logsCollector == nil {
+		logrus.Warnf("Logs collector does not exist. This is unexpected as the logs collector should already be running during enclave creation.")
+		logrus.Warnf("This can be fixed by restarting the engine using `kurtosis engine restart` and attempting to create the enclave again.")
+		return nil, stacktrace.NewError("No logs collector exists. An enclave cannot be created without a logs collector.")
+	}
+	if logsCollector.GetStatus() != container.ContainerStatus_Running {
+		logrus.Warnf("Logs collector exists but is not running. Instead status is '%v'. This is unexpected.",
+			logsCollector.GetStatus())
+		logrus.Warnf("This can be fixed by restarting the engine using `kurtosis engine restart` and attempting to create the enclave again.")
+		return nil, stacktrace.NewError(
+			"The logs collector daemon set exists but is not running. Instead logs collector status is '%v'. An enclave cannot be created without a logs collector.",
+			logsCollector.GetStatus(),
+		)
 	}
 
-	return logsCollector, nil
+	return nil, nil
 }
 
 func (backend *KubernetesKurtosisBackend) GetLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (*logs_collector.LogsCollector, error) {
@@ -572,10 +570,7 @@ func (backend *KubernetesKurtosisBackend) GetLogsCollectorForEnclave(ctx context
 }
 
 func (backend *KubernetesKurtosisBackend) DestroyLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) error {
-	if err := logs_collector_functions.DestroyLogsCollector(ctx, backend.kubernetesManager); err != nil {
-		return stacktrace.Propagate(err, "An error occurred destroying logs collector.")
-	}
-	logrus.Debug("Successfully destroyed logs collector.")
+	logrus.Debug("The logs collector in K8s backend is per engine as opposed to per enclave there's no way to destroy it per enclave. Skipping destroy logs collector for enclave...")
 	return nil
 }
 
