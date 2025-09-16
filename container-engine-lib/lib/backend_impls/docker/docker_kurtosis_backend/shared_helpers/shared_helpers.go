@@ -772,3 +772,23 @@ func dumpContainerInfo(
 
 	return nil
 }
+
+// GetDockerSocketPath returns the Docker socket path to use, checking DOCKER_HOST env var first,
+// then falling back to appropriate defaults for Docker/Podman
+func GetDockerSocketPath(dockerManager *docker_manager.DockerManager) string {
+	// Check if DOCKER_HOST environment variable is set
+	dockerHost := os.Getenv("DOCKER_HOST")
+	if dockerHost != "" {
+		// Extract socket path from DOCKER_HOST (e.g., "unix:///path/to/socket" -> "/path/to/socket")
+		if strings.HasPrefix(dockerHost, "unix://") {
+			return strings.TrimPrefix(dockerHost, "unix://")
+		}
+		// If DOCKER_HOST is set but not a unix socket, fall back to defaults
+	}
+
+	// Fall back to default paths based on Docker/Podman
+	if dockerManager.IsPodman() {
+		return "/run/podman/podman.sock"
+	}
+	return consts.DockerSocketFilepath
+}
