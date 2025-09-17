@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/store_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
@@ -138,6 +139,8 @@ func NewRunShService(
 				wait:                   DefaultWaitTimeoutDurationStr,
 				description:            "",  // populated at interpretation time
 				returnValue:            nil, // populated at interpretation time
+				runCodeValue:           "",  // populated at interpretation time
+				runOutputValue:         "",  // populated at interpretation time
 				skipCodeCheck:          false,
 				acceptableCodes:        nil, // populated at interpretation time
 			}
@@ -173,6 +176,8 @@ type RunShCapabilities struct {
 	serviceConfig   *service.ServiceConfig
 	storeSpecList   []*store_spec.StoreSpec
 	returnValue     *starlarkstruct.Struct
+	runCodeValue    string
+	runOutputValue  string
 	wait            string
 	description     string
 	acceptableCodes []int64
@@ -310,7 +315,7 @@ func (builtin *RunShCapabilities) Interpret(locatorOfModuleInWhichThisBuiltinIsB
 	}
 	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, defaultDescription)
 
-	builtin.returnValue = createInterpretationResult(resultUuid, builtin.storeSpecList)
+	builtin.returnValue, builtin.runCodeValue, builtin.runOutputValue = createInterpretationResult(resultUuid, builtin.storeSpecList)
 	return builtin.returnValue, nil
 }
 
@@ -402,6 +407,42 @@ func (builtin *RunShCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerator) 
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred adding run sh task to the plan")
 	}
+	return nil
+}
+
+func (builtin *RunShCapabilities) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+	// outputs
+	dependencyGraph.StoreOutput(instructionUuid, builtin.runCodeValue)
+	dependencyGraph.StoreOutput(instructionUuid, builtin.runOutputValue)
+
+	for _, storeSpec := range builtin.storeSpecList {
+		dependencyGraph.StoreOutput(instructionUuid, storeSpec.GetName())
+	}
+
+	if builtin.serviceConfig.GetFilesArtifactsExpansion() != nil {
+		for _, filesArtifactNames := range builtin.serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
+			for _, filesArtifactName := range filesArtifactNames {
+				dependencyGraph.DependsOnOutput(instructionUuid, filesArtifactName)
+			}
+		}
+	}
+
+	for _, v := range builtin.serviceConfig.GetEnvVars() {
+		if futureRefs, ok := magic_string_helper.ContainsRuntimeValue(v); ok {
+			for _, futureRef := range futureRefs {
+				dependencyGraph.DependsOnOutput(instructionUuid, futureRef)
+			}
+		}
+	}
+
+	if futureRefs, ok := magic_string_helper.ContainsRuntimeValue(builtin.run); ok {
+		for _, futureRef := range futureRefs {
+			dependencyGraph.DependsOnOutput(instructionUuid, futureRef)
+		}
+	}
+
+	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("run_sh %s", builtin.description))
+
 	return nil
 }
 

@@ -2,7 +2,9 @@ package kurtosis_instruction
 
 import (
 	"context"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
@@ -37,4 +39,7 @@ type KurtosisInstruction interface {
 
 	// UpdatePlan updates the plan with the effects of running this instruction.
 	UpdatePlan(plan *plan_yaml.PlanYamlGenerator) error
+
+	// UpdateDependencyGraph updates the dependency graph with the effects of running this instruction
+	UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error
 }

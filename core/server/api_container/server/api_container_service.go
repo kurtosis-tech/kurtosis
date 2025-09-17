@@ -17,6 +17,8 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"runtime"
+	"runtime/pprof"
 	"strings"
 	"time"
 	"unicode"
@@ -299,6 +301,55 @@ func (apicService *ApiContainerService) InspectFilesArtifactContents(_ context.C
 }
 
 func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_RunStarlarkPackageServer) error {
+	// Start CPU profiling
+	cpuProfileFile, err := os.Create("/tmp/run_starlark_package_cpu.prof")
+	if err != nil {
+		logrus.Errorf("Failed to create CPU profile file: %v", err)
+	} else {
+		defer cpuProfileFile.Close()
+		if err := pprof.StartCPUProfile(cpuProfileFile); err != nil {
+			logrus.Errorf("Failed to start CPU profiling: %v", err)
+		} else {
+			defer pprof.StopCPUProfile()
+			logrus.Infof("Started CPU profiling to /tmp/run_starlark_package_cpu.prof")
+		}
+	}
+
+	// Start block profiling
+	blockProfileFile, err := os.Create("/tmp/run_starlark_package_block.prof")
+	if err != nil {
+		logrus.Errorf("Failed to create block profile file: %v", err)
+	} else {
+		defer blockProfileFile.Close()
+		// Enable block profiling
+		runtime.SetBlockProfileRate(1)
+		defer func() {
+			if err := pprof.Lookup("block").WriteTo(blockProfileFile, 0); err != nil {
+				logrus.Errorf("Failed to write block profile: %v", err)
+			} else {
+				logrus.Infof("Written block profile to /tmp/run_starlark_package_block.prof")
+			}
+		}()
+		logrus.Infof("Started block profiling to /tmp/run_starlark_package_block.prof")
+	}
+
+	// Start mutex profiling
+	mutexProfileFile, err := os.Create("/tmp/run_starlark_package_mutex.prof")
+	if err != nil {
+		logrus.Errorf("Failed to create mutex profile file: %v", err)
+	} else {
+		defer mutexProfileFile.Close()
+		// Enable mutex profiling
+		runtime.SetMutexProfileFraction(1)
+		defer func() {
+			if err := pprof.Lookup("mutex").WriteTo(mutexProfileFile, 0); err != nil {
+				logrus.Errorf("Failed to write mutex profile: %v", err)
+			} else {
+				logrus.Infof("Written mutex profile to /tmp/run_starlark_package_mutex.prof")
+			}
+		}()
+		logrus.Infof("Started mutex profiling to /tmp/run_starlark_package_mutex.prof")
+	}
 
 	var scriptWithRunFunction string
 	var interpretationError *startosis_errors.InterpretationError

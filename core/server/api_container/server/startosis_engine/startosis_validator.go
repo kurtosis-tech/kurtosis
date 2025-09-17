@@ -63,7 +63,7 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructionsS
 		isValidationFailure := false
 
 		starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
-			validationInProgressMsg, defaultCurrentStepNumber, defaultTotalStepsNumber)
+			validationInProgressMsg, defaultCurrentStepNumber, defaultTotalStepsNumber, "validatation")
 
 		serviceNames, err := validator.serviceNetwork.GetServiceNames()
 		if err != nil {

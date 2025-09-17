@@ -863,6 +863,11 @@ export declare class StarlarkInstruction extends Message<StarlarkInstruction> {
    */
   description: string;
 
+  /**
+   * @generated from field: optional string instruction_id = 7;
+   */
+  instructionId?: string;
+
   constructor(data?: PartialMessage<StarlarkInstruction>);
 
   static readonly runtime: typeof proto3;
@@ -891,6 +896,11 @@ export declare class StarlarkInstructionResult extends Message<StarlarkInstructi
    * @generated from field: optional google.protobuf.Duration execution_duration = 2;
    */
   executionDuration?: Duration;
+
+  /**
+   * @generated from field: optional string instruction_id = 3;
+   */
+  instructionId?: string;
 
   constructor(data?: PartialMessage<StarlarkInstructionResult>);
 
@@ -1108,6 +1118,11 @@ export declare class StarlarkRunProgress extends Message<StarlarkRunProgress> {
    */
   currentStepNumber: number;
 
+  /**
+   * @generated from field: optional string instruction_id = 4;
+   */
+  instructionId?: string;
+
   constructor(data?: PartialMessage<StarlarkRunProgress>);
 
   static readonly runtime: typeof proto3;
@@ -1133,14 +1148,19 @@ export declare class StarlarkRunFinishedEvent extends Message<StarlarkRunFinishe
   isRunSuccessful: boolean;
 
   /**
-   * @generated from field: optional google.protobuf.Duration total_execution_duration = 2;
+   * @generated from field: optional string serialized_output = 2;
+   */
+  serializedOutput?: string;
+
+  /**
+   * @generated from field: optional google.protobuf.Duration total_execution_duration = 3;
    */
   totalExecutionDuration?: Duration;
 
   /**
-   * @generated from field: optional string serialized_output = 3;
+   * @generated from field: optional google.protobuf.Duration total_parallel_execution_duration = 4;
    */
-  serializedOutput?: string;
+  totalParallelExecutionDuration?: Duration;
 
   constructor(data?: PartialMessage<StarlarkRunFinishedEvent>);
 

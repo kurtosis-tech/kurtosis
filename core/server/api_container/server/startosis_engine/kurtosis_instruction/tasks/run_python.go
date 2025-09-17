@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/store_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
@@ -158,6 +159,8 @@ func NewRunPythonService(
 				wait:                   DefaultWaitTimeoutDurationStr,
 				description:            "",  // populated at interpretation time
 				returnValue:            nil, // populated at interpretation time
+				runCodeValue:           "",  // populated at interpretation time
+				runOutputValue:         "",  // populated at interpretation time
 				skipCodeCheck:          false,
 				acceptableCodes:        nil, // populated at interpretation time
 			}
@@ -195,6 +198,8 @@ type RunPythonCapabilities struct {
 	packageReplaceOptions  map[string]string
 
 	returnValue     *starlarkstruct.Struct
+	runCodeValue    string
+	runOutputValue  string
 	serviceConfig   *service.ServiceConfig
 	storeSpecList   []*store_spec.StoreSpec
 	wait            string
@@ -355,7 +360,7 @@ func (builtin *RunPythonCapabilities) Interpret(locatorOfModuleInWhichThisBuilti
 
 	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, runPythonDefaultDescription)
 
-	builtin.returnValue = createInterpretationResult(resultUuid, builtin.storeSpecList)
+	builtin.returnValue, builtin.runCodeValue, builtin.runOutputValue = createInterpretationResult(resultUuid, builtin.storeSpecList)
 	return builtin.returnValue, nil
 }
 
@@ -449,6 +454,42 @@ func (builtin *RunPythonCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerat
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred updating plan with run python")
 	}
+	return nil
+}
+
+func (builtin *RunPythonCapabilities) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+	// store outputs
+	dependencyGraph.StoreOutput(instructionUuid, builtin.runCodeValue)
+	dependencyGraph.StoreOutput(instructionUuid, builtin.runOutputValue)
+
+	for _, storeSpec := range builtin.storeSpecList {
+		dependencyGraph.StoreOutput(instructionUuid, storeSpec.GetName())
+	}
+
+	// depend on outputs
+	if builtin.serviceConfig.GetFilesArtifactsExpansion() != nil {
+		for _, filesArtifactNames := range builtin.serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
+			for _, filesArtifactName := range filesArtifactNames {
+				dependencyGraph.DependsOnOutput(instructionUuid, filesArtifactName)
+			}
+		}
+	}
+
+	if futureRefs, ok := magic_string_helper.ContainsRuntimeValue(builtin.run); ok {
+		for _, futureRef := range futureRefs {
+			dependencyGraph.DependsOnOutput(instructionUuid, futureRef)
+		}
+	}
+
+	for _, arg := range builtin.pythonArguments {
+		if futureRefs, ok := magic_string_helper.ContainsRuntimeValue(arg); ok {
+			for _, futureRef := range futureRefs {
+				dependencyGraph.DependsOnOutput(instructionUuid, futureRef)
+			}
+		}
+	}
+
+	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("run_python %s", builtin.run))
 	return nil
 }
 
