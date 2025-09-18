@@ -772,3 +772,24 @@ func dumpContainerInfo(
 
 	return nil
 }
+
+// GetHostDockerSocketPath returns the appropriate Docker socket path to use for mounting into containers.
+// It checks if DOCKER_HOST environment variable specifies a custom Unix socket and validates its existence.
+// If no custom socket is found or it doesn't exist, it returns the default Docker socket path.
+func GetHostDockerSocketPath() string {
+	// By default, use the standard Docker socket location
+	hostDockerSocketPath := consts.DockerSocketFilepath
+
+	// Check if DOCKER_HOST environment variable specifies a custom Unix socket
+	if dockerHostEnv := os.Getenv("DOCKER_HOST"); dockerHostEnv != "" {
+		if strings.HasPrefix(dockerHostEnv, "unix://") {
+			customSocketPath := strings.TrimPrefix(dockerHostEnv, "unix://")
+			// Verify the custom socket actually exists before using it
+			if _, err := os.Stat(customSocketPath); err == nil {
+				hostDockerSocketPath = customSocketPath
+			}
+		}
+	}
+
+	return hostDockerSocketPath
+}
