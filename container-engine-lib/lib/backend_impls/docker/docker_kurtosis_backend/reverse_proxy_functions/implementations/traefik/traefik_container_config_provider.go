@@ -35,9 +35,13 @@ func (traefik *traefikContainerConfigProvider) GetContainerArgs(
 	networkId string,
 ) (*docker_manager.CreateAndStartContainerArgs, error) {
 
+	// Get the appropriate Docker socket path for mounting into the container
+	hostDockerSocketPath := shared_helpers.GetHostDockerSocketPath()
+
 	bindMounts := map[string]string{
-		// Necessary so that the reverse proxy can interact with the Docker engine
-		consts.DockerSocketFilepath: consts.DockerSocketFilepath,
+		// Mount the host's Docker socket to the standard location inside the container
+		// This allows the reverse proxy to interact with the Docker daemon
+		hostDockerSocketPath: consts.DockerSocketFilepath,
 	}
 
 	traefikConfigContentStr, err := traefik.config.GetConfigFileContent(configFileTemplate)
