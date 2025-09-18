@@ -3,6 +3,8 @@ package engine_functions
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/docker_config_storage_creator"
@@ -279,9 +281,18 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred creating Docker config storage.")
 	}
 
+	// Use the user's Docker socket if DOCKER_HOST is set in the environment, otherwise use the default
+	dockerSocketPath := consts.DockerSocketFilepath
+	if dockerHost := os.Getenv("DOCKER_HOST"); dockerHost != "" && strings.HasPrefix(dockerHost, "unix://") {
+		hostSocketPath := strings.TrimPrefix(dockerHost, "unix://")
+		if _, err := os.Stat(hostSocketPath); err == nil {
+			dockerSocketPath = hostSocketPath
+		}
+	}
+
 	bindMounts := map[string]string{
 		// Necessary so that the engine server can interact with the Docker engine
-		consts.DockerSocketFilepath: consts.DockerSocketFilepath,
+		dockerSocketPath: consts.DockerSocketFilepath,
 	}
 
 	volumeMounts := map[string]string{
