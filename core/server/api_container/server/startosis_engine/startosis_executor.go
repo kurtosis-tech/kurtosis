@@ -67,7 +67,7 @@ func NewStartosisExecutor(starlarkValueSerde *kurtosis_types.StarlarkValueSerde,
 // - A regular KurtosisInstruction that was successfully executed
 // - A KurtosisExecutionError if the execution failed
 // - A ProgressInfo to update the current "state" of the execution
-func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, parallelism int, indexOfFirstInstructionInEnclavePlan int, instructionsSequence []*instructions_plan.ScheduledInstruction, serializedScriptOutput string, instructionDependencyGraph map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid, instructionNumToDescription map[int]string) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, parallelism int, indexOfFirstInstructionInEnclavePlan int, instructionsSequence []*instructions_plan.ScheduledInstruction, serializedScriptOutput string) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	executor.mutex.Lock()
 	starlarkRunResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 	ctxWithParallelism := context.WithValue(ctx, startosis_constants.ParallelismParam, parallelism)
@@ -165,7 +165,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 			logrus.Debugf("Current enclave plan remained the same as the it was a dry-run. It contains %d instructions", executor.enclavePlan.Size())
 		}
 
-		printInstructionToDuration(&instructionDurations, instructionNumToDescription)
+		// printInstructionToDuration(&instructionDurations, instructionNumToDescription)
 	}()
 	return starlarkRunResponseLineStream
 }

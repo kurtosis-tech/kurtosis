@@ -146,9 +146,6 @@ func (runner *StartosisRunner) Run(
 			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent()
 			return
 		}
-		logrus.Infof("Generating instructions dependency graph")
-		instructionDependencyGraph, instructionNumToDescription := instructionsPlan.GenerateInstructionsDependencyGraph()
-		logrus.Infof("Generated instructions dependency graph")
 
 		// Validation starts > send progress info
 		progressInfo = binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
@@ -171,11 +168,13 @@ func (runner *StartosisRunner) Run(
 
 		var executionResponseLinesChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine
 		if parallelism > 1 {
-			logrus.Infof("Executing Kurtosis instructions in parallel with parallelism: %d", parallelism)
+			logrus.Infof("Executing Kurtosis instructions (in parallel) with parallelism: %d...", parallelism)
+
+			instructionDependencyGraph, instructionNumToDescription := instructionsPlan.GenerateInstructionsDependencyGraph()
 			executionResponseLinesChan = runner.startosisExecutor.ExecuteInParallel(ctx, dryRun, parallelism, instructionsPlan.GetIndexOfFirstInstruction(), instructionsSequence, serializedScriptOutput, instructionDependencyGraph, instructionNumToDescription)
 		} else {
-			logrus.Infof("Executing Kurtosis instructions in serial")
-			executionResponseLinesChan = runner.startosisExecutor.Execute(ctx, dryRun, parallelism, instructionsPlan.GetIndexOfFirstInstruction(), instructionsSequence, serializedScriptOutput, instructionDependencyGraph, instructionNumToDescription)
+			logrus.Infof("Executing Kurtosis instructions (sequentially)...")
+			executionResponseLinesChan = runner.startosisExecutor.Execute(ctx, dryRun, parallelism, instructionsPlan.GetIndexOfFirstInstruction(), instructionsSequence, serializedScriptOutput)
 		}
 		if isRunFinished, isRunSuccessful := forwardKurtosisResponseLineChannelUntilSourceIsClosed(executionResponseLinesChan, starlarkRunResponseLines); !isRunFinished {
 			logrus.Warnf("Execution finished but no 'RunFinishedEvent' was received through the stream. This is unexpected as every execution should be terminal.")

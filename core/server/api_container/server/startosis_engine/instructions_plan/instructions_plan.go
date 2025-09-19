@@ -88,24 +88,19 @@ func (plan *InstructionsPlan) GeneratePlan() ([]*ScheduledInstruction, *startosi
 }
 
 func (plan *InstructionsPlan) GenerateInstructionsDependencyGraph() (map[ScheduledInstructionUuid][]ScheduledInstructionUuid, map[int]string) {
-	// update the dependency graph with the effects of the adding this instruction the plan
-	instructionPlan, err := plan.GeneratePlan() // same api
-	if err != nil {
-		logrus.Errorf("error generating instructions dependency graph: %v", err)
-		// return nil, err
-		panic(err)
-	}
-
 	instructionsDependencies := dependency_graph.NewInstructionsDependencyGraph()
-
-	count := 1
-	for _, instruction := range instructionPlan {
-		logrus.Infof("Updating dependency graph with instruction: %v", count)
-		instruction.kurtosisInstruction.UpdateDependencyGraph(dependency_graph.ScheduledInstructionUuid(strconv.Itoa(count)), instructionsDependencies)
-		count++
+	for idx, instructionUuid := range plan.instructionsSequence {
+		instruction, found := plan.scheduledInstructionsIndex[instructionUuid]
+		if !found {
+			return nil, nil // TODO: return err
+		}
+		logrus.Infof("Updating dependency graph with instruction: %v", instruction.kurtosisInstruction.String())
+		err := instruction.kurtosisInstruction.UpdateDependencyGraph(dependency_graph.ScheduledInstructionUuid(strconv.Itoa(idx)), instructionsDependencies)
+		if err != nil {
+			return nil, nil // TODO: return
+		}
 	}
 
-	// conversion
 	// TODO: This is a temporary solution to convert the dependency graph to a map[ScheduledInstructionUuid][]ScheduledInstructionUuid
 	// Should likely not use ScheduledInstructionUuid as the key type for the dependency graph
 	dependencyGraphMap := make(map[ScheduledInstructionUuid][]ScheduledInstructionUuid)
