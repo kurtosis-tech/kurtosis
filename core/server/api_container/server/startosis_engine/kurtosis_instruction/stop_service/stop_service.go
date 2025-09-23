@@ -121,8 +121,8 @@ func (builtin *StopServiceCapabilities) Description() string {
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
 func (builtin *StopServiceCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
-	// TODO: Implement dependency graph updates for stop_service instruction
-	dependencyGraph.DependsOnOutput(instructionUuid, string(builtin.serviceName))
 	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("stop_service %s", builtin.serviceName))
+
+	dependencyGraph.ConsumesService(instructionUuid, string(builtin.serviceName))
 	return nil
 }

@@ -107,7 +107,10 @@ func (builtin *GetFilesArtifactCapabilities) Description() string {
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
 func (builtin *GetFilesArtifactCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
-	dependencyGraph.DependsOnOutput(instructionUuid, string(builtin.artifactName))
 	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("get_files_artifact %s", builtin.artifactName))
+
+	// TODO: document the behavior of get_files_artifact now owning the output of render_templates somewhere
+	dependencyGraph.ConsumesFilesArtifact(instructionUuid, string(builtin.artifactName))
+	dependencyGraph.ProducesFilesArtifact(instructionUuid, string(builtin.artifactName))
 	return nil
 }

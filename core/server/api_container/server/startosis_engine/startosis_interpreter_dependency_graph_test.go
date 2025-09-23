@@ -1192,6 +1192,8 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestStopServiceDepends
 // 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 // }
 
+// TODO: document the behavior of get_files_artifact now owning the output of render_templates
+// Consider not producing the output of render_templates anymore
 func (suite *StartosisIntepreterDependencyGraphTestSuite) TestGetFilesArtifactsDependsOnRenderTemplate() {
 	script := `def run(plan):
 	artifact_a = plan.render_templates(

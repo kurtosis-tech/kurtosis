@@ -106,9 +106,10 @@ func (builtin *GetServicesCapabilities) Description() string {
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
 func (builtin *GetServicesCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
-	for _, serviceName := range builtin.serviceNames {
-		dependencyGraph.DependsOnOutput(instructionUuid, string(serviceName))
-	}
 	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, "get_services")
+
+	for _, serviceName := range builtin.serviceNames {
+		dependencyGraph.ProducesService(instructionUuid, string(serviceName))
+	}
 	return nil
 }
