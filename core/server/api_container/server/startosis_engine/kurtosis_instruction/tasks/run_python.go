@@ -27,6 +27,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
@@ -457,7 +458,7 @@ func (builtin *RunPythonCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerat
 	return nil
 }
 
-func (builtin *RunPythonCapabilities) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+func (builtin *RunPythonCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
 	// store outputs
 	dependencyGraph.StoreOutput(instructionUuid, builtin.runCodeValue)
 	dependencyGraph.StoreOutput(instructionUuid, builtin.runOutputValue)

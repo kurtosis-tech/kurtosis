@@ -24,6 +24,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 )
@@ -328,7 +329,7 @@ func (builtin *AddServiceCapabilities) Description() string {
 }
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction
-func (builtin *AddServiceCapabilities) UpdateDependencyGraph(instructionsUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+func (builtin *AddServiceCapabilities) UpdateDependencyGraph(instructionsUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
 	err := addServiceToDependencyGraph(instructionsUuid, dependencyGraph, string(builtin.serviceName), builtin.returnValue, builtin.serviceConfig)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred updating the dependency graph with service '%s'", builtin.serviceName)

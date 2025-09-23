@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
 	"go.starlark.net/starlark"
 )
 
@@ -104,7 +105,7 @@ func (builtin *kurtosisPlanInstructionInternal) UpdatePlan(plan *plan_yaml.PlanY
 	return builtin.capabilities.UpdatePlan(plan)
 }
 
-func (builtin *kurtosisPlanInstructionInternal) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+func (builtin *kurtosisPlanInstructionInternal) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
 	return builtin.capabilities.UpdateDependencyGraph(instructionUuid, dependencyGraph)
 }
 

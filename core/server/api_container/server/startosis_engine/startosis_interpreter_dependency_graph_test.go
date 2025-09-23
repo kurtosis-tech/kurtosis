@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/core/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
@@ -16,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -59,7 +61,7 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) SetupTest() {
 	suite.serviceNetwork.EXPECT().GetUniqueNameForFileArtifact().Maybe().Return(mockFileArtifactName, nil)
 	suite.serviceNetwork.EXPECT().GetEnclaveUuid().Maybe().Return(enclave.EnclaveUUID(mockEnclaveUuid))
 	suite.serviceNetwork.EXPECT().ExistServiceRegistration(testServiceName).Maybe().Return(true, nil)
-	suite.interpreter = NewStartosisInterpreter(suite.serviceNetwork, suite.packageContentProvider, suite.runtimeValueStore, nil, "", suite.interpretationTimeValueStore)
+	suite.interpreter = NewStartosisInterpreter(suite.serviceNetwork, suite.packageContentProvider, suite.runtimeValueStore, nil, "", suite.interpretationTimeValueStore, args.KurtosisBackendType_Docker)
 }
 
 func TestRunStartosisIntepreterDependencyGraphTestSuite(t *testing.T) {
@@ -78,8 +80,8 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddSingleServiceTo
 	service = plan.add_service(name = "serviceA", config = config)
 `
 
-	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
-		instructions_plan.ScheduledInstructionUuid("1"): {},
+	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+		types.ScheduledInstructionUuid("1"): {},
 	}
 
 	inputArgs := `{}`
@@ -94,7 +96,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddSingleServiceTo
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
 		emptyInstructionsPlanMask,
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlanForDependencyGraphTests(),
+	)
 	require.Nil(suite.T(), interpretationError)
 
 	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
@@ -110,7 +114,6 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 	suite.serviceNetwork.EXPECT().GetApiContainerInfo().Return(apiContainerInfo)
 
 	script := `def run(plan):
-
 
 	artifact_a = plan.render_templates(
 		name="artifact_a", 
@@ -132,10 +135,10 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 	)
 	service = plan.add_service(name = "serviceA", config = config)
 `
-	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
-		instructions_plan.ScheduledInstructionUuid("1"): {},
-		instructions_plan.ScheduledInstructionUuid("2"): {
-			instructions_plan.ScheduledInstructionUuid("1"),
+	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+		types.ScheduledInstructionUuid("1"): {},
+		types.ScheduledInstructionUuid("2"): {
+			types.ScheduledInstructionUuid("1"),
 		},
 	}
 
@@ -151,7 +154,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
 		emptyInstructionsPlanMask,
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlanForDependencyGraphTests(),
+	)
 	require.Nil(suite.T(), interpretationError)
 
 	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
@@ -189,14 +194,14 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestExecDependsOnReque
 		),
 	)
 `
-	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
-		instructions_plan.ScheduledInstructionUuid("1"): {},
-		instructions_plan.ScheduledInstructionUuid("2"): {
-			instructions_plan.ScheduledInstructionUuid("1"),
+	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+		types.ScheduledInstructionUuid("1"): {},
+		types.ScheduledInstructionUuid("2"): {
+			types.ScheduledInstructionUuid("1"),
 		},
-		instructions_plan.ScheduledInstructionUuid("3"): {
-			instructions_plan.ScheduledInstructionUuid("1"),
-			instructions_plan.ScheduledInstructionUuid("2"),
+		types.ScheduledInstructionUuid("3"): {
+			types.ScheduledInstructionUuid("1"),
+			types.ScheduledInstructionUuid("2"),
 		},
 	}
 
@@ -212,7 +217,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestExecDependsOnReque
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
 		emptyInstructionsPlanMask,
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlanForDependencyGraphTests(),
+	)
 	require.Nil(suite.T(), interpretationError)
 
 	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
@@ -236,10 +243,10 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 	)
 	service_b = plan.add_service(name = "serviceB", config = config)
 `
-	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
-		instructions_plan.ScheduledInstructionUuid("1"): {},
-		instructions_plan.ScheduledInstructionUuid("2"): {
-			instructions_plan.ScheduledInstructionUuid("1"),
+	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+		types.ScheduledInstructionUuid("1"): {},
+		types.ScheduledInstructionUuid("2"): {
+			types.ScheduledInstructionUuid("1"),
 		},
 	}
 
@@ -255,7 +262,8 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
 		emptyInstructionsPlanMask,
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlanForDependencyGraphTests())
 	require.Nil(suite.T(), interpretationError)
 
 	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
@@ -291,10 +299,10 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 	)
 	service_a = plan.add_service(name = "serviceA", config = config)
 `
-	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
-		instructions_plan.ScheduledInstructionUuid("1"): {},
-		instructions_plan.ScheduledInstructionUuid("2"): {
-			instructions_plan.ScheduledInstructionUuid("1"),
+	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+		types.ScheduledInstructionUuid("1"): {},
+		types.ScheduledInstructionUuid("2"): {
+			types.ScheduledInstructionUuid("1"),
 		},
 	}
 
@@ -310,7 +318,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
 		emptyInstructionsPlanMask,
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlanForDependencyGraphTests(),
+	)
 	require.Nil(suite.T(), interpretationError)
 
 	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
@@ -348,13 +358,13 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 	)
 	service_b = plan.add_service(name = "serviceB", config = config)
 `
-	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
-		instructions_plan.ScheduledInstructionUuid("1"): {},
-		instructions_plan.ScheduledInstructionUuid("2"): {
-			instructions_plan.ScheduledInstructionUuid("1"),
+	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+		types.ScheduledInstructionUuid("1"): {},
+		types.ScheduledInstructionUuid("2"): {
+			types.ScheduledInstructionUuid("1"),
 		},
-		instructions_plan.ScheduledInstructionUuid("3"): {
-			instructions_plan.ScheduledInstructionUuid("2"),
+		types.ScheduledInstructionUuid("3"): {
+			types.ScheduledInstructionUuid("2"),
 		},
 	}
 
@@ -370,7 +380,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
 		emptyInstructionsPlanMask,
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlanForDependencyGraphTests(),
+	)
 	require.Nil(suite.T(), interpretationError)
 
 	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
@@ -410,15 +422,15 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 	)
 	service_c = plan.add_service(name = "serviceC", config = config)
 `
-	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
-		instructions_plan.ScheduledInstructionUuid("1"): {},
-		instructions_plan.ScheduledInstructionUuid("2"): {},
-		instructions_plan.ScheduledInstructionUuid("3"): {
-			instructions_plan.ScheduledInstructionUuid("1"),
-			instructions_plan.ScheduledInstructionUuid("2"),
+	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+		types.ScheduledInstructionUuid("1"): {},
+		types.ScheduledInstructionUuid("2"): {},
+		types.ScheduledInstructionUuid("3"): {
+			types.ScheduledInstructionUuid("1"),
+			types.ScheduledInstructionUuid("2"),
 		},
-		instructions_plan.ScheduledInstructionUuid("4"): {
-			instructions_plan.ScheduledInstructionUuid("3"),
+		types.ScheduledInstructionUuid("4"): {
+			types.ScheduledInstructionUuid("3"),
 		},
 	}
 
@@ -434,7 +446,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
 		emptyInstructionsPlanMask,
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlanForDependencyGraphTests(),
+	)
 	require.Nil(suite.T(), interpretationError)
 
 	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
@@ -473,13 +487,13 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 	)
 	service_b = plan.add_service(name = "serviceB", config = config)
 `
-	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
-		instructions_plan.ScheduledInstructionUuid("1"): {},
-		instructions_plan.ScheduledInstructionUuid("2"): {
-			instructions_plan.ScheduledInstructionUuid("1"),
+	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+		types.ScheduledInstructionUuid("1"): {},
+		types.ScheduledInstructionUuid("2"): {
+			types.ScheduledInstructionUuid("1"),
 		},
-		instructions_plan.ScheduledInstructionUuid("3"): {
-			instructions_plan.ScheduledInstructionUuid("2"),
+		types.ScheduledInstructionUuid("3"): {
+			types.ScheduledInstructionUuid("2"),
 		},
 	}
 
@@ -495,7 +509,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
 		emptyInstructionsPlanMask,
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlanForDependencyGraphTests(),
+	)
 	require.Nil(suite.T(), interpretationError)
 
 	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
@@ -535,14 +551,14 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 	)
 	service_b = plan.add_service(name = "serviceB", config = config)
 `
-	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
-		instructions_plan.ScheduledInstructionUuid("1"): {},
-		instructions_plan.ScheduledInstructionUuid("2"): {
-			instructions_plan.ScheduledInstructionUuid("1"),
+	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+		types.ScheduledInstructionUuid("1"): {},
+		types.ScheduledInstructionUuid("2"): {
+			types.ScheduledInstructionUuid("1"),
 		},
-		instructions_plan.ScheduledInstructionUuid("3"): {
-			instructions_plan.ScheduledInstructionUuid("1"),
-			instructions_plan.ScheduledInstructionUuid("2"),
+		types.ScheduledInstructionUuid("3"): {
+			types.ScheduledInstructionUuid("1"),
+			types.ScheduledInstructionUuid("2"),
 		},
 	}
 
@@ -558,7 +574,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
 		emptyInstructionsPlanMask,
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlanForDependencyGraphTests(),
+	)
 	require.Nil(suite.T(), interpretationError)
 
 	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
@@ -588,10 +606,10 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRunShDependsOnServ
 
 	task_a_result = plan.run_sh(name = "taskA", run = "echo Hi", files = { "/root/hi.txt": artifact_a })
 `
-	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
-		instructions_plan.ScheduledInstructionUuid("1"): {},
-		instructions_plan.ScheduledInstructionUuid("2"): {
-			instructions_plan.ScheduledInstructionUuid("1"),
+	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+		types.ScheduledInstructionUuid("1"): {},
+		types.ScheduledInstructionUuid("2"): {
+			types.ScheduledInstructionUuid("1"),
 		},
 	}
 
@@ -607,7 +625,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRunShDependsOnServ
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
 		emptyInstructionsPlanMask,
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlanForDependencyGraphTests(),
+	)
 	require.Nil(suite.T(), interpretationError)
 
 	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
@@ -646,13 +666,13 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 	)
 	service_b = plan.add_service(name = "serviceB", config = config)
 `
-	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
-		instructions_plan.ScheduledInstructionUuid("1"): {},
-		instructions_plan.ScheduledInstructionUuid("2"): {
-			instructions_plan.ScheduledInstructionUuid("1"),
+	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+		types.ScheduledInstructionUuid("1"): {},
+		types.ScheduledInstructionUuid("2"): {
+			types.ScheduledInstructionUuid("1"),
 		},
-		instructions_plan.ScheduledInstructionUuid("3"): {
-			instructions_plan.ScheduledInstructionUuid("2"),
+		types.ScheduledInstructionUuid("3"): {
+			types.ScheduledInstructionUuid("2"),
 		},
 	}
 
@@ -668,7 +688,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
 		emptyInstructionsPlanMask,
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlanForDependencyGraphTests(),
+	)
 	require.Nil(suite.T(), interpretationError)
 
 	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
@@ -708,14 +730,14 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 	)
 	service_b = plan.add_service(name = "serviceB", config = config)
 `
-	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
-		instructions_plan.ScheduledInstructionUuid("1"): {},
-		instructions_plan.ScheduledInstructionUuid("2"): {
-			instructions_plan.ScheduledInstructionUuid("1"),
+	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+		types.ScheduledInstructionUuid("1"): {},
+		types.ScheduledInstructionUuid("2"): {
+			types.ScheduledInstructionUuid("1"),
 		},
-		instructions_plan.ScheduledInstructionUuid("3"): {
-			instructions_plan.ScheduledInstructionUuid("1"),
-			instructions_plan.ScheduledInstructionUuid("2"),
+		types.ScheduledInstructionUuid("3"): {
+			types.ScheduledInstructionUuid("1"),
+			types.ScheduledInstructionUuid("2"),
 		},
 	}
 
@@ -731,7 +753,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
 		emptyInstructionsPlanMask,
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlanForDependencyGraphTests(),
+	)
 	require.Nil(suite.T(), interpretationError)
 
 	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
@@ -761,10 +785,10 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRunPythonDependsOn
 
 	task_a_result = plan.run_python(name = "taskA", run = "asfa",files = { "/root/artifact.txt": artifact_a })
 `
-	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
-		instructions_plan.ScheduledInstructionUuid("1"): {},
-		instructions_plan.ScheduledInstructionUuid("2"): {
-			instructions_plan.ScheduledInstructionUuid("1"),
+	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+		types.ScheduledInstructionUuid("1"): {},
+		types.ScheduledInstructionUuid("2"): {
+			types.ScheduledInstructionUuid("1"),
 		},
 	}
 
@@ -780,7 +804,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRunPythonDependsOn
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
 		emptyInstructionsPlanMask,
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlanForDependencyGraphTests(),
+	)
 	require.Nil(suite.T(), interpretationError)
 
 	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
@@ -798,10 +824,10 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRunPythonWithArgsD
 		args = [service_a.ip_address]
 	)
 `
-	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
-		instructions_plan.ScheduledInstructionUuid("1"): {},
-		instructions_plan.ScheduledInstructionUuid("2"): {
-			instructions_plan.ScheduledInstructionUuid("1"),
+	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+		types.ScheduledInstructionUuid("1"): {},
+		types.ScheduledInstructionUuid("2"): {
+			types.ScheduledInstructionUuid("1"),
 		},
 	}
 
@@ -817,7 +843,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRunPythonWithArgsD
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
 		emptyInstructionsPlanMask,
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlanForDependencyGraphTests(),
+	)
 	require.Nil(suite.T(), interpretationError)
 
 	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
@@ -854,10 +882,10 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRunPythonWithPacka
 		}
 	)
 `
-	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
-		instructions_plan.ScheduledInstructionUuid("1"): {},
-		instructions_plan.ScheduledInstructionUuid("2"): {
-			instructions_plan.ScheduledInstructionUuid("1"),
+	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+		types.ScheduledInstructionUuid("1"): {},
+		types.ScheduledInstructionUuid("2"): {
+			types.ScheduledInstructionUuid("1"),
 		},
 	}
 
@@ -873,7 +901,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRunPythonWithPacka
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
 		emptyInstructionsPlanMask,
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlanForDependencyGraphTests(),
+	)
 	require.Nil(suite.T(), interpretationError)
 
 	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
@@ -891,9 +921,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRunPythonWithCusto
 		image = "python:3.12-alpine"
 	)
 `
-	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
-		instructions_plan.ScheduledInstructionUuid("1"): {},
-		instructions_plan.ScheduledInstructionUuid("2"): {},
+	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+		types.ScheduledInstructionUuid("1"): {},
+		types.ScheduledInstructionUuid("2"): {},
 	}
 
 	inputArgs := `{}`
@@ -908,7 +938,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRunPythonWithCusto
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
 		emptyInstructionsPlanMask,
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlanForDependencyGraphTests(),
+	)
 	require.Nil(suite.T(), interpretationError)
 
 	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
@@ -929,10 +961,10 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestExecDependsOnServi
 	)
 `
 
-	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
-		instructions_plan.ScheduledInstructionUuid("1"): {},
-		instructions_plan.ScheduledInstructionUuid("2"): {
-			instructions_plan.ScheduledInstructionUuid("1"),
+	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+		types.ScheduledInstructionUuid("1"): {},
+		types.ScheduledInstructionUuid("2"): {
+			types.ScheduledInstructionUuid("1"),
 		},
 	}
 
@@ -948,7 +980,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestExecDependsOnServi
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
 		emptyInstructionsPlanMask,
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlanForDependencyGraphTests(),
+	)
 	require.Nil(suite.T(), interpretationError)
 
 	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
@@ -969,12 +1003,12 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestExecOnServiceBDepe
 		recipe = exec_recipe,
 	)
 `
-	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
-		instructions_plan.ScheduledInstructionUuid("1"): {},
-		instructions_plan.ScheduledInstructionUuid("2"): {},
-		instructions_plan.ScheduledInstructionUuid("3"): {
-			instructions_plan.ScheduledInstructionUuid("1"),
-			instructions_plan.ScheduledInstructionUuid("2"),
+	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+		types.ScheduledInstructionUuid("1"): {},
+		types.ScheduledInstructionUuid("2"): {},
+		types.ScheduledInstructionUuid("3"): {
+			types.ScheduledInstructionUuid("1"),
+			types.ScheduledInstructionUuid("2"),
 		},
 	}
 
@@ -990,7 +1024,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestExecOnServiceBDepe
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
 		emptyInstructionsPlanMask,
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlanForDependencyGraphTests(),
+	)
 	require.Nil(suite.T(), interpretationError)
 
 	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
@@ -1018,13 +1054,13 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestServiceCDependsOnE
 	)
 	service_c = plan.add_service(name = "serviceC", config = config)
 `
-	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
-		instructions_plan.ScheduledInstructionUuid("1"): {},
-		instructions_plan.ScheduledInstructionUuid("2"): {
-			instructions_plan.ScheduledInstructionUuid("1"),
+	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+		types.ScheduledInstructionUuid("1"): {},
+		types.ScheduledInstructionUuid("2"): {
+			types.ScheduledInstructionUuid("1"),
 		},
-		instructions_plan.ScheduledInstructionUuid("3"): {
-			instructions_plan.ScheduledInstructionUuid("2"),
+		types.ScheduledInstructionUuid("3"): {
+			types.ScheduledInstructionUuid("2"),
 		},
 	}
 
@@ -1040,7 +1076,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestServiceCDependsOnE
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
 		emptyInstructionsPlanMask,
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlanForDependencyGraphTests(),
+	)
 	require.Nil(suite.T(), interpretationError)
 
 	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
@@ -1055,10 +1093,10 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestStartServiceDepend
 	# Start service depends on service_a being available
 	plan.start_service(name = "serviceA")
 `
-	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
-		instructions_plan.ScheduledInstructionUuid("1"): {},
-		instructions_plan.ScheduledInstructionUuid("2"): {
-			instructions_plan.ScheduledInstructionUuid("1"),
+	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+		types.ScheduledInstructionUuid("1"): {},
+		types.ScheduledInstructionUuid("2"): {
+			types.ScheduledInstructionUuid("1"),
 		},
 	}
 
@@ -1074,7 +1112,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestStartServiceDepend
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
 		emptyInstructionsPlanMask,
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlanForDependencyGraphTests(),
+	)
 	require.Nil(suite.T(), interpretationError)
 
 	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
@@ -1089,10 +1129,10 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestStopServiceDepends
 	# Stop service depends on service_a being available
 	plan.stop_service(name = "serviceA")
 `
-	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
-		instructions_plan.ScheduledInstructionUuid("1"): {},
-		instructions_plan.ScheduledInstructionUuid("2"): {
-			instructions_plan.ScheduledInstructionUuid("1"),
+	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+		types.ScheduledInstructionUuid("1"): {},
+		types.ScheduledInstructionUuid("2"): {
+			types.ScheduledInstructionUuid("1"),
 		},
 	}
 
@@ -1108,7 +1148,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestStopServiceDepends
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
 		emptyInstructionsPlanMask,
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlanForDependencyGraphTests(),
+	)
 	require.Nil(suite.T(), interpretationError)
 
 	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
@@ -1166,10 +1208,10 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestGetFilesArtifactsD
 	
 	artifact_a = plan.get_files_artifact(name = "another-artifact")
 `
-	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
-		instructions_plan.ScheduledInstructionUuid("1"): {},
-		instructions_plan.ScheduledInstructionUuid("2"): {
-			instructions_plan.ScheduledInstructionUuid("1"),
+	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+		types.ScheduledInstructionUuid("1"): {},
+		types.ScheduledInstructionUuid("2"): {
+			types.ScheduledInstructionUuid("1"),
 		},
 	}
 
@@ -1185,7 +1227,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestGetFilesArtifactsD
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
 		emptyInstructionsPlanMask,
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlanForDependencyGraphTests(),
+	)
 	require.Nil(suite.T(), interpretationError)
 
 	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
@@ -1200,10 +1244,10 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRemoveServiceDepen
 	# Remove service depends on service_a being available
 	plan.remove_service(name = "serviceA")
 `
-	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
-		instructions_plan.ScheduledInstructionUuid("1"): {},
-		instructions_plan.ScheduledInstructionUuid("2"): {
-			instructions_plan.ScheduledInstructionUuid("1"),
+	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+		types.ScheduledInstructionUuid("1"): {},
+		types.ScheduledInstructionUuid("2"): {
+			types.ScheduledInstructionUuid("1"),
 		},
 	}
 
@@ -1219,7 +1263,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRemoveServiceDepen
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
 		emptyInstructionsPlanMask,
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlanForDependencyGraphTests(),
+	)
 	require.Nil(suite.T(), interpretationError)
 
 	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
@@ -1233,12 +1279,12 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRemoveServiceDepen
 
 // 	services = plan.get_services()
 // `
-// 	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
-// 		instructions_plan.ScheduledInstructionUuid("1"): {},
-// 		instructions_plan.ScheduledInstructionUuid("2"): {},
-// 		instructions_plan.ScheduledInstructionUuid("3"): {
-// 			instructions_plan.ScheduledInstructionUuid("2"),
-// 			instructions_plan.ScheduledInstructionUuid("1"),
+// 	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+// 		types.ScheduledInstructionUuid("1"): {},
+// 		types.ScheduledInstructionUuid("2"): {},
+// 		types.ScheduledInstructionUuid("3"): {
+// 			types.ScheduledInstructionUuid("2"),
+// 			types.ScheduledInstructionUuid("1"),
 // 		},
 // 	}
 
@@ -1279,13 +1325,13 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestVerifyDependsOnExe
 		target_value = 0,
 	)
 `
-	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
-		instructions_plan.ScheduledInstructionUuid("1"): {},
-		instructions_plan.ScheduledInstructionUuid("2"): {
-			instructions_plan.ScheduledInstructionUuid("1"),
+	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+		types.ScheduledInstructionUuid("1"): {},
+		types.ScheduledInstructionUuid("2"): {
+			types.ScheduledInstructionUuid("1"),
 		},
-		instructions_plan.ScheduledInstructionUuid("3"): {
-			instructions_plan.ScheduledInstructionUuid("2"),
+		types.ScheduledInstructionUuid("3"): {
+			types.ScheduledInstructionUuid("2"),
 		},
 	}
 
@@ -1301,7 +1347,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestVerifyDependsOnExe
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
 		emptyInstructionsPlanMask,
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlanForDependencyGraphTests(),
+	)
 	require.Nil(suite.T(), interpretationError)
 
 	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
@@ -1325,10 +1373,10 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestWaitDependsOnAddSe
 		target_value = 0,
 	)
 `
-	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
-		instructions_plan.ScheduledInstructionUuid("1"): {},
-		instructions_plan.ScheduledInstructionUuid("2"): {
-			instructions_plan.ScheduledInstructionUuid("1"),
+	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+		types.ScheduledInstructionUuid("1"): {},
+		types.ScheduledInstructionUuid("2"): {
+			types.ScheduledInstructionUuid("1"),
 		},
 	}
 
@@ -1344,7 +1392,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestWaitDependsOnAddSe
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
 		emptyInstructionsPlanMask,
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlanForDependencyGraphTests(),
+	)
 	require.Nil(suite.T(), interpretationError)
 
 	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
@@ -1373,10 +1423,10 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRequestDependsOnAd
 		)
 	)
 `
-	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
-		instructions_plan.ScheduledInstructionUuid("1"): {},
-		instructions_plan.ScheduledInstructionUuid("2"): {
-			instructions_plan.ScheduledInstructionUuid("1"),
+	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+		types.ScheduledInstructionUuid("1"): {},
+		types.ScheduledInstructionUuid("2"): {
+			types.ScheduledInstructionUuid("1"),
 		},
 	}
 
@@ -1392,7 +1442,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRequestDependsOnAd
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
 		emptyInstructionsPlanMask,
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlanForDependencyGraphTests(),
+	)
 	require.Nil(suite.T(), interpretationError)
 
 	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()

@@ -2,7 +2,6 @@ package get_services
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
@@ -15,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
 	"go.starlark.net/starlark"
 )
 
@@ -105,10 +105,10 @@ func (builtin *GetServicesCapabilities) Description() string {
 }
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
-func (builtin *GetServicesCapabilities) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+func (builtin *GetServicesCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
 	for _, serviceName := range builtin.serviceNames {
 		dependencyGraph.DependsOnOutput(instructionUuid, string(serviceName))
 	}
-	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("get_services"))
+	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, "get_services")
 	return nil
 }

@@ -1,10 +1,11 @@
 package uuid_generator
 
 import (
+	"strings"
+
 	"github.com/google/uuid"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"strings"
 )
 
 const (

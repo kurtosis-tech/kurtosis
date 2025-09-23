@@ -17,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
@@ -302,7 +303,7 @@ func runServiceReadinessCheck(
 }
 
 func addServiceToDependencyGraph(
-	instructionUuid dependency_graph.ScheduledInstructionUuid,
+	instructionUuid types.ScheduledInstructionUuid,
 	dependencyGraph *dependency_graph.InstructionsDependencyGraph,
 	serviceName string,
 	service *kurtosis_types.Service,

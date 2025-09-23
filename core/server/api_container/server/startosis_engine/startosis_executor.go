@@ -13,13 +13,13 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -108,7 +108,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 			starlarkRunResponseLineStream <- progress
 
 			indexStr := strconv.Itoa(index + 1)
-			instructionUuidStr := instructions_plan.ScheduledInstructionUuid(indexStr)
+			instructionUuidStr := types.ScheduledInstructionUuid(indexStr)
 
 			instruction := scheduledInstruction.GetInstruction()
 			canonicalInstruction := binding_constructors.NewStarlarkRunResponseLineFromInstruction(instruction.GetCanonicalInstruction(scheduledInstruction.IsExecuted()), strconv.Itoa(index+1))
@@ -177,7 +177,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 // - A regular KurtosisInstruction that was successfully executed
 // - A KurtosisExecutionError if the execution failed
 // - A ProgressInfo to update the current "state" of the execution
-func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun bool, parallelism int, indexOfFirstInstructionInEnclavePlan int, instructionsSequence []*instructions_plan.ScheduledInstruction, serializedScriptOutput string, instructionDependencyGraph map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid, instructionNumToDescription map[int]string) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun bool, parallelism int, indexOfFirstInstructionInEnclavePlan int, instructionsSequence []*instructions_plan.ScheduledInstruction, serializedScriptOutput string, instructionDependencyGraph map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid, instructionNumToDescription map[int]string) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	file, err := os.Create("/tmp/execution.txt")
 	if err != nil {
 		logrus.Errorf("Failed to create execution.txt file: %v", err)
@@ -235,7 +235,7 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 			executor.enclavePlan.AppendInstruction(enclavePlanInstruction)
 		}
 
-		completionChannels := make(map[instructions_plan.ScheduledInstructionUuid]chan struct{})
+		completionChannels := make(map[types.ScheduledInstructionUuid]chan struct{})
 		for instructionUuid := range instructionDependencyGraph {
 			logrus.Infof("Adding completion channel for instruction %v", string(instructionUuid))
 			completionChannels[instructionUuid] = make(chan struct{})
@@ -249,7 +249,7 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 				defer wgSenders.Done()
 
 				indexStr := strconv.Itoa(instructionIndex + 1)
-				instructionUuidStr := instructions_plan.ScheduledInstructionUuid(indexStr)
+				instructionUuidStr := types.ScheduledInstructionUuid(indexStr)
 				logrus.Infof("Processing instruction %v", instructionUuidStr)
 
 				for _, depUuid := range instructionDependencyGraph[instructionUuidStr] {
@@ -337,11 +337,11 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 			return true
 		})
 
-		instructionsDependencyGraph := make(map[dependency_graph.ScheduledInstructionUuid][]dependency_graph.ScheduledInstructionUuid)
+		instructionsDependencyGraph := make(map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid)
 		for instructionUuid, dependencies := range instructionDependencyGraph {
-			instructionsDependencyGraph[dependency_graph.ScheduledInstructionUuid(instructionUuid)] = make([]dependency_graph.ScheduledInstructionUuid, len(dependencies))
+			instructionsDependencyGraph[types.ScheduledInstructionUuid(instructionUuid)] = make([]types.ScheduledInstructionUuid, len(dependencies))
 			for i, dependency := range dependencies {
-				instructionsDependencyGraph[dependency_graph.ScheduledInstructionUuid(instructionUuid)][i] = dependency_graph.ScheduledInstructionUuid(dependency)
+				instructionsDependencyGraph[types.ScheduledInstructionUuid(instructionUuid)][i] = types.ScheduledInstructionUuid(dependency)
 			}
 		}
 
@@ -387,7 +387,7 @@ func printInstructionToDuration(instructionNumToDuration *sync.Map, instructionN
 	// Convert durations to structured format for JSON marshaling
 	instructionData := make(map[int]InstructionInfo)
 	instructionNumToDuration.Range(func(key, value interface{}) bool {
-		numId := key.(instructions_plan.ScheduledInstructionUuid)
+		numId := key.(types.ScheduledInstructionUuid)
 		num, err := strconv.Atoi(string(numId))
 		if err != nil {
 			logrus.Errorf("Failed to convert instruction UUID to number: %v", err)
