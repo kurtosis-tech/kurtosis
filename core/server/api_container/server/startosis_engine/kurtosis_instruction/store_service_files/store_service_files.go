@@ -214,7 +214,7 @@ func (builtin *StoreServiceFilesCapabilities) Description() string {
 }
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
-func (builtin *StoreServiceFilesCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+func (builtin *StoreServiceFilesCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
 	dependencyGraph.StoreOutput(instructionUuid, string(builtin.artifactName))
 
 	dependencyGraph.DependsOnOutput(instructionUuid, string(builtin.serviceName))

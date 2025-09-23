@@ -5,5 +5,5 @@ import (
 )
 
 func TestAddDependency(t *testing.T) {
-	_ = NewInstructionsDependencyGraph()
+	_ = NewInstructionDependencyGraph()
 }

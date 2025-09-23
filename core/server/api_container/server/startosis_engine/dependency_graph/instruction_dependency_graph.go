@@ -39,7 +39,7 @@ import (
 // What does the another developor have to know about storing outputs?
 // there is a link between the output and the depends on format
 // need to find a way to explain a) when something is an output (e.g.) give an exhaustive list: Files Artifacts, Service Information, Runtime Values
-type InstructionsDependencyGraph struct {
+type InstructionDependencyGraph struct {
 	instructionsDependencies map[types.ScheduledInstructionUuid]map[types.ScheduledInstructionUuid]bool
 
 	// the following data structures tracks artifacts produced by instructions and consumed by downstream instructions
@@ -48,21 +48,21 @@ type InstructionsDependencyGraph struct {
 	instructionShortDescriptors map[types.ScheduledInstructionUuid]string
 }
 
-func NewInstructionsDependencyGraph() *InstructionsDependencyGraph {
-	return &InstructionsDependencyGraph{
+func NewInstructionDependencyGraph() *InstructionDependencyGraph {
+	return &InstructionDependencyGraph{
 		instructionsDependencies:    map[types.ScheduledInstructionUuid]map[types.ScheduledInstructionUuid]bool{},
 		outputsToInstructionMap:     map[string]types.ScheduledInstructionUuid{},
 		instructionShortDescriptors: map[types.ScheduledInstructionUuid]string{},
 	}
 }
 
-func (graph *InstructionsDependencyGraph) StoreOutput(instruction types.ScheduledInstructionUuid, output string) {
+func (graph *InstructionDependencyGraph) StoreOutput(instruction types.ScheduledInstructionUuid, output string) {
 	graph.addInstruction(instruction)
 	logrus.Infof("Storing output %s for instruction %s", output, instruction)
 	graph.outputsToInstructionMap[output] = instruction
 }
 
-func (graph *InstructionsDependencyGraph) DependsOnOutput(instruction types.ScheduledInstructionUuid, output string) {
+func (graph *InstructionDependencyGraph) DependsOnOutput(instruction types.ScheduledInstructionUuid, output string) {
 	logrus.Infof("Attempting to depend instruction %s on output %s", instruction, output)
 	instructionThatProducedOutput, ok := graph.outputsToInstructionMap[output]
 	if !ok {
@@ -72,11 +72,11 @@ func (graph *InstructionsDependencyGraph) DependsOnOutput(instruction types.Sche
 }
 
 // if [instruction] depends on [dependency] then [dependency] is stored as a dependency of [instruction]
-func (graph *InstructionsDependencyGraph) DependsOnInstruction(instruction types.ScheduledInstructionUuid, dependency types.ScheduledInstructionUuid) {
+func (graph *InstructionDependencyGraph) DependsOnInstruction(instruction types.ScheduledInstructionUuid, dependency types.ScheduledInstructionUuid) {
 	graph.addDependency(instruction, dependency)
 }
 
-func (graph *InstructionsDependencyGraph) addDependency(instruction types.ScheduledInstructionUuid, dependency types.ScheduledInstructionUuid) {
+func (graph *InstructionDependencyGraph) addDependency(instruction types.ScheduledInstructionUuid, dependency types.ScheduledInstructionUuid) {
 	// idempotently add the instruction and the dependency to the graph
 	if instruction == dependency {
 
@@ -87,7 +87,7 @@ func (graph *InstructionsDependencyGraph) addDependency(instruction types.Schedu
 	graph.instructionsDependencies[instruction][dependency] = true
 }
 
-func (graph *InstructionsDependencyGraph) getInvertedDependencyGraph() map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid {
+func (graph *InstructionDependencyGraph) getInvertedDependencyGraph() map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid {
 	invertedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{}
 	for instruction := range graph.instructionsDependencies {
 		invertedDependencyGraph[instruction] = []types.ScheduledInstructionUuid{}
@@ -102,7 +102,7 @@ func (graph *InstructionsDependencyGraph) getInvertedDependencyGraph() map[types
 }
 
 // if instruction is not in the graph yet, add it with an empty dependency list
-func (graph *InstructionsDependencyGraph) addInstruction(instruction types.ScheduledInstructionUuid) {
+func (graph *InstructionDependencyGraph) addInstruction(instruction types.ScheduledInstructionUuid) {
 	if _, ok := graph.instructionsDependencies[instruction]; !ok {
 		graph.instructionsDependencies[instruction] = map[types.ScheduledInstructionUuid]bool{}
 	}
@@ -111,21 +111,21 @@ func (graph *InstructionsDependencyGraph) addInstruction(instruction types.Sched
 // AddInstructionShortDescriptor adds a human-readable description for an instruction.
 // This description will be used as the node label in the visual graph.
 // Example: AddInstructionShortDescriptor("instruction-1", "add_service(database)")
-func (graph *InstructionsDependencyGraph) AddInstructionShortDescriptor(instruction types.ScheduledInstructionUuid, shortDescriptor string) {
+func (graph *InstructionDependencyGraph) AddInstructionShortDescriptor(instruction types.ScheduledInstructionUuid, shortDescriptor string) {
 	graph.addInstruction(instruction)
 	graph.instructionShortDescriptors[instruction] = shortDescriptor
 }
 
 // GetInstructionShortDescriptor returns the short descriptor for an instruction.
 // Returns the instruction UUID if no descriptor is set.
-func (graph *InstructionsDependencyGraph) GetInstructionShortDescriptor(instruction types.ScheduledInstructionUuid) string {
+func (graph *InstructionDependencyGraph) GetInstructionShortDescriptor(instruction types.ScheduledInstructionUuid) string {
 	if descriptor, exists := graph.instructionShortDescriptors[instruction]; exists {
 		return descriptor
 	}
 	return string(instruction)
 }
 
-func (graph *InstructionsDependencyGraph) GetDependencyGraph() map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid {
+func (graph *InstructionDependencyGraph) GetDependencyGraph() map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid {
 	dependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{}
 	for instruction, dependencies := range graph.instructionsDependencies {
 		instructionDependencies := []types.ScheduledInstructionUuid{}
@@ -138,7 +138,7 @@ func (graph *InstructionsDependencyGraph) GetDependencyGraph() map[types.Schedul
 	return dependencyGraph
 }
 
-func (graph *InstructionsDependencyGraph) GetInstructionNumToDescription() map[int]string {
+func (graph *InstructionDependencyGraph) GetInstructionNumToDescription() map[int]string {
 	instructionNumToDescription := map[int]string{}
 	for instruction, description := range graph.instructionShortDescriptors {
 		instructionNum, err := strconv.Atoi(string(instruction))
@@ -150,7 +150,7 @@ func (graph *InstructionsDependencyGraph) GetInstructionNumToDescription() map[i
 	return instructionNumToDescription
 }
 
-func (graph *InstructionsDependencyGraph) GetInstructionShortDescriptors() map[types.ScheduledInstructionUuid]string {
+func (graph *InstructionDependencyGraph) GetInstructionShortDescriptors() map[types.ScheduledInstructionUuid]string {
 	return graph.instructionShortDescriptors
 }
 
@@ -197,7 +197,7 @@ func OutputDependencyGraphVisual(dependencyGraph map[types.ScheduledInstructionU
 	}
 }
 
-func (graph *InstructionsDependencyGraph) OutputDependencyGraphVisualWithShortDescriptors(path string) {
+func (graph *InstructionDependencyGraph) OutputDependencyGraphVisualWithShortDescriptors(path string) {
 	g := simple.NewDirectedGraph()
 
 	// Create a mapping from instruction UUID to node ID

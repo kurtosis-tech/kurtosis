@@ -304,7 +304,7 @@ func runServiceReadinessCheck(
 
 func addServiceToDependencyGraph(
 	instructionUuid types.ScheduledInstructionUuid,
-	dependencyGraph *dependency_graph.InstructionsDependencyGraph,
+	dependencyGraph *dependency_graph.InstructionDependencyGraph,
 	serviceName string,
 	service *kurtosis_types.Service,
 	serviceConfig *service.ServiceConfig,

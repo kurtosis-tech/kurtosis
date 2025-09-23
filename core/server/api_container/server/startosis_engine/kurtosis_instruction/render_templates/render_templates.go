@@ -195,7 +195,7 @@ func (builtin *RenderTemplatesCapabilities) Description() string {
 }
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
-func (builtin *RenderTemplatesCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+func (builtin *RenderTemplatesCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
 	// render template outputs a files artifact
 	dependencyGraph.StoreOutput(instructionUuid, builtin.artifactName)
 

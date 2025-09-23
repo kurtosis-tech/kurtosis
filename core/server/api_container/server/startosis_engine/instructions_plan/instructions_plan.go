@@ -96,7 +96,7 @@ func (plan *InstructionsPlan) GeneratePlan() ([]*ScheduledInstruction, *startosi
 }
 
 func (plan *InstructionsPlan) GenerateInstructionsDependencyGraph() (map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid, map[int]string) {
-	instructionsDependencies := dependency_graph.NewInstructionsDependencyGraph()
+	instructionsDependencies := dependency_graph.NewInstructionDependencyGraph()
 	for _, instructionUuid := range plan.instructionsSequence {
 		instruction, found := plan.scheduledInstructionsIndex[instructionUuid]
 		if !found {

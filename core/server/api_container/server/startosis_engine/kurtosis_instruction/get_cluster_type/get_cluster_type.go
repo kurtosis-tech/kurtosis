@@ -75,7 +75,7 @@ func (builtin *GetClusterTypeCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYa
 	return nil
 }
 
-func (builtin *GetClusterTypeCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+func (builtin *GetClusterTypeCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
 	return nil
 }
 

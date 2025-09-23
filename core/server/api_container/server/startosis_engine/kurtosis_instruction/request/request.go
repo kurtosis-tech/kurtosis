@@ -242,7 +242,7 @@ func (builtin *RequestCapabilities) isAcceptableCode(recipeResult map[string]sta
 }
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
-func (builtin *RequestCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+func (builtin *RequestCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
 	// store outputs
 	for _, keyAndValueTuple := range builtin.returnValue.Items() {
 		value := keyAndValueTuple.Index(1)

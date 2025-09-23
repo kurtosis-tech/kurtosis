@@ -411,7 +411,7 @@ func (builtin *RunShCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerator) 
 	return nil
 }
 
-func (builtin *RunShCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+func (builtin *RunShCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
 	// outputs
 	dependencyGraph.StoreOutput(instructionUuid, builtin.runCodeValue)
 	dependencyGraph.StoreOutput(instructionUuid, builtin.runOutputValue)

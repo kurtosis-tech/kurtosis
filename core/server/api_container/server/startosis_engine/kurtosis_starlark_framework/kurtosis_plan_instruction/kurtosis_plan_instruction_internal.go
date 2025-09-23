@@ -105,7 +105,7 @@ func (builtin *kurtosisPlanInstructionInternal) UpdatePlan(plan *plan_yaml.PlanY
 	return builtin.capabilities.UpdatePlan(plan)
 }
 
-func (builtin *kurtosisPlanInstructionInternal) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+func (builtin *kurtosisPlanInstructionInternal) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
 	return builtin.capabilities.UpdateDependencyGraph(instructionUuid, dependencyGraph)
 }
 

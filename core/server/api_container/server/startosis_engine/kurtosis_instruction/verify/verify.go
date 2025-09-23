@@ -174,7 +174,7 @@ func (builtin *VerifyCapabilities) Description() string {
 }
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
-func (builtin *VerifyCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+func (builtin *VerifyCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
 	dependencyGraph.DependsOnOutput(instructionUuid, string(builtin.runtimeValue))
 
 	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("verify %s", builtin.runtimeValue))

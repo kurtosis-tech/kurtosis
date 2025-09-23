@@ -106,7 +106,7 @@ func (builtin *GetFilesArtifactCapabilities) Description() string {
 }
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
-func (builtin *GetFilesArtifactCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+func (builtin *GetFilesArtifactCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
 	dependencyGraph.DependsOnOutput(instructionUuid, string(builtin.artifactName))
 	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("get_files_artifact %s", builtin.artifactName))
 	return nil

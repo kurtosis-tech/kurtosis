@@ -382,7 +382,7 @@ func (builtin *AddServicesCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGener
 	return nil
 }
 
-func (builtin *AddServicesCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+func (builtin *AddServicesCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
 	for _, serviceTuple := range builtin.returnValue.Items() {
 		serviceNameVal := serviceTuple.Index(0)
 		serviceNameStarlarkStr, ok := serviceNameVal.(starlark.String)

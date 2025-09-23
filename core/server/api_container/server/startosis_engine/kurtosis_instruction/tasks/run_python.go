@@ -458,7 +458,7 @@ func (builtin *RunPythonCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerat
 	return nil
 }
 
-func (builtin *RunPythonCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+func (builtin *RunPythonCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
 	// store outputs
 	dependencyGraph.StoreOutput(instructionUuid, builtin.runCodeValue)
 	dependencyGraph.StoreOutput(instructionUuid, builtin.runOutputValue)

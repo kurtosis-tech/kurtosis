@@ -34,5 +34,5 @@ type KurtosisPlanInstructionCapabilities interface {
 	UpdatePlan(plan *plan_yaml.PlanYamlGenerator) error
 
 	// UpdateDependencyGraph updates the dependency graph with the effects of running this instruction
-	UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error
+	UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error
 }
