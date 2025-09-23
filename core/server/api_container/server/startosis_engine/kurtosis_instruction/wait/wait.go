@@ -316,6 +316,10 @@ func (builtin *WaitCapabilities) Description() string {
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
 func (builtin *WaitCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
+	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("wait %s", builtin.serviceName))
+
+	dependencyGraph.ConsumesService(instructionUuid, string(builtin.serviceName))
+
 	for _, keyAndValueTuple := range builtin.returnValue.Items() {
 		value := keyAndValueTuple.Index(1)
 
@@ -323,11 +327,7 @@ func (builtin *WaitCapabilities) UpdateDependencyGraph(instructionUuid types.Sch
 		if !ok {
 			return stacktrace.NewError("Expected value to be a string, but got %v", value.String())
 		}
-		dependencyGraph.StoreOutput(instructionUuid, valueStarlarkStr.GoString())
+		dependencyGraph.ProducesRuntimeValue(instructionUuid, valueStarlarkStr.GoString())
 	}
-
-	dependencyGraph.DependsOnOutput(instructionUuid, string(builtin.serviceName))
-
-	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("wait %s", builtin.serviceName))
 	return nil
 }

@@ -309,66 +309,41 @@ func addServiceToDependencyGraph(
 	service *kurtosis_types.Service,
 	serviceConfig *service.ServiceConfig,
 ) error {
-	// store the outputs of this instruction in the dependency graph
-	// add service outputs:
-	// - service.name
-	dependencyGraph.StoreOutput(instructionUuid, serviceName)
+	// TODO: add descriptor for instruction
 
-	// - service.ip_addresss
+	if serviceConfig.GetFilesArtifactsExpansion() != nil {
+		for _, filesArtifactNames := range serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
+			for _, filesArtifactName := range filesArtifactNames {
+				dependencyGraph.ConsumesFilesArtifact(instructionUuid, filesArtifactName)
+			}
+		}
+	}
+	if serviceConfig.GetCmdArgs() != nil {
+		dependencyGraph.ConsumesAnyRuntimeValuesInList(instructionUuid, serviceConfig.GetCmdArgs())
+	}
+	if serviceConfig.GetEntrypointArgs() != nil {
+		dependencyGraph.ConsumesAnyRuntimeValuesInList(instructionUuid, serviceConfig.GetEntrypointArgs())
+	}
+	envVarValues := make([]string, 0, len(serviceConfig.GetEnvVars()))
+	for _, v := range serviceConfig.GetEnvVars() {
+		envVarValues = append(envVarValues, v)
+	}
+	dependencyGraph.ConsumesAnyRuntimeValuesInList(instructionUuid, envVarValues)
+
+	// TODO: Considering adding ServicePort as an explicit output type
+	// - service.ports
+
+	dependencyGraph.ProducesService(instructionUuid, serviceName)
 	ipAddress, err := service.GetIpAddress()
 	if err != nil {
 		return stacktrace.NewError("An error occurred updating the plan with ip address from services: %v", serviceName)
 	}
-	dependencyGraph.StoreOutput(instructionUuid, ipAddress)
-
+	dependencyGraph.ProducesRuntimeValue(instructionUuid, ipAddress)
 	hostname, err := service.GetHostname()
 	if err != nil {
 		return stacktrace.NewError("An error occurred updating the plan with hostname from services: %v", serviceName)
 	}
-	dependencyGraph.StoreOutput(instructionUuid, hostname)
-
-	// TODO: figure out how to store ports as an instruciton output as they're technically future references
-	// - service.ports
-
-	// Find the outputs that this instruction depends on
-	// add service can depend on:
-	// - files artifacts in files
-	if serviceConfig.GetFilesArtifactsExpansion() != nil {
-		for _, filesArtifactNames := range serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
-			for _, filesArtifactName := range filesArtifactNames {
-				dependencyGraph.DependsOnOutput(instructionUuid, filesArtifactName)
-			}
-		}
-	}
-
-	// if value from env vars, cmd, entrypoint contain future reference, then this instruction depends on the output
-	for _, v := range serviceConfig.GetEnvVars() {
-		if futureRefs, ok := magic_string_helper.ContainsRuntimeValue(v); ok {
-			for _, futureRef := range futureRefs {
-				dependencyGraph.DependsOnOutput(instructionUuid, futureRef)
-			}
-		}
-	}
-
-	if serviceConfig.GetCmdArgs() != nil {
-		for _, v := range serviceConfig.GetCmdArgs() {
-			if futureRefs, ok := magic_string_helper.ContainsRuntimeValue(v); ok {
-				for _, futureRef := range futureRefs {
-					dependencyGraph.DependsOnOutput(instructionUuid, futureRef)
-				}
-			}
-		}
-	}
-
-	if serviceConfig.GetEntrypointArgs() != nil {
-		for _, v := range serviceConfig.GetEntrypointArgs() {
-			if futureRefs, ok := magic_string_helper.ContainsRuntimeValue(v); ok {
-				for _, futureRef := range futureRefs {
-					dependencyGraph.DependsOnOutput(instructionUuid, futureRef)
-				}
-			}
-		}
-	}
+	dependencyGraph.ProducesRuntimeValue(instructionUuid, hostname)
 	return nil
 
 }

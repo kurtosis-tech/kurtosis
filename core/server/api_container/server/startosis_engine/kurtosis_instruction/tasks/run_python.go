@@ -459,38 +459,23 @@ func (builtin *RunPythonCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerat
 }
 
 func (builtin *RunPythonCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
-	// store outputs
-	dependencyGraph.StoreOutput(instructionUuid, builtin.runCodeValue)
-	dependencyGraph.StoreOutput(instructionUuid, builtin.runOutputValue)
+	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("run_python %s", builtin.run))
 
-	for _, storeSpec := range builtin.storeSpecList {
-		dependencyGraph.StoreOutput(instructionUuid, storeSpec.GetName())
-	}
-
-	// depend on outputs
 	if builtin.serviceConfig.GetFilesArtifactsExpansion() != nil {
 		for _, filesArtifactNames := range builtin.serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
 			for _, filesArtifactName := range filesArtifactNames {
-				dependencyGraph.DependsOnOutput(instructionUuid, filesArtifactName)
+				dependencyGraph.ConsumesFilesArtifact(instructionUuid, filesArtifactName)
 			}
 		}
 	}
+	dependencyGraph.ConsumesAnyRuntimeValuesInString(instructionUuid, builtin.run)
+	dependencyGraph.ConsumesAnyRuntimeValuesInList(instructionUuid, builtin.pythonArguments)
 
-	if futureRefs, ok := magic_string_helper.ContainsRuntimeValue(builtin.run); ok {
-		for _, futureRef := range futureRefs {
-			dependencyGraph.DependsOnOutput(instructionUuid, futureRef)
-		}
+	dependencyGraph.ProducesRuntimeValue(instructionUuid, builtin.runCodeValue)
+	dependencyGraph.ProducesRuntimeValue(instructionUuid, builtin.runOutputValue)
+	for _, storeSpec := range builtin.storeSpecList {
+		dependencyGraph.ProducesFilesArtifact(instructionUuid, storeSpec.GetName())
 	}
-
-	for _, arg := range builtin.pythonArguments {
-		if futureRefs, ok := magic_string_helper.ContainsRuntimeValue(arg); ok {
-			for _, futureRef := range futureRefs {
-				dependencyGraph.DependsOnOutput(instructionUuid, futureRef)
-			}
-		}
-	}
-
-	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("run_python %s", builtin.run))
 	return nil
 }
 

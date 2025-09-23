@@ -10,7 +10,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/tasks"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -253,6 +252,11 @@ func formatErrorMessage(errorMessage string, errorFromExec string) string {
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
 func (builtin *ExecCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error { // store outputs
+	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("exec(%s %s)", builtin.serviceName, builtin.description))
+
+	dependencyGraph.ConsumesService(instructionUuid, string(builtin.serviceName))
+	dependencyGraph.ConsumesAnyRuntimeValuesInList(instructionUuid, builtin.cmdList)
+
 	// store outputs
 	// - output
 	// - code
@@ -262,23 +266,7 @@ func (builtin *ExecCapabilities) UpdateDependencyGraph(instructionUuid types.Sch
 		if !ok {
 			return stacktrace.NewError("Expected starlark value %s to be a string.", value.String())
 		}
-		dependencyGraph.StoreOutput(instructionUuid, valueStr.GoString())
+		dependencyGraph.ProducesRuntimeValue(instructionUuid, valueStr.GoString())
 	}
-
-	// depends on outputs
-	// - service name
-	dependencyGraph.DependsOnOutput(instructionUuid, string(builtin.serviceName))
-
-	// - cmd list
-	for _, v := range builtin.cmdList {
-		if futureRefs, ok := magic_string_helper.ContainsRuntimeValue(v); ok {
-			for _, futureRef := range futureRefs {
-				dependencyGraph.DependsOnOutput(instructionUuid, futureRef)
-			}
-		}
-	}
-
-	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("exec(%s %s)", builtin.serviceName, builtin.description))
-
 	return nil
 }

@@ -215,14 +215,13 @@ func (builtin *StoreServiceFilesCapabilities) Description() string {
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
 func (builtin *StoreServiceFilesCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
-	dependencyGraph.StoreOutput(instructionUuid, string(builtin.artifactName))
-
-	dependencyGraph.DependsOnOutput(instructionUuid, string(builtin.serviceName))
 	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("store_service_files(%s, %s)", builtin.serviceName, builtin.description))
 
+	dependencyGraph.ConsumesService(instructionUuid, string(builtin.serviceName))
 	if builtin.dependsOn != "" {
-		dependencyGraph.DependsOnOutput(instructionUuid, builtin.dependsOn)
+		dependencyGraph.ConsumesAnyRuntimeValuesInString(instructionUuid, builtin.dependsOn)
 	}
 
+	dependencyGraph.ProducesFilesArtifact(instructionUuid, string(builtin.artifactName))
 	return nil
 }

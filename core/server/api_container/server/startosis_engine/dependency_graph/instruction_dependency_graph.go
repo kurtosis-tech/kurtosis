@@ -8,17 +8,14 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
 	"github.com/sirupsen/logrus"
 	"gonum.org/v1/gonum/graph/encoding/dot"
 	"gonum.org/v1/gonum/graph/simple"
 )
 
-// TODO: This mirrors the ScheduledInstructionUuid in instructions_plan.go
-// It should be merged into a single type by refactoring the instructions_plan package to avoid circular dependencies
-// type ScheduledInstructionUuid string
-
-// InstructionsDependencyGraph tracks dependencies between Kurtosis instructions.
+// InstructionDependencyGraph tracks dependencies between Kurtosis instructions.
 //
 // Dependencies can be:
 // - **Implicit**: An instruction uses outputs (e.g. service info, file artifacts, runtime values) from a prior instruction.
@@ -56,30 +53,72 @@ func NewInstructionDependencyGraph() *InstructionDependencyGraph {
 	}
 }
 
-func (graph *InstructionDependencyGraph) StoreOutput(instruction types.ScheduledInstructionUuid, output string) {
+func (graph *InstructionDependencyGraph) ProducesService(instruction types.ScheduledInstructionUuid, serviceName string) {
 	graph.addInstruction(instruction)
-	logrus.Infof("Storing output %s for instruction %s", output, instruction)
-	graph.outputsToInstructionMap[output] = instruction
+	logrus.Infof("Storing service %s for instruction %s", serviceName, instruction)
+	graph.outputsToInstructionMap[serviceName] = instruction
 }
 
-func (graph *InstructionDependencyGraph) DependsOnOutput(instruction types.ScheduledInstructionUuid, output string) {
-	logrus.Infof("Attempting to depend instruction %s on output %s", instruction, output)
-	instructionThatProducedOutput, ok := graph.outputsToInstructionMap[output]
+func (graph *InstructionDependencyGraph) ProducesFilesArtifact(instruction types.ScheduledInstructionUuid, filesArtifactName string) {
+	graph.addInstruction(instruction)
+	logrus.Infof("Storing service %s for instruction %s", filesArtifactName, instruction)
+	graph.outputsToInstructionMap[filesArtifactName] = instruction
+}
+
+func (graph *InstructionDependencyGraph) ProducesRuntimeValue(instruction types.ScheduledInstructionUuid, runtimeValue string) {
+	graph.addInstruction(instruction)
+	logrus.Infof("Storing runtime value %s for instruction %s", runtimeValue, instruction)
+	graph.outputsToInstructionMap[runtimeValue] = instruction
+}
+
+func (graph *InstructionDependencyGraph) ConsumesService(instruction types.ScheduledInstructionUuid, serviceName string) {
+	logrus.Infof("Attempting to consume service %s for instruction %s", serviceName, instruction)
+	instructionThatProducedService, ok := graph.outputsToInstructionMap[serviceName]
 	if !ok {
-		panic("smth went wrong")
+		panic(fmt.Sprintf("No instruction found that output service %s.", serviceName))
 	}
-	graph.addDependency(instruction, instructionThatProducedOutput)
+	graph.addDependency(instruction, instructionThatProducedService)
 }
 
-// if [instruction] depends on [dependency] then [dependency] is stored as a dependency of [instruction]
-func (graph *InstructionDependencyGraph) DependsOnInstruction(instruction types.ScheduledInstructionUuid, dependency types.ScheduledInstructionUuid) {
-	graph.addDependency(instruction, dependency)
+func (graph *InstructionDependencyGraph) ConsumesFilesArtifact(instruction types.ScheduledInstructionUuid, filesArtifactName string) {
+	logrus.Infof("Attempting to consume files artifact %s for instruction %s", filesArtifactName, instruction)
+	instructionThatProducedFilesArtifact, ok := graph.outputsToInstructionMap[filesArtifactName]
+	if !ok {
+		panic(fmt.Sprintf("No instruction found that output files artifact %s.", filesArtifactName))
+	}
+	graph.addDependency(instruction, instructionThatProducedFilesArtifact)
+}
+
+func (graph *InstructionDependencyGraph) ConsumesAnyRuntimeValuesInString(instruction types.ScheduledInstructionUuid, stringPotentiallyContainingRuntimeValues string) {
+	if runtimeValues, ok := magic_string_helper.ContainsRuntimeValue(stringPotentiallyContainingRuntimeValues); ok {
+		for _, runtimeValue := range runtimeValues {
+			graph.consumesRuntimeValue(instruction, runtimeValue)
+		}
+	}
+}
+
+func (graph *InstructionDependencyGraph) ConsumesAnyRuntimeValuesInList(instruction types.ScheduledInstructionUuid, listPotentiallyContainingRuntimeValues []string) {
+	for _, wordPotentiallyContainingRuntimeValues := range listPotentiallyContainingRuntimeValues {
+		if runtimeValues, ok := magic_string_helper.ContainsRuntimeValue(wordPotentiallyContainingRuntimeValues); ok {
+			for _, runtimeValue := range runtimeValues {
+				graph.consumesRuntimeValue(instruction, runtimeValue)
+			}
+		}
+	}
+}
+
+func (graph *InstructionDependencyGraph) consumesRuntimeValue(instruction types.ScheduledInstructionUuid, runtimeValue string) {
+	logrus.Infof("Attempting to consume runtime value %s for instruction %s", runtimeValue, instruction)
+	instructionThatProducedRuntimeValue, ok := graph.outputsToInstructionMap[runtimeValue]
+	if !ok {
+		panic(fmt.Sprintf("No instruction found that output runtime value %s.", runtimeValue))
+	}
+	graph.addDependency(instruction, instructionThatProducedRuntimeValue)
 }
 
 func (graph *InstructionDependencyGraph) addDependency(instruction types.ScheduledInstructionUuid, dependency types.ScheduledInstructionUuid) {
 	// idempotently add the instruction and the dependency to the graph
 	if instruction == dependency {
-
 		return
 	}
 	graph.addInstruction(instruction)
@@ -114,15 +153,6 @@ func (graph *InstructionDependencyGraph) addInstruction(instruction types.Schedu
 func (graph *InstructionDependencyGraph) AddInstructionShortDescriptor(instruction types.ScheduledInstructionUuid, shortDescriptor string) {
 	graph.addInstruction(instruction)
 	graph.instructionShortDescriptors[instruction] = shortDescriptor
-}
-
-// GetInstructionShortDescriptor returns the short descriptor for an instruction.
-// Returns the instruction UUID if no descriptor is set.
-func (graph *InstructionDependencyGraph) GetInstructionShortDescriptor(instruction types.ScheduledInstructionUuid) string {
-	if descriptor, exists := graph.instructionShortDescriptors[instruction]; exists {
-		return descriptor
-	}
-	return string(instruction)
 }
 
 func (graph *InstructionDependencyGraph) GetDependencyGraph() map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid {
@@ -276,10 +306,4 @@ func (graph *InstructionDependencyGraph) OutputDependencyGraphVisualWithShortDes
 	if err := os.WriteFile(fmt.Sprintf("%s/dependency.dot", path), []byte(dotContent), 0644); err != nil {
 		panic(err)
 	}
-
-	// // Generate PNG
-	// cmd := exec.Command("dot", "-Tpng", fmt.Sprintf("%s/dependency.dot", path), "-o", fmt.Sprintf("%s/graph.png", path))
-	// if err := cmd.Run(); err != nil {
-	// 	panic(err)
-	// }
 }

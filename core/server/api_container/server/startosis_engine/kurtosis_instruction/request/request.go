@@ -243,7 +243,10 @@ func (builtin *RequestCapabilities) isAcceptableCode(recipeResult map[string]sta
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
 func (builtin *RequestCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
-	// store outputs
+	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("request %s", builtin.serviceName))
+
+	dependencyGraph.ConsumesService(instructionUuid, string(builtin.serviceName))
+
 	for _, keyAndValueTuple := range builtin.returnValue.Items() {
 		value := keyAndValueTuple.Index(1)
 
@@ -251,12 +254,7 @@ func (builtin *RequestCapabilities) UpdateDependencyGraph(instructionUuid types.
 		if !ok {
 			return stacktrace.NewError("Expected value to be a string, but got %v", value.String())
 		}
-		dependencyGraph.StoreOutput(instructionUuid, valueStarlarkStr.GoString())
+		dependencyGraph.ProducesRuntimeValue(instructionUuid, valueStarlarkStr.GoString())
 	}
-
-	// depends on outputs
-	dependencyGraph.DependsOnOutput(instructionUuid, string(builtin.serviceName))
-
-	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("request %s", builtin.serviceName))
 	return nil
 }

@@ -412,38 +412,27 @@ func (builtin *RunShCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerator) 
 }
 
 func (builtin *RunShCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
-	// outputs
-	dependencyGraph.StoreOutput(instructionUuid, builtin.runCodeValue)
-	dependencyGraph.StoreOutput(instructionUuid, builtin.runOutputValue)
-
-	for _, storeSpec := range builtin.storeSpecList {
-		dependencyGraph.StoreOutput(instructionUuid, storeSpec.GetName())
-	}
+	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("run_sh %s", builtin.description))
 
 	if builtin.serviceConfig.GetFilesArtifactsExpansion() != nil {
 		for _, filesArtifactNames := range builtin.serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
 			for _, filesArtifactName := range filesArtifactNames {
-				dependencyGraph.DependsOnOutput(instructionUuid, filesArtifactName)
+				dependencyGraph.ConsumesFilesArtifact(instructionUuid, filesArtifactName)
 			}
 		}
 	}
-
+	envVarValues := make([]string, 0, len(builtin.serviceConfig.GetEnvVars()))
 	for _, v := range builtin.serviceConfig.GetEnvVars() {
-		if futureRefs, ok := magic_string_helper.ContainsRuntimeValue(v); ok {
-			for _, futureRef := range futureRefs {
-				dependencyGraph.DependsOnOutput(instructionUuid, futureRef)
-			}
-		}
+		envVarValues = append(envVarValues, v)
 	}
+	dependencyGraph.ConsumesAnyRuntimeValuesInList(instructionUuid, envVarValues)
+	dependencyGraph.ConsumesAnyRuntimeValuesInString(instructionUuid, builtin.run)
 
-	if futureRefs, ok := magic_string_helper.ContainsRuntimeValue(builtin.run); ok {
-		for _, futureRef := range futureRefs {
-			dependencyGraph.DependsOnOutput(instructionUuid, futureRef)
-		}
+	dependencyGraph.ProducesRuntimeValue(instructionUuid, builtin.runCodeValue)
+	dependencyGraph.ProducesRuntimeValue(instructionUuid, builtin.runOutputValue)
+	for _, storeSpec := range builtin.storeSpecList {
+		dependencyGraph.ProducesFilesArtifact(instructionUuid, storeSpec.GetName())
 	}
-
-	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("run_sh %s", builtin.description))
-
 	return nil
 }
 
