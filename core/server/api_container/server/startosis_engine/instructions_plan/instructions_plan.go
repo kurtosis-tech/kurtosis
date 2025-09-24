@@ -109,7 +109,7 @@ func (plan *InstructionsPlan) GenerateInstructionsDependencyGraph() (map[types.S
 		}
 	}
 
-	return instructionsDependencies.GetDependencyGraph(), nil
+	return instructionsDependencies.GenerateDependencyGraph(), nil
 }
 
 // GenerateYaml takes in an existing planYaml (usually empty) and returns a yaml string containing the effects of the plan
