@@ -257,16 +257,12 @@ func (builtin *ExecCapabilities) UpdateDependencyGraph(instructionUuid types.Sch
 	dependencyGraph.ConsumesService(instructionUuid, string(builtin.serviceName))
 	dependencyGraph.ConsumesAnyRuntimeValuesInList(instructionUuid, builtin.cmdList)
 
-	// store outputs
-	// - output
-	// - code
-	for _, keyAndValueTuple := range builtin.returnValue.Items() { // iterate through tuples in dict to get output and code
-		value := keyAndValueTuple.Index(1) // 1 is the index to access the value of the tuple
-		valueStr, ok := value.(starlark.String)
-		if !ok {
-			return stacktrace.NewError("Expected starlark value %s to be a string.", value.String())
-		}
-		dependencyGraph.ProducesRuntimeValue(instructionUuid, valueStr.GoString())
+	returnValueStrings, interpretationErr := builtin.execRecipe.GetStarlarkReturnValuesAsStringList(builtin.resultUuid)
+	if interpretationErr != nil {
+		return stacktrace.Propagate(interpretationErr, "An error occurred while getting return value strings for exec recipe")
+	}
+	for _, returnValueString := range returnValueStrings {
+		dependencyGraph.ProducesRuntimeValue(instructionUuid, returnValueString)
 	}
 	return nil
 }

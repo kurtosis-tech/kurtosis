@@ -247,14 +247,12 @@ func (builtin *RequestCapabilities) UpdateDependencyGraph(instructionUuid types.
 
 	dependencyGraph.ConsumesService(instructionUuid, string(builtin.serviceName))
 
-	for _, keyAndValueTuple := range builtin.returnValue.Items() {
-		value := keyAndValueTuple.Index(1)
-
-		valueStarlarkStr, ok := value.(starlark.String)
-		if !ok {
-			return stacktrace.NewError("Expected value to be a string, but got %v", value.String())
-		}
-		dependencyGraph.ProducesRuntimeValue(instructionUuid, valueStarlarkStr.GoString())
+	returnValueStrings, interpretationErr := builtin.httpRequestRecipe.GetStarlarkReturnValuesAsStringList(builtin.resultUuid)
+	if interpretationErr != nil {
+		return stacktrace.Propagate(interpretationErr, "An error occurred while getting return value strings for http request recipe")
+	}
+	for _, returnValueString := range returnValueStrings {
+		dependencyGraph.ProducesRuntimeValue(instructionUuid, returnValueString)
 	}
 	return nil
 }
