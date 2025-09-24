@@ -117,6 +117,7 @@ func (builtin *GetServiceCapabilities) Description() string {
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
 func (builtin *GetServiceCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
+	dependencyGraph.ConsumesService(instructionUuid, string(builtin.serviceName))
 	dependencyGraph.ProducesService(instructionUuid, string(builtin.serviceName))
 	return nil
 }

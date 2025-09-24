@@ -1184,42 +1184,6 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestStopServiceDepends
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
-// func (suite *StartosisIntepreterDependencyGraphTestSuite) TestGetServiceDependsOnAddService() {
-// 	script := `def run(plan):
-// 	service_a = plan.add_service(name = "serviceA", config = ServiceConfig(image = "ubuntu"))
-
-// 	# Get service depends on service_a being available
-// 	plan.get_service(name = "serviceA")
-// `
-// 	expectedDependencyGraph := map[instructions_plan.ScheduledInstructionUuid][]instructions_plan.ScheduledInstructionUuid{
-// 		instructions_plan.ScheduledInstructionUuid("1"): {},
-// 		instructions_plan.ScheduledInstructionUuid("2"): {
-// 			instructions_plan.ScheduledInstructionUuid("1"),
-// 		},
-// 	}
-
-// 	inputArgs := `{}`
-// 	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
-// 		context.Background(),
-// 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
-// 		useDefaultMainFunctionName,
-// 		noPackageReplaceOptions,
-// 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
-// 		script,
-// 		inputArgs,
-// 		defaultNonBlockingMode,
-// 		emptyEnclaveComponents,
-// 		emptyInstructionsPlanMask,
-// 		image_download_mode.ImageDownloadMode_Always)
-// 	require.Nil(suite.T(), interpretationError)
-
-// 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
-
-// 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
-// }
-
-// TODO: document the behavior of get_files_artifact now owning the output of render_templates
-// Consider not producing the output of render_templates anymore
 func (suite *StartosisIntepreterDependencyGraphTestSuite) TestGetFilesArtifactsDependsOnRenderTemplate() {
 	script := `def run(plan):
 	artifact_a = plan.render_templates(
@@ -1234,6 +1198,8 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestGetFilesArtifactsD
 		}
 	)
 	
+	# Get files artifact depends on render template, now any instructions depending on "another-artifact" will depend on the get_files_artifact
+	# the dependency is transferred to the get_files_artifact
 	artifact_a = plan.get_files_artifact(name = "another-artifact")
 `
 	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
@@ -1303,42 +1269,6 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRemoveServiceDepen
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
-
-// func (suite *StartosisIntepreterDependencyGraphTestSuite) TestGetServicesDependsOnMultipleAddService() {
-// 	script := `def run(plan):
-// 	plan.add_service(name = "serviceA", config = ServiceConfig(image = "ubuntu"))
-
-// 	services = plan.get_services()
-// `
-// 	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
-// 		types.ScheduledInstructionUuid("1"): {},
-// 		types.ScheduledInstructionUuid("2"): {},
-// 		types.ScheduledInstructionUuid("3"): {
-// 			types.ScheduledInstructionUuid("2"),
-// 			types.ScheduledInstructionUuid("1"),
-// 		},
-// 	}
-
-// 	inputArgs := `{}`
-// 	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
-// 		context.Background(),
-// 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
-// 		useDefaultMainFunctionName,
-// 		noPackageReplaceOptions,
-// 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
-// 		script,
-// 		inputArgs,
-// 		defaultNonBlockingMode,
-// 		emptyEnclaveComponents,
-// 		emptyInstructionsPlanMask,
-// 		image_download_mode.ImageDownloadMode_Always)
-// 	require.Nil(suite.T(), interpretationError)
-
-// 	instructionsDependencyGraph := instructionsPlan.GenerateInstructionsDependencyGraph()
-
-// 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
-// }
-
 func (suite *StartosisIntepreterDependencyGraphTestSuite) TestVerifyDependsOnExec() {
 	script := `def run(plan):
 	service_a = plan.add_service(name = "serviceA", config = ServiceConfig(image = "ubuntu"))
