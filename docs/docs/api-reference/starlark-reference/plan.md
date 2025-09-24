@@ -828,6 +828,12 @@ artifact_name = plan.store_service_files(
     # OPTIONAL
     name = "my-favorite-artifact-name",
 
+    # The future reference a store service files depends on to produce the files artifact.
+    # Occassionally, an exec instruction needs to happen before a store service.
+    # Depends on is a way to explicitly depend on a prior exec instruction by depending on the output/code of it.
+    # OPTIONAL
+    depends_on = result["output"],
+
     # A human friendly description for the end user of the package
     # OPTIONAL (Default: Storing files from service 'SERVICE_NAME' at path 'PATH' to files artifact with name 'ARTIFACT_NAME')
     description = "storing some files"
