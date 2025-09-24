@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
@@ -16,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
@@ -298,4 +300,48 @@ func runServiceReadinessCheck(
 		)
 	}
 	return nil
+}
+
+func addServiceToDependencyGraph(
+	instructionUuid types.ScheduledInstructionUuid,
+	dependencyGraph *dependency_graph.InstructionDependencyGraph,
+	serviceName string,
+	service *kurtosis_types.Service,
+	serviceConfig *service.ServiceConfig,
+) error {
+	if serviceConfig.GetFilesArtifactsExpansion() != nil {
+		for _, filesArtifactNames := range serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
+			for _, filesArtifactName := range filesArtifactNames {
+				dependencyGraph.ConsumesFilesArtifact(instructionUuid, filesArtifactName)
+			}
+		}
+	}
+	if serviceConfig.GetCmdArgs() != nil {
+		dependencyGraph.ConsumesAnyRuntimeValuesInList(instructionUuid, serviceConfig.GetCmdArgs())
+	}
+	if serviceConfig.GetEntrypointArgs() != nil {
+		dependencyGraph.ConsumesAnyRuntimeValuesInList(instructionUuid, serviceConfig.GetEntrypointArgs())
+	}
+	envVarValues := make([]string, 0, len(serviceConfig.GetEnvVars()))
+	for _, v := range serviceConfig.GetEnvVars() {
+		envVarValues = append(envVarValues, v)
+	}
+	dependencyGraph.ConsumesAnyRuntimeValuesInList(instructionUuid, envVarValues)
+
+	// TODO: Considering adding ServicePort as an explicit output type
+	// - service.ports
+
+	dependencyGraph.ProducesService(instructionUuid, serviceName)
+	ipAddress, err := service.GetIpAddress()
+	if err != nil {
+		return stacktrace.NewError("An error occurred updating the plan with ip address from services: %v", serviceName)
+	}
+	dependencyGraph.ProducesRuntimeValue(instructionUuid, ipAddress)
+	hostname, err := service.GetHostname()
+	if err != nil {
+		return stacktrace.NewError("An error occurred updating the plan with hostname from services: %v", serviceName)
+	}
+	dependencyGraph.ProducesRuntimeValue(instructionUuid, hostname)
+	return nil
+
 }

@@ -124,7 +124,7 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 	// run interpretation with no mask at all to generate the list of instructions as if the enclave was empty
 	enclaveComponents := enclave_structure.NewEnclaveComponents()
 	emptyPlanInstructionsMask := resolver.NewInstructionsPlanMask(0)
-	naiveInstructionsPlanSerializedScriptOutput, naiveInstructionsPlan, interpretationErrorApi := interpreter.Interpret(ctx, packageId, mainFunctionName, packageReplaceOptions, relativePathtoMainFile, serializedStarlark, serializedJsonParams, nonBlockingMode, enclaveComponents, emptyPlanInstructionsMask, imageDownloadMode)
+	naiveInstructionsPlanSerializedScriptOutput, naiveInstructionsPlan, interpretationErrorApi := interpreter.Interpret(ctx, packageId, mainFunctionName, packageReplaceOptions, relativePathtoMainFile, serializedStarlark, serializedJsonParams, nonBlockingMode, enclaveComponents, emptyPlanInstructionsMask, imageDownloadMode, instructions_plan.NewInstructionsPlan())
 	if interpretationErrorApi != nil {
 		return startosis_constants.NoOutputObject, nil, interpretationErrorApi
 	}
@@ -173,6 +173,8 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 			// -> Then recopy all instructions past this match from the enclave state to the mask
 			// Those instructions are the instructions that will mask the instructions for the newly submitted plan
 			numberOfInstructionCopiedToMask := 0
+			// TODO: here once we have InstructionDependencyGraph, we can use it to recopy only the instructions that are dependent on the matching instruction
+			// TODO: we need something like graph.GetInstructionDependencies(matchingInstruction)
 			for copyIdx := matchingInstructionIdx; copyIdx < len(currentEnclavePlanSequence); copyIdx++ {
 				if numberOfInstructionCopiedToMask >= potentialMask.Size() {
 					// the mask is already full, can't recopy more instructions, stop here
@@ -192,8 +194,8 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 			return naiveInstructionsPlanSerializedScriptOutput, optimizedPlan, nil
 		}
 
-		// Now that we have a potential plan mask, try running interpretation again using this plan mask
-		attemptSerializedScriptOutput, attemptInstructionsPlan, interpretationErrorApi := interpreter.Interpret(ctx, packageId, mainFunctionName, packageReplaceOptions, relativePathtoMainFile, serializedStarlark, serializedJsonParams, nonBlockingMode, enclaveComponents, potentialMask, imageDownloadMode)
+		// Now that we have a potential plan mask, try running interpretation again using this plan mask and a new instructions plan
+		attemptSerializedScriptOutput, attemptInstructionsPlan, interpretationErrorApi := interpreter.Interpret(ctx, packageId, mainFunctionName, packageReplaceOptions, relativePathtoMainFile, serializedStarlark, serializedJsonParams, nonBlockingMode, enclaveComponents, potentialMask, imageDownloadMode, instructions_plan.NewInstructionsPlan())
 		if interpretationErrorApi != nil {
 			// Note: there's no real reason why this interpretation would fail with an error, given that the package
 			// has been interpreted once already (right above). But to be on the safe side, check the error
@@ -245,10 +247,11 @@ func (interpreter *StartosisInterpreter) Interpret(
 	enclaveComponents *enclave_structure.EnclaveComponents,
 	instructionsPlanMask *resolver.InstructionsPlanMask,
 	imageDownloadMode image_download_mode.ImageDownloadMode,
+	instructionsPlan *instructions_plan.InstructionsPlan,
 ) (string, *instructions_plan.InstructionsPlan, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
 	interpreter.mutex.Lock()
 	defer interpreter.mutex.Unlock()
-	newInstructionsPlan := instructions_plan.NewInstructionsPlan()
+	newInstructionsPlan := instructionsPlan
 	logrus.Debugf("Interpreting package '%v' with contents '%v' and params '%v'", packageId, serializedStarlark, serializedJsonParams)
 	moduleLocator := packageId
 	if packageId != startosis_constants.PackageIdPlaceholderForStandaloneScript {

@@ -80,6 +80,7 @@ func instantiateGetHttpRequestRecipe(arguments *builtin_argument.ArgumentValuesS
 
 type GetHttpRequestRecipe struct {
 	*kurtosis_type_constructor.KurtosisValueTypeDefault
+	runtimeValues []string
 }
 
 func (recipe *GetHttpRequestRecipe) Copy() (builtin_argument.KurtosisValueType, error) {
@@ -172,11 +173,30 @@ func (recipe *GetHttpRequestRecipe) CreateStarlarkReturnValue(resultUuid string)
 		return nil, interpretationErr
 	}
 
-	returnValue, interpretationErr := createStarlarkReturnValueInternal(resultUuid, extractors)
+	returnValue, _, interpretationErr := createHttpRequestRecipeStarlarkReturnValueInternal(resultUuid, extractors)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 	return returnValue, nil
+}
+
+func (recipe *GetHttpRequestRecipe) GetStarlarkReturnValuesAsStringList(resultUuid string) ([]string, *startosis_errors.InterpretationError) {
+	rawExtractors, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](
+		recipe.KurtosisValueTypeDefault, ExtractAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	extractors, interpretationErr := convertExtractorsToDict(found, rawExtractors)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	_, returnValueStrings, interpretationErr := createHttpRequestRecipeStarlarkReturnValueInternal(resultUuid, extractors)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	return returnValueStrings, nil
 }
 
 func (recipe *GetHttpRequestRecipe) RequestType() string {
