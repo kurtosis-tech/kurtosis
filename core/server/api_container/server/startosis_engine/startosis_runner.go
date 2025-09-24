@@ -148,6 +148,13 @@ func (runner *StartosisRunner) Run(
 			return
 		}
 
+		instructionDependencyGraph, instructionNumToDescription, interpretationErr := instructionsPlan.GenerateInstructionsDependencyGraph()
+		if interpretationErr != nil {
+			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromInterpretationError(interpretationErr.ToAPIType())
+			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent()
+			return
+		}
+
 		// Validation starts > send progress info
 		progressInfo = binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
 			startingValidationMsg, defaultCurrentStepNumber, totalNumberOfInstructions, "validation")
@@ -171,7 +178,6 @@ func (runner *StartosisRunner) Run(
 		if parallelism > 1 {
 			logrus.Infof("Executing Kurtosis instructions (in parallel) with parallelism: %d...", parallelism)
 
-			instructionDependencyGraph, instructionNumToDescription := instructionsPlan.GenerateInstructionsDependencyGraph()
 			executionResponseLinesChan = runner.startosisExecutor.ExecuteInParallel(ctx, dryRun, parallelism, instructionsPlan.GetIndexOfFirstInstruction(), instructionsSequence, serializedScriptOutput, instructionDependencyGraph, instructionNumToDescription)
 		} else {
 			logrus.Infof("Executing Kurtosis instructions (sequentially)...")

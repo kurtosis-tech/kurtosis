@@ -95,23 +95,23 @@ func (plan *InstructionsPlan) GeneratePlan() ([]*ScheduledInstruction, *startosi
 	return generatedPlan, nil
 }
 
-func (plan *InstructionsPlan) GenerateInstructionsDependencyGraph() (map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid, map[int]string) {
-	instructionsDependencies := dependency_graph.NewInstructionDependencyGraph()
+func (plan *InstructionsPlan) GenerateInstructionsDependencyGraph() (map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid, map[int]string, *startosis_errors.InterpretationError) {
+	instructionsDependencies := dependency_graph.NewInstructionDependencyGraph(plan.instructionsSequence)
 	for _, instructionUuid := range plan.instructionsSequence {
 		instruction, found := plan.scheduledInstructionsIndex[instructionUuid]
 		if !found {
-			return nil, nil // TODO: return err
+			return nil, nil, startosis_errors.NewInterpretationError("An error occurred updating the Instructions Dependency Graph. Instruction with UUID '%s' was scheduled but could not be found in Kurtosis instruction index.", instructionUuid)
 		}
 		logrus.Infof("Updating dependency graph with instruction: %v", instruction.kurtosisInstruction.String())
 		err := instruction.kurtosisInstruction.UpdateDependencyGraph(instructionUuid, instructionsDependencies)
 		if err != nil {
-			return nil, nil // TODO: return
+			return nil, nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred updating the dependency graph with instruction: %v.", instructionUuid)
 		}
 	}
 
 	// TODO: remove this after testing
 	instructionsDependencies.OutputDependencyGraphVisualWithShortDescriptors("/tmp")
-	return instructionsDependencies.GetDependencyGraph(), instructionsDependencies.GetInstructionNumToDescription()
+	return instructionsDependencies.GetDependencyGraph(), instructionsDependencies.GetInstructionNumToDescription(), nil
 }
 
 // GenerateYaml takes in an existing planYaml (usually empty) and returns a yaml string containing the effects of the plan

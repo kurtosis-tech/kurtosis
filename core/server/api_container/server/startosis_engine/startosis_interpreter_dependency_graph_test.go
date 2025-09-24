@@ -101,7 +101,8 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddSingleServiceTo
 	)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _, startosisInterpretationError := instructionsPlan.GenerateInstructionsDependencyGraph()
+	require.Nil(suite.T(), startosisInterpretationError)
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -159,7 +160,8 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 	)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _, startosisInterpretationError := instructionsPlan.GenerateInstructionsDependencyGraph()
+	require.Nil(suite.T(), startosisInterpretationError)
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -222,7 +224,8 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestExecDependsOnReque
 	)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _, startosisInterpretationError := instructionsPlan.GenerateInstructionsDependencyGraph()
+	require.Nil(suite.T(), startosisInterpretationError)
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -266,7 +269,8 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 		instructions_plan.NewInstructionsPlanForDependencyGraphTests())
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _, startosisInterpretationError := instructionsPlan.GenerateInstructionsDependencyGraph()
+	require.Nil(suite.T(), startosisInterpretationError)
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -323,7 +327,8 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 	)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _, startosisInterpretationError := instructionsPlan.GenerateInstructionsDependencyGraph()
+	require.Nil(suite.T(), startosisInterpretationError)
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -385,7 +390,8 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 	)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _, startosisInterpretationError := instructionsPlan.GenerateInstructionsDependencyGraph()
+	require.Nil(suite.T(), startosisInterpretationError)
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -451,7 +457,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 	)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _, startosisInterpretationError := instructionsPlan.GenerateInstructionsDependencyGraph()
+	require.Nil(suite.T(), startosisInterpretationError)
+	require.Nil(suite.T(), interpretationError)
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -514,7 +522,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 	)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _, startosisInterpretationError := instructionsPlan.GenerateInstructionsDependencyGraph()
+	require.Nil(suite.T(), startosisInterpretationError)
+	require.Nil(suite.T(), interpretationError)
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -579,7 +589,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 	)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _, startosisInterpretationError := instructionsPlan.GenerateInstructionsDependencyGraph()
+	require.Nil(suite.T(), startosisInterpretationError)
+	require.Nil(suite.T(), interpretationError)
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -630,7 +642,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRunShDependsOnServ
 	)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _, startosisInterpretationError := instructionsPlan.GenerateInstructionsDependencyGraph()
+	require.Nil(suite.T(), startosisInterpretationError)
+	require.Nil(suite.T(), interpretationError)
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -693,7 +707,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 	)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _, startosisInterpretationError := instructionsPlan.GenerateInstructionsDependencyGraph()
+	require.Nil(suite.T(), startosisInterpretationError)
+	require.Nil(suite.T(), interpretationError)
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -758,7 +774,8 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 	)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _, startosisInterpretationError := instructionsPlan.GenerateInstructionsDependencyGraph()
+	require.Nil(suite.T(), startosisInterpretationError)
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -809,7 +826,8 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRunPythonDependsOn
 	)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _, startosisInterpretationError := instructionsPlan.GenerateInstructionsDependencyGraph()
+	require.Nil(suite.T(), startosisInterpretationError)
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -848,7 +866,8 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRunPythonWithArgsD
 	)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _, startosisInterpretationError := instructionsPlan.GenerateInstructionsDependencyGraph()
+	require.Nil(suite.T(), startosisInterpretationError)
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -906,7 +925,8 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRunPythonWithPacka
 	)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _, startosisInterpretationError := instructionsPlan.GenerateInstructionsDependencyGraph()
+	require.Nil(suite.T(), startosisInterpretationError)
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -943,7 +963,8 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRunPythonWithCusto
 	)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _, startosisInterpretationError := instructionsPlan.GenerateInstructionsDependencyGraph()
+	require.Nil(suite.T(), startosisInterpretationError)
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -985,7 +1006,8 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestExecDependsOnServi
 	)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _, startosisInterpretationError := instructionsPlan.GenerateInstructionsDependencyGraph()
+	require.Nil(suite.T(), startosisInterpretationError)
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -1029,7 +1051,8 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestExecOnServiceBDepe
 	)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _, startosisInterpretationError := instructionsPlan.GenerateInstructionsDependencyGraph()
+	require.Nil(suite.T(), startosisInterpretationError)
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -1081,7 +1104,8 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestServiceCDependsOnE
 	)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _, startosisInterpretationError := instructionsPlan.GenerateInstructionsDependencyGraph()
+	require.Nil(suite.T(), startosisInterpretationError)
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -1117,7 +1141,8 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestStartServiceDepend
 	)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _, startosisInterpretationError := instructionsPlan.GenerateInstructionsDependencyGraph()
+	require.Nil(suite.T(), startosisInterpretationError)
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -1153,7 +1178,8 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestStopServiceDepends
 	)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _, startosisInterpretationError := instructionsPlan.GenerateInstructionsDependencyGraph()
+	require.Nil(suite.T(), startosisInterpretationError)
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -1234,7 +1260,9 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestGetFilesArtifactsD
 	)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _, startosisInterpretationError := instructionsPlan.GenerateInstructionsDependencyGraph()
+	require.Nil(suite.T(), startosisInterpretationError)
+	require.Nil(suite.T(), interpretationError)
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -1270,7 +1298,8 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRemoveServiceDepen
 	)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _, startosisInterpretationError := instructionsPlan.GenerateInstructionsDependencyGraph()
+	require.Nil(suite.T(), startosisInterpretationError)
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -1354,7 +1383,8 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestVerifyDependsOnExe
 	)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _, startosisInterpretationError := instructionsPlan.GenerateInstructionsDependencyGraph()
+	require.Nil(suite.T(), startosisInterpretationError)
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -1399,7 +1429,8 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestWaitDependsOnAddSe
 	)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _, startosisInterpretationError := instructionsPlan.GenerateInstructionsDependencyGraph()
+	require.Nil(suite.T(), startosisInterpretationError)
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
@@ -1449,7 +1480,8 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRequestDependsOnAd
 	)
 	require.Nil(suite.T(), interpretationError)
 
-	instructionsDependencyGraph, _ := instructionsPlan.GenerateInstructionsDependencyGraph()
+	instructionsDependencyGraph, _, startosisInterpretationError := instructionsPlan.GenerateInstructionsDependencyGraph()
+	require.Nil(suite.T(), startosisInterpretationError)
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }

@@ -43,13 +43,16 @@ type InstructionDependencyGraph struct {
 	outputsToInstructionMap map[string]types.ScheduledInstructionUuid
 
 	instructionShortDescriptors map[types.ScheduledInstructionUuid]string
+
+	instructionsSequence []types.ScheduledInstructionUuid
 }
 
-func NewInstructionDependencyGraph() *InstructionDependencyGraph {
+func NewInstructionDependencyGraph(instructionsSequence []types.ScheduledInstructionUuid) *InstructionDependencyGraph {
 	return &InstructionDependencyGraph{
 		instructionsDependencies:    map[types.ScheduledInstructionUuid]map[types.ScheduledInstructionUuid]bool{},
 		outputsToInstructionMap:     map[string]types.ScheduledInstructionUuid{},
 		instructionShortDescriptors: map[types.ScheduledInstructionUuid]string{},
+		instructionsSequence:        instructionsSequence,
 	}
 }
 
@@ -114,6 +117,18 @@ func (graph *InstructionDependencyGraph) consumesRuntimeValue(instruction types.
 		panic(fmt.Sprintf("No instruction found that output runtime value %s.", runtimeValue))
 	}
 	graph.addDependency(instruction, instructionThatProducedRuntimeValue)
+}
+
+// AddPrintInstruction manually adds a dependency between a print and the instruction that comes right before it in the instructions sequence.
+// TODO: explain why this is important
+func (graph *InstructionDependencyGraph) AddPrintInstruction(instruction types.ScheduledInstructionUuid) {
+	for i := 1; i < len(graph.instructionsSequence); i++ {
+		if graph.instructionsSequence[i] == instruction {
+			dependency := graph.instructionsSequence[i-1]
+			graph.addDependency(instruction, dependency)
+			return
+		}
+	}
 }
 
 func (graph *InstructionDependencyGraph) addDependency(instruction types.ScheduledInstructionUuid, dependency types.ScheduledInstructionUuid) {
