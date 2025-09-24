@@ -328,9 +328,6 @@ func addServiceToDependencyGraph(
 	}
 	dependencyGraph.ConsumesAnyRuntimeValuesInList(instructionUuid, envVarValues)
 
-	// TODO: Considering adding ServicePort as an explicit output type
-	// - service.ports
-
 	dependencyGraph.ProducesService(instructionUuid, serviceName)
 	ipAddress, err := service.GetIpAddress()
 	if err != nil {

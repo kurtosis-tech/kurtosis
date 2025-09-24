@@ -76,7 +76,7 @@ func (builtin *GetClusterTypeCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYa
 }
 
 func (builtin *GetClusterTypeCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
-	// TODO: implement
+	// has no effecto no dependencies
 	return nil
 }
 

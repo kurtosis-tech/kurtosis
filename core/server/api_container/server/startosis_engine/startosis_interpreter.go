@@ -174,7 +174,6 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 			// Those instructions are the instructions that will mask the instructions for the newly submitted plan
 			numberOfInstructionCopiedToMask := 0
 			// TODO: here once we have InstructionDependencyGraph, we can use it to recopy only the instructions that are dependent on the matching instruction
-			// TODO: we need something like graph.GetInstructionDependencies(matchingInstruction)
 			for copyIdx := matchingInstructionIdx; copyIdx < len(currentEnclavePlanSequence); copyIdx++ {
 				if numberOfInstructionCopiedToMask >= potentialMask.Size() {
 					// the mask is already full, can't recopy more instructions, stop here
