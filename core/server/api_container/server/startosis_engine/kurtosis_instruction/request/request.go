@@ -7,6 +7,7 @@ import (
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
@@ -112,8 +113,10 @@ type RequestCapabilities struct {
 	serviceName       service.ServiceName
 	httpRequestRecipe recipe.HttpRequestRecipe
 	resultUuid        string
-	acceptableCodes   []int64
-	skipCodeCheck     bool
+	returnValue       *starlark.Dict
+
+	acceptableCodes []int64
+	skipCodeCheck   bool
 
 	description string
 }
@@ -168,6 +171,7 @@ func (builtin *RequestCapabilities) Interpret(_ string, arguments *builtin_argum
 	if interpretationErr != nil {
 		return nil, startosis_errors.NewInterpretationError("An error occurred while creating return value for %v instruction", RequestBuiltinName)
 	}
+	builtin.returnValue = returnValue
 	return returnValue, nil
 }
 
@@ -234,4 +238,24 @@ func (builtin *RequestCapabilities) isAcceptableCode(recipeResult map[string]sta
 		}
 	}
 	return isAcceptableCode
+}
+
+// UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
+func (builtin *RequestCapabilities) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+	// store outputs
+	for _, keyAndValueTuple := range builtin.returnValue.Items() {
+		value := keyAndValueTuple.Index(1)
+
+		valueStarlarkStr, ok := value.(starlark.String)
+		if !ok {
+			return stacktrace.NewError("Expected value to be a string, but got %v", value.String())
+		}
+		dependencyGraph.StoreOutput(instructionUuid, valueStarlarkStr.GoString())
+	}
+
+	// depends on outputs
+	dependencyGraph.DependsOnOutput(instructionUuid, string(builtin.serviceName))
+
+	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("request %s", builtin.serviceName))
+	return nil
 }

@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/availability_checker"
 
@@ -541,6 +542,9 @@ func createStartServiceOperation(
 	privateIpAddr := serviceRegistration.GetPrivateIP()
 
 	return func() (interface{}, error) {
+		wholeCreateStartServiceOperationStart := time.Now()
+		logrus.Infof("IN START SERVICE OPERATION [%v]: starting createStartServiceOperation for service started at %v", serviceUUID, wholeCreateStartServiceOperationStart)
+
 		filesArtifactsExpansion := serviceConfig.GetFilesArtifactsExpansion()
 		persistentDirectories := serviceConfig.GetPersistentDirectories()
 		containerImageName := serviceConfig.GetContainerImageName()
@@ -580,8 +584,10 @@ func createStartServiceOperation(
 			}
 		}
 
+		filesArtifactsExpansionStart := time.Now()
 		volumeMounts := map[string]string{}
 		shouldDeleteVolumes := true
+		logrus.Infof("IN START SERVICE OPERATION [%v]: starting filesArtifactsExpansion started at %v", serviceUUID, filesArtifactsExpansionStart)
 		if filesArtifactsExpansion != nil {
 			candidateVolumeMounts, err := doFilesArtifactExpansionAndGetUserServiceVolumes(
 				ctx,
@@ -616,6 +622,8 @@ func createStartServiceOperation(
 				volumeMounts[dirpath] = volumeName
 			}
 		}
+		filesArtifactsExpansionEnd := time.Now()
+		logrus.Infof("IN START SERVICE OPERATION: finished filesArtifactsExpansion [%v] started at %v, finished at %v, took %v", serviceUUID, filesArtifactsExpansionStart, filesArtifactsExpansionEnd, filesArtifactsExpansionEnd.Sub(filesArtifactsExpansionStart).Seconds())
 
 		if persistentDirectories != nil {
 			candidateVolumeMounts, err := getOrCreatePersistentDirectories(
@@ -742,7 +750,9 @@ func createStartServiceOperation(
 
 		createAndStartArgs := createAndStartArgsBuilder.Build()
 
-		containerId, hostMachinePortBindings, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
+		createAndStartContainerStart := time.Now()
+		logrus.Infof("IN START SERVICE OPERATION [%v]: starting createAndStartContainer started at %v", serviceUUID, createAndStartContainerStart)
+		containerId, hostMachinePortBindings, err := dockerManager.CreateAndStartContainerWithServiceUuid(ctx, serviceUUID, createAndStartArgs)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred starting the user service container for user service with UUID '%v'", serviceUUID)
 		}
@@ -763,6 +773,8 @@ func createStartServiceOperation(
 				}
 			}
 		}()
+		createAndStartContainerEnd := time.Now()
+		logrus.Infof("IN START SERVICE OPERATION [%v]: finished createAndStartContainer started at %v, finished at %v, took %v", serviceUUID, createAndStartContainerStart, createAndStartContainerEnd, createAndStartContainerEnd.Sub(createAndStartContainerStart).Seconds())
 
 		_, _, maybePublicIp, maybePublicPortSpecs, err := shared_helpers.GetIpAndPortInfoFromContainer(
 			containerName.GetString(),
@@ -786,6 +798,8 @@ func createStartServiceOperation(
 				envVars),
 		)
 
+		wholeCreateStartServiceOperationEnd := time.Now()
+		logrus.Infof("IN START SERVICE OPERATION [%v]: finished createStartServiceOperation started at %v, finished at %v, took %v", serviceUUID, wholeCreateStartServiceOperationStart, wholeCreateStartServiceOperationEnd, wholeCreateStartServiceOperationEnd.Sub(wholeCreateStartServiceOperationStart).Seconds())
 		shouldDeleteVolumes = false
 		shouldKillContainer = false
 		return serviceObjectPtr, nil

@@ -3,6 +3,8 @@ package get_files_artifact
 import (
 	"context"
 	"fmt"
+
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
@@ -100,4 +102,11 @@ func (builtin *GetFilesArtifactCapabilities) UpdatePlan(planYaml *plan_yaml.Plan
 
 func (builtin *GetFilesArtifactCapabilities) Description() string {
 	return builtin.description
+}
+
+// UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
+func (builtin *GetFilesArtifactCapabilities) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+	dependencyGraph.DependsOnOutput(instructionUuid, string(builtin.artifactName))
+	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("get_files_artifact %s", builtin.artifactName))
+	return nil
 }

@@ -2,6 +2,8 @@ package kurtosis_plan_instruction
 
 import (
 	"context"
+
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -27,6 +29,9 @@ type KurtosisPlanInstructionCapabilities interface {
 	// Description Brief description of the instruction based on its contents
 	Description() string
 
-	// UpdatePlan applies the effect of this instruction capabilities onto the yaml representation of the instruction plan.
+	// UpdatePlan applies the effect of this instruction capabilities onto the yaml representation of the instruction plan
 	UpdatePlan(plan *plan_yaml.PlanYamlGenerator) error
+
+	// UpdateDependencyGraph updates the dependency graph with the effects of running this instruction
+	UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error
 }

@@ -2,7 +2,10 @@ package get_services
 
 import (
 	"context"
+	"fmt"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
@@ -99,4 +102,13 @@ func (builtin *GetServicesCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYamlG
 
 func (builtin *GetServicesCapabilities) Description() string {
 	return builtin.description
+}
+
+// UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
+func (builtin *GetServicesCapabilities) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+	for _, serviceName := range builtin.serviceNames {
+		dependencyGraph.DependsOnOutput(instructionUuid, string(serviceName))
+	}
+	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("get_services"))
+	return nil
 }

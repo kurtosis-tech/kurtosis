@@ -7,8 +7,10 @@ import (
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/tasks"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -115,7 +117,6 @@ type ExecCapabilities struct {
 }
 
 func (builtin *ExecCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
-
 	serviceNameArgumentValue, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ServiceNameArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceNameArgName)
@@ -247,4 +248,36 @@ func formatErrorMessage(errorMessage string, errorFromExec string) string {
 	splitErrorMessageNewLine := strings.Split(errorFromExec, "\n")
 	reformattedErrorMessage := strings.Join(splitErrorMessageNewLine, "\n  ")
 	return fmt.Sprintf("%v\n  %v", errorMessage, reformattedErrorMessage)
+}
+
+// UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
+func (builtin *ExecCapabilities) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error { // store outputs
+	// store outputs
+	// - output
+	// - code
+	for _, keyAndValueTuple := range builtin.returnValue.Items() { // iterate through tuples in dict to get output and code
+		value := keyAndValueTuple.Index(1) // 1 is the index to access the value of the tuple
+		valueStr, ok := value.(starlark.String)
+		if !ok {
+			return stacktrace.NewError("Expected starlark value %s to be a string.", value.String())
+		}
+		dependencyGraph.StoreOutput(instructionUuid, valueStr.GoString())
+	}
+
+	// depends on outputs
+	// - service name
+	dependencyGraph.DependsOnOutput(instructionUuid, string(builtin.serviceName))
+
+	// - cmd list
+	for _, v := range builtin.cmdList {
+		if futureRefs, ok := magic_string_helper.ContainsRuntimeValue(v); ok {
+			for _, futureRef := range futureRefs {
+				dependencyGraph.DependsOnOutput(instructionUuid, futureRef)
+			}
+		}
+	}
+
+	dependencyGraph.AddInstructionShortDescriptor(instructionUuid, fmt.Sprintf("exec(%s %s)", builtin.serviceName, builtin.description))
+
+	return nil
 }

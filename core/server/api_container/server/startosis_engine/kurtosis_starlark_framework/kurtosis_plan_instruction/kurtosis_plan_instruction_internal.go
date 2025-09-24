@@ -2,8 +2,10 @@ package kurtosis_plan_instruction
 
 import (
 	"context"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
@@ -47,7 +49,7 @@ func (builtin *kurtosisPlanInstructionInternal) GetCanonicalInstruction(isSkippe
 		}
 		args[idx] = binding_constructors.NewStarlarkInstructionKwarg(builtin_argument.StringifyArgumentValue(value), name, shouldBeDisplayed)
 	}
-	return binding_constructors.NewStarlarkInstruction(builtin.GetPosition().ToAPIType(), builtin.GetName(), builtin.String(), args, isSkipped, builtin.capabilities.Description())
+	return binding_constructors.NewStarlarkInstruction(builtin.GetPosition().ToAPIType(), builtin.GetName(), builtin.String(), args, isSkipped, builtin.capabilities.Description(), "")
 }
 
 // GetPositionInOriginalScript is here to implement the KurtosisInstruction interface. Remove it when it's not needed anymore
@@ -100,6 +102,10 @@ func (builtin *kurtosisPlanInstructionInternal) GetPersistableAttributes() *encl
 
 func (builtin *kurtosisPlanInstructionInternal) UpdatePlan(plan *plan_yaml.PlanYamlGenerator) error {
 	return builtin.capabilities.UpdatePlan(plan)
+}
+
+func (builtin *kurtosisPlanInstructionInternal) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
+	return builtin.capabilities.UpdateDependencyGraph(instructionUuid, dependencyGraph)
 }
 
 func (builtin *kurtosisPlanInstructionInternal) interpret() (starlark.Value, *startosis_errors.InterpretationError) {

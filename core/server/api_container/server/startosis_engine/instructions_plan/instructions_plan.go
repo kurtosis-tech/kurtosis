@@ -1,11 +1,15 @@
 package instructions_plan
 
 import (
+	"strconv"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 )
 
@@ -24,6 +28,8 @@ type InstructionsPlan struct {
 
 	// list of package names that this instructions plan relies on
 	packageDependencies map[string]bool
+
+	instructionCount int
 }
 
 func NewInstructionsPlan() *InstructionsPlan {
@@ -32,6 +38,7 @@ func NewInstructionsPlan() *InstructionsPlan {
 		scheduledInstructionsIndex: map[ScheduledInstructionUuid]*ScheduledInstruction{},
 		instructionsSequence:       []ScheduledInstructionUuid{},
 		packageDependencies:        map[string]bool{},
+		instructionCount:           0,
 	}
 }
 
@@ -78,6 +85,40 @@ func (plan *InstructionsPlan) GeneratePlan() ([]*ScheduledInstruction, *startosi
 		generatedPlan = append(generatedPlan, instruction)
 	}
 	return generatedPlan, nil
+}
+
+func (plan *InstructionsPlan) GenerateInstructionsDependencyGraph() (map[ScheduledInstructionUuid][]ScheduledInstructionUuid, map[int]string) {
+	// update the dependency graph with the effects of the adding this instruction the plan
+	instructionPlan, err := plan.GeneratePlan() // same api
+	if err != nil {
+		logrus.Errorf("error generating instructions dependency graph: %v", err)
+		// return nil, err
+		panic(err)
+	}
+
+	instructionsDependencies := dependency_graph.NewInstructionsDependencyGraph()
+
+	count := 1
+	for _, instruction := range instructionPlan {
+		logrus.Infof("Updating dependency graph with instruction: %v", count)
+		instruction.kurtosisInstruction.UpdateDependencyGraph(dependency_graph.ScheduledInstructionUuid(strconv.Itoa(count)), instructionsDependencies)
+		count++
+	}
+
+	// conversion
+	// TODO: This is a temporary solution to convert the dependency graph to a map[ScheduledInstructionUuid][]ScheduledInstructionUuid
+	// Should likely not use ScheduledInstructionUuid as the key type for the dependency graph
+	dependencyGraphMap := make(map[ScheduledInstructionUuid][]ScheduledInstructionUuid)
+	for instructionUuid, dependencies := range instructionsDependencies.GetDependencyGraph() {
+		dependencyGraphMap[ScheduledInstructionUuid(instructionUuid)] = make([]ScheduledInstructionUuid, len(dependencies))
+		for i, dependency := range dependencies {
+			dependencyGraphMap[ScheduledInstructionUuid(instructionUuid)][i] = ScheduledInstructionUuid(dependency)
+		}
+	}
+
+	// instructionsDependencies.OutputDependencyGraphVisualWithShortDescriptors("/Users/tewodrosmitiku/craft/graphs")
+	instructionsDependencies.OutputDependencyGraphVisualWithShortDescriptors("/tmp")
+	return dependencyGraphMap, instructionsDependencies.GetInstructionNumToDescription()
 }
 
 // GenerateYaml takes in an existing planYaml (usually empty) and returns a yaml string containing the effects of the plan
