@@ -98,6 +98,7 @@ func NewRequest(serviceNetwork service_network.ServiceNetwork, runtimeValueStore
 				acceptableCodes:   nil,   // populated at interpretation time
 				skipCodeCheck:     false, // populated at interpretation time
 				description:       "",    // populated at interpretation time
+				returnValue:       nil,   // populated at interpretation time
 			}
 		},
 

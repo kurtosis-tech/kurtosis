@@ -108,6 +108,7 @@ func NewWait(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *r
 				timeout:     0,   // populated at interpretation time
 				resultUuid:  "",  // populated at interpretation time
 				description: "",  // populated at interpretation time
+				returnValue: nil, // populated at interpretation time
 			}
 		},
 
