@@ -132,3 +132,7 @@ lerna-debug.log
 yarn.lock
 package.json
 package-lock.json
+
+# Nix
+# ignores the default result symlink created when building with nix
+result
