@@ -8,6 +8,10 @@ package logs
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/signal"
+	"strconv"
+
 	"github.com/fatih/color"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
@@ -24,9 +28,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"os"
-	"os/signal"
-	"strconv"
 )
 
 const (
@@ -54,7 +55,7 @@ const (
 
 	interruptChanBufferSize = 5
 
-	defaultNumLogLines            = 200
+	defaultNumLogLines            = 0
 	commonInstructionInMatchFlags = "Important: " + matchTextFilterFlagKey + " and " + matchRegexFilterFlagKey + " flags cannot be used at the same time. You should either use one or the other."
 )
 
@@ -202,6 +203,10 @@ func run(
 	numLogLines, err := flags.GetUint32(returnNumLogsFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the 'num' flag using key '%v'", returnNumLogsFlagKey)
+	}
+
+	if shouldFollowLogs && numLogLines > 0 {
+		return stacktrace.Propagate(stacktrace.NewError("Unsupported flags combination"), "`%v` flag cannot be used with `%v` flag", shouldFollowLogsFlagKey, returnNumLogsFlagKey)
 	}
 
 	matchTextStr, err := flags.GetString(matchTextFilterFlagKey)
