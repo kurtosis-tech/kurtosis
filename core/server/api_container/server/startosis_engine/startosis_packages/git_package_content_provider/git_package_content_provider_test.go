@@ -2,6 +2,10 @@ package git_package_content_provider
 
 import (
 	"fmt"
+	"os"
+	"path"
+	"testing"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/docker_compose_transpiler"
@@ -12,9 +16,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
-	"os"
-	"path"
-	"testing"
 )
 
 const (
@@ -600,14 +601,45 @@ func TestGetAbsoluteLocator_AbsoluteLocatorIsInRootPackageButSourceIsNotShouldNo
 	require.Nil(t, err)
 }
 
+func TestGetAbsoluteLocator_ImportPackageWithSamePrefixNameAsRootPackageShouldNotBeBlocked(t *testing.T) {
+	provider := NewGitPackageContentProvider("", "", NewGitHubPackageAuthProvider(""), nil)
+
+	packageId := "github.com/main-package"
+	locatorOfModuleInWhichThisBuiltInIsBeingCalled := "github.com/main-package-xyz/main.star" // same package prefix
+	maybeRelativeLocator := "github.com/main-package/file.star"
+
+	_, err := provider.GetAbsoluteLocator(packageId, locatorOfModuleInWhichThisBuiltInIsBeingCalled, maybeRelativeLocator, noPackageReplaceOptions)
+	require.Nil(t, err)
+}
+
 func Test_isSamePackageLocalAbsoluteLocator_TestDetectionInSubpath(t *testing.T) {
-	result := shouldBlockAbsoluteLocatorBecauseIsInTheSameSourceModuleLocatorPackage("github.com/author/package/bang/lib.star", "github.com/author/package/main.star", "github.com/author/package/")
+	// Without root package id trailing slash.
+	result := shouldBlockAbsoluteLocatorBecauseIsInTheSameSourceModuleLocatorPackage("github.com/author/package/bang/lib.star", "github.com/author/package/main.star", "github.com/author/package")
+	require.True(t, result)
+
+	// With root package id trailing slash.
+	result = shouldBlockAbsoluteLocatorBecauseIsInTheSameSourceModuleLocatorPackage("github.com/author/package/bang/lib.star", "github.com/author/package/main.star", "github.com/author/package/")
 	require.True(t, result)
 }
 
 func Test_isSamePackageLocalAbsoluteLocator_TestDetectionInDifferentSubdirectories(t *testing.T) {
-	result := shouldBlockAbsoluteLocatorBecauseIsInTheSameSourceModuleLocatorPackage("github.com/author/package/subdir1/file1.star", "github.com/author/package/subdir2/file2.star", "github.com/author/package/")
+	// Without root package id trailing slash.
+	result := shouldBlockAbsoluteLocatorBecauseIsInTheSameSourceModuleLocatorPackage("github.com/author/package/subdir1/file1.star", "github.com/author/package/subdir2/file2.star", "github.com/author/package")
 	require.True(t, result)
+
+	// With root package id trailing slash.
+	result = shouldBlockAbsoluteLocatorBecauseIsInTheSameSourceModuleLocatorPackage("github.com/author/package/subdir1/file1.star", "github.com/author/package/subdir2/file2.star", "github.com/author/package/")
+	require.True(t, result)
+}
+
+func Test_isNotSamePackageLocalAbsoluteLocator_TestImportPackageWithSamePrefixNameAsRootPackages(t *testing.T) {
+	// Without root package id trailing slash.
+	result := shouldBlockAbsoluteLocatorBecauseIsInTheSameSourceModuleLocatorPackage("github.com/author/package2/main.star", "github.com/author/package/main.star", "github.com/author/package")
+	require.False(t, result)
+
+	// With root package id trailing slash.
+	result = shouldBlockAbsoluteLocatorBecauseIsInTheSameSourceModuleLocatorPackage("github.com/author/package2/main.star", "github.com/author/package/main.star", "github.com/author/package/")
+	require.False(t, result)
 }
 
 func Test_getPathToPackageRoot(t *testing.T) {
