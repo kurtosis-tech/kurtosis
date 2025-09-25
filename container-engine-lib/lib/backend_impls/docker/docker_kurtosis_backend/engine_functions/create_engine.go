@@ -279,9 +279,13 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred creating Docker config storage.")
 	}
 
+	// Get the appropriate Docker socket path for mounting into the container
+	hostDockerSocketPath := shared_helpers.GetHostDockerSocketPath()
+
 	bindMounts := map[string]string{
-		// Necessary so that the engine server can interact with the Docker engine
-		consts.DockerSocketFilepath: consts.DockerSocketFilepath,
+		// Mount the host's Docker socket to the standard location inside the container
+		// This allows the engine to interact with the Docker daemon
+		hostDockerSocketPath: consts.DockerSocketFilepath,
 	}
 
 	volumeMounts := map[string]string{
