@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/kurtosis-tech/kurtosis/core/launcher/args"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
@@ -70,6 +71,10 @@ func (builtin *GetClusterTypeCapabilities) FillPersistableAttributes(builder *en
 
 func (builtin *GetClusterTypeCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYamlGenerator) error {
 	// get cluster type does not affect the planYaml
+	return nil
+}
+
+func (builtin *GetClusterTypeCapabilities) UpdateDependencyGraph(instructionUuid dependency_graph.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionsDependencyGraph) error {
 	return nil
 }
 
