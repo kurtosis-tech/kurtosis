@@ -77,10 +77,8 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 		executor.enclavePlan = executor.enclavePlan.PartialDeepClone(indexOfFirstInstructionInEnclavePlan)
 
 		defer func() {
-			// TODO: we now perist the plan at the end of the execution. We could persist it everytime an instruction
-			//  is executed, to be resilient to the APIC being stopped in the middle of a Starlark script execution
-			//  Or we could even persist it only when the APIC is stopped. This seems to be a good middle ground, but
-			//  can be tuned according the our future needs
+			// We persist the enclave plan after every instruction, but also at the end of the execution
+			// This is to be resilient to the APIC being stopped in the middle of a Starlark script execution
 			logrus.Infof("Persisting enclave plan composed of %d instructions into enclave database", executor.enclavePlan.Size())
 			if err := executor.enclavePlan.Persist(executor.enclaveDb); err != nil {
 				logrus.Errorf("An error occurred persisting the enclave plan at the end of the execution of the" +
@@ -136,7 +134,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 				if err != nil {
 					sendErrorAndFail(starlarkRunResponseLineStream, totalExecutionDuration, err, "An error occurred persisting instruction (number %d) at %v after it's been executed:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
 				}
-				executor.enclavePlan.AppendInstruction(enclavePlanInstruction)
+				executor.appendAndPersistEnclavePlanInstruction(enclavePlanInstruction)
 			}
 		}
 
@@ -165,4 +163,11 @@ func sendErrorAndFail(starlarkRunResponseLineStream chan<- *kurtosis_core_rpc_ap
 	serializedError := binding_constructors.NewStarlarkExecutionError(propagatedErr.Error())
 	starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromExecutionError(serializedError)
 	starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEventWithDuration(totalExecutionDuration)
+}
+
+func (executor *StartosisExecutor) appendAndPersistEnclavePlanInstruction(instruction *enclave_plan_persistence.EnclavePlanInstruction) {
+	executor.enclavePlan.AppendInstruction(instruction)
+	if err := executor.enclavePlan.Persist(executor.enclaveDb); err != nil {
+		logrus.Errorf("An error occurred persisting the enclave plan at the end of the execution of the package. The enclave will continue to run, but next runs of Starlark package might not be executed as expected.")
+	}
 }
