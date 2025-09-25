@@ -1269,6 +1269,38 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRemoveServiceDepen
 
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
+
+func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRemoveServiceWhenServiceExists() {
+	script := `def run(plan):
+	# Remove service depends on service_a being available - but it already exists in the enclave
+	plan.remove_service(name = "serviceA")
+`
+	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+		types.ScheduledInstructionUuid("1"): {},
+	}
+
+	inputArgs := `{}`
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		script,
+		inputArgs,
+		defaultNonBlockingMode,
+		emptyEnclaveComponents,
+		emptyInstructionsPlanMask,
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlanForDependencyGraphTests(),
+	)
+	require.Nil(suite.T(), interpretationError)
+
+	instructionsDependencyGraph, startosisInterpretationError := instructionsPlan.GenerateInstructionsDependencyGraph()
+	require.Nil(suite.T(), startosisInterpretationError)
+
+	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
+}
 func (suite *StartosisIntepreterDependencyGraphTestSuite) TestVerifyDependsOnExec() {
 	script := `def run(plan):
 	service_a = plan.add_service(name = "serviceA", config = ServiceConfig(image = "ubuntu"))

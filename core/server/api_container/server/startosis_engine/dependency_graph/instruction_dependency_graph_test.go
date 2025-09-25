@@ -175,6 +175,20 @@ func TestComplexDependencyChain(t *testing.T) {
 	require.Len(t, dependencies[instruction1], 0)
 }
 
+func TestRemoveServiceFromDependencyGraph(t *testing.T) {
+	instruction1 := types.ScheduledInstructionUuid("remove-service(name = 'service-1')")
+
+	serviceName := "service-1"
+
+	graph := NewInstructionDependencyGraph([]types.ScheduledInstructionUuid{instruction1})
+
+	graph.ConsumesService(instruction1, serviceName)
+
+	dependencies := graph.GenerateDependencyGraph()
+
+	require.Len(t, dependencies[instruction1], 0)
+}
+
 func getEnclaveDBForTest(t *testing.T) *enclave_db.EnclaveDB {
 	file, err := os.CreateTemp("/tmp", "*.db")
 	defer func() {

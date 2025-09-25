@@ -1,7 +1,6 @@
 package dependency_graph
 
 import (
-	"fmt"
 	"slices"
 
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
@@ -55,18 +54,16 @@ func (graph *InstructionDependencyGraph) ProducesRuntimeValue(instruction types.
 
 func (graph *InstructionDependencyGraph) ConsumesService(instruction types.ScheduledInstructionUuid, serviceName string) {
 	instructionThatProducedService, ok := graph.outputsToInstructionMap[serviceName]
-	if !ok {
-		panic(fmt.Sprintf("No instruction found that output service %s.", serviceName))
+	if ok {
+		graph.addDependency(instruction, instructionThatProducedService)
 	}
-	graph.addDependency(instruction, instructionThatProducedService)
 }
 
 func (graph *InstructionDependencyGraph) ConsumesFilesArtifact(instruction types.ScheduledInstructionUuid, filesArtifactName string) {
 	instructionThatProducedFilesArtifact, ok := graph.outputsToInstructionMap[filesArtifactName]
-	if !ok {
-		panic(fmt.Sprintf("No instruction found that output files artifact %s.", filesArtifactName))
+	if ok {
+		graph.addDependency(instruction, instructionThatProducedFilesArtifact)
 	}
-	graph.addDependency(instruction, instructionThatProducedFilesArtifact)
 }
 
 func (graph *InstructionDependencyGraph) ConsumesAnyRuntimeValuesInString(instruction types.ScheduledInstructionUuid, stringPotentiallyContainingRuntimeValues string) {
@@ -89,10 +86,9 @@ func (graph *InstructionDependencyGraph) ConsumesAnyRuntimeValuesInList(instruct
 
 func (graph *InstructionDependencyGraph) consumesRuntimeValue(instruction types.ScheduledInstructionUuid, runtimeValue string) {
 	instructionThatProducedRuntimeValue, ok := graph.outputsToInstructionMap[runtimeValue]
-	if !ok {
-		panic(fmt.Sprintf("No instruction found that output runtime value %s.", runtimeValue))
+	if ok {
+		graph.addDependency(instruction, instructionThatProducedRuntimeValue)
 	}
-	graph.addDependency(instruction, instructionThatProducedRuntimeValue)
 }
 
 // AddPrintInstruction manually adds a dependency between a print and the instruction that comes right before it in the instructions sequence.
