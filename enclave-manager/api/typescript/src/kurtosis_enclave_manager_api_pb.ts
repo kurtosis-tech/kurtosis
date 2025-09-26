@@ -5,7 +5,7 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3 } from "@bufbuild/protobuf";
-import { GetEnclavesArgs } from "./engine_service_pb.js";
+import { GetEnclavesByUuidsArgs } from "./engine_service_pb.js";
 import { DownloadFilesArtifactArgs, FilesArtifactNameAndUuid, RunStarlarkPackageArgs, RunStarlarkScriptArgs, StarlarkPackagePlanYamlArgs as StarlarkPackagePlanYamlArgs$1, StarlarkScriptPlanYamlArgs as StarlarkScriptPlanYamlArgs$1 } from "./api_container_service_pb.js";
 
 /**
@@ -205,9 +205,9 @@ export class GetServicesRequest extends Message<GetServicesRequest> {
 }
 
 /**
- * @generated from message kurtosis_enclave_manager.GetEnclavesRequest
+ * @generated from message kurtosis_enclave_manager.GetEnclavesByUuidsRequest
  */
-export class GetEnclavesRequest extends Message<GetEnclavesRequest> {
+export class GetEnclavesByUuidsRequest extends Message<GetEnclavesByUuidsRequest> {
   /**
    * @generated from field: string apic_ip_address = 1;
    */
@@ -219,37 +219,37 @@ export class GetEnclavesRequest extends Message<GetEnclavesRequest> {
   apicPort = 0;
 
   /**
-   * @generated from field: engine_api.GetEnclavesArgs GetEnclavesArgs = 3;
+   * @generated from field: engine_api.GetEnclavesByUuidsArgs GetEnclavesByUuidsArgs = 3;
    */
-  GetEnclavesArgs?: GetEnclavesArgs;
+  GetEnclavesByUuidsArgs?: GetEnclavesByUuidsArgs;
 
-  constructor(data?: PartialMessage<GetEnclavesRequest>) {
+  constructor(data?: PartialMessage<GetEnclavesByUuidsRequest>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "kurtosis_enclave_manager.GetEnclavesRequest";
+  static readonly typeName = "kurtosis_enclave_manager.GetEnclavesByUuidsRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "apic_ip_address", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "apic_port", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
-    { no: 3, name: "GetEnclavesArgs", kind: "message", T: GetEnclavesArgs },
+    { no: 3, name: "GetEnclavesByUuidsArgs", kind: "message", T: GetEnclavesByUuidsArgs },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetEnclavesRequest {
-    return new GetEnclavesRequest().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetEnclavesByUuidsRequest {
+    return new GetEnclavesByUuidsRequest().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetEnclavesRequest {
-    return new GetEnclavesRequest().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetEnclavesByUuidsRequest {
+    return new GetEnclavesByUuidsRequest().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetEnclavesRequest {
-    return new GetEnclavesRequest().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetEnclavesByUuidsRequest {
+    return new GetEnclavesByUuidsRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(a: GetEnclavesRequest | PlainMessage<GetEnclavesRequest> | undefined, b: GetEnclavesRequest | PlainMessage<GetEnclavesRequest> | undefined): boolean {
-    return proto3.util.equals(GetEnclavesRequest, a, b);
+  static equals(a: GetEnclavesByUuidsRequest | PlainMessage<GetEnclavesByUuidsRequest> | undefined, b: GetEnclavesByUuidsRequest | PlainMessage<GetEnclavesByUuidsRequest> | undefined): boolean {
+    return proto3.util.equals(GetEnclavesByUuidsRequest, a, b);
   }
 }
 

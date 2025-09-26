@@ -301,21 +301,21 @@ export namespace StopEnclaveArgs {
   }
 }
 
-export class GetEnclavesArgs extends jspb.Message {
+export class GetEnclavesByUuidsArgs extends jspb.Message {
   getEnclaveUuidsList(): Array<string>;
-  setEnclaveUuidsList(value: Array<string>): GetEnclavesArgs;
-  clearEnclaveUuidsList(): GetEnclavesArgs;
-  addEnclaveUuids(value: string, index?: number): GetEnclavesArgs;
+  setEnclaveUuidsList(value: Array<string>): GetEnclavesByUuidsArgs;
+  clearEnclaveUuidsList(): GetEnclavesByUuidsArgs;
+  addEnclaveUuids(value: string, index?: number): GetEnclavesByUuidsArgs;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): GetEnclavesArgs.AsObject;
-  static toObject(includeInstance: boolean, msg: GetEnclavesArgs): GetEnclavesArgs.AsObject;
-  static serializeBinaryToWriter(message: GetEnclavesArgs, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): GetEnclavesArgs;
-  static deserializeBinaryFromReader(message: GetEnclavesArgs, reader: jspb.BinaryReader): GetEnclavesArgs;
+  toObject(includeInstance?: boolean): GetEnclavesByUuidsArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: GetEnclavesByUuidsArgs): GetEnclavesByUuidsArgs.AsObject;
+  static serializeBinaryToWriter(message: GetEnclavesByUuidsArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetEnclavesByUuidsArgs;
+  static deserializeBinaryFromReader(message: GetEnclavesByUuidsArgs, reader: jspb.BinaryReader): GetEnclavesByUuidsArgs;
 }
 
-export namespace GetEnclavesArgs {
+export namespace GetEnclavesByUuidsArgs {
   export type AsObject = {
     enclaveUuidsList: Array<string>,
   }

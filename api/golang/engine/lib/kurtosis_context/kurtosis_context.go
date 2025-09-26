@@ -202,7 +202,7 @@ func (kurtosisCtx *KurtosisContext) GetEnclaveContextFromEnclaveInfo(ctx context
 }
 
 func (kurtosisCtx *KurtosisContext) GetEnclaves(ctx context.Context) (*Enclaves, error) {
-	response, err := kurtosisCtx.engineClient.GetEnclaves(ctx, &kurtosis_engine_rpc_api_bindings.GetEnclavesArgs{
+	response, err := kurtosisCtx.engineClient.GetEnclavesByUuids(ctx, &kurtosis_engine_rpc_api_bindings.GetEnclavesByUuidsArgs{
 		EnclaveUuids: []string{}, // retrieves all enclaves
 	})
 	if err != nil {
@@ -252,7 +252,7 @@ func (kurtosisCtx *KurtosisContext) GetEnclave(ctx context.Context, enclaveIdent
 		return nil, stacktrace.NewError("No enclave found with identifier '%v'", enclaveIdentifier)
 	}
 
-	getEnclaveResponse, err := kurtosisCtx.engineClient.GetEnclaves(ctx, &kurtosis_engine_rpc_api_bindings.GetEnclavesArgs{
+	getEnclaveResponse, err := kurtosisCtx.engineClient.GetEnclavesByUuids(ctx, &kurtosis_engine_rpc_api_bindings.GetEnclavesByUuidsArgs{
 		EnclaveUuids: []string{matchingEnclaveUuid},
 	})
 	if err != nil {

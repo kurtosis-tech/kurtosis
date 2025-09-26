@@ -23,6 +23,7 @@ const (
 	EngineService_GetEngineInfo_FullMethodName                              = "/engine_api.EngineService/GetEngineInfo"
 	EngineService_CreateEnclave_FullMethodName                              = "/engine_api.EngineService/CreateEnclave"
 	EngineService_GetEnclaves_FullMethodName                                = "/engine_api.EngineService/GetEnclaves"
+	EngineService_GetEnclavesByUuids_FullMethodName                         = "/engine_api.EngineService/GetEnclavesByUuids"
 	EngineService_GetExistingAndHistoricalEnclaveIdentifiers_FullMethodName = "/engine_api.EngineService/GetExistingAndHistoricalEnclaveIdentifiers"
 	EngineService_StopEnclave_FullMethodName                                = "/engine_api.EngineService/StopEnclave"
 	EngineService_DestroyEnclave_FullMethodName                             = "/engine_api.EngineService/DestroyEnclave"
@@ -44,7 +45,9 @@ type EngineServiceClient interface {
 	// Creates a new Kurtosis Enclave
 	CreateEnclave(ctx context.Context, in *CreateEnclaveArgs, opts ...grpc.CallOption) (*CreateEnclaveResponse, error)
 	// Returns information about the requested enclaves or all enclaves if none specified.
-	GetEnclaves(ctx context.Context, in *GetEnclavesArgs, opts ...grpc.CallOption) (*GetEnclavesResponse, error)
+	GetEnclaves(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetEnclavesResponse, error)
+	// Returns information about the requested enclaves or all enclaves if none specified.
+	GetEnclavesByUuids(ctx context.Context, in *GetEnclavesByUuidsArgs, opts ...grpc.CallOption) (*GetEnclavesResponse, error)
 	// Returns information about all existing & historical enclaves
 	GetExistingAndHistoricalEnclaveIdentifiers(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetExistingAndHistoricalEnclaveIdentifiersResponse, error)
 	// Stops all containers in an enclave
@@ -83,9 +86,18 @@ func (c *engineServiceClient) CreateEnclave(ctx context.Context, in *CreateEncla
 	return out, nil
 }
 
-func (c *engineServiceClient) GetEnclaves(ctx context.Context, in *GetEnclavesArgs, opts ...grpc.CallOption) (*GetEnclavesResponse, error) {
+func (c *engineServiceClient) GetEnclaves(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetEnclavesResponse, error) {
 	out := new(GetEnclavesResponse)
 	err := c.cc.Invoke(ctx, EngineService_GetEnclaves_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *engineServiceClient) GetEnclavesByUuids(ctx context.Context, in *GetEnclavesByUuidsArgs, opts ...grpc.CallOption) (*GetEnclavesResponse, error) {
+	out := new(GetEnclavesResponse)
+	err := c.cc.Invoke(ctx, EngineService_GetEnclavesByUuids_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +186,9 @@ type EngineServiceServer interface {
 	// Creates a new Kurtosis Enclave
 	CreateEnclave(context.Context, *CreateEnclaveArgs) (*CreateEnclaveResponse, error)
 	// Returns information about the requested enclaves or all enclaves if none specified.
-	GetEnclaves(context.Context, *GetEnclavesArgs) (*GetEnclavesResponse, error)
+	GetEnclaves(context.Context, *emptypb.Empty) (*GetEnclavesResponse, error)
+	// Returns information about the requested enclaves or all enclaves if none specified.
+	GetEnclavesByUuids(context.Context, *GetEnclavesByUuidsArgs) (*GetEnclavesResponse, error)
 	// Returns information about all existing & historical enclaves
 	GetExistingAndHistoricalEnclaveIdentifiers(context.Context, *emptypb.Empty) (*GetExistingAndHistoricalEnclaveIdentifiersResponse, error)
 	// Stops all containers in an enclave
@@ -197,8 +211,11 @@ func (UnimplementedEngineServiceServer) GetEngineInfo(context.Context, *emptypb.
 func (UnimplementedEngineServiceServer) CreateEnclave(context.Context, *CreateEnclaveArgs) (*CreateEnclaveResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateEnclave not implemented")
 }
-func (UnimplementedEngineServiceServer) GetEnclaves(context.Context, *GetEnclavesArgs) (*GetEnclavesResponse, error) {
+func (UnimplementedEngineServiceServer) GetEnclaves(context.Context, *emptypb.Empty) (*GetEnclavesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetEnclaves not implemented")
+}
+func (UnimplementedEngineServiceServer) GetEnclavesByUuids(context.Context, *GetEnclavesByUuidsArgs) (*GetEnclavesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetEnclavesByUuids not implemented")
 }
 func (UnimplementedEngineServiceServer) GetExistingAndHistoricalEnclaveIdentifiers(context.Context, *emptypb.Empty) (*GetExistingAndHistoricalEnclaveIdentifiersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetExistingAndHistoricalEnclaveIdentifiers not implemented")
@@ -264,7 +281,7 @@ func _EngineService_CreateEnclave_Handler(srv interface{}, ctx context.Context, 
 }
 
 func _EngineService_GetEnclaves_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetEnclavesArgs)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -276,7 +293,25 @@ func _EngineService_GetEnclaves_Handler(srv interface{}, ctx context.Context, de
 		FullMethod: EngineService_GetEnclaves_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EngineServiceServer).GetEnclaves(ctx, req.(*GetEnclavesArgs))
+		return srv.(EngineServiceServer).GetEnclaves(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _EngineService_GetEnclavesByUuids_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetEnclavesByUuidsArgs)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EngineServiceServer).GetEnclavesByUuids(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EngineService_GetEnclavesByUuids_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EngineServiceServer).GetEnclavesByUuids(ctx, req.(*GetEnclavesByUuidsArgs))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -392,6 +427,10 @@ var EngineService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetEnclaves",
 			Handler:    _EngineService_GetEnclaves_Handler,
+		},
+		{
+			MethodName: "GetEnclavesByUuids",
+			Handler:    _EngineService_GetEnclavesByUuids_Handler,
 		},
 		{
 			MethodName: "GetExistingAndHistoricalEnclaveIdentifiers",

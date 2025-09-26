@@ -193,7 +193,21 @@ func (service *EngineConnectServerService) CreateEnclave(ctx context.Context, co
 	return connect.NewResponse(response), nil
 }
 
-func (service *EngineConnectServerService) GetEnclaves(ctx context.Context, args *connect.Request[kurtosis_engine_rpc_api_bindings.GetEnclavesArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
+func (service *EngineConnectServerService) GetEnclaves(ctx context.Context, _ *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
+	infoForEnclaves, err := service.enclaveManager.GetAllEnclaves(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting info for enclaves")
+	}
+	response := &kurtosis_engine_rpc_api_bindings.GetEnclavesResponse{
+		EnclaveInfo: utils.MapMapValues(
+			infoForEnclaves,
+			func(info *types.EnclaveInfo) *kurtosis_engine_rpc_api_bindings.EnclaveInfo {
+				return utils.MapPointer(info, toGrpcEnclaveInfo)
+			})}
+	return connect.NewResponse(response), nil
+}
+
+func (service *EngineConnectServerService) GetEnclavesByUuids(ctx context.Context, args *connect.Request[kurtosis_engine_rpc_api_bindings.GetEnclavesByUuidsArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
 	var enclaveInfos map[string]*types.EnclaveInfo
 	var err error
 

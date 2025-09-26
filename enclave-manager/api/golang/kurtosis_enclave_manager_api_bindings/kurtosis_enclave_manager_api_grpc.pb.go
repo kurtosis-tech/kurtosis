@@ -25,6 +25,7 @@ const _ = grpc.SupportPackageIsVersion7
 const (
 	KurtosisEnclaveManagerServer_Check_FullMethodName                          = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/Check"
 	KurtosisEnclaveManagerServer_GetEnclaves_FullMethodName                    = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/GetEnclaves"
+	KurtosisEnclaveManagerServer_GetEnclavesByUuids_FullMethodName             = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/GetEnclavesByUuids"
 	KurtosisEnclaveManagerServer_GetServices_FullMethodName                    = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/GetServices"
 	KurtosisEnclaveManagerServer_GetServiceLogs_FullMethodName                 = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/GetServiceLogs"
 	KurtosisEnclaveManagerServer_ListFilesArtifactNamesAndUuids_FullMethodName = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/ListFilesArtifactNamesAndUuids"
@@ -51,7 +52,8 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type KurtosisEnclaveManagerServerClient interface {
 	Check(ctx context.Context, in *HealthCheckRequest, opts ...grpc.CallOption) (*HealthCheckResponse, error)
-	GetEnclaves(ctx context.Context, in *GetEnclavesRequest, opts ...grpc.CallOption) (*kurtosis_engine_rpc_api_bindings.GetEnclavesResponse, error)
+	GetEnclaves(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*kurtosis_engine_rpc_api_bindings.GetEnclavesResponse, error)
+	GetEnclavesByUuids(ctx context.Context, in *GetEnclavesByUuidsRequest, opts ...grpc.CallOption) (*kurtosis_engine_rpc_api_bindings.GetEnclavesResponse, error)
 	GetServices(ctx context.Context, in *GetServicesRequest, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error)
 	GetServiceLogs(ctx context.Context, in *kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs, opts ...grpc.CallOption) (KurtosisEnclaveManagerServer_GetServiceLogsClient, error)
 	ListFilesArtifactNamesAndUuids(ctx context.Context, in *GetListFilesArtifactNamesAndUuidsRequest, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse, error)
@@ -90,9 +92,18 @@ func (c *kurtosisEnclaveManagerServerClient) Check(ctx context.Context, in *Heal
 	return out, nil
 }
 
-func (c *kurtosisEnclaveManagerServerClient) GetEnclaves(ctx context.Context, in *GetEnclavesRequest, opts ...grpc.CallOption) (*kurtosis_engine_rpc_api_bindings.GetEnclavesResponse, error) {
+func (c *kurtosisEnclaveManagerServerClient) GetEnclaves(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*kurtosis_engine_rpc_api_bindings.GetEnclavesResponse, error) {
 	out := new(kurtosis_engine_rpc_api_bindings.GetEnclavesResponse)
 	err := c.cc.Invoke(ctx, KurtosisEnclaveManagerServer_GetEnclaves_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *kurtosisEnclaveManagerServerClient) GetEnclavesByUuids(ctx context.Context, in *GetEnclavesByUuidsRequest, opts ...grpc.CallOption) (*kurtosis_engine_rpc_api_bindings.GetEnclavesResponse, error) {
+	out := new(kurtosis_engine_rpc_api_bindings.GetEnclavesResponse)
+	err := c.cc.Invoke(ctx, KurtosisEnclaveManagerServer_GetEnclavesByUuids_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -367,7 +378,8 @@ func (c *kurtosisEnclaveManagerServerClient) UpgradeKurtosisVersion(ctx context.
 // for forward compatibility
 type KurtosisEnclaveManagerServerServer interface {
 	Check(context.Context, *HealthCheckRequest) (*HealthCheckResponse, error)
-	GetEnclaves(context.Context, *GetEnclavesRequest) (*kurtosis_engine_rpc_api_bindings.GetEnclavesResponse, error)
+	GetEnclaves(context.Context, *emptypb.Empty) (*kurtosis_engine_rpc_api_bindings.GetEnclavesResponse, error)
+	GetEnclavesByUuids(context.Context, *GetEnclavesByUuidsRequest) (*kurtosis_engine_rpc_api_bindings.GetEnclavesResponse, error)
 	GetServices(context.Context, *GetServicesRequest) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error)
 	GetServiceLogs(*kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs, KurtosisEnclaveManagerServer_GetServiceLogsServer) error
 	ListFilesArtifactNamesAndUuids(context.Context, *GetListFilesArtifactNamesAndUuidsRequest) (*kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse, error)
@@ -396,8 +408,11 @@ type UnimplementedKurtosisEnclaveManagerServerServer struct {
 func (UnimplementedKurtosisEnclaveManagerServerServer) Check(context.Context, *HealthCheckRequest) (*HealthCheckResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Check not implemented")
 }
-func (UnimplementedKurtosisEnclaveManagerServerServer) GetEnclaves(context.Context, *GetEnclavesRequest) (*kurtosis_engine_rpc_api_bindings.GetEnclavesResponse, error) {
+func (UnimplementedKurtosisEnclaveManagerServerServer) GetEnclaves(context.Context, *emptypb.Empty) (*kurtosis_engine_rpc_api_bindings.GetEnclavesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetEnclaves not implemented")
+}
+func (UnimplementedKurtosisEnclaveManagerServerServer) GetEnclavesByUuids(context.Context, *GetEnclavesByUuidsRequest) (*kurtosis_engine_rpc_api_bindings.GetEnclavesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetEnclavesByUuids not implemented")
 }
 func (UnimplementedKurtosisEnclaveManagerServerServer) GetServices(context.Context, *GetServicesRequest) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetServices not implemented")
@@ -487,7 +502,7 @@ func _KurtosisEnclaveManagerServer_Check_Handler(srv interface{}, ctx context.Co
 }
 
 func _KurtosisEnclaveManagerServer_GetEnclaves_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetEnclavesRequest)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -499,7 +514,25 @@ func _KurtosisEnclaveManagerServer_GetEnclaves_Handler(srv interface{}, ctx cont
 		FullMethod: KurtosisEnclaveManagerServer_GetEnclaves_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KurtosisEnclaveManagerServerServer).GetEnclaves(ctx, req.(*GetEnclavesRequest))
+		return srv.(KurtosisEnclaveManagerServerServer).GetEnclaves(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _KurtosisEnclaveManagerServer_GetEnclavesByUuids_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetEnclavesByUuidsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KurtosisEnclaveManagerServerServer).GetEnclavesByUuids(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KurtosisEnclaveManagerServer_GetEnclavesByUuids_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KurtosisEnclaveManagerServerServer).GetEnclavesByUuids(ctx, req.(*GetEnclavesByUuidsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -872,6 +905,10 @@ var KurtosisEnclaveManagerServer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetEnclaves",
 			Handler:    _KurtosisEnclaveManagerServer_GetEnclaves_Handler,
+		},
+		{
+			MethodName: "GetEnclavesByUuids",
+			Handler:    _KurtosisEnclaveManagerServer_GetEnclavesByUuids_Handler,
 		},
 		{
 			MethodName: "GetServices",

@@ -203,16 +203,16 @@ proto.engine_api.EngineServicePromiseClient.prototype.createEnclave =
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
- *   !proto.engine_api.GetEnclavesArgs,
+ *   !proto.google.protobuf.Empty,
  *   !proto.engine_api.GetEnclavesResponse>}
  */
 const methodDescriptor_EngineService_GetEnclaves = new grpc.web.MethodDescriptor(
   '/engine_api.EngineService/GetEnclaves',
   grpc.web.MethodType.UNARY,
-  proto.engine_api.GetEnclavesArgs,
+  google_protobuf_empty_pb.Empty,
   proto.engine_api.GetEnclavesResponse,
   /**
-   * @param {!proto.engine_api.GetEnclavesArgs} request
+   * @param {!proto.google.protobuf.Empty} request
    * @return {!Uint8Array}
    */
   function(request) {
@@ -223,7 +223,7 @@ const methodDescriptor_EngineService_GetEnclaves = new grpc.web.MethodDescriptor
 
 
 /**
- * @param {!proto.engine_api.GetEnclavesArgs} request The
+ * @param {!proto.google.protobuf.Empty} request The
  *     request proto
  * @param {?Object<string, string>} metadata User defined
  *     call metadata
@@ -244,7 +244,7 @@ proto.engine_api.EngineServiceClient.prototype.getEnclaves =
 
 
 /**
- * @param {!proto.engine_api.GetEnclavesArgs} request The
+ * @param {!proto.google.protobuf.Empty} request The
  *     request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
@@ -258,6 +258,67 @@ proto.engine_api.EngineServicePromiseClient.prototype.getEnclaves =
       request,
       metadata || {},
       methodDescriptor_EngineService_GetEnclaves);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.engine_api.GetEnclavesByUuidsArgs,
+ *   !proto.engine_api.GetEnclavesResponse>}
+ */
+const methodDescriptor_EngineService_GetEnclavesByUuids = new grpc.web.MethodDescriptor(
+  '/engine_api.EngineService/GetEnclavesByUuids',
+  grpc.web.MethodType.UNARY,
+  proto.engine_api.GetEnclavesByUuidsArgs,
+  proto.engine_api.GetEnclavesResponse,
+  /**
+   * @param {!proto.engine_api.GetEnclavesByUuidsArgs} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.engine_api.GetEnclavesResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.engine_api.GetEnclavesByUuidsArgs} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.engine_api.GetEnclavesResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.engine_api.GetEnclavesResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.engine_api.EngineServiceClient.prototype.getEnclavesByUuids =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/engine_api.EngineService/GetEnclavesByUuids',
+      request,
+      metadata || {},
+      methodDescriptor_EngineService_GetEnclavesByUuids,
+      callback);
+};
+
+
+/**
+ * @param {!proto.engine_api.GetEnclavesByUuidsArgs} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.engine_api.GetEnclavesResponse>}
+ *     Promise that resolves to the response
+ */
+proto.engine_api.EngineServicePromiseClient.prototype.getEnclavesByUuids =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/engine_api.EngineService/GetEnclavesByUuids',
+      request,
+      metadata || {},
+      methodDescriptor_EngineService_GetEnclavesByUuids);
 };
 
 

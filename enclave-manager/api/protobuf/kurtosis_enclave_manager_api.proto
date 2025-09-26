@@ -11,7 +11,8 @@ import "kurtosis_backend_server_api.proto";
 
 service KurtosisEnclaveManagerServer {
   rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
-  rpc GetEnclaves(GetEnclavesRequest) returns (engine_api.GetEnclavesResponse) {};
+  rpc GetEnclaves(google.protobuf.Empty) returns (engine_api.GetEnclavesResponse) {};
+  rpc GetEnclavesByUuids(GetEnclavesByUuidsRequest) returns (engine_api.GetEnclavesResponse) {};
   rpc GetServices(GetServicesRequest) returns (api_container_api.GetServicesResponse) {};
   rpc GetServiceLogs(engine_api.GetServiceLogsArgs) returns (stream engine_api.GetServiceLogsResponse) {};
   rpc ListFilesArtifactNamesAndUuids(GetListFilesArtifactNamesAndUuidsRequest) returns (api_container_api.ListFilesArtifactNamesAndUuidsResponse) {};
@@ -58,10 +59,10 @@ message GetServicesRequest{
   string enclave_shortened_uuid = 3;
 }
 
-message GetEnclavesRequest {
+message GetEnclavesByUuidsRequest {
   string apic_ip_address = 1;
   int32 apic_port = 2;
-  engine_api.GetEnclavesArgs GetEnclavesArgs = 3;
+  engine_api.GetEnclavesByUuidsArgs GetEnclavesByUuidsArgs = 3;
 }
 
 message GetListFilesArtifactNamesAndUuidsRequest{

@@ -43,6 +43,9 @@ const (
 	// EngineServiceGetEnclavesProcedure is the fully-qualified name of the EngineService's GetEnclaves
 	// RPC.
 	EngineServiceGetEnclavesProcedure = "/engine_api.EngineService/GetEnclaves"
+	// EngineServiceGetEnclavesByUuidsProcedure is the fully-qualified name of the EngineService's
+	// GetEnclavesByUuids RPC.
+	EngineServiceGetEnclavesByUuidsProcedure = "/engine_api.EngineService/GetEnclavesByUuids"
 	// EngineServiceGetExistingAndHistoricalEnclaveIdentifiersProcedure is the fully-qualified name of
 	// the EngineService's GetExistingAndHistoricalEnclaveIdentifiers RPC.
 	EngineServiceGetExistingAndHistoricalEnclaveIdentifiersProcedure = "/engine_api.EngineService/GetExistingAndHistoricalEnclaveIdentifiers"
@@ -71,7 +74,9 @@ type EngineServiceClient interface {
 	// Creates a new Kurtosis Enclave
 	CreateEnclave(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error)
 	// Returns information about the requested enclaves or all enclaves if none specified.
-	GetEnclaves(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.GetEnclavesArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error)
+	GetEnclaves(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error)
+	// Returns information about the requested enclaves or all enclaves if none specified.
+	GetEnclavesByUuids(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.GetEnclavesByUuidsArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error)
 	// Returns information about all existing & historical enclaves
 	GetExistingAndHistoricalEnclaveIdentifiers(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetExistingAndHistoricalEnclaveIdentifiersResponse], error)
 	// Stops all containers in an enclave
@@ -104,9 +109,14 @@ func NewEngineServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			baseURL+EngineServiceCreateEnclaveProcedure,
 			opts...,
 		),
-		getEnclaves: connect.NewClient[kurtosis_engine_rpc_api_bindings.GetEnclavesArgs, kurtosis_engine_rpc_api_bindings.GetEnclavesResponse](
+		getEnclaves: connect.NewClient[emptypb.Empty, kurtosis_engine_rpc_api_bindings.GetEnclavesResponse](
 			httpClient,
 			baseURL+EngineServiceGetEnclavesProcedure,
+			opts...,
+		),
+		getEnclavesByUuids: connect.NewClient[kurtosis_engine_rpc_api_bindings.GetEnclavesByUuidsArgs, kurtosis_engine_rpc_api_bindings.GetEnclavesResponse](
+			httpClient,
+			baseURL+EngineServiceGetEnclavesByUuidsProcedure,
 			opts...,
 		),
 		getExistingAndHistoricalEnclaveIdentifiers: connect.NewClient[emptypb.Empty, kurtosis_engine_rpc_api_bindings.GetExistingAndHistoricalEnclaveIdentifiersResponse](
@@ -141,7 +151,8 @@ func NewEngineServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 type engineServiceClient struct {
 	getEngineInfo                              *connect.Client[emptypb.Empty, kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse]
 	createEnclave                              *connect.Client[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs, kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse]
-	getEnclaves                                *connect.Client[kurtosis_engine_rpc_api_bindings.GetEnclavesArgs, kurtosis_engine_rpc_api_bindings.GetEnclavesResponse]
+	getEnclaves                                *connect.Client[emptypb.Empty, kurtosis_engine_rpc_api_bindings.GetEnclavesResponse]
+	getEnclavesByUuids                         *connect.Client[kurtosis_engine_rpc_api_bindings.GetEnclavesByUuidsArgs, kurtosis_engine_rpc_api_bindings.GetEnclavesResponse]
 	getExistingAndHistoricalEnclaveIdentifiers *connect.Client[emptypb.Empty, kurtosis_engine_rpc_api_bindings.GetExistingAndHistoricalEnclaveIdentifiersResponse]
 	stopEnclave                                *connect.Client[kurtosis_engine_rpc_api_bindings.StopEnclaveArgs, emptypb.Empty]
 	destroyEnclave                             *connect.Client[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs, emptypb.Empty]
@@ -160,8 +171,13 @@ func (c *engineServiceClient) CreateEnclave(ctx context.Context, req *connect.Re
 }
 
 // GetEnclaves calls engine_api.EngineService.GetEnclaves.
-func (c *engineServiceClient) GetEnclaves(ctx context.Context, req *connect.Request[kurtosis_engine_rpc_api_bindings.GetEnclavesArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
+func (c *engineServiceClient) GetEnclaves(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
 	return c.getEnclaves.CallUnary(ctx, req)
+}
+
+// GetEnclavesByUuids calls engine_api.EngineService.GetEnclavesByUuids.
+func (c *engineServiceClient) GetEnclavesByUuids(ctx context.Context, req *connect.Request[kurtosis_engine_rpc_api_bindings.GetEnclavesByUuidsArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
+	return c.getEnclavesByUuids.CallUnary(ctx, req)
 }
 
 // GetExistingAndHistoricalEnclaveIdentifiers calls
@@ -202,7 +218,9 @@ type EngineServiceHandler interface {
 	// Creates a new Kurtosis Enclave
 	CreateEnclave(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error)
 	// Returns information about the requested enclaves or all enclaves if none specified.
-	GetEnclaves(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.GetEnclavesArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error)
+	GetEnclaves(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error)
+	// Returns information about the requested enclaves or all enclaves if none specified.
+	GetEnclavesByUuids(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.GetEnclavesByUuidsArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error)
 	// Returns information about all existing & historical enclaves
 	GetExistingAndHistoricalEnclaveIdentifiers(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetExistingAndHistoricalEnclaveIdentifiersResponse], error)
 	// Stops all containers in an enclave
@@ -234,6 +252,11 @@ func NewEngineServiceHandler(svc EngineServiceHandler, opts ...connect.HandlerOp
 	engineServiceGetEnclavesHandler := connect.NewUnaryHandler(
 		EngineServiceGetEnclavesProcedure,
 		svc.GetEnclaves,
+		opts...,
+	)
+	engineServiceGetEnclavesByUuidsHandler := connect.NewUnaryHandler(
+		EngineServiceGetEnclavesByUuidsProcedure,
+		svc.GetEnclavesByUuids,
 		opts...,
 	)
 	engineServiceGetExistingAndHistoricalEnclaveIdentifiersHandler := connect.NewUnaryHandler(
@@ -269,6 +292,8 @@ func NewEngineServiceHandler(svc EngineServiceHandler, opts ...connect.HandlerOp
 			engineServiceCreateEnclaveHandler.ServeHTTP(w, r)
 		case EngineServiceGetEnclavesProcedure:
 			engineServiceGetEnclavesHandler.ServeHTTP(w, r)
+		case EngineServiceGetEnclavesByUuidsProcedure:
+			engineServiceGetEnclavesByUuidsHandler.ServeHTTP(w, r)
 		case EngineServiceGetExistingAndHistoricalEnclaveIdentifiersProcedure:
 			engineServiceGetExistingAndHistoricalEnclaveIdentifiersHandler.ServeHTTP(w, r)
 		case EngineServiceStopEnclaveProcedure:
@@ -296,8 +321,12 @@ func (UnimplementedEngineServiceHandler) CreateEnclave(context.Context, *connect
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("engine_api.EngineService.CreateEnclave is not implemented"))
 }
 
-func (UnimplementedEngineServiceHandler) GetEnclaves(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.GetEnclavesArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
+func (UnimplementedEngineServiceHandler) GetEnclaves(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("engine_api.EngineService.GetEnclaves is not implemented"))
+}
+
+func (UnimplementedEngineServiceHandler) GetEnclavesByUuids(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.GetEnclavesByUuidsArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("engine_api.EngineService.GetEnclavesByUuids is not implemented"))
 }
 
 func (UnimplementedEngineServiceHandler) GetExistingAndHistoricalEnclaveIdentifiers(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetExistingAndHistoricalEnclaveIdentifiersResponse], error) {

@@ -145,7 +145,7 @@ pub struct StopEnclaveArgs {
 /// ==============================================================================================
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct GetEnclavesArgs {
+pub struct GetEnclavesByUuidsArgs {
     /// The enclave uuid of the Kurtosis enclaves to get. An empty list of enclave uuids will retrieve all enclaves.
     #[prost(string, repeated, tag = "1")]
     pub enclave_uuids: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
@@ -534,7 +534,7 @@ pub mod engine_service_client {
         /// Returns information about the requested enclaves or all enclaves if none specified.
         pub async fn get_enclaves(
             &mut self,
-            request: impl tonic::IntoRequest<super::GetEnclavesArgs>,
+            request: impl tonic::IntoRequest<()>,
         ) -> std::result::Result<
             tonic::Response<super::GetEnclavesResponse>,
             tonic::Status,
@@ -555,6 +555,34 @@ pub mod engine_service_client {
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(GrpcMethod::new("engine_api.EngineService", "GetEnclaves"));
+            self.inner.unary(req, path, codec).await
+        }
+        /// Returns information about the requested enclaves or all enclaves if none specified.
+        pub async fn get_enclaves_by_uuids(
+            &mut self,
+            request: impl tonic::IntoRequest<super::GetEnclavesByUuidsArgs>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetEnclavesResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/engine_api.EngineService/GetEnclavesByUuids",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new("engine_api.EngineService", "GetEnclavesByUuids"),
+                );
             self.inner.unary(req, path, codec).await
         }
         /// Returns information about all existing & historical enclaves
@@ -714,7 +742,15 @@ pub mod engine_service_server {
         /// Returns information about the requested enclaves or all enclaves if none specified.
         async fn get_enclaves(
             &self,
-            request: tonic::Request<super::GetEnclavesArgs>,
+            request: tonic::Request<()>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetEnclavesResponse>,
+            tonic::Status,
+        >;
+        /// Returns information about the requested enclaves or all enclaves if none specified.
+        async fn get_enclaves_by_uuids(
+            &self,
+            request: tonic::Request<super::GetEnclavesByUuidsArgs>,
         ) -> std::result::Result<
             tonic::Response<super::GetEnclavesResponse>,
             tonic::Status,
@@ -926,19 +962,14 @@ pub mod engine_service_server {
                 "/engine_api.EngineService/GetEnclaves" => {
                     #[allow(non_camel_case_types)]
                     struct GetEnclavesSvc<T: EngineService>(pub Arc<T>);
-                    impl<
-                        T: EngineService,
-                    > tonic::server::UnaryService<super::GetEnclavesArgs>
+                    impl<T: EngineService> tonic::server::UnaryService<()>
                     for GetEnclavesSvc<T> {
                         type Response = super::GetEnclavesResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
                         >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<super::GetEnclavesArgs>,
-                        ) -> Self::Future {
+                        fn call(&mut self, request: tonic::Request<()>) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
                                 (*inner).get_enclaves(request).await
@@ -954,6 +985,52 @@ pub mod engine_service_server {
                     let fut = async move {
                         let inner = inner.0;
                         let method = GetEnclavesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/engine_api.EngineService/GetEnclavesByUuids" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetEnclavesByUuidsSvc<T: EngineService>(pub Arc<T>);
+                    impl<
+                        T: EngineService,
+                    > tonic::server::UnaryService<super::GetEnclavesByUuidsArgs>
+                    for GetEnclavesByUuidsSvc<T> {
+                        type Response = super::GetEnclavesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::GetEnclavesByUuidsArgs>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                (*inner).get_enclaves_by_uuids(request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = GetEnclavesByUuidsSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(

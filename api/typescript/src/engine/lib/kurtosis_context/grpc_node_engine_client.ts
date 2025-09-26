@@ -13,7 +13,7 @@ import { NO_ERROR_ENCOUNTERED_BUT_RESPONSE_FALSY_MSG } from '../consts';
 import type { EngineServiceClient as EngineServiceClientNode } from "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_pb";
 import type { GenericEngineClient } from "./generic_engine_client";
 import {
-    GetEnclavesArgs
+    GetEnclavesByUuidsArgs
 } from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
 import type {
     CleanArgs,
@@ -166,9 +166,9 @@ export class GrpcNodeEngineClient implements GenericEngineClient {
 
     public async getEnclavesResponse(): Promise<Result<GetEnclavesResponse, Error>> {
         const getEnclavesPromise: Promise<Result<GetEnclavesResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            const getEnclavesArgs = new GetEnclavesArgs();
+            const getEnclavesArgs = new GetEnclavesByUuidsArgs();
             getEnclavesArgs.setEnclaveUuidsList([]); // retrieves all enclaves
-            this.client.getEnclaves(getEnclavesArgs, (error: ServiceError | null, response?: GetEnclavesResponse) => {
+            this.client.getEnclavesByUuids(getEnclavesArgs, (error: ServiceError | null, response?: GetEnclavesResponse) => {
                 if (error === null) {
                     if (!response) {
                         resolve(err(new Error(NO_ERROR_ENCOUNTERED_BUT_RESPONSE_FALSY_MSG)));
