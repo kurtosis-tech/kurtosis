@@ -194,14 +194,25 @@ func (service *EngineConnectServerService) CreateEnclave(ctx context.Context, co
 }
 
 func (service *EngineConnectServerService) GetEnclaves(ctx context.Context, args *connect.Request[kurtosis_engine_rpc_api_bindings.GetEnclavesArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
-	var enclaveUuids []enclave.EnclaveUUID
-	for _, enclaveUuid := range args.Msg.EnclaveUuids {
-		enclaveUuids = append(enclaveUuids, enclave.EnclaveUUID(enclaveUuid))
+	var enclaveInfos map[string]*types.EnclaveInfo
+	var err error
+
+	if len(args.Msg.EnclaveUuids) == 0 { // if no uuids, get all enclaves
+		enclaveInfos, err = service.enclaveManager.GetAllEnclaves(ctx)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting info for enclaves")
+		}
+	} else {
+		var enclaveUuids []enclave.EnclaveUUID
+		for _, enclaveUuid := range args.Msg.EnclaveUuids {
+			enclaveUuids = append(enclaveUuids, enclave.EnclaveUUID(enclaveUuid))
+		}
+		enclaveInfos, err = service.enclaveManager.GetEnclavesByUuid(ctx, enclaveUuids)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting info for enclaves")
+		}
 	}
-	enclaveInfos, err := service.enclaveManager.GetEnclavesByUuid(ctx, enclaveUuids)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting info for enclaves")
-	}
+
 	response := &kurtosis_engine_rpc_api_bindings.GetEnclavesResponse{
 		EnclaveInfo: utils.MapMapValues(
 			enclaveInfos,

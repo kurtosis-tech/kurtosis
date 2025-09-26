@@ -672,6 +672,11 @@ func (manager *EnclaveManager) getEnclavesByUuidWithoutMutex(
 	ctx context.Context,
 	enclaveUuids []enclave.EnclaveUUID,
 ) (map[enclave.EnclaveUUID]*types.EnclaveInfo, error) {
+	// if no uuids
+	if len(enclaveUuids) == 0 { // if no
+		return manager.getAllEnclavesWithoutMutex(ctx)
+	}
+
 	enclaves, err := manager.kurtosisBackend.GetEnclaves(ctx, getEnclavesByUuidFilter(enclaveUuids))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave '%v'", enclaveUuids)
