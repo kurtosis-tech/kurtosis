@@ -509,7 +509,7 @@ func (config *ServiceConfig) ToKurtosisType(
 		return nil, interpretationErr
 	}
 	if found {
-		tolerations, interpretationErr = convertTolerations(tolerationsStarlarkList)
+		tolerations, interpretationErr = ConvertTolerations(tolerationsStarlarkList)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
@@ -770,7 +770,7 @@ func ConvertImage(
 	}
 }
 
-func convertTolerations(tolerationsList *starlark.List) ([]v1.Toleration, *startosis_errors.InterpretationError) {
+func ConvertTolerations(tolerationsList *starlark.List) ([]v1.Toleration, *startosis_errors.InterpretationError) {
 	var outputValue []v1.Toleration
 	iterator := tolerationsList.Iterate()
 	defer iterator.Done()
