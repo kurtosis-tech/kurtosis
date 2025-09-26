@@ -10,8 +10,11 @@ import {
 } from '../../kurtosis_engine_rpc_api_bindings/engine_service_pb';
 import { NO_ERROR_ENCOUNTERED_BUT_RESPONSE_FALSY_MSG } from '../consts';
 
-import type {EngineServiceClient as EngineServiceClientNode} from "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_pb";
-import type {GenericEngineClient} from "./generic_engine_client";
+import type { EngineServiceClient as EngineServiceClientNode } from "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_pb";
+import type { GenericEngineClient } from "./generic_engine_client";
+import {
+    GetEnclavesArgs
+} from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
 import type {
     CleanArgs,
     CleanResponse,
@@ -24,9 +27,9 @@ import type {
     GetServiceLogsResponse,
     StopEnclaveArgs
 } from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
-import type {ClientReadableStream, ServiceError} from "@grpc/grpc-js";
-import {ServiceLogsStreamContent} from "./service_logs_stream_content";
-import {ServiceLog} from "./service_log";
+import type { ClientReadableStream, ServiceError } from "@grpc/grpc-js";
+import { ServiceLogsStreamContent } from "./service_logs_stream_content";
+import { ServiceLog } from "./service_log";
 const GRPC_STREAM_RESPONSE_DATA_EVENT_NAME = 'data'
 const GRPC_STREAM_RESPONSE_ERROR_EVENT_NAME = 'error'
 const GRPC_STREAM_RESPONSE_END_EVENT_NAME = 'end'
@@ -162,9 +165,10 @@ export class GrpcNodeEngineClient implements GenericEngineClient {
     }
 
     public async getEnclavesResponse(): Promise<Result<GetEnclavesResponse, Error>> {
-        const emptyArg: google_protobuf_empty_pb.Empty = new google_protobuf_empty_pb.Empty()
         const getEnclavesPromise: Promise<Result<GetEnclavesResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.getEnclaves(emptyArg, (error: ServiceError | null, response?: GetEnclavesResponse) => {
+            const getEnclavesArgs = new GetEnclavesArgs();
+            getEnclavesArgs.setEnclaveUuidsList([]); // retrieves all enclaves
+            this.client.getEnclaves(getEnclavesArgs, (error: ServiceError | null, response?: GetEnclavesResponse) => {
                 if (error === null) {
                     if (!response) {
                         resolve(err(new Error(NO_ERROR_ENCOUNTERED_BUT_RESPONSE_FALSY_MSG)));
@@ -186,7 +190,6 @@ export class GrpcNodeEngineClient implements GenericEngineClient {
     }
 
     public async getServiceLogs(getServiceLogsArgs: GetServiceLogsArgs): Promise<Result<Readable, Error>> {
-
         const streamServiceLogsPromise: Promise<Result<ClientReadableStream<GetServiceLogsResponse>, Error>> = new Promise((resolve, _unusedReject) => {
             const getServiceLogsStreamResponse: ClientReadableStream<GetServiceLogsResponse> = this.client.getServiceLogs(getServiceLogsArgs);
             resolve(ok(getServiceLogsStreamResponse));
@@ -211,7 +214,7 @@ export class GrpcNodeEngineClient implements GenericEngineClient {
                     (ServiceLogLine, serviceUuidStr) => {
                         const serviceLogs: Array<ServiceLog> = Array<ServiceLog>();
 
-                        ServiceLogLine.getLineList().forEach((logLine:string) => {
+                        ServiceLogLine.getLineList().forEach((logLine: string) => {
                             const serviceLog: ServiceLog = new ServiceLog(logLine)
                             serviceLogs.push(serviceLog)
                         })
@@ -252,7 +255,7 @@ export class GrpcNodeEngineClient implements GenericEngineClient {
         return ok(serviceLogsReadable);
     }
 
-    public async getExistingAndHistoricalEnclaveIdentifiers(): Promise<Result<GetExistingAndHistoricalEnclaveIdentifiersResponse, Error>>{
+    public async getExistingAndHistoricalEnclaveIdentifiers(): Promise<Result<GetExistingAndHistoricalEnclaveIdentifiersResponse, Error>> {
         const emptyArg: google_protobuf_empty_pb.Empty = new google_protobuf_empty_pb.Empty()
         const getExistingAndHistoricalEnclaveIdentifiersPromise: Promise<Result<GetExistingAndHistoricalEnclaveIdentifiersResponse, Error>> = new Promise((resolve, _unusedReject) => {
             this.client.getExistingAndHistoricalEnclaveIdentifiers(emptyArg, (error: ServiceError | null, response?: GetExistingAndHistoricalEnclaveIdentifiersResponse) => {

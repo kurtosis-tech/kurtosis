@@ -110,13 +110,6 @@ pub struct GetEnclavesResponse {
         EnclaveInfo,
     >,
 }
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct GetEnclaveResponse {
-    /// All the enclave information inside this object
-    #[prost(message, optional, tag = "1")]
-    pub enclave_info: ::core::option::Option<EnclaveInfo>,
-}
 /// An enclave identifier is a collection of uuid, name and shortened uuid
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -148,14 +141,14 @@ pub struct StopEnclaveArgs {
     pub enclave_identifier: ::prost::alloc::string::String,
 }
 /// ==============================================================================================
-///                                        Get Enclave
+///                                        Get Enclaves
 /// ==============================================================================================
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct GetEnclaveArgs {
-    /// The identifier(uuid, shortened uuid, name) of the Kurtosis enclave to get
-    #[prost(string, tag = "1")]
-    pub enclave_identifier: ::prost::alloc::string::String,
+pub struct GetEnclavesArgs {
+    /// The enclave uuid of the Kurtosis enclaves to get. An empty list of enclave uuids will retrieve all enclaves.
+    #[prost(string, repeated, tag = "1")]
+    pub enclave_uuids: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 /// ==============================================================================================
 ///                                        Destroy Enclave
@@ -538,10 +531,10 @@ pub mod engine_service_client {
                 .insert(GrpcMethod::new("engine_api.EngineService", "CreateEnclave"));
             self.inner.unary(req, path, codec).await
         }
-        /// Returns information about the existing enclaves
+        /// Returns information about the requested enclaves or all enclaves if none specified.
         pub async fn get_enclaves(
             &mut self,
-            request: impl tonic::IntoRequest<()>,
+            request: impl tonic::IntoRequest<super::GetEnclavesArgs>,
         ) -> std::result::Result<
             tonic::Response<super::GetEnclavesResponse>,
             tonic::Status,
@@ -562,32 +555,6 @@ pub mod engine_service_client {
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(GrpcMethod::new("engine_api.EngineService", "GetEnclaves"));
-            self.inner.unary(req, path, codec).await
-        }
-        /// Returns information about an existing enclave
-        pub async fn get_enclave(
-            &mut self,
-            request: impl tonic::IntoRequest<super::GetEnclaveArgs>,
-        ) -> std::result::Result<
-            tonic::Response<super::GetEnclaveResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::new(
-                        tonic::Code::Unknown,
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/engine_api.EngineService/GetEnclave",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(GrpcMethod::new("engine_api.EngineService", "GetEnclave"));
             self.inner.unary(req, path, codec).await
         }
         /// Returns information about all existing & historical enclaves
@@ -744,20 +711,12 @@ pub mod engine_service_server {
             tonic::Response<super::CreateEnclaveResponse>,
             tonic::Status,
         >;
-        /// Returns information about the existing enclaves
+        /// Returns information about the requested enclaves or all enclaves if none specified.
         async fn get_enclaves(
             &self,
-            request: tonic::Request<()>,
+            request: tonic::Request<super::GetEnclavesArgs>,
         ) -> std::result::Result<
             tonic::Response<super::GetEnclavesResponse>,
-            tonic::Status,
-        >;
-        /// Returns information about an existing enclave
-        async fn get_enclave(
-            &self,
-            request: tonic::Request<super::GetEnclaveArgs>,
-        ) -> std::result::Result<
-            tonic::Response<super::GetEnclaveResponse>,
             tonic::Status,
         >;
         /// Returns information about all existing & historical enclaves
@@ -967,14 +926,19 @@ pub mod engine_service_server {
                 "/engine_api.EngineService/GetEnclaves" => {
                     #[allow(non_camel_case_types)]
                     struct GetEnclavesSvc<T: EngineService>(pub Arc<T>);
-                    impl<T: EngineService> tonic::server::UnaryService<()>
+                    impl<
+                        T: EngineService,
+                    > tonic::server::UnaryService<super::GetEnclavesArgs>
                     for GetEnclavesSvc<T> {
                         type Response = super::GetEnclavesResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
                         >;
-                        fn call(&mut self, request: tonic::Request<()>) -> Self::Future {
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::GetEnclavesArgs>,
+                        ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
                                 (*inner).get_enclaves(request).await
@@ -990,50 +954,6 @@ pub mod engine_service_server {
                     let fut = async move {
                         let inner = inner.0;
                         let method = GetEnclavesSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/engine_api.EngineService/GetEnclave" => {
-                    #[allow(non_camel_case_types)]
-                    struct GetEnclaveSvc<T: EngineService>(pub Arc<T>);
-                    impl<
-                        T: EngineService,
-                    > tonic::server::UnaryService<super::GetEnclaveArgs>
-                    for GetEnclaveSvc<T> {
-                        type Response = super::GetEnclaveResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<super::GetEnclaveArgs>,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move { (*inner).get_enclave(request).await };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let inner = inner.0;
-                        let method = GetEnclaveSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(

@@ -417,32 +417,6 @@ export declare class GetEnclavesResponse extends Message<GetEnclavesResponse> {
 }
 
 /**
- * @generated from message engine_api.GetEnclaveResponse
- */
-export declare class GetEnclaveResponse extends Message<GetEnclaveResponse> {
-  /**
-   * All the enclave information inside this object
-   *
-   * @generated from field: engine_api.EnclaveInfo enclave_info = 1;
-   */
-  enclaveInfo?: EnclaveInfo;
-
-  constructor(data?: PartialMessage<GetEnclaveResponse>);
-
-  static readonly runtime: typeof proto3;
-  static readonly typeName = "engine_api.GetEnclaveResponse";
-  static readonly fields: FieldList;
-
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetEnclaveResponse;
-
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetEnclaveResponse;
-
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetEnclaveResponse;
-
-  static equals(a: GetEnclaveResponse | PlainMessage<GetEnclaveResponse> | undefined, b: GetEnclaveResponse | PlainMessage<GetEnclaveResponse> | undefined): boolean;
-}
-
-/**
  * An enclave identifier is a collection of uuid, name and shortened uuid
  *
  * @generated from message engine_api.EnclaveIdentifiers
@@ -540,32 +514,32 @@ export declare class StopEnclaveArgs extends Message<StopEnclaveArgs> {
 
 /**
  * ==============================================================================================
- *                                       Get Enclave
+ *                                       Get Enclaves
  * ==============================================================================================
  *
- * @generated from message engine_api.GetEnclaveArgs
+ * @generated from message engine_api.GetEnclavesArgs
  */
-export declare class GetEnclaveArgs extends Message<GetEnclaveArgs> {
+export declare class GetEnclavesArgs extends Message<GetEnclavesArgs> {
   /**
-   * The identifier(uuid, shortened uuid, name) of the Kurtosis enclave to get
+   * The enclave uuid of the Kurtosis enclaves to get. An empty list of enclave uuids will retrieve all enclaves.
    *
-   * @generated from field: string enclave_identifier = 1;
+   * @generated from field: repeated string enclave_uuids = 1;
    */
-  enclaveIdentifier: string;
+  enclaveUuids: string[];
 
-  constructor(data?: PartialMessage<GetEnclaveArgs>);
+  constructor(data?: PartialMessage<GetEnclavesArgs>);
 
   static readonly runtime: typeof proto3;
-  static readonly typeName = "engine_api.GetEnclaveArgs";
+  static readonly typeName = "engine_api.GetEnclavesArgs";
   static readonly fields: FieldList;
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetEnclaveArgs;
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetEnclavesArgs;
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetEnclaveArgs;
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetEnclavesArgs;
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetEnclaveArgs;
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetEnclavesArgs;
 
-  static equals(a: GetEnclaveArgs | PlainMessage<GetEnclaveArgs> | undefined, b: GetEnclaveArgs | PlainMessage<GetEnclaveArgs> | undefined): boolean;
+  static equals(a: GetEnclavesArgs | PlainMessage<GetEnclavesArgs> | undefined, b: GetEnclavesArgs | PlainMessage<GetEnclavesArgs> | undefined): boolean;
 }
 
 /**

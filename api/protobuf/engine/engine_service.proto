@@ -16,10 +16,8 @@ service EngineService {
   // ==============================================================================================
   // Creates a new Kurtosis Enclave
   rpc CreateEnclave(CreateEnclaveArgs) returns (CreateEnclaveResponse) {};
-  // Returns information about the existing enclaves
-  rpc GetEnclaves(google.protobuf.Empty) returns (GetEnclavesResponse) {};
-  // Returns information about an existing enclave
-  rpc GetEnclave(GetEnclaveArgs) returns (GetEnclaveResponse) {};
+  // Returns information about the requested enclaves or all enclaves if none specified.
+  rpc GetEnclaves(GetEnclavesArgs) returns (GetEnclavesResponse) {};
   // Returns information about all existing & historical enclaves
   rpc GetExistingAndHistoricalEnclaveIdentifiers(google.protobuf.Empty) returns (GetExistingAndHistoricalEnclaveIdentifiersResponse) {}
   // Stops all containers in an enclave
@@ -153,11 +151,6 @@ message GetEnclavesResponse {
   map<string, EnclaveInfo> enclave_info = 1;
 }
 
-message GetEnclaveResponse {
-  //All the enclave information inside this object
-  EnclaveInfo enclave_info = 1;
-}
-
 // ==============================================================================================
 //                                            Get Historical Enclaves
 // ==============================================================================================
@@ -187,11 +180,11 @@ message StopEnclaveArgs {
 }
 
 // ==============================================================================================
-//                                       Get Enclave
+//                                       Get Enclaves
 // ==============================================================================================
-message GetEnclaveArgs {
-  //The identifier(uuid, shortened uuid, name) of the Kurtosis enclave to get
-  string enclave_identifier = 1;
+message GetEnclavesArgs {
+  //The enclave uuid of the Kurtosis enclaves to get. An empty list of enclave uuids will retrieve all enclaves.
+  repeated string enclave_uuids = 1;
 }
 
 // ==============================================================================================

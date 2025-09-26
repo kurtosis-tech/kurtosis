@@ -279,7 +279,7 @@ func (c *WebServer) UpgradeKurtosisVersion(ctx context.Context, req *connect.Req
 	return upgradeKurtosisVersionResponse, nil
 }
 
-func (c *WebServer) GetEnclaves(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
+func (c *WebServer) GetEnclaves(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.GetEnclavesRequest]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
 	isValidRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
@@ -287,7 +287,11 @@ func (c *WebServer) GetEnclaves(ctx context.Context, req *connect.Request[emptyp
 	if !isValidRequest {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
-	enclaves, err := (*c.engineServiceClient).GetEnclaves(ctx, req)
+	enclaves, err := (*c.engineServiceClient).GetEnclaves(ctx, &connect.Request[kurtosis_engine_rpc_api_bindings.GetEnclavesArgs]{
+		Msg: &kurtosis_engine_rpc_api_bindings.GetEnclavesArgs{
+			EnclaveUuids: req.Msg.GetEnclavesArgs.EnclaveUuids,
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -298,6 +302,7 @@ func (c *WebServer) GetEnclaves(ctx context.Context, req *connect.Request[emptyp
 	}
 	return resp, nil
 }
+
 func (c *WebServer) GetServices(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.GetServicesRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse], error) {
 	isValidRequest, instanceConfig, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {

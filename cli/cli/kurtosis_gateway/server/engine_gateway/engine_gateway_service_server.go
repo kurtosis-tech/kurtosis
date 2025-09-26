@@ -120,7 +120,7 @@ func (service *EngineGatewayServiceServer) CreateEnclave(ctx context.Context, ar
 	return remoteEngineResponse, nil
 }
 
-func (service *EngineGatewayServiceServer) GetEnclaves(ctx context.Context, in *emptypb.Empty) (*kurtosis_engine_rpc_api_bindings.GetEnclavesResponse, error) {
+func (service *EngineGatewayServiceServer) GetEnclaves(ctx context.Context, in *kurtosis_engine_rpc_api_bindings.GetEnclavesArgs) (*kurtosis_engine_rpc_api_bindings.GetEnclavesResponse, error) {
 	remoteEngineClient, err := service.engineClientSupplier.GetEngineClient()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to get a client for a live Kurtosis engine, instead a non nil error was returned")
@@ -150,38 +150,6 @@ func (service *EngineGatewayServiceServer) GetEnclaves(ctx context.Context, in *
 	}
 
 	shouldCleanUpRunningGateways = false
-	return remoteEngineResponse, nil
-}
-
-func (service *EngineGatewayServiceServer) GetEnclave(ctx context.Context, in *kurtosis_engine_rpc_api_bindings.GetEnclaveArgs) (*kurtosis_engine_rpc_api_bindings.GetEnclaveResponse, error) {
-	remoteEngineClient, err := service.engineClientSupplier.GetEngineClient()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to get a client for a live Kurtosis engine, instead a non nil error was returned")
-	}
-	remoteEngineResponse, err := remoteEngineClient.GetEnclave(ctx, in)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting info for enclave '%v' from the remote engine", in.EnclaveIdentifier)
-	}
-	enclaveUuid := remoteEngineResponse.EnclaveInfo.EnclaveUuid
-
-	shouldCleanUpRunningGateway := true
-	var runningApiContainerGateway *runningApiContainerGateway
-	runningApiContainerGateway, isRunning := service.enclaveIdToRunningGatewayMap[enclaveUuid]
-	// If the gateway isn't running, start it
-	if !isRunning {
-		runningApiContainerGateway, err = service.startRunningGatewayForEnclave(remoteEngineResponse.EnclaveInfo)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Expected to be able to start a local gateway for enclave '%v', instead a non-nil error was returned", enclaveUuid)
-		}
-		defer func() {
-			if shouldCleanUpRunningGateway {
-				service.idempotentKillRunningGatewayForEnclaveId(enclaveUuid)
-			}
-		}()
-	}
-
-	remoteEngineResponse.EnclaveInfo.ApiContainerHostMachineInfo = runningApiContainerGateway.hostMachineInfo
-	shouldCleanUpRunningGateway = false
 	return remoteEngineResponse, nil
 }
 

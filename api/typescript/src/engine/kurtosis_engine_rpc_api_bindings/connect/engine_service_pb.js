@@ -163,16 +163,6 @@ export const GetEnclavesResponse = proto3.makeMessageType(
 );
 
 /**
- * @generated from message engine_api.GetEnclaveResponse
- */
-export const GetEnclaveResponse = proto3.makeMessageType(
-  "engine_api.GetEnclaveResponse",
-  () => [
-    { no: 1, name: "enclave_info", kind: "message", T: EnclaveInfo },
-  ],
-);
-
-/**
  * An enclave identifier is a collection of uuid, name and shortened uuid
  *
  * @generated from message engine_api.EnclaveIdentifiers
@@ -212,15 +202,15 @@ export const StopEnclaveArgs = proto3.makeMessageType(
 
 /**
  * ==============================================================================================
- *                                       Get Enclave
+ *                                       Get Enclaves
  * ==============================================================================================
  *
- * @generated from message engine_api.GetEnclaveArgs
+ * @generated from message engine_api.GetEnclavesArgs
  */
-export const GetEnclaveArgs = proto3.makeMessageType(
-  "engine_api.GetEnclaveArgs",
+export const GetEnclavesArgs = proto3.makeMessageType(
+  "engine_api.GetEnclavesArgs",
   () => [
-    { no: 1, name: "enclave_identifier", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 1, name: "enclave_uuids", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
   ],
 );
 
