@@ -216,8 +216,6 @@ func (backend *DockerKurtosisBackend) GetEnclaves(
 			productionMode,
 		)
 	}
-	logrus.Infof("Found %v enclaves in the docker kurtosis backend", len(result))
-
 	return result, nil
 }
 

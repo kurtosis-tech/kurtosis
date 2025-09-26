@@ -264,7 +264,6 @@ func (manager *EnclaveManager) GetEnclavesByUuid(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave '%v' without mutex", enclaveUuids)
 	}
-	logrus.Infof("Found %v enclaves in the enclave manager", len(enclaveInfos))
 
 	// Transform map[enclave.EnclaveUUID]*EnclaveInfo -> map[string]*EnclaveInfo
 	enclaveMapKeyedWithUuidStr := map[string]*types.EnclaveInfo{}
