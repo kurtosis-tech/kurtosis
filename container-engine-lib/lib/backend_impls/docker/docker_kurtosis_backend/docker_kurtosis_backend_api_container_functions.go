@@ -565,10 +565,6 @@ func getApiContainerObjectFromContainerInfoWithBridgeNetworkIpAddress(
 	apicObj *api_container.APIContainer,
 	bridgeNetworkIpAddress string,
 ) (*api_container.APIContainer, error) {
-	bridgeNetworkIpAddr := net.ParseIP(bridgeNetworkIpAddress)
-	if bridgeNetworkIpAddr == nil {
-		return nil, stacktrace.NewError("Couldn't parse bridge network IP address string '%v' to an IP", bridgeNetworkIpAddress)
-	}
 	result := api_container.NewAPIContainer(
 		apicObj.GetEnclaveID(),
 		apicObj.GetStatus(),
@@ -576,7 +572,7 @@ func getApiContainerObjectFromContainerInfoWithBridgeNetworkIpAddress(
 		apicObj.GetPrivateGRPCPort(),
 		apicObj.GetPublicIPAddress(),
 		apicObj.GetPublicGRPCPort(),
-		bridgeNetworkIpAddr,
+		net.ParseIP(bridgeNetworkIpAddress),
 		apicObj.IsProductionEnclave(),
 	)
 	return result, nil
