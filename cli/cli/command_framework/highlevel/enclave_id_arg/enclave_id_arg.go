@@ -107,8 +107,13 @@ func getValidationFunc(argKey string, _ string, isGreedy bool) func(context.Cont
 			enclaveIdentifiersToValidate = enclaveIds
 		}
 
-		// only validate enclave identifer if this is a greedy enclave identifier arg
-		if len(enclaveIdentifiersToValidate) > 1 {
+		if len(enclaveIdentifiersToValidate) == 1 {
+			// enclave identifier is validated in GetEnclave, so checking no err is enough
+			_, err = kurtosisCtx.GetEnclave(ctx, enclaveIdentifiersToValidate[0])
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred getting enclave with identifier '%v'.", enclaveIdentifiersToValidate[0])
+			}
+		} else if len(enclaveIdentifiersToValidate) > 1 { // only validate enclave identifer if this is a greedy enclave identifier arg
 			enclaves, err := kurtosisCtx.GetEnclaves(ctx)
 			if err != nil {
 				return stacktrace.Propagate(err, "An error occurred getting enclaves, which is necessary to check if the enclaves exist")
@@ -135,12 +140,6 @@ func getValidationFunc(argKey string, _ string, isGreedy bool) func(context.Cont
 					continue
 				}
 				return stacktrace.NewError("No enclave found for identifier '%v'", enclaveIdentifier)
-			}
-		} else if len(enclaveIdentifiersToValidate) == 1 {
-			// enclave identifier is validated in GetEnclave, so checking no err is enough
-			_, err = kurtosisCtx.GetEnclave(ctx, enclaveIdentifiersToValidate[0])
-			if err != nil {
-				return stacktrace.Propagate(err, "An error occurred getting enclave with identifier '%v'.", enclaveIdentifiersToValidate[0])
 			}
 		}
 
