@@ -30,6 +30,8 @@ type InstructionDependencyGraph struct {
 	// Right now, Services, Files Artifacts, and Runtime Values are all represented as strings for simplicity
 	// In the future, we may add types to represent each output but not needed for now
 	outputsToInstructionMap map[string]types.ScheduledInstructionUuid
+
+	shortDescriptors map[types.ScheduledInstructionUuid]string
 }
 
 func NewInstructionDependencyGraph(instructionsSequence []types.ScheduledInstructionUuid) *InstructionDependencyGraph {
@@ -42,6 +44,7 @@ func NewInstructionDependencyGraph(instructionsSequence []types.ScheduledInstruc
 		instructionsDependencies: instructionsDependencies,
 		outputsToInstructionMap:  map[string]types.ScheduledInstructionUuid{},
 		instructionsSequence:     instructionsSequence,
+		shortDescriptors:         map[types.ScheduledInstructionUuid]string{},
 	}
 }
 
@@ -141,6 +144,10 @@ func (graph *InstructionDependencyGraph) getInvertedDependencyGraph() map[types.
 	return invertedDependencyGraph
 }
 
+func (graph *InstructionDependencyGraph) AddShortDescriptor(instruction types.ScheduledInstructionUuid, descriptor string) {
+	graph.shortDescriptors[instruction] = descriptor
+}
+
 func (graph *InstructionDependencyGraph) OutputDependencyGraphVisualWithShortDescriptors(path string) {
 	g := simple.NewDirectedGraph()
 
@@ -168,7 +175,11 @@ func (graph *InstructionDependencyGraph) OutputDependencyGraphVisualWithShortDes
 		// 	descriptor = descriptor[:27] + "..."
 		// }
 
-		nodeIDToDescriptor[nextNodeId] = string(instruction)
+		if _, exists := graph.shortDescriptors[instruction]; exists {
+			nodeIDToDescriptor[nextNodeId] = graph.shortDescriptors[instruction]
+		} else {
+			nodeIDToDescriptor[nextNodeId] = string(instruction)
+		}
 
 		// // don't display prints in the graph
 		// if descriptor != "print" {

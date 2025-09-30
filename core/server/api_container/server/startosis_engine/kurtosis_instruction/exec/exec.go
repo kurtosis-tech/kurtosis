@@ -252,6 +252,7 @@ func formatErrorMessage(errorMessage string, errorFromExec string) string {
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
 func (builtin *ExecCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error { // store outputs
+	dependencyGraph.AddShortDescriptor(instructionUuid, fmt.Sprintf("exec %s", builtin.serviceName))
 	dependencyGraph.ConsumesService(instructionUuid, string(builtin.serviceName))
 	dependencyGraph.ConsumesAnyRuntimeValuesInList(instructionUuid, builtin.cmdList)
 
