@@ -148,7 +148,7 @@ func (runner *StartosisRunner) Run(
 			return
 		}
 
-		_, interpretationErr = instructionsPlan.GenerateInstructionsDependencyGraph()
+		instructionDependencyGraph, interpretationErr := instructionsPlan.GenerateInstructionsDependencyGraph()
 		if interpretationErr != nil {
 			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromInterpretationError(interpretationErr.ToAPIType())
 			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent()
@@ -174,7 +174,14 @@ func (runner *StartosisRunner) Run(
 			startingExecutionMsg, defaultCurrentStepNumber, totalNumberOfInstructions)
 		starlarkRunResponseLines <- progressInfo
 
-		executionResponseLinesChan := runner.startosisExecutor.Execute(ctx, dryRun, parallelism, instructionsPlan.GetIndexOfFirstInstruction(), instructionsSequence, serializedScriptOutput)
+		var executionResponseLinesChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine
+		if parallelism > 1 {
+			logrus.Infof("Executing Kurtosis instructions in parallel with parallelism: %d", parallelism)
+			executionResponseLinesChan = runner.startosisExecutor.ExecuteInParallel(ctx, dryRun, parallelism, instructionsPlan.GetIndexOfFirstInstruction(), instructionsSequence, serializedScriptOutput, instructionDependencyGraph)
+		} else {
+			logrus.Infof("Executing Kurtosis instructions in serial")
+			executionResponseLinesChan = runner.startosisExecutor.Execute(ctx, dryRun, parallelism, instructionsPlan.GetIndexOfFirstInstruction(), instructionsSequence, serializedScriptOutput)
+		}
 		if isRunFinished, isRunSuccessful := forwardKurtosisResponseLineChannelUntilSourceIsClosed(executionResponseLinesChan, starlarkRunResponseLines); !isRunFinished {
 			logrus.Warnf("Execution finished but no 'RunFinishedEvent' was received through the stream. This is unexpected as every execution should be terminal.")
 		} else if !isRunSuccessful {
