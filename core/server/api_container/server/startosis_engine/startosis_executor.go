@@ -189,21 +189,21 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 
 		logrus.Debugf("Transfered %d instructions from previous enclave plan to keep the enclave state consistent", executor.enclavePlan.Size())
 
-		// for index, scheduledInstruction := range instructionsSequence {
-		// 	instructionNumber := uint32(index + 1)
+		for index, scheduledInstruction := range instructionsSequence {
+			instructionNumber := uint32(index + 1)
 
-		// 	instruction := scheduledInstruction.GetInstruction()
-		// 	// add the instruction into the current enclave plan
-		// 	enclavePlanInstruction, err := scheduledInstruction.GetInstruction().GetPersistableAttributes().SetUuid(
-		// 		string(scheduledInstruction.GetUuid()),
-		// 	).SetReturnedValue(
-		// 		executor.starlarkValueSerde.Serialize(scheduledInstruction.GetReturnedValue()),
-		// 	).Build()
-		// 	if err != nil {
-		// 		sendErrorAndFail(starlarkRunResponseLineStream, time.Duration(0), err, "An error occurred persisting instruction (number %d) at %v after it's been executed:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
-		// 	}
-		// 	executor.enclavePlan.AppendInstruction(enclavePlanInstruction)
-		// }
+			instruction := scheduledInstruction.GetInstruction()
+			// add the instruction into the current enclave plan
+			enclavePlanInstruction, err := scheduledInstruction.GetInstruction().GetPersistableAttributes().SetUuid(
+				string(scheduledInstruction.GetUuid()),
+			).SetReturnedValue(
+				executor.starlarkValueSerde.Serialize(scheduledInstruction.GetReturnedValue()),
+			).Build()
+			if err != nil {
+				sendErrorAndFail(starlarkRunResponseLineStream, time.Duration(0), err, "An error occurred persisting instruction (number %d) at %v after it's been executed:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
+			}
+			executor.enclavePlan.AppendInstruction(enclavePlanInstruction)
+		}
 
 		instructionCompletionChannels := make(map[types.ScheduledInstructionUuid]chan struct{})
 		for instructionUuid := range instructionDependencyGraph {
