@@ -175,7 +175,6 @@ func (backend *DockerKurtosisBackend) GetEnclaves(
 	map[enclave.EnclaveUUID]*enclave.Enclave,
 	error,
 ) {
-
 	allMatchingNetworkInfo, err := backend.getMatchingEnclaveNetworkInfo(ctx, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave networks matching filters '%+v'", filters)
@@ -217,7 +216,6 @@ func (backend *DockerKurtosisBackend) GetEnclaves(
 			productionMode,
 		)
 	}
-
 	return result, nil
 }
 
