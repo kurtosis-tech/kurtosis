@@ -1,10 +1,15 @@
 package dependency_graph
 
 import (
+	"fmt"
+	"os"
 	"slices"
+	"strings"
 
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
+	"github.com/sirupsen/logrus"
+	"gonum.org/v1/gonum/graph/simple"
 )
 
 // InstructionDependencyGraph tracks dependencies between Starlark instructions in an instruction sequence.
@@ -120,4 +125,95 @@ func (graph *InstructionDependencyGraph) GenerateDependencyGraph() map[types.Sch
 		dependencyGraph[instruction] = instructionDependencies
 	}
 	return dependencyGraph
+}
+
+func (graph *InstructionDependencyGraph) getInvertedDependencyGraph() map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid {
+	invertedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{}
+	for instruction := range graph.instructionsDependencies {
+		invertedDependencyGraph[instruction] = []types.ScheduledInstructionUuid{}
+	}
+	for instruction, dependencies := range graph.instructionsDependencies {
+		for dependency := range dependencies {
+			invertedDependencyGraph[dependency] = append(invertedDependencyGraph[dependency], instruction)
+		}
+		slices.Sort(invertedDependencyGraph[instruction])
+	}
+	return invertedDependencyGraph
+}
+
+func (graph *InstructionDependencyGraph) OutputDependencyGraphVisualWithShortDescriptors(path string) {
+	g := simple.NewDirectedGraph()
+
+	// Create a mapping from instruction UUID to node ID
+	instructionToNodeID := make(map[types.ScheduledInstructionUuid]int64)
+	nodeIDToDescriptor := make(map[int64]string)
+
+	// First pass: create all nodes with their descriptors
+	dependencyGraph := graph.getInvertedDependencyGraph()
+	logrus.Infof("dependencyGraph: %v", dependencyGraph)
+
+	// Add all instructions as nodes
+	nextNodeId := int64(0)
+	for instruction := range dependencyGraph {
+		nextNodeId = nextNodeId + 1
+		instructionToNodeID[instruction] = nextNodeId
+
+		// // Get descriptor, fallback to instruction UUID if not found
+		// descriptor, exists := shortDescriptors[instruction]
+		// if !exists {
+		// 	descriptor = string(instruction)
+		// }
+
+		// if len(descriptor) > 30 {
+		// 	descriptor = descriptor[:27] + "..."
+		// }
+
+		nodeIDToDescriptor[nextNodeId] = string(instruction)
+
+		// // don't display prints in the graph
+		// if descriptor != "print" {
+		// 	g.AddNode(simple.Node(nextNodeID))
+		// }
+	}
+	logrus.Infof("nodeIDToDescriptor: %v", nodeIDToDescriptor)
+
+	// Second pass: add edges
+	for to, fromList := range dependencyGraph {
+		toNodeID := instructionToNodeID[to]
+		for _, from := range fromList {
+			fromNodeID := instructionToNodeID[from]
+			logrus.Infof("Adding edge from %d to %d", toNodeID, fromNodeID)
+			g.SetEdge(g.NewEdge(simple.Node(toNodeID), simple.Node(fromNodeID)))
+		}
+	}
+
+	// Create DOT representation with node labels
+	dotContent := "digraph InstructionsDependencyGraph {\n"
+	dotContent += "  rankdir=TB;\n"
+	dotContent += "  node [shape=box, style=filled, fillcolor=lightblue];\n\n"
+
+	// Add nodes with descriptions
+	for nodeID := range nodeIDToDescriptor {
+		// Escape quotes in descriptor for DOT format
+		escapedDescriptor := strings.ReplaceAll(nodeIDToDescriptor[nodeID], "\"", "\\\"")
+		dotContent += fmt.Sprintf("  %d [label=\"%d - %s\"];\n", nodeID, nodeID, escapedDescriptor)
+	}
+
+	dotContent += "\n"
+
+	// Add edges
+	for to, fromList := range dependencyGraph {
+		toNodeID := instructionToNodeID[to]
+		for _, from := range fromList {
+			fromNodeID := instructionToNodeID[from]
+			dotContent += fmt.Sprintf("  %d -> %d;\n", toNodeID, fromNodeID)
+		}
+	}
+
+	dotContent += "}\n"
+
+	// Write DOT file
+	if err := os.WriteFile(fmt.Sprintf("%s/dependency.dot", path), []byte(dotContent), 0644); err != nil {
+		panic(err)
+	}
 }
