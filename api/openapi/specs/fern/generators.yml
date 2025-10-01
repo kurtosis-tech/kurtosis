@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=https://schema.buildwithfern.dev/generators-yml.json
+api:
+  specs:
+    - openapi: ../kurtosis_api.yaml
+default-group: local
+groups:
+  local:
+    generators:
+      - name: fernapi/fern-go-sdk
+        version: 1.13.3
+        output:
+          location: local-file-system
+          path: ../sdks/go
+        config:
+          module:
+            path: sdk

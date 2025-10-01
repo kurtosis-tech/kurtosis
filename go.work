@@ -4,6 +4,7 @@ toolchain go1.23.7
 
 use (
 	./api/golang
+	./sdks/go
 	./cli/cli
 	./cloud/api/golang
 	./container-engine-lib
