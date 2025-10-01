@@ -120,17 +120,3 @@ func (graph *InstructionDependencyGraph) GenerateDependencyGraph() map[types.Sch
 	}
 	return dependencyGraph
 }
-
-func (graph *InstructionDependencyGraph) getInvertedDependencyGraph() map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid {
-	invertedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{}
-	for instruction := range graph.instructionsDependencies {
-		invertedDependencyGraph[instruction] = []types.ScheduledInstructionUuid{}
-	}
-	for instruction, dependencies := range graph.instructionsDependencies {
-		for dependency := range dependencies {
-			invertedDependencyGraph[dependency] = append(invertedDependencyGraph[dependency], instruction)
-		}
-		slices.Sort(invertedDependencyGraph[instruction])
-	}
-	return invertedDependencyGraph
-}
