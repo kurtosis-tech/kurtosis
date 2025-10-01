@@ -109,8 +109,6 @@ func (plan *InstructionsPlan) GenerateInstructionsDependencyGraph() (map[types.S
 		}
 	}
 
-	instructionsDependencies.OutputDependencyGraphVisualWithShortDescriptors("/tmp")
-
 	return instructionsDependencies.GenerateDependencyGraph(), nil
 }
 

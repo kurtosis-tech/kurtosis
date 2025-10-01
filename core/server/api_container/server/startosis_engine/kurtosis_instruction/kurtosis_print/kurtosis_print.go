@@ -120,7 +120,6 @@ func (builtin *PrintCapabilities) Description() string {
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
 func (builtin *PrintCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
-	dependencyGraph.AddShortDescriptor(instructionUuid, "print")
 	dependencyGraph.AddPrintInstruction(instructionUuid)
 
 	dependencyGraph.ConsumesAnyRuntimeValuesInString(instructionUuid, builtin.msg.String())

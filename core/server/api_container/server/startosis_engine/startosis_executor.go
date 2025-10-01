@@ -3,7 +3,6 @@ package startosis_engine
 import (
 	"context"
 	"fmt"
-	"os"
 	"sync"
 	"time"
 
@@ -160,11 +159,6 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 
 // ExecuteInParallel parallelizes the execution of the list of instructionSequence _asynchronously_ against the Kurtosis backend
 func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun bool, parallelism int, indexOfFirstInstructionInEnclavePlan int, instructionsSequence []*instructions_plan.ScheduledInstruction, serializedScriptOutput string, instructionDependencyGraph map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
-	file, err := os.Create("/tmp/execution.txt")
-	if err != nil {
-		logrus.Errorf("Failed to create execution.txt file: %v", err)
-	}
-
 	executor.mutex.Lock()
 	starlarkRunResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 	ctxWithParallelism := context.WithValue(ctx, startosis_constants.ParallelismParam, parallelism)
@@ -231,11 +225,6 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 					<-instructionCompletionChannels[dependencyUuid]
 				}
 
-				_, err = file.WriteString(fmt.Sprintf("Running instruction %v: %v\n", instructionUuid, scheduledInstruction.GetInstruction().String()))
-				if err != nil {
-					logrus.Errorf("Failed to write to execution.txt file: %v", err)
-				}
-
 				instructionNumber := uint32(index + 1)
 				progress := binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(progressMsg, uint32(index+1), totalNumberOfInstructions)
 				starlarkRunResponseLineStream <- progress
@@ -272,11 +261,6 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 
 				// signal that this instruction has completed
 				close(instructionCompletionChannels[instructionUuid])
-
-				_, err = file.WriteString(fmt.Sprintf("Instruction %v completed: %v\n", instructionUuid, scheduledInstruction.GetInstruction().String()))
-				if err != nil {
-					logrus.Errorf("Failed to write to execution.txt file: %v", err)
-				}
 			}(scheduledInstruction, index)
 		}
 
