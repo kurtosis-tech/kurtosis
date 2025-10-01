@@ -1,4 +1,4 @@
-module sdk
+module github.com/kurtosis-tech/kurtosis/sdks/go
 
 go 1.18
 

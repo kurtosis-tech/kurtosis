@@ -3,7 +3,7 @@
 package api
 
 import (
-	internal "sdk/internal"
+	internal "github.com/kurtosis-tech/kurtosis/sdks/go/internal"
 )
 
 var ErrorCodes internal.ErrorCodes = internal.ErrorCodes{}

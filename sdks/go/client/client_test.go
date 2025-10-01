@@ -3,11 +3,12 @@
 package client
 
 import (
-	assert "github.com/stretchr/testify/assert"
 	http "net/http"
-	option "sdk/option"
 	testing "testing"
 	time "time"
+
+	option "github.com/kurtosis-tech/kurtosis/sdks/go/option"
+	assert "github.com/stretchr/testify/assert"
 )
 
 func TestNewClient(t *testing.T) {

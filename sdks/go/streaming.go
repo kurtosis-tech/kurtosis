@@ -6,8 +6,9 @@ import (
 	json "encoding/json"
 	fmt "fmt"
 	big "math/big"
-	internal "sdk/internal"
 	time "time"
+
+	internal "github.com/kurtosis-tech/kurtosis/sdks/go/internal"
 )
 
 var (

@@ -7,10 +7,11 @@ import (
 	context "context"
 	io "io"
 	http "net/http"
-	sdk "sdk"
-	core "sdk/core"
-	internal "sdk/internal"
-	option "sdk/option"
+
+	sdk "github.com/kurtosis-tech/kurtosis/sdks/go"
+	core "github.com/kurtosis-tech/kurtosis/sdks/go/core"
+	internal "github.com/kurtosis-tech/kurtosis/sdks/go/internal"
+	option "github.com/kurtosis-tech/kurtosis/sdks/go/option"
 )
 
 type RawClient struct {

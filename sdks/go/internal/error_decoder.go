@@ -8,7 +8,7 @@ import (
 	"io"
 	"net/http"
 
-	"sdk/core"
+	"github.com/kurtosis-tech/kurtosis/sdks/go/core"
 )
 
 // ErrorCodes maps HTTP status codes to error constructors.

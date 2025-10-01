@@ -3,12 +3,12 @@
 package client
 
 import (
-	core "sdk/core"
-	enclave "sdk/enclave"
-	engine "sdk/engine"
-	internal "sdk/internal"
-	option "sdk/option"
-	streaming "sdk/streaming"
+	core "github.com/kurtosis-tech/kurtosis/sdks/go/core"
+	enclave "github.com/kurtosis-tech/kurtosis/sdks/go/enclave"
+	engine "github.com/kurtosis-tech/kurtosis/sdks/go/engine"
+	internal "github.com/kurtosis-tech/kurtosis/sdks/go/internal"
+	option "github.com/kurtosis-tech/kurtosis/sdks/go/option"
+	streaming "github.com/kurtosis-tech/kurtosis/sdks/go/streaming"
 )
 
 type Client struct {

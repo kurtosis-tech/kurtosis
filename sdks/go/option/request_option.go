@@ -5,7 +5,8 @@ package option
 import (
 	http "net/http"
 	url "net/url"
-	core "sdk/core"
+
+	core "github.com/kurtosis-tech/kurtosis/sdks/go/core"
 )
 
 // RequestOption adapts the behavior of an individual request.

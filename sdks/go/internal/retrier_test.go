@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kurtosis-tech/kurtosis/sdks/go/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"sdk/core"
 )
 
 type RetryTestCase struct {

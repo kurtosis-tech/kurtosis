@@ -12,7 +12,7 @@ import (
 	"reflect"
 	"strings"
 
-	"sdk/core"
+	"github.com/kurtosis-tech/kurtosis/sdks/go/core"
 )
 
 const (
