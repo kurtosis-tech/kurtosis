@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.11.2](https://github.com/kurtosis-tech/kurtosis/compare/1.11.1...1.11.2) (2025-10-01)
+
+
+### Bug Fixes
+
+* don't delete logs collector per enclave over k8s ([#2804](https://github.com/kurtosis-tech/kurtosis/issues/2804)) ([5a09733](https://github.com/kurtosis-tech/kurtosis/commit/5a09733d43cdf66df6985368feb1c097bb8cff03))
+* speed up enclave inspect (and other CLI commands) ([#2774](https://github.com/kurtosis-tech/kurtosis/issues/2774)) ([095261b](https://github.com/kurtosis-tech/kurtosis/commit/095261b25fdeec0ae1f5bb5186b7ca7c081b6ed7))
+
 ## [1.11.1](https://github.com/kurtosis-tech/kurtosis/compare/1.11.0...1.11.1) (2025-08-27)
 
 
