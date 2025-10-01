@@ -781,7 +781,7 @@ func (runtime *enclaveRuntime) refreshEnclaveConnections() error {
 	runtime.lock.Lock()
 	defer runtime.lock.Unlock()
 
-	enclaves, err := runtime.enclaveManager.GetEnclaves(runtime.ctx)
+	enclaves, err := runtime.enclaveManager.GetAllEnclaves(runtime.ctx)
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to retrieve the list of enclaves")
 	}

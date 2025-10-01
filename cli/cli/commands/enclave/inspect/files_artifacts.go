@@ -2,13 +2,14 @@ package inspect
 
 import (
 	"context"
+	"sort"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
-	"sort"
 )
 
 const (
@@ -17,7 +18,7 @@ const (
 )
 
 func printFilesArtifacts(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisContext, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, showFullUuids bool, _ bool) error {
-	enclaveContext, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveInfo.GetName())
+	enclaveContext, err := kurtosisCtx.GetEnclaveContextFromEnclaveInfo(ctx, enclaveInfo)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while fetching enclave with name '%v'", enclaveInfo.GetName())
 	}

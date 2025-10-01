@@ -8,7 +8,7 @@ To quickly get in touch with us, simply run:
 ```bash
 kurtosis feedback
 ```
-which will open the [Kurtosis GitHub create new issue page](https://github.com/kurtosis-tech/kurtosis/issues/new/choose), where you can file a bug report, submit a feature request, or let us know about any docs issues you may have come across. A link to our [Discord server](https://discord.gg/yUGgeE8s) will be made available there too.
+which will open the [Kurtosis GitHub create new issue page](https://github.com/kurtosis-tech/kurtosis/issues/new/choose), where you can file a bug report, submit a feature request, or let us know about any docs issues you may have come across. A link to our [Discord server](https://discord.gg/sJzX2EF2Da) will be made available there too.
 
 ### Using `kurtosis feedback`
 

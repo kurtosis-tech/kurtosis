@@ -8,6 +8,11 @@ package inspect
 import (
 	"context"
 	"fmt"
+	"sort"
+	"strings"
+	"time"
+	"unicode/utf8"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
@@ -22,10 +27,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"sort"
-	"strings"
-	"time"
-	"unicode/utf8"
 )
 
 const (

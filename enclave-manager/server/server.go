@@ -298,6 +298,31 @@ func (c *WebServer) GetEnclaves(ctx context.Context, req *connect.Request[emptyp
 	}
 	return resp, nil
 }
+
+func (c *WebServer) GetEnclavesByUuids(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.GetEnclavesByUuidsRequest]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
+	isValidRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
+	}
+	if !isValidRequest {
+		return nil, stacktrace.Propagate(err, "User not authorized")
+	}
+	enclaves, err := (*c.engineServiceClient).GetEnclavesByUuids(ctx, &connect.Request[kurtosis_engine_rpc_api_bindings.GetEnclavesByUuidsArgs]{
+		Msg: &kurtosis_engine_rpc_api_bindings.GetEnclavesByUuidsArgs{
+			EnclaveUuids: req.Msg.GetEnclavesByUuidsArgs.EnclaveUuids,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	resp := &connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse]{
+		Msg: &kurtosis_engine_rpc_api_bindings.GetEnclavesResponse{
+			EnclaveInfo: enclaves.Msg.EnclaveInfo,
+		},
+	}
+	return resp, nil
+}
+
 func (c *WebServer) GetServices(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.GetServicesRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse], error) {
 	isValidRequest, instanceConfig, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
