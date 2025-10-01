@@ -56,13 +56,13 @@ func (c *Client) UploadsAStarlarkPackage(
 	ctx context.Context,
 	// UUID, shortened UUID, or name of the enclave
 	enclaveIdentifier string,
-	request *sdk.PostEnclavesEnclaveIdentifierStarlarkPackagesRequest,
+	// request *sdk.PostEnclavesEnclaveIdentifierStarlarkPackagesRequest,
 	opts ...option.RequestOption,
 ) error {
 	_, err := c.WithRawResponse.UploadsAStarlarkPackage(
 		ctx,
 		enclaveIdentifier,
-		request,
+		// request,
 		opts...,
 	)
 	if err != nil {
@@ -285,13 +285,13 @@ func (c *Client) UploadsLocalFileArtifactToTheKurtosisFileSystem(
 	ctx context.Context,
 	// UUID, shortened UUID, or name of the enclave
 	enclaveIdentifier string,
-	request *sdk.PostEnclavesEnclaveIdentifierArtifactsLocalFileRequest,
+	// request *sdk.PostEnclavesEnclaveIdentifierArtifactsLocalFileRequest,
 	opts ...option.RequestOption,
 ) (map[string]*sdk.FileArtifactUploadResult, error) {
 	response, err := c.WithRawResponse.UploadsLocalFileArtifactToTheKurtosisFileSystem(
 		ctx,
 		enclaveIdentifier,
-		request,
+		// request,
 		opts...,
 	)
 	if err != nil {

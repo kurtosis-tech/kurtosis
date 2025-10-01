@@ -81,7 +81,7 @@ func (r *RawClient) UploadsAStarlarkPackage(
 	ctx context.Context,
 	// UUID, shortened UUID, or name of the enclave
 	enclaveIdentifier string,
-	request *sdk.PostEnclavesEnclaveIdentifierStarlarkPackagesRequest,
+	// request *sdk.PostEnclavesEnclaveIdentifierStarlarkPackagesRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[any], error) {
 	options := core.NewRequestOptions(opts...)
@@ -629,7 +629,7 @@ func (r *RawClient) UploadsLocalFileArtifactToTheKurtosisFileSystem(
 	ctx context.Context,
 	// UUID, shortened UUID, or name of the enclave
 	enclaveIdentifier string,
-	request *sdk.PostEnclavesEnclaveIdentifierArtifactsLocalFileRequest,
+	// request *sdk.PostEnclavesEnclaveIdentifierArtifactsLocalFileRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[map[string]*sdk.FileArtifactUploadResult], error) {
 	options := core.NewRequestOptions(opts...)
