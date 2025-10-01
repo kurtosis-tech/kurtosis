@@ -203,6 +203,7 @@ export const RunStarlarkScriptArgs = proto3.makeMessageType(
     { no: 8, name: "cloud_user_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 9, name: "image_download_mode", kind: "enum", T: proto3.getEnumType(ImageDownloadMode), opt: true },
     { no: 10, name: "non_blocking_mode", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
+    { no: 17, name: "parallel", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
   ],
 );
 
@@ -227,6 +228,7 @@ export const RunStarlarkPackageArgs = proto3.makeMessageType(
     { no: 14, name: "image_download_mode", kind: "enum", T: proto3.getEnumType(ImageDownloadMode), opt: true },
     { no: 15, name: "non_blocking_mode", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
     { no: 16, name: "github_auth_token", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 17, name: "parallel", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
   ],
 );
 
@@ -381,8 +383,8 @@ export const StarlarkRunFinishedEvent = proto3.makeMessageType(
   "api_container_api.StarlarkRunFinishedEvent",
   () => [
     { no: 1, name: "is_run_successful", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
-    { no: 2, name: "total_execution_duration", kind: "message", T: Duration, opt: true },
-    { no: 3, name: "serialized_output", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 2, name: "serialized_output", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 3, name: "total_execution_duration", kind: "message", T: Duration, opt: true },
   ],
 );
 

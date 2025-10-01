@@ -48,6 +48,7 @@ func NewRunStarlarkScriptArgs(
 	cloudUserId string,
 	imageDownloadMode kurtosis_core_rpc_api_bindings.ImageDownloadMode,
 	nonBlockingMode bool,
+	parallel bool,
 ) *kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs {
 	cloudInstanceIdCopy := new(string)
 	*cloudInstanceIdCopy = cloudInstanceId
@@ -57,6 +58,8 @@ func NewRunStarlarkScriptArgs(
 	*imageDownloadModeCopy = imageDownloadMode
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
+	parallelCopy := new(bool)
+	*parallelCopy = parallel
 	return &kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs{
 		SerializedScript:     serializedString,
 		SerializedParams:     &serializedParams,
@@ -68,6 +71,7 @@ func NewRunStarlarkScriptArgs(
 		CloudUserId:          cloudUserIdCopy,
 		ImageDownloadMode:    imageDownloadModeCopy,
 		NonBlockingMode:      &nonBlockingMode,
+		Parallel:             parallelCopy,
 	}
 }
 
@@ -83,6 +87,7 @@ func NewRunStarlarkPackageArgs(
 	cloudUserId string,
 	imageDownloadMode kurtosis_core_rpc_api_bindings.ImageDownloadMode,
 	nonBlockingMode bool,
+	parallel bool,
 	githubAuthToken string,
 ) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
 	parallelismCopy := new(int32)
@@ -96,6 +101,8 @@ func NewRunStarlarkPackageArgs(
 	clonePackage := false
 	githubAuthTokenCopy := new(string)
 	*githubAuthTokenCopy = githubAuthToken
+	parallelCopy := new(bool)
+	*parallelCopy = parallel
 	return &kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs{
 		PackageId:              packageId,
 		ClonePackage:           &clonePackage,
@@ -111,6 +118,7 @@ func NewRunStarlarkPackageArgs(
 		ImageDownloadMode:      imageDownloadModeCopy,
 		NonBlockingMode:        &nonBlockingMode,
 		GithubAuthToken:        githubAuthTokenCopy,
+		Parallel:               parallelCopy,
 	}
 }
 

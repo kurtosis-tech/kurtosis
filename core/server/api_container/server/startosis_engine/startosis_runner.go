@@ -57,6 +57,7 @@ func (runner *StartosisRunner) Run(
 	serializedParams string,
 	imageDownloadMode image_download_mode.ImageDownloadMode,
 	nonBlockingMode bool,
+	shouldExecuteInParallel bool,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 ) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	runner.mutex.Lock()
@@ -175,7 +176,7 @@ func (runner *StartosisRunner) Run(
 		starlarkRunResponseLines <- progressInfo
 
 		var executionResponseLinesChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine
-		if parallelism > 1 {
+		if shouldExecuteInParallel {
 			logrus.Infof("Executing Kurtosis instructions in parallel with parallelism: %d", parallelism)
 			executionResponseLinesChan = runner.startosisExecutor.ExecuteInParallel(ctx, dryRun, parallelism, instructionsPlan.GetIndexOfFirstInstruction(), instructionsSequence, serializedScriptOutput, instructionDependencyGraph)
 		} else {

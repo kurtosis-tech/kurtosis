@@ -350,6 +350,11 @@ export class RunStarlarkScriptArgs extends jspb.Message {
   hasNonBlockingMode(): boolean;
   clearNonBlockingMode(): RunStarlarkScriptArgs;
 
+  getParallel(): boolean;
+  setParallel(value: boolean): RunStarlarkScriptArgs;
+  hasParallel(): boolean;
+  clearParallel(): RunStarlarkScriptArgs;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RunStarlarkScriptArgs.AsObject;
   static toObject(includeInstance: boolean, msg: RunStarlarkScriptArgs): RunStarlarkScriptArgs.AsObject;
@@ -370,6 +375,7 @@ export namespace RunStarlarkScriptArgs {
     cloudUserId?: string,
     imageDownloadMode?: ImageDownloadMode,
     nonBlockingMode?: boolean,
+    parallel?: boolean,
   }
 
   export enum SerializedParamsCase { 
@@ -410,6 +416,11 @@ export namespace RunStarlarkScriptArgs {
   export enum NonBlockingModeCase { 
     _NON_BLOCKING_MODE_NOT_SET = 0,
     NON_BLOCKING_MODE = 10,
+  }
+
+  export enum ParallelCase { 
+    _PARALLEL_NOT_SET = 0,
+    PARALLEL = 17,
   }
 }
 
@@ -485,6 +496,11 @@ export class RunStarlarkPackageArgs extends jspb.Message {
   hasGithubAuthToken(): boolean;
   clearGithubAuthToken(): RunStarlarkPackageArgs;
 
+  getParallel(): boolean;
+  setParallel(value: boolean): RunStarlarkPackageArgs;
+  hasParallel(): boolean;
+  clearParallel(): RunStarlarkPackageArgs;
+
   getStarlarkPackageContentCase(): RunStarlarkPackageArgs.StarlarkPackageContentCase;
 
   serializeBinary(): Uint8Array;
@@ -512,6 +528,7 @@ export namespace RunStarlarkPackageArgs {
     imageDownloadMode?: ImageDownloadMode,
     nonBlockingMode?: boolean,
     githubAuthToken?: string,
+    parallel?: boolean,
   }
 
   export enum StarlarkPackageContentCase { 
@@ -573,6 +590,11 @@ export namespace RunStarlarkPackageArgs {
   export enum GithubAuthTokenCase { 
     _GITHUB_AUTH_TOKEN_NOT_SET = 0,
     GITHUB_AUTH_TOKEN = 16,
+  }
+
+  export enum ParallelCase { 
+    _PARALLEL_NOT_SET = 0,
+    PARALLEL = 17,
   }
 }
 
@@ -938,15 +960,15 @@ export class StarlarkRunFinishedEvent extends jspb.Message {
   getIsRunSuccessful(): boolean;
   setIsRunSuccessful(value: boolean): StarlarkRunFinishedEvent;
 
-  getTotalExecutionDuration(): google_protobuf_duration_pb.Duration | undefined;
-  setTotalExecutionDuration(value?: google_protobuf_duration_pb.Duration): StarlarkRunFinishedEvent;
-  hasTotalExecutionDuration(): boolean;
-  clearTotalExecutionDuration(): StarlarkRunFinishedEvent;
-
   getSerializedOutput(): string;
   setSerializedOutput(value: string): StarlarkRunFinishedEvent;
   hasSerializedOutput(): boolean;
   clearSerializedOutput(): StarlarkRunFinishedEvent;
+
+  getTotalExecutionDuration(): google_protobuf_duration_pb.Duration | undefined;
+  setTotalExecutionDuration(value?: google_protobuf_duration_pb.Duration): StarlarkRunFinishedEvent;
+  hasTotalExecutionDuration(): boolean;
+  clearTotalExecutionDuration(): StarlarkRunFinishedEvent;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StarlarkRunFinishedEvent.AsObject;
@@ -959,18 +981,18 @@ export class StarlarkRunFinishedEvent extends jspb.Message {
 export namespace StarlarkRunFinishedEvent {
   export type AsObject = {
     isRunSuccessful: boolean,
-    totalExecutionDuration?: google_protobuf_duration_pb.Duration.AsObject,
     serializedOutput?: string,
-  }
-
-  export enum TotalExecutionDurationCase { 
-    _TOTAL_EXECUTION_DURATION_NOT_SET = 0,
-    TOTAL_EXECUTION_DURATION = 2,
+    totalExecutionDuration?: google_protobuf_duration_pb.Duration.AsObject,
   }
 
   export enum SerializedOutputCase { 
     _SERIALIZED_OUTPUT_NOT_SET = 0,
-    SERIALIZED_OUTPUT = 3,
+    SERIALIZED_OUTPUT = 2,
+  }
+
+  export enum TotalExecutionDurationCase { 
+    _TOTAL_EXECUTION_DURATION_NOT_SET = 0,
+    TOTAL_EXECUTION_DURATION = 3,
   }
 }
 
