@@ -283,29 +283,6 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 		wgSenders.Wait()
 		totalParallelExecutionDuration := time.Since(parallelStartTime)
 
-		// Calculate total sequential execution time by summing all individual instruction durations
-		totalSequentialDuration := time.Duration(0)
-		instructionDurations.Range(func(key, value interface{}) bool {
-			totalSequentialDuration += value.(time.Duration)
-			return true
-		})
-
-		logrus.Infof("Total parallel execution time: %v", totalParallelExecutionDuration)
-		logrus.Infof("Total sequential execution time (sum of individual instructions): %v", totalSequentialDuration)
-		logrus.Infof("Parallel speedup: %.2fx", float64(totalSequentialDuration)/float64(totalParallelExecutionDuration))
-
-		// // Log individual instruction durations
-		// instructionDurations.Range(func(key, value interface{}) bool {
-		// 	logrus.Infof("Instruction %v took: %v", key, value)
-		// 	return true
-		// })
-
-		// logrus.Infof("Computing parallel execution time for instructionsDependencyGraph")
-		// totalParallelExecutionDuration := dependency_graph.ComputeParallelExecutionTime(instructionsDependencyGraph, instructionNumToDuration)
-		// logrus.Infof("totalParallelExecutionDuration: %v", totalParallelExecutionDuration)
-		// // map of ints to instruction descriptions
-		// printInstructionToDuration(&instructionDurations, instructionNumToDescription)
-
 		if !dryRun {
 			logrus.Debugf("Serialized script output before runtime value replace: '%v'", serializedScriptOutput)
 			scriptWithValuesReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(serializedScriptOutput, executor.runtimeValueStore)
