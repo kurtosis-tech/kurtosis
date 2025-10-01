@@ -39,7 +39,7 @@ func (r *RawClient) GetEngineInfo(
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
 		r.baseURL,
-		"http://engine.localhost:9779/api",
+		"http://localhost:9779/api",
 	)
 	endpointURL := baseURL + "/engine/info"
 	headers := internal.MergeHeaders(
@@ -78,7 +78,7 @@ func (r *RawClient) ListEnclaves(
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
 		r.baseURL,
-		"http://engine.localhost:9779/api",
+		"http://localhost:9779/api",
 	)
 	endpointURL := baseURL + "/enclaves"
 	headers := internal.MergeHeaders(
@@ -118,7 +118,7 @@ func (r *RawClient) CreateEnclave(
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
 		r.baseURL,
-		"http://engine.localhost:9779/api",
+		"http://localhost:9779/api",
 	)
 	endpointURL := baseURL + "/enclaves"
 	headers := internal.MergeHeaders(
@@ -160,7 +160,7 @@ func (r *RawClient) DeleteEnclaves(
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
 		r.baseURL,
-		"http://engine.localhost:9779/api",
+		"http://localhost:9779/api",
 	)
 	endpointURL := baseURL + "/enclaves"
 	queryParams, err := internal.QueryValues(request)
@@ -206,7 +206,7 @@ func (r *RawClient) ListAllEnclaveIdentifiers(
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
 		r.baseURL,
-		"http://engine.localhost:9779/api",
+		"http://localhost:9779/api",
 	)
 	endpointURL := baseURL + "/enclaves/history"
 	headers := internal.MergeHeaders(
@@ -247,7 +247,7 @@ func (r *RawClient) GetEnclaveDetailedInfo(
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
 		r.baseURL,
-		"http://engine.localhost:9779/api",
+		"http://localhost:9779/api",
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/enclaves/%v",
@@ -291,7 +291,7 @@ func (r *RawClient) DestroyEnclave(
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
 		r.baseURL,
-		"http://engine.localhost:9779/api",
+		"http://localhost:9779/api",
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/enclaves/%v",
@@ -333,7 +333,7 @@ func (r *RawClient) GetEnclaveStatus(
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
 		r.baseURL,
-		"http://engine.localhost:9779/api",
+		"http://localhost:9779/api",
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/enclaves/%v/status",
@@ -378,7 +378,7 @@ func (r *RawClient) SetEnclaveStatus(
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
 		r.baseURL,
-		"http://engine.localhost:9779/api",
+		"http://localhost:9779/api",
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/enclaves/%v/status",

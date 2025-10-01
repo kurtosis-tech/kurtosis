@@ -43,7 +43,7 @@ func (r *RawClient) GetLastStarlarkRun(
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
 		r.baseURL,
-		"http://engine.localhost:9779/api",
+		"http://localhost:9779/api",
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/enclaves/%v/starlark",
@@ -88,7 +88,7 @@ func (r *RawClient) UploadsAStarlarkPackage(
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
 		r.baseURL,
-		"http://engine.localhost:9779/api",
+		"http://localhost:9779/api",
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/enclaves/%v/starlark/packages",
@@ -140,7 +140,7 @@ func (r *RawClient) ExecutesAStarlarkPackageOnTheUsersBehalf(
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
 		r.baseURL,
-		"http://engine.localhost:9779/api",
+		"http://localhost:9779/api",
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/enclaves/%v/starlark/packages/%v",
@@ -195,7 +195,7 @@ func (r *RawClient) ExecutesAStarlarkScriptOnTheUsersBehalf(
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
 		r.baseURL,
-		"http://engine.localhost:9779/api",
+		"http://localhost:9779/api",
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/enclaves/%v/starlark/scripts",
@@ -250,7 +250,7 @@ func (r *RawClient) ReturnsDetailedInformationAboutASpecificService(
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
 		r.baseURL,
-		"http://engine.localhost:9779/api",
+		"http://localhost:9779/api",
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/enclaves/%v/services/%v",
@@ -295,7 +295,7 @@ func (r *RawClient) ReturnsInformationAboutAllExistingHistoricalServices(
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
 		r.baseURL,
-		"http://engine.localhost:9779/api",
+		"http://localhost:9779/api",
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/enclaves/%v/services/history",
@@ -340,7 +340,7 @@ func (r *RawClient) ReturnsDetailedInformationAboutAllsServicesWithinTheEnclave(
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
 		r.baseURL,
-		"http://engine.localhost:9779/api",
+		"http://localhost:9779/api",
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/enclaves/%v/services",
@@ -394,7 +394,7 @@ func (r *RawClient) ExecutesTheGivenCommandInsideARunningServicesContainer(
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
 		r.baseURL,
-		"http://engine.localhost:9779/api",
+		"http://localhost:9779/api",
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/enclaves/%v/services/%v/command",
@@ -446,7 +446,7 @@ func (r *RawClient) CheckForServiceAvailability(
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
 		r.baseURL,
-		"http://engine.localhost:9779/api",
+		"http://localhost:9779/api",
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/enclaves/%v/services/%v/endpoints/%v/availability",
@@ -497,7 +497,7 @@ func (r *RawClient) ListAllFilesArtifacts(
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
 		r.baseURL,
-		"http://engine.localhost:9779/api",
+		"http://localhost:9779/api",
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/enclaves/%v/artifacts",
@@ -543,7 +543,7 @@ func (r *RawClient) InspectTheContentOfAFileArtifact(
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
 		r.baseURL,
-		"http://engine.localhost:9779/api",
+		"http://localhost:9779/api",
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/enclaves/%v/artifacts/%v",
@@ -590,7 +590,7 @@ func (r *RawClient) DownloadsAFilesArtifactFromTheKurtosisFileSystem(
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
 		r.baseURL,
-		"http://engine.localhost:9779/api",
+		"http://localhost:9779/api",
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/enclaves/%v/artifacts/%v/download",
@@ -636,7 +636,7 @@ func (r *RawClient) UploadsLocalFileArtifactToTheKurtosisFileSystem(
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
 		r.baseURL,
-		"http://engine.localhost:9779/api",
+		"http://localhost:9779/api",
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/enclaves/%v/artifacts/local-file",
@@ -688,7 +688,7 @@ func (r *RawClient) AddRemoteFileToKurtosisFileSystem(
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
 		r.baseURL,
-		"http://engine.localhost:9779/api",
+		"http://localhost:9779/api",
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/enclaves/%v/artifacts/remote-file",
@@ -737,7 +737,7 @@ func (r *RawClient) AddServicesFileToKurtosisFileSystem(
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
 		r.baseURL,
-		"http://engine.localhost:9779/api",
+		"http://localhost:9779/api",
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/enclaves/%v/artifacts/services/%v",
@@ -785,7 +785,7 @@ func (r *RawClient) UserServicesPortForwarding(
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
 		r.baseURL,
-		"http://engine.localhost:9779/api",
+		"http://localhost:9779/api",
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/enclaves/%v/services/connection",

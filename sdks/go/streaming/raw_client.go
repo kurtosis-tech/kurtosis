@@ -42,7 +42,7 @@ func (r *RawClient) GetEnclavesServicesLogs(
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
 		r.baseURL,
-		"http://engine.localhost:9779/api",
+		"http://localhost:9779/api",
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/enclaves/%v/logs",
@@ -96,7 +96,7 @@ func (r *RawClient) GetServiceLogs(
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
 		r.baseURL,
-		"http://engine.localhost:9779/api",
+		"http://localhost:9779/api",
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/enclaves/%v/services/%v/logs",
@@ -148,7 +148,7 @@ func (r *RawClient) GetStarlarkExecutionLogs(
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
 		r.baseURL,
-		"http://engine.localhost:9779/api",
+		"http://localhost:9779/api",
 	)
 	endpointURL := internal.EncodeURL(
 		baseURL+"/starlark/executions/%v/logs",
