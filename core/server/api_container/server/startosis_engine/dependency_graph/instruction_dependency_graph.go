@@ -75,19 +75,15 @@ func (graph *InstructionDependencyGraph) ConsumesFilesArtifact(instruction types
 }
 
 func (graph *InstructionDependencyGraph) ConsumesAnyRuntimeValuesInString(instruction types.ScheduledInstructionUuid, stringPotentiallyContainingRuntimeValues string) {
-	if runtimeValues, ok := magic_string_helper.ContainsRuntimeValue(stringPotentiallyContainingRuntimeValues); ok {
-		for _, runtimeValue := range runtimeValues {
-			graph.consumesRuntimeValue(instruction, runtimeValue)
-		}
+	for _, runtimeValue := range magic_string_helper.GetRuntimeValuesFromString(stringPotentiallyContainingRuntimeValues) {
+		graph.consumesRuntimeValue(instruction, runtimeValue)
 	}
 }
 
 func (graph *InstructionDependencyGraph) ConsumesAnyRuntimeValuesInList(instruction types.ScheduledInstructionUuid, listPotentiallyContainingRuntimeValues []string) {
 	for _, wordPotentiallyContainingRuntimeValues := range listPotentiallyContainingRuntimeValues {
-		if runtimeValues, ok := magic_string_helper.ContainsRuntimeValue(wordPotentiallyContainingRuntimeValues); ok {
-			for _, runtimeValue := range runtimeValues {
-				graph.consumesRuntimeValue(instruction, runtimeValue)
-			}
+		for _, runtimeValue := range magic_string_helper.GetRuntimeValuesFromString(wordPotentiallyContainingRuntimeValues) {
+			graph.consumesRuntimeValue(instruction, runtimeValue)
 		}
 	}
 }
