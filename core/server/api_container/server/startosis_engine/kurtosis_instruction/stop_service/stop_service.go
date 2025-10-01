@@ -3,8 +3,10 @@ package stop_service
 import (
 	"context"
 	"fmt"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
@@ -13,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 )
@@ -114,4 +117,10 @@ func (builtin *StopServiceCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGener
 
 func (builtin *StopServiceCapabilities) Description() string {
 	return builtin.description
+}
+
+// UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
+func (builtin *StopServiceCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
+	dependencyGraph.ConsumesService(instructionUuid, string(builtin.serviceName))
+	return nil
 }

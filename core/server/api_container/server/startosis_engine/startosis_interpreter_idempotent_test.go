@@ -107,7 +107,8 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_I
 		defaultNonBlockingMode,
 		enclave_structure.NewEnclaveComponents(),
 		resolver.NewInstructionsPlanMask(0),
-		image_download_mode.ImageDownloadMode_Missing)
+		image_download_mode.ImageDownloadMode_Missing,
+		instructions_plan.NewInstructionsPlan())
 	require.Nil(suite.T(), interpretationApiErr)
 	require.Equal(suite.T(), 3, currentEnclavePlan.Size())
 	convertedEnclavePlan := suite.convertInstructionPlanToEnclavePlan(currentEnclavePlan)
@@ -166,7 +167,8 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 		defaultNonBlockingMode,
 		enclave_structure.NewEnclaveComponents(),
 		resolver.NewInstructionsPlanMask(0),
-		image_download_mode.ImageDownloadMode_Missing)
+		image_download_mode.ImageDownloadMode_Missing,
+		instructions_plan.NewInstructionsPlan())
 	require.Nil(suite.T(), interpretationApiErr)
 	require.Equal(suite.T(), 2, currentEnclavePlan.Size())
 	convertedEnclavePlan := suite.convertInstructionPlanToEnclavePlan(currentEnclavePlan)
@@ -231,7 +233,8 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_D
 		defaultNonBlockingMode,
 		enclave_structure.NewEnclaveComponents(),
 		resolver.NewInstructionsPlanMask(0),
-		image_download_mode.ImageDownloadMode_Missing)
+		image_download_mode.ImageDownloadMode_Missing,
+		instructions_plan.NewInstructionsPlan())
 	require.Nil(suite.T(), interpretationApiErr)
 	require.Equal(suite.T(), 2, currentEnclavePlan.Size())
 	convertedEnclavePlan := suite.convertInstructionPlanToEnclavePlan(currentEnclavePlan)
@@ -288,7 +291,8 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_I
 		defaultNonBlockingMode,
 		enclave_structure.NewEnclaveComponents(),
 		resolver.NewInstructionsPlanMask(0),
-		image_download_mode.ImageDownloadMode_Missing)
+		image_download_mode.ImageDownloadMode_Missing,
+		instructions_plan.NewInstructionsPlan())
 	require.Nil(suite.T(), interpretationApiErr)
 	require.Equal(suite.T(), 3, currentEnclavePlan.Size())
 	convertedEnclavePlan := suite.convertInstructionPlanToEnclavePlan(currentEnclavePlan)
@@ -353,7 +357,8 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 		defaultNonBlockingMode,
 		enclave_structure.NewEnclaveComponents(),
 		resolver.NewInstructionsPlanMask(0),
-		image_download_mode.ImageDownloadMode_Missing)
+		image_download_mode.ImageDownloadMode_Missing,
+		instructions_plan.NewInstructionsPlan())
 	require.Nil(suite.T(), interpretationApiErr)
 	require.Equal(suite.T(), 4, currentEnclavePlan.Size())
 	convertedEnclavePlan := suite.convertInstructionPlanToEnclavePlan(currentEnclavePlan)
@@ -428,7 +433,8 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_U
 		defaultNonBlockingMode,
 		enclave_structure.NewEnclaveComponents(),
 		resolver.NewInstructionsPlanMask(0),
-		image_download_mode.ImageDownloadMode_Missing)
+		image_download_mode.ImageDownloadMode_Missing,
+		instructions_plan.NewInstructionsPlan())
 	require.Nil(suite.T(), interpretationApiErr)
 	require.Equal(suite.T(), 4, currentEnclavePlan.Size())
 	convertedEnclavePlan := suite.convertInstructionPlanToEnclavePlan(currentEnclavePlan)
@@ -502,7 +508,8 @@ def run(plan):
 		defaultNonBlockingMode,
 		enclave_structure.NewEnclaveComponents(),
 		resolver.NewInstructionsPlanMask(0),
-		image_download_mode.ImageDownloadMode_Missing)
+		image_download_mode.ImageDownloadMode_Missing,
+		instructions_plan.NewInstructionsPlan())
 	require.Nil(suite.T(), interpretationApiErr)
 	require.Equal(suite.T(), 1, currentEnclavePlan.Size())
 	convertedEnclavePlan := suite.convertInstructionPlanToEnclavePlan(currentEnclavePlan)
@@ -570,7 +577,8 @@ def run(plan):
 		defaultNonBlockingMode,
 		enclave_structure.NewEnclaveComponents(),
 		resolver.NewInstructionsPlanMask(0),
-		image_download_mode.ImageDownloadMode_Missing)
+		image_download_mode.ImageDownloadMode_Missing,
+		instructions_plan.NewInstructionsPlan())
 	require.Nil(suite.T(), interpretationApiErr)
 	require.Equal(suite.T(), 1, currentEnclavePlan.Size())
 	convertedEnclavePlan := suite.convertInstructionPlanToEnclavePlan(currentEnclavePlan)
@@ -649,7 +657,9 @@ def run(plan):
 		defaultNonBlockingMode,
 		enclave_structure.NewEnclaveComponents(),
 		resolver.NewInstructionsPlanMask(0),
-		image_download_mode.ImageDownloadMode_Missing)
+		image_download_mode.ImageDownloadMode_Missing,
+		instructions_plan.NewInstructionsPlan(),
+	)
 	require.Nil(suite.T(), interpretationApiErr)
 	require.Equal(suite.T(), 2, currentEnclavePlan.Size())
 	convertedEnclavePlan := suite.convertInstructionPlanToEnclavePlan(currentEnclavePlan)
