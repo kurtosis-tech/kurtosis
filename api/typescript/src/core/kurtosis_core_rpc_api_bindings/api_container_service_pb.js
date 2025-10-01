@@ -7123,8 +7123,8 @@ proto.api_container_api.StarlarkRunFinishedEvent.prototype.toObject = function(o
 proto.api_container_api.StarlarkRunFinishedEvent.toObject = function(includeInstance, msg) {
   var f, obj = {
     isRunSuccessful: jspb.Message.getBooleanFieldWithDefault(msg, 1, false),
-    totalExecutionDuration: (f = msg.getTotalExecutionDuration()) && google_protobuf_duration_pb.Duration.toObject(includeInstance, f),
-    serializedOutput: jspb.Message.getFieldWithDefault(msg, 3, "")
+    serializedOutput: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    totalExecutionDuration: (f = msg.getTotalExecutionDuration()) && google_protobuf_duration_pb.Duration.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -7166,13 +7166,13 @@ proto.api_container_api.StarlarkRunFinishedEvent.deserializeBinaryFromReader = f
       msg.setIsRunSuccessful(value);
       break;
     case 2:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setSerializedOutput(value);
+      break;
+    case 3:
       var value = new google_protobuf_duration_pb.Duration;
       reader.readMessage(value,google_protobuf_duration_pb.Duration.deserializeBinaryFromReader);
       msg.setTotalExecutionDuration(value);
-      break;
-    case 3:
-      var value = /** @type {string} */ (reader.readString());
-      msg.setSerializedOutput(value);
       break;
     default:
       reader.skipField();
@@ -7210,19 +7210,19 @@ proto.api_container_api.StarlarkRunFinishedEvent.serializeBinaryToWriter = funct
       f
     );
   }
+  f = /** @type {string} */ (jspb.Message.getField(message, 2));
+  if (f != null) {
+    writer.writeString(
+      2,
+      f
+    );
+  }
   f = message.getTotalExecutionDuration();
   if (f != null) {
     writer.writeMessage(
-      2,
+      3,
       f,
       google_protobuf_duration_pb.Duration.serializeBinaryToWriter
-    );
-  }
-  f = /** @type {string} */ (jspb.Message.getField(message, 3));
-  if (f != null) {
-    writer.writeString(
-      3,
-      f
     );
   }
 };
@@ -7247,12 +7247,48 @@ proto.api_container_api.StarlarkRunFinishedEvent.prototype.setIsRunSuccessful = 
 
 
 /**
- * optional google.protobuf.Duration total_execution_duration = 2;
+ * optional string serialized_output = 2;
+ * @return {string}
+ */
+proto.api_container_api.StarlarkRunFinishedEvent.prototype.getSerializedOutput = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.StarlarkRunFinishedEvent} returns this
+ */
+proto.api_container_api.StarlarkRunFinishedEvent.prototype.setSerializedOutput = function(value) {
+  return jspb.Message.setField(this, 2, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.StarlarkRunFinishedEvent} returns this
+ */
+proto.api_container_api.StarlarkRunFinishedEvent.prototype.clearSerializedOutput = function() {
+  return jspb.Message.setField(this, 2, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.StarlarkRunFinishedEvent.prototype.hasSerializedOutput = function() {
+  return jspb.Message.getField(this, 2) != null;
+};
+
+
+/**
+ * optional google.protobuf.Duration total_execution_duration = 3;
  * @return {?proto.google.protobuf.Duration}
  */
 proto.api_container_api.StarlarkRunFinishedEvent.prototype.getTotalExecutionDuration = function() {
   return /** @type{?proto.google.protobuf.Duration} */ (
-    jspb.Message.getWrapperField(this, google_protobuf_duration_pb.Duration, 2));
+    jspb.Message.getWrapperField(this, google_protobuf_duration_pb.Duration, 3));
 };
 
 
@@ -7261,7 +7297,7 @@ proto.api_container_api.StarlarkRunFinishedEvent.prototype.getTotalExecutionDura
  * @return {!proto.api_container_api.StarlarkRunFinishedEvent} returns this
 */
 proto.api_container_api.StarlarkRunFinishedEvent.prototype.setTotalExecutionDuration = function(value) {
-  return jspb.Message.setWrapperField(this, 2, value);
+  return jspb.Message.setWrapperField(this, 3, value);
 };
 
 
@@ -7279,42 +7315,6 @@ proto.api_container_api.StarlarkRunFinishedEvent.prototype.clearTotalExecutionDu
  * @return {boolean}
  */
 proto.api_container_api.StarlarkRunFinishedEvent.prototype.hasTotalExecutionDuration = function() {
-  return jspb.Message.getField(this, 2) != null;
-};
-
-
-/**
- * optional string serialized_output = 3;
- * @return {string}
- */
-proto.api_container_api.StarlarkRunFinishedEvent.prototype.getSerializedOutput = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
-};
-
-
-/**
- * @param {string} value
- * @return {!proto.api_container_api.StarlarkRunFinishedEvent} returns this
- */
-proto.api_container_api.StarlarkRunFinishedEvent.prototype.setSerializedOutput = function(value) {
-  return jspb.Message.setField(this, 3, value);
-};
-
-
-/**
- * Clears the field making it undefined.
- * @return {!proto.api_container_api.StarlarkRunFinishedEvent} returns this
- */
-proto.api_container_api.StarlarkRunFinishedEvent.prototype.clearSerializedOutput = function() {
-  return jspb.Message.setField(this, 3, undefined);
-};
-
-
-/**
- * Returns whether this field is set.
- * @return {boolean}
- */
-proto.api_container_api.StarlarkRunFinishedEvent.prototype.hasSerializedOutput = function() {
   return jspb.Message.getField(this, 3) != null;
 };
 

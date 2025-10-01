@@ -36,7 +36,7 @@ func loadDockerAuth() (RegistryAuthConfig, error) {
 		configFilePath = configFilePath + "/config.json"
 	}
 
-	logrus.Infof("Loading docker auth from config file: %s", configFilePath)
+	logrus.Debugf("Loading docker auth from config file: %s", configFilePath)
 
 	file, err := os.ReadFile(configFilePath)
 	if errors.Is(err, os.ErrNotExist) {

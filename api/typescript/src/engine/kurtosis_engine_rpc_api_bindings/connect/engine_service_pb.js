@@ -202,6 +202,20 @@ export const StopEnclaveArgs = proto3.makeMessageType(
 
 /**
  * ==============================================================================================
+ *                                       Get Enclaves
+ * ==============================================================================================
+ *
+ * @generated from message engine_api.GetEnclavesByUuidsArgs
+ */
+export const GetEnclavesByUuidsArgs = proto3.makeMessageType(
+  "engine_api.GetEnclavesByUuidsArgs",
+  () => [
+    { no: 1, name: "enclave_uuids", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+  ],
+);
+
+/**
+ * ==============================================================================================
  *                                       Destroy Enclave
  * ==============================================================================================
  *

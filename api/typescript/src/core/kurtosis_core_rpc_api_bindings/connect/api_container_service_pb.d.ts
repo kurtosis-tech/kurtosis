@@ -1133,14 +1133,14 @@ export declare class StarlarkRunFinishedEvent extends Message<StarlarkRunFinishe
   isRunSuccessful: boolean;
 
   /**
-   * @generated from field: optional google.protobuf.Duration total_execution_duration = 2;
-   */
-  totalExecutionDuration?: Duration;
-
-  /**
-   * @generated from field: optional string serialized_output = 3;
+   * @generated from field: optional string serialized_output = 2;
    */
   serializedOutput?: string;
+
+  /**
+   * @generated from field: optional google.protobuf.Duration total_execution_duration = 3;
+   */
+  totalExecutionDuration?: Duration;
 
   constructor(data?: PartialMessage<StarlarkRunFinishedEvent>);
 
