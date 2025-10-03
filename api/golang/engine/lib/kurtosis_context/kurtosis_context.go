@@ -236,6 +236,7 @@ func (kurtosisCtx *KurtosisContext) GetEnclave(ctx context.Context, enclaveIdent
 		return nil, stacktrace.Propagate(err, "An error occurred getting existing and historical enclave identifiers ")
 	}
 	matchingEnclaveUuid := ""
+	logrus.Infof("Existing and historical enclave identifiers: %v", existingAndHistoricalEnclaveIdentifiers.AllIdentifiers)
 	for _, enclaveInfo := range existingAndHistoricalEnclaveIdentifiers.AllIdentifiers {
 		if matchingEnclaveUuid != "" {
 			break
