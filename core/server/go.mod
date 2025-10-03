@@ -48,7 +48,6 @@ require (
 	go.starlark.net v0.0.0-20230224151120-c52844e64a10
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
 	golang.org/x/sync v0.12.0
-	gonum.org/v1/gonum v0.16.0
 	k8s.io/api v0.27.2
 )
 
