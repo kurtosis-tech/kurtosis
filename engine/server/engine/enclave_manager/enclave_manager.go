@@ -291,7 +291,6 @@ func (manager *EnclaveManager) StopEnclave(ctx context.Context, enclaveIdentifie
 // TODO remove these notes - this should be working on active enclaves as well
 // Destroys an enclave, deleting all objects associated with it in the container engine (containers, volumes, networks, etc.)
 func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveIdentifier string) error {
-	logrus.Infof("[DESTROY] Existing and historical enclave identifiers: %v", manager.allExistingAndHistoricalIdentifiers)
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
 
@@ -867,10 +866,8 @@ func getEnclaveCreationTimestamp(enclave *enclave.Enclave) (*time.Time, error) {
 }
 
 func (manager *EnclaveManager) removeEnclaveIdentifierIfExists(enclaveIdentifier string) {
-	logrus.Infof("[REMOVE] Existing and historical enclave identifiers: %v", manager.allExistingAndHistoricalIdentifiers)
 	for i, enclaveIdentifierObj := range manager.allExistingAndHistoricalIdentifiers {
 		if enclaveIdentifierObj.EnclaveUuid == enclaveIdentifier || enclaveIdentifierObj.ShortenedUuid == enclaveIdentifier || enclaveIdentifierObj.Name == enclaveIdentifier {
-			fmt.Println("Removing enclave identifier", enclaveIdentifier)
 			manager.allExistingAndHistoricalIdentifiers = append(manager.allExistingAndHistoricalIdentifiers[:i], manager.allExistingAndHistoricalIdentifiers[i+1:]...)
 			break
 		}
