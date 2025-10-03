@@ -706,14 +706,20 @@ func (network *DefaultServiceNetwork) GetServices(ctx context.Context) (map[serv
 }
 
 func (network *DefaultServiceNetwork) GetService(ctx context.Context, serviceIdentifier string) (*service.Service, error) {
-
-	network.serviceRegistrationMutex.Lock()
-	serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
+	var serviceRegistration *service.ServiceRegistration
+	err := func() error {
+		network.serviceRegistrationMutex.Lock()
+		defer network.serviceRegistrationMutex.Unlock()
+		var err error
+		serviceRegistration, err = network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
+		if err != nil {
+			return err
+		}
+		return nil
+	}()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while fetching registration for service identifier '%v'", serviceIdentifier)
 	}
-	network.serviceRegistrationMutex.Unlock()
-
 	serviceUuid := serviceRegistration.GetUUID()
 
 	getServiceFilters := &service.ServiceFilters{
