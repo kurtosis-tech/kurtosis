@@ -239,6 +239,9 @@ message RunStarlarkScriptArgs {
 
   // Defaults to false
   optional bool non_blocking_mode = 10;
+
+  // If true, executes the package in parallel meaning each instruction runs as soon as its dependencies are finished
+  optional bool parallel = 17;
 }
 
 message RunStarlarkPackageArgs {
@@ -292,6 +295,9 @@ message RunStarlarkPackageArgs {
 
   // token that will be used to authenticate requests for this package
   optional string github_auth_token = 16;
+
+  // If true, executes the package in parallel meaning each instruction runs as soon as its dependencies are finished
+  optional bool parallel = 17;
 }
 
 enum KurtosisFeatureFlag {

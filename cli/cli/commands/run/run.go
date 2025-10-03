@@ -110,6 +110,9 @@ const (
 	noConnectFlagKey = "no-connect"
 	noConnectDefault = "false"
 
+	parallelFlagKey = "parallel"
+	parallelDefault = "false"
+
 	packageArgsFileFlagKey      = "args-file"
 	packageArgsFileDefaultValue = ""
 
@@ -240,6 +243,12 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Type:    flags.FlagType_Bool,
 			Default: defaultBlockingMode,
 		},
+		{
+			Key:     parallelFlagKey,
+			Usage:   "set true, executes the package in parallel, meaning each instruction runs as soon as its dependencies are finished",
+			Type:    flags.FlagType_Bool,
+			Default: parallelDefault,
+		},
 	},
 	Args: []*args.ArgConfig{
 		// TODO add a `Usage` description here when ArgConfig supports it
@@ -360,6 +369,11 @@ func run(
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", nonBlockingModeFlagKey)
 	}
 
+	parallel, err := flags.GetBool(parallelFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", parallelFlagKey)
+	}
+
 	if packageArgs == inputArgsAreEmptyBracesByDefault && packageArgsFile != packageArgsFileDefaultValue {
 		logrus.Debugf("'%v' is empty but '%v' is provided so we will go with the '%v' value", inputArgsArgKey, packageArgsFileFlagKey, packageArgsFileFlagKey)
 		packageArgs, err = getArgsFromFilepathOrURL(packageArgsFile)
@@ -379,6 +393,7 @@ func run(
 		starlark_run_config.WithSerializedParams(packageArgs),
 		starlark_run_config.WithImageDownloadMode(*imageDownload),
 		starlark_run_config.WithNonBlockingMode(nonBlockingMode),
+		starlark_run_config.WithParallel(parallel),
 	)
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()

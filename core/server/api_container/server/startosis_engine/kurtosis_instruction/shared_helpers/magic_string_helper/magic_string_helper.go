@@ -65,16 +65,16 @@ func GetOrReplaceRuntimeValueFromString(originalString string, runtimeValueStore
 	}
 }
 
-func ContainsRuntimeValue(originalString string) ([]string, bool) {
+func GetRuntimeValuesFromString(originalString string) []string {
 	matches := compiledRuntimeValueReplacementRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
 	if len(matches) == 0 {
-		return []string{}, false
+		return []string{}
 	}
 	runtimeValues := make([]string, len(matches))
 	for i, match := range matches {
 		runtimeValues[i] = match[0]
 	}
-	return runtimeValues, true
+	return runtimeValues
 }
 
 func getRuntimeValueFromRegexMatch(match []string, runtimeValueStore *runtime_value_store.RuntimeValueStore) (starlark.Comparable, error) {
