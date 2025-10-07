@@ -2181,12 +2181,13 @@ func (manager *DockerManager) getContainersByFilterArgs(ctx context.Context, fil
 // 2- the container runs successfully and exited with 0, in this case this method will also return true and nil
 // 3- the container dies, in this case this method will return false and the error with the container logs
 func (manager *DockerManager) didContainerStartSuccessfully(ctx context.Context, containerId string, dockerImage string) (bool, error) {
-
 	containerJson, err := manager.InspectContainer(ctx, containerId)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting container JSON info for container with ID '%v'", containerId)
 	}
 	containerState := containerJson.State
+
+	logrus.Infof("Container status '%v' with exit code '%v'", containerState.Status, containerState.ExitCode)
 	containerStatus, err := getContainerStatusByDockerContainerState(containerState.Status)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting ContainerStatus from Docker container state '%v'", containerState.Status)
@@ -2252,6 +2253,10 @@ func newContainerFromDockerContainer(dockerContainer types.ContainerJSON) (*dock
 }
 
 func getContainerStatusByDockerContainerState(dockerContainerState string) (docker_manager_types.ContainerStatus, error) {
+	logrus.Infof("Getting container status by Docker container state '%v'", dockerContainerState)
+	if dockerContainerState == "stopped" { // treat stopped as exited
+		return docker_manager_types.ContainerStatus_Exited, nil
+	}
 	containerStatus, err := docker_manager_types.ContainerStatusString(dockerContainerState)
 	if err != nil {
 		return 0, stacktrace.NewError("No container status matches Docker container state '%v'; this is a bug in Kurtosis", dockerContainerState)
