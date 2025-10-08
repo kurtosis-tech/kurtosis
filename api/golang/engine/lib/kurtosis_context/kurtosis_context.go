@@ -259,19 +259,13 @@ func (kurtosisCtx *KurtosisContext) GetEnclave(ctx context.Context, enclaveIdent
 			enclaveIdentifier,
 		)
 	}
-	var runningEnclaveInfos []*kurtosis_engine_rpc_api_bindings.EnclaveInfo
-	for _, enclaveInfo := range getEnclaveResponse.EnclaveInfo {
-		if enclaveInfo.ContainersStatus == kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_RUNNING {
-			runningEnclaveInfos = append(runningEnclaveInfos, enclaveInfo)
-		}
-	}
-	if len(runningEnclaveInfos) > 1 {
+	if len(getEnclaveResponse.EnclaveInfo) > 1 {
 		return nil, stacktrace.NewError("More than one running enclave found with identifier '%v'. There should only ever be one running enclave with a given name for the identifier.", enclaveIdentifier)
 	}
-	if len(runningEnclaveInfos) == 0 {
+	if len(getEnclaveResponse.EnclaveInfo) == 0 {
 		return nil, stacktrace.NewError("No running enclave found with identifier '%v'", enclaveIdentifier)
 	}
-	return runningEnclaveInfos[0], nil
+	return getEnclaveResponse.EnclaveInfo[enclaveIdentifier], nil
 }
 
 func (kurtosisCtx *KurtosisContext) StopEnclave(ctx context.Context, enclaveIdentifier string) error {
