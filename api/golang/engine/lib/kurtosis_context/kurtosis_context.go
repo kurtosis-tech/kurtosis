@@ -268,6 +268,9 @@ func (kurtosisCtx *KurtosisContext) GetEnclave(ctx context.Context, enclaveIdent
 	if len(runningEnclaveInfos) > 1 {
 		return nil, stacktrace.NewError("More than one running enclave found with identifier '%v'. There should only ever be one running enclave with a given name for the identifier.", enclaveIdentifier)
 	}
+	if len(runningEnclaveInfos) == 0 {
+		return nil, stacktrace.NewError("No running enclave found with identifier '%v'", enclaveIdentifier)
+	}
 	return runningEnclaveInfos[0], nil
 }
 
