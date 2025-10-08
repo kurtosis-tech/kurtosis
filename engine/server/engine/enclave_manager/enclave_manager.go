@@ -313,7 +313,6 @@ func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveIdenti
 		if err = manager.logsDbClient.RemoveEnclaveLogs(string(enclaveUuid)); err != nil {
 			return stacktrace.Propagate(err, "An error occurred attempting to remove enclave '%v' logs after it was destroyed.", enclaveIdentifier)
 		}
-		manager.removeEnclaveIdentifierIfExists(enclaveIdentifier)
 		return nil
 	}
 	destructionErr, found := erroredEnclaves[enclaveUuid]
@@ -639,8 +638,6 @@ func (manager *EnclaveManager) cleanEnclaves(
 			logRemovalErr := stacktrace.Propagate(err, "An error occurred removing enclave '%v' logs.", enclaveId)
 			enclaveDestructionErrors = append(enclaveDestructionErrors, logRemovalErr)
 		}
-
-		manager.removeEnclaveIdentifierIfExists(string(enclaveId))
 	}
 
 	return successfullyDestroyedEnclaveIdStrs, enclaveDestructionErrors, nil
@@ -863,13 +860,4 @@ func getEnclaveCreationTimestamp(enclave *enclave.Enclave) (*time.Time, error) {
 	}
 
 	return enclaveCreationTime, nil
-}
-
-func (manager *EnclaveManager) removeEnclaveIdentifierIfExists(enclaveIdentifier string) {
-	for i, enclaveIdentifierObj := range manager.allExistingAndHistoricalIdentifiers {
-		if enclaveIdentifierObj.EnclaveUuid == enclaveIdentifier || enclaveIdentifierObj.ShortenedUuid == enclaveIdentifier || enclaveIdentifierObj.Name == enclaveIdentifier {
-			manager.allExistingAndHistoricalIdentifiers = append(manager.allExistingAndHistoricalIdentifiers[:i], manager.allExistingAndHistoricalIdentifiers[i+1:]...)
-			break
-		}
-	}
 }
