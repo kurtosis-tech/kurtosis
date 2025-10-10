@@ -369,7 +369,7 @@ func run(
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", nonBlockingModeFlagKey)
 	}
 
-	parallel, err := flags.GetBool(parallelFlagKey)
+	isParallel, err := flags.GetBool(parallelFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", parallelFlagKey)
 	}
@@ -393,7 +393,7 @@ func run(
 		starlark_run_config.WithSerializedParams(packageArgs),
 		starlark_run_config.WithImageDownloadMode(*imageDownload),
 		starlark_run_config.WithNonBlockingMode(nonBlockingMode),
-		starlark_run_config.WithParallel(parallel),
+		starlark_run_config.WithParallel(isParallel),
 	)
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
@@ -503,7 +503,7 @@ func run(
 		return stacktrace.Propagate(errRunningKurtosis, "An error starting the Kurtosis code execution '%v'", starlarkScriptOrPackagePath)
 	}
 
-	errRunningKurtosis = ReadAndPrintResponseLinesUntilClosed(responseLineChan, cancelFunc, verbosity, dryRun)
+	errRunningKurtosis = ReadAndPrintResponseLinesUntilClosed(responseLineChan, cancelFunc, verbosity, dryRun, isParallel)
 
 	if err = enclaveCtx.ConnectServices(ctx, connect); err != nil {
 		logrus.Warnf("An error occurred configuring the user services port forwarding\nError was: %v", err)
@@ -612,7 +612,12 @@ func executeRemotePackage(
 }
 
 // ReadAndPrintResponseLinesUntilClosed TODO(victor.colombo): Extract this to somewhere reasonable
-func ReadAndPrintResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, cancelFunc context.CancelFunc, verbosity command_args_run.Verbosity, dryRun bool) error {
+func ReadAndPrintResponseLinesUntilClosed(
+	responseLineChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine,
+	cancelFunc context.CancelFunc,
+	verbosity command_args_run.Verbosity,
+	dryRun bool,
+	isParallelRun bool) error {
 	defer cancelFunc()
 
 	// This channel will receive a signal when the user presses an interrupt
@@ -620,7 +625,12 @@ func ReadAndPrintResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core
 	signal.Notify(interruptChan, os.Interrupt)
 	defer close(interruptChan)
 
-	printer := output_printers.NewExecutionPrinter()
+	var printer output_printers.ExecutionPrinter
+	if isParallelRun {
+		printer = output_printers.NewParallelExecutionPrinter()
+	} else {
+		printer = output_printers.NewDefaultExecutionPrinter()
+	}
 	if err := printer.Start(); err != nil {
 		return stacktrace.Propagate(err, "Unable to start the printer for this execution. The execution will continue in the background but nothing will be printed.")
 	}
