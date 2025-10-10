@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
@@ -12,7 +14,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/free_ip_addr_tracker"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"strings"
 )
 
 const (
@@ -167,24 +168,24 @@ func runFilesArtifactsExpander(
 			serviceUuid,
 		)
 	}
-	defer func() {
-		if !fileArtifactExpansionSuccessful {
-			return
-		}
-		// We destroy the expander container, rather than leaving it around, so that we clean up the resource we created
-		// in this function (meaning the caller doesn't have to do it)
-		// We can do this because if an error occurs, we'll capture the logs of the container in the error we return
-		// to the user
-		if destroyContainerErr := dockerManager.RemoveContainer(ctx, containerId); destroyContainerErr != nil {
-			logrus.Errorf(
-				"We tried to remove the expander container '%v' with ID '%v' that we started, but doing so threw an error:\n%v",
-				containerName,
-				containerId,
-				destroyContainerErr,
-			)
-			logrus.Errorf("ACTION REQUIRED: You'll need to remove files artifacts expander container '%v' manually", containerName)
-		}
-	}()
+	// defer func() {
+	// 	if !fileArtifactExpansionSuccessful {
+	// 		return
+	// 	}
+	// 	// We destroy the expander container, rather than leaving it around, so that we clean up the resource we created
+	// 	// in this function (meaning the caller doesn't have to do it)
+	// 	// We can do this because if an error occurs, we'll capture the logs of the container in the error we return
+	// 	// to the user
+	// 	if destroyContainerErr := dockerManager.RemoveContainer(ctx, containerId); destroyContainerErr != nil {
+	// 		logrus.Errorf(
+	// 			"We tried to remove the expander container '%v' with ID '%v' that we started, but doing so threw an error:\n%v",
+	// 			containerName,
+	// 			containerId,
+	// 			destroyContainerErr,
+	// 		)
+	// 		logrus.Errorf("ACTION REQUIRED: You'll need to remove files artifacts expander container '%v' manually", containerName)
+	// 	}
+	// }()
 
 	exitCode, err := dockerManager.WaitForExit(ctx, containerId)
 	if err != nil {

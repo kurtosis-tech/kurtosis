@@ -559,6 +559,13 @@ export declare class RunStarlarkScriptArgs extends Message<RunStarlarkScriptArgs
    */
   nonBlockingMode?: boolean;
 
+  /**
+   * If true, executes the package in parallel meaning each instruction runs as soon as its dependencies are finished
+   *
+   * @generated from field: optional bool parallel = 17;
+   */
+  parallel?: boolean;
+
   constructor(data?: PartialMessage<RunStarlarkScriptArgs>);
 
   static readonly runtime: typeof proto3;
@@ -695,6 +702,13 @@ export declare class RunStarlarkPackageArgs extends Message<RunStarlarkPackageAr
    * @generated from field: optional string github_auth_token = 16;
    */
   githubAuthToken?: string;
+
+  /**
+   * If true, executes the package in parallel meaning each instruction runs as soon as its dependencies are finished
+   *
+   * @generated from field: optional bool parallel = 17;
+   */
+  parallel?: boolean;
 
   constructor(data?: PartialMessage<RunStarlarkPackageArgs>);
 

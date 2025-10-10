@@ -685,7 +685,8 @@ func (manager *EnclaveManager) getEnclavesByUuidWithoutMutex(
 	for _, enclaveUuid := range enclaveUuids {
 		enclaveObj, existsEnclave := enclaves[enclaveUuid]
 		if !existsEnclave {
-			return nil, stacktrace.NewError("Enclave '%v' not found", enclaveUuids)
+			logrus.Warnf("Requested enclave '%v' not found. This is likely because the enclave is not running or has been destroyed.", enclaveUuids)
+			continue
 		}
 
 		enclaveInfo, err := getEnclaveInfoForEnclave(ctx, manager.kurtosisBackend, enclaveObj)

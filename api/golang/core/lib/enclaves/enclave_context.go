@@ -117,7 +117,8 @@ func (enclaveCtx *EnclaveContext) RunStarlarkScript(
 		runConfig.CloudInstanceId,
 		runConfig.CloudUserId,
 		runConfig.ImageDownload,
-		runConfig.NonBlockingMode)
+		runConfig.NonBlockingMode,
+		runConfig.Parallel)
 	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 
 	stream, err := enclaveCtx.client.RunStarlarkScript(ctxWithCancel, executeStartosisScriptArgs)
@@ -179,7 +180,8 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackage(
 		runConfig.CloudUserId,
 		runConfig.ImageDownload,
 		runConfig.NonBlockingMode,
-		runConfig.GitHubAuthToken)
+		runConfig.GitHubAuthToken,
+		runConfig.Parallel)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Error preparing package '%s' for execution", packageRootPath)
 	}
@@ -302,7 +304,7 @@ func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(
 	}()
 
 	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
-	executeStartosisScriptArgs := binding_constructors.NewRunStarlarkRemotePackageArgs(packageId, runConfig.RelativePathToMainFile, runConfig.MainFunctionName, serializedParams, runConfig.DryRun, runConfig.Parallelism, runConfig.ExperimentalFeatureFlags, runConfig.CloudInstanceId, runConfig.CloudUserId, runConfig.ImageDownload, runConfig.NonBlockingMode, runConfig.GitHubAuthToken)
+	executeStartosisScriptArgs := binding_constructors.NewRunStarlarkRemotePackageArgs(packageId, runConfig.RelativePathToMainFile, runConfig.MainFunctionName, serializedParams, runConfig.DryRun, runConfig.Parallelism, runConfig.ExperimentalFeatureFlags, runConfig.CloudInstanceId, runConfig.CloudUserId, runConfig.ImageDownload, runConfig.NonBlockingMode, runConfig.Parallel, runConfig.GitHubAuthToken)
 
 	stream, err := enclaveCtx.client.RunStarlarkPackage(ctxWithCancel, executeStartosisScriptArgs)
 	if err != nil {
@@ -670,6 +672,7 @@ func (enclaveCtx *EnclaveContext) assembleRunStartosisPackageArg(
 	imageDownloadMode kurtosis_core_rpc_api_bindings.ImageDownloadMode,
 	nonBlockingMode bool,
 	githubAuthToken string,
+	parallel bool,
 ) (*kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, error) {
 
 	return binding_constructors.NewRunStarlarkPackageArgs(
@@ -684,6 +687,7 @@ func (enclaveCtx *EnclaveContext) assembleRunStartosisPackageArg(
 		cloudUserId,
 		imageDownloadMode,
 		nonBlockingMode,
+		parallel,
 		githubAuthToken), nil
 }
 

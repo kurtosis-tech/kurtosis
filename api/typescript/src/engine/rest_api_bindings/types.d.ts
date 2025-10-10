@@ -791,6 +791,8 @@ export interface components {
       image_download_mode?: components["schemas"]["ImageDownloadMode"];
       /** @description Defaults to false */
       non_blocking_mode?: boolean;
+      /** @description Defaults to false */
+      parallel?: boolean;
     };
     RunStarlarkPackage: {
       /** @description Parameters data for the Starlark package main function */
@@ -825,6 +827,8 @@ export interface components {
       non_blocking_mode?: boolean;
       /** @description Defaults to empty */
       github_auth_token?: string;
+      /** @description Defaults to false */
+      parallel?: boolean;
     };
     /**
      * @description 0 - NO_INSTRUCTIONS_CACHING

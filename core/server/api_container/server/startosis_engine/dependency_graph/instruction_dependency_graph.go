@@ -25,6 +25,8 @@ type InstructionDependencyGraph struct {
 	// Right now, Services, Files Artifacts, and Runtime Values are all represented as strings for simplicity
 	// In the future, we may add types to represent each output but not needed for now
 	outputsToInstructionMap map[string]types.ScheduledInstructionUuid
+
+	shortDescriptors map[types.ScheduledInstructionUuid]string
 }
 
 func NewInstructionDependencyGraph(instructionsSequence []types.ScheduledInstructionUuid) *InstructionDependencyGraph {
@@ -37,6 +39,7 @@ func NewInstructionDependencyGraph(instructionsSequence []types.ScheduledInstruc
 		instructionsDependencies: instructionsDependencies,
 		outputsToInstructionMap:  map[string]types.ScheduledInstructionUuid{},
 		instructionsSequence:     instructionsSequence,
+		shortDescriptors:         map[types.ScheduledInstructionUuid]string{},
 	}
 }
 
@@ -67,19 +70,15 @@ func (graph *InstructionDependencyGraph) ConsumesFilesArtifact(instruction types
 }
 
 func (graph *InstructionDependencyGraph) ConsumesAnyRuntimeValuesInString(instruction types.ScheduledInstructionUuid, stringPotentiallyContainingRuntimeValues string) {
-	if runtimeValues, ok := magic_string_helper.ContainsRuntimeValue(stringPotentiallyContainingRuntimeValues); ok {
-		for _, runtimeValue := range runtimeValues {
-			graph.consumesRuntimeValue(instruction, runtimeValue)
-		}
+	for _, runtimeValue := range magic_string_helper.GetRuntimeValuesFromString(stringPotentiallyContainingRuntimeValues) {
+		graph.consumesRuntimeValue(instruction, runtimeValue)
 	}
 }
 
 func (graph *InstructionDependencyGraph) ConsumesAnyRuntimeValuesInList(instruction types.ScheduledInstructionUuid, listPotentiallyContainingRuntimeValues []string) {
 	for _, wordPotentiallyContainingRuntimeValues := range listPotentiallyContainingRuntimeValues {
-		if runtimeValues, ok := magic_string_helper.ContainsRuntimeValue(wordPotentiallyContainingRuntimeValues); ok {
-			for _, runtimeValue := range runtimeValues {
-				graph.consumesRuntimeValue(instruction, runtimeValue)
-			}
+		for _, runtimeValue := range magic_string_helper.GetRuntimeValuesFromString(wordPotentiallyContainingRuntimeValues) {
+			graph.consumesRuntimeValue(instruction, runtimeValue)
 		}
 	}
 }

@@ -15,6 +15,7 @@ const (
 	defaultImageDownload          = kurtosis_core_rpc_api_bindings.ImageDownloadMode_missing
 	defaultNonBlockingMode        = false
 	defaultGitHubAuthToken        = ""
+	defaultParallel               = false
 )
 
 var defaultExperimentalFeatureFlags = []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag(nil)
@@ -31,6 +32,7 @@ type StarlarkRunConfig struct {
 	ImageDownload            kurtosis_core_rpc_api_bindings.ImageDownloadMode
 	NonBlockingMode          bool
 	GitHubAuthToken          string
+	Parallel                 bool
 }
 
 type starlarkRunConfigOption func(*StarlarkRunConfig)
@@ -48,6 +50,7 @@ func NewRunStarlarkConfig(opts ...starlarkRunConfigOption) *StarlarkRunConfig {
 		ImageDownload:            defaultImageDownload,
 		NonBlockingMode:          defaultNonBlockingMode,
 		GitHubAuthToken:          defaultGitHubAuthToken,
+		Parallel:                 defaultParallel,
 	}
 
 	for _, opt := range opts {
@@ -122,5 +125,11 @@ func WithNonBlockingMode(nonBlockingMode bool) starlarkRunConfigOption {
 func WithGitHubAuthToken(githubAuthToken string) starlarkRunConfigOption {
 	return func(config *StarlarkRunConfig) {
 		config.GitHubAuthToken = githubAuthToken
+	}
+}
+
+func WithParallel(parallel bool) starlarkRunConfigOption {
+	return func(config *StarlarkRunConfig) {
+		config.Parallel = parallel
 	}
 }
