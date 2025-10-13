@@ -265,7 +265,13 @@ func (kurtosisCtx *KurtosisContext) GetEnclave(ctx context.Context, enclaveIdent
 	if len(getEnclaveResponse.EnclaveInfo) == 0 {
 		return nil, stacktrace.NewError("No running enclave found with identifier '%v'", enclaveIdentifier)
 	}
-	return getEnclaveResponse.EnclaveInfo[matchingEnclaveUuids[0]], nil
+	// Get the only key in the map since we know there's exactly one enclave
+	var actualEnclaveUuid string
+	for uuid := range getEnclaveResponse.EnclaveInfo {
+		actualEnclaveUuid = uuid
+		break
+	}
+	return getEnclaveResponse.EnclaveInfo[actualEnclaveUuid], nil
 }
 
 func (kurtosisCtx *KurtosisContext) StopEnclave(ctx context.Context, enclaveIdentifier string) error {
