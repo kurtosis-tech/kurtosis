@@ -3,7 +3,6 @@ package output_printers
 import (
 	"errors"
 	"fmt"
-	"os"
 	"sync"
 	"time"
 
@@ -83,13 +82,23 @@ func (printer *ParallelExecutionPrinter) Start() error {
 
 func (printer *ParallelExecutionPrinter) Stop() {
 	printer.stopSpinnerIfUsed()
+	// Give a moment for final messages to be processed and rendered
+	time.Sleep(100 * time.Millisecond)
+
+	// Properly quit the bubbletea program to release terminal control
+	printer.bubbleteaProgram.Quit()
+
+	// Close the message channel
+	close(printer.bubbleteaMsgChan)
 	printer.isStarted = false
 }
 
 // PrintKurtosisExecutionResponseLineToStdOut format and prints the instruction to StdOut.
 // TODO: consider refactoring this?
 func (printer *ParallelExecutionPrinter) PrintKurtosisExecutionResponseLineToStdOut(responseLine *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, verbosity run.Verbosity, dryRun bool) error {
-	// should we lock here?
+	printer.lock.Lock()
+	defer printer.lock.Unlock()
+
 	if !printer.isStarted {
 		return stacktrace.NewError("Cannot print with a non started printer")
 	}
@@ -97,16 +106,16 @@ func (printer *ParallelExecutionPrinter) PrintKurtosisExecutionResponseLineToStd
 	var msg tea.Msg
 	if responseLine.GetInstruction() != nil && verbosity != run.OutputOnly {
 		instruction := responseLine.GetInstruction()
-		instructionId := instruction.GetExecutableInstruction()
+		instructionId := instruction.GetInstructionId()
 		msg = InstructionStartedMsg{
 			ID:   instructionId,
 			Name: formatInstruction(instruction, verbosity),
 		}
 	} else if responseLine.GetInstructionResult() != nil {
 		result := responseLine.GetInstructionResult()
-		// instructionId := result.GetInstructionId()
+		instructionId := result.GetInstructionId()
 		msg = InstructionCompletedMsg{
-			ID:     "execution", // TODO: see where instruction id comes from
+			ID:     instructionId,
 			Result: formatInstructionResult(result, verbosity),
 		}
 	} else if responseLine.GetError() != nil {
@@ -133,19 +142,19 @@ func (printer *ParallelExecutionPrinter) PrintKurtosisExecutionResponseLineToStd
 	} else if responseLine.GetProgressInfo() != nil {
 		progress := responseLine.GetProgressInfo()
 		progressRatio := float64(progress.GetCurrentStepNumber()) / float64(progress.GetTotalSteps())
-		// instructionId := progress.GetExecutableInstruction() // TODO: see where instruction id comes from
+		instructionId := progress.GetInstructionId()
 		msg = InstructionProgressMsg{
-			ID:       "execution", // TODO: see where instruction id comes from
+			ID:       instructionId,
 			Progress: progressRatio,
 			Message:  formatProgressMessage(progress.GetCurrentStepInfo()),
 		}
 	} else if responseLine.GetRunFinishedEvent() != nil {
 		runFinished := responseLine.GetRunFinishedEvent()
 		output := formatRunOutput(runFinished, dryRun, verbosity)
-		err := os.WriteFile("/Users/tewodrosmitiku/craft/kurtosis/output.txt", []byte(output), 0644)
-		if err != nil {
-			logrus.Errorf("Error writing output to file: %v", err)
-		}
+		// err := os.WriteFile("/Users/tewodrosmitiku/craft/kurtosis/output.txt", []byte(output), 0644)
+		// if err != nil {
+		// 	logrus.Errorf("Error writing output to file: %v", err)
+		// }
 		msg = ExecutionCompleteMsg{
 			ID:      "execution",
 			Result:  output,
