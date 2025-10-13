@@ -726,6 +726,11 @@ export class StarlarkInstruction extends jspb.Message {
   getDescription(): string;
   setDescription(value: string): StarlarkInstruction;
 
+  getInstructionId(): string;
+  setInstructionId(value: string): StarlarkInstruction;
+  hasInstructionId(): boolean;
+  clearInstructionId(): StarlarkInstruction;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StarlarkInstruction.AsObject;
   static toObject(includeInstance: boolean, msg: StarlarkInstruction): StarlarkInstruction.AsObject;
@@ -742,6 +747,12 @@ export namespace StarlarkInstruction {
     executableInstruction: string,
     isSkipped: boolean,
     description: string,
+    instructionId?: string,
+  }
+
+  export enum InstructionIdCase { 
+    _INSTRUCTION_ID_NOT_SET = 0,
+    INSTRUCTION_ID = 7,
   }
 }
 
@@ -753,6 +764,11 @@ export class StarlarkInstructionResult extends jspb.Message {
   setExecutionDuration(value?: google_protobuf_duration_pb.Duration): StarlarkInstructionResult;
   hasExecutionDuration(): boolean;
   clearExecutionDuration(): StarlarkInstructionResult;
+
+  getInstructionId(): string;
+  setInstructionId(value: string): StarlarkInstructionResult;
+  hasInstructionId(): boolean;
+  clearInstructionId(): StarlarkInstructionResult;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StarlarkInstructionResult.AsObject;
@@ -766,11 +782,17 @@ export namespace StarlarkInstructionResult {
   export type AsObject = {
     serializedInstructionResult: string,
     executionDuration?: google_protobuf_duration_pb.Duration.AsObject,
+    instructionId?: string,
   }
 
   export enum ExecutionDurationCase { 
     _EXECUTION_DURATION_NOT_SET = 0,
     EXECUTION_DURATION = 2,
+  }
+
+  export enum InstructionIdCase { 
+    _INSTRUCTION_ID_NOT_SET = 0,
+    INSTRUCTION_ID = 3,
   }
 }
 
@@ -940,6 +962,11 @@ export class StarlarkRunProgress extends jspb.Message {
   getCurrentStepNumber(): number;
   setCurrentStepNumber(value: number): StarlarkRunProgress;
 
+  getInstructionId(): string;
+  setInstructionId(value: string): StarlarkRunProgress;
+  hasInstructionId(): boolean;
+  clearInstructionId(): StarlarkRunProgress;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StarlarkRunProgress.AsObject;
   static toObject(includeInstance: boolean, msg: StarlarkRunProgress): StarlarkRunProgress.AsObject;
@@ -953,6 +980,12 @@ export namespace StarlarkRunProgress {
     currentStepInfoList: Array<string>,
     totalSteps: number,
     currentStepNumber: number,
+    instructionId?: string,
+  }
+
+  export enum InstructionIdCase { 
+    _INSTRUCTION_ID_NOT_SET = 0,
+    INSTRUCTION_ID = 4,
   }
 }
 

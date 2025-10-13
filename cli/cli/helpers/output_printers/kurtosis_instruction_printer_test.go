@@ -32,7 +32,8 @@ func testInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
 			binding_constructors.NewStarlarkInstructionKwarg(`struct(bonjour=42, hello="world")`, "kwarg2", false),
 		},
 		isSkipped,
-		"description")
+		"description",
+		"1")
 }
 
 func TestFormatInstruction_Executable(t *testing.T) {
@@ -80,7 +81,8 @@ func TestFormatInstruction_FormattingFail(t *testing.T) {
 		`print("UNSUPPORTED_TYPE['ModuleOutput(grafana_info=GrafanaInfo(dashboard_path="/d/QdTOwy-nz/eth2-merge-kurtosis-module-dashboard?orgId=1", user="admin", password="admin"))']")`,
 		[]*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{},
 		isSkipped,
-		"description")
+		"description",
+		"1")
 	formattedInstruction := formatInstruction(instruction, run.Executable)
 	// failure to format -> the instruction is returned with no formatting applied
 	expectedResult := `# from dummyFile[12:4]
@@ -96,14 +98,14 @@ func TestFormatError(t *testing.T) {
 
 func TestFormatResult(t *testing.T) {
 	resultMsg := "Hello world"
-	instructionResult := binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(resultMsg, testDuration).GetInstructionResult()
+	instructionResult := binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(resultMsg, testDuration, "1").GetInstructionResult()
 	formattedResultMessage := formatInstructionResult(instructionResult, defaultVerbosity)
 	require.Equal(t, resultMsg, formattedResultMessage)
 }
 
 func TestFormatResult_Detailed(t *testing.T) {
 	serializedResult := "Hello world"
-	instructionResult := binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(serializedResult, testDuration).GetInstructionResult()
+	instructionResult := binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(serializedResult, testDuration, "1").GetInstructionResult()
 	formattedResultMessage := formatInstructionResult(instructionResult, run.Detailed)
 
 	expectedResultMessage := "Hello world (execution duration: 1s)"

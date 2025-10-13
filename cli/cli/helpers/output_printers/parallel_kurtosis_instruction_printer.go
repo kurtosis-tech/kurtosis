@@ -14,6 +14,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_args/run"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/interactive_terminal_decider"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -22,20 +23,25 @@ import (
 type ParallelExecutionPrinter struct {
 	lock *sync.Mutex
 
-	isStarted         bool
-	bubbletteaModel   *ExecutionModel
-	bubbletteaProgram *tea.Program
-	messageChan       chan tea.Msg
+	isStarted bool
 
 	isSpinnerBeingUsed bool
 	spinner            *spinner.Spinner
+
+	// bubbletea library components for rendering the TUI
+	bubbleteaModel   *ExecutionModel
+	bubbleteaProgram *tea.Program
+	bubbleteaMsgChan chan tea.Msg
 }
 
 func NewParallelExecutionPrinter() *ParallelExecutionPrinter {
 	return &ParallelExecutionPrinter{
-		lock:        &sync.Mutex{},
-		isStarted:   false,
-		messageChan: make(chan tea.Msg, 100),
+		lock:               &sync.Mutex{},
+		isStarted:          false,
+		isSpinnerBeingUsed: false,
+		spinner:            nil,
+
+		bubbleteaMsgChan: make(chan tea.Msg, 100),
 	}
 }
 
@@ -43,18 +49,24 @@ func (printer *ParallelExecutionPrinter) Start() error {
 	if printer.isStarted {
 		return stacktrace.NewError("printer already started")
 	}
-
 	printer.isStarted = true
+	// TODO: figure out if we need this?
+	// if !interactive_terminal_decider.IsInteractiveTerminal() {
+	// 	printer.isSpinnerBeingUsed = false
+	// 	logrus.Infof("Kurtosis CLI is running in a non interactive terminal. Everything will work but progress information and the progress bar will not be displayed.")
+	// 	return nil
+	// }
+
 	// Initialize bubbletea model and program
-	printer.bubbletteaModel = NewExecutionModel()
-	printer.bubbletteaProgram = tea.NewProgram(
-		printer.bubbletteaModel,
+	printer.bubbleteaModel = NewExecutionModel()
+	printer.bubbleteaProgram = tea.NewProgram(
+		printer.bubbleteaModel,
 		tea.WithMouseCellMotion(),
 	)
 
 	// Start the bubbletea program in a goroutine
 	go func() {
-		if _, err := printer.bubbletteaProgram.Run(); err != nil {
+		if _, err := printer.bubbleteaProgram.Run(); err != nil {
 			logrus.Errorf("Error running bubbletea program: %v", err)
 		}
 	}()
@@ -75,7 +87,13 @@ func (printer *ParallelExecutionPrinter) Stop() {
 }
 
 // PrintKurtosisExecutionResponseLineToStdOut format and prints the instruction to StdOut.
+// TODO: consider refactoring this?
 func (printer *ParallelExecutionPrinter) PrintKurtosisExecutionResponseLineToStdOut(responseLine *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, verbosity run.Verbosity, dryRun bool) error {
+	// should we lock here?
+	if !printer.isStarted {
+		return stacktrace.NewError("Cannot print with a non started printer")
+	}
+
 	var msg tea.Msg
 	if responseLine.GetInstruction() != nil && verbosity != run.OutputOnly {
 		instruction := responseLine.GetInstruction()
@@ -151,7 +169,7 @@ func (printer *ParallelExecutionPrinter) PrintKurtosisExecutionResponseLineToStd
 	}
 	if msg != nil {
 		select {
-		case printer.messageChan <- msg:
+		case printer.bubbleteaMsgChan <- msg:
 			// Message sent successfully
 		default:
 			// Channel full, log warning but don't block
@@ -165,9 +183,9 @@ func (printer *ParallelExecutionPrinter) PrintKurtosisExecutionResponseLineToStd
 
 // processMessages handles bubbletea messages from the channel
 func (printer *ParallelExecutionPrinter) processMessages() {
-	for msg := range printer.messageChan {
-		if printer.bubbletteaProgram != nil {
-			printer.bubbletteaProgram.Send(msg)
+	for msg := range printer.bubbleteaMsgChan {
+		if printer.bubbleteaProgram != nil {
+			printer.bubbleteaProgram.Send(msg)
 		}
 	}
 }
@@ -325,6 +343,7 @@ func NewExecutionModel() *ExecutionModel {
 		instructions:     instructions,
 		instructionOrder: []string{"execution"},
 		done:             false,
+		isInteractive:    interactive_terminal_decider.IsInteractiveTerminal(),
 	}
 }
 
@@ -332,13 +351,16 @@ func NewExecutionModel() *ExecutionModel {
 func (m *ExecutionModel) Init() tea.Cmd {
 	// Start the execution spinner and progress ticker
 	var cmds []tea.Cmd
+
 	if execution, exists := m.instructions["execution"]; exists {
 		cmds = append(cmds, execution.Spinner.Tick)
 	}
+
 	// Start periodic progress updates
 	cmds = append(cmds, tea.Tick(500*time.Millisecond, func(t time.Time) tea.Msg {
 		return ProgressTickMsg{Time: t}
 	}))
+
 	return tea.Batch(cmds...)
 }
 
@@ -385,7 +407,7 @@ func (m *ExecutionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case InstructionProgressMsg:
 		if instruction, exists := m.instructions[msg.ID]; exists {
 			instruction.Progress = msg.Progress
-			if msg.Message != "" {
+			if msg.Message != "" { // what is message?
 				instruction.InfoMessages = append(instruction.InfoMessages, msg.Message)
 			}
 		}
@@ -396,7 +418,7 @@ func (m *ExecutionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			instruction.Status = StatusCompleted
 			instruction.Progress = 1.0
 			instruction.Result = msg.Result
-		}
+		} // should we handle case where instruction doesn't exist? this means that the instruction didn't have an instruction started message?
 		return m, tea.Batch(cmds...)
 
 	case InstructionFailedMsg:
@@ -484,8 +506,6 @@ func (m *ExecutionModel) renderInteractive() string {
 
 // renderNonInteractive renders simple output for non-interactive terminals
 func (m *ExecutionModel) renderNonInteractive() string {
-	// This will be implemented to provide fallback for non-interactive terminals
-	// For now, return empty string as we'll handle this in the existing printer
 	return ""
 }
 
@@ -566,7 +586,10 @@ func (m *ExecutionModel) renderSummary() string {
 }
 
 // getOrderedInstructions returns instructions in the proper display order:
-// interpretation, validation, regular instructions, execution (always last)
+// interpretation
+// validation
+// regular instructions
+// execution (always last)
 func (m *ExecutionModel) getOrderedInstructions() []*InstructionState {
 	var orderedInstructions []*InstructionState
 	var executionInstruction *InstructionState

@@ -284,6 +284,7 @@ export const StarlarkInstruction = proto3.makeMessageType(
     { no: 4, name: "executable_instruction", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 5, name: "is_skipped", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
     { no: 6, name: "description", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 7, name: "instruction_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ],
 );
 
@@ -295,6 +296,7 @@ export const StarlarkInstructionResult = proto3.makeMessageType(
   () => [
     { no: 1, name: "serialized_instruction_result", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "execution_duration", kind: "message", T: Duration, opt: true },
+    { no: 3, name: "instruction_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ],
 );
 
@@ -373,6 +375,7 @@ export const StarlarkRunProgress = proto3.makeMessageType(
     { no: 1, name: "current_step_info", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
     { no: 2, name: "total_steps", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
     { no: 3, name: "current_step_number", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
+    { no: 4, name: "instruction_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ],
 );
 

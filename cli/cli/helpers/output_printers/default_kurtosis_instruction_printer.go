@@ -26,9 +26,9 @@ type DefaultExecutionPrinter struct {
 func NewDefaultExecutionPrinter() *DefaultExecutionPrinter {
 	return &DefaultExecutionPrinter{
 		lock:               &sync.Mutex{},
+		isStarted:          false,
 		isSpinnerBeingUsed: false,
 		spinner:            nil,
-		isStarted:          false,
 	}
 }
 

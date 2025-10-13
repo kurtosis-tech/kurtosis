@@ -31,6 +31,10 @@ const (
 	startingInterpretationMsg = "Interpreting plan - execution will begin shortly"
 	startingValidationMsg     = "Starting validation"
 	startingExecutionMsg      = "Starting execution"
+
+	InterpretationInstructionId = "interpretation"
+	ValidationInstructionId     = "validation"
+	ExecutionInstructionId      = "execution"
 )
 
 func NewStartosisRunner(interpreter *StartosisInterpreter, validator *StartosisValidator, executor *StartosisExecutor) *StartosisRunner {
@@ -95,7 +99,7 @@ func (runner *StartosisRunner) Run(
 
 		// Interpretation starts > send progress info (this line will be invisible as interpretation is super quick)
 		progressInfo := binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
-			startingInterpretationMsg, defaultCurrentStepNumber, defaultTotalStepsNumber)
+			startingInterpretationMsg, defaultCurrentStepNumber, defaultTotalStepsNumber, InterpretationInstructionId)
 		starlarkRunResponseLines <- progressInfo
 
 		// TODO: once we have feature flags, add a switch here to call InterpretAndOptimizePlan if the feature flag is
@@ -158,7 +162,7 @@ func (runner *StartosisRunner) Run(
 
 		// Validation starts > send progress info
 		progressInfo = binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
-			startingValidationMsg, defaultCurrentStepNumber, totalNumberOfInstructions)
+			startingValidationMsg, defaultCurrentStepNumber, totalNumberOfInstructions, ValidationInstructionId)
 		starlarkRunResponseLines <- progressInfo
 
 		validationErrorsChan := runner.startosisValidator.Validate(ctx, instructionsSequence, imageDownloadMode)
@@ -172,7 +176,7 @@ func (runner *StartosisRunner) Run(
 
 		// Execution starts > send progress info. This will soon be overridden byt the first instruction execution
 		progressInfo = binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
-			startingExecutionMsg, defaultCurrentStepNumber, totalNumberOfInstructions)
+			startingExecutionMsg, defaultCurrentStepNumber, totalNumberOfInstructions, ExecutionInstructionId)
 		starlarkRunResponseLines <- progressInfo
 
 		var executionResponseLinesChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine
