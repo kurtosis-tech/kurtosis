@@ -526,16 +526,16 @@ func (m *ExecutionModel) renderInstruction(instruction *InstructionState) string
 	switch instruction.Status {
 	case StatusPending:
 		style = lipgloss.NewStyle().Foreground(lipgloss.Color("8")) // Gray
-		statusText = "⏳ " + instruction.Name
+		statusText = "⏳ " + instruction.Name + " " + instruction.ID
 	case StatusRunning:
 		style = lipgloss.NewStyle().Foreground(lipgloss.Color("11")) // Yellow
-		statusText = instruction.Spinner.View() + " " + instruction.Name
+		statusText = instruction.Spinner.View() + " " + instruction.Name + " " + instruction.ID
 	case StatusCompleted:
 		style = lipgloss.NewStyle().Foreground(lipgloss.Color("10")) // Green
-		statusText = "✅ " + instruction.Name
+		statusText = "✅ " + instruction.Name + " " + instruction.ID
 	case StatusFailed:
 		style = lipgloss.NewStyle().Foreground(lipgloss.Color("9")) // Red
-		statusText = "❌ " + instruction.Name
+		statusText = "❌ " + instruction.Name + " " + instruction.ID
 	}
 
 	// Build instruction line with status
