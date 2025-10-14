@@ -26,7 +26,7 @@ jobs:
     outputs:
       change: ${{ steps.check.outputs.change }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           go-version: '1.23'
           fetch-depth: 0
@@ -61,7 +61,7 @@ jobs:
         if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
         with:
           go-version: '1.23'
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
       # Generate versions
       - run: scripts/generate-kurtosis-version.sh
