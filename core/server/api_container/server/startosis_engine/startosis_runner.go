@@ -115,6 +115,7 @@ func (runner *StartosisRunner) Run(
 				enclave_structure.NewEnclaveComponents(),
 				resolver.NewInstructionsPlanMask(0),
 				imageDownloadMode,
+				instructions_plan.NewInstructionsPlan(),
 			)
 		} else {
 			serializedScriptOutput, instructionsPlan, interpretationError = runner.startosisInterpreter.InterpretAndOptimizePlan(
@@ -141,6 +142,13 @@ func (runner *StartosisRunner) Run(
 			totalNumberOfInstructions)
 
 		instructionsSequence, interpretationErr := instructionsPlan.GeneratePlan()
+		if interpretationErr != nil {
+			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromInterpretationError(interpretationErr.ToAPIType())
+			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent()
+			return
+		}
+
+		_, interpretationErr = instructionsPlan.GenerateInstructionsDependencyGraph()
 		if interpretationErr != nil {
 			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromInterpretationError(interpretationErr.ToAPIType())
 			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent()
