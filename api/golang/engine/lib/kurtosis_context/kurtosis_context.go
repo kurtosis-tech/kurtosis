@@ -235,25 +235,22 @@ func (kurtosisCtx *KurtosisContext) GetEnclave(ctx context.Context, enclaveIdent
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting existing and historical enclave identifiers ")
 	}
-	matchingEnclaveUuid := ""
+	// in the case the user has created an enclave with the same name multiple times - we only want to return the running enclave (there should only ever be one running enclave with a given name)
+	// we query for enclaves that match the provided identifier and only return the running one
+	matchingEnclaveUuids := []string{}
 	for _, enclaveInfo := range existingAndHistoricalEnclaveIdentifiers.AllIdentifiers {
-		if matchingEnclaveUuid != "" {
-			break
-		}
-
 		// if the provided identifier matches any of the known identifiers for an enclave, use that enclaves full uuid to get the enclave info
 		if enclaveInfo.Name == enclaveIdentifier ||
 			enclaveInfo.ShortenedUuid == enclaveIdentifier ||
 			enclaveInfo.EnclaveUuid == enclaveIdentifier {
-			matchingEnclaveUuid = enclaveInfo.EnclaveUuid
+			matchingEnclaveUuids = append(matchingEnclaveUuids, enclaveInfo.EnclaveUuid)
 		}
 	}
-	if matchingEnclaveUuid == "" {
+	if len(matchingEnclaveUuids) == 0 {
 		return nil, stacktrace.NewError("No enclave found with identifier '%v'", enclaveIdentifier)
 	}
-
 	getEnclaveResponse, err := kurtosisCtx.engineClient.GetEnclavesByUuids(ctx, &kurtosis_engine_rpc_api_bindings.GetEnclavesByUuidsArgs{
-		EnclaveUuids: []string{matchingEnclaveUuid},
+		EnclaveUuids: matchingEnclaveUuids,
 	})
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -262,7 +259,19 @@ func (kurtosisCtx *KurtosisContext) GetEnclave(ctx context.Context, enclaveIdent
 			enclaveIdentifier,
 		)
 	}
-	return getEnclaveResponse.EnclaveInfo[matchingEnclaveUuid], nil
+	if len(getEnclaveResponse.EnclaveInfo) > 1 {
+		return nil, stacktrace.NewError("More than one running enclave found with identifier '%v'. There should only ever be one running enclave with a given name for the identifier.", enclaveIdentifier)
+	}
+	if len(getEnclaveResponse.EnclaveInfo) == 0 {
+		return nil, stacktrace.NewError("No running enclave found with identifier '%v'", enclaveIdentifier)
+	}
+	// Get the only key in the map since we know there's exactly one enclave
+	var actualEnclaveUuid string
+	for uuid := range getEnclaveResponse.EnclaveInfo {
+		actualEnclaveUuid = uuid
+		break
+	}
+	return getEnclaveResponse.EnclaveInfo[actualEnclaveUuid], nil
 }
 
 func (kurtosisCtx *KurtosisContext) StopEnclave(ctx context.Context, enclaveIdentifier string) error {
