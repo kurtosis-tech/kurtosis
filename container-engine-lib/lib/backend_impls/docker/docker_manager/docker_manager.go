@@ -161,6 +161,9 @@ const (
 	NameOfNetworkToStartEngineAndLogServiceContainersInDocker = "bridge"
 	NameOfNetworkToStartEngineAndLogServiceContainersInPodman = "podman"
 
+	dockerContainerStatusExited = "exited"
+	podmanContainerStatusExited = "stopped"
+
 	defaultContainerStopTimeout = 1 * time.Second
 )
 
@@ -2181,13 +2184,20 @@ func (manager *DockerManager) getContainersByFilterArgs(ctx context.Context, fil
 // 2- the container runs successfully and exited with 0, in this case this method will also return true and nil
 // 3- the container dies, in this case this method will return false and the error with the container logs
 func (manager *DockerManager) didContainerStartSuccessfully(ctx context.Context, containerId string, dockerImage string) (bool, error) {
-
 	containerJson, err := manager.InspectContainer(ctx, containerId)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting container JSON info for container with ID '%v'", containerId)
 	}
 	containerState := containerJson.State
-	containerStatus, err := getContainerStatusByDockerContainerState(containerState.Status)
+
+	logrus.Debugf("Container with id '%v' has status '%v' and exited with exit code '%v'", containerId, containerState.Status, containerState.ExitCode)
+	var containerStatusStr string
+	if manager.IsPodman() && containerState.Status == podmanContainerStatusExited {
+		containerStatusStr = dockerContainerStatusExited
+	} else {
+		containerStatusStr = containerState.Status
+	}
+	containerStatus, err := getContainerStatusByDockerContainerState(containerStatusStr)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting ContainerStatus from Docker container state '%v'", containerState.Status)
 	}
