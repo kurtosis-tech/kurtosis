@@ -674,9 +674,8 @@ func createStartServiceOperation(
 
 			//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 			if privatePortSpec.GetTransportProtocol() == port_spec.TransportProtocol_UDP {
-				// We don't publish UDP ports to the host machine - we only expose them
-				// After Docker Desktop 4.41.2 https://github.com/docker/for-mac/issues/7754, Docker Desktop doesn't publish UDP ports to the host machine
-				// We avoid attempting publishing them to prevent errors downstream
+				// After Docker Desktop 4.41.2 https://github.com/docker/for-mac/issues/7754, Docker Desktop doesn't properly publish UDP ports to the host machine
+				// To avoid errors downstream checking for published UDP ports, we only expose them
 				unPublishedPrivatePortIds[portId] = true
 				dockerUsedPorts[dockerPort] = docker_manager.NewNoPublishingSpec()
 			} else if portShouldBeManuallyPublished(portId, publicPorts) {
