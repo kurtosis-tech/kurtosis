@@ -670,6 +670,7 @@ func createStartServiceOperation(
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "An error occurred converting private port spec '%v' to a Docker port", portId)
 			}
+
 			//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 			if portShouldBeManuallyPublished(portId, publicPorts) {
 				publicPortSpec, found := publicPorts[portId]
@@ -678,7 +679,7 @@ func createStartServiceOperation(
 				}
 				dockerUsedPorts[dockerPort] = docker_manager.NewManualPublishingSpec(publicPortSpec.GetNumber())
 			} else {
-				dockerUsedPorts[dockerPort] = docker_manager.NewAutomaticPublishingSpec()
+				dockerUsedPorts[dockerPort] = docker_manager.NewAutomaticPublishingSpec() // most private ports go here
 			}
 		}
 
@@ -689,7 +690,7 @@ func createStartServiceOperation(
 		).WithStaticIP(
 			privateIpAddr,
 		).WithUsedPorts(
-			dockerUsedPorts,
+			dockerUsedPorts, // if its UDP - don't publish it - just expose it
 		).WithEnvironmentVariables(
 			envVars,
 		).WithLabels(
@@ -767,7 +768,7 @@ func createStartServiceOperation(
 		_, _, maybePublicIp, maybePublicPortSpecs, err := shared_helpers.GetIpAndPortInfoFromContainer(
 			containerName.GetString(),
 			labelStrs,
-			hostMachinePortBindings,
+			hostMachinePortBindings, // th
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting the public IP and ports from container '%v'", containerName)

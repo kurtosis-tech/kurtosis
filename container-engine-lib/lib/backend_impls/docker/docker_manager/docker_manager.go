@@ -660,7 +660,7 @@ func (manager *DockerManager) CreateAndStartContainer(
 	containerConfigPtr, err := manager.getContainerCfg(
 		dockerImage,
 		isInteractiveMode,
-		usedPortsSet,
+		usedPortsSet, // these get set as ExposedPorts in the container config
 		args.entrypointArgs,
 		args.cmdArgs,
 		args.envVariables,
@@ -676,7 +676,7 @@ func (manager *DockerManager) CreateAndStartContainer(
 		args.networkMode,
 		args.bindMounts,
 		args.volumeMounts,
-		args.usedPorts,
+		args.usedPorts, // these are used to determine if the port should be published to the host machine and how
 		args.needsAccessToDockerHostMachine,
 		args.cpuAllocationMillicpus,
 		args.memoryAllocationMegabytes,
@@ -774,7 +774,7 @@ func (manager *DockerManager) CreateAndStartContainer(
 
 	publishedPortsSet := map[nat.Port]bool{}
 	for containerPort, publishSpec := range args.usedPorts {
-		if publishSpec.mustBeFoundAfterContainerStart() {
+		if publishSpec.mustBeFoundAfterContainerStart() { // udp ports don't need to be found after container start because they are not published
 			publishedPortsSet[containerPort] = true
 		}
 	}
@@ -808,7 +808,7 @@ func (manager *DockerManager) CreateAndStartContainer(
 				)
 			}
 			logrus.Tracef("Network settings: %+v", networkSettings)
-			allInterfaceHostPortBindings := networkSettings.Ports
+			allInterfaceHostPortBindings := networkSettings.Ports // does this include hosts published to host?
 			if allInterfaceHostPortBindings == nil {
 				return "", nil, stacktrace.NewError(
 					"%v ports on container '%v' were to be published to the host machine, but the container host port bindings were null",
@@ -818,7 +818,7 @@ func (manager *DockerManager) CreateAndStartContainer(
 			}
 			logrus.Tracef("Network settings -> ports: %+v", allInterfaceHostPortBindings)
 
-			allHostPortBindingsOnExpectedInterface := getHostPortBindingsOnExpectedInterface(allInterfaceHostPortBindings)
+			allHostPortBindingsOnExpectedInterface := getHostPortBindingsOnExpectedInterface(allInterfaceHostPortBindings) // now wittles it down to just the published ones
 
 			// Filter to the ports matching the ports we wanted to publish
 			usedHostPortBindingsOnExpectedInterface := map[nat.Port]*nat.PortBinding{}
@@ -1841,9 +1841,9 @@ func (manager *DockerManager) getContainerHostConfig(
 	for containerPort, publishSpec := range usedPortsWithPublishSpec {
 		publishSpecType := publishSpec.getType()
 		switch publishSpecType {
-		case noPublishing:
+		case noPublishing: // we don't want to publish UDP ports to the host machine - we only want to expose them
 			continue
-		case automaticPublishing:
+		case automaticPublishing: // these are for private ports that get random ports exposed
 			hostIp := ""
 			if manager.podmanMode {
 				hostIp = expectedHostIp // podman requires to be 0.0.0.0
@@ -1855,7 +1855,7 @@ func (manager *DockerManager) getContainerHostConfig(
 					HostPort: "",
 				},
 			}
-		case manualPublishing:
+		case manualPublishing: // these are only for public ports - not private ports.
 			manualSpec, ok := publishSpec.(*manuallySpecifiedPortPublishSpec)
 			if !ok {
 				return nil, stacktrace.NewError(

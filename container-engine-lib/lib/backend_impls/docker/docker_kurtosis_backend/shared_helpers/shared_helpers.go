@@ -135,6 +135,8 @@ func GetDockerPortFromPortSpec(portSpec *port_spec.PortSpec) (nat.Port, error) {
 	return dockerPort, nil
 }
 
+// private port spec comes from the deserialized label - could this be one a port we didn't mean to publish?
+// all machine host port bindings comes from the actual published docker container ports
 func GetPublicPortBindingFromPrivatePortSpec(privatePortSpec *port_spec.PortSpec, allHostMachinePortBindings map[nat.Port]*nat.PortBinding) (
 	resultPublicIpAddr net.IP,
 	resultPublicPortSpec *port_spec.PortSpec,
@@ -224,8 +226,8 @@ func TransformPortSpecToDockerPort(portSpec *port_spec.PortSpec) (nat.Port, erro
 // TODO Extract this to DockerKurtosisBackend and use it everywhere, for Engines and API containers?
 func GetIpAndPortInfoFromContainer(
 	containerName string,
-	labels map[string]string,
-	hostMachinePortBindings map[nat.Port]*nat.PortBinding,
+	labels map[string]string, // label that was found the container
+	hostMachinePortBindings map[nat.Port]*nat.PortBinding, // host machine port bindings that were found
 ) (
 	resultPrivateIp net.IP,
 	resultPrivatePortSpecs map[string]*port_spec.PortSpec,
@@ -251,6 +253,8 @@ func GetIpAndPortInfoFromContainer(
 		)
 	}
 
+	// would we need to filter out ports we didn't mean to publish?
+	// figure out what ports get added to the PortSpecsDockerLabelKey
 	privatePortSpecs, err := docker_port_spec_serializer.DeserializePortSpecs(serializedPortSpecs)
 	if err != nil {
 		if err != nil {
