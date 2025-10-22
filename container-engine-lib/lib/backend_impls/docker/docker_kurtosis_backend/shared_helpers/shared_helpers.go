@@ -225,7 +225,6 @@ func GetIpAndPortInfoFromContainer(
 	containerName string,
 	labels map[string]string, // label that was found the container
 	hostMachinePortBindings map[nat.Port]*nat.PortBinding, // host machine port bindings that were found
-	unPublishedPrivatePortIds map[string]bool, // private port ids that were not meant to be published
 ) (
 	resultPrivateIp net.IP,
 	resultPrivatePortSpecs map[string]*port_spec.PortSpec,
@@ -262,10 +261,10 @@ func GetIpAndPortInfoFromContainer(
 		return privateIp, privatePortSpecs, containerPublicIp, publicPortSpecs, nil
 	}
 
-	// filter out the private port specs that didn't get published so we don't attempt to retrieve a public port that doesn't exist
 	publishedPrivateSpecs := map[string]*port_spec.PortSpec{}
 	for portId, privatePortSpec := range privatePortSpecs {
-		if _, found := unPublishedPrivatePortIds[portId]; found {
+		// filter out the private port specs that didn't get published so we don't attempt to retrieve a public port that doesn't exist
+		if privatePortSpec.GetTransportProtocol() == port_spec.TransportProtocol_UDP {
 			continue
 		}
 		publishedPrivateSpecs[portId] = privatePortSpec
@@ -629,7 +628,6 @@ func getUserServiceObjsFromDockerResources(
 			containerName,
 			containerLabels,
 			serviceContainer.GetHostPortBindings(),
-			map[string]bool{},
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting IP & port info from container '%v'", serviceContainer.GetName())

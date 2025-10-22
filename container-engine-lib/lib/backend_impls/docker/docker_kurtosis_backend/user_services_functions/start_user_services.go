@@ -665,7 +665,6 @@ func createStartServiceOperation(
 		}
 
 		dockerUsedPorts := map[nat.Port]docker_manager.PortPublishSpec{}
-		unPublishedPrivatePortIds := map[string]bool{}
 		for portId, privatePortSpec := range privatePorts {
 			dockerPort, err := shared_helpers.TransformPortSpecToDockerPort(privatePortSpec)
 			if err != nil {
@@ -675,7 +674,6 @@ func createStartServiceOperation(
 			if privatePortSpec.GetTransportProtocol() == port_spec.TransportProtocol_UDP {
 				// After Docker Desktop 4.41.2 https://github.com/docker/for-mac/issues/7754, Docker Desktop doesn't properly publish UDP ports to the host machine
 				// To avoid errors downstream checking for published UDP ports, we only expose them
-				unPublishedPrivatePortIds[portId] = true
 				dockerUsedPorts[dockerPort] = docker_manager.NewNoPublishingSpec()
 			} else if portShouldBeManuallyPublished(portId, publicPorts) {
 				publicPortSpec, found := publicPorts[portId]
@@ -774,7 +772,6 @@ func createStartServiceOperation(
 			containerName.GetString(),
 			labelStrs,
 			hostMachinePortBindings,
-			unPublishedPrivatePortIds,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting the public IP and ports from container '%v'", containerName)
