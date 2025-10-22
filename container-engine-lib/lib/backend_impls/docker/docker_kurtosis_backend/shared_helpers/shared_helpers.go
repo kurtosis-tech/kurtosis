@@ -135,14 +135,11 @@ func GetDockerPortFromPortSpec(portSpec *port_spec.PortSpec) (nat.Port, error) {
 	return dockerPort, nil
 }
 
-// private port spec comes from the deserialized label - could this be one a port we didn't mean to publish?
-// all machine host port bindings comes from the actual published docker container ports
 func GetPublicPortBindingFromPrivatePortSpec(privatePortSpec *port_spec.PortSpec, allHostMachinePortBindings map[nat.Port]*nat.PortBinding) (
 	resultPublicIpAddr net.IP,
 	resultPublicPortSpec *port_spec.PortSpec,
 	resultErr error,
 ) {
-
 	dockerPrivatePort, err := GetDockerPortFromPortSpec(privatePortSpec)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(
@@ -228,6 +225,7 @@ func GetIpAndPortInfoFromContainer(
 	containerName string,
 	labels map[string]string, // label that was found the container
 	hostMachinePortBindings map[nat.Port]*nat.PortBinding, // host machine port bindings that were found
+	unPublishedPrivatePortIds map[string]bool, // private port ids that were not meant to be published
 ) (
 	resultPrivateIp net.IP,
 	resultPrivatePortSpecs map[string]*port_spec.PortSpec,
@@ -268,7 +266,16 @@ func GetIpAndPortInfoFromContainer(
 		return privateIp, privatePortSpecs, containerPublicIp, publicPortSpecs, nil
 	}
 
+	// filter out the private port specs that didn't get published so we don't attempt to retrieve a public port that doesn't exist
+	publishedPrivateSpecs := map[string]*port_spec.PortSpec{}
 	for portId, privatePortSpec := range privatePortSpecs {
+		if _, found := unPublishedPrivatePortIds[portId]; !found {
+			continue
+		}
+		publishedPrivateSpecs[portId] = privatePortSpec
+	}
+
+	for portId, privatePortSpec := range publishedPrivateSpecs {
 		portPublicIp, publicPortSpec, err := GetPublicPortBindingFromPrivatePortSpec(privatePortSpec, hostMachinePortBindings)
 		if err != nil {
 			return nil, nil, nil, nil, stacktrace.Propagate(
@@ -626,6 +633,7 @@ func getUserServiceObjsFromDockerResources(
 			containerName,
 			containerLabels,
 			serviceContainer.GetHostPortBindings(),
+			map[string]bool{},
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting IP & port info from container '%v'", serviceContainer.GetName())
