@@ -251,13 +251,9 @@ func GetIpAndPortInfoFromContainer(
 		)
 	}
 
-	// would we need to filter out ports we didn't mean to publish?
-	// figure out what ports get added to the PortSpecsDockerLabelKey
 	privatePortSpecs, err := docker_port_spec_serializer.DeserializePortSpecs(serializedPortSpecs)
 	if err != nil {
-		if err != nil {
-			return nil, nil, nil, nil, stacktrace.Propagate(err, "Couldn't deserialize port spec string '%v'", serializedPortSpecs)
-		}
+		return nil, nil, nil, nil, stacktrace.Propagate(err, "Couldn't deserialize port spec string '%v'", serializedPortSpecs)
 	}
 
 	var containerPublicIp net.IP

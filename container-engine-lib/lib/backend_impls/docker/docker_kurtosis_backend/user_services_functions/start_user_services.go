@@ -671,7 +671,6 @@ func createStartServiceOperation(
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "An error occurred converting private port spec '%v' to a Docker port", portId)
 			}
-
 			//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 			if privatePortSpec.GetTransportProtocol() == port_spec.TransportProtocol_UDP {
 				// After Docker Desktop 4.41.2 https://github.com/docker/for-mac/issues/7754, Docker Desktop doesn't properly publish UDP ports to the host machine
@@ -685,7 +684,7 @@ func createStartServiceOperation(
 				}
 				dockerUsedPorts[dockerPort] = docker_manager.NewManualPublishingSpec(publicPortSpec.GetNumber())
 			} else {
-				dockerUsedPorts[dockerPort] = docker_manager.NewAutomaticPublishingSpec() // most private ports go here
+				dockerUsedPorts[dockerPort] = docker_manager.NewAutomaticPublishingSpec()
 			}
 		}
 
@@ -696,7 +695,7 @@ func createStartServiceOperation(
 		).WithStaticIP(
 			privateIpAddr,
 		).WithUsedPorts(
-			dockerUsedPorts, // if its UDP - don't publish it - just expose it
+			dockerUsedPorts,
 		).WithEnvironmentVariables(
 			envVars,
 		).WithLabels(
@@ -775,7 +774,10 @@ func createStartServiceOperation(
 			containerName.GetString(),
 			labelStrs,
 			hostMachinePortBindings,
+<<<<<<< HEAD
 			unPublishedPrivatePortIds,
+=======
+>>>>>>> parent of 00391aae0 (cmts)
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting the public IP and ports from container '%v'", containerName)
