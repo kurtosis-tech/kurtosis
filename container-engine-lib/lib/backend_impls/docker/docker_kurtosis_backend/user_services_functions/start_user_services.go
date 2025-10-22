@@ -774,10 +774,7 @@ func createStartServiceOperation(
 			containerName.GetString(),
 			labelStrs,
 			hostMachinePortBindings,
-<<<<<<< HEAD
 			unPublishedPrivatePortIds,
-=======
->>>>>>> parent of 00391aae0 (cmts)
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting the public IP and ports from container '%v'", containerName)
