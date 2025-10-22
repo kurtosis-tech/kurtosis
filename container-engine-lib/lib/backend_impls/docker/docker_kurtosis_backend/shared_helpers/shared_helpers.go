@@ -265,7 +265,7 @@ func GetIpAndPortInfoFromContainer(
 	// filter out the private port specs that didn't get published so we don't attempt to retrieve a public port that doesn't exist
 	publishedPrivateSpecs := map[string]*port_spec.PortSpec{}
 	for portId, privatePortSpec := range privatePortSpecs {
-		if _, found := unPublishedPrivatePortIds[portId]; !found {
+		if _, found := unPublishedPrivatePortIds[portId]; found {
 			continue
 		}
 		publishedPrivateSpecs[portId] = privatePortSpec
