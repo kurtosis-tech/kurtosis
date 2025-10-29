@@ -26,7 +26,6 @@ const (
 	outputSizeLimit          = 64 * 1024
 	outputLimitReachedSuffix = "..."
 	progressMsg              = "Execution in progress"
-	emptyInstructionId       = ""
 )
 
 var (
