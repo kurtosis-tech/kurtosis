@@ -34,6 +34,10 @@ const (
 
 	ExecutionCompletedMessage = "Execution completed successfully"
 	ExecutionFailedMessage    = "Execution failed"
+
+	initProgressPct      = 0.1
+	progressIncrementPct = 0.02
+	maxProgressPct       = 0.9
 )
 
 type InstructionStatus int
@@ -67,7 +71,6 @@ type ExecutionModel struct {
 	instructions     map[string]*InstructionState
 	instructionOrder []string
 
-	width, height int
 	isInteractive bool
 
 	done bool
@@ -164,10 +167,6 @@ func (m *ExecutionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
-		return m, tea.Batch(cmds...)
 	case InstructionStartedMsg:
 		instruction := getInitialInstructionState(msg.ID, msg.Name)
 
@@ -225,11 +224,11 @@ func (m *ExecutionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case ProgressTickMsg:
 		// Gradually increase progress for running instructions
 		for _, instruction := range m.instructions {
-			if instruction.Status == StatusRunning && instruction.Progress < 0.9 {
+			if instruction.Status == StatusRunning && instruction.Progress < maxProgressPct {
 				// Slowly increase progress, max out at 90% until completion
-				instruction.Progress += 0.02
-				if instruction.Progress > 0.9 {
-					instruction.Progress = 0.9
+				instruction.Progress += progressIncrementPct
+				if instruction.Progress > maxProgressPct {
+					instruction.Progress = maxProgressPct
 				}
 			}
 		}
@@ -330,6 +329,8 @@ func (m *ExecutionModel) renderSummary() string {
 			completed++
 		case StatusFailed:
 			failed++
+		case StatusPending:
+		case StatusRunning:
 		}
 	}
 
@@ -388,7 +389,7 @@ func getInitialInstructionState(id, name string) *InstructionState {
 		ID:              id,
 		Name:            name,
 		Status:          StatusRunning,
-		Progress:        0.1, // Start with 10% progress
+		Progress:        initProgressPct,
 		Result:          "",
 		ProgressBar:     progress.New(progressBarGradient),
 		Spinner:         s,

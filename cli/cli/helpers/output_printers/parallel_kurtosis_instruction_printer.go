@@ -15,6 +15,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	sleepTimeBeforeFinalOutput = 100 * time.Millisecond
+	messageChanBufferSize      = 100
+)
+
 type ParallelExecutionPrinter struct {
 	lock *sync.Mutex
 
@@ -34,9 +39,12 @@ func NewParallelExecutionPrinter() *ParallelExecutionPrinter {
 	return &ParallelExecutionPrinter{
 		lock:             &sync.Mutex{},
 		isStarted:        false,
-		bubbleteaMsgChan: make(chan tea.Msg, 100),
-		programDone:      make(chan struct{}),
+		bubbleteaModel:   nil,
+		bubbleteaProgram: nil,
+		bubbleteaMsgChan: make(chan tea.Msg, messageChanBufferSize),
+		errorMsgOutput:   "",
 		finalOutput:      "",
+		programDone:      make(chan struct{}),
 	}
 }
 
@@ -86,7 +94,7 @@ func (printer *ParallelExecutionPrinter) Stop() {
 	}
 
 	// Give a moment for final messages to be processed and rendered
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(sleepTimeBeforeFinalOutput)
 
 	close(printer.bubbleteaMsgChan)
 
