@@ -161,6 +161,9 @@ const (
 	NameOfNetworkToStartEngineAndLogServiceContainersInDocker = "bridge"
 	NameOfNetworkToStartEngineAndLogServiceContainersInPodman = "podman"
 
+	dockerContainerStatusExited = "exited"
+	podmanContainerStatusExited = "stopped"
+
 	defaultContainerStopTimeout = 1 * time.Second
 )
 
@@ -2187,8 +2190,14 @@ func (manager *DockerManager) didContainerStartSuccessfully(ctx context.Context,
 	}
 	containerState := containerJson.State
 
-	logrus.Infof("Container status '%v' with exit code '%v'", containerState.Status, containerState.ExitCode)
-	containerStatus, err := getContainerStatusByDockerContainerState(containerState.Status)
+	logrus.Debugf("Container with id '%v' has status '%v' and exited with exit code '%v'", containerId, containerState.Status, containerState.ExitCode)
+	var containerStatusStr string
+	if manager.IsPodman() && containerState.Status == podmanContainerStatusExited {
+		containerStatusStr = dockerContainerStatusExited
+	} else {
+		containerStatusStr = containerState.Status
+	}
+	containerStatus, err := getContainerStatusByDockerContainerState(containerStatusStr)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting ContainerStatus from Docker container state '%v'", containerState.Status)
 	}
