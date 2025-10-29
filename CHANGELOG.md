@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.11.2](https://github.com/kurtosis-tech/kurtosis/compare/1.11.1...1.11.2) (2025-10-16)
+
+
+### Bug Fixes
+
+* don't delete logs collector per enclave over k8s ([#2804](https://github.com/kurtosis-tech/kurtosis/issues/2804)) ([5a09733](https://github.com/kurtosis-tech/kurtosis/commit/5a09733d43cdf66df6985368feb1c097bb8cff03))
+* remove enclave identifiers ([#2812](https://github.com/kurtosis-tech/kurtosis/issues/2812)) ([a7e4fcf](https://github.com/kurtosis-tech/kurtosis/commit/a7e4fcf1f450ae0da905777f7b21097ef04a7f1a))
+* speed up enclave inspect (and other CLI commands) ([#2774](https://github.com/kurtosis-tech/kurtosis/issues/2774)) ([095261b](https://github.com/kurtosis-tech/kurtosis/commit/095261b25fdeec0ae1f5bb5186b7ca7c081b6ed7))
+* treat podman container status stopped as exited status ([#2817](https://github.com/kurtosis-tech/kurtosis/issues/2817)) ([899432f](https://github.com/kurtosis-tech/kurtosis/commit/899432f3dcb67a329820266f0fdcd8502ee81156))
+* use returned uuid ([#2816](https://github.com/kurtosis-tech/kurtosis/issues/2816)) ([2707d5f](https://github.com/kurtosis-tech/kurtosis/commit/2707d5fdf775081664ffb4ad995d69df55746a86))
+
 ## [1.11.1](https://github.com/kurtosis-tech/kurtosis/compare/1.11.0...1.11.1) (2025-08-27)
 
 

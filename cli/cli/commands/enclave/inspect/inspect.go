@@ -143,7 +143,7 @@ func PrintEnclaveInspect(ctx context.Context, kurtosisCtx *kurtosis_context.Kurt
 	// Add creation time row
 	enclaveCreationTime := enclaveInfo.GetCreationTime()
 	if enclaveCreationTime == nil {
-		return stacktrace.Propagate(err, "Expected to get the enclave creation time from the enclave info received but it was not received, this is a bug in Kurtosis")
+		return stacktrace.NewError("Expected to get the enclave creation time from the enclave info received but it was not received, this is a bug in Kurtosis")
 	}
 	enclaveCreationTimeStr := enclaveCreationTime.AsTime().Local().Format(time.RFC1123)
 	keyValuePrinter.AddPair(enclaveCreationTimeTitleName, enclaveCreationTimeStr)
