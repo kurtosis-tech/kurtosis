@@ -102,7 +102,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 			starlarkRunResponseLineStream <- progress
 
 			instruction := scheduledInstruction.GetInstruction()
-			canonicalInstruction := binding_constructors.NewStarlarkRunResponseLineFromInstruction(instruction.GetCanonicalInstruction(scheduledInstruction.IsExecuted()), emptyInstructionId)
+			canonicalInstruction := binding_constructors.NewStarlarkRunResponseLineFromInstruction(instruction.GetCanonicalInstruction(scheduledInstruction.IsExecuted()))
 			starlarkRunResponseLineStream <- canonicalInstruction
 
 			if !dryRun {
@@ -127,7 +127,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 					if len(instructionOutputStr) > outputSizeLimit {
 						instructionOutputStr = fmt.Sprintf("%s%s", instructionOutputStr[0:outputSizeLimit], outputLimitReachedSuffix)
 					}
-					starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(instructionOutputStr, duration, emptyInstructionId)
+					starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(instructionOutputStr, duration)
 				}
 				// add the instruction into the current enclave plan
 				enclavePlanInstruction, err := scheduledInstruction.GetInstruction().GetPersistableAttributes().SetUuid(
@@ -232,7 +232,7 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 				starlarkRunResponseLineStream <- progress
 
 				instruction := scheduledInstruction.GetInstruction()
-				canonicalInstruction := binding_constructors.NewStarlarkRunResponseLineFromInstruction(instruction.GetCanonicalInstruction(scheduledInstruction.IsExecuted()), instructionUuidStr)
+				canonicalInstruction := binding_constructors.NewStarlarkRunResponseLineFromInstructionWithInstructionId(instruction.GetCanonicalInstruction(scheduledInstruction.IsExecuted()), instructionUuidStr)
 				starlarkRunResponseLineStream <- canonicalInstruction
 
 				if !dryRun {
@@ -257,7 +257,7 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 						if len(instructionOutputStr) > outputSizeLimit {
 							instructionOutputStr = fmt.Sprintf("%s%s", instructionOutputStr[0:outputSizeLimit], outputLimitReachedSuffix)
 						}
-						starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(instructionOutputStr, duration, instructionUuidStr)
+						starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResultWithInstructionId(instructionOutputStr, duration, instructionUuidStr)
 					}
 				}
 

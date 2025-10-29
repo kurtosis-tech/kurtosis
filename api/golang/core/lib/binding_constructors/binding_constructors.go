@@ -174,7 +174,16 @@ func NewRunStarlarkRemotePackageArgs(
 //	Startosis Execution Response
 //
 // ==============================================================================================
-func NewStarlarkRunResponseLineFromInstruction(instruction *kurtosis_core_rpc_api_bindings.StarlarkInstruction, instructionId string) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+func NewStarlarkRunResponseLineFromInstruction(instruction *kurtosis_core_rpc_api_bindings.StarlarkInstruction) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+	starlarkInstructionCopy := instruction
+	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
+		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_Instruction{
+			Instruction: starlarkInstructionCopy,
+		},
+	}
+}
+
+func NewStarlarkRunResponseLineFromInstructionWithInstructionId(instruction *kurtosis_core_rpc_api_bindings.StarlarkInstruction, instructionId string) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	starlarkInstructionCopy := instruction
 	starlarkInstructionCopy.InstructionId = &instructionId
 	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
@@ -204,7 +213,18 @@ func NewStarlarkRunResponseLineFromWarning(warningMessage string) *kurtosis_core
 	}
 }
 
-func NewStarlarkRunResponseLineFromInstructionResult(serializedInstructionResult string, executionDuration time.Duration, instructionId string) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+func NewStarlarkRunResponseLineFromInstructionResult(serializedInstructionResult string, executionDuration time.Duration) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
+		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_InstructionResult{
+			InstructionResult: &kurtosis_core_rpc_api_bindings.StarlarkInstructionResult{
+				SerializedInstructionResult: serializedInstructionResult,
+				ExecutionDuration:           durationpb.New(executionDuration),
+			},
+		},
+	}
+}
+
+func NewStarlarkRunResponseLineFromInstructionResultWithInstructionId(serializedInstructionResult string, executionDuration time.Duration, instructionId string) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	instructionIdPtr := new(string)
 	*instructionIdPtr = instructionId
 	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{

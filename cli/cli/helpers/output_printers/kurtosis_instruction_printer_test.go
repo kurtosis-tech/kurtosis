@@ -98,14 +98,14 @@ func TestFormatError(t *testing.T) {
 
 func TestFormatResult(t *testing.T) {
 	resultMsg := "Hello world"
-	instructionResult := binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(resultMsg, testDuration, "1").GetInstructionResult()
+	instructionResult := binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(resultMsg, testDuration).GetInstructionResult()
 	formattedResultMessage := formatInstructionResult(instructionResult, defaultVerbosity)
 	require.Equal(t, resultMsg, formattedResultMessage)
 }
 
 func TestFormatResult_Detailed(t *testing.T) {
 	serializedResult := "Hello world"
-	instructionResult := binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(serializedResult, testDuration, "1").GetInstructionResult()
+	instructionResult := binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(serializedResult, testDuration).GetInstructionResult()
 	formattedResultMessage := formatInstructionResult(instructionResult, run.Detailed)
 
 	expectedResultMessage := "Hello world (execution duration: 1s)"
