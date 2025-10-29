@@ -32,8 +32,7 @@ func testInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
 			binding_constructors.NewStarlarkInstructionKwarg(`struct(bonjour=42, hello="world")`, "kwarg2", false),
 		},
 		isSkipped,
-		"description",
-		"1")
+		"description")
 }
 
 func TestFormatInstruction_Executable(t *testing.T) {
@@ -81,8 +80,7 @@ func TestFormatInstruction_FormattingFail(t *testing.T) {
 		`print("UNSUPPORTED_TYPE['ModuleOutput(grafana_info=GrafanaInfo(dashboard_path="/d/QdTOwy-nz/eth2-merge-kurtosis-module-dashboard?orgId=1", user="admin", password="admin"))']")`,
 		[]*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{},
 		isSkipped,
-		"description",
-		"1")
+		"description")
 	formattedInstruction := formatInstruction(instruction, run.Executable)
 	// failure to format -> the instruction is returned with no formatting applied
 	expectedResult := `# from dummyFile[12:4]

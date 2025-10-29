@@ -62,7 +62,7 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructionsS
 		defer close(starlarkRunResponseLineStream)
 		isValidationFailure := false
 
-		starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
+		starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfoWithInstructionId(
 			validationInProgressMsg, defaultCurrentStepNumber, defaultTotalStepsNumber, ValidationInstructionId)
 
 		serviceNames, err := validator.serviceNetwork.GetServiceNames()

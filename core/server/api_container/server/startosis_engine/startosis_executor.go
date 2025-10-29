@@ -98,7 +98,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 		for index, scheduledInstruction := range instructionsSequence {
 			instructionNumber := uint32(index + 1)
 			progress := binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
-				progressMsg, instructionNumber, totalNumberOfInstructions, emptyInstructionId)
+				progressMsg, instructionNumber, totalNumberOfInstructions)
 			starlarkRunResponseLineStream <- progress
 
 			instruction := scheduledInstruction.GetInstruction()
@@ -228,7 +228,7 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 				}
 
 				instructionNumber := uint32(index + 1)
-				progress := binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(progressMsg, uint32(index+1), totalNumberOfInstructions, instructionUuidStr)
+				progress := binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfoWithInstructionId(progressMsg, uint32(index+1), totalNumberOfInstructions, instructionUuidStr)
 				starlarkRunResponseLineStream <- progress
 
 				instruction := scheduledInstruction.GetInstruction()
