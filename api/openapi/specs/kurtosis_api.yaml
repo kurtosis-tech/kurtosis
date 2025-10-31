@@ -5,17 +5,16 @@ info:
   version: 0.1.0
 
 servers:
-  
   - url: http://engine.localhost:{port}/api
-    description: Local environment 
+    description: Local environment
     variables:
       port:
         enum:
-          - '9779'
-        default: '9779'
+          - "9779"
+        default: "9779"
 
   - url: https://engine-{engine_uuid}.cloud.kurtosis.com/api
-    description: Production Cloud environment 
+    description: Production Cloud environment
     variables:
       engine_uuid:
         default: "000000000000"
@@ -84,7 +83,7 @@ paths:
         - engine
       summary: Delete enclaves
       description: |-
-        Delete stopped enclaves. TO delete all the enclaves use the query parameter `remove_all` 
+        Delete stopped enclaves. TO delete all the enclaves use the query parameter `remove_all`
       parameters:
         - $ref: "#/components/parameters/remove_all"
       responses:
@@ -280,7 +279,7 @@ paths:
     get:
       tags:
         - enclave
-      summary: Returns detailed information about a specific service 
+      summary: Returns detailed information about a specific service
       parameters:
         - $ref: "#/components/parameters/enclave_identifier"
         - $ref: "#/components/parameters/service_identifier"
@@ -317,7 +316,7 @@ paths:
     get:
       tags:
         - enclave
-      summary: Returns detailed information about alls services within the enclave 
+      summary: Returns detailed information about alls services within the enclave
       parameters:
         - $ref: "#/components/parameters/enclave_identifier"
         - in: query
@@ -470,7 +469,7 @@ paths:
     post:
       tags:
         - enclave
-      summary: Add remote file to Kurtosis File System 
+      summary: Add remote file to Kurtosis File System
       description: Tells the API container to download a files artifact from the web to the Kurtosis File System
       parameters:
         - $ref: "#/components/parameters/enclave_identifier"
@@ -495,7 +494,7 @@ paths:
     post:
       tags:
         - enclave
-      summary: Add service's file to Kurtosis File System 
+      summary: Add service's file to Kurtosis File System
       description: Tells the API container to copy a files artifact from a service to the Kurtosis File System
       parameters:
         - $ref: "#/components/parameters/enclave_identifier"
@@ -1128,6 +1127,9 @@ components:
         non_blocking_mode:
           type: boolean
           description: Defaults to false
+        parallel:
+          type: boolean
+          description: Defaults to false
       required:
         - serialized_script
 
@@ -1177,6 +1179,9 @@ components:
         github_auth_token:
           type: string
           description: Defaults to empty
+        parallel:
+          type: boolean
+          description: Defaults to false
 
     KurtosisFeatureFlag:
       type: string

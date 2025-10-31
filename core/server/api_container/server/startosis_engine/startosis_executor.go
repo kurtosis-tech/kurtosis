@@ -15,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -153,6 +154,133 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 			logrus.Debugf("Current enclave plan remained the same as the it was a dry-run. It contains %d instructions", executor.enclavePlan.Size())
 		}
 	}()
+	return starlarkRunResponseLineStream
+}
+
+// ExecuteInParallel parallelizes the execution of the list of instructionSequence _asynchronously_ against the Kurtosis backend
+func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun bool, parallelism int, indexOfFirstInstructionInEnclavePlan int, instructionsSequence []*instructions_plan.ScheduledInstruction, serializedScriptOutput string, instructionDependencyGraph map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+	executor.mutex.Lock()
+	starlarkRunResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
+	ctxWithParallelism := context.WithValue(ctx, startosis_constants.ParallelismParam, parallelism)
+	go func() {
+		defer func() {
+			executor.mutex.Unlock()
+			close(starlarkRunResponseLineStream)
+		}()
+
+		// TODO: for now the plan is append only, as each Starlark run happens on top of whatever exists in the enclave
+		logrus.Debugf("Current enclave plan contains %d instuctions. About to process a new plan with %d instructions starting at index %d (dry-run: %v)",
+			executor.enclavePlan.Size(), len(instructionsSequence), indexOfFirstInstructionInEnclavePlan, dryRun)
+
+		executor.enclavePlan = executor.enclavePlan.PartialDeepClone(indexOfFirstInstructionInEnclavePlan)
+
+		defer func() {
+			// TODO: we now perist the plan at the end of the execution. We could persist it everytime an instruction
+			//  is executed, to be resilient to the APIC being stopped in the middle of a Starlark script execution
+			//  Or we could even persist it only when the APIC is stopped. This seems to be a good middle ground, but
+			//  can be tuned according the our future needs
+			logrus.Infof("Persisting enclave plan composed of %d instructions into enclave database", executor.enclavePlan.Size())
+			if err := executor.enclavePlan.Persist(executor.enclaveDb); err != nil {
+				logrus.Errorf("An error occurred persisting the enclave plan at the end of the execution of the" +
+					"package. The enclave will continue to run, but next runs of Starlark package might not be executed" +
+					"as expected.")
+			}
+		}()
+
+		logrus.Debugf("Transfered %d instructions from previous enclave plan to keep the enclave state consistent", executor.enclavePlan.Size())
+
+		for index, scheduledInstruction := range instructionsSequence {
+			instructionNumber := uint32(index + 1)
+
+			instruction := scheduledInstruction.GetInstruction()
+			// add the instruction into the current enclave plan
+			enclavePlanInstruction, err := scheduledInstruction.GetInstruction().GetPersistableAttributes().SetUuid(
+				string(scheduledInstruction.GetUuid()),
+			).SetReturnedValue(
+				executor.starlarkValueSerde.Serialize(scheduledInstruction.GetReturnedValue()),
+			).Build()
+			if err != nil {
+				sendErrorAndFail(starlarkRunResponseLineStream, time.Duration(0), err, "An error occurred persisting instruction (number %d) at %v after it's been executed:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
+			}
+			executor.enclavePlan.AppendInstruction(enclavePlanInstruction)
+		}
+
+		instructionCompletionChannels := make(map[types.ScheduledInstructionUuid]chan struct{})
+		for instructionUuid := range instructionDependencyGraph {
+			instructionCompletionChannels[instructionUuid] = make(chan struct{})
+		}
+
+		totalNumberOfInstructions := uint32(len(instructionsSequence))
+		var instructionDurations sync.Map // Thread-safe map to store instruction durations
+		parallelStartTime := time.Now()
+		wgSenders := sync.WaitGroup{}
+		for index, scheduledInstruction := range instructionsSequence {
+			wgSenders.Add(1)
+			go func(scheduledInstruction *instructions_plan.ScheduledInstruction, instructionIndex int) {
+				defer wgSenders.Done()
+
+				instructionUuid := scheduledInstruction.GetUuid()
+				for _, dependencyUuid := range instructionDependencyGraph[instructionUuid] {
+					// wait for dependency to complete
+					<-instructionCompletionChannels[dependencyUuid]
+				}
+
+				instructionNumber := uint32(index + 1)
+				progress := binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(progressMsg, uint32(index+1), totalNumberOfInstructions)
+				starlarkRunResponseLineStream <- progress
+
+				instruction := scheduledInstruction.GetInstruction()
+				canonicalInstruction := binding_constructors.NewStarlarkRunResponseLineFromInstruction(instruction.GetCanonicalInstruction(scheduledInstruction.IsExecuted()))
+				starlarkRunResponseLineStream <- canonicalInstruction
+
+				if !dryRun {
+					var err error
+					var instructionOutput *string
+					var duration time.Duration
+					if scheduledInstruction.IsExecuted() {
+						// instruction already executed within this enclave. Do not run it
+						instructionOutput = &skippedInstructionOutput
+					} else {
+						startTime := time.Now()
+						instructionOutput, err = instruction.Execute(ctxWithParallelism)
+						duration = time.Since(startTime)
+						instructionDurations.Store(instructionUuid, duration)
+					}
+					if err != nil {
+						sendErrorAndFail(starlarkRunResponseLineStream, time.Duration(0), err, "An error occurred executing instruction (number %d) at %v:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
+						return
+					}
+					if instructionOutput != nil {
+						instructionOutputStr := *instructionOutput
+						if len(instructionOutputStr) > outputSizeLimit {
+							instructionOutputStr = fmt.Sprintf("%s%s", instructionOutputStr[0:outputSizeLimit], outputLimitReachedSuffix)
+						}
+						starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(instructionOutputStr, duration)
+					}
+				}
+
+				// signal that this instruction has completed
+				close(instructionCompletionChannels[instructionUuid])
+			}(scheduledInstruction, index)
+		}
+
+		wgSenders.Wait()
+		totalParallelExecutionDuration := time.Since(parallelStartTime)
+
+		if !dryRun {
+			logrus.Debugf("Serialized script output before runtime value replace: '%v'", serializedScriptOutput)
+			scriptWithValuesReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(serializedScriptOutput, executor.runtimeValueStore)
+			if err != nil {
+				sendErrorAndFail(starlarkRunResponseLineStream, totalParallelExecutionDuration, err, "An error occurred while replacing the runtime values in the output of the script")
+				return
+			}
+			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(scriptWithValuesReplaced, totalParallelExecutionDuration)
+			logrus.Debugf("Current enclave plan has been updated. It now contains %d instructions", executor.enclavePlan.Size())
+		} else {
+			logrus.Debugf("Current enclave plan remained the same as the it was a dry-run. It contains %d instructions", executor.enclavePlan.Size())
+		}
+	}()
+
 	return starlarkRunResponseLineStream
 }
 

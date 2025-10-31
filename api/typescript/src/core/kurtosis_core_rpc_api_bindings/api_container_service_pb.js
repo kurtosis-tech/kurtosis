@@ -3160,7 +3160,8 @@ proto.api_container_api.RunStarlarkScriptArgs.toObject = function(includeInstanc
     cloudInstanceId: jspb.Message.getFieldWithDefault(msg, 7, ""),
     cloudUserId: jspb.Message.getFieldWithDefault(msg, 8, ""),
     imageDownloadMode: jspb.Message.getFieldWithDefault(msg, 9, 0),
-    nonBlockingMode: jspb.Message.getBooleanFieldWithDefault(msg, 10, false)
+    nonBlockingMode: jspb.Message.getBooleanFieldWithDefault(msg, 10, false),
+    parallel: jspb.Message.getBooleanFieldWithDefault(msg, 17, false)
   };
 
   if (includeInstance) {
@@ -3238,6 +3239,10 @@ proto.api_container_api.RunStarlarkScriptArgs.deserializeBinaryFromReader = func
     case 10:
       var value = /** @type {boolean} */ (reader.readBool());
       msg.setNonBlockingMode(value);
+      break;
+    case 17:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setParallel(value);
       break;
     default:
       reader.skipField();
@@ -3335,6 +3340,13 @@ proto.api_container_api.RunStarlarkScriptArgs.serializeBinaryToWriter = function
   if (f != null) {
     writer.writeBool(
       10,
+      f
+    );
+  }
+  f = /** @type {boolean} */ (jspb.Message.getField(message, 17));
+  if (f != null) {
+    writer.writeBool(
+      17,
       f
     );
   }
@@ -3684,6 +3696,42 @@ proto.api_container_api.RunStarlarkScriptArgs.prototype.hasNonBlockingMode = fun
 };
 
 
+/**
+ * optional bool parallel = 17;
+ * @return {boolean}
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.getParallel = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 17, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.api_container_api.RunStarlarkScriptArgs} returns this
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.setParallel = function(value) {
+  return jspb.Message.setField(this, 17, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.RunStarlarkScriptArgs} returns this
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.clearParallel = function() {
+  return jspb.Message.setField(this, 17, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.hasParallel = function() {
+  return jspb.Message.getField(this, 17) != null;
+};
+
+
 
 /**
  * List of repeated fields within this message type.
@@ -3763,7 +3811,8 @@ proto.api_container_api.RunStarlarkPackageArgs.toObject = function(includeInstan
     cloudUserId: jspb.Message.getFieldWithDefault(msg, 13, ""),
     imageDownloadMode: jspb.Message.getFieldWithDefault(msg, 14, 0),
     nonBlockingMode: jspb.Message.getBooleanFieldWithDefault(msg, 15, false),
-    githubAuthToken: jspb.Message.getFieldWithDefault(msg, 16, "")
+    githubAuthToken: jspb.Message.getFieldWithDefault(msg, 16, ""),
+    parallel: jspb.Message.getBooleanFieldWithDefault(msg, 17, false)
   };
 
   if (includeInstance) {
@@ -3861,6 +3910,10 @@ proto.api_container_api.RunStarlarkPackageArgs.deserializeBinaryFromReader = fun
     case 16:
       var value = /** @type {string} */ (reader.readString());
       msg.setGithubAuthToken(value);
+      break;
+    case 17:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setParallel(value);
       break;
     default:
       reader.skipField();
@@ -3993,6 +4046,13 @@ proto.api_container_api.RunStarlarkPackageArgs.serializeBinaryToWriter = functio
   if (f != null) {
     writer.writeString(
       16,
+      f
+    );
+  }
+  f = /** @type {boolean} */ (jspb.Message.getField(message, 17));
+  if (f != null) {
+    writer.writeBool(
+      17,
       f
     );
   }
@@ -4543,6 +4603,42 @@ proto.api_container_api.RunStarlarkPackageArgs.prototype.clearGithubAuthToken = 
  */
 proto.api_container_api.RunStarlarkPackageArgs.prototype.hasGithubAuthToken = function() {
   return jspb.Message.getField(this, 16) != null;
+};
+
+
+/**
+ * optional bool parallel = 17;
+ * @return {boolean}
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.getParallel = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 17, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.api_container_api.RunStarlarkPackageArgs} returns this
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.setParallel = function(value) {
+  return jspb.Message.setField(this, 17, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.RunStarlarkPackageArgs} returns this
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.clearParallel = function() {
+  return jspb.Message.setField(this, 17, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.hasParallel = function() {
+  return jspb.Message.getField(this, 17) != null;
 };
 
 
