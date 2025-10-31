@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.12.0](https://github.com/kurtosis-tech/kurtosis/compare/1.11.2...1.12.0) (2025-10-31)
+
+
+### Features
+
+* add dependency graph to interpreter ([#2809](https://github.com/kurtosis-tech/kurtosis/issues/2809)) ([9f5e463](https://github.com/kurtosis-tech/kurtosis/commit/9f5e4630df774a1dde6bda266748bfa4e2095643))
+* kurtosis run `--parallel` ([#2811](https://github.com/kurtosis-tech/kurtosis/issues/2811)) ([d1e808b](https://github.com/kurtosis-tech/kurtosis/commit/d1e808b2b88dbd21e75dc9262793cc41fb7d5894))
+* parallel printing terminal UI ([#2821](https://github.com/kurtosis-tech/kurtosis/issues/2821)) ([17e39d2](https://github.com/kurtosis-tech/kurtosis/commit/17e39d2192f7b485d59377107f1fea9b535b3881))
+
+
+### Bug Fixes
+
+* don't publish udp ports ([#2818](https://github.com/kurtosis-tech/kurtosis/issues/2818)) ([f87a91e](https://github.com/kurtosis-tech/kurtosis/commit/f87a91ead5306196818ff3c39d2bcfbacc0826cd))
+* kurtosis service update with wait=None ([#2819](https://github.com/kurtosis-tech/kurtosis/issues/2819)) ([f53d678](https://github.com/kurtosis-tech/kurtosis/commit/f53d6781082e26e6c0ee5c6ddd2ec45a6b3a1d9e))
+* remove log ([#2822](https://github.com/kurtosis-tech/kurtosis/issues/2822)) ([3e6510c](https://github.com/kurtosis-tech/kurtosis/commit/3e6510c5d9c738004025e52498c154e3bc2fb4a4))
+
 ## [1.11.2](https://github.com/kurtosis-tech/kurtosis/compare/1.11.1...1.11.2) (2025-10-16)
 
 
