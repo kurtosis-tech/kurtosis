@@ -25,6 +25,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/docker_compose_transpiler"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
@@ -699,7 +700,8 @@ func (apicService *ApiContainerService) GetStarlarkPackagePlanYaml(ctx context.C
 		false,
 		enclave_structure.NewEnclaveComponents(),
 		resolver.NewInstructionsPlanMask(0),
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlan())
 	if apiInterpretationError != nil {
 		interpretationError = startosis_errors.NewInterpretationError(apiInterpretationError.GetErrorMessage())
 		return nil, stacktrace.Propagate(interpretationError, "An interpretation error occurred interpreting package for retrieving plan yaml for package: %v", packageIdFromArgs)
@@ -733,7 +735,9 @@ func (apicService *ApiContainerService) GetStarlarkScriptPlanYaml(ctx context.Co
 		false,
 		enclave_structure.NewEnclaveComponents(),
 		resolver.NewInstructionsPlanMask(0),
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlan(),
+	)
 	if apiInterpretationError != nil {
 		return nil, startosis_errors.NewInterpretationError(apiInterpretationError.GetErrorMessage())
 	}

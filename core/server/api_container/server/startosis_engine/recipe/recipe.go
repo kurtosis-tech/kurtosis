@@ -19,4 +19,5 @@ type Recipe interface {
 	) (map[string]starlark.Comparable, error)
 	CreateStarlarkReturnValue(resultUuid string) (*starlark.Dict, *startosis_errors.InterpretationError)
 	ResultMapToString(resultMap map[string]starlark.Comparable) string
+	GetStarlarkReturnValuesAsStringList(resultUuid string) ([]string, *startosis_errors.InterpretationError)
 }
