@@ -54,6 +54,7 @@ const (
 	engineClientCtxKey    = "engine-client"
 	doNotShowFullUuids    = false
 	doNotDryRun           = false
+	doNotParallel         = false
 	noParallelism         = 1
 )
 
@@ -301,7 +302,7 @@ func runStarlark(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, starl
 	if err != nil {
 		return stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
 	}
-	errRunningKurtosis := _run.ReadAndPrintResponseLinesUntilClosed(responseLineChan, cancelFunc, command_args_run.OutputOnly, doNotDryRun)
+	errRunningKurtosis := _run.ReadAndPrintResponseLinesUntilClosed(responseLineChan, cancelFunc, command_args_run.OutputOnly, doNotDryRun, doNotParallel)
 	if errRunningKurtosis != nil {
 		return stacktrace.Propagate(errRunningKurtosis, "An error running starlark happaned")
 	}

@@ -5435,7 +5435,8 @@ proto.api_container_api.StarlarkInstruction.toObject = function(includeInstance,
     proto.api_container_api.StarlarkInstructionArg.toObject, includeInstance),
     executableInstruction: jspb.Message.getFieldWithDefault(msg, 4, ""),
     isSkipped: jspb.Message.getBooleanFieldWithDefault(msg, 5, false),
-    description: jspb.Message.getFieldWithDefault(msg, 6, "")
+    description: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    instructionId: jspb.Message.getFieldWithDefault(msg, 7, "")
   };
 
   if (includeInstance) {
@@ -5497,6 +5498,10 @@ proto.api_container_api.StarlarkInstruction.deserializeBinaryFromReader = functi
     case 6:
       var value = /** @type {string} */ (reader.readString());
       msg.setDescription(value);
+      break;
+    case 7:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setInstructionId(value);
       break;
     default:
       reader.skipField();
@@ -5568,6 +5573,13 @@ proto.api_container_api.StarlarkInstruction.serializeBinaryToWriter = function(m
   if (f.length > 0) {
     writer.writeString(
       6,
+      f
+    );
+  }
+  f = /** @type {string} */ (jspb.Message.getField(message, 7));
+  if (f != null) {
+    writer.writeString(
+      7,
       f
     );
   }
@@ -5721,6 +5733,42 @@ proto.api_container_api.StarlarkInstruction.prototype.setDescription = function(
 };
 
 
+/**
+ * optional string instruction_id = 7;
+ * @return {string}
+ */
+proto.api_container_api.StarlarkInstruction.prototype.getInstructionId = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 7, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.StarlarkInstruction} returns this
+ */
+proto.api_container_api.StarlarkInstruction.prototype.setInstructionId = function(value) {
+  return jspb.Message.setField(this, 7, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.StarlarkInstruction} returns this
+ */
+proto.api_container_api.StarlarkInstruction.prototype.clearInstructionId = function() {
+  return jspb.Message.setField(this, 7, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.StarlarkInstruction.prototype.hasInstructionId = function() {
+  return jspb.Message.getField(this, 7) != null;
+};
+
+
 
 
 
@@ -5754,7 +5802,8 @@ proto.api_container_api.StarlarkInstructionResult.prototype.toObject = function(
 proto.api_container_api.StarlarkInstructionResult.toObject = function(includeInstance, msg) {
   var f, obj = {
     serializedInstructionResult: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    executionDuration: (f = msg.getExecutionDuration()) && google_protobuf_duration_pb.Duration.toObject(includeInstance, f)
+    executionDuration: (f = msg.getExecutionDuration()) && google_protobuf_duration_pb.Duration.toObject(includeInstance, f),
+    instructionId: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -5800,6 +5849,10 @@ proto.api_container_api.StarlarkInstructionResult.deserializeBinaryFromReader = 
       reader.readMessage(value,google_protobuf_duration_pb.Duration.deserializeBinaryFromReader);
       msg.setExecutionDuration(value);
       break;
+    case 3:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setInstructionId(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -5842,6 +5895,13 @@ proto.api_container_api.StarlarkInstructionResult.serializeBinaryToWriter = func
       2,
       f,
       google_protobuf_duration_pb.Duration.serializeBinaryToWriter
+    );
+  }
+  f = /** @type {string} */ (jspb.Message.getField(message, 3));
+  if (f != null) {
+    writer.writeString(
+      3,
+      f
     );
   }
 };
@@ -5899,6 +5959,42 @@ proto.api_container_api.StarlarkInstructionResult.prototype.clearExecutionDurati
  */
 proto.api_container_api.StarlarkInstructionResult.prototype.hasExecutionDuration = function() {
   return jspb.Message.getField(this, 2) != null;
+};
+
+
+/**
+ * optional string instruction_id = 3;
+ * @return {string}
+ */
+proto.api_container_api.StarlarkInstructionResult.prototype.getInstructionId = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.StarlarkInstructionResult} returns this
+ */
+proto.api_container_api.StarlarkInstructionResult.prototype.setInstructionId = function(value) {
+  return jspb.Message.setField(this, 3, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.StarlarkInstructionResult} returns this
+ */
+proto.api_container_api.StarlarkInstructionResult.prototype.clearInstructionId = function() {
+  return jspb.Message.setField(this, 3, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.StarlarkInstructionResult.prototype.hasInstructionId = function() {
+  return jspb.Message.getField(this, 3) != null;
 };
 
 
@@ -7011,7 +7107,8 @@ proto.api_container_api.StarlarkRunProgress.toObject = function(includeInstance,
   var f, obj = {
     currentStepInfoList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f,
     totalSteps: jspb.Message.getFieldWithDefault(msg, 2, 0),
-    currentStepNumber: jspb.Message.getFieldWithDefault(msg, 3, 0)
+    currentStepNumber: jspb.Message.getFieldWithDefault(msg, 3, 0),
+    instructionId: jspb.Message.getFieldWithDefault(msg, 4, "")
   };
 
   if (includeInstance) {
@@ -7060,6 +7157,10 @@ proto.api_container_api.StarlarkRunProgress.deserializeBinaryFromReader = functi
       var value = /** @type {number} */ (reader.readUint32());
       msg.setCurrentStepNumber(value);
       break;
+    case 4:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setInstructionId(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -7107,6 +7208,13 @@ proto.api_container_api.StarlarkRunProgress.serializeBinaryToWriter = function(m
   if (f !== 0) {
     writer.writeUint32(
       3,
+      f
+    );
+  }
+  f = /** @type {string} */ (jspb.Message.getField(message, 4));
+  if (f != null) {
+    writer.writeString(
+      4,
       f
     );
   }
@@ -7183,6 +7291,42 @@ proto.api_container_api.StarlarkRunProgress.prototype.getCurrentStepNumber = fun
  */
 proto.api_container_api.StarlarkRunProgress.prototype.setCurrentStepNumber = function(value) {
   return jspb.Message.setProto3IntField(this, 3, value);
+};
+
+
+/**
+ * optional string instruction_id = 4;
+ * @return {string}
+ */
+proto.api_container_api.StarlarkRunProgress.prototype.getInstructionId = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 4, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.StarlarkRunProgress} returns this
+ */
+proto.api_container_api.StarlarkRunProgress.prototype.setInstructionId = function(value) {
+  return jspb.Message.setField(this, 4, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.StarlarkRunProgress} returns this
+ */
+proto.api_container_api.StarlarkRunProgress.prototype.clearInstructionId = function() {
+  return jspb.Message.setField(this, 4, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.StarlarkRunProgress.prototype.hasInstructionId = function() {
+  return jspb.Message.getField(this, 4) != null;
 };
 
 

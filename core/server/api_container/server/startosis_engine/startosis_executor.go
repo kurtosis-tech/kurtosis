@@ -163,6 +163,13 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 	starlarkRunResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 	ctxWithParallelism := context.WithValue(ctx, startosis_constants.ParallelismParam, parallelism)
 	go func() {
+		ctxWithParallelismAndCancel, cancelParallelismCtxFunc := context.WithCancel(ctxWithParallelism)
+		defer cancelParallelismCtxFunc()
+
+		var firstError error
+		var errorMu sync.Mutex
+		errorFound := false
+
 		defer func() {
 			executor.mutex.Unlock()
 			close(starlarkRunResponseLineStream)
@@ -220,17 +227,25 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 				defer wgSenders.Done()
 
 				instructionUuid := scheduledInstruction.GetUuid()
+				defer close(instructionCompletionChannels[instructionUuid])
+
+				instructionUuidStr := string(instructionUuid)
 				for _, dependencyUuid := range instructionDependencyGraph[instructionUuid] {
-					// wait for dependency to complete
-					<-instructionCompletionChannels[dependencyUuid]
+					select {
+					case <-instructionCompletionChannels[dependencyUuid]:
+						// wait for dependency to complete successfully, then continue
+					case <-ctxWithParallelismAndCancel.Done():
+						// Cancellation signaled, exit early
+						return
+					}
 				}
 
 				instructionNumber := uint32(index + 1)
-				progress := binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(progressMsg, uint32(index+1), totalNumberOfInstructions)
+				progress := binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfoWithInstructionId(progressMsg, uint32(index+1), totalNumberOfInstructions, instructionUuidStr)
 				starlarkRunResponseLineStream <- progress
 
 				instruction := scheduledInstruction.GetInstruction()
-				canonicalInstruction := binding_constructors.NewStarlarkRunResponseLineFromInstruction(instruction.GetCanonicalInstruction(scheduledInstruction.IsExecuted()))
+				canonicalInstruction := binding_constructors.NewStarlarkRunResponseLineFromInstructionWithInstructionId(instruction.GetCanonicalInstruction(scheduledInstruction.IsExecuted()), instructionUuidStr)
 				starlarkRunResponseLineStream <- canonicalInstruction
 
 				if !dryRun {
@@ -242,12 +257,18 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 						instructionOutput = &skippedInstructionOutput
 					} else {
 						startTime := time.Now()
-						instructionOutput, err = instruction.Execute(ctxWithParallelism)
+						instructionOutput, err = instruction.Execute(ctxWithParallelismAndCancel)
 						duration = time.Since(startTime)
 						instructionDurations.Store(instructionUuid, duration)
 					}
 					if err != nil {
-						sendErrorAndFail(starlarkRunResponseLineStream, time.Duration(0), err, "An error occurred executing instruction (number %d) at %v:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
+						errorMu.Lock()
+						if !errorFound {
+							errorFound = true
+							firstError = stacktrace.Propagate(err, "An error occurred executing instruction (number %d) at %v:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
+							cancelParallelismCtxFunc() // Signal all other goroutines to stop
+						}
+						errorMu.Unlock()
 						return
 					}
 					if instructionOutput != nil {
@@ -255,17 +276,19 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 						if len(instructionOutputStr) > outputSizeLimit {
 							instructionOutputStr = fmt.Sprintf("%s%s", instructionOutputStr[0:outputSizeLimit], outputLimitReachedSuffix)
 						}
-						starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(instructionOutputStr, duration)
+						starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResultWithInstructionId(instructionOutputStr, duration, instructionUuidStr)
 					}
 				}
-
-				// signal that this instruction has completed
-				close(instructionCompletionChannels[instructionUuid])
 			}(scheduledInstruction, index)
 		}
 
 		wgSenders.Wait()
 		totalParallelExecutionDuration := time.Since(parallelStartTime)
+
+		if errorFound {
+			sendErrorAndFail(starlarkRunResponseLineStream, totalParallelExecutionDuration, firstError, "One or more instructions failed to execute in parallel. This if the first error that was found.")
+			return
+		}
 
 		if !dryRun {
 			logrus.Debugf("Serialized script output before runtime value replace: '%v'", serializedScriptOutput)
@@ -288,6 +311,7 @@ func (executor *StartosisExecutor) GetCurrentEnclavePLan() *enclave_plan_persist
 	return executor.enclavePlan
 }
 
+// how should I ensure this terminates all running goroutines?
 func sendErrorAndFail(starlarkRunResponseLineStream chan<- *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, totalExecutionDuration time.Duration, err error, msg string, msgArgs ...interface{}) {
 	propagatedErr := stacktrace.Propagate(err, msg, msgArgs...)
 	serializedError := binding_constructors.NewStarlarkExecutionError(propagatedErr.Error())
