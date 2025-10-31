@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.12.1](https://github.com/kurtosis-tech/kurtosis/compare/1.12.0...1.12.1) (2025-10-31)
+
+
+### Bug Fixes
+
+* **ci:** upgrade rust to 1.88 ([#2823](https://github.com/kurtosis-tech/kurtosis/issues/2823)) ([80c41d8](https://github.com/kurtosis-tech/kurtosis/commit/80c41d8deb51704f0e38034ca04939037c6fb805))
+
 ## [1.12.0](https://github.com/kurtosis-tech/kurtosis/compare/1.11.2...1.12.0) (2025-10-31)
 
 
