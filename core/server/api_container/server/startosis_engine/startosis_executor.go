@@ -229,27 +229,15 @@ func (executor *StartosisExecutor) ExecuteInParallel(ctx context.Context, dryRun
 				instructionUuid := scheduledInstruction.GetUuid()
 				defer close(instructionCompletionChannels[instructionUuid])
 
-				select {
-				case <-ctxWithParallelismAndCancel.Done():
-					return
-				default:
-				}
-
 				instructionUuidStr := string(instructionUuid)
 				for _, dependencyUuid := range instructionDependencyGraph[instructionUuid] {
 					select {
 					case <-instructionCompletionChannels[dependencyUuid]:
-						// Dependency completed successfully, continue
+						// wait for dependency to complete successfully, then continue
 					case <-ctxWithParallelismAndCancel.Done():
 						// Cancellation signaled, exit early
 						return
 					}
-				}
-
-				select {
-				case <-ctxWithParallelismAndCancel.Done():
-					return
-				default:
 				}
 
 				instructionNumber := uint32(index + 1)
