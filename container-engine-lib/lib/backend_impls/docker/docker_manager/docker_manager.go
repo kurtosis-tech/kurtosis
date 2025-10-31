@@ -2262,10 +2262,6 @@ func newContainerFromDockerContainer(dockerContainer types.ContainerJSON) (*dock
 }
 
 func getContainerStatusByDockerContainerState(dockerContainerState string) (docker_manager_types.ContainerStatus, error) {
-	logrus.Infof("Getting container status by Docker container state '%v'", dockerContainerState)
-	if dockerContainerState == "stopped" { // treat stopped as exited
-		return docker_manager_types.ContainerStatus_Exited, nil
-	}
 	containerStatus, err := docker_manager_types.ContainerStatusString(dockerContainerState)
 	if err != nil {
 		return 0, stacktrace.NewError("No container status matches Docker container state '%v'; this is a bug in Kurtosis", dockerContainerState)
