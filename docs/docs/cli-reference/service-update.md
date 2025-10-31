@@ -37,3 +37,6 @@ kurtosis service update my-enclave test-service \
 This command replaces the existing service with a new container using the updated configuration. The service will be briefly stopped and restarted as part of this process.
 :::
 
+:::note Port wait
+When you update a service, any custom `wait` configuration set on its ports will be cleared. All updated ports will have `wait=None` after this operation, regardless of their previous setting.
+:::

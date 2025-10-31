@@ -60,8 +60,12 @@ func portToStarlark(port *kurtosis_core_rpc_api_bindings.Port) string {
 	if port.GetTransportProtocol() != kurtosis_core_rpc_api_bindings.Port_TCP {
 		starlarkFields = append(starlarkFields, fmt.Sprintf(`transport_protocol="%s"`, port.GetTransportProtocol().String()))
 	}
-	if port.GetMaybeWaitTimeout() != "" {
-		starlarkFields = append(starlarkFields, fmt.Sprintf(`wait="%s"`, port.GetMaybeWaitTimeout()))
+	waitTimeout := port.GetMaybeWaitTimeout()
+	if waitTimeout == "" {
+		// When wait=None is set in Starlark, the proto field MaybeWaitTimeout is an empty string.
+		starlarkFields = append(starlarkFields, `wait=None`)
+	} else {
+		starlarkFields = append(starlarkFields, fmt.Sprintf(`wait="%s"`, waitTimeout))
 	}
 	return fmt.Sprintf("PortSpec(%s)", strings.Join(starlarkFields, ","))
 }
