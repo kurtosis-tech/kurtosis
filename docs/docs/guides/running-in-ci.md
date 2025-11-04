@@ -52,4 +52,6 @@ Naturally, if your job fails you'll want to see what was going on inside of Kurt
 
 Example
 -------
-- [GitHub Actions](https://github.com/ethpandaops/ethereum-package/blob/main/.github/workflows/per-pr.yml)
+- [Ethereum Package GitHub Actions](https://github.com/ethpandaops/ethereum-package/blob/main/.github/workflows/per-pr.yml)
+- [Optimism Package GitHub Actions](https://github.com/ethpandaops/optimism-package/blob/main/.github/workflows/per-pr.yml)
+- [EthPandaOps Assertoor Tests](https://github.com/ethpandaops/assertoor-test/blob/master/.github/workflows/run-scheduled.yml)
