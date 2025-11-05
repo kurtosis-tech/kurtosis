@@ -378,8 +378,24 @@ func (builtin *AddServicesCapabilities) allServicesReadinessCheck(
 }
 
 func (builtin *AddServicesCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerator) error {
-	// TOOD: Implement
-	logrus.Warn("ADD SERVICES NOT IMPLEMENTED YET FOR UPDATING PLAN YAML.")
+	var emptyImageVal starlark.Value = nil // ImageBuildSpec, ImageSpec, and NixBuildSpec are not supported yet for add_services, only container image name
+	for serviceName, serviceConfig := range builtin.serviceConfigs {
+		returnValue, found, err := builtin.returnValue.Get(starlark.String(serviceName))
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting the return value for service '%s'", serviceName)
+		}
+		if !found {
+			return stacktrace.NewError("Expected to find a Service object in the return value for service '%s', but none was found; this is a bug in Kurtosis", serviceName)
+		}
+		returnValueService, ok := returnValue.(*kurtosis_types.Service)
+		if !ok {
+			return stacktrace.NewError("Expected to be able to cast the return value for service '%s' to a Service object, but got '%s'", serviceName, reflect.TypeOf(returnValue))
+		}
+		err = updatePlanYamlWithService(plan, serviceName, returnValueService, serviceConfig, emptyImageVal)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
