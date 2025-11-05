@@ -115,7 +115,7 @@ func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEn
 	} else if serviceConfig.GetNixBuildSpec() != nil {
 		validatorEnvironment.AppendRequiredNixBuild(serviceConfig.GetContainerImageName(), serviceConfig.GetNixBuildSpec())
 	} else {
-		validatorEnvironment.AppendRequiredImagePull(serviceConfig.GetContainerImageName()) // THIS IS WHERE THE IMAGE IS ADDED TO THE VALIDATOR ENVIRONMENT
+		validatorEnvironment.AppendRequiredImagePull(serviceConfig.GetContainerImageName())
 	}
 
 	var portIds []string

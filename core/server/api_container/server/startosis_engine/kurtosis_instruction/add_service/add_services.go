@@ -378,7 +378,9 @@ func (builtin *AddServicesCapabilities) allServicesReadinessCheck(
 }
 
 func (builtin *AddServicesCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerator) error {
-	var emptyImageVal starlark.Value = nil // ImageBuildSpec, ImageSpec, and NixBuildSpec are not supported yet for add_services, only container image name
+	// ImageBuildSpec, ImageSpec, and NixBuildSpec are not supported yet for add_services, only container image name
+	// Providing emptyImgVal will cause the plan yaml generator to use the container image name as the image name
+	var emptyImgVal starlark.Value = nil
 	for serviceName, serviceConfig := range builtin.serviceConfigs {
 		returnValue, found, err := builtin.returnValue.Get(starlark.String(serviceName))
 		if err != nil {
@@ -391,7 +393,7 @@ func (builtin *AddServicesCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGener
 		if !ok {
 			return stacktrace.NewError("Expected to be able to cast the return value for service '%s' to a Service object, but got '%s'", serviceName, reflect.TypeOf(returnValue))
 		}
-		err = updatePlanYamlWithService(plan, serviceName, returnValueService, serviceConfig, emptyImageVal)
+		err = updatePlanYamlWithService(plan, serviceName, returnValueService, serviceConfig, emptyImgVal)
 		if err != nil {
 			return err
 		}
