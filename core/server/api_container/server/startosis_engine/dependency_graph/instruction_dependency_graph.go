@@ -34,7 +34,7 @@ type InstructionWithDependencies struct {
 	InstructionUuid    types.ScheduledInstructionUuid   `yaml:"instructionUuid"`
 	ShortDescriptor    string                           `yaml:"shortDescriptor"`
 	Dependencies       []types.ScheduledInstructionUuid `yaml:"dependencies"`
-	isPrintInstruction bool                             `yaml:"isPrintInstruction"`
+	IsPrintInstruction bool                             `yaml:"isPrintInstruction"`
 }
 
 func NewInstructionDependencyGraph(instructionsSequence []types.ScheduledInstructionUuid) *InstructionDependencyGraph {
@@ -155,7 +155,7 @@ func (graph *InstructionDependencyGraph) GenerateInstructionsWithDependencies() 
 		instructionsWithDependencies = append(instructionsWithDependencies, InstructionWithDependencies{
 			InstructionUuid:    instruction,
 			ShortDescriptor:    graph.instructionShortDescriptors[instruction],
-			isPrintInstruction: graph.printInstructionUuids[instruction],
+			IsPrintInstruction: graph.printInstructionUuids[instruction],
 			Dependencies:       dependencies,
 		})
 	}

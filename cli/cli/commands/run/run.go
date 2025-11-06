@@ -23,6 +23,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/configs"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/user_support_constants"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"gopkg.in/yaml.v2"
 	"k8s.io/utils/strings/slices"
 
@@ -38,6 +39,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/enclave/inspect"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/graph_viz"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/portal_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
@@ -121,6 +123,12 @@ const (
 
 	nonBlockingModeFlagKey = "non-blocking-tasks"
 	defaultBlockingMode    = "false"
+
+	outputGraphFlagKey = "output-graph"
+	defaultOutputGraph = "false"
+
+	withMermaidFlagKey = "with-mermaid"
+	defaultWithMermaid = "false"
 
 	httpProtocolRegexStr           = "^(http|https)://"
 	shouldCloneNormalRepo          = false
@@ -249,6 +257,18 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Type:    flags.FlagType_Bool,
 			Default: parallelDefault,
 		},
+		{
+			Key:     outputGraphFlagKey,
+			Usage:   "If true, outputs a graph image of instructions as nodes and edges specifying dependencies between them",
+			Type:    flags.FlagType_Bool,
+			Default: defaultOutputGraph,
+		},
+		{
+			Key:     withMermaidFlagKey,
+			Usage:   "If true, outputs the instruction dependency graph in Mermaid format",
+			Type:    flags.FlagType_Bool,
+			Default: defaultWithMermaid,
+		},
 	},
 	Args: []*args.ArgConfig{
 		// TODO add a `Usage` description here when ArgConfig supports it
@@ -374,6 +394,16 @@ func run(
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", parallelFlagKey)
 	}
 
+	shouldOutputGraph, err := flags.GetBool(outputGraphFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", outputGraphFlagKey)
+	}
+
+	shouldOutputMermaid, err := flags.GetBool(withMermaidFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", withMermaidFlagKey)
+	}
+
 	if packageArgs == inputArgsAreEmptyBracesByDefault && packageArgsFile != packageArgsFileDefaultValue {
 		logrus.Debugf("'%v' is empty but '%v' is provided so we will go with the '%v' value", inputArgsArgKey, packageArgsFileFlagKey, packageArgsFileFlagKey)
 		packageArgs, err = getArgsFromFilepathOrURL(packageArgsFile)
@@ -421,7 +451,7 @@ func run(
 	isRemotePackage := strings.HasPrefix(starlarkScriptOrPackagePath, githubDomainPrefix)
 
 	if isDependenciesOnly {
-		dependencyYaml, err := getPackageDependencyYaml(ctx, enclaveCtx, starlarkScriptOrPackagePath, isRemotePackage, packageArgs)
+		dependencyYaml, err := getPlanYaml(ctx, enclaveCtx, starlarkScriptOrPackagePath, isRemotePackage, packageArgs)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting package dependencies.")
 		}
@@ -462,6 +492,34 @@ func run(
 			}
 		}
 		return nil
+	}
+
+	if shouldOutputGraph {
+		planYaml, err := getPlanYaml(ctx, enclaveCtx, starlarkScriptOrPackagePath, isRemotePackage, packageArgs)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting package dependencies.")
+		}
+
+		type InstructionDependencies struct {
+			Instructions []dependency_graph.InstructionWithDependencies `yaml:"instructions"`
+		}
+		var instructions InstructionDependencies
+		err = yaml.Unmarshal([]byte(planYaml.PlanYaml), &instructions)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred unmarshalling dependency yaml string")
+		}
+
+		err = graph_viz.OutputGraphVisual(instructions.Instructions, "kurtosis-graph.png")
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred outputting the graph image")
+		}
+
+		if shouldOutputMermaid {
+			err := graph_viz.OutputMermaidGraph(instructions.Instructions, "kurtosis-mermaid.md")
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred outputting the mermaid graph")
+			}
+		}
 	}
 
 	var responseLineChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine
@@ -695,7 +753,7 @@ func getOrCreateEnclaveContext(
 	return enclaveContext, isNewEnclaveFlagWhenCreated, nil
 }
 
-func getPackageDependencyYaml(
+func getPlanYaml(
 	ctx context.Context,
 	enclaveCtx *enclaves.EnclaveContext,
 	starlarkScriptOrPackageId string,
