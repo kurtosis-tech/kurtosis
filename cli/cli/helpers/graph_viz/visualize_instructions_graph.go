@@ -1,15 +1,18 @@
 package graph_viz
 
 import (
+	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"strings"
 
+	"github.com/goccy/go-graphviz"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
-// OutputGraphVisual generates a Graphviz DOT format graph and saves it to the specified path
+// OutputGraphVisual generates a Graphviz DOT format graph and renders it as a PNG image
 func OutputGraphVisual(instructions []dependency_graph.InstructionWithDependencies, path string) error {
 	if len(instructions) == 0 {
 		return stacktrace.NewError("No instructions provided to generate graph")
@@ -22,7 +25,7 @@ func OutputGraphVisual(instructions []dependency_graph.InstructionWithDependenci
 	dotGraph.WriteString("  rankdir=TB;\n")
 	dotGraph.WriteString("  node [shape=box, style=rounded];\n\n")
 
-	// Add nodes (skip print instructions)
+	// Add nodes with labels (UUIDs are used only for internal node IDs, not displayed)
 	for _, instruction := range instructions {
 		if instruction.IsPrintInstruction {
 			continue
@@ -47,10 +50,41 @@ func OutputGraphVisual(instructions []dependency_graph.InstructionWithDependenci
 
 	dotGraph.WriteString("}\n")
 
-	// Write to file
-	err := os.WriteFile(path, []byte(dotGraph.String()), 0644)
+	// Create graphviz instance
+	ctx := context.Background()
+	g, err := graphviz.New(ctx)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to write DOT graph to file '%s'", path)
+		return stacktrace.Propagate(err, "Failed to create graphviz instance")
+	}
+	defer func() {
+		if err := g.Close(); err != nil {
+			// Log the error but don't fail the function
+			fmt.Fprintf(os.Stderr, "Warning: failed to close graphviz instance: %v\n", err)
+		}
+	}()
+
+	// Parse the DOT string
+	graph, err := graphviz.ParseBytes([]byte(dotGraph.String()))
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to parse DOT graph")
+	}
+	defer func() {
+		if err := graph.Close(); err != nil {
+			// Log the error but don't fail the function
+			fmt.Fprintf(os.Stderr, "Warning: failed to close graph: %v\n", err)
+		}
+	}()
+
+	// Render the graph to PNG format
+	var buf bytes.Buffer
+	if err := g.Render(ctx, graph, graphviz.PNG, &buf); err != nil {
+		return stacktrace.Propagate(err, "Failed to render graph to PNG")
+	}
+
+	// Write the PNG to file
+	err = os.WriteFile(path, buf.Bytes(), 0644)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to write PNG graph to file '%s'", path)
 	}
 
 	return nil
