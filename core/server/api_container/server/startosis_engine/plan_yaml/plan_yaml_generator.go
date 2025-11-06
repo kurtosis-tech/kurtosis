@@ -44,6 +44,7 @@ func CreateEmptyPlan(packageId string) *PlanYamlGenerator {
 			FilesArtifacts:      []*FilesArtifact{},
 			Images:              []string{},
 			PackageDependencies: []string{},
+			Instructions:        []dependency_graph.InstructionWithDependencies{},
 		},
 		imageSet:             map[string]bool{},
 		packageDependencySet: map[string]bool{},
