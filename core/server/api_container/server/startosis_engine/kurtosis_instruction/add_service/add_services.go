@@ -384,6 +384,7 @@ func (builtin *AddServicesCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGener
 }
 
 func (builtin *AddServicesCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
+	serviceNames := []string{}
 	for _, serviceTuple := range builtin.returnValue.Items() {
 		serviceNameVal := serviceTuple.Index(0)
 		serviceNameStarlarkStr, ok := serviceNameVal.(starlark.String)
@@ -391,6 +392,7 @@ func (builtin *AddServicesCapabilities) UpdateDependencyGraph(instructionUuid ty
 			return stacktrace.NewError("Expected to find a string in the return value for service '%s', but none was found; this is a bug in Kurtosis", serviceNameStarlarkStr.String())
 		}
 		serviceNameStr := serviceNameStarlarkStr.GoString()
+		serviceNames = append(serviceNames, serviceNameStr)
 
 		serviceStarlarkVal := serviceTuple.Index(1)
 		serviceObj, ok := serviceStarlarkVal.(*kurtosis_types.Service)
@@ -405,6 +407,10 @@ func (builtin *AddServicesCapabilities) UpdateDependencyGraph(instructionUuid ty
 			return stacktrace.Propagate(err, "An error occurred updating the dependency graph with service '%s'", serviceNameStr)
 		}
 	}
+
+	serviceNamesStr := strings.Join(serviceNames, ", ")
+	shortDescriptor := fmt.Sprintf("add_services(%d services: %s)", len(builtin.serviceConfigs), serviceNamesStr)
+	dependencyGraph.UpdateInstructionShortDescriptor(instructionUuid, shortDescriptor)
 	return nil
 }
 

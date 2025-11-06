@@ -317,6 +317,9 @@ func (builtin *WaitCapabilities) Description() string {
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
 func (builtin *WaitCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
+	shortDescriptor := fmt.Sprintf("wait(%s %s)", builtin.serviceName, builtin.description)
+	dependencyGraph.UpdateInstructionShortDescriptor(instructionUuid, shortDescriptor)
+
 	dependencyGraph.ConsumesService(instructionUuid, string(builtin.serviceName))
 
 	returnValueStrings, interpretationErr := builtin.recipe.GetStarlarkReturnValuesAsStringList(builtin.resultUuid)

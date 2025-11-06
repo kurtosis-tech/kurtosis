@@ -330,6 +330,9 @@ func (builtin *AddServiceCapabilities) Description() string {
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction
 func (builtin *AddServiceCapabilities) UpdateDependencyGraph(instructionsUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
+	shortDescriptor := fmt.Sprintf("add_service(%s)", builtin.serviceName)
+	dependencyGraph.UpdateInstructionShortDescriptor(instructionsUuid, shortDescriptor)
+
 	err := addServiceToDependencyGraph(instructionsUuid, dependencyGraph, string(builtin.serviceName), builtin.returnValue, builtin.serviceConfig)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred updating the dependency graph with service '%s'", builtin.serviceName)
