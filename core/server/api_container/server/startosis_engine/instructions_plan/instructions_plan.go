@@ -96,36 +96,65 @@ func (plan *InstructionsPlan) GeneratePlan() ([]*ScheduledInstruction, *startosi
 }
 
 func (plan *InstructionsPlan) GenerateInstructionsDependencyGraph() (map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid, *startosis_errors.InterpretationError) {
+	instructionsDependencies, err := plan.generateInstructionsDependencies()
+	if err != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred generating the Instructions Dependencies.")
+	}
+	return instructionsDependencies.GenerateDependencyGraph(), nil
+}
+
+// GenerateYaml takes in an existing planYaml (usually empty) and returns a yaml string containing the effects of the plan
+func (plan *InstructionsPlan) GenerateYaml(planYaml *plan_yaml.PlanYamlGenerator) (string, error) {
+	planYaml, err := plan.generatePlanYaml(planYaml)
+	if err != nil {
+		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred generating the Plan YAML.")
+	}
+	return planYaml.GenerateYaml()
+}
+
+func (plan *InstructionsPlan) GenerateYamlWithInstructions(planYaml *plan_yaml.PlanYamlGenerator) (string, error) {
+	planYaml, err := plan.generatePlanYaml(planYaml)
+	if err != nil {
+		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred generating the Plan YAML.")
+	}
+
+	instructionsDependencies, depErr := plan.generateInstructionsDependencies()
+	if depErr != nil {
+		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred generating the Instructions Dependency Graph.")
+	}
+	planYaml.AddInstructions(instructionsDependencies.GenerateInstructionsWithDependencies())
+	return planYaml.GenerateYaml()
+}
+
+func (plan *InstructionsPlan) generatePlanYaml(planYaml *plan_yaml.PlanYamlGenerator) (*plan_yaml.PlanYamlGenerator, error) {
+	for _, instructionUuid := range plan.instructionsSequence {
+		instruction, found := plan.scheduledInstructionsIndex[instructionUuid]
+		if !found {
+			return nil, startosis_errors.NewInterpretationError("Unexpected error generating the Kurtosis Instructions plan. Instruction with UUID '%s' was scheduled but could not be found in Kurtosis instruction index", instructionUuid)
+		}
+		err := instruction.kurtosisInstruction.UpdatePlan(planYaml)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred updating the plan with instruction: %v.", instructionUuid)
+		}
+	}
+	planYaml.AddPackageDependencies(plan.packageDependencies)
+	return planYaml, nil
+}
+
+func (plan *InstructionsPlan) generateInstructionsDependencies() (*dependency_graph.InstructionDependencyGraph, *startosis_errors.InterpretationError) {
 	instructionsDependencies := dependency_graph.NewInstructionDependencyGraph(plan.instructionsSequence)
 	for _, instructionUuid := range plan.instructionsSequence {
 		instruction, found := plan.scheduledInstructionsIndex[instructionUuid]
 		if !found {
 			return nil, startosis_errors.NewInterpretationError("An error occurred updating the Instructions Dependency Graph. Instruction with UUID '%s' was scheduled but could not be found in Kurtosis instruction index.", instructionUuid)
 		}
-		logrus.Infof("Updating dependency graph with instruction: %v", instruction.kurtosisInstruction.String())
+		logrus.Debugf("Updating dependency graph with instruction: %v", instruction.kurtosisInstruction.String())
 		err := instruction.kurtosisInstruction.UpdateDependencyGraph(instructionUuid, instructionsDependencies)
 		if err != nil {
 			return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred updating the dependency graph with instruction: %v.", instructionUuid)
 		}
 	}
-
-	return instructionsDependencies.GenerateDependencyGraph(), nil
-}
-
-// GenerateYaml takes in an existing planYaml (usually empty) and returns a yaml string containing the effects of the plan
-func (plan *InstructionsPlan) GenerateYaml(planYaml *plan_yaml.PlanYamlGenerator) (string, error) {
-	for _, instructionUuid := range plan.instructionsSequence {
-		instruction, found := plan.scheduledInstructionsIndex[instructionUuid]
-		if !found {
-			return "", startosis_errors.NewInterpretationError("Unexpected error generating the Kurtosis Instructions plan. Instruction with UUID '%s' was scheduled but could not be found in Kurtosis instruction index", instructionUuid)
-		}
-		err := instruction.kurtosisInstruction.UpdatePlan(planYaml)
-		if err != nil {
-			return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred updating the plan with instruction: %v.", instructionUuid)
-		}
-	}
-	planYaml.AddPackageDependencies(plan.packageDependencies)
-	return planYaml.GenerateYaml()
+	return instructionsDependencies, nil
 }
 
 func (plan *InstructionsPlan) AddPackageDependency(packageDependency string) {
