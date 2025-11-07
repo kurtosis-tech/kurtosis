@@ -236,7 +236,7 @@ func (builtin *UploadFilesCapabilities) Description() string {
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
 func (builtin *UploadFilesCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
-	shortDescriptor := fmt.Sprintf("upload_files(%s %s)", builtin.src, builtin.artifactName)
+	shortDescriptor := fmt.Sprintf("upload_files(%s, %s)", builtin.src, builtin.artifactName)
 	dependencyGraph.UpdateInstructionShortDescriptor(instructionUuid, shortDescriptor)
 
 	dependencyGraph.ProducesFilesArtifact(instructionUuid, string(builtin.artifactName))
