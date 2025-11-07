@@ -290,36 +290,9 @@ func (builtin *AddServiceCapabilities) FillPersistableAttributes(builder *enclav
 }
 
 func (builtin *AddServiceCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYamlGenerator) error {
-	var buildContextLocator string
-	var targetStage string
-	var registryAddress string
-	var interpretationErr *startosis_errors.InterpretationError
-
-	// set image values based on type of image
-	if builtin.imageVal != nil {
-		switch starlarkImgVal := builtin.imageVal.(type) {
-		case *service_config.ImageBuildSpec:
-			buildContextLocator, interpretationErr = starlarkImgVal.GetBuildContextLocator()
-			if interpretationErr != nil {
-				return startosis_errors.WrapWithInterpretationError(interpretationErr, "An error occurred getting build context locator")
-			}
-			targetStage, interpretationErr = starlarkImgVal.GetTargetStage()
-			if interpretationErr != nil {
-				return startosis_errors.WrapWithInterpretationError(interpretationErr, "An error occurred getting target stage.")
-			}
-		case *service_config.ImageSpec:
-			registryAddress, interpretationErr = starlarkImgVal.GetRegistryAddrIfSet()
-			if interpretationErr != nil {
-				return startosis_errors.WrapWithInterpretationError(interpretationErr, "An error occurred getting registry address.")
-			}
-		default:
-			// assume NixBuildSpec or regular image
-		}
-	}
-
-	err := planYaml.AddService(builtin.serviceName, builtin.returnValue, builtin.serviceConfig, buildContextLocator, targetStage, registryAddress)
+	err := updatePlanYamlWithService(planYaml, builtin.serviceName, builtin.returnValue, builtin.serviceConfig, builtin.imageVal)
 	if err != nil {
-		return stacktrace.NewError("An error occurred updating the plan with service: %v", builtin.serviceName)
+		return err
 	}
 	return nil
 }
