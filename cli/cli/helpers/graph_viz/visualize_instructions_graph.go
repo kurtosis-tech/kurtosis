@@ -12,6 +12,10 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 )
 
+const (
+	graphFilePermissions = 0644
+)
+
 // OutputGraphVisual generates a Graphviz DOT format graph and renders it as a PNG image
 func OutputGraphVisual(instructions []dependency_graph.InstructionWithDependencies, path string) error {
 	if len(instructions) == 0 {
@@ -82,7 +86,7 @@ func OutputGraphVisual(instructions []dependency_graph.InstructionWithDependenci
 	}
 
 	// Write the PNG to file
-	err = os.WriteFile(path, buf.Bytes(), 0644)
+	err = os.WriteFile(path, buf.Bytes(), graphFilePermissions)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to write PNG graph to file '%s'", path)
 	}
@@ -129,7 +133,7 @@ func OutputMermaidGraph(instructions []dependency_graph.InstructionWithDependenc
 	mermaidGraph.WriteString("```\n")
 
 	// Write to file
-	err := os.WriteFile(path, []byte(mermaidGraph.String()), 0644)
+	err := os.WriteFile(path, []byte(mermaidGraph.String()), graphFilePermissions)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to write Mermaid graph to file '%s'", path)
 	}
