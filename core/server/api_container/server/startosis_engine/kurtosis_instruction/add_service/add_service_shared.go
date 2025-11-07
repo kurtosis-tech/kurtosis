@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
@@ -341,4 +342,45 @@ func addServiceToDependencyGraph(
 	dependencyGraph.ProducesRuntimeValue(instructionUuid, hostname)
 	return nil
 
+}
+
+func updatePlanYamlWithService(
+	planYaml *plan_yaml.PlanYamlGenerator,
+	serviceName service.ServiceName,
+	returnValue *kurtosis_types.Service,
+	serviceConfig *service.ServiceConfig,
+	imageVal starlark.Value,
+) error {
+	var buildContextLocator string
+	var targetStage string
+	var registryAddress string
+	var interpretationErr *startosis_errors.InterpretationError
+
+	// set image values based on type of image
+	if imageVal != nil {
+		switch starlarkImgVal := imageVal.(type) {
+		case *service_config.ImageBuildSpec:
+			buildContextLocator, interpretationErr = starlarkImgVal.GetBuildContextLocator()
+			if interpretationErr != nil {
+				return startosis_errors.WrapWithInterpretationError(interpretationErr, "An error occurred getting build context locator")
+			}
+			targetStage, interpretationErr = starlarkImgVal.GetTargetStage()
+			if interpretationErr != nil {
+				return startosis_errors.WrapWithInterpretationError(interpretationErr, "An error occurred getting target stage.")
+			}
+		case *service_config.ImageSpec:
+			registryAddress, interpretationErr = starlarkImgVal.GetRegistryAddrIfSet()
+			if interpretationErr != nil {
+				return startosis_errors.WrapWithInterpretationError(interpretationErr, "An error occurred getting registry address.")
+			}
+		default:
+			// assume NixBuildSpec or regular image
+		}
+	}
+
+	err := planYaml.AddService(serviceName, returnValue, serviceConfig, buildContextLocator, targetStage, registryAddress)
+	if err != nil {
+		return stacktrace.NewError("An error occurred updating the plan with service: %v", serviceName)
+	}
+	return nil
 }
