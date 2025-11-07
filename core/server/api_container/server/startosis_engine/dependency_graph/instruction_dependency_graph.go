@@ -22,11 +22,19 @@ type InstructionDependencyGraph struct {
 
 	instructionsDependencies map[types.ScheduledInstructionUuid]map[types.ScheduledInstructionUuid]bool
 
+	instructionShortDescriptors map[types.ScheduledInstructionUuid]string
+	printInstructionUuids       map[types.ScheduledInstructionUuid]bool
+
 	// Right now, Services, Files Artifacts, and Runtime Values are all represented as strings for simplicity
 	// In the future, we may add types to represent each output but not needed for now
 	outputsToInstructionMap map[string]types.ScheduledInstructionUuid
+}
 
-	shortDescriptors map[types.ScheduledInstructionUuid]string
+type InstructionWithDependencies struct {
+	InstructionUuid    types.ScheduledInstructionUuid   `yaml:"instructionUuid"`
+	ShortDescriptor    string                           `yaml:"shortDescriptor"`
+	Dependencies       []types.ScheduledInstructionUuid `yaml:"dependencies"`
+	IsPrintInstruction bool                             `yaml:"isPrintInstruction"`
 }
 
 func NewInstructionDependencyGraph(instructionsSequence []types.ScheduledInstructionUuid) *InstructionDependencyGraph {
@@ -35,11 +43,22 @@ func NewInstructionDependencyGraph(instructionsSequence []types.ScheduledInstruc
 		instructionsDependencies[instruction] = make(map[types.ScheduledInstructionUuid]bool)
 	}
 
+	printInstructionUuids := make(map[types.ScheduledInstructionUuid]bool)
+	for _, instruction := range instructionsSequence {
+		printInstructionUuids[instruction] = false
+	}
+
+	instructionShortDescriptors := make(map[types.ScheduledInstructionUuid]string)
+	for _, instruction := range instructionsSequence {
+		instructionShortDescriptors[instruction] = string(instruction) // initialize instruction descriptors to their uuid, but will be updated later
+	}
+
 	return &InstructionDependencyGraph{
-		instructionsDependencies: instructionsDependencies,
-		outputsToInstructionMap:  map[string]types.ScheduledInstructionUuid{},
-		instructionsSequence:     instructionsSequence,
-		shortDescriptors:         map[types.ScheduledInstructionUuid]string{},
+		instructionsDependencies:    instructionsDependencies,
+		outputsToInstructionMap:     map[string]types.ScheduledInstructionUuid{},
+		instructionsSequence:        instructionsSequence,
+		instructionShortDescriptors: instructionShortDescriptors,
+		printInstructionUuids:       printInstructionUuids,
 	}
 }
 
@@ -92,6 +111,7 @@ func (graph *InstructionDependencyGraph) consumesRuntimeValue(instruction types.
 
 // AddPrintInstruction manually adds a dependency between a print and the instruction that comes right before it in the instructions sequence.
 func (graph *InstructionDependencyGraph) AddPrintInstruction(instruction types.ScheduledInstructionUuid) {
+	graph.printInstructionUuids[instruction] = true
 	for i := 1; i < len(graph.instructionsSequence); i++ {
 		if graph.instructionsSequence[i] == instruction {
 			dependency := graph.instructionsSequence[i-1]
@@ -99,6 +119,10 @@ func (graph *InstructionDependencyGraph) AddPrintInstruction(instruction types.S
 			return
 		}
 	}
+}
+
+func (graph *InstructionDependencyGraph) UpdateInstructionShortDescriptor(instruction types.ScheduledInstructionUuid, shortDescriptor string) {
+	graph.instructionShortDescriptors[instruction] = shortDescriptor
 }
 
 func (graph *InstructionDependencyGraph) addDependency(instruction types.ScheduledInstructionUuid, dependency types.ScheduledInstructionUuid) {
@@ -119,4 +143,21 @@ func (graph *InstructionDependencyGraph) GenerateDependencyGraph() map[types.Sch
 		dependencyGraph[instruction] = instructionDependencies
 	}
 	return dependencyGraph
+}
+
+func (graph *InstructionDependencyGraph) GenerateInstructionsWithDependencies() []InstructionWithDependencies {
+	instructionsWithDependencies := []InstructionWithDependencies{}
+	for _, instruction := range graph.instructionsSequence {
+		dependencies := []types.ScheduledInstructionUuid{}
+		for dependency := range graph.instructionsDependencies[instruction] {
+			dependencies = append(dependencies, dependency)
+		}
+		instructionsWithDependencies = append(instructionsWithDependencies, InstructionWithDependencies{
+			InstructionUuid:    instruction,
+			ShortDescriptor:    graph.instructionShortDescriptors[instruction],
+			IsPrintInstruction: graph.printInstructionUuids[instruction],
+			Dependencies:       dependencies,
+		})
+	}
+	return instructionsWithDependencies
 }

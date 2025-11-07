@@ -195,6 +195,9 @@ func (builtin *RenderTemplatesCapabilities) Description() string {
 
 // UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
 func (builtin *RenderTemplatesCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
+	shortDescriptor := fmt.Sprintf("render_templates(%s)", builtin.artifactName)
+	dependencyGraph.UpdateInstructionShortDescriptor(instructionUuid, shortDescriptor)
+
 	// Templates can be constructed with runtime values in them
 	for _, templateData := range builtin.templatesAndDataByDestRelFilepath {
 		dependencyGraph.ConsumesAnyRuntimeValuesInString(instructionUuid, templateData.GetDataAsSerializedJson())

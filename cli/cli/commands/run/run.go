@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport"
@@ -23,6 +24,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/configs"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/user_support_constants"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"gopkg.in/yaml.v2"
 	"k8s.io/utils/strings/slices"
 
@@ -38,6 +40,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/enclave/inspect"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/graph_viz"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/portal_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
@@ -121,6 +124,15 @@ const (
 
 	nonBlockingModeFlagKey = "non-blocking-tasks"
 	defaultBlockingMode    = "false"
+
+	outputGraphFlagKey = "output-graph"
+	defaultOutputGraph = "false"
+
+	outputGraphPathFlagKey = "output-graph-path"
+	defaultOutputGraphPath = "./"
+
+	withMermaidFlagKey = "with-mermaid"
+	defaultWithMermaid = "false"
 
 	httpProtocolRegexStr           = "^(http|https)://"
 	shouldCloneNormalRepo          = false
@@ -249,6 +261,24 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Type:    flags.FlagType_Bool,
 			Default: parallelDefault,
 		},
+		{
+			Key:     outputGraphFlagKey,
+			Usage:   "If true, outputs a graph image of instructions as nodes and edges specifying dependencies between them",
+			Type:    flags.FlagType_Bool,
+			Default: defaultOutputGraph,
+		},
+		{
+			Key:     outputGraphPathFlagKey,
+			Usage:   "Path to directory where graph files will be output. Defaults to current working directory. Used with --output-graph and --with-mermaid flags.",
+			Type:    flags.FlagType_String,
+			Default: defaultOutputGraphPath,
+		},
+		{
+			Key:     withMermaidFlagKey,
+			Usage:   "If true, outputs the instruction dependency graph in Mermaid format",
+			Type:    flags.FlagType_Bool,
+			Default: defaultWithMermaid,
+		},
 	},
 	Args: []*args.ArgConfig{
 		// TODO add a `Usage` description here when ArgConfig supports it
@@ -374,6 +404,21 @@ func run(
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", parallelFlagKey)
 	}
 
+	shouldOutputGraph, err := flags.GetBool(outputGraphFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", outputGraphFlagKey)
+	}
+
+	outputGraphPath, err := flags.GetString(outputGraphPathFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", outputGraphPathFlagKey)
+	}
+
+	shouldOutputMermaid, err := flags.GetBool(withMermaidFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", withMermaidFlagKey)
+	}
+
 	if packageArgs == inputArgsAreEmptyBracesByDefault && packageArgsFile != packageArgsFileDefaultValue {
 		logrus.Debugf("'%v' is empty but '%v' is provided so we will go with the '%v' value", inputArgsArgKey, packageArgsFileFlagKey, packageArgsFileFlagKey)
 		packageArgs, err = getArgsFromFilepathOrURL(packageArgsFile)
@@ -421,7 +466,7 @@ func run(
 	isRemotePackage := strings.HasPrefix(starlarkScriptOrPackagePath, githubDomainPrefix)
 
 	if isDependenciesOnly {
-		dependencyYaml, err := getPackageDependencyYaml(ctx, enclaveCtx, starlarkScriptOrPackagePath, isRemotePackage, packageArgs)
+		dependencyYaml, err := getPlanYaml(ctx, enclaveCtx, starlarkScriptOrPackagePath, isRemotePackage, packageArgs)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting package dependencies.")
 		}
@@ -462,6 +507,45 @@ func run(
 			}
 		}
 		return nil
+	}
+
+	if shouldOutputGraph {
+		planYaml, err := getPlanYaml(ctx, enclaveCtx, starlarkScriptOrPackagePath, isRemotePackage, packageArgs)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting package dependencies.")
+		}
+
+		type InstructionDependencies struct {
+			Instructions []dependency_graph.InstructionWithDependencies `yaml:"instructions"`
+		}
+		var instructions InstructionDependencies
+		err = yaml.Unmarshal([]byte(planYaml.PlanYaml), &instructions)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred unmarshalling dependency yaml string")
+		}
+
+		// Generate filename with enclave name (if specified) and timestamp
+		timestamp := time.Now().Format("20060102-150405")
+		var baseFilename string
+		if userRequestedEnclaveIdentifier != autogenerateEnclaveIdentifierKeyword {
+			baseFilename = fmt.Sprintf("kurtosis-graph-%s-%s", userRequestedEnclaveIdentifier, timestamp)
+		} else {
+			baseFilename = fmt.Sprintf("kurtosis-graph-%s", timestamp)
+		}
+
+		graphOutputPath := filepath.Join(outputGraphPath, baseFilename+".png")
+		err = graph_viz.OutputGraphVisual(instructions.Instructions, graphOutputPath)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred outputting the graph image")
+		}
+
+		if shouldOutputMermaid {
+			mermaidOutputPath := filepath.Join(outputGraphPath, baseFilename+".md")
+			err := graph_viz.OutputMermaidGraph(instructions.Instructions, mermaidOutputPath)
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred outputting the mermaid graph")
+			}
+		}
 	}
 
 	var responseLineChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine
@@ -695,7 +779,7 @@ func getOrCreateEnclaveContext(
 	return enclaveContext, isNewEnclaveFlagWhenCreated, nil
 }
 
-func getPackageDependencyYaml(
+func getPlanYaml(
 	ctx context.Context,
 	enclaveCtx *enclaves.EnclaveContext,
 	starlarkScriptOrPackageId string,

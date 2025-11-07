@@ -412,6 +412,9 @@ func (builtin *RunShCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerator) 
 }
 
 func (builtin *RunShCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
+	shortDescriptor := fmt.Sprintf("run_sh(%s)", builtin.description)
+	dependencyGraph.UpdateInstructionShortDescriptor(instructionUuid, shortDescriptor)
+
 	if builtin.serviceConfig.GetFilesArtifactsExpansion() != nil {
 		for _, filesArtifactNames := range builtin.serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
 			for _, filesArtifactName := range filesArtifactNames {

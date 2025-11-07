@@ -341,7 +341,6 @@ func addServiceToDependencyGraph(
 	}
 	dependencyGraph.ProducesRuntimeValue(instructionUuid, hostname)
 	return nil
-
 }
 
 func updatePlanYamlWithService(
