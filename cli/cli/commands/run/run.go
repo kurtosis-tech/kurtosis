@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport"
@@ -126,6 +127,9 @@ const (
 
 	outputGraphFlagKey = "output-graph"
 	defaultOutputGraph = "false"
+
+	outputGraphPathFlagKey = "output-graph-path"
+	defaultOutputGraphPath = "./"
 
 	withMermaidFlagKey = "with-mermaid"
 	defaultWithMermaid = "false"
@@ -264,6 +268,12 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Default: defaultOutputGraph,
 		},
 		{
+			Key:     outputGraphPathFlagKey,
+			Usage:   "Path to directory where graph files will be output. Defaults to current working directory. Used with --output-graph and --with-mermaid flags.",
+			Type:    flags.FlagType_String,
+			Default: defaultOutputGraphPath,
+		},
+		{
 			Key:     withMermaidFlagKey,
 			Usage:   "If true, outputs the instruction dependency graph in Mermaid format",
 			Type:    flags.FlagType_Bool,
@@ -399,6 +409,11 @@ func run(
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", outputGraphFlagKey)
 	}
 
+	outputGraphPath, err := flags.GetString(outputGraphPathFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", outputGraphPathFlagKey)
+	}
+
 	shouldOutputMermaid, err := flags.GetBool(withMermaidFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", withMermaidFlagKey)
@@ -509,13 +524,24 @@ func run(
 			return stacktrace.Propagate(err, "An error occurred unmarshalling dependency yaml string")
 		}
 
-		err = graph_viz.OutputGraphVisual(instructions.Instructions, "kurtosis-graph.png")
+		// Generate filename with enclave name (if specified) and timestamp
+		timestamp := time.Now().Format("20060102-150405")
+		var baseFilename string
+		if userRequestedEnclaveIdentifier != autogenerateEnclaveIdentifierKeyword {
+			baseFilename = fmt.Sprintf("kurtosis-graph-%s-%s", userRequestedEnclaveIdentifier, timestamp)
+		} else {
+			baseFilename = fmt.Sprintf("kurtosis-graph-%s", timestamp)
+		}
+
+		graphOutputPath := filepath.Join(outputGraphPath, baseFilename+".png")
+		err = graph_viz.OutputGraphVisual(instructions.Instructions, graphOutputPath)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred outputting the graph image")
 		}
 
 		if shouldOutputMermaid {
-			err := graph_viz.OutputMermaidGraph(instructions.Instructions, "kurtosis-mermaid.md")
+			mermaidOutputPath := filepath.Join(outputGraphPath, baseFilename+".md")
+			err := graph_viz.OutputMermaidGraph(instructions.Instructions, mermaidOutputPath)
 			if err != nil {
 				return stacktrace.Propagate(err, "An error occurred outputting the mermaid graph")
 			}

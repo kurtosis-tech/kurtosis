@@ -41,7 +41,7 @@ func OutputGraphVisual(instructions []dependency_graph.InstructionWithDependenci
 
 	dotGraph.WriteString("\n")
 
-	// Add edges (dependencies) - skip print instructions
+	// Add edges (dependencies) while skipping print instructions
 	for _, instruction := range instructions {
 		if instruction.IsPrintInstruction {
 			continue
@@ -58,19 +58,19 @@ func OutputGraphVisual(instructions []dependency_graph.InstructionWithDependenci
 	ctx := context.Background()
 	g, err := graphviz.New(ctx)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to create graphviz instance")
+		return stacktrace.Propagate(err, "An error occurred creating graphviz instance.")
 	}
 	defer func() {
 		if err := g.Close(); err != nil {
 			// Log the error but don't fail the function
-			fmt.Fprintf(os.Stderr, "Warning: failed to close graphviz instance: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Warning: an error occurred closing graphviz instance: %v\n", err)
 		}
 	}()
 
 	// Parse the DOT string
 	graph, err := graphviz.ParseBytes([]byte(dotGraph.String()))
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to parse DOT graph")
+		return stacktrace.Propagate(err, "An error occurred parsing the DOT graph.")
 	}
 	defer func() {
 		if err := graph.Close(); err != nil {
@@ -82,13 +82,13 @@ func OutputGraphVisual(instructions []dependency_graph.InstructionWithDependenci
 	// Render the graph to PNG format
 	var buf bytes.Buffer
 	if err := g.Render(ctx, graph, graphviz.PNG, &buf); err != nil {
-		return stacktrace.Propagate(err, "Failed to render graph to PNG")
+		return stacktrace.Propagate(err, "An error occurred rendering graph to PNG")
 	}
 
 	// Write the PNG to file
 	err = os.WriteFile(path, buf.Bytes(), graphFilePermissions)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to write PNG graph to file '%s'", path)
+		return stacktrace.Propagate(err, "An error occurred writing graph image to file '%s'", path)
 	}
 
 	return nil
@@ -103,7 +103,6 @@ func OutputMermaidGraph(instructions []dependency_graph.InstructionWithDependenc
 	var mermaidGraph strings.Builder
 
 	// Start the Mermaid graph
-	mermaidGraph.WriteString("```mermaid\n")
 	mermaidGraph.WriteString("graph TD\n")
 
 	// Add nodes with labels (skip print instructions)
@@ -130,12 +129,10 @@ func OutputMermaidGraph(instructions []dependency_graph.InstructionWithDependenc
 		}
 	}
 
-	mermaidGraph.WriteString("```\n")
-
 	// Write to file
 	err := os.WriteFile(path, []byte(mermaidGraph.String()), graphFilePermissions)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to write Mermaid graph to file '%s'", path)
+		return stacktrace.Propagate(err, "An error occurred writing Mermaid graph to file '%s'", path)
 	}
 
 	return nil
