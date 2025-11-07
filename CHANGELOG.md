@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.13.0](https://github.com/kurtosis-tech/kurtosis/compare/1.12.1...1.13.0) (2025-11-07)
+
+
+### Features
+
+* output instruction graph ([#2829](https://github.com/kurtosis-tech/kurtosis/issues/2829)) ([c012491](https://github.com/kurtosis-tech/kurtosis/commit/c01249136b3ac81df888d5e032a5fcb80d12e777))
+
+
+### Bug Fixes
+
+* **core:** impl update plan for add services ([#2826](https://github.com/kurtosis-tech/kurtosis/issues/2826)) ([8d451fb](https://github.com/kurtosis-tech/kurtosis/commit/8d451fb37db815116e1d11f8ac958890cb52ac92))
+
 ## [1.12.1](https://github.com/kurtosis-tech/kurtosis/compare/1.12.0...1.12.1) (2025-10-31)
 
 
