@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_args/run"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/interactive_terminal_decider"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/print_builtin"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -122,6 +123,10 @@ func (printer *ParallelExecutionPrinter) PrintKurtosisExecutionResponseLineToStd
 		return stacktrace.NewError("Cannot print with a non started printer")
 	}
 
+	if isPrintInstruction(responseLine) { // don't process print instructions
+		return nil
+	}
+
 	var msg tea.Msg
 	if responseLine.GetInstruction() != nil && verbosity != run.OutputOnly {
 		instruction := responseLine.GetInstruction()
@@ -203,4 +208,15 @@ func (printer *ParallelExecutionPrinter) PrintKurtosisExecutionResponseLineToStd
 	}
 
 	return nil
+}
+
+func isPrintInstruction(responseLine *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine) bool {
+	if responseLine.GetInstruction() != nil {
+		instruction := responseLine.GetInstruction()
+		return instruction.GetInstructionName() == print_builtin.PrintBuiltinName
+	} else if responseLine.GetInstructionResult() != nil {
+		instruction := responseLine.GetInstruction()
+		return instruction.GetInstructionName() == print_builtin.PrintBuiltinName
+	}
+	return false
 }
