@@ -26,8 +26,6 @@ type InstructionDependencyGraph struct {
 	printInstructionUuids       map[types.ScheduledInstructionUuid]bool
 	waitInstructionUuids        []types.ScheduledInstructionUuid
 
-	removeServiceInstructionUuidsToServiceName map[types.ScheduledInstructionUuid]string
-
 	// Right now, Services, Files Artifacts, and Runtime Values are all represented as strings for simplicity
 	// In the future, we may add types to represent each output but not needed for now
 	outputsToInstructionUuids map[string]types.ScheduledInstructionUuid
@@ -57,13 +55,12 @@ func NewInstructionDependencyGraph(instructionsSequence []types.ScheduledInstruc
 	}
 
 	return &InstructionDependencyGraph{
-		instructionsDependencies:                   instructionsDependencies,
-		outputsToInstructionUuids:                  map[string]types.ScheduledInstructionUuid{},
-		instructionsSequence:                       instructionsSequence,
-		instructionShortDescriptors:                instructionShortDescriptors,
-		printInstructionUuids:                      printInstructionUuids,
-		waitInstructionUuids:                       []types.ScheduledInstructionUuid{},
-		removeServiceInstructionUuidsToServiceName: map[types.ScheduledInstructionUuid]string{},
+		instructionsDependencies:    instructionsDependencies,
+		outputsToInstructionUuids:   map[string]types.ScheduledInstructionUuid{},
+		instructionsSequence:        instructionsSequence,
+		instructionShortDescriptors: instructionShortDescriptors,
+		printInstructionUuids:       printInstructionUuids,
+		waitInstructionUuids:        []types.ScheduledInstructionUuid{},
 	}
 }
 
@@ -146,24 +143,16 @@ func (graph *InstructionDependencyGraph) ensureInstructionDependsOnWaitInstructi
 // AddRemoveServiceInstruction tracks a remove service instruction in the dependency graph.
 // remove_service instructions must come after all operations on the service have been completed
 func (graph *InstructionDependencyGraph) AddRemoveServiceInstruction(instruction types.ScheduledInstructionUuid, serviceName string) {
-	graph.removeServiceInstructionUuidsToServiceName[instruction] = serviceName
-}
-
-// addRemoveServiceDependencies adds dependencies between remove_service instructions and the instructions that depend on the services they are removing
-// if service hasn't been produced, there are no dependencies to add
-func (graph *InstructionDependencyGraph) addRemoveServiceDependencies() {
-	for removeServiceInstruction, serviceName := range graph.removeServiceInstructionUuidsToServiceName {
-		instructionThatProducedService, ok := graph.outputsToInstructionUuids[serviceName]
-		if !ok {
-			// it could be the case the remove_service exists in a script that doesn't contain the add_service instruction that produces the service
-			// in which case the service won't exist in the outputs map so we just skip adding dependencies
-			continue
-		}
-		for instruction, dependencies := range graph.instructionsDependencies {
-			// if an instruction depends on the service that the remove_service instruction is removing, add a dependency between the remove_service instruction and the instruction
-			if _, ok := dependencies[instructionThatProducedService]; ok {
-				graph.addDependency(removeServiceInstruction, instruction)
-			}
+	instructionThatProducedService, ok := graph.outputsToInstructionUuids[serviceName]
+	if !ok {
+		// it could be the case the remove_service exists in a script that doesn't contain the add_service instruction that produces the service
+		// in which case the service won't exist in the outputs map so we just skip adding dependencies
+		return
+	}
+	for maybeInstructionDependingOnService, dependencies := range graph.instructionsDependencies {
+		// if a instruction depends on the service that the remove_service instruction is removing, add a dependency between the remove_service instruction and the instruction
+		if _, ok := dependencies[instructionThatProducedService]; ok {
+			graph.addDependency(instruction, maybeInstructionDependingOnService)
 		}
 	}
 }
@@ -182,9 +171,6 @@ func (graph *InstructionDependencyGraph) addDependency(instruction types.Schedul
 }
 
 func (graph *InstructionDependencyGraph) GenerateDependencyGraph() map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid {
-	// handle remove service dependencies once all instructions have been added to the dependency graph
-	graph.addRemoveServiceDependencies()
-
 	dependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{}
 	for instruction, dependencies := range graph.instructionsDependencies {
 		instructionDependencies := []types.ScheduledInstructionUuid{}
