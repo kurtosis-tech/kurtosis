@@ -320,6 +320,7 @@ func (builtin *WaitCapabilities) UpdateDependencyGraph(instructionUuid types.Sch
 	shortDescriptor := fmt.Sprintf("wait(%s, %s)", builtin.serviceName, builtin.description)
 	dependencyGraph.UpdateInstructionShortDescriptor(instructionUuid, shortDescriptor)
 
+	dependencyGraph.AddWaitInstruction(instructionUuid) // every downstream instruction depends on this wait
 	dependencyGraph.ConsumesService(instructionUuid, string(builtin.serviceName))
 
 	returnValueStrings, interpretationErr := builtin.recipe.GetStarlarkReturnValuesAsStringList(builtin.resultUuid)
