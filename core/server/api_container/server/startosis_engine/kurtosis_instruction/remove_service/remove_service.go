@@ -131,6 +131,7 @@ func (builtin *RemoveServiceCapabilities) UpdateDependencyGraph(instructionUuid 
 	shortDescriptor := fmt.Sprintf("remove_service(%s)", builtin.serviceName)
 	dependencyGraph.UpdateInstructionShortDescriptor(instructionUuid, shortDescriptor)
 
+	dependencyGraph.AddRemoveServiceInstruction(instructionUuid, string(builtin.serviceName))
 	dependencyGraph.ConsumesService(instructionUuid, string(builtin.serviceName))
 	return nil
 }

@@ -28,7 +28,7 @@ type InstructionDependencyGraph struct {
 
 	// Right now, Services, Files Artifacts, and Runtime Values are all represented as strings for simplicity
 	// In the future, we may add types to represent each output but not needed for now
-	outputsToInstructionMap map[string]types.ScheduledInstructionUuid
+	outputsToInstructionUuids map[string]types.ScheduledInstructionUuid
 }
 
 type InstructionWithDependencies struct {
@@ -56,7 +56,7 @@ func NewInstructionDependencyGraph(instructionsSequence []types.ScheduledInstruc
 
 	return &InstructionDependencyGraph{
 		instructionsDependencies:    instructionsDependencies,
-		outputsToInstructionMap:     map[string]types.ScheduledInstructionUuid{},
+		outputsToInstructionUuids:   map[string]types.ScheduledInstructionUuid{},
 		instructionsSequence:        instructionsSequence,
 		instructionShortDescriptors: instructionShortDescriptors,
 		printInstructionUuids:       printInstructionUuids,
@@ -65,26 +65,26 @@ func NewInstructionDependencyGraph(instructionsSequence []types.ScheduledInstruc
 }
 
 func (graph *InstructionDependencyGraph) ProducesService(instruction types.ScheduledInstructionUuid, serviceName string) {
-	graph.outputsToInstructionMap[serviceName] = instruction
+	graph.outputsToInstructionUuids[serviceName] = instruction
 }
 
 func (graph *InstructionDependencyGraph) ProducesFilesArtifact(instruction types.ScheduledInstructionUuid, filesArtifactName string) {
-	graph.outputsToInstructionMap[filesArtifactName] = instruction
+	graph.outputsToInstructionUuids[filesArtifactName] = instruction
 }
 
 func (graph *InstructionDependencyGraph) ProducesRuntimeValue(instruction types.ScheduledInstructionUuid, runtimeValue string) {
-	graph.outputsToInstructionMap[runtimeValue] = instruction
+	graph.outputsToInstructionUuids[runtimeValue] = instruction
 }
 
 func (graph *InstructionDependencyGraph) ConsumesService(instruction types.ScheduledInstructionUuid, serviceName string) {
-	instructionThatProducedService, ok := graph.outputsToInstructionMap[serviceName]
+	instructionThatProducedService, ok := graph.outputsToInstructionUuids[serviceName]
 	if ok {
 		graph.addDependency(instruction, instructionThatProducedService)
 	}
 }
 
 func (graph *InstructionDependencyGraph) ConsumesFilesArtifact(instruction types.ScheduledInstructionUuid, filesArtifactName string) {
-	instructionThatProducedFilesArtifact, ok := graph.outputsToInstructionMap[filesArtifactName]
+	instructionThatProducedFilesArtifact, ok := graph.outputsToInstructionUuids[filesArtifactName]
 	if ok {
 		graph.addDependency(instruction, instructionThatProducedFilesArtifact)
 	}
@@ -105,7 +105,7 @@ func (graph *InstructionDependencyGraph) ConsumesAnyRuntimeValuesInList(instruct
 }
 
 func (graph *InstructionDependencyGraph) consumesRuntimeValue(instruction types.ScheduledInstructionUuid, runtimeValue string) {
-	instructionThatProducedRuntimeValue, ok := graph.outputsToInstructionMap[runtimeValue]
+	instructionThatProducedRuntimeValue, ok := graph.outputsToInstructionUuids[runtimeValue]
 	if ok {
 		graph.addDependency(instruction, instructionThatProducedRuntimeValue)
 	}
@@ -123,17 +123,36 @@ func (graph *InstructionDependencyGraph) AddPrintInstruction(instruction types.S
 	}
 }
 
+// AddWaitInstruction tracks a wait instruction in the dependency graph.
+// All instructions sequentially downstream from a wait instruction must depend on the wait instruction
 func (graph *InstructionDependencyGraph) AddWaitInstruction(instruction types.ScheduledInstructionUuid) {
 	graph.waitInstructionUuids = append(graph.waitInstructionUuids, instruction)
 }
 
-func (graph *InstructionDependencyGraph) ensureInstructionDependsOnWaitInstructions(instruction types.ScheduledInstructionUuid, waitInstruction types.ScheduledInstructionUuid) {
+func (graph *InstructionDependencyGraph) ensureInstructionDependsOnWaitInstructions(instruction types.ScheduledInstructionUuid) {
 	for _, waitInstruction := range graph.waitInstructionUuids {
 		if _, ok := graph.instructionsDependencies[instruction][waitInstruction]; !ok {
 			if instruction == waitInstruction {
 				continue
 			}
 			graph.instructionsDependencies[instruction][waitInstruction] = true
+		}
+	}
+}
+
+// AddRemoveServiceInstruction tracks a remove service instruction in the dependency graph.
+// remove_service instructions must come after all operations on the service have been completed
+func (graph *InstructionDependencyGraph) AddRemoveServiceInstruction(instruction types.ScheduledInstructionUuid, serviceName string) {
+	instructionThatProducedService, ok := graph.outputsToInstructionUuids[serviceName]
+	if !ok {
+		// it could be the case the remove_service exists in a script that doesn't contain the add_service instruction that produces the service
+		// in which case the service won't exist in the outputs map so we just skip adding dependencies
+		return
+	}
+	for maybeInstructionDependingOnService, dependencies := range graph.instructionsDependencies {
+		// if a instruction depends on the service that the remove_service instruction is removing, add a dependency between the remove_service instruction and the instruction
+		if _, ok := dependencies[instructionThatProducedService]; ok {
+			graph.addDependency(instruction, maybeInstructionDependingOnService)
 		}
 	}
 }
@@ -148,7 +167,7 @@ func (graph *InstructionDependencyGraph) addDependency(instruction types.Schedul
 	}
 	graph.instructionsDependencies[instruction][dependency] = true
 
-	graph.ensureInstructionDependsOnWaitInstructions(instruction, dependency)
+	graph.ensureInstructionDependsOnWaitInstructions(instruction)
 }
 
 func (graph *InstructionDependencyGraph) GenerateDependencyGraph() map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid {
@@ -180,5 +199,3 @@ func (graph *InstructionDependencyGraph) GenerateInstructionsWithDependencies() 
 	}
 	return instructionsWithDependencies
 }
-
-// where's a good place to add the logic to update the dependency graph with the effects of a wait instruction?
