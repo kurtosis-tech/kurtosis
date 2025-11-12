@@ -1397,6 +1397,168 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestWaitDependsOnAddSe
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
+func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAllInstructionsDownstreamFromWaitDependsOnWait() {
+	script := `def run(plan):
+	service_a = plan.add_service(name = "serviceA", config = ServiceConfig(image = "ubuntu"))
+	
+	recipe = ExecRecipe(
+		command = ["echo", "Hello, world"],
+	)
+	
+	plan.wait(
+		service_name = "serviceA",
+		recipe = recipe,
+		field = "code",
+		assertion = "==",
+		target_value = 0,
+	)
+
+	result = plan.exec(
+		service_name = "serviceA",
+		recipe = ExecRecipe(
+			command = ["echo", "Wait finished."],
+		),
+	)
+
+	plan.verify(
+		value = result["output"],
+		assertion = "==",
+		target_value = 0,
+	)
+`
+	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+		types.ScheduledInstructionUuid("1"): {},
+		types.ScheduledInstructionUuid("2"): {
+			types.ScheduledInstructionUuid("1"),
+		},
+		types.ScheduledInstructionUuid("3"): {
+			types.ScheduledInstructionUuid("1"),
+			types.ScheduledInstructionUuid("2"),
+		},
+		types.ScheduledInstructionUuid("4"): {
+			types.ScheduledInstructionUuid("2"),
+			types.ScheduledInstructionUuid("3"),
+		},
+	}
+
+	inputArgs := `{}`
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		script,
+		inputArgs,
+		defaultNonBlockingMode,
+		emptyEnclaveComponents,
+		emptyInstructionsPlanMask,
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlanForDependencyGraphTests(),
+	)
+	require.Nil(suite.T(), interpretationError)
+
+	instructionsDependencyGraph, startosisInterpretationError := instructionsPlan.GenerateInstructionsDependencyGraph()
+	require.Nil(suite.T(), startosisInterpretationError)
+
+	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
+}
+
+func (suite *StartosisIntepreterDependencyGraphTestSuite) TestInstructionsDownstreamFromMultipleWaitsDependsOnAllWaits() {
+	script := `def run(plan):
+	service_a = plan.add_service(name = "serviceA", config = ServiceConfig(image = "ubuntu"))
+
+	service_b = plan.add_service(name = "serviceB", config = ServiceConfig(image = "ubuntu"))
+	
+	recipe = ExecRecipe(
+		command = ["echo", "Hello, world"],
+	)
+	
+	plan.wait(
+		service_name = "serviceA",
+		recipe = recipe,
+		field = "code",
+		assertion = "==",
+		target_value = 0,
+	)
+
+	plan.exec(
+		service_name = "serviceA",
+		recipe = ExecRecipe(
+			command = ["echo", "Wait finished."],
+		),
+	)
+
+	plan.wait(
+		service_name = "serviceB",
+		recipe = recipe,
+		field = "code",
+		assertion = "==",
+		target_value = 0,
+	)
+
+	plan.request(
+		service_name = "serviceB",
+		recipe = GetHttpRequestRecipe(
+			port_id = "http",
+			endpoint = "/health",
+		),
+	)
+`
+	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+		// 1 - add serviceA
+		types.ScheduledInstructionUuid("1"): {},
+		// 2 - add serviceB
+		types.ScheduledInstructionUuid("2"): {},
+		// 3 - wait serviceA
+		types.ScheduledInstructionUuid("3"): {
+			types.ScheduledInstructionUuid("1"),
+		},
+		// 4 - exec serviceA
+		types.ScheduledInstructionUuid("4"): {
+			types.ScheduledInstructionUuid("1"),
+			types.ScheduledInstructionUuid("3"), // depends on wait serviceA
+		},
+		// 5 - wait serviceB
+		types.ScheduledInstructionUuid("5"): {
+			types.ScheduledInstructionUuid("2"),
+
+			// wait should also depend on wait serviceA
+			types.ScheduledInstructionUuid("3"),
+		},
+		// 6 - request serviceB
+		types.ScheduledInstructionUuid("6"): {
+			types.ScheduledInstructionUuid("2"),
+
+			// depends on serviceB and both waits for serviceA and serviceB
+			types.ScheduledInstructionUuid("3"),
+			types.ScheduledInstructionUuid("5"),
+		},
+	}
+
+	inputArgs := `{}`
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		script,
+		inputArgs,
+		defaultNonBlockingMode,
+		emptyEnclaveComponents,
+		emptyInstructionsPlanMask,
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlanForDependencyGraphTests(),
+	)
+	require.Nil(suite.T(), interpretationError)
+
+	instructionsDependencyGraph, startosisInterpretationError := instructionsPlan.GenerateInstructionsDependencyGraph()
+	require.Nil(suite.T(), startosisInterpretationError)
+
+	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
+}
+
 func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRequestDependsOnAddService() {
 	script := `def run(plan):
 	config = ServiceConfig(

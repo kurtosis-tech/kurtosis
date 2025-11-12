@@ -24,6 +24,7 @@ type InstructionDependencyGraph struct {
 
 	instructionShortDescriptors map[types.ScheduledInstructionUuid]string
 	printInstructionUuids       map[types.ScheduledInstructionUuid]bool
+	waitInstructionUuids        []types.ScheduledInstructionUuid
 
 	// Right now, Services, Files Artifacts, and Runtime Values are all represented as strings for simplicity
 	// In the future, we may add types to represent each output but not needed for now
@@ -59,6 +60,7 @@ func NewInstructionDependencyGraph(instructionsSequence []types.ScheduledInstruc
 		instructionsSequence:        instructionsSequence,
 		instructionShortDescriptors: instructionShortDescriptors,
 		printInstructionUuids:       printInstructionUuids,
+		waitInstructionUuids:        []types.ScheduledInstructionUuid{},
 	}
 }
 
@@ -121,6 +123,21 @@ func (graph *InstructionDependencyGraph) AddPrintInstruction(instruction types.S
 	}
 }
 
+func (graph *InstructionDependencyGraph) AddWaitInstruction(instruction types.ScheduledInstructionUuid) {
+	graph.waitInstructionUuids = append(graph.waitInstructionUuids, instruction)
+}
+
+func (graph *InstructionDependencyGraph) ensureInstructionDependsOnWaitInstructions(instruction types.ScheduledInstructionUuid, waitInstruction types.ScheduledInstructionUuid) {
+	for _, waitInstruction := range graph.waitInstructionUuids {
+		if _, ok := graph.instructionsDependencies[instruction][waitInstruction]; !ok {
+			if instruction == waitInstruction {
+				continue
+			}
+			graph.instructionsDependencies[instruction][waitInstruction] = true
+		}
+	}
+}
+
 func (graph *InstructionDependencyGraph) UpdateInstructionShortDescriptor(instruction types.ScheduledInstructionUuid, shortDescriptor string) {
 	graph.instructionShortDescriptors[instruction] = shortDescriptor
 }
@@ -130,6 +147,8 @@ func (graph *InstructionDependencyGraph) addDependency(instruction types.Schedul
 		return
 	}
 	graph.instructionsDependencies[instruction][dependency] = true
+
+	graph.ensureInstructionDependsOnWaitInstructions(instruction, dependency)
 }
 
 func (graph *InstructionDependencyGraph) GenerateDependencyGraph() map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid {
@@ -161,3 +180,5 @@ func (graph *InstructionDependencyGraph) GenerateInstructionsWithDependencies() 
 	}
 	return instructionsWithDependencies
 }
+
+// where's a good place to add the logic to update the dependency graph with the effects of a wait instruction?
