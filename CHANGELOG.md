@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.1](https://github.com/kurtosis-tech/kurtosis/compare/1.13.0...1.13.1) (2025-11-12)
+
+
+### Bug Fixes
+
+* downstream instructions depend on any waits ([#2831](https://github.com/kurtosis-tech/kurtosis/issues/2831)) ([f478b40](https://github.com/kurtosis-tech/kurtosis/commit/f478b40ca1322ef50f952808c3da97da8f534425))
+
 ## [1.13.0](https://github.com/kurtosis-tech/kurtosis/compare/1.12.1...1.13.0) (2025-11-07)
 
 
