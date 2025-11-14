@@ -24,6 +24,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/api/types/volume"
@@ -305,13 +306,13 @@ func (manager *DockerManager) ListNetworks(ctx context.Context) ([]types.Network
 	return networks, nil
 }
 
-func (manager *DockerManager) PruneUnusedImages(ctx context.Context) ([]types.ImageSummary, error) {
+func (manager *DockerManager) PruneUnusedImages(ctx context.Context) ([]image.Summary, error) {
 	unusedImages, err := manager.ListUnusedImages(ctx)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to list unused images")
 	}
 	logrus.Debugf("List of unused images to be pruned '%v'", unusedImages)
-	successfulPrunedImages := []types.ImageSummary{}
+	successfulPrunedImages := []image.Summary{}
 	for _, image := range unusedImages {
 		imagePruneResponse, err := manager.dockerClient.ImageRemove(ctx, image.ID, types.ImageRemoveOptions{}) //nolint:exhaustruct
 		if err != nil {
@@ -330,12 +331,12 @@ func containsSemVer(s string) bool {
 	return matched
 }
 
-func (manager *DockerManager) ListUnusedImages(ctx context.Context) ([]types.ImageSummary, error) {
+func (manager *DockerManager) ListUnusedImages(ctx context.Context) ([]image.Summary, error) {
 	images, err := manager.dockerClient.ImageList(ctx, types.ImageListOptions{}) //nolint:exhaustruct
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to list Docker images")
 	}
-	containers, err := manager.dockerClient.ContainerList(ctx, types.ContainerListOptions{All: true}) //nolint:exhaustruct
+	containers, err := manager.dockerClient.ContainerList(ctx, container.ListOptions{All: true}) //nolint:exhaustruct
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to list Docker images")
 	}
@@ -345,7 +346,7 @@ func (manager *DockerManager) ListUnusedImages(ctx context.Context) ([]types.Ima
 		usedImages[cont.ImageID] = true
 	}
 
-	unusedImages := []types.ImageSummary{}
+	unusedImages := []image.Summary{}
 	for _, image := range images {
 		if _, used := usedImages[image.ID]; used {
 			logrus.Debugf("Skipping image '%v' since its in use", image.ID)
@@ -758,7 +759,7 @@ func (manager *DockerManager) CreateAndStartContainer(
 			 2) This resize is very important - if we don't do it, then the output will look garbled for
 				 lines longer than the user's terminal
 		*/
-		resizeOpts := types.ResizeOptions{
+		resizeOpts := container.ResizeOptions{
 			Height: args.interactiveModeTtySize.Height,
 			Width:  args.interactiveModeTtySize.Width,
 		}
@@ -915,7 +916,7 @@ func (manager *DockerManager) GetContainerIps(ctx context.Context, containerId s
 }
 
 func (manager *DockerManager) AttachToContainer(ctx context.Context, containerId string) (types.HijackedResponse, error) {
-	attachOpts := types.ContainerAttachOptions{
+	attachOpts := container.AttachOptions{
 		Stream:     true,
 		Stdin:      true,
 		Stdout:     true,
@@ -940,7 +941,7 @@ Args:
 	containerId: ID of Docker container to start
 */
 func (manager *DockerManager) StartContainer(context context.Context, containerId string) error {
-	options := types.ContainerStartOptions{
+	options := container.StartOptions{
 		CheckpointID:  "",
 		CheckpointDir: "",
 	}
@@ -1010,7 +1011,7 @@ Args:
 	containerId: ID of Docker container to remove
 */
 func (manager *DockerManager) RemoveContainer(ctx context.Context, containerId string) error {
-	removeOpts := &types.ContainerRemoveOptions{
+	removeOpts := &container.RemoveOptions{
 		RemoveVolumes: shouldRemoveAnonymousVolumesWhenRemovingContainers,
 		RemoveLinks:   shouldRemoveLinksWhenRemovingContainers,
 		Force:         shouldKillContainersWhenRemovingContainers,
@@ -1074,7 +1075,7 @@ func (manager *DockerManager) GetContainerLogs(
 		return nil, stacktrace.Propagate(err, "An error occurred communicating with docker engine")
 	}
 
-	containerLogOpts := types.ContainerLogsOptions{
+	containerLogOpts := container.LogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
 		Since:      "",
@@ -1974,7 +1975,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		NetworkMode:     container.NetworkMode(networkMode),
 		PortBindings:    portMap,
 		RestartPolicy: container.RestartPolicy{
-			Name:              string(restartPolicy),
+			Name:              container.RestartPolicyMode(restartPolicy),
 			MaximumRetryCount: 0,
 		},
 		AutoRemove:      false,
@@ -2098,7 +2099,7 @@ func (manager *DockerManager) killContainerWithRetriesWhenErrorResponseFromDaemo
 func (manager *DockerManager) removeContainerWithRetriesOnFailureForZombieProcesses(
 	ctx context.Context,
 	containerId string,
-	options *types.ContainerRemoveOptions,
+	options *container.RemoveOptions,
 	maxRetries uint8,
 	timeBetweenRetries time.Duration,
 ) error {
@@ -2150,7 +2151,7 @@ func getHostPortBindingsOnExpectedInterface(hostPortBindingsOnAllInterfaces nat.
 }
 
 func (manager *DockerManager) getContainersByFilterArgs(ctx context.Context, filterArgs filters.Args, shouldShowStoppedContainers bool) ([]*docker_manager_types.Container, error) {
-	opts := types.ContainerListOptions{
+	opts := container.ListOptions{
 		Size:    false,
 		All:     shouldShowStoppedContainers,
 		Latest:  false,
@@ -2386,6 +2387,7 @@ func getEndpointSettingsForIpAddress(ipAddress string, alias string) *network.En
 		GlobalIPv6PrefixLen: 0,
 		MacAddress:          "",
 		DriverOpts:          nil,
+		DNSNames:            []string{},
 	}
 
 	if alias != emptyNetworkAlias {
@@ -2485,7 +2487,7 @@ func getFreeMemoryAndCPU(ctx context.Context, dockerClient *client.Client) (comp
 	if err != nil {
 		return 0, 0, stacktrace.Propagate(err, "An error occurred while running info on docker")
 	}
-	containers, err := dockerClient.ContainerList(ctx, types.ContainerListOptions{
+	containers, err := dockerClient.ContainerList(ctx, container.ListOptions{
 		Size:    false,
 		All:     false,
 		Latest:  false,
