@@ -1974,7 +1974,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		NetworkMode:     container.NetworkMode(networkMode),
 		PortBindings:    portMap,
 		RestartPolicy: container.RestartPolicy{
-			Name:              string(restartPolicy),
+			Name:              container.RestartPolicyMode(restartPolicy),
 			MaximumRetryCount: 0,
 		},
 		AutoRemove:      false,
