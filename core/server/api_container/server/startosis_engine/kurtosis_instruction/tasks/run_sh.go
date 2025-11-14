@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/store_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
@@ -24,6 +25,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
@@ -138,6 +140,8 @@ func NewRunShService(
 				wait:                   DefaultWaitTimeoutDurationStr,
 				description:            "",  // populated at interpretation time
 				returnValue:            nil, // populated at interpretation time
+				runCodeValue:           "",  // populated at interpretation time
+				runOutputValue:         "",  // populated at interpretation time
 				skipCodeCheck:          false,
 				acceptableCodes:        nil, // populated at interpretation time
 			}
@@ -173,6 +177,8 @@ type RunShCapabilities struct {
 	serviceConfig   *service.ServiceConfig
 	storeSpecList   []*store_spec.StoreSpec
 	returnValue     *starlarkstruct.Struct
+	runCodeValue    string
+	runOutputValue  string
 	wait            string
 	description     string
 	acceptableCodes []int64
@@ -310,7 +316,7 @@ func (builtin *RunShCapabilities) Interpret(locatorOfModuleInWhichThisBuiltinIsB
 	}
 	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, defaultDescription)
 
-	builtin.returnValue = createInterpretationResult(resultUuid, builtin.storeSpecList)
+	builtin.returnValue, builtin.runCodeValue, builtin.runOutputValue = createInterpretationResult(resultUuid, builtin.storeSpecList)
 	return builtin.returnValue, nil
 }
 
@@ -401,6 +407,32 @@ func (builtin *RunShCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerator) 
 	err := plan.AddRunSh(builtin.run, builtin.description, builtin.returnValue, builtin.serviceConfig, builtin.storeSpecList)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred adding run sh task to the plan")
+	}
+	return nil
+}
+
+func (builtin *RunShCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
+	shortDescriptor := fmt.Sprintf("run_sh(%s)", builtin.description)
+	dependencyGraph.UpdateInstructionShortDescriptor(instructionUuid, shortDescriptor)
+
+	if builtin.serviceConfig.GetFilesArtifactsExpansion() != nil {
+		for _, filesArtifactNames := range builtin.serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
+			for _, filesArtifactName := range filesArtifactNames {
+				dependencyGraph.ConsumesFilesArtifact(instructionUuid, filesArtifactName)
+			}
+		}
+	}
+	envVarValues := make([]string, 0, len(builtin.serviceConfig.GetEnvVars()))
+	for _, v := range builtin.serviceConfig.GetEnvVars() {
+		envVarValues = append(envVarValues, v)
+	}
+	dependencyGraph.ConsumesAnyRuntimeValuesInList(instructionUuid, envVarValues)
+	dependencyGraph.ConsumesAnyRuntimeValuesInString(instructionUuid, builtin.run)
+
+	dependencyGraph.ProducesRuntimeValue(instructionUuid, builtin.runCodeValue)
+	dependencyGraph.ProducesRuntimeValue(instructionUuid, builtin.runOutputValue)
+	for _, storeSpec := range builtin.storeSpecList {
+		dependencyGraph.ProducesFilesArtifact(instructionUuid, storeSpec.GetName())
 	}
 	return nil
 }

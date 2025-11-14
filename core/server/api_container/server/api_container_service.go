@@ -25,6 +25,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/docker_compose_transpiler"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
@@ -158,6 +159,7 @@ func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rp
 	ApiDownloadMode := shared_utils.GetOrDefault(args.ImageDownloadMode, defaultImageDownloadMode)
 	nonBlockingMode := args.GetNonBlockingMode()
 	downloadMode := convertFromImageDownloadModeAPI(ApiDownloadMode)
+	shouldExecuteInParallel := args.GetParallel()
 
 	metricsErr := apicService.metricsClient.TrackKurtosisRun(startosis_constants.PackageIdPlaceholderForStandaloneScript, isNotRemote, dryRun, isScript, serializedParams)
 	if metricsErr != nil {
@@ -176,6 +178,7 @@ func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rp
 		serializedParams,
 		downloadMode,
 		nonBlockingMode,
+		shouldExecuteInParallel,
 		experimentalFeatures,
 		stream,
 	)
@@ -317,6 +320,7 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 	ApiDownloadMode := shared_utils.GetOrDefault(args.ImageDownloadMode, defaultImageDownloadMode)
 	downloadMode := convertFromImageDownloadModeAPI(ApiDownloadMode)
 	nonBlockingMode := args.GetNonBlockingMode()
+	shouldExecuteInParallel := args.GetParallel()
 
 	packageGitHubAuthToken := args.GetGithubAuthToken()
 	if packageGitHubAuthToken != "" {
@@ -361,7 +365,20 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 		actualRelativePathToMainFile,
 		scriptWithRunFunction,
 		serializedParams)
-	apicService.runStarlark(int(parallelism), dryRun, detectedPackageId, detectedPackageReplaceOptions, mainFuncName, actualRelativePathToMainFile, scriptWithRunFunction, serializedParams, downloadMode, nonBlockingMode, args.ExperimentalFeatures, stream)
+	apicService.runStarlark(
+		int(parallelism),
+		dryRun,
+		detectedPackageId,
+		detectedPackageReplaceOptions,
+		mainFuncName,
+		actualRelativePathToMainFile,
+		scriptWithRunFunction,
+		serializedParams,
+		downloadMode,
+		nonBlockingMode,
+		shouldExecuteInParallel,
+		args.ExperimentalFeatures,
+		stream)
 
 	return nil
 }
@@ -699,12 +716,13 @@ func (apicService *ApiContainerService) GetStarlarkPackagePlanYaml(ctx context.C
 		false,
 		enclave_structure.NewEnclaveComponents(),
 		resolver.NewInstructionsPlanMask(0),
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlan())
 	if apiInterpretationError != nil {
 		interpretationError = startosis_errors.NewInterpretationError(apiInterpretationError.GetErrorMessage())
 		return nil, stacktrace.Propagate(interpretationError, "An interpretation error occurred interpreting package for retrieving plan yaml for package: %v", packageIdFromArgs)
 	}
-	planYamlStr, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(packageIdFromArgs))
+	planYamlStr, err := instructionsPlan.GenerateYamlWithInstructions(plan_yaml.CreateEmptyPlan(packageIdFromArgs))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred generating plan yaml for package: %v", packageIdFromArgs)
 	}
@@ -733,11 +751,13 @@ func (apicService *ApiContainerService) GetStarlarkScriptPlanYaml(ctx context.Co
 		false,
 		enclave_structure.NewEnclaveComponents(),
 		resolver.NewInstructionsPlanMask(0),
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlan(),
+	)
 	if apiInterpretationError != nil {
 		return nil, startosis_errors.NewInterpretationError(apiInterpretationError.GetErrorMessage())
 	}
-	planYamlStr, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript))
+	planYamlStr, err := instructionsPlan.GenerateYamlWithInstructions(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript))
 	if err != nil {
 		return nil, err
 	}
@@ -1018,10 +1038,11 @@ func (apicService *ApiContainerService) runStarlark(
 	serializedParams string,
 	imageDownloadMode image_download_mode.ImageDownloadMode,
 	nonBlockingMode bool,
+	shouldExecuteInParallel bool,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 	stream grpc.ServerStream,
 ) {
-	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, packageReplaceOptions, mainFunctionName, relativePathToMainFile, serializedStarlark, serializedParams, imageDownloadMode, nonBlockingMode, experimentalFeatures)
+	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, packageReplaceOptions, mainFunctionName, relativePathToMainFile, serializedStarlark, serializedParams, imageDownloadMode, nonBlockingMode, shouldExecuteInParallel, experimentalFeatures)
 	for {
 		select {
 		case <-stream.Context().Done():

@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
@@ -23,6 +24,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 )
@@ -288,40 +290,25 @@ func (builtin *AddServiceCapabilities) FillPersistableAttributes(builder *enclav
 }
 
 func (builtin *AddServiceCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYamlGenerator) error {
-	var buildContextLocator string
-	var targetStage string
-	var registryAddress string
-	var interpretationErr *startosis_errors.InterpretationError
-
-	// set image values based on type of image
-	if builtin.imageVal != nil {
-		switch starlarkImgVal := builtin.imageVal.(type) {
-		case *service_config.ImageBuildSpec:
-			buildContextLocator, interpretationErr = starlarkImgVal.GetBuildContextLocator()
-			if interpretationErr != nil {
-				return startosis_errors.WrapWithInterpretationError(interpretationErr, "An error occurred getting build context locator")
-			}
-			targetStage, interpretationErr = starlarkImgVal.GetTargetStage()
-			if interpretationErr != nil {
-				return startosis_errors.WrapWithInterpretationError(interpretationErr, "An error occurred getting target stage.")
-			}
-		case *service_config.ImageSpec:
-			registryAddress, interpretationErr = starlarkImgVal.GetRegistryAddrIfSet()
-			if interpretationErr != nil {
-				return startosis_errors.WrapWithInterpretationError(interpretationErr, "An error occurred getting registry address.")
-			}
-		default:
-			// assume NixBuildSpec or regular image
-		}
-	}
-
-	err := planYaml.AddService(builtin.serviceName, builtin.returnValue, builtin.serviceConfig, buildContextLocator, targetStage, registryAddress)
+	err := updatePlanYamlWithService(planYaml, builtin.serviceName, builtin.returnValue, builtin.serviceConfig, builtin.imageVal)
 	if err != nil {
-		return stacktrace.NewError("An error occurred updating the plan with service: %v", builtin.serviceName)
+		return err
 	}
 	return nil
 }
 
 func (builtin *AddServiceCapabilities) Description() string {
 	return builtin.description
+}
+
+// UpdateDependencyGraph updates the dependency graph with the effects of running this instruction
+func (builtin *AddServiceCapabilities) UpdateDependencyGraph(instructionsUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
+	shortDescriptor := fmt.Sprintf("add_service(%s)", builtin.serviceName)
+	dependencyGraph.UpdateInstructionShortDescriptor(instructionsUuid, shortDescriptor)
+
+	err := addServiceToDependencyGraph(instructionsUuid, dependencyGraph, string(builtin.serviceName), builtin.returnValue, builtin.serviceConfig)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred updating the dependency graph with service '%s'", builtin.serviceName)
+	}
+	return nil
 }

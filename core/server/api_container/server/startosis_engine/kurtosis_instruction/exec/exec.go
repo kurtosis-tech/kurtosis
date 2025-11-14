@@ -7,6 +7,7 @@ import (
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/tasks"
@@ -20,6 +21,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 )
@@ -115,7 +117,6 @@ type ExecCapabilities struct {
 }
 
 func (builtin *ExecCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
-
 	serviceNameArgumentValue, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ServiceNameArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceNameArgName)
@@ -247,4 +248,22 @@ func formatErrorMessage(errorMessage string, errorFromExec string) string {
 	splitErrorMessageNewLine := strings.Split(errorFromExec, "\n")
 	reformattedErrorMessage := strings.Join(splitErrorMessageNewLine, "\n  ")
 	return fmt.Sprintf("%v\n  %v", errorMessage, reformattedErrorMessage)
+}
+
+// UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
+func (builtin *ExecCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error { // store outputs
+	shortDescriptor := fmt.Sprintf("exec(%s %s)", builtin.serviceName, builtin.description)
+	dependencyGraph.UpdateInstructionShortDescriptor(instructionUuid, shortDescriptor)
+
+	dependencyGraph.ConsumesService(instructionUuid, string(builtin.serviceName))
+	dependencyGraph.ConsumesAnyRuntimeValuesInList(instructionUuid, builtin.cmdList)
+
+	returnValueStrings, interpretationErr := builtin.execRecipe.GetStarlarkReturnValuesAsStringList(builtin.resultUuid)
+	if interpretationErr != nil {
+		return stacktrace.Propagate(interpretationErr, "An error occurred while getting return value strings for exec recipe")
+	}
+	for _, returnValueString := range returnValueStrings {
+		dependencyGraph.ProducesRuntimeValue(instructionUuid, returnValueString)
+	}
+	return nil
 }

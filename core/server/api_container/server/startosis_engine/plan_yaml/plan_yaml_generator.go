@@ -2,17 +2,19 @@ package plan_yaml
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/go-yaml/yaml"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	store_spec2 "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/store_spec"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
 	"golang.org/x/exp/slices"
-	"strconv"
-	"strings"
 )
 
 const (
@@ -42,6 +44,7 @@ func CreateEmptyPlan(packageId string) *PlanYamlGenerator {
 			FilesArtifacts:      []*FilesArtifact{},
 			Images:              []string{},
 			PackageDependencies: []string{},
+			Instructions:        []dependency_graph.InstructionWithDependencies{},
 		},
 		imageSet:             map[string]bool{},
 		packageDependencySet: map[string]bool{},
@@ -399,6 +402,10 @@ func (planYaml *PlanYamlGenerator) AddImages() {
 		planYaml.privatePlanYaml.Images = append(planYaml.privatePlanYaml.Images, img)
 	}
 	slices.Sort(planYaml.privatePlanYaml.Images)
+}
+
+func (planYaml *PlanYamlGenerator) AddInstructions(instructionsWithDependencies []dependency_graph.InstructionWithDependencies) {
+	planYaml.privatePlanYaml.Instructions = append(planYaml.privatePlanYaml.Instructions, instructionsWithDependencies...)
 }
 
 // getFileMountsFromFilesArtifacts turns filesArtifactExpansions into FileMount's

@@ -5,12 +5,13 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
-	"github.com/kurtosis-tech/stacktrace"
 	"os"
 	"path"
 	"text/template"
+
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
+	"github.com/kurtosis-tech/stacktrace"
 )
 
 const (
@@ -38,6 +39,10 @@ func CreateTemplateData(templateString string, dataAsSerializedJson string) (*Te
 		template:             parsedTemplate,
 		dataAsSerializedJson: dataAsSerializedJson,
 	}, nil
+}
+
+func (templateData *TemplateData) GetDataAsSerializedJson() string {
+	return templateData.dataAsSerializedJson
 }
 
 func (templateData *TemplateData) ReplaceRuntimeValues(runtimeValueStore *runtime_value_store.RuntimeValueStore) error {

@@ -65,7 +65,7 @@ func (apiContainer *APIContainer) GetPrivateIPAddress() net.IP {
 	return apiContainer.privateIpAddr
 }
 
-// Returns nil if the bridge network IP address does not exist
+// Returns nil if the bridge network IP address does not exist, likely meaning this API container is not connected to the bridge network
 func (apiContainer *APIContainer) GetBridgeNetworkIPAddress() net.IP {
 	return apiContainer.bridgeNetworkIpAddress
 }

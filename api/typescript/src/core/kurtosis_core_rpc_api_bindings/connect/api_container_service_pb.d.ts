@@ -559,6 +559,13 @@ export declare class RunStarlarkScriptArgs extends Message<RunStarlarkScriptArgs
    */
   nonBlockingMode?: boolean;
 
+  /**
+   * If true, executes the package in parallel meaning each instruction runs as soon as its dependencies are finished
+   *
+   * @generated from field: optional bool parallel = 17;
+   */
+  parallel?: boolean;
+
   constructor(data?: PartialMessage<RunStarlarkScriptArgs>);
 
   static readonly runtime: typeof proto3;
@@ -695,6 +702,13 @@ export declare class RunStarlarkPackageArgs extends Message<RunStarlarkPackageAr
    * @generated from field: optional string github_auth_token = 16;
    */
   githubAuthToken?: string;
+
+  /**
+   * If true, executes the package in parallel meaning each instruction runs as soon as its dependencies are finished
+   *
+   * @generated from field: optional bool parallel = 17;
+   */
+  parallel?: boolean;
 
   constructor(data?: PartialMessage<RunStarlarkPackageArgs>);
 
@@ -863,6 +877,11 @@ export declare class StarlarkInstruction extends Message<StarlarkInstruction> {
    */
   description: string;
 
+  /**
+   * @generated from field: optional string instruction_id = 7;
+   */
+  instructionId?: string;
+
   constructor(data?: PartialMessage<StarlarkInstruction>);
 
   static readonly runtime: typeof proto3;
@@ -891,6 +910,11 @@ export declare class StarlarkInstructionResult extends Message<StarlarkInstructi
    * @generated from field: optional google.protobuf.Duration execution_duration = 2;
    */
   executionDuration?: Duration;
+
+  /**
+   * @generated from field: optional string instruction_id = 3;
+   */
+  instructionId?: string;
 
   constructor(data?: PartialMessage<StarlarkInstructionResult>);
 
@@ -1108,6 +1132,11 @@ export declare class StarlarkRunProgress extends Message<StarlarkRunProgress> {
    */
   currentStepNumber: number;
 
+  /**
+   * @generated from field: optional string instruction_id = 4;
+   */
+  instructionId?: string;
+
   constructor(data?: PartialMessage<StarlarkRunProgress>);
 
   static readonly runtime: typeof proto3;
@@ -1133,14 +1162,14 @@ export declare class StarlarkRunFinishedEvent extends Message<StarlarkRunFinishe
   isRunSuccessful: boolean;
 
   /**
-   * @generated from field: optional google.protobuf.Duration total_execution_duration = 2;
-   */
-  totalExecutionDuration?: Duration;
-
-  /**
-   * @generated from field: optional string serialized_output = 3;
+   * @generated from field: optional string serialized_output = 2;
    */
   serializedOutput?: string;
+
+  /**
+   * @generated from field: optional google.protobuf.Duration total_execution_duration = 3;
+   */
+  totalExecutionDuration?: Duration;
 
   constructor(data?: PartialMessage<StarlarkRunFinishedEvent>);
 

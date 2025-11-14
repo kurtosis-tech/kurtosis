@@ -1,5 +1,51 @@
 # Changelog
 
+## [1.13.0](https://github.com/kurtosis-tech/kurtosis/compare/1.12.1...1.13.0) (2025-11-07)
+
+
+### Features
+
+* output instruction graph ([#2829](https://github.com/kurtosis-tech/kurtosis/issues/2829)) ([c012491](https://github.com/kurtosis-tech/kurtosis/commit/c01249136b3ac81df888d5e032a5fcb80d12e777))
+
+
+### Bug Fixes
+
+* **core:** impl update plan for add services ([#2826](https://github.com/kurtosis-tech/kurtosis/issues/2826)) ([8d451fb](https://github.com/kurtosis-tech/kurtosis/commit/8d451fb37db815116e1d11f8ac958890cb52ac92))
+
+## [1.12.1](https://github.com/kurtosis-tech/kurtosis/compare/1.12.0...1.12.1) (2025-10-31)
+
+
+### Bug Fixes
+
+* **ci:** upgrade rust to 1.88 ([#2823](https://github.com/kurtosis-tech/kurtosis/issues/2823)) ([80c41d8](https://github.com/kurtosis-tech/kurtosis/commit/80c41d8deb51704f0e38034ca04939037c6fb805))
+
+## [1.12.0](https://github.com/kurtosis-tech/kurtosis/compare/1.11.2...1.12.0) (2025-10-31)
+
+
+### Features
+
+* add dependency graph to interpreter ([#2809](https://github.com/kurtosis-tech/kurtosis/issues/2809)) ([9f5e463](https://github.com/kurtosis-tech/kurtosis/commit/9f5e4630df774a1dde6bda266748bfa4e2095643))
+* kurtosis run `--parallel` ([#2811](https://github.com/kurtosis-tech/kurtosis/issues/2811)) ([d1e808b](https://github.com/kurtosis-tech/kurtosis/commit/d1e808b2b88dbd21e75dc9262793cc41fb7d5894))
+* parallel printing terminal UI ([#2821](https://github.com/kurtosis-tech/kurtosis/issues/2821)) ([17e39d2](https://github.com/kurtosis-tech/kurtosis/commit/17e39d2192f7b485d59377107f1fea9b535b3881))
+
+
+### Bug Fixes
+
+* don't publish udp ports ([#2818](https://github.com/kurtosis-tech/kurtosis/issues/2818)) ([f87a91e](https://github.com/kurtosis-tech/kurtosis/commit/f87a91ead5306196818ff3c39d2bcfbacc0826cd))
+* kurtosis service update with wait=None ([#2819](https://github.com/kurtosis-tech/kurtosis/issues/2819)) ([f53d678](https://github.com/kurtosis-tech/kurtosis/commit/f53d6781082e26e6c0ee5c6ddd2ec45a6b3a1d9e))
+* remove log ([#2822](https://github.com/kurtosis-tech/kurtosis/issues/2822)) ([3e6510c](https://github.com/kurtosis-tech/kurtosis/commit/3e6510c5d9c738004025e52498c154e3bc2fb4a4))
+
+## [1.11.2](https://github.com/kurtosis-tech/kurtosis/compare/1.11.1...1.11.2) (2025-10-16)
+
+
+### Bug Fixes
+
+* don't delete logs collector per enclave over k8s ([#2804](https://github.com/kurtosis-tech/kurtosis/issues/2804)) ([5a09733](https://github.com/kurtosis-tech/kurtosis/commit/5a09733d43cdf66df6985368feb1c097bb8cff03))
+* remove enclave identifiers ([#2812](https://github.com/kurtosis-tech/kurtosis/issues/2812)) ([a7e4fcf](https://github.com/kurtosis-tech/kurtosis/commit/a7e4fcf1f450ae0da905777f7b21097ef04a7f1a))
+* speed up enclave inspect (and other CLI commands) ([#2774](https://github.com/kurtosis-tech/kurtosis/issues/2774)) ([095261b](https://github.com/kurtosis-tech/kurtosis/commit/095261b25fdeec0ae1f5bb5186b7ca7c081b6ed7))
+* treat podman container status stopped as exited status ([#2817](https://github.com/kurtosis-tech/kurtosis/issues/2817)) ([899432f](https://github.com/kurtosis-tech/kurtosis/commit/899432f3dcb67a329820266f0fdcd8502ee81156))
+* use returned uuid ([#2816](https://github.com/kurtosis-tech/kurtosis/issues/2816)) ([2707d5f](https://github.com/kurtosis-tech/kurtosis/commit/2707d5fdf775081664ffb4ad995d69df55746a86))
+
 ## [1.11.1](https://github.com/kurtosis-tech/kurtosis/compare/1.11.0...1.11.1) (2025-08-27)
 
 

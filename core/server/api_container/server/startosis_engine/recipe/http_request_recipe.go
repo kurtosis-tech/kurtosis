@@ -105,25 +105,35 @@ func resultMapToStringInternal(resultMap map[string]starlark.Comparable) string 
 	}
 }
 
-func createStarlarkReturnValueInternal(resultUuid string, extractors map[string]string) (*starlark.Dict, *startosis_errors.InterpretationError) {
+func createHttpRequestRecipeStarlarkReturnValueInternal(resultUuid string, extractors map[string]string) (*starlark.Dict, []string, *startosis_errors.InterpretationError) {
 	dict := &starlark.Dict{}
-	err := dict.SetKey(starlark.String(bodyKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, bodyKey)))
+	returnValueStrings := []string{}
+
+	bodyValueString := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, bodyKey)
+	returnValueStrings = append(returnValueStrings, bodyValueString)
+	err := dict.SetKey(starlark.String(bodyKey), starlark.String(bodyValueString))
 	if err != nil {
-		return nil, startosis_errors.NewInterpretationError("An error has occurred when creating return value for request recipe, setting field '%v'", bodyKey)
+		return nil, nil, startosis_errors.NewInterpretationError("An error has occurred when creating return value for request recipe, setting field '%v'", bodyKey)
 	}
-	err = dict.SetKey(starlark.String(statusCodeKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, statusCodeKey)))
+
+	statusCodeValueString := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, statusCodeKey)
+	returnValueStrings = append(returnValueStrings, statusCodeValueString)
+	err = dict.SetKey(starlark.String(statusCodeKey), starlark.String(statusCodeValueString))
 	if err != nil {
-		return nil, startosis_errors.NewInterpretationError("An error has occurred when creating return value for request recipe, setting field '%v'", statusCodeKey)
+		return nil, nil, startosis_errors.NewInterpretationError("An error has occurred when creating return value for request recipe, setting field '%v'", statusCodeKey)
 	}
+
 	for extractorKey := range extractors {
 		fullExtractorKey := fmt.Sprintf("%v.%v", extractKeyPrefix, extractorKey)
-		err = dict.SetKey(starlark.String(fullExtractorKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, fullExtractorKey)))
+		extractedValueString := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, fullExtractorKey)
+		returnValueStrings = append(returnValueStrings, extractedValueString)
+		err = dict.SetKey(starlark.String(fullExtractorKey), starlark.String(extractedValueString))
 		if err != nil {
-			return nil, startosis_errors.NewInterpretationError("An error has occurred when creating return value for request recipe, setting field '%v'", fullExtractorKey)
+			return nil, nil, startosis_errors.NewInterpretationError("An error has occurred when creating return value for request recipe, setting field '%v'", fullExtractorKey)
 		}
 	}
 	dict.Freeze()
-	return dict, nil
+	return dict, returnValueStrings, nil
 }
 
 func convertHeadersToMapStringString(isSet bool, headersStarlarkValue starlark.Value) (map[string]string, *startosis_errors.InterpretationError) {

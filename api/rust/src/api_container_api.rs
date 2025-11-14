@@ -260,6 +260,9 @@ pub struct RunStarlarkScriptArgs {
     /// Defaults to false
     #[prost(bool, optional, tag = "10")]
     pub non_blocking_mode: ::core::option::Option<bool>,
+    /// If true, executes the package in parallel meaning each instruction runs as soon as its dependencies are finished
+    #[prost(bool, optional, tag = "17")]
+    pub parallel: ::core::option::Option<bool>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -309,6 +312,9 @@ pub struct RunStarlarkPackageArgs {
     /// token that will be used to authenticate requests for this package
     #[prost(string, optional, tag = "16")]
     pub github_auth_token: ::core::option::Option<::prost::alloc::string::String>,
+    /// If true, executes the package in parallel meaning each instruction runs as soon as its dependencies are finished
+    #[prost(bool, optional, tag = "17")]
+    pub parallel: ::core::option::Option<bool>,
     /// Deprecated: If the package is local, it should have been uploaded with UploadStarlarkPackage prior to calling
     /// RunStarlarkPackage. If the package is remote and must be cloned within the APIC, use the standalone boolean flag
     /// clone_package below
@@ -395,6 +401,8 @@ pub struct StarlarkInstruction {
     pub is_skipped: bool,
     #[prost(string, tag = "6")]
     pub description: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "7")]
+    pub instruction_id: ::core::option::Option<::prost::alloc::string::String>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -403,6 +411,8 @@ pub struct StarlarkInstructionResult {
     pub serialized_instruction_result: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "2")]
     pub execution_duration: ::core::option::Option<::prost_types::Duration>,
+    #[prost(string, optional, tag = "3")]
+    pub instruction_id: ::core::option::Option<::prost::alloc::string::String>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -470,16 +480,18 @@ pub struct StarlarkRunProgress {
     pub total_steps: u32,
     #[prost(uint32, tag = "3")]
     pub current_step_number: u32,
+    #[prost(string, optional, tag = "4")]
+    pub instruction_id: ::core::option::Option<::prost::alloc::string::String>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct StarlarkRunFinishedEvent {
     #[prost(bool, tag = "1")]
     pub is_run_successful: bool,
-    #[prost(message, optional, tag = "2")]
-    pub total_execution_duration: ::core::option::Option<::prost_types::Duration>,
-    #[prost(string, optional, tag = "3")]
+    #[prost(string, optional, tag = "2")]
     pub serialized_output: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(message, optional, tag = "3")]
+    pub total_execution_duration: ::core::option::Option<::prost_types::Duration>,
 }
 /// ==============================================================================================
 ///                                           Get Services

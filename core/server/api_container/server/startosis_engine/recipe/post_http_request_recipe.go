@@ -208,11 +208,30 @@ func (recipe *PostHttpRequestRecipe) CreateStarlarkReturnValue(resultUuid string
 		return nil, interpretationErr
 	}
 
-	returnValue, interpretationErr := createStarlarkReturnValueInternal(resultUuid, extractors)
+	returnValue, _, interpretationErr := createHttpRequestRecipeStarlarkReturnValueInternal(resultUuid, extractors)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 	return returnValue, nil
+}
+
+func (recipe *PostHttpRequestRecipe) GetStarlarkReturnValuesAsStringList(resultUuid string) ([]string, *startosis_errors.InterpretationError) {
+	rawExtractors, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](
+		recipe.KurtosisValueTypeDefault, ExtractAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	extractors, interpretationErr := convertExtractorsToDict(found, rawExtractors)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	_, returnValueStrings, interpretationErr := createHttpRequestRecipeStarlarkReturnValueInternal(resultUuid, extractors)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	return returnValueStrings, nil
 }
 
 func (recipe *PostHttpRequestRecipe) RequestType() string {

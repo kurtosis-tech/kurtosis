@@ -233,13 +233,13 @@ func (manager *EnclaveManager) CreateEnclave(
 // It's a liiiitle weird that we return an EnclaveInfo object (which is a Protobuf object), but as of 2021-10-21 this class
 //
 //	is only used by the EngineServerService so we might as well return the object that EngineServerService wants
-func (manager *EnclaveManager) GetEnclaves(
+func (manager *EnclaveManager) GetAllEnclaves(
 	ctx context.Context,
 ) (map[string]*types.EnclaveInfo, error) {
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
 
-	enclaves, err := manager.getEnclavesWithoutMutex(ctx)
+	enclaves, err := manager.getAllEnclavesWithoutMutex(ctx)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the enclaves without the mutex")
 	}
@@ -247,6 +247,27 @@ func (manager *EnclaveManager) GetEnclaves(
 	// Transform map[enclave.EnclaveUUID]*EnclaveInfo -> map[string]*EnclaveInfo
 	enclaveMapKeyedWithUuidStr := map[string]*types.EnclaveInfo{}
 	for enclaveUuid, enclaveInfo := range enclaves {
+		enclaveMapKeyedWithUuidStr[string(enclaveUuid)] = enclaveInfo
+	}
+
+	return enclaveMapKeyedWithUuidStr, nil
+}
+
+func (manager *EnclaveManager) GetEnclavesByUuid(
+	ctx context.Context,
+	enclaveUuids []enclave.EnclaveUUID,
+) (map[string]*types.EnclaveInfo, error) {
+	manager.mutex.Lock()
+	defer manager.mutex.Unlock()
+
+	enclaveInfos, err := manager.getEnclavesByUuidWithoutMutex(ctx, enclaveUuids)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave '%v' without mutex", enclaveUuids)
+	}
+
+	// Transform map[enclave.EnclaveUUID]*EnclaveInfo -> map[string]*EnclaveInfo
+	enclaveMapKeyedWithUuidStr := map[string]*types.EnclaveInfo{}
+	for enclaveUuid, enclaveInfo := range enclaveInfos {
 		enclaveMapKeyedWithUuidStr[string(enclaveUuid)] = enclaveInfo
 	}
 
@@ -308,7 +329,7 @@ func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (
 	var resultEnclaveNameAndUuids []*types.EnclaveNameAndUuid
 
 	// we prefetch the enclaves before deletion so that we have metadata
-	enclavesForUuidNameMapping, err := manager.getEnclavesWithoutMutex(ctx)
+	enclavesForUuidNameMapping, err := manager.getAllEnclavesWithoutMutex(ctx)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Tried retrieving existing enclaves but failed")
 	}
@@ -383,7 +404,7 @@ func (manager *EnclaveManager) getExistingAndHistoricalEnclaveIdentifiersWithout
 	// TODO fix this - this is a hack while we persist enclave identifier information to disk
 	// this is a hack that will only send enclaves that are still registered; removed or destroyed enclaves will not show up
 	ctx := context.Background()
-	allCurrentEnclavesToBackFillRestart, err := manager.getEnclavesWithoutMutex(ctx)
+	allCurrentEnclavesToBackFillRestart, err := manager.getAllEnclavesWithoutMutex(ctx)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Found no registered enclaves in the in memory map; tried fetching them from backend but failed")
 	}
@@ -622,7 +643,7 @@ func (manager *EnclaveManager) cleanEnclaves(
 	return successfullyDestroyedEnclaveIdStrs, enclaveDestructionErrors, nil
 }
 
-func (manager *EnclaveManager) getEnclavesWithoutMutex(
+func (manager *EnclaveManager) getAllEnclavesWithoutMutex(
 	ctx context.Context,
 ) (map[enclave.EnclaveUUID]*types.EnclaveInfo, error) {
 	enclaves, err := manager.kurtosisBackend.GetEnclaves(ctx, getAllEnclavesFilter())
@@ -632,7 +653,7 @@ func (manager *EnclaveManager) getEnclavesWithoutMutex(
 
 	result := map[enclave.EnclaveUUID]*types.EnclaveInfo{}
 	for enclaveId, enclaveObj := range enclaves {
-		// filter idle enclaves because these were not created by users
+		// idle enclaves are enclaves in the enclave pool aka created by Kurtosis and not by users so we filter them out here b/c users shouldn't see them
 		if isIdleEnclave(*enclaveObj) {
 			continue
 		}
@@ -644,7 +665,38 @@ func (manager *EnclaveManager) getEnclavesWithoutMutex(
 		result[enclaveId] = enclaveInfo
 	}
 	return result, nil
+}
 
+func (manager *EnclaveManager) getEnclavesByUuidWithoutMutex(
+	ctx context.Context,
+	enclaveUuids []enclave.EnclaveUUID,
+) (map[enclave.EnclaveUUID]*types.EnclaveInfo, error) {
+	// if no uuids
+	if len(enclaveUuids) == 0 { // if no
+		return manager.getAllEnclavesWithoutMutex(ctx)
+	}
+
+	enclaves, err := manager.kurtosisBackend.GetEnclaves(ctx, getEnclavesByUuidFilter(enclaveUuids))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave '%v'", enclaveUuids)
+	}
+
+	enclaveInfos := map[enclave.EnclaveUUID]*types.EnclaveInfo{}
+	for _, enclaveUuid := range enclaveUuids {
+		enclaveObj, existsEnclave := enclaves[enclaveUuid]
+		if !existsEnclave {
+			logrus.Warnf("Requested enclave '%v' not found. This is likely because the enclave is not running or has been destroyed.", enclaveUuids)
+			continue
+		}
+
+		enclaveInfo, err := getEnclaveInfoForEnclave(ctx, manager.kurtosisBackend, enclaveObj)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting information about enclave '%v'", enclaveUuids)
+		}
+		enclaveInfos[enclaveUuid] = enclaveInfo
+	}
+
+	return enclaveInfos, nil
 }
 
 func (manager *EnclaveManager) Close() error {
@@ -667,6 +719,17 @@ func getEnclaveByEnclaveIdFilter(enclaveUuid enclave.EnclaveUUID) *enclave.Encla
 func getAllEnclavesFilter() *enclave.EnclaveFilters {
 	return &enclave.EnclaveFilters{
 		UUIDs:    map[enclave.EnclaveUUID]bool{},
+		Statuses: nil,
+	}
+}
+
+func getEnclavesByUuidFilter(enclaveUuids []enclave.EnclaveUUID) *enclave.EnclaveFilters {
+	enclaveUuidsMap := map[enclave.EnclaveUUID]bool{}
+	for _, enclaveUuid := range enclaveUuids {
+		enclaveUuidsMap[enclaveUuid] = true
+	}
+	return &enclave.EnclaveFilters{
+		UUIDs:    enclaveUuidsMap,
 		Statuses: nil,
 	}
 }
@@ -719,7 +782,7 @@ func getEnclaveInfoForEnclave(ctx context.Context, kurtosisBackend backend_inter
 
 // this should be called from a thread safe context
 func (manager *EnclaveManager) getEnclaveUuidForIdentifierUnlocked(ctx context.Context, enclaveIdentifier string) (enclave.EnclaveUUID, error) {
-	enclaves, err := manager.getEnclavesWithoutMutex(ctx)
+	enclaves, err := manager.getAllEnclavesWithoutMutex(ctx)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while getting enclaves to look up if identifier '%v' is a valid uuid", enclaveIdentifier)
 	}

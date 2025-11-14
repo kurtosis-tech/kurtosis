@@ -3,8 +3,9 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs"
 	"net/http"
+
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs"
 
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/mapping/to_http"
@@ -56,7 +57,7 @@ func (engine EngineRuntime) DeleteEnclaves(ctx context.Context, request api.Dele
 // Get Enclaves
 // (GET /enclaves)
 func (engine EngineRuntime) GetEnclaves(ctx context.Context, request api.GetEnclavesRequestObject) (api.GetEnclavesResponseObject, error) {
-	infoForEnclaves, err := engine.EnclaveManager.GetEnclaves(ctx)
+	infoForEnclaves, err := engine.EnclaveManager.GetAllEnclaves(ctx)
 	if err != nil {
 		response := internalErrorResponseInfof(err, "An error occurred getting info for enclaves")
 		return api.GetEnclavesdefaultJSONResponse{
@@ -157,7 +158,7 @@ func (engine EngineRuntime) DeleteEnclavesEnclaveIdentifier(ctx context.Context,
 // Get Enclave Info
 // (GET /enclaves/{enclave_identifier})
 func (engine EngineRuntime) GetEnclavesEnclaveIdentifier(ctx context.Context, request api.GetEnclavesEnclaveIdentifierRequestObject) (api.GetEnclavesEnclaveIdentifierResponseObject, error) {
-	infoForEnclaves, err := engine.EnclaveManager.GetEnclaves(ctx)
+	infoForEnclaves, err := engine.EnclaveManager.GetAllEnclaves(ctx)
 	if err != nil {
 		response := internalErrorResponseInfof(err, "An error occurred getting info for enclaves")
 		return api.GetEnclavesEnclaveIdentifierdefaultJSONResponse{
@@ -183,7 +184,7 @@ func (engine EngineRuntime) GetEnclavesEnclaveIdentifier(ctx context.Context, re
 // (GET /enclaves/{enclave_identifier}/status)
 func (engine EngineRuntime) GetEnclavesEnclaveIdentifierStatus(ctx context.Context, request api.GetEnclavesEnclaveIdentifierStatusRequestObject) (api.GetEnclavesEnclaveIdentifierStatusResponseObject, error) {
 	enclaveIdentifier := request.EnclaveIdentifier
-	enclaveList, err := engine.EnclaveManager.GetEnclaves(ctx)
+	enclaveList, err := engine.EnclaveManager.GetAllEnclaves(ctx)
 	if err != nil {
 		response := internalErrorResponseInfof(err, "An error occurred stopping enclave '%v'", enclaveIdentifier)
 		return api.GetEnclavesEnclaveIdentifierStatusdefaultJSONResponse{
