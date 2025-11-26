@@ -314,6 +314,7 @@ func createStartServiceOperation(
 		tolerations := serviceConfig.GetTolerations()
 		nodeSelectors := serviceConfig.GetNodeSelectors()
 		imageDownloadMode := serviceConfig.GetImageDownloadMode()
+		devices := serviceConfig.GetDevices()
 
 		matchingObjectAndResources, found := servicesObjectsAndResources[serviceUuid]
 		if !found {
@@ -372,6 +373,34 @@ func createStartServiceOperation(
 				userServiceContainerVolumeMounts = append(userServiceContainerVolumeMounts, *volumeAndClaim.GetVolumeMount(serviceMountDirPath))
 			}
 		}
+
+		// Add device volumes if devices are specified
+		if len(devices) > 0 {
+			for _, devicePath := range devices {
+				deviceType := apiv1.HostPathCharDev
+				// Try to detect if it's a block device (common patterns: /dev/sd*, /dev/nvme*, /dev/vd*)
+				// For TPM devices (/dev/tpm*), they are character devices
+				volumeName := "device-" + strings.ReplaceAll(strings.TrimPrefix(devicePath, "/dev/"), "/", "-")
+				deviceVolume := apiv1.Volume{
+					Name: volumeName,
+					VolumeSource: apiv1.VolumeSource{
+						HostPath: &apiv1.HostPathVolumeSource{
+							Path: devicePath,
+							Type: &deviceType,
+						},
+					},
+				}
+				podVolumes = append(podVolumes, deviceVolume)
+
+				deviceVolumeMount := apiv1.VolumeMount{
+					Name:      volumeName,
+					MountPath: devicePath,
+					ReadOnly:  false,
+				}
+				userServiceContainerVolumeMounts = append(userServiceContainerVolumeMounts, deviceVolumeMount)
+			}
+		}
+
 		defer func() {
 			if !shouldDestroyPersistentVolumesAndClaims {
 				return
