@@ -2,9 +2,9 @@ package status
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
+	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_str_consts"
+	"github.com/dzobbe/PoTE-kurtosis/cli/cli/helpers/output_printers"
+	"github.com/dzobbe/PoTE-kurtosis/cli/cli/out"
 )
 
 const (

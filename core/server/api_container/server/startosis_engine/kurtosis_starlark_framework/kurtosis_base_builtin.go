@@ -1,8 +1,8 @@
 package kurtosis_starlark_framework
 
 import (
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_warning"
+	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
+	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/starlark_warning"
 	"go.starlark.net/starlark"
 )
 

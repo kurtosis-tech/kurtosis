@@ -2,7 +2,7 @@ package service
 
 import (
 	"encoding/json"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/stretchr/testify/require"
 	"net"
 	"testing"

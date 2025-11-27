@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	contexts_config_store_generated_api "github.com/kurtosis-tech/kurtosis/contexts-config-store/api/golang/generated"
+	contexts_config_store_generated_api "github.com/dzobbe/PoTE-kurtosis/contexts-config-store/api/golang/generated"
 	"github.com/kurtosis-tech/stacktrace"
 )
 

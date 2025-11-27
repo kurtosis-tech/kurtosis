@@ -2,8 +2,8 @@ package commands
 
 import (
 	"bytes"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
-	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
+	"github.com/dzobbe/PoTE-kurtosis/cli/cli/out"
+	"github.com/dzobbe/PoTE-kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"

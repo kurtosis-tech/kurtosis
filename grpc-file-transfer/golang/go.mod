@@ -1,4 +1,4 @@
-module github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang
+module github.com/dzobbe/PoTE-kurtosis/grpc-file-transfer/golang
 
 go 1.23.0
 

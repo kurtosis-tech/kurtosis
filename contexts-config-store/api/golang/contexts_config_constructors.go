@@ -1,6 +1,6 @@
 package golang
 
-import "github.com/kurtosis-tech/kurtosis/contexts-config-store/api/golang/generated"
+import "github.com/dzobbe/PoTE-kurtosis/contexts-config-store/api/golang/generated"
 
 func NewContextUuid(uuid string) *generated.ContextUuid {
 	return &generated.ContextUuid{

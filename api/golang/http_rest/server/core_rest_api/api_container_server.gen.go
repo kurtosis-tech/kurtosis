@@ -18,7 +18,7 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	. "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/api_types"
+	. "github.com/dzobbe/PoTE-kurtosis/api/golang/http_rest/api_types"
 	"github.com/labstack/echo/v4"
 	"github.com/oapi-codegen/runtime"
 	strictecho "github.com/oapi-codegen/runtime/strictmiddleware/echo"

@@ -1,6 +1,6 @@
 package kurtosis_context
 
-import "github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
+import "github.com/dzobbe/PoTE-kurtosis/api/golang/core/lib/services"
 
 // This struct wrap the information returned by the user service logs GRPC stream
 type serviceLogsStreamContent struct {

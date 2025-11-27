@@ -3,7 +3,7 @@ package reverse_proxy
 import (
 	"net"
 
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
+	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 )
 
 // This component is responsible for routing http traffic to the services

@@ -1,11 +1,11 @@
 package plan_module
 
 import (
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
+	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
+	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
+	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
+	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
+	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
 )

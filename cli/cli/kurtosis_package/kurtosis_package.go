@@ -3,8 +3,8 @@ package kurtosis_package
 import (
 	"fmt"
 	"github.com/go-yaml/yaml"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
+	"github.com/dzobbe/PoTE-kurtosis/api/golang/core/lib/enclaves"
+	"github.com/dzobbe/PoTE-kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"os"

@@ -2,8 +2,8 @@ package persistence
 
 import (
 	"github.com/adrg/xdg"
-	"github.com/kurtosis-tech/kurtosis/contexts-config-store/api/golang/generated"
-	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store/serde"
+	"github.com/dzobbe/PoTE-kurtosis/contexts-config-store/api/golang/generated"
+	"github.com/dzobbe/PoTE-kurtosis/contexts-config-store/store/serde"
 	"github.com/kurtosis-tech/stacktrace"
 	"os"
 	"path"

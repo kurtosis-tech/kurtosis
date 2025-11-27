@@ -3,8 +3,8 @@ package dependency_graph
 import (
 	"slices"
 
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
+	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
+	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/types"
 )
 
 // InstructionDependencyGraph tracks dependencies between Starlark instructions in an instruction sequence.

@@ -2,12 +2,12 @@ package stop
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/grafloki"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/kurtosis_config_getter"
+	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_framework/lowlevel"
+	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_framework/lowlevel/args"
+	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_framework/lowlevel/flags"
+	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_str_consts"
+	"github.com/dzobbe/PoTE-kurtosis/cli/cli/helpers/grafloki"
+	"github.com/dzobbe/PoTE-kurtosis/cli/cli/helpers/kurtosis_config_getter"
 	"github.com/kurtosis-tech/stacktrace"
 )
 

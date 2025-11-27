@@ -2,9 +2,9 @@ package file_layout
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_consts"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
+	"github.com/dzobbe/PoTE-kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
+	"github.com/dzobbe/PoTE-kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_consts"
+	"github.com/dzobbe/PoTE-kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"golang.org/x/exp/slices"
 	"math"
 	"os"

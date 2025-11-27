@@ -2,12 +2,12 @@ package twitter
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/multi_os_command_executor"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/user_support_constants"
+	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_framework/lowlevel"
+	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_framework/lowlevel/args"
+	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_framework/lowlevel/flags"
+	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_str_consts"
+	"github.com/dzobbe/PoTE-kurtosis/cli/cli/helpers/multi_os_command_executor"
+	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/user_support_constants"
 	"github.com/kurtosis-tech/stacktrace"
 )
 

@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/kurtosis-tech/kurtosis/core/launcher/args/kurtosis_backend_config"
-	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
+	"github.com/dzobbe/PoTE-kurtosis/core/launcher/args/kurtosis_backend_config"
+	"github.com/dzobbe/PoTE-kurtosis/metrics-library/golang/lib/metrics_client"
 
 	"github.com/kurtosis-tech/stacktrace"
 )

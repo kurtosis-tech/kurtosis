@@ -4,10 +4,10 @@ import (
 	"sort"
 	"testing"
 
-	v6 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v6"
+	v6 "github.com/dzobbe/PoTE-kurtosis/cli/cli/kurtosis_config/overrides_objects/v6"
 
-	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/config_version"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects"
+	"github.com/dzobbe/PoTE-kurtosis/cli/cli/kurtosis_config/config_version"
+	"github.com/dzobbe/PoTE-kurtosis/cli/cli/kurtosis_config/overrides_objects"
 	"github.com/stretchr/testify/require"
 )
 

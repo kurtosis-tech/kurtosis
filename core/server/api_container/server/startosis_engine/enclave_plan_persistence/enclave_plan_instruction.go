@@ -2,7 +2,7 @@ package enclave_plan_persistence
 
 import (
 	"bytes"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 )
 
 type EnclavePlanInstruction struct {

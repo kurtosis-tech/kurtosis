@@ -1,4 +1,4 @@
-module github.com/kurtosis-tech/kurtosis/metrics-library/golang
+module github.com/dzobbe/PoTE-kurtosis/metrics-library/golang
 
 go 1.23.0
 

@@ -3,7 +3,7 @@ package plan_yaml
 import (
 	"sort"
 
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
+	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 )
 
 const (

@@ -2,8 +2,8 @@ package startosis_add_service_test
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
+	"github.com/dzobbe/PoTE-kurtosis-cli/golang_internal_testsuite/test_helpers"
+	"github.com/dzobbe/PoTE-kurtosis/api/golang/core/lib/enclaves"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"

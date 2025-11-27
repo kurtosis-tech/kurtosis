@@ -2,7 +2,7 @@ package service_identifiers
 
 import (
 	"encoding/json"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/stretchr/testify/require"
 	"testing"
 )

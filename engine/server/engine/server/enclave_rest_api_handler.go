@@ -8,22 +8,22 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/mapping/to_grpc"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/mapping/to_http"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/streaming"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/types"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/utils"
-	"github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang/grpc_file_streaming"
+	"github.com/dzobbe/PoTE-kurtosis/engine/server/engine/enclave_manager"
+	"github.com/dzobbe/PoTE-kurtosis/engine/server/engine/mapping/to_grpc"
+	"github.com/dzobbe/PoTE-kurtosis/engine/server/engine/mapping/to_http"
+	"github.com/dzobbe/PoTE-kurtosis/engine/server/engine/streaming"
+	"github.com/dzobbe/PoTE-kurtosis/engine/server/engine/types"
+	"github.com/dzobbe/PoTE-kurtosis/engine/server/engine/utils"
+	"github.com/dzobbe/PoTE-kurtosis/grpc-file-transfer/golang/grpc_file_streaming"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	rpc_api "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	api_type "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/api_types"
-	api "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/server/core_rest_api"
+	rpc_api "github.com/dzobbe/PoTE-kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	api_type "github.com/dzobbe/PoTE-kurtosis/api/golang/http_rest/api_types"
+	api "github.com/dzobbe/PoTE-kurtosis/api/golang/http_rest/server/core_rest_api"
 )
 
 const (

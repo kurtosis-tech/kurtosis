@@ -1,9 +1,9 @@
 package free_ip_addr_tracker
 
 import (
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/consts"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/network_helpers"
+	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/database_accessors/consts"
+	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
+	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/network_helpers"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	bolt "go.etcd.io/bbolt"

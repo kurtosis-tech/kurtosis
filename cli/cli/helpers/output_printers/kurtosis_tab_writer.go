@@ -2,7 +2,7 @@ package output_printers
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
+	"github.com/dzobbe/PoTE-kurtosis/cli/cli/out"
 	"github.com/sirupsen/logrus"
 	"strings"
 	"text/tabwriter"

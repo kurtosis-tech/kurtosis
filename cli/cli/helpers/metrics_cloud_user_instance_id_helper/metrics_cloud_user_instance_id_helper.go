@@ -1,8 +1,8 @@
 package metrics_cloud_user_instance_id_helper
 
 import (
-	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
-	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
+	"github.com/dzobbe/PoTE-kurtosis/contexts-config-store/store"
+	"github.com/dzobbe/PoTE-kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/sirupsen/logrus"
 )
 

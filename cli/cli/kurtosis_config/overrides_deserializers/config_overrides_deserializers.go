@@ -2,14 +2,14 @@ package overrides_deserializers
 
 import (
 	"github.com/go-yaml/yaml"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/config_version"
-	v0 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v0"
-	v1 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v1"
-	v2 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v2"
-	v3 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v3"
-	v4 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v4"
-	v5 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v5"
-	v6 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v6"
+	"github.com/dzobbe/PoTE-kurtosis/cli/cli/kurtosis_config/config_version"
+	v0 "github.com/dzobbe/PoTE-kurtosis/cli/cli/kurtosis_config/overrides_objects/v0"
+	v1 "github.com/dzobbe/PoTE-kurtosis/cli/cli/kurtosis_config/overrides_objects/v1"
+	v2 "github.com/dzobbe/PoTE-kurtosis/cli/cli/kurtosis_config/overrides_objects/v2"
+	v3 "github.com/dzobbe/PoTE-kurtosis/cli/cli/kurtosis_config/overrides_objects/v3"
+	v4 "github.com/dzobbe/PoTE-kurtosis/cli/cli/kurtosis_config/overrides_objects/v4"
+	v5 "github.com/dzobbe/PoTE-kurtosis/cli/cli/kurtosis_config/overrides_objects/v5"
+	v6 "github.com/dzobbe/PoTE-kurtosis/cli/cli/kurtosis_config/overrides_objects/v6"
 	"github.com/kurtosis-tech/stacktrace"
 )
 

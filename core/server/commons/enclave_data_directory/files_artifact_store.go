@@ -7,9 +7,9 @@ package enclave_data_directory
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/file_artifacts_db"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
-	"github.com/kurtosis-tech/kurtosis/name_generator"
+	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/database_accessors/enclave_db/file_artifacts_db"
+	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/uuid_generator"
+	"github.com/dzobbe/PoTE-kurtosis/name_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"

@@ -2,8 +2,8 @@ package store
 
 import (
 	"fmt"
-	api "github.com/kurtosis-tech/kurtosis/contexts-config-store/api/golang"
-	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store/persistence"
+	api "github.com/dzobbe/PoTE-kurtosis/contexts-config-store/api/golang"
+	"github.com/dzobbe/PoTE-kurtosis/contexts-config-store/store/persistence"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"

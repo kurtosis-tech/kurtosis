@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
-	"github.com/kurtosis-tech/kurtosis/api/golang/util"
+	"github.com/dzobbe/PoTE-kurtosis/api/golang/core/lib/enclaves"
+	"github.com/dzobbe/PoTE-kurtosis/api/golang/util"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"

@@ -1,4 +1,4 @@
-module github.com/kurtosis-tech/kurtosis/enclave-manager
+module github.com/dzobbe/PoTE-kurtosis/enclave-manager
 
 go 1.23.0
 
@@ -7,11 +7,11 @@ toolchain go1.23.7
 require (
 	connectrpc.com/connect v1.11.1
 	github.com/google/go-github/v60 v60.0.0
-	github.com/kurtosis-tech/kurtosis/api/golang v0.84.10
-	github.com/kurtosis-tech/kurtosis/cloud/api/golang v0.0.0-20230828153722-32770ca96513
-	github.com/kurtosis-tech/kurtosis/connect-server v0.0.0-20230828153722-32770ca96513
-	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0-20240325164203-1197d5589b85
-	github.com/kurtosis-tech/kurtosis/enclave-manager/api/golang v0.0.0-20230828153722-32770ca96513
+	github.com/dzobbe/PoTE-kurtosis/api/golang v0.84.10
+	github.com/dzobbe/PoTE-kurtosis/cloud/api/golang v0.0.0-20230828153722-32770ca96513
+	github.com/dzobbe/PoTE-kurtosis/connect-server v0.0.0-20230828153722-32770ca96513
+	github.com/dzobbe/PoTE-kurtosis/container-engine-lib v0.0.0-20240325164203-1197d5589b85
+	github.com/dzobbe/PoTE-kurtosis/enclave-manager/api/golang v0.0.0-20230828153722-32770ca96513
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/rs/cors v1.11.0
 	github.com/sirupsen/logrus v1.9.3
@@ -40,7 +40,7 @@ require (
 	github.com/google/uuid v1.4.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
-	github.com/kurtosis-tech/kurtosis/path-compression v0.0.0-20240307154559-64d2929cd265 // indirect
+	github.com/dzobbe/PoTE-kurtosis/path-compression v0.0.0-20240307154559-64d2929cd265 // indirect
 	github.com/mholt/archiver v3.1.1+incompatible // indirect
 	github.com/moby/buildkit v0.12.4 // indirect
 	github.com/moby/term v0.0.0-20220808134915-39b0c02b01ae // indirect

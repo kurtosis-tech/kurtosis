@@ -1,7 +1,7 @@
 package vector
 
 import (
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
+	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 )
 
 func createVectorConfigurationCreatorForKurtosis(

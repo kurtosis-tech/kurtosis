@@ -1,10 +1,10 @@
-module github.com/kurtosis-tech/kurtosis/container-engine-lib
+module github.com/dzobbe/PoTE-kurtosis/container-engine-lib
 
 go 1.23.0
 
 toolchain go1.23.7
 
-replace github.com/kurtosis-tech/kurtosis/path-compression => ./../path-compression
+replace github.com/dzobbe/PoTE-kurtosis/path-compression => ./../path-compression
 
 require (
 	github.com/dmarkham/enumer v1.5.5
@@ -14,10 +14,10 @@ require (
 	github.com/gammazero/workerpool v1.1.2
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/google/uuid v1.4.0
-	github.com/kurtosis-tech/kurtosis/api/golang v0.84.10
-	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0-20231024185242-de10c7bab36c
-	github.com/kurtosis-tech/kurtosis/engine/launcher v0.0.0-20231024185242-de10c7bab36c
-	github.com/kurtosis-tech/kurtosis/path-compression v0.0.0-20240307154559-64d2929cd265
+	github.com/dzobbe/PoTE-kurtosis/api/golang v0.84.10
+	github.com/dzobbe/PoTE-kurtosis/contexts-config-store v0.0.0-20231024185242-de10c7bab36c
+	github.com/dzobbe/PoTE-kurtosis/engine/launcher v0.0.0-20231024185242-de10c7bab36c
+	github.com/dzobbe/PoTE-kurtosis/path-compression v0.0.0-20240307154559-64d2929cd265
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/moby/buildkit v0.12.4
 	github.com/sirupsen/logrus v1.9.3

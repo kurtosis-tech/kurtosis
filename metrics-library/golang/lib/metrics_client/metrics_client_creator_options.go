@@ -1,7 +1,7 @@
 package metrics_client
 
 import (
-	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/source"
+	"github.com/dzobbe/PoTE-kurtosis/metrics-library/golang/lib/source"
 	"gopkg.in/segmentio/analytics-go.v3"
 )
 

@@ -3,8 +3,8 @@ package file_artifacts_db
 import (
 	"encoding/json"
 	"errors"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/consts"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
+	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/database_accessors/consts"
+	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/stacktrace"
 	bolt "go.etcd.io/bbolt"
 )

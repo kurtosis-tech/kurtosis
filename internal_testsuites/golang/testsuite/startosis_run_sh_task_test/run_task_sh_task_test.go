@@ -2,7 +2,7 @@ package startosis_run_sh_task_test
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
+	"github.com/dzobbe/PoTE-kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/stretchr/testify/require"
 	"testing"
 )

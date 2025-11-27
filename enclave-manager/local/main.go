@@ -1,7 +1,7 @@
 package main
 
 import (
-	server "github.com/kurtosis-tech/kurtosis/enclave-manager"
+	server "github.com/dzobbe/PoTE-kurtosis/enclave-manager"
 	"github.com/sirupsen/logrus"
 )
 

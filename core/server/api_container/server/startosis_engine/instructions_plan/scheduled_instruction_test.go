@@ -3,8 +3,8 @@ package instructions_plan
 import (
 	"testing"
 
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/mock_instruction"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
+	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/mock_instruction"
+	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/types"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
 )

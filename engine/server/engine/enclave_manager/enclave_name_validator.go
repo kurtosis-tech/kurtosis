@@ -1,7 +1,7 @@
 package enclave_manager
 
 import (
-	enclave_consts "github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/enclave"
+	enclave_consts "github.com/dzobbe/PoTE-kurtosis/api/golang/engine/lib/enclave"
 	"github.com/kurtosis-tech/stacktrace"
 	"regexp"
 )

@@ -1,4 +1,4 @@
-module github.com/kurtosis-tech/kurtosis/path-compression
+module github.com/dzobbe/PoTE-kurtosis/path-compression
 
 go 1.23.0
 

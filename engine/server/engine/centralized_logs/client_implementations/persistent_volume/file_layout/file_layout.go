@@ -1,7 +1,7 @@
 package file_layout
 
 import (
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
+	"github.com/dzobbe/PoTE-kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"time"
 )
 

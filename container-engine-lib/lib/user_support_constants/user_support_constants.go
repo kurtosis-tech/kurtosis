@@ -11,7 +11,7 @@ const (
 	Domain                            = "kurtosis.com"
 	OldDomain                         = "kurtosistech.com" //This domain is still used for email accounts
 	DocumentationUrl                  = "https://docs." + Domain
-	GithubRepoUrl                     = "https://github.com/kurtosis-tech/kurtosis"
+	GithubRepoUrl                     = "https://github.com/dzobbe/PoTE-kurtosis"
 	GithubNewIssuesUrl                = GithubRepoUrl + "/issues/new"
 	GitHubChooseNewIssuesUrl          = GithubNewIssuesUrl + "/choose"
 	GitHubChooseNewIssuesUrlWitLabels = GitHubChooseNewIssuesUrl + "?labels="

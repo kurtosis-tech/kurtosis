@@ -3,7 +3,7 @@ package cloud
 import (
 	"crypto/tls"
 	"crypto/x509"
-	api "github.com/kurtosis-tech/kurtosis/cloud/api/golang/kurtosis_backend_server_rpc_api_bindings"
+	api "github.com/dzobbe/PoTE-kurtosis/cloud/api/golang/kurtosis_backend_server_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"

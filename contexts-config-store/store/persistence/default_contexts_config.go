@@ -2,8 +2,8 @@ package persistence
 
 import (
 	"github.com/google/uuid"
-	api "github.com/kurtosis-tech/kurtosis/contexts-config-store/api/golang"
-	"github.com/kurtosis-tech/kurtosis/contexts-config-store/api/golang/generated"
+	api "github.com/dzobbe/PoTE-kurtosis/contexts-config-store/api/golang"
+	"github.com/dzobbe/PoTE-kurtosis/contexts-config-store/api/golang/generated"
 	"github.com/kurtosis-tech/stacktrace"
 	"strings"
 )

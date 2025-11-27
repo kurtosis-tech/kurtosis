@@ -8,9 +8,9 @@ package kurtosis_enclave_manager_api_bindings
 
 import (
 	context "context"
-	kurtosis_core_rpc_api_bindings "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	kurtosis_engine_rpc_api_bindings "github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
-	kurtosis_backend_server_rpc_api_bindings "github.com/kurtosis-tech/kurtosis/cloud/api/golang/kurtosis_backend_server_rpc_api_bindings"
+	kurtosis_core_rpc_api_bindings "github.com/dzobbe/PoTE-kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	kurtosis_engine_rpc_api_bindings "github.com/dzobbe/PoTE-kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	kurtosis_backend_server_rpc_api_bindings "github.com/dzobbe/PoTE-kurtosis/cloud/api/golang/kurtosis_backend_server_rpc_api_bindings"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"

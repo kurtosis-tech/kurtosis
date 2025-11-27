@@ -1,30 +1,30 @@
-module github.com/kurtosis-tech/kurtosis/core/server
+module github.com/dzobbe/PoTE-kurtosis/core/server
 
 go 1.23.0
 
 toolchain go1.23.7
 
 replace (
-	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
-	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
-	github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander => ../files_artifacts_expander
-	github.com/kurtosis-tech/kurtosis/core/launcher => ../launcher
-	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
-	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
-	github.com/kurtosis-tech/kurtosis/metrics-library/golang => ../../metrics-library/golang
-	github.com/kurtosis-tech/kurtosis/name_generator => ../../name_generator
-	github.com/kurtosis-tech/kurtosis/path-compression => ./../../path-compression
+	github.com/dzobbe/PoTE-kurtosis/api/golang => ../../api/golang
+	github.com/dzobbe/PoTE-kurtosis/container-engine-lib => ../../container-engine-lib
+	github.com/dzobbe/PoTE-kurtosis/core/files_artifacts_expander => ../files_artifacts_expander
+	github.com/dzobbe/PoTE-kurtosis/core/launcher => ../launcher
+	github.com/dzobbe/PoTE-kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
+	github.com/dzobbe/PoTE-kurtosis/kurtosis_version => ../../kurtosis_version
+	github.com/dzobbe/PoTE-kurtosis/metrics-library/golang => ../../metrics-library/golang
+	github.com/dzobbe/PoTE-kurtosis/name_generator => ../../name_generator
+	github.com/dzobbe/PoTE-kurtosis/path-compression => ./../../path-compression
 )
 
 require (
 	github.com/google/uuid v1.4.0
-	github.com/kurtosis-tech/kurtosis/api/golang v0.84.10 // Local dependency
-	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // Local dependency
-	github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander v0.0.0 // Local dependency
-	github.com/kurtosis-tech/kurtosis/core/launcher v0.0.0 // Local dependency
-	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang v0.0.0 // Local dependency
-	github.com/kurtosis-tech/kurtosis/metrics-library/golang v0.0.0 // Local dependency
-	github.com/kurtosis-tech/kurtosis/name_generator v0.0.0 // Local dependency
+	github.com/dzobbe/PoTE-kurtosis/api/golang v0.84.10 // Local dependency
+	github.com/dzobbe/PoTE-kurtosis/container-engine-lib v0.0.0 // Local dependency
+	github.com/dzobbe/PoTE-kurtosis/core/files_artifacts_expander v0.0.0 // Local dependency
+	github.com/dzobbe/PoTE-kurtosis/core/launcher v0.0.0 // Local dependency
+	github.com/dzobbe/PoTE-kurtosis/grpc-file-transfer/golang v0.0.0 // Local dependency
+	github.com/dzobbe/PoTE-kurtosis/metrics-library/golang v0.0.0 // Local dependency
+	github.com/dzobbe/PoTE-kurtosis/name_generator v0.0.0 // Local dependency
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.10.0
@@ -39,7 +39,7 @@ require (
 	github.com/hashicorp/go-envparse v0.1.0
 	github.com/itchyny/gojq v0.12.13
 	github.com/joho/godotenv v1.5.1
-	github.com/kurtosis-tech/kurtosis/path-compression v0.0.0-20240307154559-64d2929cd265
+	github.com/dzobbe/PoTE-kurtosis/path-compression v0.0.0-20240307154559-64d2929cd265
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20230710164206-90b674acb269
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/pkg/errors v0.9.1
@@ -111,8 +111,8 @@ require (
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/klauspost/compress v1.17.2 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
-	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0-20231024185242-de10c7bab36c // indirect
-	github.com/kurtosis-tech/kurtosis/engine/launcher v0.0.0-20231024185242-de10c7bab36c // indirect
+	github.com/dzobbe/PoTE-kurtosis/contexts-config-store v0.0.0-20231024185242-de10c7bab36c // indirect
+	github.com/dzobbe/PoTE-kurtosis/engine/launcher v0.0.0-20231024185242-de10c7bab36c // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-shellwords v1.0.12 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect

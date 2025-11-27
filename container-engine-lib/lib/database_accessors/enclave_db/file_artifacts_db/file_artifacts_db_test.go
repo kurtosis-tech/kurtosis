@@ -1,7 +1,7 @@
 package file_artifacts_db
 
 import (
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/test_helpers"
+	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/database_accessors/test_helpers"
 	"github.com/stretchr/testify/require"
 	"testing"
 )

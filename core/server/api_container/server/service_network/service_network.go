@@ -5,12 +5,12 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/render_templates"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_identifiers"
-	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
+	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/service_network/render_templates"
+	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/service_network/service_identifiers"
+	"github.com/dzobbe/PoTE-kurtosis/core/server/commons/enclave_data_directory"
 )
 
 // ServiceNetwork handles the state of the enclave

@@ -5,10 +5,10 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
-	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
+	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
+	"github.com/dzobbe/PoTE-kurtosis/metrics-library/golang/lib/metrics_client"
 
-	"github.com/kurtosis-tech/kurtosis/engine/launcher/args/kurtosis_backend_config"
+	"github.com/dzobbe/PoTE-kurtosis/engine/launcher/args/kurtosis_backend_config"
 	"github.com/kurtosis-tech/stacktrace"
 )
 

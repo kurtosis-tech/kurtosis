@@ -1,25 +1,26 @@
-module github.com/kurtosis-tech/kurtosis/engine/launcher
+module github.com/dzobbe/PoTE-kurtosis/engine/launcher
 
 go 1.23.0
 
 toolchain go1.23.7
 
 replace (
-	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
-	github.com/kurtosis-tech/kurtosis/contexts-config-store => ../../contexts-config-store
-	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
+	github.com/dzobbe/PoTE-kurtosis/container-engine-lib => ../../container-engine-lib
+	github.com/dzobbe/PoTE-kurtosis/contexts-config-store => ../../contexts-config-store
+	github.com/dzobbe/PoTE-kurtosis/kurtosis_version => ../../kurtosis_version
+	github.com/dzobbe/PoTE-kurtosis/metrics-library/golang => ../../metrics-library/golang
 )
 
 require (
-	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // local dependency
+	github.com/dzobbe/PoTE-kurtosis/container-engine-lib v0.0.0 // local dependency
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.10.0
 )
 
 require (
-	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0-00010101000000-000000000000
-	github.com/kurtosis-tech/kurtosis/metrics-library/golang v0.0.0-20231206095907-9bdf0d02cb90
+	github.com/dzobbe/PoTE-kurtosis/kurtosis_version v0.0.0-00010101000000-000000000000
+	github.com/dzobbe/PoTE-kurtosis/metrics-library/golang v0.0.0-20231206095907-9bdf0d02cb90
 )
 
 require (
@@ -28,11 +29,9 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kr/pretty v0.3.1 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/segmentio/backo-go v1.0.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect

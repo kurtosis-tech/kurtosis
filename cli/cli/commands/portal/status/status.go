@@ -3,12 +3,12 @@ package status
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/portal_manager"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
+	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_framework/lowlevel"
+	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_framework/lowlevel/args"
+	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_framework/lowlevel/flags"
+	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_str_consts"
+	"github.com/dzobbe/PoTE-kurtosis/cli/cli/helpers/portal_manager"
+	"github.com/dzobbe/PoTE-kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/stacktrace"
 )
 

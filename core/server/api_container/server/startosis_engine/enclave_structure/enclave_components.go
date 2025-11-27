@@ -1,7 +1,7 @@
 package enclave_structure
 
 import (
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 )
 
 type EnclaveComponents struct {

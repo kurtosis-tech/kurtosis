@@ -1,7 +1,7 @@
 package logs
 
 import (
-	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
+	"github.com/dzobbe/PoTE-kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/stretchr/testify/require"
 	"testing"
 )

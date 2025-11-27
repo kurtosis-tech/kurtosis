@@ -5,7 +5,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"net"
 
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 )
 
 // A ServiceRegistration is a stub for a started service

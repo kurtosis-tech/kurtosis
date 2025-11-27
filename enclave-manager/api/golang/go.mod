@@ -1,11 +1,11 @@
-module github.com/kurtosis-tech/kurtosis/enclave-manager/api/golang
+module github.com/dzobbe/PoTE-kurtosis/enclave-manager/api/golang
 
 go 1.23
 
 require (
 	connectrpc.com/connect v1.11.1
-	github.com/kurtosis-tech/kurtosis/api/golang v0.81.9
-	github.com/kurtosis-tech/kurtosis/cloud/api/golang v0.88.12
+	github.com/dzobbe/PoTE-kurtosis/api/golang v0.81.9
+	github.com/dzobbe/PoTE-kurtosis/cloud/api/golang v0.88.12
 	google.golang.org/grpc v1.57.1
 	google.golang.org/protobuf v1.33.0
 )

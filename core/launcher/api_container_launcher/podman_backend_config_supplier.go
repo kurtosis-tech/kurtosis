@@ -6,8 +6,8 @@
 package api_container_launcher
 
 import (
-	"github.com/kurtosis-tech/kurtosis/core/launcher/args"
-	"github.com/kurtosis-tech/kurtosis/core/launcher/args/kurtosis_backend_config"
+	"github.com/dzobbe/PoTE-kurtosis/core/launcher/args"
+	"github.com/dzobbe/PoTE-kurtosis/core/launcher/args/kurtosis_backend_config"
 )
 
 type PodmanBackendConfigSupplier struct {

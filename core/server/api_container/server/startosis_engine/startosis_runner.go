@@ -5,13 +5,13 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_warning"
+	"github.com/dzobbe/PoTE-kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/dzobbe/PoTE-kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
+	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
+	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
+	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
+	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/starlark_warning"
 	"github.com/sirupsen/logrus"
 )
 
@@ -81,7 +81,7 @@ func (runner *StartosisRunner) Run(
 				}
 			}
 
-			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromInfoMsg("⭐ us on GitHub - https://github.com/kurtosis-tech/kurtosis")
+			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromInfoMsg("⭐ us on GitHub - https://github.com/dzobbe/PoTE-kurtosis")
 			close(starlarkRunResponseLines)
 		}()
 

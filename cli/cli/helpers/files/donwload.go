@@ -3,7 +3,7 @@ package files
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
+	"github.com/dzobbe/PoTE-kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/mholt/archiver"
 	"os"
