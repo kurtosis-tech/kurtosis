@@ -564,7 +564,7 @@ func (config *ServiceConfig) ToKurtosisType(
 		ttyEnabled = bool(ttyStarlark)
 	}
 
-	var devices []string
+	devices := []string{}
 	devicesStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.List](config.KurtosisValueTypeDefault, DevicesAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
