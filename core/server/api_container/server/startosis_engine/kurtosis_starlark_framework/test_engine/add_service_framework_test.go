@@ -2,9 +2,10 @@ package test_engine
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
-	"testing"
 
 	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
 
@@ -36,7 +37,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddService() {
 		mock.Anything,
 		testServiceName,
 		mock.MatchedBy(func(serviceConfig *service.ServiceConfig) bool {
-			expectedServiceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, map[string]*port_spec.PortSpec{}, map[string]*port_spec.PortSpec{}, nil, nil, map[string]string{}, nil, nil, 0, 0, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false)
+			expectedServiceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, map[string]*port_spec.PortSpec{}, map[string]*port_spec.PortSpec{}, nil, nil, map[string]string{}, nil, nil, 0, 0, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false, []string{})
 			require.NoError(suite.T(), err)
 
 			actualServiceConfig := serviceConfig

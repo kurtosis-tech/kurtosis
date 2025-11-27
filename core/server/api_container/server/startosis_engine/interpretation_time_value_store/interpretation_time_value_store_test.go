@@ -2,14 +2,15 @@ package interpretation_time_value_store
 
 import (
 	"fmt"
+	"os"
+	"testing"
+
 	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
-	"os"
-	"testing"
 )
 
 const (
@@ -65,7 +66,7 @@ func TestPutNewServiceConfig(t *testing.T) {
 }
 
 func getTestServiceConfigForService(name service.ServiceName, imageTag string) (*service.ServiceConfig, error) {
-	return service.CreateServiceConfig(fmt.Sprintf("%v-%v:%v", name, testContainerImageName, imageTag), nil, nil, nil, nil, nil, []string{}, []string{}, map[string]string{}, nil, nil, 0, 0, "IP-ADDRESS", 0, 0, map[string]string{}, nil, nil, nil, image_download_mode.ImageDownloadMode_Always, true, false)
+	return service.CreateServiceConfig(fmt.Sprintf("%v-%v:%v", name, testContainerImageName, imageTag), nil, nil, nil, nil, nil, []string{}, []string{}, map[string]string{}, nil, nil, 0, 0, "IP-ADDRESS", 0, 0, map[string]string{}, nil, nil, nil, image_download_mode.ImageDownloadMode_Always, true, false, []string{})
 }
 
 func getEnclaveDBForTest(t *testing.T) *enclave_db.EnclaveDB {
