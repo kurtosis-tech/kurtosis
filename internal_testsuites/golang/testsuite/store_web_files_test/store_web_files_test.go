@@ -3,7 +3,7 @@ package files_artifact_mounting_test
 import (
 	"context"
 	"fmt"
-	"github.com/dzobbe/PoTE-kurtosis-cli/golang_internal_testsuite/test_helpers"
+	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/dzobbe/PoTE-kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"

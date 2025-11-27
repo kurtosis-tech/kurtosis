@@ -5,7 +5,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
-	"github.com/dzobbe/PoTE-kurtosis-cli/golang_internal_testsuite/test_helpers"
+	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/dzobbe/PoTE-kurtosis/api/golang/core/lib/starlark_run_config"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"

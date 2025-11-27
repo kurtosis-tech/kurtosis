@@ -2,7 +2,7 @@ package engine_consuming_kurtosis_command
 
 import (
 	"context"
-	portal_constructors "github.com/dzobbe/PoTE-kurtosis-portal/api/golang/constructors"
+	portal_constructors "github.com/kurtosis-tech/kurtosis-portal/api/golang/constructors"
 	"github.com/dzobbe/PoTE-kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/dzobbe/PoTE-kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_framework/lowlevel"

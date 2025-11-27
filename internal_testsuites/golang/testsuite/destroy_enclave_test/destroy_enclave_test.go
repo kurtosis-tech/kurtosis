@@ -2,7 +2,7 @@ package destroy_enclave_test
 
 import (
 	"context"
-	"github.com/dzobbe/PoTE-kurtosis-cli/golang_internal_testsuite/test_helpers"
+	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/dzobbe/PoTE-kurtosis/api/golang/core/lib/services"
 	"github.com/stretchr/testify/require"
 	"testing"

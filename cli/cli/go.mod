@@ -13,6 +13,7 @@ replace (
 	github.com/dzobbe/PoTE-kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
 	github.com/dzobbe/PoTE-kurtosis/kurtosis_version => ../../kurtosis_version
 	github.com/dzobbe/PoTE-kurtosis/metrics-library/golang => ../../metrics-library/golang
+	github.com/dzobbe/PoTE-kurtosis/name_generator => ../../name_generator
 	github.com/dzobbe/PoTE-kurtosis/path-compression => ../../path-compression
 )
 
@@ -60,8 +61,8 @@ require (
 	github.com/go-git/go-git/v5 v5.14.0
 	github.com/google/go-github/v50 v50.2.0
 	github.com/joho/godotenv v1.5.1
-	github.com/dzobbe/PoTE-kurtosis-package-indexer/server v0.0.0-20240222174809-4f74727f5e3b
-	github.com/dzobbe/PoTE-kurtosis-portal/api/golang v0.0.0-20230818182330-1a86869414d2
+	github.com/kurtosis-tech/kurtosis-package-indexer/server v0.0.0-20240222174809-4f74727f5e3b
+	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230818182330-1a86869414d2
 	github.com/dzobbe/PoTE-kurtosis/cloud/api/golang v0.0.0
 	github.com/dzobbe/PoTE-kurtosis/name_generator v0.0.0-20230727152609-768e95d2dbeb
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20230710164206-90b674acb269
@@ -159,7 +160,7 @@ require (
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/klauspost/compress v1.17.2 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
-	github.com/dzobbe/PoTE-kurtosis-package-indexer/api/golang v0.0.0-20231220155208-4ae5a14a79d0 // indirect
+	github.com/kurtosis-tech/kurtosis-package-indexer/api/golang v0.0.0-20231220155208-4ae5a14a79d0 // indirect
 	github.com/dzobbe/PoTE-kurtosis/grpc-file-transfer/golang v0.0.0 // indirect
 	github.com/dzobbe/PoTE-kurtosis/path-compression v0.0.0-20240307154559-64d2929cd265 // indirect
 	github.com/kurtosis-tech/starlark-lsp v0.0.0-20231103163737-8f660a80cb17 // indirect

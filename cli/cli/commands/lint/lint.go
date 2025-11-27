@@ -10,7 +10,7 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/dzobbe/PoTE-kurtosis-package-indexer/server/crawler"
+	"github.com/kurtosis-tech/kurtosis-package-indexer/server/crawler"
 	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_framework/lowlevel"
 	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_framework/lowlevel/flags"

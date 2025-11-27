@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/md5"
 	"fmt"
-	"github.com/dzobbe/PoTE-kurtosis-cli/golang_internal_testsuite/test_helpers"
+	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/dzobbe/PoTE-kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/dzobbe/PoTE-kurtosis/api/golang/core/lib/services"
 	"github.com/dzobbe/PoTE-kurtosis/path-compression"

@@ -8,8 +8,8 @@ import (
 	"syscall"
 	"time"
 
-	portal_constructors "github.com/dzobbe/PoTE-kurtosis-portal/api/golang/constructors"
-	portal_generated_api "github.com/dzobbe/PoTE-kurtosis-portal/api/golang/generated"
+	portal_constructors "github.com/kurtosis-tech/kurtosis-portal/api/golang/constructors"
+	portal_generated_api "github.com/kurtosis-tech/kurtosis-portal/api/golang/generated"
 	"github.com/dzobbe/PoTE-kurtosis/api/golang/core/lib/services"
 	"github.com/dzobbe/PoTE-kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/dzobbe/PoTE-kurtosis/cli/cli/helpers/host_machine_directories"

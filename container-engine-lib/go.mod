@@ -4,7 +4,10 @@ go 1.23.0
 
 toolchain go1.23.7
 
-replace github.com/dzobbe/PoTE-kurtosis/path-compression => ./../path-compression
+replace (
+	github.com/dzobbe/PoTE-kurtosis/enclave-manager/api/golang => ../enclave-manager/api/golang
+	github.com/dzobbe/PoTE-kurtosis/path-compression => ./../path-compression
+)
 
 require (
 	github.com/dmarkham/enumer v1.5.5

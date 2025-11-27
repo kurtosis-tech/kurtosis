@@ -6,8 +6,8 @@ import (
 	"io"
 
 	"github.com/Masterminds/semver/v3"
-	portal_constructors "github.com/dzobbe/PoTE-kurtosis-portal/api/golang/constructors"
-	portal_api "github.com/dzobbe/PoTE-kurtosis-portal/api/golang/generated"
+	portal_constructors "github.com/kurtosis-tech/kurtosis-portal/api/golang/constructors"
+	portal_api "github.com/kurtosis-tech/kurtosis-portal/api/golang/generated"
 	"github.com/dzobbe/PoTE-kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/dzobbe/PoTE-kurtosis/api/golang/core/lib/enclaves"
 	"github.com/dzobbe/PoTE-kurtosis/api/golang/core/lib/services"

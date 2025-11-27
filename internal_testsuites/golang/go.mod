@@ -1,4 +1,4 @@
-module github.com/dzobbe/PoTE-kurtosis-cli/golang_internal_testsuite
+module github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite
 
 go 1.23.0
 
@@ -38,7 +38,7 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/uuid v1.4.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/dzobbe/PoTE-kurtosis-portal/api/golang v0.0.0-20230818182330-1a86869414d2 // indirect
+	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230818182330-1a86869414d2 // indirect
 	github.com/dzobbe/PoTE-kurtosis/contexts-config-store v0.0.0-20230818184218-f4e3e773463b // indirect
 	github.com/dzobbe/PoTE-kurtosis/grpc-file-transfer/golang v0.0.0 // indirect
 	github.com/mholt/archiver v3.1.1+incompatible // indirect

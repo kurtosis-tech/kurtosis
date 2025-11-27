@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	portal_constructors "github.com/dzobbe/PoTE-kurtosis-portal/api/golang/constructors"
-	portal_api "github.com/dzobbe/PoTE-kurtosis-portal/api/golang/generated"
+	portal_constructors "github.com/kurtosis-tech/kurtosis-portal/api/golang/constructors"
+	portal_api "github.com/kurtosis-tech/kurtosis-portal/api/golang/generated"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"

@@ -3,7 +3,7 @@ package set
 import (
 	"context"
 	"fmt"
-	"github.com/dzobbe/PoTE-kurtosis-portal/api/golang/constructors"
+	"github.com/kurtosis-tech/kurtosis-portal/api/golang/constructors"
 	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_framework/highlevel/context_id_arg"
 	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_framework/lowlevel"
 	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_framework/lowlevel/args"
