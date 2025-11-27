@@ -556,6 +556,7 @@ func createStartServiceOperation(
 		filesToBeMoved := serviceConfig.GetFilesToBeMoved()
 		tiniEnabled := serviceConfig.GetTiniEnabled()
 		ttyEnabled := serviceConfig.GetTtyEnabled()
+		devices := serviceConfig.GetDevices()
 
 		// We replace the placeholder value with the actual private IP address
 		privateIPAddrStr := privateIpAddr.String()
@@ -742,6 +743,10 @@ func createStartServiceOperation(
 			// We don't care bout the height/width of the TTY. We just need it to be not nil.
 			defaultTtySize := &docker_manager.InteractiveModeTtySize{Height: 0, Width: 0}
 			createAndStartArgsBuilder.WithInteractiveModeTtySize(defaultTtySize)
+		}
+
+		if len(devices) > 0 {
+			createAndStartArgsBuilder.WithDevices(devices)
 		}
 
 		createAndStartArgs := createAndStartArgsBuilder.Build()
