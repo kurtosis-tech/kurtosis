@@ -5,8 +5,8 @@ package startosis_packages
 import (
 	io "io"
 
-	startosis_errors "github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
-	yaml_parser "github.com/dzobbe/PoTE-kurtosis/core/server/commons/yaml_parser"
+	startosis_errors "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	yaml_parser "github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
 	mock "github.com/stretchr/testify/mock"
 )
 

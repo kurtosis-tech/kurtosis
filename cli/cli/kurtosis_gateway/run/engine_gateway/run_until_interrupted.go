@@ -1,11 +1,11 @@
 package engine_gateway
 
 import (
-	"github.com/dzobbe/PoTE-kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/kurtosis_gateway/connection"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/kurtosis_gateway/live_engine_client_supplier"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/kurtosis_gateway/server/engine_gateway"
-	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/connection"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/live_engine_client_supplier"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/server/engine_gateway"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"

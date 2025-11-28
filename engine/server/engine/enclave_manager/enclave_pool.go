@@ -6,12 +6,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface"
-	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
-	"github.com/dzobbe/PoTE-kurtosis/engine/launcher/args"
-	"github.com/dzobbe/PoTE-kurtosis/engine/server/engine/types"
-	"github.com/dzobbe/PoTE-kurtosis/metrics-library/golang/lib/metrics_client"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
+	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/types"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )

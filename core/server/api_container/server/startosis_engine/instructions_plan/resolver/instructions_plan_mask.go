@@ -1,7 +1,7 @@
 package resolver
 
 import (
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 )
 
 type InstructionsPlanMask struct {

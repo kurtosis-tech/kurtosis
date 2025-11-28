@@ -2,7 +2,7 @@ package github_auth_store
 
 import (
 	"errors"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/helpers/host_machine_directories"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/zalando/go-keyring"

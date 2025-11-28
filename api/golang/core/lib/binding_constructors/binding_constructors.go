@@ -3,7 +3,7 @@ package binding_constructors
 import (
 	"time"
 
-	"github.com/dzobbe/PoTE-kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 

@@ -1,10 +1,10 @@
 package portal
 
 import (
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_str_consts"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/commands/portal/start"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/commands/portal/status"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/commands/portal/stop"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/portal/start"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/portal/status"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/portal/stop"
 	"github.com/spf13/cobra"
 )
 

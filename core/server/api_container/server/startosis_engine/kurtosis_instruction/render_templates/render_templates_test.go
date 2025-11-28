@@ -1,7 +1,7 @@
 package render_templates
 
 import (
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/service_network/render_templates"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/render_templates"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"

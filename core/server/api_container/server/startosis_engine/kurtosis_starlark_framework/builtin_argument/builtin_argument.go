@@ -1,8 +1,8 @@
 package builtin_argument
 
 import (
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/starlark_warning"
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_warning"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"go.starlark.net/starlark"
 )
 

@@ -3,14 +3,14 @@ package kurtosis_instruction
 import (
 	"context"
 
-	"github.com/dzobbe/PoTE-kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/types"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
 )
 
 type KurtosisInstruction interface {

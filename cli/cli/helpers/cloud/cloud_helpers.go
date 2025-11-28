@@ -1,8 +1,8 @@
 package cloud
 
 import (
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/kurtosis_config"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/kurtosis_config/resolved_config"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"os"

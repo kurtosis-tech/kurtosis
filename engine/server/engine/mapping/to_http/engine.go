@@ -3,12 +3,12 @@ package to_http
 import (
 	"fmt"
 
-	"github.com/dzobbe/PoTE-kurtosis/engine/server/engine/types"
-	"github.com/dzobbe/PoTE-kurtosis/engine/server/engine/utils"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/types"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/utils"
 	"github.com/sirupsen/logrus"
 
-	rpc_api "github.com/dzobbe/PoTE-kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	api_type "github.com/dzobbe/PoTE-kurtosis/api/golang/http_rest/api_types"
+	rpc_api "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	api_type "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/api_types"
 )
 
 func warnUnmatchedValue[T any](value T) {

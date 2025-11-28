@@ -13,7 +13,7 @@ import (
 	"net/url"
 	"strings"
 
-	. "github.com/dzobbe/PoTE-kurtosis/api/golang/http_rest/api_types"
+	. "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/api_types"
 	"github.com/oapi-codegen/runtime"
 )
 

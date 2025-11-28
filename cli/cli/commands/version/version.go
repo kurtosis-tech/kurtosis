@@ -2,9 +2,9 @@ package version
 
 import (
 	"fmt"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_str_consts"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/helpers/output_printers"
-	"github.com/dzobbe/PoTE-kurtosis/kurtosis_version"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
+	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/spf13/cobra"
 )
 

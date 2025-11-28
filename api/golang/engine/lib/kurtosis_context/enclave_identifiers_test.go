@@ -1,7 +1,7 @@
 package kurtosis_context
 
 import (
-	"github.com/dzobbe/PoTE-kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/stretchr/testify/require"
 	"testing"
 )

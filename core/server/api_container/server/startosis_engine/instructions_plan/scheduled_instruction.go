@@ -1,8 +1,8 @@
 package instructions_plan
 
 import (
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/types"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
 	"go.starlark.net/starlark"
 )
 

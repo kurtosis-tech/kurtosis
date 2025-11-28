@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/container"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 )
 
 // Selector for matching services inside an enclave

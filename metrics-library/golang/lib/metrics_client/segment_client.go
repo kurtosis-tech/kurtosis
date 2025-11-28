@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/dzobbe/PoTE-kurtosis/metrics-library/golang/lib/event"
-	metrics_source "github.com/dzobbe/PoTE-kurtosis/metrics-library/golang/lib/source"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/event"
+	metrics_source "github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/source"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/segmentio/backo-go"
 	"gopkg.in/segmentio/analytics-go.v3"

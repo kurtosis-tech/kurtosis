@@ -1,12 +1,12 @@
-module github.com/dzobbe/PoTE-kurtosis/container-engine-lib
+module github.com/kurtosis-tech/kurtosis/container-engine-lib
 
 go 1.23.0
 
 toolchain go1.23.7
 
 replace (
-	github.com/dzobbe/PoTE-kurtosis/enclave-manager/api/golang => ../enclave-manager/api/golang
-	github.com/dzobbe/PoTE-kurtosis/path-compression => ./../path-compression
+	github.com/kurtosis-tech/kurtosis/enclave-manager/api/golang => ../enclave-manager/api/golang
+	github.com/kurtosis-tech/kurtosis/path-compression => ./../path-compression
 )
 
 require (
@@ -17,10 +17,10 @@ require (
 	github.com/gammazero/workerpool v1.1.2
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/google/uuid v1.4.0
-	github.com/dzobbe/PoTE-kurtosis/api/golang v0.84.10
-	github.com/dzobbe/PoTE-kurtosis/contexts-config-store v0.0.0-20231024185242-de10c7bab36c
-	github.com/dzobbe/PoTE-kurtosis/engine/launcher v0.0.0-20231024185242-de10c7bab36c
-	github.com/dzobbe/PoTE-kurtosis/path-compression v0.0.0-20240307154559-64d2929cd265
+	github.com/kurtosis-tech/kurtosis/api/golang v0.84.10
+	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0-20231024185242-de10c7bab36c
+	github.com/kurtosis-tech/kurtosis/engine/launcher v0.0.0-20231024185242-de10c7bab36c
+	github.com/kurtosis-tech/kurtosis/path-compression v0.0.0-20240307154559-64d2929cd265
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/moby/buildkit v0.12.4
 	github.com/sirupsen/logrus v1.9.3
@@ -33,10 +33,11 @@ require (
 )
 
 require (
-	cloud.google.com/go/compute/metadata v0.2.3 // indirect
+	cloud.google.com/go/compute/metadata v0.3.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/containerd/containerd v1.7.2 // indirect
 	github.com/containerd/log v0.1.0 // indirect
@@ -49,6 +50,7 @@ require (
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
 	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
 	github.com/emicklei/go-restful/v3 v3.10.1 // indirect
+	github.com/felixge/httpsnoop v1.0.3 // indirect
 	github.com/gammazero/deque v0.1.0 // indirect
 	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
@@ -94,18 +96,18 @@ require (
 	github.com/ulikunitz/xz v0.5.11 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.40.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.40.0 // indirect
 	go.opentelemetry.io/otel v1.14.0 // indirect
 	go.opentelemetry.io/otel/metric v0.37.0 // indirect
 	go.opentelemetry.io/otel/trace v1.14.0 // indirect
 	golang.org/x/mod v0.21.0 // indirect
 	golang.org/x/net v0.38.0 // indirect
-	golang.org/x/oauth2 v0.11.0 // indirect
+	golang.org/x/oauth2 v0.27.0 // indirect
 	golang.org/x/sync v0.12.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.26.0 // indirect
-	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230803162519-f966b187b2e5 // indirect
 	google.golang.org/grpc v1.57.1 // indirect
 	google.golang.org/protobuf v1.34.1 // indirect

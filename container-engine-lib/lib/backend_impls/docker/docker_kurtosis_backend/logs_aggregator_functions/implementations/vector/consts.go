@@ -3,8 +3,8 @@ package vector
 import (
 	"fmt"
 
-	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
-	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 )
 
 const (

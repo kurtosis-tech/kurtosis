@@ -2,15 +2,15 @@ package ls
 
 import (
 	"context"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_framework/lowlevel"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_framework/lowlevel/args"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_framework/lowlevel/flags"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_str_consts"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/helpers/output_printers"
-	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/uuid_generator"
-	contexts_config_api "github.com/dzobbe/PoTE-kurtosis/contexts-config-store/api/golang"
-	contexts_config_generated_api "github.com/dzobbe/PoTE-kurtosis/contexts-config-store/api/golang/generated"
-	"github.com/dzobbe/PoTE-kurtosis/contexts-config-store/store"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
+	contexts_config_api "github.com/kurtosis-tech/kurtosis/contexts-config-store/api/golang"
+	contexts_config_generated_api "github.com/kurtosis-tech/kurtosis/contexts-config-store/api/golang/generated"
+	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	"github.com/kurtosis-tech/stacktrace"
 )
 

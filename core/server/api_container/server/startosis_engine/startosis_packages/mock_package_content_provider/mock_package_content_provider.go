@@ -1,10 +1,10 @@
 package mock_package_content_provider
 
 import (
-	"github.com/dzobbe/PoTE-kurtosis/api/golang/core/lib/shared_utils"
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
-	"github.com/dzobbe/PoTE-kurtosis/core/server/commons/yaml_parser"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
+	"github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
 	"os"

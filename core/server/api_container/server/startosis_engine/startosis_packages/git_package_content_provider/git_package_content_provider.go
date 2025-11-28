@@ -6,14 +6,14 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
-	"github.com/dzobbe/PoTE-kurtosis/api/golang/core/lib/shared_utils"
-	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
-	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/user_support_constants"
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/docker_compose_transpiler"
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
-	"github.com/dzobbe/PoTE-kurtosis/core/server/commons/yaml_parser"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/user_support_constants"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/docker_compose_transpiler"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
+	"github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
 	"github.com/mholt/archiver"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -465,7 +465,7 @@ func (provider *GitPackageContentProvider) cloneWithRetries(parsedURL *shared_ut
 		// We silence the underlying error here as it can be confusing to the user. For example, when there's a typo in
 		// the repo name, pointing to a non existing repo, the underlying error is: "authentication required"
 		logrus.Errorf("Error cloning git repository: '%s' to '%s'. Error was: \n%s", parsedURL.GetGitURL(), gitClonePath, err.Error())
-		return nil, startosis_errors.NewInterpretationError("Error in cloning git repository '%s' to '%s'. Make sure that '%v' exists or if it's a private repository, that you are logged into GitHub via `kurtosis github login`.\nIf this is NOT a private repo, there could be an issue with MTUs configured by Docker networks. Please refer to discussion and articles at this issue: https://github.com/dzobbe/PoTE-kurtosis/issues/2150", parsedURL.GetGitURL(), gitClonePath, parsedURL.GetGitURL())
+		return nil, startosis_errors.NewInterpretationError("Error in cloning git repository '%s' to '%s'. Make sure that '%v' exists or if it's a private repository, that you are logged into GitHub via `kurtosis github login`.\nIf this is NOT a private repo, there could be an issue with MTUs configured by Docker networks. Please refer to discussion and articles at this issue: https://github.com/kurtosis-tech/kurtosis/issues/2150", parsedURL.GetGitURL(), gitClonePath, parsedURL.GetGitURL())
 	}
 	return repo, nil
 }

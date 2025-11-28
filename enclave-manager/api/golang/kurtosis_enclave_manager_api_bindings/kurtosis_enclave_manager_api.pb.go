@@ -7,9 +7,9 @@
 package kurtosis_enclave_manager_api_bindings
 
 import (
-	kurtosis_core_rpc_api_bindings "github.com/dzobbe/PoTE-kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	kurtosis_engine_rpc_api_bindings "github.com/dzobbe/PoTE-kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
-	kurtosis_backend_server_rpc_api_bindings "github.com/dzobbe/PoTE-kurtosis/cloud/api/golang/kurtosis_backend_server_rpc_api_bindings"
+	kurtosis_core_rpc_api_bindings "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	kurtosis_engine_rpc_api_bindings "github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	kurtosis_backend_server_rpc_api_bindings "github.com/kurtosis-tech/kurtosis/cloud/api/golang/kurtosis_backend_server_rpc_api_bindings"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"

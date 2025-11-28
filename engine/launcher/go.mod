@@ -1,26 +1,26 @@
-module github.com/dzobbe/PoTE-kurtosis/engine/launcher
+module github.com/kurtosis-tech/kurtosis/engine/launcher
 
 go 1.23.0
 
 toolchain go1.23.7
 
 replace (
-	github.com/dzobbe/PoTE-kurtosis/container-engine-lib => ../../container-engine-lib
-	github.com/dzobbe/PoTE-kurtosis/contexts-config-store => ../../contexts-config-store
-	github.com/dzobbe/PoTE-kurtosis/kurtosis_version => ../../kurtosis_version
-	github.com/dzobbe/PoTE-kurtosis/metrics-library/golang => ../../metrics-library/golang
+	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
+	github.com/kurtosis-tech/kurtosis/contexts-config-store => ../../contexts-config-store
+	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
+	github.com/kurtosis-tech/kurtosis/metrics-library/golang => ../../metrics-library/golang
 )
 
 require (
-	github.com/dzobbe/PoTE-kurtosis/container-engine-lib v0.0.0 // local dependency
+	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // local dependency
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.10.0
 )
 
 require (
-	github.com/dzobbe/PoTE-kurtosis/kurtosis_version v0.0.0-00010101000000-000000000000
-	github.com/dzobbe/PoTE-kurtosis/metrics-library/golang v0.0.0-20231206095907-9bdf0d02cb90
+	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0-00010101000000-000000000000
+	github.com/kurtosis-tech/kurtosis/metrics-library/golang v0.0.0-20231206095907-9bdf0d02cb90
 )
 
 require (

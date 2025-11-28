@@ -1,19 +1,19 @@
-module github.com/dzobbe/PoTE-kurtosis/core/files_artifacts_expander
+module github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander
 
 go 1.23.0
 
 toolchain go1.23.7
 
 replace (
-	github.com/dzobbe/PoTE-kurtosis/api/golang => ../../api/golang
-	github.com/dzobbe/PoTE-kurtosis/contexts-config-store => ../../contexts-config-store
-	github.com/dzobbe/PoTE-kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
+	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
+	github.com/kurtosis-tech/kurtosis/contexts-config-store => ../../contexts-config-store
+	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
 )
 
 require (
 	github.com/gammazero/workerpool v1.1.2
-	github.com/dzobbe/PoTE-kurtosis/api/golang v0.0.0 // Local dependency
-	github.com/dzobbe/PoTE-kurtosis/grpc-file-transfer/golang v0.0.0 // Local dependency
+	github.com/kurtosis-tech/kurtosis/api/golang v0.0.0 // Local dependency
+	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang v0.0.0 // Local dependency
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.9.3
 	google.golang.org/grpc v1.57.1

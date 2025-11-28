@@ -3,10 +3,10 @@ package resolved_config
 import (
 	"testing"
 
-	v6 "github.com/dzobbe/PoTE-kurtosis/cli/cli/kurtosis_config/overrides_objects/v6"
+	v6 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v6"
 
-	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
-	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/stretchr/testify/require"
 )
 

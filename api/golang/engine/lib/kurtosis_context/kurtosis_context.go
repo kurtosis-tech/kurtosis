@@ -8,12 +8,12 @@ import (
 	"github.com/Masterminds/semver/v3"
 	portal_constructors "github.com/kurtosis-tech/kurtosis-portal/api/golang/constructors"
 	portal_api "github.com/kurtosis-tech/kurtosis-portal/api/golang/generated"
-	"github.com/dzobbe/PoTE-kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	"github.com/dzobbe/PoTE-kurtosis/api/golang/core/lib/enclaves"
-	"github.com/dzobbe/PoTE-kurtosis/api/golang/core/lib/services"
-	"github.com/dzobbe/PoTE-kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
-	"github.com/dzobbe/PoTE-kurtosis/api/golang/kurtosis_version"
-	"github.com/dzobbe/PoTE-kurtosis/contexts-config-store/store"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/kurtosis_version"
+	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -525,7 +525,7 @@ func validateEngineApiVersion(ctx context.Context, engineServiceClient kurtosis_
 			"An API version mismatch was detected between the running engine version '%v' and the engine version this Kurtosis SDK library expects, '%v'. You should:\n"+
 				"  1) upgrade your Kurtosis CLI to latest using the instructions at https://docs.kurtosis.com/upgrade\n"+
 				"  2) use the Kurtosis CLI to restart your engine via 'kurtosis engine restart'\n"+
-				"  3) upgrade your Kurtosis SDK library using the instructions at https://github.com/dzobbe/PoTE-kurtosis-engine-api-lib\n",
+				"  3) upgrade your Kurtosis SDK library using the instructions at https://github.com/kurtosis-tech/kurtosis-engine-api-lib\n",
 			runningEngineSemver.String(),
 			libraryEngineSemver.String(),
 		)

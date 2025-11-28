@@ -3,7 +3,7 @@ package kubernetes_annotation_key_consts
 import (
 	"testing"
 
-	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key"
 	"github.com/stretchr/testify/require"
 )
 

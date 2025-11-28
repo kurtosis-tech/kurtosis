@@ -1,9 +1,9 @@
 package grafloki
 
 import (
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_str_consts"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/commands/grafloki/start"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/commands/grafloki/stop"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/grafloki/start"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/grafloki/stop"
 	"github.com/spf13/cobra"
 )
 

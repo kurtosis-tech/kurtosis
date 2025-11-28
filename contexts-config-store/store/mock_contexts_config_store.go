@@ -3,7 +3,7 @@
 package store
 
 import (
-	generated "github.com/dzobbe/PoTE-kurtosis/contexts-config-store/api/golang/generated"
+	generated "github.com/kurtosis-tech/kurtosis/contexts-config-store/api/golang/generated"
 	mock "github.com/stretchr/testify/mock"
 )
 

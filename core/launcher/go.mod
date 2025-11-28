@@ -1,23 +1,23 @@
-module github.com/dzobbe/PoTE-kurtosis/core/launcher
+module github.com/kurtosis-tech/kurtosis/core/launcher
 
 go 1.23.0
 
 toolchain go1.23.7
 
 replace (
-	github.com/dzobbe/PoTE-kurtosis/container-engine-lib => ../../container-engine-lib
-	github.com/dzobbe/PoTE-kurtosis/kurtosis_version => ../../kurtosis_version
+	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
+	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
 )
 
 require (
-	github.com/dzobbe/PoTE-kurtosis/container-engine-lib v0.0.0 // Local dependency
-	github.com/dzobbe/PoTE-kurtosis/kurtosis_version v0.0.0 // Local dependency generated during build
+	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // Local dependency
+	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0 // Local dependency generated during build
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.10.0
 )
 
-require github.com/dzobbe/PoTE-kurtosis/metrics-library/golang v0.0.0-20231206095907-9bdf0d02cb90
+require github.com/kurtosis-tech/kurtosis/metrics-library/golang v0.0.0-20231206095907-9bdf0d02cb90
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect

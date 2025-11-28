@@ -2,7 +2,7 @@ package out
 
 import (
 	"fmt"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/helpers/host_machine_directories"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io/fs"

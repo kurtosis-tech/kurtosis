@@ -1,4 +1,4 @@
-module github.com/dzobbe/PoTE-kurtosis/kurtosis_version
+module github.com/kurtosis-tech/kurtosis/kurtosis_version
 
 go 1.23
 

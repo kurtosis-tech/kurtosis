@@ -1,11 +1,11 @@
 package kurtosis_context
 
 import (
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_str_consts"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/commands/kurtosis_context/add"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/commands/kurtosis_context/ls"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/commands/kurtosis_context/rm"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/commands/kurtosis_context/set"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/kurtosis_context/add"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/kurtosis_context/ls"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/kurtosis_context/rm"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/kurtosis_context/set"
 	"github.com/spf13/cobra"
 )
 

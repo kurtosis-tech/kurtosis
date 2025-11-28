@@ -7,8 +7,8 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/helpers/interactive_terminal_decider"
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/interactive_terminal_decider"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
 )
 
 var (

@@ -2,13 +2,13 @@ package startosis_replace_test
 
 import (
 	"context"
-	"github.com/dzobbe/PoTE-kurtosis/api/golang/core/lib/starlark_run_config"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 	"os"
 	"path"
 	"testing"
 
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
-	"github.com/dzobbe/PoTE-kurtosis/api/golang/core/lib/enclaves"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"

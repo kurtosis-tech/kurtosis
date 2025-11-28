@@ -10,7 +10,7 @@ import (
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 
-	api_type "github.com/dzobbe/PoTE-kurtosis/api/golang/http_rest/api_types"
+	api_type "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/api_types"
 )
 
 const (

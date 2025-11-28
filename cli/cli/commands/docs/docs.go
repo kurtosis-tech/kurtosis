@@ -2,11 +2,11 @@ package docs
 
 import (
 	"context"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_framework/lowlevel"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_framework/lowlevel/args"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_framework/lowlevel/flags"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_str_consts"
-	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/user_support_constants"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/user_support_constants"
 	"github.com/kurtosis-tech/stacktrace"
 	"os/exec"
 	"runtime"
@@ -29,7 +29,7 @@ var DocsCmd = &lowlevel.LowlevelKurtosisCommand{
 	PostValidationAndRunFunc: nil,
 }
 
-// TODO refactor this to use the multi_os_command_executor after https://github.com/dzobbe/PoTE-kurtosis/pull/28/files is merged
+// TODO refactor this to use the multi_os_command_executor after https://github.com/kurtosis-tech/kurtosis/pull/28/files is merged
 func run(_ context.Context, _ *flags.ParsedFlags, _ *args.ParsedArgs) error {
 	var args []string
 	switch runtime.GOOS {

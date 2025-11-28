@@ -6,7 +6,7 @@
 package enclave_data_directory
 
 import (
-	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/uuid_generator"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 )
 

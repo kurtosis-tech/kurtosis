@@ -2,7 +2,7 @@ package enclave_plan_persistence
 
 import (
 	"encoding/json"
-	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.etcd.io/bbolt"
 )

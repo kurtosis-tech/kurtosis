@@ -1,7 +1,7 @@
 package starlark_run
 
 import (
-	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
 	"os"

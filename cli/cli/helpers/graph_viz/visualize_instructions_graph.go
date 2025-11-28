@@ -7,8 +7,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/goccy/go-graphviz"
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/stacktrace"
 )
 

@@ -1,4 +1,4 @@
-module github.com/dzobbe/PoTE-kurtosis/name_generator
+module github.com/kurtosis-tech/kurtosis/name_generator
 
 go 1.23
 

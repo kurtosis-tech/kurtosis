@@ -2,7 +2,7 @@ package builtin_argument
 
 import (
 	"fmt"
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
 	"reflect"

@@ -1,7 +1,7 @@
 package builtins
 
 import (
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/builtins/time_now_builtin"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/time_now_builtin"
 	"go.starlark.net/lib/time"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"

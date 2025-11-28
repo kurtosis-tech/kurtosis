@@ -1,4 +1,4 @@
-module github.com/dzobbe/PoTE-kurtosis/cloud/api/golang
+module github.com/kurtosis-tech/kurtosis/cloud/api/golang
 
 go 1.23.0
 

@@ -5,17 +5,17 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/dzobbe/PoTE-kurtosis/engine/server/engine/centralized_logs"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs"
 
-	"github.com/dzobbe/PoTE-kurtosis/engine/server/engine/enclave_manager"
-	"github.com/dzobbe/PoTE-kurtosis/engine/server/engine/mapping/to_http"
-	"github.com/dzobbe/PoTE-kurtosis/engine/server/engine/types"
-	"github.com/dzobbe/PoTE-kurtosis/engine/server/engine/utils"
-	"github.com/dzobbe/PoTE-kurtosis/metrics-library/golang/lib/metrics_client"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/mapping/to_http"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/types"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/utils"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/sirupsen/logrus"
 
-	api_type "github.com/dzobbe/PoTE-kurtosis/api/golang/http_rest/api_types"
-	api "github.com/dzobbe/PoTE-kurtosis/api/golang/http_rest/server/engine_rest_api"
+	api_type "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/api_types"
+	api "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/server/engine_rest_api"
 )
 
 type EngineRuntime struct {

@@ -6,7 +6,7 @@
 package enclave_data_directory
 
 import (
-	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/database_accessors/enclave_db/file_artifacts_db"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/file_artifacts_db"
 	"github.com/kurtosis-tech/stacktrace"
 	"path"
 	"sync"

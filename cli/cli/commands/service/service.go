@@ -6,16 +6,16 @@
 package service
 
 import (
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_str_consts"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/commands/service/add"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/commands/service/exec"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/commands/service/inspect"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/commands/service/logs"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/commands/service/rm"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/commands/service/shell"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/commands/service/start"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/commands/service/stop"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/commands/service/update"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/add"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/exec"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/inspect"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/logs"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/rm"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/shell"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/start"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/stop"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/update"
 	"github.com/spf13/cobra"
 )
 

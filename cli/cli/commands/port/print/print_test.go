@@ -2,7 +2,7 @@ package print
 
 import (
 	"fmt"
-	"github.com/dzobbe/PoTE-kurtosis/api/golang/core/lib/services"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

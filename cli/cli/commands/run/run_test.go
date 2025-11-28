@@ -2,8 +2,8 @@ package run
 
 import (
 	"context"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_framework/lowlevel/args"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_framework/lowlevel/flags"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/stretchr/testify/require"
 	"testing"
 )

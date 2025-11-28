@@ -1,11 +1,11 @@
 package instructions_plan
 
 import (
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/types"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"

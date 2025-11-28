@@ -6,14 +6,14 @@
 package enclave
 
 import (
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_str_consts"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/commands/enclave/add"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/commands/enclave/connect"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/commands/enclave/dump"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/commands/enclave/inspect"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/commands/enclave/ls"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/commands/enclave/rm"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/commands/enclave/stop"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/enclave/add"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/enclave/connect"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/enclave/dump"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/enclave/inspect"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/enclave/ls"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/enclave/rm"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/enclave/stop"
 	"github.com/spf13/cobra"
 )
 

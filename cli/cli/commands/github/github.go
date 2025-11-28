@@ -1,11 +1,11 @@
 package github
 
 import (
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_str_consts"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/commands/github/login"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/commands/github/logout"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/commands/github/status"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/commands/github/token"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/github/login"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/github/logout"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/github/status"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/github/token"
 	"github.com/spf13/cobra"
 )
 

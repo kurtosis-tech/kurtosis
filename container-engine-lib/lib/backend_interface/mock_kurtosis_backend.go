@@ -3,36 +3,36 @@
 package backend_interface
 
 import (
-	api_container "github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
-	compute_resources "github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
+	api_container "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
+	compute_resources "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
 
 	context "context"
 
-	enclave "github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	enclave "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 
-	engine "github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
+	engine "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 
-	exec_result "github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	exec_result "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 
-	image_build_spec "github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	image_build_spec "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 
-	image_download_mode "github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
+	image_download_mode "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 
-	image_registry_spec "github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+	image_registry_spec "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 
 	io "io"
 
-	logs_aggregator "github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
+	logs_aggregator "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 
-	logs_collector "github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
+	logs_collector "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 
 	mock "github.com/stretchr/testify/mock"
 
-	nix_build_spec "github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
+	nix_build_spec "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
 
-	reverse_proxy "github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/reverse_proxy"
+	reverse_proxy "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/reverse_proxy"
 
-	service "github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 
 	time "time"
 )

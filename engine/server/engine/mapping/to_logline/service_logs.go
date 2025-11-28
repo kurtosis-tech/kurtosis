@@ -1,10 +1,10 @@
 package to_logline
 
 import (
-	"github.com/dzobbe/PoTE-kurtosis/engine/server/engine/centralized_logs/logline"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
 	"github.com/kurtosis-tech/stacktrace"
 
-	api_type "github.com/dzobbe/PoTE-kurtosis/api/golang/http_rest/api_types"
+	api_type "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/api_types"
 )
 
 func ToLoglineLogLineFilters(logLineFilters []api_type.LogLineFilter) (logline.ConjunctiveLogLineFilters, error) {

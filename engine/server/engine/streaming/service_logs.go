@@ -3,18 +3,18 @@ package streaming
 import (
 	"context"
 
-	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
-	user_service "github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/dzobbe/PoTE-kurtosis/engine/server/engine/centralized_logs"
-	"github.com/dzobbe/PoTE-kurtosis/engine/server/engine/centralized_logs/logline"
-	"github.com/dzobbe/PoTE-kurtosis/engine/server/engine/enclave_manager"
-	"github.com/dzobbe/PoTE-kurtosis/engine/server/engine/mapping/to_http"
-	"github.com/dzobbe/PoTE-kurtosis/engine/server/engine/mapping/to_logline"
-	"github.com/dzobbe/PoTE-kurtosis/engine/server/engine/utils"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	user_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/mapping/to_http"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/mapping/to_logline"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/utils"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 
-	api_type "github.com/dzobbe/PoTE-kurtosis/api/golang/http_rest/api_types"
+	api_type "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/api_types"
 )
 
 var (

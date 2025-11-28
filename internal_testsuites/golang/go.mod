@@ -5,16 +5,16 @@ go 1.23.0
 toolchain go1.23.7
 
 replace (
-	github.com/dzobbe/PoTE-kurtosis/api/golang => ../../api/golang
-	github.com/dzobbe/PoTE-kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
-	github.com/dzobbe/PoTE-kurtosis/path-compression => ./../../path-compression
+	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
+	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
+	github.com/kurtosis-tech/kurtosis/path-compression => ./../../path-compression
 )
 
 require (
 	github.com/golang/protobuf v1.5.4
 	github.com/kurtosis-tech/example-api-server/api/golang v0.0.0-20211207020812-00a54fc29318
 	github.com/kurtosis-tech/example-datastore-server/api/golang v0.0.0-20211207020830-504dbf5ed1a6
-	github.com/dzobbe/PoTE-kurtosis/api/golang v0.0.0 // local dependency
+	github.com/kurtosis-tech/kurtosis/api/golang v0.0.0 // local dependency
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.10.0
@@ -23,7 +23,7 @@ require (
 )
 
 require (
-	github.com/dzobbe/PoTE-kurtosis/path-compression v0.0.0-20240307154559-64d2929cd265
+	github.com/kurtosis-tech/kurtosis/path-compression v0.0.0-20240307154559-64d2929cd265
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
 	k8s.io/utils v0.0.0-20230711102312-30195339c3c7
 )
@@ -39,8 +39,8 @@ require (
 	github.com/google/uuid v1.4.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230818182330-1a86869414d2 // indirect
-	github.com/dzobbe/PoTE-kurtosis/contexts-config-store v0.0.0-20230818184218-f4e3e773463b // indirect
-	github.com/dzobbe/PoTE-kurtosis/grpc-file-transfer/golang v0.0.0 // indirect
+	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0-20230818184218-f4e3e773463b // indirect
+	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang v0.0.0 // indirect
 	github.com/mholt/archiver v3.1.1+incompatible // indirect
 	github.com/nwaples/rardecode v1.1.3 // indirect
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect

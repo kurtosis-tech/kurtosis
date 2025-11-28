@@ -3,11 +3,11 @@ package to_http
 import (
 	"time"
 
-	user_service "github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/dzobbe/PoTE-kurtosis/engine/server/engine/centralized_logs/logline"
+	user_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
 	"golang.org/x/exp/slices"
 
-	api_type "github.com/dzobbe/PoTE-kurtosis/api/golang/http_rest/api_types"
+	api_type "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/api_types"
 )
 
 func ToHttpServiceLogs(

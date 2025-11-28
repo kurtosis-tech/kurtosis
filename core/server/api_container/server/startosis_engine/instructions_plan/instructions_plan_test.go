@@ -3,11 +3,11 @@ package instructions_plan
 import (
 	"testing"
 
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/mock_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/mock_instruction"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
 
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/types"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
 )
 
 func TestAddInstruction(t *testing.T) {

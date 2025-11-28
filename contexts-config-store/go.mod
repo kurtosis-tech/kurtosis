@@ -1,4 +1,4 @@
-module github.com/dzobbe/PoTE-kurtosis/contexts-config-store
+module github.com/kurtosis-tech/kurtosis/contexts-config-store
 
 go 1.23.0
 

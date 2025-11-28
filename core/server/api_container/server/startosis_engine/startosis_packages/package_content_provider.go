@@ -1,8 +1,8 @@
 package startosis_packages
 
 import (
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
-	"github.com/dzobbe/PoTE-kurtosis/core/server/commons/yaml_parser"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
 	"io"
 )
 

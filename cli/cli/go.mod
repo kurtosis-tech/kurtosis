@@ -1,20 +1,20 @@
-module github.com/dzobbe/PoTE-kurtosis/cli/cli
+module github.com/kurtosis-tech/kurtosis/cli/cli
 
 go 1.23.0
 
 toolchain go1.23.7
 
 replace (
-	github.com/dzobbe/PoTE-kurtosis/api/golang => ../../api/golang
-	github.com/dzobbe/PoTE-kurtosis/cloud/api/golang => ../../cloud/api/golang
-	github.com/dzobbe/PoTE-kurtosis/container-engine-lib => ../../container-engine-lib
-	github.com/dzobbe/PoTE-kurtosis/contexts-config-store => ../../contexts-config-store
-	github.com/dzobbe/PoTE-kurtosis/engine/launcher => ../../engine/launcher
-	github.com/dzobbe/PoTE-kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
-	github.com/dzobbe/PoTE-kurtosis/kurtosis_version => ../../kurtosis_version
-	github.com/dzobbe/PoTE-kurtosis/metrics-library/golang => ../../metrics-library/golang
-	github.com/dzobbe/PoTE-kurtosis/name_generator => ../../name_generator
-	github.com/dzobbe/PoTE-kurtosis/path-compression => ../../path-compression
+	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
+	github.com/kurtosis-tech/kurtosis/cloud/api/golang => ../../cloud/api/golang
+	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
+	github.com/kurtosis-tech/kurtosis/contexts-config-store => ../../contexts-config-store
+	github.com/kurtosis-tech/kurtosis/engine/launcher => ../../engine/launcher
+	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
+	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
+	github.com/kurtosis-tech/kurtosis/metrics-library/golang => ../../metrics-library/golang
+	github.com/kurtosis-tech/kurtosis/name_generator => ../../name_generator
+	github.com/kurtosis-tech/kurtosis/path-compression => ../../path-compression
 )
 
 require (
@@ -24,12 +24,12 @@ require (
 	github.com/dmarkham/enumer v1.5.5
 	github.com/docker/distribution v2.8.2+incompatible
 	github.com/go-yaml/yaml v2.1.0+incompatible
-	github.com/dzobbe/PoTE-kurtosis/api/golang v0.84.10 // local dependency
-	github.com/dzobbe/PoTE-kurtosis/container-engine-lib v0.0.0 // local dependency
-	github.com/dzobbe/PoTE-kurtosis/contexts-config-store v0.0.0 // local dependency
-	github.com/dzobbe/PoTE-kurtosis/engine/launcher v0.0.0 // local dependency
-	github.com/dzobbe/PoTE-kurtosis/kurtosis_version v0.0.0 // Local dependency generated during build
-	github.com/dzobbe/PoTE-kurtosis/metrics-library/golang v0.0.0 // Local dependency
+	github.com/kurtosis-tech/kurtosis/api/golang v0.84.10 // local dependency
+	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // local dependency
+	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0 // local dependency
+	github.com/kurtosis-tech/kurtosis/engine/launcher v0.0.0 // local dependency
+	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0 // Local dependency generated during build
+	github.com/kurtosis-tech/kurtosis/metrics-library/golang v0.0.0 // Local dependency
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/manifoldco/promptui v0.9.0
 	github.com/mattn/go-isatty v0.0.20
@@ -55,16 +55,17 @@ require (
 	github.com/cli/go-gh/v2 v2.4.1-0.20231120145612-d32c104a9a25
 	github.com/cli/oauth v1.0.1
 	github.com/compose-spec/compose-go v1.17.0
-	github.com/docker/docker v24.0.9+incompatible
+	github.com/docker/docker v25.0.0+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/fatih/color v1.13.0
 	github.com/go-git/go-git/v5 v5.14.0
+	github.com/goccy/go-graphviz v0.2.9
 	github.com/google/go-github/v50 v50.2.0
 	github.com/joho/godotenv v1.5.1
 	github.com/kurtosis-tech/kurtosis-package-indexer/server v0.0.0-20240222174809-4f74727f5e3b
 	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230818182330-1a86869414d2
-	github.com/dzobbe/PoTE-kurtosis/cloud/api/golang v0.0.0
-	github.com/dzobbe/PoTE-kurtosis/name_generator v0.0.0-20230727152609-768e95d2dbeb
+	github.com/kurtosis-tech/kurtosis/cloud/api/golang v0.0.0
+	github.com/kurtosis-tech/kurtosis/name_generator v0.0.0-20230727152609-768e95d2dbeb
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20230710164206-90b674acb269
 	github.com/kurtosis-tech/vscode-kurtosis/starlark-lsp v0.0.0-20230406131103-c466e04f1b89
 	github.com/mholt/archiver v3.1.1+incompatible
@@ -100,6 +101,7 @@ require (
 	github.com/cli/shurcooL-graphql v0.0.4 // indirect
 	github.com/cloudflare/circl v1.6.0 // indirect
 	github.com/containerd/containerd v1.7.2 // indirect
+	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/typeurl/v2 v2.1.1 // indirect
 	github.com/cyphar/filepath-securejoin v0.4.1 // indirect
 	github.com/danieljoos/wincred v1.2.0 // indirect
@@ -107,12 +109,14 @@ require (
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/distribution/distribution/v3 v3.0.0-20230214150026-36d8c594d7aa // indirect
+	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/go-metrics v0.0.1 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
 	github.com/emicklei/go-restful/v3 v3.10.1 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
+	github.com/felixge/httpsnoop v1.0.3 // indirect
 	github.com/flopp/go-findfont v0.1.0 // indirect
 	github.com/fogleman/gg v1.3.0 // indirect
 	github.com/francoispqt/gojay v1.2.13 // indirect
@@ -130,7 +134,6 @@ require (
 	github.com/go-playground/validator/v10 v10.14.1 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/gobwas/ws v1.2.1 // indirect
-	github.com/goccy/go-graphviz v0.2.9 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/gogo/googleapis v1.4.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
@@ -161,8 +164,8 @@ require (
 	github.com/klauspost/compress v1.17.2 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
 	github.com/kurtosis-tech/kurtosis-package-indexer/api/golang v0.0.0-20231220155208-4ae5a14a79d0 // indirect
-	github.com/dzobbe/PoTE-kurtosis/grpc-file-transfer/golang v0.0.0 // indirect
-	github.com/dzobbe/PoTE-kurtosis/path-compression v0.0.0-20240307154559-64d2929cd265 // indirect
+	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang v0.0.0 // indirect
+	github.com/kurtosis-tech/kurtosis/path-compression v0.0.0-20240307154559-64d2929cd265 // indirect
 	github.com/kurtosis-tech/starlark-lsp v0.0.0-20231103163737-8f660a80cb17 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
@@ -222,6 +225,7 @@ require (
 	go.lsp.dev/protocol v0.11.2 // indirect
 	go.lsp.dev/uri v0.3.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.40.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.40.0 // indirect
 	go.opentelemetry.io/otel v1.14.0 // indirect
 	go.opentelemetry.io/otel/metric v0.37.0 // indirect
 	go.opentelemetry.io/otel/trace v1.14.0 // indirect
@@ -233,14 +237,13 @@ require (
 	golang.org/x/image v0.21.0 // indirect
 	golang.org/x/mod v0.21.0 // indirect
 	golang.org/x/net v0.38.0 // indirect
-	golang.org/x/oauth2 v0.11.0 // indirect
+	golang.org/x/oauth2 v0.27.0 // indirect
 	golang.org/x/sync v0.12.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/term v0.30.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.26.0 // indirect
-	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20230726155614-23370e0ffb3e // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20230711160842-782d3b101e98 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230803162519-f966b187b2e5 // indirect

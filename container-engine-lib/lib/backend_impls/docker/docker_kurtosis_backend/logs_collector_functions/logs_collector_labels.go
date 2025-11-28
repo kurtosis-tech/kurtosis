@@ -1,7 +1,7 @@
 package logs_collector_functions
 
 import (
-	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_labels_for_logs"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_labels_for_logs"
 )
 
 // GetServiceLabelsForLogsTracking returns list of labels to add to kurtosis user service containers

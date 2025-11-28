@@ -1,4 +1,4 @@
-module github.com/dzobbe/PoTE-kurtosis/connect-server
+module github.com/kurtosis-tech/kurtosis/connect-server
 
 go 1.23.0
 

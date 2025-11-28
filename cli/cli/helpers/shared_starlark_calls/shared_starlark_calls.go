@@ -3,9 +3,9 @@ package shared_starlark_calls
 import (
 	"context"
 	"fmt"
-	"github.com/dzobbe/PoTE-kurtosis/api/golang/core/lib/enclaves"
-	"github.com/dzobbe/PoTE-kurtosis/api/golang/core/lib/services"
-	"github.com/dzobbe/PoTE-kurtosis/api/golang/core/lib/starlark_run_config"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 	"github.com/kurtosis-tech/stacktrace"
 )
 

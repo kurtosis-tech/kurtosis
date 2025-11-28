@@ -18,7 +18,7 @@ func (suite *StartosisPackageTestSuite) TestStartosisPackage_NoMainFile() {
 	require.Error(t, err)
 	require.NotNil(t, runResult)
 
-	expectedErrorContents := `An error occurred while verifying that 'main.star' exists in the package 'github.com/dzobbe/PoTE-kurtosis/internal_testsuites/starlark/no-main-star' at '/kurtosis-data/repositories/kurtosis-tech/kurtosis/internal_testsuites/starlark/no-main-star/main.star'
+	expectedErrorContents := `An error occurred while verifying that 'main.star' exists in the package 'github.com/kurtosis-tech/kurtosis/internal_testsuites/starlark/no-main-star' at '/kurtosis-data/repositories/kurtosis-tech/kurtosis/internal_testsuites/starlark/no-main-star/main.star'
 	Caused by: stat /kurtosis-data/repositories/kurtosis-tech/kurtosis/internal_testsuites/starlark/no-main-star/main.star: no such file or directory`
 	require.NotNil(t, runResult.InterpretationError)
 	require.Equal(t, expectedErrorContents, runResult.InterpretationError.GetErrorMessage())

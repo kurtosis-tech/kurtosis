@@ -2,8 +2,8 @@ package context_id_arg
 
 import (
 	"fmt"
-	store_api "github.com/dzobbe/PoTE-kurtosis/contexts-config-store/api/golang"
-	"github.com/dzobbe/PoTE-kurtosis/contexts-config-store/store"
+	store_api "github.com/kurtosis-tech/kurtosis/contexts-config-store/api/golang"
+	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	"github.com/stretchr/testify/require"
 	"testing"
 )

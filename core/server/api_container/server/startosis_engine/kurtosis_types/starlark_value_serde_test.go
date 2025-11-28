@@ -1,8 +1,8 @@
 package kurtosis_types
 
 import (
-	port_spec_core "github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
-	"github.com/dzobbe/PoTE-kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
+	port_spec_core "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.starlark.net/starlark"

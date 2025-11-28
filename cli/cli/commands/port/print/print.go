@@ -3,18 +3,18 @@ package print
 import (
 	"context"
 	"fmt"
-	"github.com/dzobbe/PoTE-kurtosis/api/golang/core/lib/services"
-	"github.com/dzobbe/PoTE-kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
-	"github.com/dzobbe/PoTE-kurtosis/api/golang/engine/lib/kurtosis_context"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_framework/highlevel/service_identifier_arg"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_framework/lowlevel/args"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_framework/lowlevel/flags"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/command_str_consts"
-	"github.com/dzobbe/PoTE-kurtosis/cli/cli/out"
-	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/backend_interface"
-	"github.com/dzobbe/PoTE-kurtosis/metrics-library/golang/lib/metrics_client"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/service_identifier_arg"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"strings"
@@ -82,7 +82,7 @@ var PortPrintCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCom
 			isEnclaveIdArgGreedy,
 		),
 		// TODO use the `NewServiceIdentifierArg` instead when we start storing identifiers in DB
-		// TODO we should fix this after https://github.com/dzobbe/PoTE-kurtosis/issues/879
+		// TODO we should fix this after https://github.com/kurtosis-tech/kurtosis/issues/879
 		service_identifier_arg.NewHistoricalServiceIdentifierArgWithValidationDisabled(
 			serviceIdentifierArgKey,
 			enclaveIdentifierArgKey,

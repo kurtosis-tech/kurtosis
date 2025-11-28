@@ -3,7 +3,7 @@ package types
 import (
 	"fmt"
 
-	"github.com/dzobbe/PoTE-kurtosis/container-engine-lib/lib/uuid_generator"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 )
 
 type ScheduledInstructionUuid string
