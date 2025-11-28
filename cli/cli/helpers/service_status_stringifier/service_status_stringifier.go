@@ -1,8 +1,8 @@
 package service_status_stringifier
 
 import (
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/fatih/color"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 )
 
 var (

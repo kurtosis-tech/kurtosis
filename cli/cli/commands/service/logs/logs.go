@@ -12,6 +12,7 @@ import (
 	"os/signal"
 	"strconv"
 
+	"github.com/fatih/color"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
@@ -25,7 +26,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
-	"github.com/fatih/color"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )

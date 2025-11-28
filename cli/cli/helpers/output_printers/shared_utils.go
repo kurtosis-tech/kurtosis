@@ -7,10 +7,10 @@ import (
 
 	"github.com/bazelbuild/buildtools/build"
 	"github.com/briandowns/spinner"
+	"github.com/fatih/color"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_args/run"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
-	"github.com/fatih/color"
 	"github.com/sirupsen/logrus"
 )
 

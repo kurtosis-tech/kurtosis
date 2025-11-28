@@ -8,11 +8,11 @@ import (
 	"syscall"
 	"time"
 
+	portal_constructors "github.com/kurtosis-tech/kurtosis-portal/api/golang/constructors"
+	portal_generated_api "github.com/kurtosis-tech/kurtosis-portal/api/golang/generated"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/host_machine_directories"
-	portal_constructors "github.com/kurtosis-tech/kurtosis-portal/api/golang/constructors"
-	portal_generated_api "github.com/kurtosis-tech/kurtosis-portal/api/golang/generated"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
