@@ -199,7 +199,7 @@ func (printer *ParallelExecutionPrinter) PrintKurtosisExecutionResponseLineToStd
 			Info: formatInfo(info.GetInfoMessage()),
 		}
 	}
-	if msg != nil {
+	if msg != nil && interactive_terminal_decider.IsInteractiveTerminal() {
 		select {
 		case printer.bubbleteaMsgChan <- msg:
 		default:
