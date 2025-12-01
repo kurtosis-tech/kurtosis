@@ -297,10 +297,6 @@ func (serviceConfig *ServiceConfig) GetTtyEnabled() bool {
 	return serviceConfig.privateServiceConfig.TtyEnabled
 }
 
-func (serviceConfig *ServiceConfig) GetDevices() []string {
-	return serviceConfig.privateServiceConfig.Devices
-}
-
 func (serviceConfig *ServiceConfig) UnmarshalJSON(data []byte) error {
 	// Suppressing exhaustruct requirement because we want an object with zero values
 	// nolint: exhaustruct
@@ -349,4 +345,8 @@ func GetEmptyServiceConfig() *ServiceConfig {
 		[]string{},
 	)
 	return emptyServiceConfig
+}
+
+func (serviceConfig *ServiceConfig) GetDevices() []string {
+	return serviceConfig.privateServiceConfig.Devices
 }

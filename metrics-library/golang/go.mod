@@ -4,8 +4,6 @@ go 1.23.0
 
 toolchain go1.23.7
 
-replace github.com/kurtosis-tech/kurtosis/enclave-manager/api/golang => ../../enclave-manager/api/golang
-
 require (
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/segmentio/backo-go v1.0.0

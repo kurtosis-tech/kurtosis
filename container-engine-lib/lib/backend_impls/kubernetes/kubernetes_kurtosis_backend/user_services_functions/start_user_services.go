@@ -380,7 +380,7 @@ func createStartServiceOperation(
 				deviceType := apiv1.HostPathCharDev
 				// Try to detect if it's a block device (common patterns: /dev/sd*, /dev/nvme*, /dev/vd*)
 				// For TPM devices (/dev/tpm*), they are character devices
-				volumeName := "device-" + strings.ReplaceAll(strings.TrimPrefix(devicePath, "/dev/"), "/", "-")
+				volumeName := "kurtosis-device-" + strings.ReplaceAll(strings.TrimPrefix(devicePath, "/dev/"), "/", "-")
 				deviceVolume := apiv1.Volume{
 					Name: volumeName,
 					VolumeSource: apiv1.VolumeSource{
