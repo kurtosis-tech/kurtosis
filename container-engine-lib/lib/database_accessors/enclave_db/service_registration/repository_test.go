@@ -2,12 +2,13 @@ package service_registration
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"math/rand"
 	"net"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -309,7 +310,7 @@ func getServiceConfigForTest(t *testing.T, imageName string) *service.ServiceCon
 		"test-second-label-key": "test-second-label-value",
 	}, nil, nil, map[string]string{
 		"disktype": "ssd",
-	}, image_download_mode.ImageDownloadMode_Missing, true, false)
+	}, image_download_mode.ImageDownloadMode_Missing, true, false, []string{})
 	require.NoError(t, err)
 	return serviceConfig
 }

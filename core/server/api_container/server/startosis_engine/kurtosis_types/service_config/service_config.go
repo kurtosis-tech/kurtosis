@@ -54,6 +54,7 @@ const (
 	FilesToBeMovedAttr              = "files_to_be_moved"
 	TiniEnabledAttr                 = "tini_enabled"
 	TtyEnabledAttr                  = "tty_enabled"
+	DevicesAttr                     = "devices"
 
 	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
@@ -233,6 +234,12 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					Name:              TtyEnabledAttr,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Bool],
+					Validator:         nil,
+				},
+				{
+					Name:              DevicesAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
 					Validator:         nil,
 				},
 			},
@@ -557,6 +564,18 @@ func (config *ServiceConfig) ToKurtosisType(
 		ttyEnabled = bool(ttyStarlark)
 	}
 
+	devices := []string{}
+	devicesStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.List](config.KurtosisValueTypeDefault, DevicesAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found && devicesStarlark.Len() > 0 {
+		devices, interpretationErr = kurtosis_types.SafeCastToStringSlice(devicesStarlark, DevicesAttr)
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
+	}
+
 	serviceConfig, err := service.CreateServiceConfig(
 		imageName,
 		maybeImageBuildSpec,
@@ -581,6 +600,7 @@ func (config *ServiceConfig) ToKurtosisType(
 		imageDownloadMode,
 		tiniEnabled,
 		ttyEnabled,
+		devices,
 	)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating a service config")

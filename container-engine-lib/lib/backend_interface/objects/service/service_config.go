@@ -79,6 +79,8 @@ type privateServiceConfig struct {
 	TiniEnabled bool
 
 	TtyEnabled bool
+
+	Devices []string
 }
 
 func CreateServiceConfig(
@@ -104,7 +106,8 @@ func CreateServiceConfig(
 	nodeSelectors map[string]string,
 	imageDownloadMode image_download_mode.ImageDownloadMode,
 	tiniEnabled bool,
-	ttyEnabled bool) (*ServiceConfig, error) {
+	ttyEnabled bool,
+	devices []string) (*ServiceConfig, error) {
 	if err := ValidateServiceConfigLabels(labels); err != nil {
 		return nil, stacktrace.Propagate(err, "Invalid service config labels '%+v'", labels)
 	}
@@ -135,6 +138,7 @@ func CreateServiceConfig(
 		FilesToBeMoved:               map[string]string{},
 		TiniEnabled:                  tiniEnabled,
 		TtyEnabled:                   ttyEnabled,
+		Devices:                      devices,
 	}
 	return &ServiceConfig{internalServiceConfig}, nil
 }
@@ -338,6 +342,11 @@ func GetEmptyServiceConfig() *ServiceConfig {
 		image_download_mode.ImageDownloadMode_Always,
 		false,
 		false,
+		[]string{},
 	)
 	return emptyServiceConfig
+}
+
+func (serviceConfig *ServiceConfig) GetDevices() []string {
+	return serviceConfig.privateServiceConfig.Devices
 }

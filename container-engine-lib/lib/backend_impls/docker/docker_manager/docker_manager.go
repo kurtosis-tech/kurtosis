@@ -683,7 +683,8 @@ func (manager *DockerManager) CreateAndStartContainer(
 		args.memoryAllocationMegabytes,
 		args.loggingDriverConfig,
 		args.containerInitEnabled,
-		args.restartPolicy)
+		args.restartPolicy,
+		args.devices)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
@@ -1824,6 +1825,7 @@ func (manager *DockerManager) getContainerHostConfig(
 	loggingDriverConfig LoggingDriver,
 	useInit bool,
 	restartPolicy RestartPolicy,
+	devices []string,
 ) (hostConfig *container.HostConfig, err error) {
 
 	bindsList := make([]string, 0, len(bindMounts))
@@ -1925,7 +1927,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		CPURealtimeRuntime:   0,
 		CpusetCpus:           "",
 		CpusetMems:           "",
-		Devices:              nil,
+		Devices:              convertDevicesToDockerDeviceMapping(devices),
 		DeviceCgroupRules:    nil,
 		DeviceRequests:       nil,
 		KernelMemory:         0,
@@ -2364,6 +2366,23 @@ func convertMegabytesToBytes(value uint64) uint64 {
 // In Docker 1 CPU = 1000 millicpus = 1000000000 NanoCPUs
 func convertMillicpusToNanoCPUs(value uint64) uint64 {
 	return value * millicpusToNanoCPUsFactor
+}
+
+// convertDevicesToDockerDeviceMapping converts device paths (e.g., "/dev/tpm0") to Docker's DeviceMapping format.
+// Each device is mounted with the same path in the container as on the host, with read-write-mknod permissions.
+func convertDevicesToDockerDeviceMapping(devices []string) []container.DeviceMapping {
+	if len(devices) == 0 {
+		return nil
+	}
+	deviceMappings := make([]container.DeviceMapping, 0, len(devices))
+	for _, devicePath := range devices {
+		deviceMappings = append(deviceMappings, container.DeviceMapping{
+			PathOnHost:        devicePath,
+			PathInContainer:   devicePath,
+			CgroupPermissions: "rwm", // read, write, mknod
+		})
+	}
+	return deviceMappings
 }
 
 func getEndpointSettingsForIpAddress(ipAddress string, alias string) *network.EndpointSettings {
