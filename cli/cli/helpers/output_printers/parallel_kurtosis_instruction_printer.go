@@ -94,6 +94,14 @@ func (printer *ParallelExecutionPrinter) Stop() {
 	}
 
 	if !printer.isInteractive {
+		if printer.errorMsgOutput != "" {
+			out.PrintOutLn(printer.errorMsgOutput)
+		}
+
+		if printer.finalOutput != "" {
+			out.PrintOutLn(printer.finalOutput)
+		}
+
 		printer.isStarted = false
 		return
 	}
