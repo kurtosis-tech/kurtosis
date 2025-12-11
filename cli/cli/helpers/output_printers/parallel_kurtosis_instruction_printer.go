@@ -34,6 +34,8 @@ type ParallelExecutionPrinter struct {
 	errorMsgOutput string        // gets populated if error occurs during execution
 	finalOutput    string        // gets populated after execution is complete
 	programDone    chan struct{} // used to wait for the bubbletea program to finish and signal when to print the final output
+
+	isInteractive bool
 }
 
 func NewParallelExecutionPrinter() *ParallelExecutionPrinter {
@@ -46,6 +48,7 @@ func NewParallelExecutionPrinter() *ParallelExecutionPrinter {
 		errorMsgOutput:   "",
 		finalOutput:      "",
 		programDone:      make(chan struct{}),
+		isInteractive:    interactive_terminal_decider.IsInteractiveTerminal(),
 	}
 }
 
@@ -54,7 +57,7 @@ func (printer *ParallelExecutionPrinter) Start() error {
 		return stacktrace.NewError("printer already started")
 	}
 	printer.isStarted = true
-	if !interactive_terminal_decider.IsInteractiveTerminal() {
+	if !printer.isInteractive {
 		logrus.Infof("Kurtosis CLI is running in a non interactive terminal. Everything will work but progress information and the progress bar will not be displayed.")
 		return nil
 	}
@@ -89,7 +92,16 @@ func (printer *ParallelExecutionPrinter) Stop() {
 	if !printer.isStarted {
 		return
 	}
-	if !interactive_terminal_decider.IsInteractiveTerminal() {
+
+	if !printer.isInteractive {
+		if printer.errorMsgOutput != "" {
+			out.PrintOutLn(printer.errorMsgOutput)
+		}
+
+		if printer.finalOutput != "" {
+			out.PrintOutLn(printer.finalOutput)
+		}
+
 		printer.isStarted = false
 		return
 	}
@@ -199,7 +211,7 @@ func (printer *ParallelExecutionPrinter) PrintKurtosisExecutionResponseLineToStd
 			Info: formatInfo(info.GetInfoMessage()),
 		}
 	}
-	if msg != nil {
+	if msg != nil && printer.isInteractive {
 		select {
 		case printer.bubbleteaMsgChan <- msg:
 		default:
