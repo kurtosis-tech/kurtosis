@@ -3,12 +3,13 @@ package startosis_persistent_directory_test
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 const (

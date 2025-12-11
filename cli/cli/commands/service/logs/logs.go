@@ -8,6 +8,10 @@ package logs
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/signal"
+	"strconv"
+
 	"github.com/fatih/color"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
@@ -24,9 +28,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"os"
-	"os/signal"
-	"strconv"
 )
 
 const (
