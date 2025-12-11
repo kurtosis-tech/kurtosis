@@ -166,6 +166,56 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestAddServiceDependsO
 	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
 }
 
+func (suite *StartosisIntepreterDependencyGraphTestSuite) TestOperationsOnServiceWithoutInitialAddService() {
+	script := `def run(plan):
+	result = plan.request(
+		service_name = "serviceA",
+		recipe = GetHttpRequestRecipe(
+			port_id = "http",
+			endpoint = "/",
+			extract = {
+				"name" : ".name.id",
+			},
+		),
+	)
+
+	plan.exec(
+		service_name = "serviceA",
+		recipe = ExecRecipe(
+			command = ["echo {0}".format(result["extract.name"])],
+		),
+	)
+`
+	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+		types.ScheduledInstructionUuid("1"): {},
+		types.ScheduledInstructionUuid("2"): {
+			types.ScheduledInstructionUuid("1"),
+		},
+	}
+
+	inputArgs := `{}`
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		script,
+		inputArgs,
+		defaultNonBlockingMode,
+		emptyEnclaveComponents,
+		emptyInstructionsPlanMask,
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlanForDependencyGraphTests(),
+	)
+	require.Nil(suite.T(), interpretationError)
+
+	instructionsDependencyGraph, startosisInterpretationError := instructionsPlan.GenerateInstructionsDependencyGraph()
+	require.Nil(suite.T(), startosisInterpretationError)
+
+	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
+}
+
 func (suite *StartosisIntepreterDependencyGraphTestSuite) TestExecDependsOnRequest() {
 	script := `def run(plan):
 	config = ServiceConfig(
@@ -1121,6 +1171,63 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestStartServiceDepend
 		types.ScheduledInstructionUuid("1"): {},
 		types.ScheduledInstructionUuid("2"): {
 			types.ScheduledInstructionUuid("1"),
+		},
+	}
+
+	inputArgs := `{}`
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		script,
+		inputArgs,
+		defaultNonBlockingMode,
+		emptyEnclaveComponents,
+		emptyInstructionsPlanMask,
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlanForDependencyGraphTests(),
+	)
+	require.Nil(suite.T(), interpretationError)
+
+	instructionsDependencyGraph, startosisInterpretationError := instructionsPlan.GenerateInstructionsDependencyGraph()
+	require.Nil(suite.T(), startosisInterpretationError)
+
+	require.Equal(suite.T(), expectedDependencyGraph, instructionsDependencyGraph)
+}
+
+func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRemoveServiceComesAfterAllOperationsOnService() {
+	script := `def run(plan):
+	service_a = plan.add_service(name = "serviceA", config = ServiceConfig(image = "ubuntu"))
+
+	plan.exec(
+		service_name = "serviceA",
+		recipe = ExecRecipe(
+			command = ["echo", "Hello, world"],
+		),
+	)
+
+	plan.store_service_files(
+		service_name = "serviceA",
+		src="/tmp/foo",
+	)
+
+	plan.remove_service(name = "serviceA")
+`
+
+	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
+		types.ScheduledInstructionUuid("1"): {},
+		types.ScheduledInstructionUuid("2"): {
+			types.ScheduledInstructionUuid("1"),
+		},
+		types.ScheduledInstructionUuid("3"): {
+			types.ScheduledInstructionUuid("1"),
+		},
+		types.ScheduledInstructionUuid("4"): {
+			types.ScheduledInstructionUuid("1"),
+			types.ScheduledInstructionUuid("2"),
+			types.ScheduledInstructionUuid("3"),
 		},
 	}
 

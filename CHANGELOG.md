@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.2](https://github.com/kurtosis-tech/kurtosis/compare/1.13.1...1.13.2) (2025-11-18)
+
+
+### Bug Fixes
+
+* remove service comes last ([#2832](https://github.com/kurtosis-tech/kurtosis/issues/2832)) ([238140f](https://github.com/kurtosis-tech/kurtosis/commit/238140f947b55af96b092085c0a248e79122aaea))
+
 ## [1.13.1](https://github.com/kurtosis-tech/kurtosis/compare/1.13.0...1.13.1) (2025-11-12)
 
 
