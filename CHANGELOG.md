@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.14.0](https://github.com/kurtosis-tech/kurtosis/compare/1.13.2...1.14.0) (2025-12-11)
+
+
+### Features
+
+* Add support for mounting devices ([#2845](https://github.com/kurtosis-tech/kurtosis/issues/2845)) ([78a237f](https://github.com/kurtosis-tech/kurtosis/commit/78a237f9d8f01e9d049a559a18aa566a42b5ab53))
+
+
+### Bug Fixes
+
+* print error in non interactive termianl ([#2850](https://github.com/kurtosis-tech/kurtosis/issues/2850)) ([5c33359](https://github.com/kurtosis-tech/kurtosis/commit/5c3335910f87125411f2e8aceddc49b1bac9655f))
+
 ## [1.13.2](https://github.com/kurtosis-tech/kurtosis/compare/1.13.1...1.13.2) (2025-11-18)
 
 
