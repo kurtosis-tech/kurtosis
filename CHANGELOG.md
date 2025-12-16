@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.1](https://github.com/kurtosis-tech/kurtosis/compare/1.14.0...1.14.1) (2025-12-16)
+
+
+### Bug Fixes
+
+* release 1.14.1 ([#2853](https://github.com/kurtosis-tech/kurtosis/issues/2853)) ([dfa3fde](https://github.com/kurtosis-tech/kurtosis/commit/dfa3fde271ff14c348c68e443f476364e9dbd66d))
+
 ## [1.14.0](https://github.com/kurtosis-tech/kurtosis/compare/1.13.2...1.14.0) (2025-12-11)
 
 
