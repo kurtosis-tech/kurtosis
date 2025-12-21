@@ -249,7 +249,10 @@ func getPackageNameAndReplaceOptions(packageRootPath string) (string, map[string
 func (enclaveCtx *EnclaveContext) uploadLocalStarlarkPackageDependencies(packageRootPath string, packageReplaceOptions map[string]string) error {
 	for dependencyPackageId, replaceOption := range packageReplaceOptions {
 		if isLocalDependencyReplace(replaceOption) {
-			localPackagePath := path.Join(packageRootPath, replaceOption)
+			localPackagePath := replaceOption
+			if !path.IsAbs(localPackagePath) {
+				localPackagePath = path.Join(packageRootPath, localPackagePath)
+			}
 			if err := enclaveCtx.uploadStarlarkPackage(dependencyPackageId, localPackagePath); err != nil {
 				return stacktrace.Propagate(err, "Error uploading package '%s' prior to executing it", replaceOption)
 			}
