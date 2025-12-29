@@ -221,7 +221,6 @@ func getDockerKurtosisBackend(
 ) (backend_interface.KurtosisBackend, error) {
 	var dockerManager *docker_manager.DockerManager
 	var err error
-
 	if usePodmanMode {
 		dockerManager, err = docker_manager.CreatePodmanManager(dockerClientOpts)
 		if err != nil {
