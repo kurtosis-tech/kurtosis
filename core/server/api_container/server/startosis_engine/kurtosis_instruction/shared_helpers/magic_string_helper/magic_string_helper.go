@@ -1,11 +1,12 @@
 package magic_string_helper
 
 import (
+	"regexp"
+	"strings"
+
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
-	"regexp"
-	"strings"
 )
 
 const (
@@ -62,6 +63,18 @@ func GetOrReplaceRuntimeValueFromString(originalString string, runtimeValueStore
 		runtimeValue, err := ReplaceRuntimeValueInString(originalString, runtimeValueStore)
 		return starlark.String(runtimeValue), err
 	}
+}
+
+func GetRuntimeValuesFromString(originalString string) []string {
+	matches := compiledRuntimeValueReplacementRegex.FindAllStringSubmatch(originalString, unlimitedMatches)
+	if len(matches) == 0 {
+		return []string{}
+	}
+	runtimeValues := make([]string, len(matches))
+	for i, match := range matches {
+		runtimeValues[i] = match[0]
+	}
+	return runtimeValues
 }
 
 func getRuntimeValueFromRegexMatch(match []string, runtimeValueStore *runtime_value_store.RuntimeValueStore) (starlark.Comparable, error) {

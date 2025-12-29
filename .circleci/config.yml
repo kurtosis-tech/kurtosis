@@ -174,7 +174,7 @@ parameters:
   # the same version as the server
   rust-version:
     type: string
-    default: 1.81.0
+    default: 1.88.0
   api-node-version:
     type: string
     default: 16.13.0

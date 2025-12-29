@@ -149,7 +149,7 @@ func parseWaitArg(arguments *builtin_argument.ArgumentValuesSet) (string, *start
 	return waitTimeout, nil
 }
 
-func createInterpretationResult(resultUuid string, storeSpecList []*store_spec.StoreSpec) *starlarkstruct.Struct {
+func createInterpretationResult(resultUuid string, storeSpecList []*store_spec.StoreSpec) (*starlarkstruct.Struct, string, string) {
 	runCodeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, runResultCodeKey)
 	runOutputValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, runResultOutputKey)
 
@@ -167,7 +167,7 @@ func createInterpretationResult(resultUuid string, storeSpecList []*store_spec.S
 	}
 	dict[runFilesArtifactsKey] = artifactNamesList
 	result := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
-	return result
+	return result, runCodeValue, runOutputValue
 }
 
 func validateTasksCommon(validatorEnvironment *startosis_validator.ValidatorEnvironment, storeSpecList []*store_spec.StoreSpec, serviceDirpathsToArtifactIdentifiers map[string][]string, serviceConfig *service.ServiceConfig) *startosis_errors.ValidationError {
@@ -326,7 +326,8 @@ func getServiceConfig(
 		*nodeSelectors,
 		image_download_mode.ImageDownloadMode_Missing,
 		tiniEnabled,
-		false)
+		false,
+		[]string{})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating service config")
 	}

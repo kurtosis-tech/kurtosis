@@ -140,7 +140,6 @@ func GetPublicPortBindingFromPrivatePortSpec(privatePortSpec *port_spec.PortSpec
 	resultPublicPortSpec *port_spec.PortSpec,
 	resultErr error,
 ) {
-
 	dockerPrivatePort, err := GetDockerPortFromPortSpec(privatePortSpec)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(
@@ -253,9 +252,7 @@ func GetIpAndPortInfoFromContainer(
 
 	privatePortSpecs, err := docker_port_spec_serializer.DeserializePortSpecs(serializedPortSpecs)
 	if err != nil {
-		if err != nil {
-			return nil, nil, nil, nil, stacktrace.Propagate(err, "Couldn't deserialize port spec string '%v'", serializedPortSpecs)
-		}
+		return nil, nil, nil, nil, stacktrace.Propagate(err, "Couldn't deserialize port spec string '%v'", serializedPortSpecs)
 	}
 
 	var containerPublicIp net.IP
@@ -264,7 +261,16 @@ func GetIpAndPortInfoFromContainer(
 		return privateIp, privatePortSpecs, containerPublicIp, publicPortSpecs, nil
 	}
 
+	publishedPrivateSpecs := map[string]*port_spec.PortSpec{}
 	for portId, privatePortSpec := range privatePortSpecs {
+		// filter out the UDP private port specs (as they don't get published) so we don't attempt to retrieve a public port that doesn't exist
+		if privatePortSpec.GetTransportProtocol() == port_spec.TransportProtocol_UDP {
+			continue
+		}
+		publishedPrivateSpecs[portId] = privatePortSpec
+	}
+
+	for portId, privatePortSpec := range publishedPrivateSpecs {
 		portPublicIp, publicPortSpec, err := GetPublicPortBindingFromPrivatePortSpec(privatePortSpec, hostMachinePortBindings)
 		if err != nil {
 			return nil, nil, nil, nil, stacktrace.Propagate(

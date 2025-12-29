@@ -194,13 +194,42 @@ func (service *EngineConnectServerService) CreateEnclave(ctx context.Context, co
 }
 
 func (service *EngineConnectServerService) GetEnclaves(ctx context.Context, _ *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
-	infoForEnclaves, err := service.enclaveManager.GetEnclaves(ctx)
+	infoForEnclaves, err := service.enclaveManager.GetAllEnclaves(ctx)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting info for enclaves")
 	}
 	response := &kurtosis_engine_rpc_api_bindings.GetEnclavesResponse{
 		EnclaveInfo: utils.MapMapValues(
 			infoForEnclaves,
+			func(info *types.EnclaveInfo) *kurtosis_engine_rpc_api_bindings.EnclaveInfo {
+				return utils.MapPointer(info, toGrpcEnclaveInfo)
+			})}
+	return connect.NewResponse(response), nil
+}
+
+func (service *EngineConnectServerService) GetEnclavesByUuids(ctx context.Context, args *connect.Request[kurtosis_engine_rpc_api_bindings.GetEnclavesByUuidsArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
+	var enclaveInfos map[string]*types.EnclaveInfo
+	var err error
+
+	if len(args.Msg.EnclaveUuids) == 0 { // if no uuids, get all enclaves
+		enclaveInfos, err = service.enclaveManager.GetAllEnclaves(ctx)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting info for enclaves")
+		}
+	} else {
+		var enclaveUuids []enclave.EnclaveUUID
+		for _, enclaveUuid := range args.Msg.EnclaveUuids {
+			enclaveUuids = append(enclaveUuids, enclave.EnclaveUUID(enclaveUuid))
+		}
+		enclaveInfos, err = service.enclaveManager.GetEnclavesByUuid(ctx, enclaveUuids)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting info for enclaves")
+		}
+	}
+
+	response := &kurtosis_engine_rpc_api_bindings.GetEnclavesResponse{
+		EnclaveInfo: utils.MapMapValues(
+			enclaveInfos,
 			func(info *types.EnclaveInfo) *kurtosis_engine_rpc_api_bindings.EnclaveInfo {
 				return utils.MapPointer(info, toGrpcEnclaveInfo)
 			})}

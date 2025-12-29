@@ -514,6 +514,36 @@ export declare class StopEnclaveArgs extends Message<StopEnclaveArgs> {
 
 /**
  * ==============================================================================================
+ *                                       Get Enclaves
+ * ==============================================================================================
+ *
+ * @generated from message engine_api.GetEnclavesByUuidsArgs
+ */
+export declare class GetEnclavesByUuidsArgs extends Message<GetEnclavesByUuidsArgs> {
+  /**
+   * The enclave uuid of the Kurtosis enclaves to get. An empty list of enclave uuids will retrieve all enclaves.
+   *
+   * @generated from field: repeated string enclave_uuids = 1;
+   */
+  enclaveUuids: string[];
+
+  constructor(data?: PartialMessage<GetEnclavesByUuidsArgs>);
+
+  static readonly runtime: typeof proto3;
+  static readonly typeName = "engine_api.GetEnclavesByUuidsArgs";
+  static readonly fields: FieldList;
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetEnclavesByUuidsArgs;
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetEnclavesByUuidsArgs;
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetEnclavesByUuidsArgs;
+
+  static equals(a: GetEnclavesByUuidsArgs | PlainMessage<GetEnclavesByUuidsArgs> | undefined, b: GetEnclavesByUuidsArgs | PlainMessage<GetEnclavesByUuidsArgs> | undefined): boolean;
+}
+
+/**
+ * ==============================================================================================
  *                                       Destroy Enclave
  * ==============================================================================================
  *

@@ -556,6 +556,7 @@ func createStartServiceOperation(
 		filesToBeMoved := serviceConfig.GetFilesToBeMoved()
 		tiniEnabled := serviceConfig.GetTiniEnabled()
 		ttyEnabled := serviceConfig.GetTtyEnabled()
+		devices := serviceConfig.GetDevices()
 
 		// We replace the placeholder value with the actual private IP address
 		privateIPAddrStr := privateIpAddr.String()
@@ -671,7 +672,11 @@ func createStartServiceOperation(
 				return nil, stacktrace.Propagate(err, "An error occurred converting private port spec '%v' to a Docker port", portId)
 			}
 			//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-			if portShouldBeManuallyPublished(portId, publicPorts) {
+			if privatePortSpec.GetTransportProtocol() == port_spec.TransportProtocol_UDP {
+				// After Docker Desktop 4.41.2 https://github.com/docker/for-mac/issues/7754, Docker Desktop doesn't properly publish UDP ports to the host machine
+				// To avoid errors downstream checking for published UDP ports, we only expose them
+				dockerUsedPorts[dockerPort] = docker_manager.NewNoPublishingSpec()
+			} else if portShouldBeManuallyPublished(portId, publicPorts) {
 				publicPortSpec, found := publicPorts[portId]
 				if !found {
 					return nil, stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v', but it was not found", portId, privatePortSpec.GetNumber())
@@ -738,6 +743,10 @@ func createStartServiceOperation(
 			// We don't care bout the height/width of the TTY. We just need it to be not nil.
 			defaultTtySize := &docker_manager.InteractiveModeTtySize{Height: 0, Width: 0}
 			createAndStartArgsBuilder.WithInteractiveModeTtySize(defaultTtySize)
+		}
+
+		if len(devices) > 0 {
+			createAndStartArgsBuilder.WithDevices(devices)
 		}
 
 		createAndStartArgs := createAndStartArgsBuilder.Build()

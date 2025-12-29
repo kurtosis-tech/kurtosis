@@ -3,8 +3,10 @@ package store_service_files
 import (
 	"context"
 	"fmt"
+
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
@@ -13,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 )
@@ -23,6 +26,7 @@ const (
 	ServiceNameArgName  = "service_name"
 	SrcArgName          = "src"
 	ArtifactNameArgName = "name"
+	DependsOnArgName    = "depends_on"
 )
 
 const (
@@ -53,6 +57,12 @@ func NewStoreServiceFiles(serviceNetwork service_network.ServiceNetwork) *kurtos
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator:         nil,
 				},
+				{
+					Name:              DependsOnArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
+					Validator:         nil,
+				},
 			},
 		},
 
@@ -63,6 +73,7 @@ func NewStoreServiceFiles(serviceNetwork service_network.ServiceNetwork) *kurtos
 				serviceName:  "", // populated at interpretation time
 				src:          "", // populated at interpretation time
 				artifactName: "", // populated at interpretation time
+				dependsOn:    "", // populated at interpretation time
 				description:  "", // populated at interpretation time
 			}
 		},
@@ -82,6 +93,7 @@ type StoreServiceFilesCapabilities struct {
 	src          string
 	artifactName string
 	description  string
+	dependsOn    string
 }
 
 func (builtin *StoreServiceFilesCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -109,9 +121,18 @@ func (builtin *StoreServiceFilesCapabilities) Interpret(_ string, arguments *bui
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", SrcArgName)
 	}
 
+	var dependsOn starlark.String
+	if arguments.IsSet(DependsOnArgName) {
+		dependsOn, err = builtin_argument.ExtractArgumentValue[starlark.String](arguments, DependsOnArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", DependsOnArgName)
+		}
+	}
+
 	builtin.serviceName = kurtosis_backend_service.ServiceName(serviceName.GoString())
 	builtin.src = src.GoString()
 	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, fmt.Sprintf(descriptionFormatStr, builtin.serviceName, builtin.src, builtin.artifactName))
+	builtin.dependsOn = dependsOn.GoString()
 	return starlark.String(builtin.artifactName), nil
 }
 
@@ -190,4 +211,15 @@ func (builtin *StoreServiceFilesCapabilities) UpdatePlan(plan *plan_yaml.PlanYam
 
 func (builtin *StoreServiceFilesCapabilities) Description() string {
 	return builtin.description
+}
+
+// UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
+func (builtin *StoreServiceFilesCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
+	shortDescriptor := fmt.Sprintf("store_service_files(%s, %s)", builtin.serviceName, builtin.description)
+	dependencyGraph.UpdateInstructionShortDescriptor(instructionUuid, shortDescriptor)
+
+	dependencyGraph.ConsumesService(instructionUuid, string(builtin.serviceName))
+	dependencyGraph.ConsumesAnyRuntimeValuesInString(instructionUuid, builtin.dependsOn)
+	dependencyGraph.ProducesFilesArtifact(instructionUuid, string(builtin.artifactName))
+	return nil
 }

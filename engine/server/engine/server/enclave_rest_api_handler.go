@@ -603,6 +603,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPack
 		StarlarkPackageContent: nil,
 		NonBlockingMode:        request.Body.NonBlockingMode,
 		GithubAuthToken:        request.Body.GithubAuthToken,
+		Parallel:               request.Body.Parallel,
 	}
 
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(context.Background())
@@ -676,6 +677,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkScripts(ctx 
 		CloudUserId:          request.Body.CloudUserId,
 		ImageDownloadMode:    utils.MapPointer(request.Body.ImageDownloadMode, to_grpc.ToGrpcImageDownloadMode),
 		NonBlockingMode:      request.Body.NonBlockingMode,
+		Parallel:             request.Body.Parallel,
 	}
 
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(context.Background())
@@ -781,7 +783,7 @@ func (runtime *enclaveRuntime) refreshEnclaveConnections() error {
 	runtime.lock.Lock()
 	defer runtime.lock.Unlock()
 
-	enclaves, err := runtime.enclaveManager.GetEnclaves(runtime.ctx)
+	enclaves, err := runtime.enclaveManager.GetAllEnclaves(runtime.ctx)
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to retrieve the list of enclaves")
 	}

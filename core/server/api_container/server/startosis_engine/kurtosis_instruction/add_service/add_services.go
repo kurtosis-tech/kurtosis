@@ -10,12 +10,14 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
@@ -23,6 +25,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
@@ -77,6 +80,7 @@ func NewAddServices(
 
 				resultUuids:       map[service.ServiceName]string{}, // populated at interpretation time
 				readyConditions:   nil,                              // populated at interpretation time
+				returnValue:       nil,                              // populated at interpretation time
 				description:       "",                               // populated at interpretation time
 				imageDownloadMode: imageDownloadMode,
 			}
@@ -103,6 +107,7 @@ type AddServicesCapabilities struct {
 	readyConditions map[service.ServiceName]*service_config.ReadyCondition
 
 	resultUuids map[service.ServiceName]string
+	returnValue *starlark.Dict
 	description string
 
 	imageDownloadMode image_download_mode.ImageDownloadMode
@@ -135,6 +140,7 @@ func (builtin *AddServicesCapabilities) Interpret(locatorOfModuleInWhichThisBuil
 		return nil, interpretationErr
 	}
 	builtin.resultUuids = resultUuids
+	builtin.returnValue = returnValue
 	return returnValue, nil
 }
 
@@ -372,8 +378,57 @@ func (builtin *AddServicesCapabilities) allServicesReadinessCheck(
 }
 
 func (builtin *AddServicesCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerator) error {
-	// TOOD: Implement
-	logrus.Warn("ADD SERVICES NOT IMPLEMENTED YET FOR UPDATING PLAN YAML.")
+	// ImageBuildSpec, ImageSpec, and NixBuildSpec are not supported yet for add_services, only container image name
+	// Providing emptyImgVal will cause the plan yaml generator to use the container image name as the image name
+	var emptyImgVal starlark.Value = nil
+	for serviceName, serviceConfig := range builtin.serviceConfigs {
+		returnValue, found, err := builtin.returnValue.Get(starlark.String(serviceName))
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting the return value for service '%s'", serviceName)
+		}
+		if !found {
+			return stacktrace.NewError("Expected to find a Service object in the return value for service '%s', but none was found; this is a bug in Kurtosis", serviceName)
+		}
+		returnValueService, ok := returnValue.(*kurtosis_types.Service)
+		if !ok {
+			return stacktrace.NewError("Expected to be able to cast the return value for service '%s' to a Service object, but got '%s'", serviceName, reflect.TypeOf(returnValue))
+		}
+		err = updatePlanYamlWithService(plan, serviceName, returnValueService, serviceConfig, emptyImgVal)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (builtin *AddServicesCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
+	serviceNames := []string{}
+	for _, serviceTuple := range builtin.returnValue.Items() {
+		serviceNameVal := serviceTuple.Index(0)
+		serviceNameStarlarkStr, ok := serviceNameVal.(starlark.String)
+		if !ok {
+			return stacktrace.NewError("Expected to find a string in the return value for service '%s', but none was found; this is a bug in Kurtosis", serviceNameStarlarkStr.String())
+		}
+		serviceNameStr := serviceNameStarlarkStr.GoString()
+		serviceNames = append(serviceNames, serviceNameStr)
+
+		serviceStarlarkVal := serviceTuple.Index(1)
+		serviceObj, ok := serviceStarlarkVal.(*kurtosis_types.Service)
+		if !ok {
+			return stacktrace.NewError("Expected to find a Service object in the return value for service '%s', but none was found; this is a bug in Kurtosis", serviceNameStr)
+		}
+
+		serviceConfig := builtin.serviceConfigs[service.ServiceName(serviceNameStr)]
+
+		err := addServiceToDependencyGraph(instructionUuid, dependencyGraph, serviceNameStr, serviceObj, serviceConfig)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred updating the dependency graph with service '%s'", serviceNameStr)
+		}
+	}
+
+	serviceNamesStr := strings.Join(serviceNames, ", ")
+	shortDescriptor := fmt.Sprintf("add_services(%d services: %s)", len(builtin.serviceConfigs), serviceNamesStr)
+	dependencyGraph.UpdateInstructionShortDescriptor(instructionUuid, shortDescriptor)
 	return nil
 }
 
