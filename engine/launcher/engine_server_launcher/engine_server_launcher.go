@@ -8,6 +8,7 @@ package engine_server_launcher
 import (
 	"context"
 	"net"
+	"os"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
@@ -21,9 +22,21 @@ import (
 )
 
 const (
-	// TODO This should come from the same logic that builds the server image!!!!!
-	containerImage = "kurtosistech/engine"
+	// Default engine image, can be overridden via KURTOSIS_ENGINE_IMAGE env var
+	defaultContainerImage = "kurtosistech/engine"
+	engineImageEnvVar     = "KURTOSIS_ENGINE_IMAGE"
 )
+
+// containerImage is the actual image to use, checking env var override first
+var containerImage = getImageWithEnvOverride(engineImageEnvVar, defaultContainerImage)
+
+func getImageWithEnvOverride(envVar, defaultImage string) string {
+	if override := os.Getenv(envVar); override != "" {
+		logrus.Infof("Using custom engine image from %s: %s", envVar, override)
+		return override
+	}
+	return defaultImage
+}
 
 type EngineServerLauncher struct {
 	kurtosisBackend backend_interface.KurtosisBackend

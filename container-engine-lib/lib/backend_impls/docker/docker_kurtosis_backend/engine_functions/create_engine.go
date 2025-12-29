@@ -3,6 +3,7 @@ package engine_functions
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/docker_config_storage_creator"
@@ -309,8 +310,14 @@ func CreateEngine(
 		labelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 
+	// Forward environment variables from CLI to Engine container
+	if coreImage := os.Getenv("KURTOSIS_CORE_IMAGE"); coreImage != "" {
+		envVars["KURTOSIS_CORE_IMAGE"] = coreImage
+	}
+
 	// Pass the host's Docker socket path to the engine for API container bind mounts
 	// We use a separate env var because DOCKER_HOST inside the engine should point to /var/run/docker.sock
+	hostSocketPath = shared_helpers.GetDockerSocketPath(dockerManager)
 	envVars["HOST_DOCKER_SOCKET"] = hostSocketPath
 
 	createAndStartArgsBuilder := docker_manager.NewCreateAndStartContainerArgsBuilder(

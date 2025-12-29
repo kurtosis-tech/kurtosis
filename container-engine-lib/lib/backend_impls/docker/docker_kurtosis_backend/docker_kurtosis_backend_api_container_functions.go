@@ -128,11 +128,11 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	if _, found := customEnvVars[ownIpAddressEnvVar]; found {
 		return nil, stacktrace.NewError("Requested own IP environment variable '%v' conflicts with custom environment variable", ownIpAddressEnvVar)
 	}
-	envVarsWithOwnIp := map[string]string{
+	envVars := map[string]string{
 		ownIpAddressEnvVar: ipAddr.String(),
 	}
 	for key, value := range customEnvVars {
-		envVarsWithOwnIp[key] = value
+		envVars[key] = value
 	}
 
 	defaultWait, err := port_spec.CreateWaitWithDefaultValues()
@@ -222,7 +222,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		apiContainerAttrs.GetName().GetString(),
 		enclaveNetwork.GetId(),
 	).WithEnvironmentVariables(
-		envVarsWithOwnIp,
+		envVars,
 	).WithBindMounts(
 		bindMounts,
 	).WithVolumeMounts(
