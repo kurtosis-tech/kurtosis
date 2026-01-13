@@ -65,6 +65,12 @@ func NewAddServices(
 						return nil
 					},
 				},
+				{
+					Name:              ForceUpdateArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Bool],
+					Validator:         nil,
+				},
 			},
 		},
 
@@ -83,6 +89,7 @@ func NewAddServices(
 				returnValue:       nil,                              // populated at interpretation time
 				description:       "",                               // populated at interpretation time
 				imageDownloadMode: imageDownloadMode,
+				forceUpdate:       defaultForceUpdate, // populated at interpretation time
 			}
 		},
 
@@ -111,6 +118,7 @@ type AddServicesCapabilities struct {
 	description string
 
 	imageDownloadMode image_download_mode.ImageDownloadMode
+	forceUpdate       bool
 }
 
 func (builtin *AddServicesCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -132,6 +140,16 @@ func (builtin *AddServicesCapabilities) Interpret(locatorOfModuleInWhichThisBuil
 	}
 	builtin.serviceConfigs = serviceConfigs
 	builtin.readyConditions = readyConditions
+
+	forceUpdate := defaultForceUpdate
+	if arguments.IsSet(ForceUpdateArgName) {
+		forceUpdateValue, err := builtin_argument.ExtractArgumentValue[starlark.Bool](arguments, ForceUpdateArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ForceUpdateArgName)
+		}
+		forceUpdate = bool(forceUpdateValue)
+	}
+	builtin.forceUpdate = forceUpdate
 
 	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, fmt.Sprintf(addServicesDescriptionFormatStr, len(builtin.serviceConfigs), getNamesAsCommaSeparatedList(builtin.serviceConfigs)))
 
@@ -247,6 +265,14 @@ func (builtin *AddServicesCapabilities) Execute(ctx context.Context, _ *builtin_
 }
 
 func (builtin *AddServicesCapabilities) TryResolveWith(instructionsAreEqual bool, other *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+	// if force_update is set, always recreate all services regardless of config equality
+	if builtin.forceUpdate {
+		for serviceName := range builtin.serviceConfigs {
+			enclaveComponents.AddService(serviceName, enclave_structure.ComponentIsUpdated)
+		}
+		return enclave_structure.InstructionIsUpdate
+	}
+
 	if instructionsAreEqual {
 		for serviceName := range builtin.serviceConfigs {
 			enclaveComponents.AddService(serviceName, enclave_structure.ComponentWasLeftIntact)

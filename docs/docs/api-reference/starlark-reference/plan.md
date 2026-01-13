@@ -21,7 +21,7 @@ The `add_service` instruction adds a service to the Kurtosis enclave within whic
 service = plan.add_service(
     # The service name of the service being created.
     # The service name is a reference to the service, which can be used in the future to refer to the service.
-    # Service names of active services are unique per enclave and needs to be formatted according to RFC 1035. 
+    # Service names of active services are unique per enclave and needs to be formatted according to RFC 1035.
     # Specifically, 1-63 lowercase alphanumeric characters with dashes and cannot start or end with dashes.
     # Also service names have to start with a lowercase alphabet.
     # MANDATORY
@@ -33,7 +33,13 @@ service = plan.add_service(
 
     # A human friendly description for the end user of the package
     # OPTIONAL (Default: Adding service with name 'SERVICE_NAME' and image 'SERVICE_IMAGE')
-    description = "adding a service"  
+    description = "adding a service",
+
+    # Force recreation of the service even if the config hasn't changed.
+    # Useful when the underlying container image has changed (same tag, new content)
+    # and you want to ensure the service is recreated with the latest image.
+    # OPTIONAL (Default: False)
+    force_update = False,
 )
 ```
 
@@ -89,7 +95,13 @@ all_services = plan.add_services(
 
     # A human friendly description for the end user of the package
     # OPTIONAL (Default: Adding 'NUMBER_OF_SERVICES' services with names 'SERVICE_NAMES')
-    description = "adding services"
+    description = "adding services",
+
+    # Force recreation of all services even if the configs haven't changed.
+    # Useful when the underlying container images have changed (same tag, new content)
+    # and you want to ensure the services are recreated with the latest images.
+    # OPTIONAL (Default: False)
+    force_update = False,
 )
 ```
 
