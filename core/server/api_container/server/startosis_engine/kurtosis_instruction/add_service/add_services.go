@@ -159,6 +159,19 @@ func (builtin *AddServicesCapabilities) Interpret(locatorOfModuleInWhichThisBuil
 	}
 	builtin.resultUuids = resultUuids
 	builtin.returnValue = returnValue
+
+	// Debug: verify returnValue matches serviceConfigs at interpretation time
+	for _, serviceTuple := range builtin.returnValue.Items() {
+		serviceNameVal := serviceTuple.Index(0)
+		if serviceNameStr, ok := serviceNameVal.(starlark.String); ok {
+			if _, found := builtin.serviceConfigs[service.ServiceName(serviceNameStr.GoString())]; !found {
+				return nil, startosis_errors.NewInterpretationError(
+					"Consistency check failed at interpretation time: service '%s' in returnValue but not in serviceConfigs; serviceConfigs has %d entries",
+					serviceNameStr.GoString(), len(builtin.serviceConfigs))
+			}
+		}
+	}
+
 	return returnValue, nil
 }
 
@@ -428,25 +441,27 @@ func (builtin *AddServicesCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGener
 }
 
 func (builtin *AddServicesCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
-	serviceNames := []string{}
-	for _, serviceTuple := range builtin.returnValue.Items() {
-		serviceNameVal := serviceTuple.Index(0)
-		serviceNameStarlarkStr, ok := serviceNameVal.(starlark.String)
-		if !ok {
-			return stacktrace.NewError("Expected to find a string in the return value for service '%s', but none was found; this is a bug in Kurtosis", serviceNameStarlarkStr.String())
-		}
-		serviceNameStr := serviceNameStarlarkStr.GoString()
+	// Iterate over serviceConfigs as the source of truth (it's always set correctly in Interpret())
+	// Look up service objects from returnValue for each service
+	serviceNames := make([]string, 0, len(builtin.serviceConfigs))
+	for serviceName, serviceConfig := range builtin.serviceConfigs {
+		serviceNameStr := string(serviceName)
 		serviceNames = append(serviceNames, serviceNameStr)
 
-		serviceStarlarkVal := serviceTuple.Index(1)
-		serviceObj, ok := serviceStarlarkVal.(*kurtosis_types.Service)
-		if !ok {
+		// Look up the service object in returnValue
+		serviceObjVal, found, err := builtin.returnValue.Get(starlark.String(serviceName))
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting the return value for service '%s'", serviceNameStr)
+		}
+		if !found {
 			return stacktrace.NewError("Expected to find a Service object in the return value for service '%s', but none was found; this is a bug in Kurtosis", serviceNameStr)
 		}
+		serviceObj, ok := serviceObjVal.(*kurtosis_types.Service)
+		if !ok {
+			return stacktrace.NewError("Expected to be able to cast the return value for service '%s' to a Service object, but got '%s'", serviceNameStr, reflect.TypeOf(serviceObjVal))
+		}
 
-		serviceConfig := builtin.serviceConfigs[service.ServiceName(serviceNameStr)]
-
-		err := addServiceToDependencyGraph(instructionUuid, dependencyGraph, serviceNameStr, serviceObj, serviceConfig)
+		err = addServiceToDependencyGraph(instructionUuid, dependencyGraph, serviceNameStr, serviceObj, serviceConfig)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred updating the dependency graph with service '%s'", serviceNameStr)
 		}
