@@ -1,0 +1,31 @@
+name: 'Prepare Docker Testing'
+description: 'Load Docker images and start Kurtosis engine for Docker backend tests'
+inputs:
+  workspace-path:
+    description: 'Path to workspace with artifacts'
+    required: true
+  kurtosis-binpath:
+    description: 'Path to Kurtosis CLI binary'
+    required: true
+  core-image-filename:
+    description: 'Filename of the core server image tarball'
+    default: 'core-server-image.tgz'
+  engine-image-filename:
+    description: 'Filename of the engine server image tarball'
+    default: 'engine-server-image.tgz'
+  files-artifacts-expander-image-filename:
+    description: 'Filename of the files artifacts expander image tarball'
+    default: 'files-artifacts-expander-image.tgz'
+runs:
+  using: composite
+  steps:
+    - name: Load Docker images
+      shell: bash
+      run: |
+        docker load -i "${{ inputs.workspace-path }}/${{ inputs.core-image-filename }}"
+        docker load -i "${{ inputs.workspace-path }}/${{ inputs.engine-image-filename }}"
+        docker load -i "${{ inputs.workspace-path }}/${{ inputs.files-artifacts-expander-image-filename }}"
+
+    - name: Start Kurtosis engine
+      shell: bash
+      run: ${{ inputs.kurtosis-binpath }} engine start --cli-log-level trace
