@@ -198,14 +198,6 @@ jobs:
           path: ${{ env.FILES_ARTIFACTS_EXPANDER_IMAGE_FILENAME }}
           retention-days: 1
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: starlark-test-files
-          path: |
-            internal_testsuites/starlark/ci_tests/simple_arg_test/main.star
-            internal_testsuites/starlark/ci_tests/simple_arg_test/args.json
-          retention-days: 1
-
   build-core-launcher:
     runs-on: ubuntu-latest
     needs: check-docs-only
@@ -394,14 +386,6 @@ jobs:
           path: ${{ env.CLI_DIST_PATH }}/
           retention-days: 1
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: startosis-test-files
-          path: |
-            internal_testsuites/starlark/ci_tests/simple_no_arg_test/startosis_simple_script.star
-            internal_testsuites/starlark/taints_and_tolerations/taints_and_toleration_test.star
-          retention-days: 1
-
   build-cli-all-arch:
     runs-on: ubuntu-latest
     container:
@@ -522,17 +506,17 @@ jobs:
           ${KURTOSIS_BINPATH} enclave ls
           ${KURTOSIS_BINPATH} enclave inspect test-enclave
 
-      # Execute simple startosis script
+      # Execute simple startosis script (using files from checkout, not artifacts)
       - name: Test startosis script
-        run: ${KURTOSIS_BINPATH} run --enclave test-enclave ${{ env.WORKSPACE_PATH }}/internal_testsuites/starlark/ci_tests/simple_no_arg_test/startosis_simple_script.star
+        run: ${KURTOSIS_BINPATH} run --enclave test-enclave internal_testsuites/starlark/ci_tests/simple_no_arg_test/startosis_simple_script.star
 
       # Execute Simple Starlark Script to test --args-file
       - name: Test args-file
-        run: ${KURTOSIS_BINPATH} run --enclave args-file-test ${{ env.WORKSPACE_PATH }}/internal_testsuites/starlark/ci_tests/simple_arg_test/main.star --args-file ${{ env.WORKSPACE_PATH }}/internal_testsuites/starlark/ci_tests/simple_arg_test/args.json
+        run: ${KURTOSIS_BINPATH} run --enclave args-file-test internal_testsuites/starlark/ci_tests/simple_arg_test/main.star --args-file internal_testsuites/starlark/ci_tests/simple_arg_test/args.json
 
       # Execute Simple Starlark Script to test --args-file from URL
       - name: Test args-file from URL
-        run: ${KURTOSIS_BINPATH} run --enclave args-file-from-url-test ${{ env.WORKSPACE_PATH }}/internal_testsuites/starlark/ci_tests/simple_arg_test/main.star --args-file https://raw.githubusercontent.com/kurtosis-tech/sample-startosis-load/main/args.json
+        run: ${KURTOSIS_BINPATH} run --enclave args-file-from-url-test internal_testsuites/starlark/ci_tests/simple_arg_test/main.star --args-file https://raw.githubusercontent.com/kurtosis-tech/sample-startosis-load/main/args.json
 
       # Execute github starlark module
       - name: Test github starlark module
@@ -558,9 +542,9 @@ jobs:
       - name: Test docker compose import
         run: ${KURTOSIS_BINPATH} import --enclave test-import --env internal_testsuites/resources/docker_import_cli_test/.env internal_testsuites/resources/docker_import_cli_test/docker-compose.yml
 
-      # Test tolerations
+      # Test tolerations (using files from checkout, not artifacts)
       - name: Test tolerations
-        run: ${KURTOSIS_BINPATH} run --enclave with-tolerations ${{ env.WORKSPACE_PATH }}/internal_testsuites/starlark/taints_and_tolerations/taints_and_toleration_test.star
+        run: ${KURTOSIS_BINPATH} run --enclave with-tolerations internal_testsuites/starlark/taints_and_tolerations/taints_and_toleration_test.star
 
       # Execute engine functions
       - name: Test engine commands
