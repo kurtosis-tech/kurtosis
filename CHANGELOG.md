@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.15.0](https://github.com/kurtosis-tech/kurtosis/compare/1.14.1...1.15.0) (2026-01-14)
+
+
+### Features
+
+* add force_restart ([#2864](https://github.com/kurtosis-tech/kurtosis/issues/2864)) ([38cca6f](https://github.com/kurtosis-tech/kurtosis/commit/38cca6f9945bb8bf5f6c0121bb1d8cfa05b84731))
+
+
+### Bug Fixes
+
+* use writeErr instead of readErr in stream forwarding ([#2867](https://github.com/kurtosis-tech/kurtosis/issues/2867)) ([d6dfcf7](https://github.com/kurtosis-tech/kurtosis/commit/d6dfcf7d7147a736720914e64f5d2617d0724540))
+
 ## [1.14.1](https://github.com/kurtosis-tech/kurtosis/compare/1.14.0...1.14.1) (2025-12-16)
 
 
