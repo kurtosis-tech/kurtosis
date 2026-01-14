@@ -67,13 +67,31 @@ type but only a subset of pre-defined arguments are identical. This only exist f
 Two instructions that doesn't fit into any of the two categories above are considered __different__ (i.e. independent 
 from each other).
 
-It's good to callout here that a few Kurtosis instructions are __fundamentally incompatible with the concept of 
-idempotency__. The use of one of those instructions in the package will make the plans not resolvable, and Kurtosis will 
-default to the "naive" execution strategy of running the _submitted plan_ on top of the _current plan_, without even 
+It's good to callout here that a few Kurtosis instructions are __fundamentally incompatible with the concept of
+idempotency__. The use of one of those instructions in the package will make the plans not resolvable, and Kurtosis will
+default to the "naive" execution strategy of running the _submitted plan_ on top of the _current plan_, without even
 trying the overlap them. Those instructions currently are:
 - `remove_service`
 - `start_service`
 - `stop_service`
+
+#### Forcing service updates
+
+In some cases, you may want to force a service to be recreated even when its configuration hasn't changed. A common
+example is when the underlying container image has changed (same tag, but new content - e.g., `myimage:latest` was
+rebuilt locally). In these cases, the idempotency system would see the instructions as equal and skip execution.
+
+To handle this, `add_service` and `add_services` support a `force_update` parameter:
+```python
+plan.add_service(
+    name = "my-service",
+    config = ServiceConfig(image = "myimage:latest"),
+    force_update = True,  # Forces recreation even if config is identical
+)
+```
+
+When `force_update=True`, the instruction will always be treated as an update, causing the service to be recreated
+regardless of whether the configuration has changed.
 
 #### Instruction dependencies
 

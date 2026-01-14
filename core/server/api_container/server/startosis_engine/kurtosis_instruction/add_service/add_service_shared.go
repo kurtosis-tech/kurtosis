@@ -310,6 +310,9 @@ func addServiceToDependencyGraph(
 	service *kurtosis_types.Service,
 	serviceConfig *service.ServiceConfig,
 ) error {
+	if serviceConfig == nil {
+		return stacktrace.NewError("Service config for service '%s' is nil; this is a bug in Kurtosis", serviceName)
+	}
 	if serviceConfig.GetFilesArtifactsExpansion() != nil {
 		for _, filesArtifactNames := range serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
 			for _, filesArtifactName := range filesArtifactNames {
