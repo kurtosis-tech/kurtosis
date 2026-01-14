@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.15.1](https://github.com/kurtosis-tech/kurtosis/compare/1.15.0...1.15.1) (2026-01-14)
+
+
+### Bug Fixes
+
+* add retry logic to stream logs test to handle flakiness ([#2869](https://github.com/kurtosis-tech/kurtosis/issues/2869)) ([f22aa29](https://github.com/kurtosis-tech/kurtosis/commit/f22aa299fda047dfeaa3295cb21c0d4028c512dc))
+* **ci:** use CIRCLE_TAG instead of git describe for tag detection ([#2868](https://github.com/kurtosis-tech/kurtosis/issues/2868)) ([06aa6b0](https://github.com/kurtosis-tech/kurtosis/commit/06aa6b0a6ebbc422676cb0f2c61b67db67366945))
+
 ## [1.15.0](https://github.com/kurtosis-tech/kurtosis/compare/1.14.1...1.15.0) (2026-01-14)
 
 
