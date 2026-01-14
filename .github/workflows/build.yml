@@ -529,7 +529,8 @@ jobs:
 
       # Execute github starlark module
       - name: Test github starlark module
-        run: ${KURTOSIS_BINPATH} run --enclave test-datastore github.com/kurtosis-tech/datastore-army-package '{"num_datastores": 2}'
+        run: |
+          ${KURTOSIS_BINPATH} run --enclave test-datastore github.com/kurtosis-tech/datastore-army-package '{"num_datastores": 2}'
 
       # Execute port print
       - name: Test port print
