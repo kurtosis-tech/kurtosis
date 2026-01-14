@@ -289,6 +289,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Mark git directory as safe
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
       - name: Install goreleaser
         run: |
           echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | tee /etc/apt/sources.list.d/goreleaser.list

@@ -365,6 +365,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Mark git directory as safe
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
       - name: Generate Kurtosis Version
         run: scripts/generate-kurtosis-version.sh
 
@@ -406,6 +409,9 @@ jobs:
     if: needs.check-docs-only.outputs.has-code-changes == 'true'
     steps:
       - uses: actions/checkout@v4
+
+      - name: Mark git directory as safe
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Generate Kurtosis Version
         run: scripts/generate-kurtosis-version.sh
