@@ -128,11 +128,11 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	if _, found := customEnvVars[ownIpAddressEnvVar]; found {
 		return nil, stacktrace.NewError("Requested own IP environment variable '%v' conflicts with custom environment variable", ownIpAddressEnvVar)
 	}
-	envVars := map[string]string{
+	envVarsWithOwnIp := map[string]string{
 		ownIpAddressEnvVar: ipAddr.String(),
 	}
 	for key, value := range customEnvVars {
-		envVars[key] = value
+		envVarsWithOwnIp[key] = value
 	}
 
 	defaultWait, err := port_spec.CreateWaitWithDefaultValues()
@@ -197,7 +197,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	hostSocketPath := os.Getenv("HOST_DOCKER_SOCKET")
 	if hostSocketPath == "" {
 		// Fallback to detecting it if not provided (shouldn't happen in normal operation)
-		hostSocketPath = shared_helpers.GetDockerSocketPath(backend.dockerManager)
+		hostSocketPath = shared_helpers.GetDockerSocketPath(backend.dockerManager.IsPodman())
 	}
 	bindMounts := map[string]string{
 		// Necessary so that the API container can interact with the Docker/Podman engine
@@ -222,7 +222,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		apiContainerAttrs.GetName().GetString(),
 		enclaveNetwork.GetId(),
 	).WithEnvironmentVariables(
-		envVars,
+		envVarsWithOwnIp,
 	).WithBindMounts(
 		bindMounts,
 	).WithVolumeMounts(

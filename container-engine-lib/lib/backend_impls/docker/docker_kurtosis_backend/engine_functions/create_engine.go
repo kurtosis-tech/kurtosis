@@ -280,7 +280,7 @@ func CreateEngine(
 	}
 
 	// Get the correct socket path based on DOCKER_HOST or runtime (Docker/Podman)
-	hostSocketPath := shared_helpers.GetDockerSocketPath(dockerManager)
+	hostSocketPath := shared_helpers.GetDockerSocketPath(dockerManager.IsPodman())
 	bindMounts := map[string]string{
 		// Necessary so that the engine server can interact with the Docker/Podman engine
 		// Map the host socket to the standard location inside the container
@@ -311,7 +311,7 @@ func CreateEngine(
 
 	// Pass the host's Docker socket path to the engine for API container bind mounts
 	// We use a separate env var because DOCKER_HOST inside the engine should point to /var/run/docker.sock
-	hostSocketPath = shared_helpers.GetDockerSocketPath(dockerManager)
+	hostSocketPath = shared_helpers.GetDockerSocketPath(dockerManager.IsPodman())
 	envVars["HOST_DOCKER_SOCKET"] = hostSocketPath
 
 	createAndStartArgsBuilder := docker_manager.NewCreateAndStartContainerArgsBuilder(

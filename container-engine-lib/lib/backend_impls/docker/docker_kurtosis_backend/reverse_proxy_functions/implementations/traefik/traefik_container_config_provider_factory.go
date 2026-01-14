@@ -10,7 +10,7 @@ func createTraefikContainerConfigProvider(httpPort uint16, dashboardPort uint16,
 	config := reverse_proxy.NewDefaultReverseProxyConfig(httpPort, dashboardPort, networkId)
 
 	// Determine socket path using the shared helper function
-	socketPath := shared_helpers.GetDockerSocketPath(dockerManager)
+	socketPath := shared_helpers.GetDockerSocketPath(dockerManager.IsPodman())
 
 	return newTraefikContainerConfigProvider(config, socketPath)
 }
