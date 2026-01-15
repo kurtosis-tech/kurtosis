@@ -700,7 +700,8 @@ jobs:
         run: ./internal_testsuites/golang/scripts/test.sh docker false
 
   build-golang-testsuite-k8s:
-    runs-on: ubuntu-latest
+    # Use larger runner (4 vCPUs) to match CircleCI's large resource class for K8s tests
+    runs-on: ubuntu-latest-4-cores
     needs:
       - check-docs-only
       - build-cli
@@ -805,7 +806,8 @@ jobs:
         run: exit 1
 
   build-typescript-testsuite-k8s:
-    runs-on: ubuntu-latest
+    # Use larger runner (4 vCPUs) to match CircleCI's large resource class for K8s tests
+    runs-on: ubuntu-latest-4-cores
     needs:
       - check-docs-only
       - build-cli
@@ -1074,7 +1076,8 @@ jobs:
           fi
 
   test-reverse-proxy-k8s:
-    runs-on: ubuntu-latest
+    # Use larger runner (4 vCPUs) to match CircleCI's large resource class for K8s tests
+    runs-on: ubuntu-latest-4-cores
     needs:
       - check-docs-only
       - build-cli

@@ -28,7 +28,8 @@ runs:
 
     - name: Create K3D/K3S cluster
       shell: bash
-      run: k3d cluster create -p "${{ inputs.reverse-proxy-port }}:80@loadbalancer" --servers 1 --wait --verbose
+      # Add an agent node for better performance on larger runners
+      run: k3d cluster create -p "${{ inputs.reverse-proxy-port }}:80@loadbalancer" --servers 1 --agents 1 --wait --verbose
 
     - name: Load Docker images
       shell: bash
