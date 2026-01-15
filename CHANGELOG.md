@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.15.1](https://github.com/kurtosis-tech/kurtosis/compare/1.15.0...1.15.1) (2026-01-14)
+
+
+### Bug Fixes
+
+* add retry logic to stream logs test to handle flakiness ([#2869](https://github.com/kurtosis-tech/kurtosis/issues/2869)) ([f22aa29](https://github.com/kurtosis-tech/kurtosis/commit/f22aa299fda047dfeaa3295cb21c0d4028c512dc))
+* **ci:** use CIRCLE_TAG instead of git describe for tag detection ([#2868](https://github.com/kurtosis-tech/kurtosis/issues/2868)) ([06aa6b0](https://github.com/kurtosis-tech/kurtosis/commit/06aa6b0a6ebbc422676cb0f2c61b67db67366945))
+
+## [1.15.0](https://github.com/kurtosis-tech/kurtosis/compare/1.14.1...1.15.0) (2026-01-14)
+
+
+### Features
+
+* add force_restart ([#2864](https://github.com/kurtosis-tech/kurtosis/issues/2864)) ([38cca6f](https://github.com/kurtosis-tech/kurtosis/commit/38cca6f9945bb8bf5f6c0121bb1d8cfa05b84731))
+
+
+### Bug Fixes
+
+* use writeErr instead of readErr in stream forwarding ([#2867](https://github.com/kurtosis-tech/kurtosis/issues/2867)) ([d6dfcf7](https://github.com/kurtosis-tech/kurtosis/commit/d6dfcf7d7147a736720914e64f5d2617d0724540))
+
+## [1.14.1](https://github.com/kurtosis-tech/kurtosis/compare/1.14.0...1.14.1) (2025-12-16)
+
+
+### Bug Fixes
+
+* release 1.14.1 ([#2853](https://github.com/kurtosis-tech/kurtosis/issues/2853)) ([dfa3fde](https://github.com/kurtosis-tech/kurtosis/commit/dfa3fde271ff14c348c68e443f476364e9dbd66d))
+
 ## [1.14.0](https://github.com/kurtosis-tech/kurtosis/compare/1.13.2...1.14.0) (2025-12-11)
 
 
