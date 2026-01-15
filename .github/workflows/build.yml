@@ -668,10 +668,6 @@ jobs:
       - build-engine-server
       - build-files-artifacts-expander
     if: needs.check-docs-only.outputs.has-code-changes == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [0, 1, 2, 3]
     steps:
       - uses: actions/checkout@v4
 
@@ -700,11 +696,8 @@ jobs:
           workspace-path: ${{ env.WORKSPACE_PATH }}
           kurtosis-binpath: ${{ env.KURTOSIS_BINPATH }}
 
-      - name: Run testsuite (shard ${{ matrix.shard }})
-        run: ./internal_testsuites/golang/scripts/test.sh docker true
-        env:
-          CIRCLE_NODE_INDEX: ${{ matrix.shard }}
-          CIRCLE_NODE_TOTAL: 4
+      - name: Run testsuite
+        run: ./internal_testsuites/golang/scripts/test.sh docker false
 
   build-golang-testsuite-k8s:
     runs-on: ubuntu-latest
@@ -715,10 +708,6 @@ jobs:
       - build-engine-server
       - build-files-artifacts-expander
     if: needs.check-docs-only.outputs.has-code-changes == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [0, 1, 2, 3]
     steps:
       - uses: actions/checkout@v4
 
@@ -747,11 +736,8 @@ jobs:
           workspace-path: ${{ env.WORKSPACE_PATH }}
           kurtosis-binpath: ${{ env.KURTOSIS_BINPATH }}
 
-      - name: Run testsuite (shard ${{ matrix.shard }})
-        run: ./internal_testsuites/golang/scripts/test.sh kubernetes true
-        env:
-          CIRCLE_NODE_INDEX: ${{ matrix.shard }}
-          CIRCLE_NODE_TOTAL: 4
+      - name: Run testsuite
+        run: ./internal_testsuites/golang/scripts/test.sh kubernetes false
 
   build-typescript-testsuite-docker:
     runs-on: ubuntu-latest
