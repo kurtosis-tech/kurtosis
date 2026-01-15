@@ -29,3 +29,10 @@ runs:
     - name: Start Kurtosis engine
       shell: bash
       run: ${{ inputs.kurtosis-binpath }} engine start --cli-log-level trace
+
+    - name: Wait for engine to be ready
+      shell: bash
+      run: |
+        echo "Waiting for engine to be fully ready..."
+        sleep 5
+        ${{ inputs.kurtosis-binpath }} engine status

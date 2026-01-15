@@ -997,6 +997,14 @@ jobs:
           workspace-path: ${{ env.WORKSPACE_PATH }}
           kurtosis-binpath: ${{ env.KURTOSIS_BINPATH }}
 
+      - name: Verify engine is running
+        run: |
+          echo "Checking engine status..."
+          $KURTOSIS_BINPATH engine status
+          echo "Listing enclaves..."
+          $KURTOSIS_BINPATH enclave ls
+          echo "Engine is ready!"
+
       - name: Build enclave-manager API
         run: enclave-manager/api/scripts/build.sh
 
@@ -1007,6 +1015,9 @@ jobs:
       - name: Run Cypress E2E tests
         working-directory: enclave-manager/web
         run: yarn cypress:ete
+        env:
+          # Increase Cypress timeout for CI environment
+          CYPRESS_defaultCommandTimeout: 30000
 
       - uses: actions/upload-artifact@v4
         if: failure()
