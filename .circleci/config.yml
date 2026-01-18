@@ -434,8 +434,7 @@ jobs:
 
       - run: |
           # If the current commit is not a tag and if there is no change (compared to main) of anything but docs, then skip this
-          git fetch origin --tags 
-          if (! git describe --exact-match) && git --no-pager diff --exit-code origin/main...HEAD -- . ':!docs' ':!*.md' ; then
+          if [ -z "${CIRCLE_TAG:-}" ] && git --no-pager diff --exit-code origin/main...HEAD -- . ':!docs' ':!*.md' ; then
             circleci-agent step halt
           fi
 
