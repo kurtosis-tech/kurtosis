@@ -39,7 +39,7 @@ func TestAddServiceShared_EntryPointArgsRuntimeValueAreReplaced(t *testing.T) {
 	runtimeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, stringValueUuid, runtimeValueName)
 
 	serviceName := service.ServiceName("example-datastore-server-2")
-	serviceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, nil, nil, []string{"-- " + runtimeValue}, nil, nil, nil, nil, 0, 0, "", 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false, []string{})
+	serviceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, nil, nil, []string{"-- " + runtimeValue}, nil, nil, nil, nil, 0, 0, "", 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false, []string{}, false)
 	require.NoError(t, err)
 
 	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(runtimeValueStore, serviceName, serviceConfig)
@@ -65,7 +65,7 @@ func TestAddServiceShared_CmdArgsRuntimeValueAreReplaced(t *testing.T) {
 	runtimeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, stringValueUuid, runtimeValueName)
 
 	serviceName := service.ServiceName("example-datastore-server-2")
-	serviceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, nil, nil, nil, []string{"bash", "-c", "sleep " + runtimeValue}, nil, nil, nil, 0, 0, "", 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false, []string{})
+	serviceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, nil, nil, nil, []string{"bash", "-c", "sleep " + runtimeValue}, nil, nil, nil, 0, 0, "", 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false, []string{}, false)
 	require.NoError(t, err)
 
 	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(runtimeValueStore, serviceName, serviceConfig)
@@ -93,7 +93,7 @@ func TestAddServiceShared_EnvVarsWithRuntimeValueAreReplaced(t *testing.T) {
 	serviceName := service.ServiceName("example-datastore-server-2")
 	serviceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, nil, nil, nil, nil, map[string]string{
 		"PORT": runtimeValue,
-	}, nil, nil, 0, 0, "", 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false, []string{})
+	}, nil, nil, 0, 0, "", 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false, []string{}, false)
 	require.NoError(t, err)
 
 	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(runtimeValueStore, serviceName, serviceConfig)
@@ -122,7 +122,7 @@ func TestAddServiceShared_ServiceNameWithRuntimeValuesAreReplaced(t *testing.T) 
 	stringRuntimeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, stringValueUuid, valueName)
 
 	serviceName := service.ServiceName(stringRuntimeValue)
-	serviceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 0, 0, "", 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false, []string{})
+	serviceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 0, 0, "", 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false, []string{}, false)
 	require.NoError(t, err)
 
 	replacedServiceName, _, err := replaceMagicStrings(runtimeValueStore, serviceName, serviceConfig)
