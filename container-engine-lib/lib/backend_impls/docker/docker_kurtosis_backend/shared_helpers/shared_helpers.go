@@ -265,6 +265,20 @@ func GetIpAndPortInfoFromContainer(
 	}
 
 	for portId, privatePortSpec := range privatePortSpecs {
+		// If this is a UDP port and there's no host binding for it, skip it
+		// This happens when publish_udp=false - UDP ports are not published to the host
+		if privatePortSpec.GetTransportProtocol() == port_spec.TransportProtocol_UDP {
+			dockerPrivatePort, err := GetDockerPortFromPortSpec(privatePortSpec)
+			if err != nil {
+				return nil, nil, nil, nil, stacktrace.Propagate(err,
+					"An error occurred creating Docker port for private port spec '%+v'", privatePortSpec)
+			}
+			if _, found := hostMachinePortBindings[dockerPrivatePort]; !found {
+				// UDP port wasn't published (publish_udp=false), skip it
+				continue
+			}
+		}
+
 		portPublicIp, publicPortSpec, err := GetPublicPortBindingFromPrivatePortSpec(privatePortSpec, hostMachinePortBindings)
 		if err != nil {
 			return nil, nil, nil, nil, stacktrace.Propagate(
