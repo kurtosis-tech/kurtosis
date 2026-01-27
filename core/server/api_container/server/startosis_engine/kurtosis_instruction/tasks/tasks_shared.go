@@ -327,7 +327,8 @@ func getServiceConfig(
 		image_download_mode.ImageDownloadMode_Missing,
 		tiniEnabled,
 		false,
-		[]string{})
+		[]string{},
+		false)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating service config")
 	}

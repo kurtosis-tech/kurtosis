@@ -139,6 +139,14 @@ config = ServiceConfig(
         )
     },
 
+    # Whether to publish UDP ports to the host machine.
+    # By default, UDP ports are not published to the host to avoid port exhaustion issues,
+    # as each published UDP port consumes a host port.
+    # Set to True if you need to access UDP ports from outside the enclave.
+    # This only applies to Docker.
+    # OPTIONAL (Default: False)
+    publish_udp = False,
+
     # A mapping of path_on_container_where_contents_will_be_mounted -> Directory object or file artifact name
     # For more info on what a Directory object is, see below
     #
