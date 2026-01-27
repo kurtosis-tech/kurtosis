@@ -557,6 +557,7 @@ func createStartServiceOperation(
 		tiniEnabled := serviceConfig.GetTiniEnabled()
 		ttyEnabled := serviceConfig.GetTtyEnabled()
 		devices := serviceConfig.GetDevices()
+		publishUdp := serviceConfig.GetPublishUdp()
 
 		// We replace the placeholder value with the actual private IP address
 		privateIPAddrStr := privateIpAddr.String()
@@ -678,6 +679,10 @@ func createStartServiceOperation(
 					return nil, stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v', but it was not found", portId, privatePortSpec.GetNumber())
 				}
 				dockerUsedPorts[dockerPort] = docker_manager.NewManualPublishingSpec(publicPortSpec.GetNumber())
+			} else if !publishUdp && privatePortSpec.GetTransportProtocol() == port_spec.TransportProtocol_UDP {
+				// When publish_udp=false and port is UDP, don't publish to host
+				// This avoids Docker Desktop 4.41.2+ UDP port publishing issues
+				dockerUsedPorts[dockerPort] = docker_manager.NewNoPublishingSpec()
 			} else {
 				dockerUsedPorts[dockerPort] = docker_manager.NewAutomaticPublishingSpec()
 			}

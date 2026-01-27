@@ -81,6 +81,8 @@ type privateServiceConfig struct {
 	TtyEnabled bool
 
 	Devices []string
+
+	PublishUdp bool
 }
 
 func CreateServiceConfig(
@@ -107,7 +109,8 @@ func CreateServiceConfig(
 	imageDownloadMode image_download_mode.ImageDownloadMode,
 	tiniEnabled bool,
 	ttyEnabled bool,
-	devices []string) (*ServiceConfig, error) {
+	devices []string,
+	publishUdp bool) (*ServiceConfig, error) {
 	if err := ValidateServiceConfigLabels(labels); err != nil {
 		return nil, stacktrace.Propagate(err, "Invalid service config labels '%+v'", labels)
 	}
@@ -139,6 +142,7 @@ func CreateServiceConfig(
 		TiniEnabled:                  tiniEnabled,
 		TtyEnabled:                   ttyEnabled,
 		Devices:                      devices,
+		PublishUdp:                   publishUdp,
 	}
 	return &ServiceConfig{internalServiceConfig}, nil
 }
@@ -343,10 +347,15 @@ func GetEmptyServiceConfig() *ServiceConfig {
 		false,
 		false,
 		[]string{},
+		false,
 	)
 	return emptyServiceConfig
 }
 
 func (serviceConfig *ServiceConfig) GetDevices() []string {
 	return serviceConfig.privateServiceConfig.Devices
+}
+
+func (serviceConfig *ServiceConfig) GetPublishUdp() bool {
+	return serviceConfig.privateServiceConfig.PublishUdp
 }

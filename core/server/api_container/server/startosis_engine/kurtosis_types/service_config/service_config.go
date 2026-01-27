@@ -55,6 +55,7 @@ const (
 	TiniEnabledAttr                 = "tini_enabled"
 	TtyEnabledAttr                  = "tty_enabled"
 	DevicesAttr                     = "devices"
+	PublishUdpAttr                  = "publish_udp"
 
 	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
@@ -240,6 +241,12 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					Name:              DevicesAttr,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
+					Validator:         nil,
+				},
+				{
+					Name:              PublishUdpAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Bool],
 					Validator:         nil,
 				},
 			},
@@ -576,6 +583,15 @@ func (config *ServiceConfig) ToKurtosisType(
 		}
 	}
 
+	publishUdp := false
+	publishUdpStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Bool](config.KurtosisValueTypeDefault, PublishUdpAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found {
+		publishUdp = bool(publishUdpStarlark)
+	}
+
 	serviceConfig, err := service.CreateServiceConfig(
 		imageName,
 		maybeImageBuildSpec,
@@ -601,6 +617,7 @@ func (config *ServiceConfig) ToKurtosisType(
 		tiniEnabled,
 		ttyEnabled,
 		devices,
+		publishUdp,
 	)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating a service config")
