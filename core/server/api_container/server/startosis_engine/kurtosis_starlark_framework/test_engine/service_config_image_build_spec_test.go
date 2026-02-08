@@ -81,7 +81,7 @@ func (t *serviceConfigImageBuildSpecTestCase) Assert(typeValue builtin_argument.
 		testTargetStage,
 		defaultBuildFile,
 		expectedBuildArgs)
-	expectedServiceConfig, err := service.CreateServiceConfig(testContainerImageName, expectedImageBuildSpec, nil, nil, map[string]*port_spec.PortSpec{}, map[string]*port_spec.PortSpec{}, nil, nil, map[string]string{}, nil, nil, 0, 0, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false, []string{})
+	expectedServiceConfig, err := service.CreateServiceConfig(testContainerImageName, expectedImageBuildSpec, nil, nil, map[string]*port_spec.PortSpec{}, map[string]*port_spec.PortSpec{}, nil, nil, map[string]string{}, nil, nil, 0, 0, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false, []string{}, false)
 	require.NoError(t, err)
 	require.Equal(t, expectedServiceConfig, serviceConfig)
 	require.Equal(t, expectedImageBuildSpec, serviceConfig.GetImageBuildSpec())

@@ -140,6 +140,7 @@ func GetPublicPortBindingFromPrivatePortSpec(privatePortSpec *port_spec.PortSpec
 	resultPublicPortSpec *port_spec.PortSpec,
 	resultErr error,
 ) {
+
 	dockerPrivatePort, err := GetDockerPortFromPortSpec(privatePortSpec)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(
@@ -252,7 +253,9 @@ func GetIpAndPortInfoFromContainer(
 
 	privatePortSpecs, err := docker_port_spec_serializer.DeserializePortSpecs(serializedPortSpecs)
 	if err != nil {
-		return nil, nil, nil, nil, stacktrace.Propagate(err, "Couldn't deserialize port spec string '%v'", serializedPortSpecs)
+		if err != nil {
+			return nil, nil, nil, nil, stacktrace.Propagate(err, "Couldn't deserialize port spec string '%v'", serializedPortSpecs)
+		}
 	}
 
 	var containerPublicIp net.IP
@@ -261,16 +264,21 @@ func GetIpAndPortInfoFromContainer(
 		return privateIp, privatePortSpecs, containerPublicIp, publicPortSpecs, nil
 	}
 
-	publishedPrivateSpecs := map[string]*port_spec.PortSpec{}
 	for portId, privatePortSpec := range privatePortSpecs {
-		// filter out the UDP private port specs (as they don't get published) so we don't attempt to retrieve a public port that doesn't exist
+		// If this is a UDP port and there's no host binding for it, skip it
+		// This happens when publish_udp=false - UDP ports are not published to the host
 		if privatePortSpec.GetTransportProtocol() == port_spec.TransportProtocol_UDP {
-			continue
+			dockerPrivatePort, err := GetDockerPortFromPortSpec(privatePortSpec)
+			if err != nil {
+				return nil, nil, nil, nil, stacktrace.Propagate(err,
+					"An error occurred creating Docker port for private port spec '%+v'", privatePortSpec)
+			}
+			if _, found := hostMachinePortBindings[dockerPrivatePort]; !found {
+				// UDP port wasn't published (publish_udp=false), skip it
+				continue
+			}
 		}
-		publishedPrivateSpecs[portId] = privatePortSpec
-	}
 
-	for portId, privatePortSpec := range publishedPrivateSpecs {
 		portPublicIp, publicPortSpec, err := GetPublicPortBindingFromPrivatePortSpec(privatePortSpec, hostMachinePortBindings)
 		if err != nil {
 			return nil, nil, nil, nil, stacktrace.Propagate(
@@ -777,4 +785,24 @@ func dumpContainerInfo(
 	}
 
 	return nil
+}
+
+// GetDockerSocketPath returns the Docker socket path to use, checking DOCKER_HOST env var first,
+// then falling back to appropriate defaults for Docker/Podman
+func GetDockerSocketPath(isPodman bool) string {
+	// Check if DOCKER_HOST environment variable is set
+	dockerHost := os.Getenv("DOCKER_HOST")
+	if dockerHost != "" {
+		// Extract socket path from DOCKER_HOST (e.g., "unix:///path/to/socket" -> "/path/to/socket")
+		if strings.HasPrefix(dockerHost, "unix://") {
+			return strings.TrimPrefix(dockerHost, "unix://")
+		}
+		// If DOCKER_HOST is set but not a unix socket, fall back to defaults
+	}
+
+	// Fall back to default paths based on Docker/Podman
+	if isPodman {
+		return "/run/user/1020/podman/podman.sock"
+	}
+	return consts.DockerSocketFilepath
 }

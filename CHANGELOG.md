@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.15.2](https://github.com/kurtosis-tech/kurtosis/compare/1.15.1...1.15.2) (2026-01-22)
+
+
+### Bug Fixes
+
+* Improve rootless Docker/Podman compatibility with proper socket detection and bind mounting ([#2803](https://github.com/kurtosis-tech/kurtosis/issues/2803)) ([3f19727](https://github.com/kurtosis-tech/kurtosis/commit/3f197273db2a915b21575c0d5d8ff04b94dffe2b))
+* revert don't publish udp ports ([#2818](https://github.com/kurtosis-tech/kurtosis/issues/2818)) ([#2872](https://github.com/kurtosis-tech/kurtosis/issues/2872)) ([fcf87bd](https://github.com/kurtosis-tech/kurtosis/commit/fcf87bd789b974d66f6ad9c56534c4dd5f5b2ef6))
+
 ## [1.15.1](https://github.com/kurtosis-tech/kurtosis/compare/1.15.0...1.15.1) (2026-01-14)
 
 

@@ -279,9 +279,12 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred creating Docker config storage.")
 	}
 
+	// Get the correct socket path based on DOCKER_HOST or runtime (Docker/Podman)
+	hostSocketPath := shared_helpers.GetDockerSocketPath(dockerManager.IsPodman())
 	bindMounts := map[string]string{
-		// Necessary so that the engine server can interact with the Docker engine
-		consts.DockerSocketFilepath: consts.DockerSocketFilepath,
+		// Necessary so that the engine server can interact with the Docker/Podman engine
+		// Map the host socket to the standard location inside the container
+		hostSocketPath: consts.DockerSocketFilepath,
 	}
 
 	volumeMounts := map[string]string{
@@ -305,6 +308,11 @@ func CreateEngine(
 	for labelKey, labelValue := range engineAttrs.GetLabels() {
 		labelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
+
+	// Pass the host's Docker socket path to the engine for API container bind mounts
+	// We use a separate env var because DOCKER_HOST inside the engine should point to /var/run/docker.sock
+	hostSocketPath = shared_helpers.GetDockerSocketPath(dockerManager.IsPodman())
+	envVars["HOST_DOCKER_SOCKET"] = hostSocketPath
 
 	createAndStartArgsBuilder := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		containerImageAndTag,
