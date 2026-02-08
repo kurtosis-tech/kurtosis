@@ -139,6 +139,15 @@ if ! docker_tag="$(./scripts/get-docker-tag.sh)"; then
     exit 1
 fi
 
+# Ensure webapp directory exists for Docker build context.
+# When the enclave-manager web build is skipped, this creates an empty
+# placeholder so the Dockerfile ADD ./webapp ./webapp succeeds.
+webapp_dirpath="${engine_root_dirpath}/webapp"
+if [ ! -d "${webapp_dirpath}" ]; then
+    echo "Warning: webapp directory not found; creating empty placeholder (web build was likely skipped)"
+    mkdir -p "${webapp_dirpath}"
+fi
+
 # Build Docker image
 if "${skip_docker_image_building}"; then
   echo "Not building docker image as requested"
