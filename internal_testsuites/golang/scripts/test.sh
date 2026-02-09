@@ -12,7 +12,7 @@ lang_root_dirpath="$(dirname "${script_dirpath}")"
 # ==================================================================================================
 PARALLELISM=2
 DOCKER_TIMEOUT="3m"   # This must be Go-parseable timeout
-KUBERNETES_TIMEOUT="8m" # K8S takes longer than docker
+KUBERNETES_TIMEOUT="15m" # K8S takes longer than docker; extra headroom for standard GHA runners
 
 TESTSUITE_CLUSTER_BACKEND_DOCKER="docker"
 TESTSUITE_CLUSTER_BACKEND_KUBERNETES="kubernetes"

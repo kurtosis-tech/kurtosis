@@ -1,0 +1,1054 @@
+name: Build
+
+on:
+  pull_request:
+    branches-ignore:
+      - main
+  push:
+    branches-ignore:
+      - main
+      - release-please--branches--main--*
+      - gh-readonly-queue/main/*
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GO_VERSION: '1.23.7'
+  RUST_VERSION: '1.88.0'
+  API_NODE_VERSION: '16.13.0'
+  UI_NODE_VERSION: '18.19.0'
+  TILT_RELEASER_SHA: '9d05f87976ccdf8a3434443fac2b867ca99a81c8423008437c767c04784969e4'
+  WORKSPACE_PATH: /tmp/workspace
+  CLI_DIST_PATH: cli/cli/dist
+  # Note: After download-artifact, the binary is at cli_linux_amd64_v1/kurtosis (without cli/cli/dist prefix)
+  CLI_BINARY_PATH: cli_linux_amd64_v1/kurtosis
+  CORE_IMAGE_FILENAME: core-server-image.tgz
+  ENGINE_IMAGE_FILENAME: engine-server-image.tgz
+  FILES_ARTIFACTS_EXPANDER_IMAGE_FILENAME: files-artifacts-expander-image.tgz
+  REVERSE_PROXY_PORT: '9730'
+
+jobs:
+  # ============================================================================
+  # Check if only docs changed (optimization to skip builds)
+  # ============================================================================
+  check-docs-only:
+    runs-on: ubuntu-latest
+    outputs:
+      has-code-changes: ${{ steps.check.outputs.has-code-changes }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/check-docs-only
+        id: check
+
+  # ============================================================================
+  # Build Jobs - Go Libraries
+  # ============================================================================
+  build-container-engine-lib:
+    runs-on: ubuntu-latest
+    needs: check-docs-only
+    if: needs.check-docs-only.outputs.has-code-changes == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: container-engine-lib/go.sum
+
+      - name: Build
+        run: container-engine-lib/scripts/build.sh
+
+  build-contexts-config-store:
+    runs-on: ubuntu-latest
+    needs: check-docs-only
+    if: needs.check-docs-only.outputs.has-code-changes == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: contexts-config-store/go.sum
+
+      - name: Build
+        run: contexts-config-store/scripts/build.sh
+
+  build-grpc-file-transfer:
+    runs-on: ubuntu-latest
+    needs: check-docs-only
+    if: needs.check-docs-only.outputs.has-code-changes == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: grpc-file-transfer/golang/go.sum
+
+      - name: Build
+        run: grpc-file-transfer/scripts/build.sh
+
+  build-metrics-library:
+    runs-on: ubuntu-latest
+    needs: check-docs-only
+    if: needs.check-docs-only.outputs.has-code-changes == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: metrics-library/golang/go.sum
+
+      - name: Build
+        run: metrics-library/scripts/build.sh
+
+  build-name-generator:
+    runs-on: ubuntu-latest
+    needs: check-docs-only
+    if: needs.check-docs-only.outputs.has-code-changes == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: name_generator/go.sum
+
+      - name: Build
+        run: name_generator/scripts/build.sh
+
+  # ============================================================================
+  # Build Jobs - API Libraries
+  # ============================================================================
+  build-kurtosis-api-golang:
+    runs-on: ubuntu-latest
+    needs: check-docs-only
+    if: needs.check-docs-only.outputs.has-code-changes == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: api/golang/go.sum
+
+      - name: Build
+        run: api/golang/scripts/build.sh
+
+  build-kurtosis-api-typescript:
+    runs-on: ubuntu-latest
+    needs: check-docs-only
+    if: needs.check-docs-only.outputs.has-code-changes == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.API_NODE_VERSION }}
+
+      - name: Build
+        run: api/typescript/scripts/build.sh
+
+  # ============================================================================
+  # Build Jobs - Docker Images
+  # ============================================================================
+  build-files-artifacts-expander:
+    runs-on: ubuntu-latest
+    needs: check-docs-only
+    if: needs.check-docs-only.outputs.has-code-changes == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: core/files_artifacts_expander/go.sum
+
+      - name: Generate Kurtosis Version
+        run: scripts/generate-kurtosis-version.sh
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and save image
+        run: |
+          core/files_artifacts_expander/scripts/build.sh
+          source core/files_artifacts_expander/scripts/_constants.env
+          version_to_publish="$(./scripts/get-docker-tag.sh)"
+          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
+          echo "Version that will be persisted: ${version_to_publish}"
+          docker save -o ${{ env.FILES_ARTIFACTS_EXPANDER_IMAGE_FILENAME }} "${image_name_with_version}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: files-artifacts-expander-image
+          path: ${{ env.FILES_ARTIFACTS_EXPANDER_IMAGE_FILENAME }}
+          retention-days: 1
+
+  build-core-launcher:
+    runs-on: ubuntu-latest
+    needs: check-docs-only
+    if: needs.check-docs-only.outputs.has-code-changes == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: core/launcher/go.sum
+
+      - name: Generate Kurtosis Version
+        run: scripts/generate-kurtosis-version.sh
+
+      - name: Build
+        run: core/launcher/scripts/build.sh
+
+  build-api-container-server:
+    runs-on: ubuntu-latest
+    needs: check-docs-only
+    if: needs.check-docs-only.outputs.has-code-changes == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: core/server/go.sum
+
+      - name: Install protobuf compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+
+      - name: Generate Kurtosis Version
+        run: scripts/generate-kurtosis-version.sh
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and save image
+        run: |
+          core/server/scripts/build.sh
+          source core/server/scripts/_constants.env
+          version_to_publish="$(./scripts/get-docker-tag.sh)"
+          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
+          echo "Version that will be persisted: ${version_to_publish}"
+          docker save -o ${{ env.CORE_IMAGE_FILENAME }} "${image_name_with_version}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: core-server-image
+          path: ${{ env.CORE_IMAGE_FILENAME }}
+          retention-days: 1
+
+  build-enclave-manager-webapp:
+    runs-on: ubuntu-latest
+    needs: check-docs-only
+    if: |
+      github.ref_type == 'tag' ||
+      needs.check-docs-only.outputs.has-code-changes == 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.UI_NODE_VERSION }}
+          cache: 'yarn'
+          cache-dependency-path: |
+            enclave-manager/api/typescript/yarn.lock
+            enclave-manager/web/yarn.lock
+
+      - name: Install yarn
+        run: npm install -g yarn
+
+      - name: Build
+        run: enclave-manager/scripts/build.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: enclave-manager-webapp
+          path: engine/server/webapp/
+          retention-days: 1
+
+  build-engine-launcher:
+    runs-on: ubuntu-latest
+    needs: check-docs-only
+    if: needs.check-docs-only.outputs.has-code-changes == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: engine/launcher/go.sum
+
+      - name: Generate Kurtosis Version
+        run: scripts/generate-kurtosis-version.sh
+
+      - name: Build
+        run: engine/launcher/scripts/build.sh
+
+  build-engine-server:
+    runs-on: ubuntu-latest
+    needs: [check-docs-only, build-enclave-manager-webapp]
+    if: needs.check-docs-only.outputs.has-code-changes == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: engine/server/go.sum
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: enclave-manager-webapp
+          path: engine/server/webapp
+
+      - name: Generate Kurtosis Version
+        run: scripts/generate-kurtosis-version.sh
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and save image
+        run: |
+          engine/server/scripts/build.sh
+          source engine/server/scripts/_constants.env
+          version_to_publish="$(./scripts/get-docker-tag.sh)"
+          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
+          echo "Version that will be persisted: ${version_to_publish}"
+          docker save -o ${{ env.ENGINE_IMAGE_FILENAME }} "${image_name_with_version}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: engine-server-image
+          path: ${{ env.ENGINE_IMAGE_FILENAME }}
+          retention-days: 1
+
+  # ============================================================================
+  # Build Jobs - CLI
+  # ============================================================================
+  build-cli:
+    runs-on: ubuntu-latest
+    container:
+      image: docker/tilt-releaser@sha256:9d05f87976ccdf8a3434443fac2b867ca99a81c8423008437c767c04784969e4
+    needs: check-docs-only
+    if: needs.check-docs-only.outputs.has-code-changes == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Mark git directory as safe
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Generate Kurtosis Version
+        run: scripts/generate-kurtosis-version.sh
+
+      - name: Update apt key
+        run: curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
+
+      - name: Restore Go cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            /go/pkg/mod
+            /root/.cache/go-build
+          key: cli-go-mod-v2-${{ hashFiles('cli/cli/go.sum') }}
+          restore-keys: |
+            cli-go-mod-v2-
+
+      - name: Build CLI (single architecture)
+        run: cli/cli/scripts/build.sh false
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cli-binary
+          path: ${{ env.CLI_DIST_PATH }}/
+          retention-days: 1
+
+  build-cli-all-arch:
+    runs-on: ubuntu-latest
+    container:
+      image: docker/tilt-releaser@sha256:9d05f87976ccdf8a3434443fac2b867ca99a81c8423008437c767c04784969e4
+    needs: check-docs-only
+    if: needs.check-docs-only.outputs.has-code-changes == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Mark git directory as safe
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Generate Kurtosis Version
+        run: scripts/generate-kurtosis-version.sh
+
+      - name: Update apt key
+        run: curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
+
+      - name: Restore Go cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            /go/pkg/mod
+            /root/.cache/go-build
+          key: cli-go-mod-v2-${{ hashFiles('cli/cli/go.sum') }}
+          restore-keys: |
+            cli-go-mod-v2-
+
+      - name: Build CLI (all architectures)
+        run: cli/cli/scripts/build.sh true
+
+  # ============================================================================
+  # Test Jobs - Docker Backend
+  # ============================================================================
+  test-basic-cli-docker:
+    runs-on: ubuntu-latest
+    needs:
+      - check-docs-only
+      - build-cli
+      - build-api-container-server
+      - build-engine-server
+      - build-files-artifacts-expander
+    if: needs.check-docs-only.outputs.has-code-changes == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: ${{ env.WORKSPACE_PATH }}
+          merge-multiple: true
+
+      - name: Setup Kurtosis CLI
+        run: |
+          chmod +x "${{ env.WORKSPACE_PATH }}/${{ env.CLI_BINARY_PATH }}"
+          echo "KURTOSIS_BINPATH=${{ env.WORKSPACE_PATH }}/${{ env.CLI_BINARY_PATH }}" >> $GITHUB_ENV
+
+      - name: Disable analytics
+        run: $KURTOSIS_BINPATH analytics disable
+
+      - name: Prepare Docker testing
+        uses: ./.github/actions/prepare-docker-testing
+        with:
+          workspace-path: ${{ env.WORKSPACE_PATH }}
+          kurtosis-binpath: ${{ env.KURTOSIS_BINPATH }}
+
+      # Basic service add & rm
+      - name: Create test enclave
+        run: ${KURTOSIS_BINPATH} enclave add --name test-enclave
+
+      - name: Test service add/rm
+        run: |
+          ${KURTOSIS_BINPATH} service add test-enclave test1 httpd --ports http=80
+          ${KURTOSIS_BINPATH} service rm test-enclave test1
+          ${KURTOSIS_BINPATH} service add test-enclave test1 httpd --ports http=80
+          ${KURTOSIS_BINPATH} service add test-enclave test2 httpd --ports http=80
+
+      # Service stop and start
+      - name: Test service stop/start
+        run: |
+          ${KURTOSIS_BINPATH} service stop test-enclave test1
+          ${KURTOSIS_BINPATH} service start test-enclave test1
+
+      # Service inspect
+      - name: Test service inspect
+        run: ${KURTOSIS_BINPATH} service inspect test-enclave test1
+
+      # Service Exec
+      - name: Test service exec
+        run: |
+          ${KURTOSIS_BINPATH} service exec test-enclave test1 'echo hello'
+          ! ${KURTOSIS_BINPATH} service exec test-enclave test1 'echo hello; exit 1'
+
+      # File commands
+      - name: Test file commands
+        run: |
+          ${KURTOSIS_BINPATH} files rendertemplate test-enclave internal_testsuites/resources/render_template_cli_test/template.txt internal_testsuites/resources/render_template_cli_test/data.json ./rendered --name rendered-file
+          ${KURTOSIS_BINPATH} files download test-enclave rendered-file .
+          ${KURTOSIS_BINPATH} files storeservice test-enclave test1 /usr/local/apache2/conf/httpd.conf --name stored-file
+          ${KURTOSIS_BINPATH} files download test-enclave stored-file .
+
+      # Service update
+      - name: Test service update
+        run: ${KURTOSIS_BINPATH} service update test-enclave test1 --image httpd:2.4.63 --env 'update=test;where=ci' --ports http=80 --files '/root/somewhere:rendered-file|stored-file'
+
+      # Check Dump Contains files
+      - name: Test enclave dump
+        run: |
+          ${KURTOSIS_BINPATH} enclave dump test-enclave test-dump
+          ls test-dump/files/rendered-file
+
+      # Module inside an enclave
+      - name: Test enclave commands
+        run: |
+          ${KURTOSIS_BINPATH} enclave ls
+          ${KURTOSIS_BINPATH} enclave inspect test-enclave
+
+      # Execute simple startosis script (using files from checkout, not artifacts)
+      - name: Test startosis script
+        run: ${KURTOSIS_BINPATH} run --enclave test-enclave internal_testsuites/starlark/ci_tests/simple_no_arg_test/startosis_simple_script.star
+
+      # Execute Simple Starlark Script to test --args-file
+      - name: Test args-file
+        run: ${KURTOSIS_BINPATH} run --enclave args-file-test internal_testsuites/starlark/ci_tests/simple_arg_test/main.star --args-file internal_testsuites/starlark/ci_tests/simple_arg_test/args.json
+
+      # Execute Simple Starlark Script to test --args-file from URL
+      - name: Test args-file from URL
+        run: ${KURTOSIS_BINPATH} run --enclave args-file-from-url-test internal_testsuites/starlark/ci_tests/simple_arg_test/main.star --args-file https://raw.githubusercontent.com/kurtosis-tech/sample-startosis-load/main/args.json
+
+      # Execute github starlark module
+      - name: Test github starlark module
+        run: |
+          ${KURTOSIS_BINPATH} run --enclave test-datastore github.com/kurtosis-tech/datastore-army-package '{"num_datastores": 2}'
+
+      # Execute port print
+      - name: Test port print
+        run: ${KURTOSIS_BINPATH} port print test-datastore datastore-0 grpc
+
+      # Stop test-datastore enclave
+      - name: Test enclave stop
+        run: |
+          ${KURTOSIS_BINPATH} enclave stop test-datastore
+          ${KURTOSIS_BINPATH} enclave stop test-enclave
+          ${KURTOSIS_BINPATH} enclave inspect test-enclave
+
+      # Clean all before compose import
+      - name: Clean enclaves
+        run: ${KURTOSIS_BINPATH} clean -a
+
+      # Execute docker compose import
+      - name: Test docker compose import
+        run: ${KURTOSIS_BINPATH} import --enclave test-import --env internal_testsuites/resources/docker_import_cli_test/.env internal_testsuites/resources/docker_import_cli_test/docker-compose.yml
+
+      # Test tolerations (using files from checkout, not artifacts)
+      - name: Test tolerations
+        run: ${KURTOSIS_BINPATH} run --enclave with-tolerations internal_testsuites/starlark/taints_and_tolerations/taints_and_toleration_test.star
+
+      # Execute engine functions
+      - name: Test engine commands
+        run: |
+          ${KURTOSIS_BINPATH} engine stop
+          ${KURTOSIS_BINPATH} engine stop
+          ${KURTOSIS_BINPATH} engine start
+          ${KURTOSIS_BINPATH} engine start
+          ${KURTOSIS_BINPATH} engine restart
+          ${KURTOSIS_BINPATH} engine restart
+          ${KURTOSIS_BINPATH} engine status
+
+      # Test APIC restart
+      - name: Test APIC restart
+        run: |
+          ${KURTOSIS_BINPATH} enclave add -n test-apic-restart
+          ${KURTOSIS_BINPATH} enclave inspect --full-uuids test-apic-restart > /tmp/inspect_output.txt
+          inspect_output_uuid_line=$(grep "^UUID:" /tmp/inspect_output.txt)
+          enclave_uuid=$(echo ${inspect_output_uuid_line:17:54})
+          ${KURTOSIS_BINPATH} service add test-apic-restart service-test kurtosistech/example-datastore-server
+          apic_container_id=$(docker ps --filter "label=com.kurtosistech.container-type=api-container" --filter "label=com.kurtosistech.enclave-id=$(echo $enclave_uuid)" --format "{{.ID}}")
+          docker container restart $(echo $apic_container_id)
+          ${KURTOSIS_BINPATH} service rm test-apic-restart service-test
+
+      # Test APIC idempotent runs restart
+      - name: Test APIC idempotent restart
+        run: |
+          ${KURTOSIS_BINPATH} enclave add -n test-apic-idempotent-restart
+          ${KURTOSIS_BINPATH} run github.com/kurtosis-tech/datastore-army-package --enclave test-apic-idempotent-restart
+          ${KURTOSIS_BINPATH} enclave inspect --full-uuids test-apic-idempotent-restart > /tmp/inspect_output2.txt
+          inspect_output_uuid_line=$(grep "^UUID:" /tmp/inspect_output2.txt)
+          enclave_uuid=$(echo ${inspect_output_uuid_line:17:54})
+          apic_container_id=$(docker ps --filter "label=com.kurtosistech.container-type=api-container" --filter "label=com.kurtosistech.enclave-id=$(echo $enclave_uuid)" --format "{{.ID}}")
+          docker container restart $(echo $apic_container_id)
+          ${KURTOSIS_BINPATH} run github.com/kurtosis-tech/datastore-army-package --enclave test-apic-idempotent-restart > /tmp/output_idempotent_runs.txt
+          number_skipped_instructions=$(grep -o -i SKIPPED /tmp/output_idempotent_runs.txt | wc -l )
+          if [ $number_skipped_instructions -ne 7 ]; then exit 1; fi
+
+      # Clean all at the end
+      - name: Final cleanup
+        run: ${KURTOSIS_BINPATH} clean -a
+
+      # Verify cleanup
+      - name: Verify cleanup - containers
+        run: |
+          if ! [ "$(docker container ls -a | tail -n+2 | wc -l)" -eq 3 ]; then
+            docker container ls -a
+            exit 1
+          fi
+
+      - name: Verify cleanup - volumes
+        run: |
+          if ! [ $(docker volume ls | grep -v kurtosis-logs-collector-vol | grep -v kurtosis-logs-db-vol | tail -n+2 | wc -l) -eq 5 ]; then
+            docker volume ls
+            exit 1
+          fi
+
+      - name: Verify cleanup - networks
+        run: |
+          builtin_network_ids=(
+            "$(docker network ls --quiet --filter "name=host")"
+            "$(docker network ls --quiet --filter "name=bridge")"
+            "$(docker network ls --quiet --filter "name=none")"
+          )
+          if ! [ $(docker network ls | grep -v -f <(printf "%s\n" "${builtin_network_ids[@]}") | tail -n+2 | wc -l) -eq 0 ]; then
+            docker network ls
+            exit 1
+          fi
+
+  test-ci-for-failure:
+    runs-on: ubuntu-latest
+    needs:
+      - check-docs-only
+      - build-cli
+      - build-api-container-server
+      - build-engine-server
+      - build-files-artifacts-expander
+    if: needs.check-docs-only.outputs.has-code-changes == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: ${{ env.WORKSPACE_PATH }}
+          merge-multiple: true
+
+      - name: Setup Kurtosis CLI
+        run: |
+          chmod +x "${{ env.WORKSPACE_PATH }}/${{ env.CLI_BINARY_PATH }}"
+          echo "KURTOSIS_BINPATH=${{ env.WORKSPACE_PATH }}/${{ env.CLI_BINARY_PATH }}" >> $GITHUB_ENV
+
+      - name: Disable analytics
+        run: $KURTOSIS_BINPATH analytics disable
+
+      - name: Prepare Docker testing
+        uses: ./.github/actions/prepare-docker-testing
+        with:
+          workspace-path: ${{ env.WORKSPACE_PATH }}
+          kurtosis-binpath: ${{ env.KURTOSIS_BINPATH }}
+
+      # Test that adding same enclave fails
+      - name: Test enclave add failure
+        run: |
+          ${KURTOSIS_BINPATH} enclave add --name test-enclave
+          ! ${KURTOSIS_BINPATH} enclave add --name test-enclave
+
+      # Test that running a broken package fails
+      - name: Test broken package failure
+        run: "! ${KURTOSIS_BINPATH} run github.com/kurtosis-tech/datastore-army-package@25ecb4c271f870d6fdf8745169a142519e49aab8"
+
+  build-golang-testsuite-docker:
+    runs-on: ubuntu-latest
+    needs:
+      - check-docs-only
+      - build-cli
+      - build-api-container-server
+      - build-engine-server
+      - build-files-artifacts-expander
+    if: needs.check-docs-only.outputs.has-code-changes == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: internal_testsuites/golang/go.sum
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: ${{ env.WORKSPACE_PATH }}
+          merge-multiple: true
+
+      - name: Setup Kurtosis CLI
+        run: |
+          chmod +x "${{ env.WORKSPACE_PATH }}/${{ env.CLI_BINARY_PATH }}"
+          echo "KURTOSIS_BINPATH=${{ env.WORKSPACE_PATH }}/${{ env.CLI_BINARY_PATH }}" >> $GITHUB_ENV
+
+      - name: Disable analytics
+        run: $KURTOSIS_BINPATH analytics disable
+
+      - name: Prepare Docker testing
+        uses: ./.github/actions/prepare-docker-testing
+        with:
+          workspace-path: ${{ env.WORKSPACE_PATH }}
+          kurtosis-binpath: ${{ env.KURTOSIS_BINPATH }}
+
+      - name: Run testsuite
+        run: ./internal_testsuites/golang/scripts/test.sh docker false
+
+  build-golang-testsuite-k8s:
+    runs-on: ubuntu-latest
+    needs:
+      - check-docs-only
+      - build-cli
+      - build-api-container-server
+      - build-engine-server
+      - build-files-artifacts-expander
+    if: needs.check-docs-only.outputs.has-code-changes == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: internal_testsuites/golang/go.sum
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: ${{ env.WORKSPACE_PATH }}
+          merge-multiple: true
+
+      - name: Setup Kurtosis CLI
+        run: |
+          chmod +x "${{ env.WORKSPACE_PATH }}/${{ env.CLI_BINARY_PATH }}"
+          echo "KURTOSIS_BINPATH=${{ env.WORKSPACE_PATH }}/${{ env.CLI_BINARY_PATH }}" >> $GITHUB_ENV
+
+      - name: Disable analytics
+        run: $KURTOSIS_BINPATH analytics disable
+
+      - name: Prepare K8s testing
+        uses: ./.github/actions/prepare-k8s-testing
+        with:
+          workspace-path: ${{ env.WORKSPACE_PATH }}
+          kurtosis-binpath: ${{ env.KURTOSIS_BINPATH }}
+
+      - name: Run testsuite
+        run: ./internal_testsuites/golang/scripts/test.sh kubernetes false
+
+  build-typescript-testsuite-docker:
+    runs-on: ubuntu-latest
+    needs:
+      - check-docs-only
+      - build-cli
+      - build-api-container-server
+      - build-engine-server
+      - build-files-artifacts-expander
+    if: needs.check-docs-only.outputs.has-code-changes == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.UI_NODE_VERSION }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: ${{ env.WORKSPACE_PATH }}
+          merge-multiple: true
+
+      - name: Install yarn
+        run: npm install -g yarn
+
+      - name: Setup Kurtosis CLI
+        run: |
+          chmod +x "${{ env.WORKSPACE_PATH }}/${{ env.CLI_BINARY_PATH }}"
+          echo "KURTOSIS_BINPATH=${{ env.WORKSPACE_PATH }}/${{ env.CLI_BINARY_PATH }}" >> $GITHUB_ENV
+
+      - name: Disable analytics
+        run: $KURTOSIS_BINPATH analytics disable
+
+      - name: Prepare Docker testing
+        uses: ./.github/actions/prepare-docker-testing
+        with:
+          workspace-path: ${{ env.WORKSPACE_PATH }}
+          kurtosis-binpath: ${{ env.KURTOSIS_BINPATH }}
+
+      - name: Run testsuite
+        id: testsuite
+        continue-on-error: true
+        run: ./internal_testsuites/typescript/scripts/test.sh
+
+      - name: Dump enclaves
+        if: always()
+        run: |
+          cd /tmp
+          output_dirname="enclave-dumps"
+          mkdir -p "${output_dirname}"
+          for enclave_uuid in $("${KURTOSIS_BINPATH}" enclave ls | grep -v "WARN" | grep -v "INFO" | grep -v "UUID" | awk '{print $1}'); do
+            "${KURTOSIS_BINPATH}" enclave dump "${enclave_uuid}" "${output_dirname}/${enclave_uuid}" || true
+          done
+          zip -r "${output_dirname}.zip" "${output_dirname}" || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: enclave-dumps-typescript-docker
+          path: /tmp/enclave-dumps.zip
+          retention-days: 7
+
+      - name: Fail if testsuite failed
+        if: steps.testsuite.outcome == 'failure'
+        run: exit 1
+
+  build-typescript-testsuite-k8s:
+    runs-on: ubuntu-latest
+    needs:
+      - check-docs-only
+      - build-cli
+      - build-api-container-server
+      - build-engine-server
+      - build-files-artifacts-expander
+    if: needs.check-docs-only.outputs.has-code-changes == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.UI_NODE_VERSION }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: ${{ env.WORKSPACE_PATH }}
+          merge-multiple: true
+
+      - name: Install yarn
+        run: npm install -g yarn
+
+      - name: Setup Kurtosis CLI
+        run: |
+          chmod +x "${{ env.WORKSPACE_PATH }}/${{ env.CLI_BINARY_PATH }}"
+          echo "KURTOSIS_BINPATH=${{ env.WORKSPACE_PATH }}/${{ env.CLI_BINARY_PATH }}" >> $GITHUB_ENV
+
+      - name: Disable analytics
+        run: $KURTOSIS_BINPATH analytics disable
+
+      - name: Prepare K8s testing
+        uses: ./.github/actions/prepare-k8s-testing
+        with:
+          workspace-path: ${{ env.WORKSPACE_PATH }}
+          kurtosis-binpath: ${{ env.KURTOSIS_BINPATH }}
+
+      - name: Run testsuite
+        id: testsuite
+        continue-on-error: true
+        run: ./internal_testsuites/typescript/scripts/test.sh kubernetes
+
+      - name: Fail if testsuite failed
+        if: steps.testsuite.outcome == 'failure'
+        run: exit 1
+
+  test-old-enclave-continuity:
+    runs-on: ubuntu-latest
+    needs:
+      - check-docs-only
+      - build-cli
+      - build-api-container-server
+      - build-engine-server
+      - build-files-artifacts-expander
+    if: needs.check-docs-only.outputs.has-code-changes == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: ${{ env.WORKSPACE_PATH }}
+          merge-multiple: true
+
+      # Install released Kurtosis CLI from apt
+      - name: Install released Kurtosis CLI
+        run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt-get update
+          sudo apt-get install -y kurtosis-cli
+
+      - name: Disable analytics (released CLI)
+        run: kurtosis analytics disable
+
+      # Start up enclaves with released CLI
+      - name: Create enclaves with released CLI
+        run: |
+          kurtosis enclave add --name running-old-enclave
+          kurtosis enclave add --name stopped-old-enclave
+          kurtosis service add running-old-enclave test-datastore-one kurtosistech/example-datastore-server
+          kurtosis service add stopped-old-enclave test-datastore-two kurtosistech/example-datastore-server
+          kurtosis enclave stop stopped-old-enclave
+          kurtosis engine stop
+
+      # Switch to dev CLI
+      - name: Setup dev Kurtosis CLI
+        run: |
+          chmod +x "${{ env.WORKSPACE_PATH }}/${{ env.CLI_BINARY_PATH }}"
+          echo "KURTOSIS_BINPATH=${{ env.WORKSPACE_PATH }}/${{ env.CLI_BINARY_PATH }}" >> $GITHUB_ENV
+          docker load -i "${{ env.WORKSPACE_PATH }}/${{ env.CORE_IMAGE_FILENAME }}"
+          docker load -i "${{ env.WORKSPACE_PATH }}/${{ env.ENGINE_IMAGE_FILENAME }}"
+          docker load -i "${{ env.WORKSPACE_PATH }}/${{ env.FILES_ARTIFACTS_EXPANDER_IMAGE_FILENAME }}"
+
+      # Make sure we can still interact with the old enclaves
+      - name: Test old enclave interaction
+        run: |
+          ${KURTOSIS_BINPATH} enclave ls
+          ${KURTOSIS_BINPATH} enclave inspect running-old-enclave
+          ${KURTOSIS_BINPATH} service add running-old-enclave test-service httpd --ports http=80
+          ${KURTOSIS_BINPATH} enclave stop running-old-enclave
+          ${KURTOSIS_BINPATH} enclave inspect stopped-old-enclave
+
+      # Ensure enclaves still work
+      - name: Clean and verify
+        run: |
+          ${KURTOSIS_BINPATH} clean -a
+          ${KURTOSIS_BINPATH} engine stop
+
+      # Verify cleanup
+      - name: Verify containers cleaned
+        run: |
+          if ! [ "$(docker container ls -a | tail -n+2 | wc -l)" -eq 0 ]; then
+            docker container ls -a
+            exit 1
+          fi
+
+      - name: Verify volumes cleaned
+        run: |
+          if ! [ $(docker volume ls | grep -v kurtosis-logs-collector-vol | grep -v kurtosis-logs-db-vol | tail -n+2 | wc -l) -eq 4 ]; then
+            docker volume ls
+            exit 1
+          fi
+
+      - name: Verify networks cleaned
+        run: |
+          builtin_network_ids=(
+            "$(docker network ls --quiet --filter "name=host")"
+            "$(docker network ls --quiet --filter "name=bridge")"
+            "$(docker network ls --quiet --filter "name=none")"
+          )
+          if ! [ $(docker network ls | grep -v -f <(printf "%s\n" "${builtin_network_ids[@]}") | tail -n+2 | wc -l) -eq 0 ]; then
+            docker network ls
+            exit 1
+          fi
+
+  test-reverse-proxy-docker:
+    runs-on: ubuntu-latest
+    needs:
+      - check-docs-only
+      - build-cli
+      - build-api-container-server
+      - build-engine-server
+      - build-files-artifacts-expander
+    if: needs.check-docs-only.outputs.has-code-changes == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: ${{ env.WORKSPACE_PATH }}
+          merge-multiple: true
+
+      - name: Setup Kurtosis CLI
+        run: |
+          chmod +x "${{ env.WORKSPACE_PATH }}/${{ env.CLI_BINARY_PATH }}"
+          echo "KURTOSIS_BINPATH=${{ env.WORKSPACE_PATH }}/${{ env.CLI_BINARY_PATH }}" >> $GITHUB_ENV
+
+      - name: Disable analytics
+        run: $KURTOSIS_BINPATH analytics disable
+
+      - name: Prepare Docker testing
+        uses: ./.github/actions/prepare-docker-testing
+        with:
+          workspace-path: ${{ env.WORKSPACE_PATH }}
+          kurtosis-binpath: ${{ env.KURTOSIS_BINPATH }}
+
+      - name: Test reverse proxy
+        run: |
+          ${KURTOSIS_BINPATH} enclave add --name test-enclave
+          ${KURTOSIS_BINPATH} service add test-enclave test1 httpd --ports http=http:80/tcp
+          enclave_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | grep "^UUID:" | awk '{print $2}')
+          service_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | tail -2 | awk '{print $1}')
+          # Give the reverse proxy enough time to discover the httpd user service
+          sleep 10
+          status_code=$(curl -I http://localhost:${{ env.REVERSE_PROXY_PORT }} -H "Host: 80-$(echo $service_uuid)-$(echo $enclave_uuid)" | head -1 | awk '{print $2}')
+          if ! [ "${status_code}" -eq "200" ]; then
+            echo 'HTTP request status code returned is '${status_code}' instead of 200'
+            exit 1
+          fi
+
+      - name: Test reverse proxy after engine restart
+        run: |
+          ${KURTOSIS_BINPATH} engine restart
+          enclave_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | grep "^UUID:" | awk '{print $2}')
+          service_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | tail -2 | awk '{print $1}')
+          sleep 10
+          status_code=$(curl -I http://localhost:${{ env.REVERSE_PROXY_PORT }} -H "Host: 80-$(echo $service_uuid)-$(echo $enclave_uuid)" | head -1 | awk '{print $2}')
+          if ! [ "${status_code}" -eq "200" ]; then
+            echo 'HTTP request status code returned is '${status_code}' instead of 200'
+            exit 1
+          fi
+
+  test-reverse-proxy-k8s:
+    runs-on: ubuntu-latest
+    needs:
+      - check-docs-only
+      - build-cli
+      - build-api-container-server
+      - build-engine-server
+      - build-files-artifacts-expander
+    if: needs.check-docs-only.outputs.has-code-changes == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: ${{ env.WORKSPACE_PATH }}
+          merge-multiple: true
+
+      - name: Setup Kurtosis CLI
+        run: |
+          chmod +x "${{ env.WORKSPACE_PATH }}/${{ env.CLI_BINARY_PATH }}"
+          echo "KURTOSIS_BINPATH=${{ env.WORKSPACE_PATH }}/${{ env.CLI_BINARY_PATH }}" >> $GITHUB_ENV
+
+      - name: Disable analytics
+        run: $KURTOSIS_BINPATH analytics disable
+
+      - name: Prepare K8s testing
+        uses: ./.github/actions/prepare-k8s-testing
+        with:
+          workspace-path: ${{ env.WORKSPACE_PATH }}
+          kurtosis-binpath: ${{ env.KURTOSIS_BINPATH }}
+
+      - name: Test reverse proxy
+        run: |
+          ${KURTOSIS_BINPATH} enclave add --name test-enclave
+          ${KURTOSIS_BINPATH} service add test-enclave test1 httpd --ports http=http:80/tcp
+          enclave_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | grep "^UUID:" | awk '{print $2}')
+          service_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | tail -2 | awk '{print $1}')
+          # Give the reverse proxy enough time to discover the httpd user service
+          sleep 10
+          status_code=$(curl -I http://localhost:${{ env.REVERSE_PROXY_PORT }} -H "Host: 80-$(echo $service_uuid)-$(echo $enclave_uuid)" | head -1 | awk '{print $2}')
+          if ! [ "${status_code}" -eq "200" ]; then
+            echo 'HTTP request status code returned is '${status_code}' instead of 200'
+            exit 1
+          fi
