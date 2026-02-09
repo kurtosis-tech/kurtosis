@@ -1,0 +1,321 @@
+name: Publish
+
+# Manual trigger only for now - enable tag trigger after validation
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., 1.14.0)'
+        required: true
+        type: string
+  # TODO: Uncomment after GitHub Actions is validated against CircleCI
+  # push:
+  #   tags:
+  #     - '[0-9]+.[0-9]+.[0-9]+'
+
+env:
+  GO_VERSION: '1.23.7'
+  RUST_VERSION: '1.88.0'
+  API_NODE_VERSION: '16.13.0'
+  UI_NODE_VERSION: '18.19.0'
+  TILT_RELEASER_SHA: '9d05f87976ccdf8a3434443fac2b867ca99a81c8423008437c767c04784969e4'
+
+jobs:
+  # ============================================================================
+  # Publish SDK/API Packages
+  # ============================================================================
+  publish-kurtosis-sdk-rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-action@stable
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+
+      - name: Publish to crates.io
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_PUBLISHER_TOKEN }}
+        run: |
+          cd api/rust/
+          cargo publish
+
+  publish-kurtosis-api-typescript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.API_NODE_VERSION }}
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Build
+        run: api/typescript/scripts/build.sh
+
+      - name: Publish to npm
+        working-directory: api/typescript
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPMJS_AUTH_TOKEN }}
+        run: npm publish
+
+  publish-kurtosis-ui-libs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.UI_NODE_VERSION }}
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install yarn
+        run: npm install -g yarn
+
+      - name: Build enclave-manager API
+        run: enclave-manager/api/typescript/scripts/build.sh
+
+      - name: Build enclave-manager web
+        run: enclave-manager/web/scripts/build.sh
+
+      - name: Publish to npm
+        working-directory: enclave-manager/web/packages/components
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPMJS_AUTH_TOKEN }}
+        run: npm publish
+
+  # ============================================================================
+  # Publish Docker Images
+  # ============================================================================
+  publish-files-artifacts-expander-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: core/files_artifacts_expander/go.sum
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build binaries (amd64)
+        run: |
+          skip_docker_image_building=true
+          core/files_artifacts_expander/scripts/build.sh "${skip_docker_image_building}"
+
+      - name: Build binaries (arm64)
+        run: |
+          skip_docker_image_building=true
+          build_architecture=arm64
+          core/files_artifacts_expander/scripts/build.sh "${skip_docker_image_building}" "${build_architecture}"
+
+      - name: Build and push multi-arch image
+        run: |
+          set -euo pipefail
+          source core/files_artifacts_expander/scripts/_constants.env
+          dockerfile_filepath='core/files_artifacts_expander/Dockerfile'
+          version_build="$(./scripts/get-docker-tag.sh)"
+          version_to_publish="$(cat version.txt)"
+          echo "Version that was built: ${version_build}"
+          echo "Version that will be published: ${version_to_publish}"
+          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_build}"
+          image_name_to_publish_semver="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
+          image_name_to_publish_latest="${IMAGE_ORG_AND_REPO}:latest"
+          push_to_dockerhub=true
+          podman_mode=false
+          scripts/docker-image-builder.sh "${push_to_dockerhub}" "${dockerfile_filepath}" "${podman_mode}" "${image_name_with_version}" "${image_name_to_publish_semver}" "${image_name_to_publish_latest}"
+
+  publish-api-container-server-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: core/server/go.sum
+
+      - name: Install protobuf compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build binaries (amd64)
+        run: |
+          skip_docker_image_building=true
+          core/server/scripts/build.sh "${skip_docker_image_building}"
+
+      - name: Build binaries (arm64)
+        run: |
+          skip_docker_image_building=true
+          build_architecture=arm64
+          core/server/scripts/build.sh "${skip_docker_image_building}" "${build_architecture}"
+
+      - name: Build and push multi-arch image
+        run: |
+          set -euo pipefail
+          source core/server/scripts/_constants.env
+          dockerfile_filepath='core/server/Dockerfile'
+          version_build="$(./scripts/get-docker-tag.sh)"
+          version_to_publish="$(cat version.txt)"
+          echo "Version that was built: ${version_build}"
+          echo "Version that will be published: ${version_to_publish}"
+          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_build}"
+          image_name_to_publish_semver="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
+          image_name_to_publish_latest="${IMAGE_ORG_AND_REPO}:latest"
+          push_to_dockerhub=true
+          podman_mode=false
+          scripts/docker-image-builder.sh "${push_to_dockerhub}" "${dockerfile_filepath}" "${podman_mode}" "${image_name_with_version}" "${image_name_to_publish_semver}" "${image_name_to_publish_latest}"
+
+  build-enclave-manager-webapp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.UI_NODE_VERSION }}
+          cache: 'yarn'
+          cache-dependency-path: |
+            enclave-manager/api/typescript/yarn.lock
+            enclave-manager/web/yarn.lock
+
+      - name: Install yarn
+        run: npm install -g yarn
+
+      - name: Build
+        run: enclave-manager/scripts/build.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: enclave-manager-webapp
+          path: engine/server/webapp/
+          retention-days: 1
+
+  publish-engine-server-image:
+    runs-on: ubuntu-latest
+    needs: build-enclave-manager-webapp
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: engine/server/go.sum
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: enclave-manager-webapp
+          path: engine/server/webapp
+
+      - name: Generate Kurtosis Version
+        run: |
+          version="$(cat version.txt)"
+          scripts/generate-kurtosis-version.sh $version
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build binaries (amd64)
+        run: |
+          skip_docker_image_building=true
+          engine/server/scripts/build.sh "${skip_docker_image_building}"
+
+      - name: Build binaries (arm64)
+        run: |
+          skip_docker_image_building=true
+          build_architecture=arm64
+          engine/server/scripts/build.sh "${skip_docker_image_building}" "${build_architecture}"
+
+      - name: Build and push multi-arch image
+        run: |
+          set -euo pipefail
+          source engine/server/scripts/_constants.env
+          dockerfile_filepath='engine/server/Dockerfile'
+          version_build="$(./scripts/get-docker-tag.sh)"
+          version_to_publish="$(cat version.txt)"
+          echo "Version that was built: ${version_build}"
+          echo "Version that will be published: ${version_to_publish}"
+          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_build}"
+          image_name_to_publish_semver="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
+          image_name_to_publish_latest="${IMAGE_ORG_AND_REPO}:latest"
+          push_to_dockerhub=true
+          podman_mode=false
+          scripts/docker-image-builder.sh "${push_to_dockerhub}" "${dockerfile_filepath}" "${podman_mode}" "${image_name_with_version}" "${image_name_to_publish_semver}" "${image_name_to_publish_latest}"
+
+  # ============================================================================
+  # Publish CLI Artifacts
+  # ============================================================================
+  push-cli-artifacts:
+    runs-on: ubuntu-latest
+    container:
+      image: docker/tilt-releaser@sha256:9d05f87976ccdf8a3434443fac2b867ca99a81c8423008437c767c04784969e4
+    needs:
+      - publish-kurtosis-api-typescript
+      - publish-kurtosis-sdk-rust
+      - publish-api-container-server-image
+      - publish-engine-server-image
+      - publish-files-artifacts-expander-image
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Mark git directory as safe
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Install goreleaser
+        run: |
+          echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | tee /etc/apt/sources.list.d/goreleaser.list
+          curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
+          apt update
+          apt install -y goreleaser
+
+      - name: Generate Kurtosis Version
+        run: |
+          version="$(cat version.txt)"
+          scripts/generate-kurtosis-version.sh $version
+
+      - name: Restore Go cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            /go/pkg/mod
+            /root/.cache/go-build
+          key: cli-go-mod-v2-${{ hashFiles('cli/cli/go.sum') }}
+          restore-keys: |
+            cli-go-mod-v2-
+
+      - name: Build and publish CLI
+        env:
+          FURY_TOKEN: ${{ secrets.GEMFURY_PUBLISH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.KURTOSISBOT_GITHUB_TOKEN }}
+        run: cli/cli/scripts/build.sh true true
