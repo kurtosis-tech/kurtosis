@@ -25,7 +25,7 @@ MANDATORY_BUILD_SCRIPT_RELATIVE_FILEPATHS=(
   "cli/scripts/build.sh"
 )
 
-# for regular builds
+# for regular builds (enclave-manager excluded by default; use --build-enclave-manager to include)
 BUILD_SCRIPT_RELATIVE_FILEPATHS=(
     "container-engine-lib/scripts/build.sh"
     "contexts-config-store/scripts/build.sh"
@@ -33,7 +33,6 @@ BUILD_SCRIPT_RELATIVE_FILEPATHS=(
     "name_generator/scripts/build.sh"
     "api/scripts/build.sh"
     "metrics-library/scripts/build.sh"
-    "enclave-manager/scripts/build.sh"
     "engine/scripts/build.sh"
     "core/scripts/build.sh"
 )
@@ -51,22 +50,34 @@ DEFAULT_PODMAN_MODE="false"
 #                                       Arg Parsing & Validation
 # ==================================================================================================
 show_helptext_and_exit() {
-    echo "Usage: $(basename "${0}") debug_image podman_mode..."
+    echo "Usage: $(basename "${0}") [--build-enclave-manager] debug_image podman_mode..."
     echo ""
-    echo "  debug_image   Whether images should contains the debug server and run in debug mode, this will use the Dockerfile.debug image to build the container (configured for the engine server and the APIC server so far)"
-    echo "  podman_mode   Whether images should be built with podman instead of docker. Use if you are developing Kurtosis on Podman cluster type"
+    echo "  --build-enclave-manager   Include the enclave-manager (Node.js) build (skipped by default)"
+    echo "  debug_image               Whether images should contains the debug server and run in debug mode, this will use the Dockerfile.debug image to build the container (configured for the engine server and the APIC server so far)"
+    echo "  podman_mode               Whether images should be built with podman instead of docker. Use if you are developing Kurtosis on Podman cluster type"
     echo ""
     exit 1  # Exit with an error so that if this is accidentally called by CI, the script will fail
 }
 
-# Raw parsing of the arguments
-debug_image="${1:-"${DEFAULT_DEBUG_IMAGE}"}"
+# Check for --build-enclave-manager flag
+build_enclave_manager="false"
+positional_args=()
+for arg in "$@"; do
+    if [ "${arg}" = "--build-enclave-manager" ]; then
+        build_enclave_manager="true"
+    else
+        positional_args+=("${arg}")
+    fi
+done
+
+# Raw parsing of the positional arguments
+debug_image="${positional_args[0]:-"${DEFAULT_DEBUG_IMAGE}"}"
 if [ "${debug_image}" != "true" ] && [ "${debug_image}" != "false" ]; then
     echo "Error: Invalid debug_image arg: '${debug_image}'" >&2
     show_helptext_and_exit
 fi
 
-podman_mode="${2:-"${DEFAULT_PODMAN_MODE}"}"
+podman_mode="${positional_args[1]:-"${DEFAULT_PODMAN_MODE}"}"
 if [ "${podman_mode}" != "true" ] && [ "${podman_mode}" != "false" ]; then
     echo "Error: Invalid podman_mode arg: '${podman_mode}'" >&2
     show_helptext_and_exit
@@ -88,6 +99,20 @@ done
 build_script_rel_filepaths=("${BUILD_SCRIPT_RELATIVE_FILEPATHS[@]}")
 if "${debug_image}"; then
   build_script_rel_filepaths=("${BUILD_DEBUG_SCRIPT_RELATIVE_FILEPATHS[@]}")
+fi
+
+if "${build_enclave_manager}"; then
+    # Insert enclave-manager build before engine build
+    updated_filepaths=()
+    for fp in "${build_script_rel_filepaths[@]}"; do
+        if [ "${fp}" = "engine/scripts/build.sh" ]; then
+            updated_filepaths+=("enclave-manager/scripts/build.sh")
+        fi
+        updated_filepaths+=("${fp}")
+    done
+    build_script_rel_filepaths=("${updated_filepaths[@]}")
+else
+    echo "Skipping enclave-manager web build (use --build-enclave-manager to include)"
 fi
 
 for build_script_rel_filepath in "${build_script_rel_filepaths[@]}"; do
