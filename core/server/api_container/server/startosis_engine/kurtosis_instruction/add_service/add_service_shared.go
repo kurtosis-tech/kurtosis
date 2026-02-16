@@ -219,6 +219,11 @@ func replaceMagicStrings(
 	}
 	renderedServiceConfig.SetFilesToBeMoved(serviceConfig.GetFilesToBeMoved())
 
+	// Preserve capabilities from the original service config
+	if len(serviceConfig.GetCapabilities()) > 0 {
+		renderedServiceConfig.SetCapabilities(serviceConfig.GetCapabilities())
+	}
+
 	return service.ServiceName(serviceNameStr), renderedServiceConfig, nil
 }
 
