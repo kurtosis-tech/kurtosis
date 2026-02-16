@@ -204,6 +204,36 @@ func testImageDownloadMode() image_download_mode.ImageDownloadMode {
 	return image_download_mode.ImageDownloadMode_Missing
 }
 
+func TestServiceConfigCapabilitiesField(t *testing.T) {
+	// Test capabilities with NET_ADMIN
+	config, err := CreateServiceConfig("test-image", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 0, 0, "", 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false, []string{}, false)
+	require.NoError(t, err)
+	require.Nil(t, config.GetCapabilities())
+
+	config.SetCapabilities([]string{"NET_ADMIN"})
+	require.Equal(t, []string{"NET_ADMIN"}, config.GetCapabilities())
+
+	// Test multiple capabilities
+	config.SetCapabilities([]string{"NET_ADMIN", "SYS_PTRACE"})
+	require.Equal(t, []string{"NET_ADMIN", "SYS_PTRACE"}, config.GetCapabilities())
+}
+
+func TestServiceConfigCapabilitiesMarshalling(t *testing.T) {
+	config, err := CreateServiceConfig("test-image", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 0, 0, "", 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false, []string{}, false)
+	require.NoError(t, err)
+	config.SetCapabilities([]string{"NET_ADMIN", "SYS_PTRACE"})
+
+	marshaledConfig, err := json.Marshal(config)
+	require.NoError(t, err)
+
+	// nolint: exhaustruct
+	newConfig := &ServiceConfig{}
+	err = json.Unmarshal(marshaledConfig, newConfig)
+	require.NoError(t, err)
+
+	require.Equal(t, config.GetCapabilities(), newConfig.GetCapabilities())
+}
+
 func TestServiceConfigTtyField(t *testing.T) {
 	// Test TTY enabled
 	ttyEnabledConfig, err := CreateServiceConfig("test-image", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 0, 0, "", 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, true, []string{}, false)
