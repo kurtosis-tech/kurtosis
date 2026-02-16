@@ -196,6 +196,9 @@ message ServiceInfo {
 
   // Wheter TTy is enabled
   optional bool tty_enabled = 20;
+
+  // Linux capabilities to add to the container (e.g., "NET_ADMIN", "SYS_PTRACE")
+  repeated string capabilities = 21;
 }
 
 // ==============================================================================================
