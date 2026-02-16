@@ -558,6 +558,7 @@ func createStartServiceOperation(
 		ttyEnabled := serviceConfig.GetTtyEnabled()
 		devices := serviceConfig.GetDevices()
 		publishUdp := serviceConfig.GetPublishUdp()
+		capabilities := serviceConfig.GetCapabilities()
 
 		// We replace the placeholder value with the actual private IP address
 		privateIPAddrStr := privateIpAddr.String()
@@ -748,6 +749,14 @@ func createStartServiceOperation(
 
 		if len(devices) > 0 {
 			createAndStartArgsBuilder.WithDevices(devices)
+		}
+
+		if len(capabilities) > 0 {
+			capabilitiesSet := map[docker_manager.ContainerCapability]bool{}
+			for _, cap := range capabilities {
+				capabilitiesSet[docker_manager.ContainerCapability(cap)] = true
+			}
+			createAndStartArgsBuilder.WithAddedCapabilities(capabilitiesSet)
 		}
 
 		createAndStartArgs := createAndStartArgsBuilder.Build()
