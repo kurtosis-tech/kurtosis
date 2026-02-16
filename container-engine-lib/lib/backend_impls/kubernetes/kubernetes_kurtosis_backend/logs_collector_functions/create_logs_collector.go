@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	apiv1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -31,6 +32,7 @@ func CreateLogsCollector(
 	logsCollectorParsers []logs_collector.Parser,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
+	tolerations []apiv1.Toleration,
 ) (
 	*logs_collector.LogsCollector,
 	func(),
@@ -63,6 +65,7 @@ func CreateLogsCollector(
 			logsCollectorParsers,
 			objAttrsProvider,
 			kubernetesManager,
+			tolerations,
 		)
 		if err != nil {
 			return nil, removeLogsCollectorFunc, stacktrace.Propagate(
