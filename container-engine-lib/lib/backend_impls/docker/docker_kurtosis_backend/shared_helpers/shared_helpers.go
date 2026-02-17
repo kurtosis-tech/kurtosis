@@ -382,10 +382,10 @@ func WaitForPortAvailabilityUsingNetstat(
 	maxRetries uint,
 	timeBetweenRetries time.Duration,
 ) error {
+	portHex := fmt.Sprintf("%04X", portSpec.GetNumber())
 	commandStr := fmt.Sprintf(
-		"[ -n \"$(netstat -anp %v | grep LISTEN | grep %v)\" ]",
-		strings.ToLower(portSpec.GetTransportProtocol().String()),
-		portSpec.GetNumber(),
+		"grep -i ':%s ' /proc/net/tcp /proc/net/tcp6 2>/dev/null | grep -qi ' 0A '",
+		portHex,
 	)
 	execCmd := []string{
 		"sh",
@@ -400,7 +400,7 @@ func WaitForPortAvailabilityUsingNetstat(
 				return nil
 			}
 			logrus.Debugf(
-				"Netstat availability-waiting command '%v' returned without a Docker error, but exited with non-%v exit code '%v' and logs:\n%v",
+				"Port availability command '%v' returned without a Docker error, but exited with non-%v exit code '%v' and logs:\n%v",
 				commandStr,
 				netstatSuccessExitCode,
 				exitCode,
@@ -408,7 +408,7 @@ func WaitForPortAvailabilityUsingNetstat(
 			)
 		} else {
 			logrus.Debugf(
-				"Netstat availability-waiting command '%v' experienced a Docker error:\n%v",
+				"Port availability command '%v' experienced a Docker error:\n%v",
 				commandStr,
 				err,
 			)
