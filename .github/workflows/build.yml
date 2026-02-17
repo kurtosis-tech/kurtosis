@@ -984,11 +984,17 @@ jobs:
           ${KURTOSIS_BINPATH} service add test-enclave test1 httpd --ports http=http:80/tcp
           enclave_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | grep "^UUID:" | awk '{print $2}')
           service_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | tail -2 | awk '{print $1}')
-          # Give the reverse proxy enough time to discover the httpd user service
-          sleep 10
-          status_code=$(curl -I http://localhost:${{ env.REVERSE_PROXY_PORT }} -H "Host: 80-$(echo $service_uuid)-$(echo $enclave_uuid)" | head -1 | awk '{print $2}')
-          if ! [ "${status_code}" -eq "200" ]; then
-            echo 'HTTP request status code returned is '${status_code}' instead of 200'
+          for i in $(seq 1 30); do
+            status_code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:${{ env.REVERSE_PROXY_PORT }} -H "Host: 80-${service_uuid}-${enclave_uuid}" || true)
+            if [ "${status_code}" = "200" ]; then
+              echo "Reverse proxy responded with 200 after ${i} attempts"
+              break
+            fi
+            echo "Attempt ${i}: got ${status_code}, retrying..."
+            sleep 2
+          done
+          if [ "${status_code}" != "200" ]; then
+            echo "HTTP request status code returned is ${status_code} instead of 200"
             exit 1
           fi
 
@@ -997,10 +1003,17 @@ jobs:
           ${KURTOSIS_BINPATH} engine restart
           enclave_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | grep "^UUID:" | awk '{print $2}')
           service_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | tail -2 | awk '{print $1}')
-          sleep 10
-          status_code=$(curl -I http://localhost:${{ env.REVERSE_PROXY_PORT }} -H "Host: 80-$(echo $service_uuid)-$(echo $enclave_uuid)" | head -1 | awk '{print $2}')
-          if ! [ "${status_code}" -eq "200" ]; then
-            echo 'HTTP request status code returned is '${status_code}' instead of 200'
+          for i in $(seq 1 30); do
+            status_code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:${{ env.REVERSE_PROXY_PORT }} -H "Host: 80-${service_uuid}-${enclave_uuid}" || true)
+            if [ "${status_code}" = "200" ]; then
+              echo "Reverse proxy responded with 200 after ${i} attempts"
+              break
+            fi
+            echo "Attempt ${i}: got ${status_code}, retrying..."
+            sleep 2
+          done
+          if [ "${status_code}" != "200" ]; then
+            echo "HTTP request status code returned is ${status_code} instead of 200"
             exit 1
           fi
 
@@ -1045,10 +1058,16 @@ jobs:
           ${KURTOSIS_BINPATH} service add test-enclave test1 httpd --ports http=http:80/tcp
           enclave_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | grep "^UUID:" | awk '{print $2}')
           service_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | tail -2 | awk '{print $1}')
-          # Give the reverse proxy enough time to discover the httpd user service
-          sleep 10
-          status_code=$(curl -I http://localhost:${{ env.REVERSE_PROXY_PORT }} -H "Host: 80-$(echo $service_uuid)-$(echo $enclave_uuid)" | head -1 | awk '{print $2}')
-          if ! [ "${status_code}" -eq "200" ]; then
-            echo 'HTTP request status code returned is '${status_code}' instead of 200'
+          for i in $(seq 1 30); do
+            status_code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:${{ env.REVERSE_PROXY_PORT }} -H "Host: 80-${service_uuid}-${enclave_uuid}" || true)
+            if [ "${status_code}" = "200" ]; then
+              echo "Reverse proxy responded with 200 after ${i} attempts"
+              break
+            fi
+            echo "Attempt ${i}: got ${status_code}, retrying..."
+            sleep 2
+          done
+          if [ "${status_code}" != "200" ]; then
+            echo "HTTP request status code returned is ${status_code} instead of 200"
             exit 1
           fi
