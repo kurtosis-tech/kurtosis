@@ -3,5 +3,5 @@ package consts
 import "time"
 
 const (
-	FluentbitRefreshInterval = 10 * time.Second
+	FluentbitRefreshInterval = 30 * time.Second
 )
