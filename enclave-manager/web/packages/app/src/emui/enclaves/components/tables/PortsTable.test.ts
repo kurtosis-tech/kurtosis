@@ -18,10 +18,14 @@ jest.mock("../widgets/PortMaybeLink", () => ({ PortMaybeLink: () => null }));
 jest.mock("../utils", () => ({
   transportProtocolToString: (protocol: number) => {
     switch (protocol) {
-      case 0: return "TCP";
-      case 1: return "SCTP";
-      case 2: return "UDP";
-      default: return "";
+      case 0:
+        return "TCP";
+      case 1:
+        return "SCTP";
+      case 2:
+        return "UDP";
+      default:
+        return "";
     }
   },
 }));
