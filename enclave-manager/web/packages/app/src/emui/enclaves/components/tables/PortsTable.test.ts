@@ -7,10 +7,14 @@
 jest.mock("@bufbuild/protobuf", () => ({ Empty: {} }));
 jest.mock("true-myth", () => ({ Result: {} }));
 jest.mock("enclave-manager-sdk/build/api_container_service_pb", () => ({ Port: {} }));
-jest.mock("kurtosis-ui-components", () => ({
-  isDefined: (it: any) => it !== null && it !== undefined,
-  DataTable: () => null,
-}));
+jest.mock(
+  "kurtosis-ui-components",
+  () => ({
+    isDefined: (it: any) => it !== null && it !== undefined,
+    DataTable: () => null,
+  }),
+  { virtual: true },
+);
 jest.mock("../../EnclavesContext", () => ({
   useEnclavesContext: () => ({ addAlias: jest.fn() }),
 }));
