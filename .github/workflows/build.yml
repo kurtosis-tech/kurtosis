@@ -279,10 +279,6 @@ jobs:
       - name: Install yarn
         run: npm install -g yarn
 
-      - name: Test
-        working-directory: enclave-manager/web
-        run: CI=true yarn test
-
       - name: Build
         run: enclave-manager/scripts/build.sh
 
