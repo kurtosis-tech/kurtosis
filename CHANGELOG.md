@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.16.3](https://github.com/kurtosis-tech/kurtosis/compare/1.16.2...1.16.3) (2026-02-24)
+
+
+### Bug Fixes
+
+* **ci:** fix publish workflow env vars and version bumping ([#2908](https://github.com/kurtosis-tech/kurtosis/issues/2908)) ([be6e597](https://github.com/kurtosis-tech/kurtosis/commit/be6e597dd6589fa23f4908563970e6695ade192e))
+
+
+### Miscellaneous Chores
+
+* release 1.16.3 ([#2910](https://github.com/kurtosis-tech/kurtosis/issues/2910)) ([de629eb](https://github.com/kurtosis-tech/kurtosis/commit/de629eb8595268b63acbaaf550c866140bc7b2ec))
+
 ## [1.16.2](https://github.com/kurtosis-tech/kurtosis/compare/1.16.1...1.16.2) (2026-02-24)
 
 
