@@ -308,6 +308,6 @@ jobs:
 
       - name: Build and publish CLI
         env:
-          FURY_TOKEN: ${{ secrets.GEMFURY_PUBLISH_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.KURTOSISBOT_GITHUB_TOKEN }}
+          GEMFURY_PUBLISH_TOKEN: ${{ secrets.GEMFURY_PUBLISH_TOKEN }}
+          KURTOSISBOT_GITHUB_TOKEN: ${{ secrets.KURTOSISBOT_GITHUB_TOKEN }}
         run: cli/cli/scripts/build.sh true true
