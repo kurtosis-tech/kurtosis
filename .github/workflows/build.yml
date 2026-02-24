@@ -7,7 +7,7 @@ on:
   push:
     branches-ignore:
       - main
-      - release-please--branches--main--*
+      - gh-readonly-queue/**
   merge_group:
 
 concurrency:
