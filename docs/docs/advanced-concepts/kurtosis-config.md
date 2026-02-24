@@ -14,8 +14,8 @@ Below is a fully annotated example of a `kurtosis-config.yml` with explanations 
 
 # Required. The version of the Kurtosis config schema.
 # This ensures compatibility with the CLI. 
-# Latest supported version is 6, supported by Kurtosis engine version 1.9.0.
-config-version: 6
+# Latest supported version is 7, supported by Kurtosis engine version 1.15.3.
+config-version: 7
 
 # Optional. Whether Kurtosis should send anonymous telemetry (usage) data.
 # Default: true
@@ -87,6 +87,19 @@ kurtosis-clusters:
       # Name of node to schedule the engine and logs aggregator on.
       # Currently, the engine and logs aggregator will be scheduled on the same machine as they need to share a filesystem for reading and writing to default logs db.
       engine-node-name: "minikube-one"
+
+      # Optional. Node selectors to apply to Kurtosis-managed pods (engine, logs aggregator).
+      # These are merged with the engine-node-name selector if both are specified.
+      node-selectors:
+        disktype: ssd
+
+      # Optional. Tolerations to apply to Kurtosis-managed pods (engine, logs aggregator, logs collector).
+      # Allows scheduling on nodes with matching taints.
+      tolerations:
+        - key: "dedicated"
+          operator: "Equal"
+          value: "kurtosis"
+          effect: "NoSchedule"
 
 # Optional. Used when connecting to Kurtosis Cloud.
 # Typically only needed in enterprise or managed deployments.
