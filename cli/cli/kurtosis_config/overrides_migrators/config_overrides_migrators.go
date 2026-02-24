@@ -9,6 +9,7 @@ import (
 	v4 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v4"
 	v5 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v5"
 	v6 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v6"
+	v7 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v7"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
@@ -28,6 +29,7 @@ type configOverridesMigrator = func(uncastedOldConfig interface{}) (interface{},
 // to the bottom each time
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>> INSTRUCTIONS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 var AllConfigOverridesMigrators = map[config_version.ConfigVersion]configOverridesMigrator{
+	config_version.ConfigVersion_v6: migrateFromV6,
 	config_version.ConfigVersion_v5: migrateFromV5,
 	config_version.ConfigVersion_v4: migrateFromV4,
 	config_version.ConfigVersion_v3: migrateFromV3,
@@ -37,6 +39,92 @@ var AllConfigOverridesMigrators = map[config_version.ConfigVersion]configOverrid
 }
 
 // vvvvvvvvvvvvvvvvvvvvvvv REVERSE chronological order so you don't have to scroll forever vvvvvvvvvvvvvvvvvvvv
+func migrateFromV6(uncastedConfig interface{}) (interface{}, error) {
+	castedOldConfig, ok := uncastedConfig.(*v6.KurtosisConfigV6)
+	if !ok {
+		return nil, stacktrace.NewError(
+			"Failed to cast old configuration '%+v' to expected configuration struct",
+			uncastedConfig,
+		)
+	}
+
+	var newClusters map[string]*v7.KurtosisClusterConfigV7
+	if castedOldConfig.KurtosisClusters != nil {
+		newClusters = make(map[string]*v7.KurtosisClusterConfigV7, len(castedOldConfig.KurtosisClusters))
+		for oldClusterName, oldClusterConfig := range castedOldConfig.KurtosisClusters {
+			oldKubernetesConfig := oldClusterConfig.Config
+			oldLogsAggregatorConfig := oldClusterConfig.LogsAggregator
+			oldLogsCollectorConfig := oldClusterConfig.LogsCollector
+			oldGraflokiConfig := oldClusterConfig.GrafanaLokiConfig
+
+			var newKubernetesConfig *v7.KubernetesClusterConfigV7
+			if oldKubernetesConfig != nil {
+				newKubernetesConfig = &v7.KubernetesClusterConfigV7{
+					KubernetesClusterName:  oldKubernetesConfig.KubernetesClusterName,
+					StorageClass:           oldKubernetesConfig.StorageClass,
+					EnclaveSizeInMegabytes: oldKubernetesConfig.EnclaveSizeInMegabytes,
+					EngineNodeName:         oldKubernetesConfig.EngineNodeName,
+					NodeSelectors:          nil,
+					Tolerations:            nil,
+				}
+			}
+
+			var newLogsAggregatorConfig *v7.LogsAggregatorConfigV7
+			if oldLogsAggregatorConfig != nil {
+				newLogsAggregatorConfig = &v7.LogsAggregatorConfigV7{
+					Sinks: oldLogsAggregatorConfig.Sinks,
+				}
+			}
+
+			var newLogsCollectorConfig *v7.LogsCollectorConfigV7
+			if oldLogsCollectorConfig != nil {
+				newLogsCollectorConfig = &v7.LogsCollectorConfigV7{
+					Parsers: oldLogsCollectorConfig.Parsers,
+					Filters: oldLogsCollectorConfig.Filters,
+				}
+			}
+
+			var newGraflokiConfig *v7.GrafanaLokiConfigV7
+			if oldGraflokiConfig != nil {
+				newGraflokiConfig = &v7.GrafanaLokiConfigV7{
+					ShouldStartBeforeEngine: oldGraflokiConfig.ShouldStartBeforeEngine,
+					GrafanaImage:            oldGraflokiConfig.GrafanaImage,
+					LokiImage:               oldGraflokiConfig.LokiImage,
+				}
+			}
+
+			newClusterConfig := &v7.KurtosisClusterConfigV7{
+				Type:                        oldClusterConfig.Type,
+				Config:                      newKubernetesConfig,
+				LogsAggregator:              newLogsAggregatorConfig,
+				LogsCollector:               newLogsCollectorConfig,
+				GrafanaLokiConfig:           newGraflokiConfig,
+				ShouldEnableDefaultLogsSink: oldClusterConfig.ShouldEnableDefaultLogsSink,
+			}
+
+			newClusters[oldClusterName] = newClusterConfig
+		}
+	}
+
+	var newCloudConfig *v7.KurtosisCloudConfigV7
+	if castedOldConfig.CloudConfig != nil {
+		newCloudConfig = &v7.KurtosisCloudConfigV7{
+			ApiUrl:           castedOldConfig.CloudConfig.ApiUrl,
+			Port:             castedOldConfig.CloudConfig.Port,
+			CertificateChain: castedOldConfig.CloudConfig.CertificateChain,
+		}
+	}
+
+	newConfig := &v7.KurtosisConfigV7{
+		ConfigVersion:     config_version.ConfigVersion_v7,
+		ShouldSendMetrics: castedOldConfig.ShouldSendMetrics,
+		KurtosisClusters:  newClusters,
+		CloudConfig:       newCloudConfig,
+	}
+
+	return newConfig, nil
+}
+
 func migrateFromV5(uncastedConfig interface{}) (interface{}, error) {
 	// cast "uncastedConfig" to current version we're upgrading from
 	castedOldConfig, ok := uncastedConfig.(*v5.KurtosisConfigV5)

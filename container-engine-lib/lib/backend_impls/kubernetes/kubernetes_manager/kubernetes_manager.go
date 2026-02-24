@@ -1248,6 +1248,8 @@ func (manager *KubernetesManager) CreateDaemonSet(
 	initContainers []apiv1.Container,
 	containers []apiv1.Container,
 	volumes []apiv1.Volume,
+	nodeSelector map[string]string,
+	tolerations []apiv1.Toleration,
 ) (*v1.DaemonSet, error) {
 	daemonSetClient := manager.kubernetesClientSet.AppsV1().DaemonSets(namespaceName)
 
@@ -1287,7 +1289,7 @@ func (manager *KubernetesManager) CreateDaemonSet(
 				TerminationGracePeriodSeconds: nil,
 				ActiveDeadlineSeconds:         nil,
 				DNSPolicy:                     "",
-				NodeSelector:                  nil,
+				NodeSelector:                  nodeSelector,
 				ServiceAccountName:            daemonSetServiceAccountName,
 				DeprecatedServiceAccount:      "",
 				AutomountServiceAccountToken:  nil,
@@ -1302,7 +1304,7 @@ func (manager *KubernetesManager) CreateDaemonSet(
 				Subdomain:                     "",
 				Affinity:                      nil,
 				SchedulerName:                 "",
-				Tolerations:                   nil,
+				Tolerations:                   tolerations,
 				HostAliases:                   nil,
 				PriorityClassName:             "",
 				Priority:                      nil,
@@ -1474,6 +1476,8 @@ func (manager *KubernetesManager) CreateDeployment(
 	containers []apiv1.Container,
 	volumes []apiv1.Volume,
 	affinity *apiv1.Affinity,
+	nodeSelector map[string]string,
+	tolerations []apiv1.Toleration,
 ) (*v1.Deployment, error) {
 	deploymentClient := manager.kubernetesClientSet.AppsV1().Deployments(namespaceName)
 
@@ -1522,7 +1526,7 @@ func (manager *KubernetesManager) CreateDeployment(
 				TerminationGracePeriodSeconds: nil,
 				ActiveDeadlineSeconds:         nil,
 				DNSPolicy:                     "",
-				NodeSelector:                  nil,
+				NodeSelector:                  nodeSelector,
 				ServiceAccountName:            "",
 				DeprecatedServiceAccount:      "",
 				AutomountServiceAccountToken:  nil,
@@ -1536,7 +1540,7 @@ func (manager *KubernetesManager) CreateDeployment(
 				Subdomain:                     "",
 				Affinity:                      affinity,
 				SchedulerName:                 "",
-				Tolerations:                   nil,
+				Tolerations:                   tolerations,
 				HostAliases:                   nil,
 				PriorityClassName:             "",
 				Priority:                      nil,

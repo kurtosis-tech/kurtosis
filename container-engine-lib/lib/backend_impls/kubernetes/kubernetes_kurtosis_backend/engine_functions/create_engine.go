@@ -42,10 +42,8 @@ const (
 )
 
 var (
-	engineWait *port_spec.Wait = nil
-	// TODO add support for passing toleration to Engine
-	engineToleration          []apiv1.Toleration = nil
-	kurtosisEngineNodeNameKey                    = kubernetes_label_key.EngineNodeLabelKey.GetString()
+	engineWait                *port_spec.Wait = nil
+	kurtosisEngineNodeNameKey                 = kubernetes_label_key.EngineNodeLabelKey.GetString()
 )
 
 func CreateEngine(
@@ -63,6 +61,8 @@ func CreateEngine(
 	engineNodeName string,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
+	configNodeSelectors map[string]string,
+	configTolerations []apiv1.Toleration,
 ) (
 	*engine.Engine,
 	error,
@@ -165,6 +165,10 @@ func CreateEngine(
 	// if engine node specified, label node with engine node name so engine node gets schedule on this node via node selectors passed to create pod
 	// the engine needs to be placed on a node to have the access to the same logs database for users, if engine gets scheduled on different nodes, there will be inconsistencies in logs
 	engineNodeSelectors := map[string]string{}
+	// merge config-provided node selectors
+	for k, v := range configNodeSelectors {
+		engineNodeSelectors[k] = v
+	}
 	shouldRemoveEngineNodeSelectors := false
 	if engineNodeName != "" {
 		engineNodeSelectors[kurtosisEngineNodeNameKey] = engineNodeName
@@ -185,7 +189,7 @@ func CreateEngine(
 
 	logsAggregatorDeployment := vector.NewVectorLogsAggregatorResourcesManager()
 
-	enginePod, enginePodLabels, err := createEnginePod(ctx, namespaceName, engineNodeSelectors, engineAttributesProvider, imageOrgAndRepo, imageVersionTag, envVars, privatePortSpecs, logsAggregatorDeployment.GetLogsBaseDirPath(), serviceAccount.Name, kubernetesManager)
+	enginePod, enginePodLabels, err := createEnginePod(ctx, namespaceName, engineNodeSelectors, configTolerations, engineAttributesProvider, imageOrgAndRepo, imageVersionTag, envVars, privatePortSpecs, logsAggregatorDeployment.GetLogsBaseDirPath(), serviceAccount.Name, kubernetesManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the engine pod")
 	}
@@ -301,6 +305,8 @@ func CreateEngine(
 		shouldEnablePersistentVolumeLogsCollection,
 		objAttrsProvider,
 		kubernetesManager,
+		engineNodeSelectors,
+		configTolerations,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the logs aggregator")
@@ -316,7 +322,7 @@ func CreateEngine(
 
 	// Unlike the DockerBackend, where the log collectors are deployed by the engine during enclave creation
 	// for k8s backend, the logs collector lifecycle gets managed with the engine's and is created during engine creation
-	_, removeLogsCollectorFunc, err := logs_collector_functions.CreateLogsCollector(ctx, logsCollectorTcpPortNum, logsCollectorHttpPortNum, logsCollectorDaemonSet, logsAggregator, logsCollectorFilters, logsCollectorParsers, kubernetesManager, objAttrsProvider)
+	_, removeLogsCollectorFunc, err := logs_collector_functions.CreateLogsCollector(ctx, logsCollectorTcpPortNum, logsCollectorHttpPortNum, logsCollectorDaemonSet, logsAggregator, logsCollectorFilters, logsCollectorParsers, kubernetesManager, objAttrsProvider, configTolerations)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the logs collector")
 	}
@@ -503,6 +509,7 @@ func createEnginePod(
 	ctx context.Context,
 	namespace string,
 	nodeSelectors map[string]string,
+	tolerations []apiv1.Toleration,
 	engineAttributesProvider object_attributes_provider.KubernetesEngineObjectAttributesProvider,
 	imageOrgAndRepo string,
 	imageVersionTag string,
@@ -586,7 +593,7 @@ func createEnginePod(
 		engineVolumes,
 		serviceAccountName,
 		apiv1.RestartPolicyNever,
-		engineToleration,
+		tolerations,
 		nodeSelectors)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while creating the pod with name '%s' in namespace '%s' with image '%s'", enginePodName, namespace, containerImageAndTag)
