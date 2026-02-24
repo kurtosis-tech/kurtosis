@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.16.2](https://github.com/kurtosis-tech/kurtosis/compare/1.16.1...1.16.2) (2026-02-24)
+
+
+### Miscellaneous Chores
+
+* release 1.16.2 ([#2906](https://github.com/kurtosis-tech/kurtosis/issues/2906)) ([08729a0](https://github.com/kurtosis-tech/kurtosis/commit/08729a00e11e5f4f338525cd9da3cfef107e1b0f))
+
+## [1.16.1](https://github.com/kurtosis-tech/kurtosis/compare/1.16.0...1.16.1) (2026-02-24)
+
+
+### Bug Fixes
+
+* **ci:** use correct dtolnay/rust-toolchain action for Rust publishing ([#2903](https://github.com/kurtosis-tech/kurtosis/issues/2903)) ([020bf44](https://github.com/kurtosis-tech/kurtosis/commit/020bf44b23d4fd2bc90b76ee0b4f1e7bb2858931))
+
+
+### Miscellaneous Chores
+
+* release 1.16.1 ([#2905](https://github.com/kurtosis-tech/kurtosis/issues/2905)) ([07c5892](https://github.com/kurtosis-tech/kurtosis/commit/07c589234264efd57150417f8f157affa5f58c8a))
+
 ## [1.16.0](https://github.com/kurtosis-tech/kurtosis/compare/1.15.2...1.16.0) (2026-02-24)
 
 
