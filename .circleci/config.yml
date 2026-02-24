@@ -8,13 +8,13 @@ filters_ignore_main: &filters_ignore_main
       ignore:
         - /.*/
 
-# Don't run on tags
+# Don't run publish workflow jobs - publishing has been migrated to GitHub Actions
 filters_ignore_tags: &filters_ignore_tags
   filters:
     branches:
       ignore: /.*/
     tags:
-      only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+      ignore: /.*/
 
 # cli cluster param used to run test suites against docker/kubernetes tests
 param_cli_cluster_backend: &param_cli_cluster_backend
@@ -1618,11 +1618,7 @@ workflows:
           context:
             - npmjs-user
             - slack-secrets
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+          <<: *filters_ignore_tags
       - publish_kurtosis_ui_libs:
           context:
             - npmjs-user
