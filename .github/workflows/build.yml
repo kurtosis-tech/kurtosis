@@ -8,7 +8,7 @@ on:
     branches-ignore:
       - main
       - release-please--branches--main--*
-      - gh-readonly-queue/main/*
+  merge_group:
 
 concurrency:
   group: build-${{ github.ref }}
