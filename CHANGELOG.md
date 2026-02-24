@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.16.0](https://github.com/kurtosis-tech/kurtosis/compare/1.15.2...1.16.0) (2026-02-24)
+
+
+### Features
+
+* **config:** add config overrides V7 objects and update resolved config ([40de020](https://github.com/kurtosis-tech/kurtosis/commit/40de020566866a2fe49629e7fdcf08e7a717ea22))
+* **config:** introduce ConfigVersion_v7 for Kurtosis config overrides ([#2891](https://github.com/kurtosis-tech/kurtosis/issues/2891)) ([40de020](https://github.com/kurtosis-tech/kurtosis/commit/40de020566866a2fe49629e7fdcf08e7a717ea22))
+* **config:** introduce KurtosisConfigV7 and v6 to v7 migrator ([40de020](https://github.com/kurtosis-tech/kurtosis/commit/40de020566866a2fe49629e7fdcf08e7a717ea22))
+* **k8s:** upgrade KurtosisConfig version to v7 and pass node ([40de020](https://github.com/kurtosis-tech/kurtosis/commit/40de020566866a2fe49629e7fdcf08e7a717ea22))
+* **kubernetes:** add support for configuring node selectors and ([40de020](https://github.com/kurtosis-tech/kurtosis/commit/40de020566866a2fe49629e7fdcf08e7a717ea22))
+* **kubernetes:** allow specifying node selectors and tolerations for ([40de020](https://github.com/kurtosis-tech/kurtosis/commit/40de020566866a2fe49629e7fdcf08e7a717ea22))
+
+
+### Bug Fixes
+
+* **ci:** fix build triggers for merge queue and release-please ([#2900](https://github.com/kurtosis-tech/kurtosis/issues/2900)) ([2d04bc1](https://github.com/kurtosis-tech/kurtosis/commit/2d04bc14095a40fead62f50cb8cdb0e3e95df02a))
+* **PortsTable.tsx:** use optional chaining and nullish coalescing for public port retrieval ([#2894](https://github.com/kurtosis-tech/kurtosis/issues/2894)) ([f1364ab](https://github.com/kurtosis-tech/kurtosis/commit/f1364abf75e5f099488e25913dbe79a369a3a5ef))
+* **publish:** update Docker Hub secret names ([#2899](https://github.com/kurtosis-tech/kurtosis/issues/2899)) ([e4637ce](https://github.com/kurtosis-tech/kurtosis/commit/e4637cee825aa66916529a625901c826353e397b))
+* **test:** increase log flush wait times in TestStreamLogs ([#2896](https://github.com/kurtosis-tech/kurtosis/issues/2896)) ([bd6047a](https://github.com/kurtosis-tech/kurtosis/commit/bd6047a4c38a110fff2e1ef8d9a113bb907b500c))
+* **test:** prevent panic in TestSearchLogs when logs are not yet persisted ([#2895](https://github.com/kurtosis-tech/kurtosis/issues/2895)) ([0306759](https://github.com/kurtosis-tech/kurtosis/commit/0306759109be392f70748cc01a4f64e66400bd66))
+
 ## [1.15.2](https://github.com/kurtosis-tech/kurtosis/compare/1.15.1...1.15.2) (2026-01-22)
 
 
