@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	apiv1 "k8s.io/api/core/v1"
 )
 
 func CreateLogsAggregator(
@@ -19,6 +20,8 @@ func CreateLogsAggregator(
 	shouldEnablePersistentVolumeLogsCollection bool,
 	objAttrProvider object_attributes_provider.KubernetesObjectAttributesProvider,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
+	nodeSelector map[string]string,
+	tolerations []apiv1.Toleration,
 ) (*logs_aggregator.LogsAggregator, func(), error) {
 	var logsAggregatorObj *logs_aggregator.LogsAggregator
 	var kubernetesResources *logsAggregatorKubernetesResources
@@ -43,7 +46,9 @@ func CreateLogsAggregator(
 			shouldEnablePersistentVolumeLogsCollection,
 			engineNamespace,
 			objAttrProvider,
-			kubernetesManager)
+			kubernetesManager,
+			nodeSelector,
+			tolerations)
 		if err != nil {
 			return nil, removeLogsAggregatorFunc, stacktrace.Propagate(err, "An error occurred creating logs aggregator deployment.")
 		}

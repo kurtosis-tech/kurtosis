@@ -23,6 +23,8 @@ type LogsAggregatorResourcesManager interface {
 		engineNamespace string,
 		objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
 		kubernetesManager *kubernetes_manager.KubernetesManager,
+		nodeSelector map[string]string,
+		tolerations []apiv1.Toleration,
 	) (
 		*apiv1.Service,
 		*appsv1.Deployment,

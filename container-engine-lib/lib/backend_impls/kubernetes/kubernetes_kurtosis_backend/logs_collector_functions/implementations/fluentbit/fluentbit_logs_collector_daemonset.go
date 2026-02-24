@@ -49,6 +49,7 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 	logsCollectorParsers []logs_collector.Parser,
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
+	tolerations []apiv1.Toleration,
 ) (
 	*appsv1.DaemonSet,
 	*apiv1.ConfigMap,
@@ -205,7 +206,7 @@ func (fluentbit *fluentbitLogsCollector) CreateAndStart(
 		return nil, nil, nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector fluent bit container ports from the port specs")
 	}
 
-	daemonSet, err := createLogsCollectorDaemonSet(ctx, namespace.Name, configMap.Name, serviceAccount.Name, containerPorts, logsCollectorAttrProvider, kubernetesManager)
+	daemonSet, err := createLogsCollectorDaemonSet(ctx, namespace.Name, configMap.Name, serviceAccount.Name, containerPorts, logsCollectorAttrProvider, kubernetesManager, tolerations)
 	if err != nil {
 		return nil, nil, nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create daemon set for fluent bit logs collector.")
 	}
@@ -261,7 +262,9 @@ func createLogsCollectorDaemonSet(
 	serviceAccountName string,
 	ports []apiv1.ContainerPort,
 	objAttrProvider object_attributes_provider.KubernetesLogsCollectorObjectAttributesProvider,
-	kubernetesManager *kubernetes_manager.KubernetesManager) (*appsv1.DaemonSet, error) {
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+	tolerations []apiv1.Toleration,
+) (*appsv1.DaemonSet, error) {
 
 	daemonSetAttrProvider, err := objAttrProvider.ForLogsCollectorDaemonSet()
 	if err != nil {
@@ -412,6 +415,8 @@ func createLogsCollectorDaemonSet(
 		[]apiv1.Container{}, // no need init containers
 		containers,
 		volumes,
+		nil, // DaemonSets run on all nodes, no nodeSelector needed
+		tolerations,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating daemon set for fluent bit logs collector.")

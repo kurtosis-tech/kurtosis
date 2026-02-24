@@ -24,6 +24,7 @@ type LogsCollectorDaemonSet interface {
 		logsCollectorParsers []logs_collector.Parser,
 		objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
 		kubernetesManager *kubernetes_manager.KubernetesManager,
+		tolerations []apiv1.Toleration,
 	) (
 		*appsv1.DaemonSet,
 		*apiv1.ConfigMap,

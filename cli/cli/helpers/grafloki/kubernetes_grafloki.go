@@ -168,7 +168,9 @@ func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes
 			NodeAffinity:    nil,
 			PodAffinity:     nil,
 			PodAntiAffinity: nil,
-		})
+		},
+		nil,
+		nil)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred creating Loki deployment.")
 	}
@@ -383,7 +385,9 @@ func createGrafanaAndLokiDeployments(ctx context.Context, k8sManager *kubernetes
 			NodeAffinity:    nil,
 			PodAffinity:     nil,
 			PodAntiAffinity: nil,
-		})
+		},
+		nil,
+		nil)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred creating Grafana deployment.")
 	}

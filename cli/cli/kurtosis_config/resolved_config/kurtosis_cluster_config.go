@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	v6 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v6"
+	v7 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v7"
 	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
@@ -15,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/stacktrace"
+	apiv1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -50,7 +51,7 @@ type GrafanaLokiConfig struct {
 	LokiImage               string
 }
 
-func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v6.KurtosisClusterConfigV6) (*KurtosisClusterConfig, error) {
+func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v7.KurtosisClusterConfigV7) (*KurtosisClusterConfig, error) {
 	if overrides.Type == nil {
 		return nil, stacktrace.NewError("Kurtosis cluster must have a defined type")
 	}
@@ -161,7 +162,7 @@ func (clusterConfig *KurtosisClusterConfig) ShouldEnableDefaultLogsSink() bool {
 //	Private Helpers
 //
 // ====================================================================================================
-func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesConfig *v6.KubernetesClusterConfigV6) (
+func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesConfig *v7.KubernetesClusterConfigV7) (
 	kurtosisBackendSupplier,
 	engine_server_launcher.KurtosisBackendConfigSupplier,
 	error,
@@ -263,8 +264,11 @@ func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesC
 			engineNodeName = *kubernetesConfig.EngineNodeName
 		}
 
+		nodeSelectors := kubernetesConfig.NodeSelectors
+		tolerations := convertTolerations(kubernetesConfig.Tolerations)
+
 		backendSupplier = func(ctx context.Context) (backend_interface.KurtosisBackend, error) {
-			backend, err := kubernetes_kurtosis_backend.GetCLIBackend(ctx, *kubernetesConfig.StorageClass, engineNodeName)
+			backend, err := kubernetes_kurtosis_backend.GetCLIBackend(ctx, *kubernetesConfig.StorageClass, engineNodeName, nodeSelectors, tolerations)
 			if err != nil {
 				return nil, stacktrace.Propagate(
 					err,
@@ -287,4 +291,38 @@ func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesC
 		)
 	}
 	return backendSupplier, engineConfigSupplier, nil
+}
+
+func convertTolerations(configTolerations []*v7.KubernetesTolerationV7) []apiv1.Toleration {
+	if len(configTolerations) == 0 {
+		return nil
+	}
+	result := make([]apiv1.Toleration, 0, len(configTolerations))
+	for _, t := range configTolerations {
+		var key string
+		if t.Key != nil {
+			key = *t.Key
+		}
+		var operator apiv1.TolerationOperator
+		if t.Operator != nil {
+			operator = apiv1.TolerationOperator(*t.Operator)
+		}
+		var value string
+		if t.Value != nil {
+			value = *t.Value
+		}
+		var effect apiv1.TaintEffect
+		if t.Effect != nil {
+			effect = apiv1.TaintEffect(*t.Effect)
+		}
+		toleration := apiv1.Toleration{
+			Key:               key,
+			Operator:          operator,
+			Value:             value,
+			Effect:            effect,
+			TolerationSeconds: t.TolerationSeconds,
+		}
+		result = append(result, toleration)
+	}
+	return result
 }
