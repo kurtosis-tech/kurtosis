@@ -320,14 +320,17 @@ func waitForLogsCollectorAvailability(
 			port_spec.TransportProtocol_TCP,
 		)
 	}
+	// Check that at least one DaemonSet pod is available rather than requiring all pods.
+	// On large clusters, some nodes may be slow to start pods (e.g. disk pressure) which
+	// would cause the engine startup to fail unnecessarily.
+	var lastErr error
 	for _, pod := range pods {
 		if len(pod.Spec.Containers) < 1 {
-			return stacktrace.NewError("Pod '%v' managed by logs collector daemon set '%v' doesn't have any containers associated with it. There should be at least one container.", pod.Name, logsCollectorDaemonSet.Name)
+			lastErr = stacktrace.NewError("Pod '%v' managed by logs collector daemon set '%v' doesn't have any containers associated with it. There should be at least one container.", pod.Name, logsCollectorDaemonSet.Name)
+			continue
 		}
 
-		// NOTE: ideally we'd actually curl the health endpoint of the fluent bit container (like we do for Docker)
-		// this part of code runs on a users machine where the  logs collector isn't exposed so we exec onto the pod containers - which may not have curl on them, hence netstat check
-		fluentBitContainerName := pod.Spec.Containers[0].Name // assume there's only one container and it's the fluent bit one (as configured)
+		fluentBitContainerName := pod.Spec.Containers[0].Name
 		if err = shared_helpers.WaitForPortAvailabilityUsingNetstat(
 			kubernetesManager,
 			k8sResources.namespace.Name,
@@ -336,11 +339,13 @@ func waitForLogsCollectorAvailability(
 			httpPortSpec,
 			maxAvailabilityChecksRetries,
 			timeToWaitBetweenAvailabilityChecksDuration); err != nil {
-			return stacktrace.Propagate(err, "An error occurred while checking for availability of pod '%v' managed by logs collector daemon set '%v'", pod.Name, logsCollectorDaemonSet.Name)
+			lastErr = stacktrace.Propagate(err, "An error occurred while checking for availability of pod '%v' managed by logs collector daemon set '%v'", pod.Name, logsCollectorDaemonSet.Name)
+			continue
 		}
+		return nil
 	}
 
-	return nil
+	return stacktrace.Propagate(lastErr, "No logs collector pods managed by daemon set '%v' became available", logsCollectorDaemonSet.Name)
 }
 
 func waitForNamespaceRemoval(
