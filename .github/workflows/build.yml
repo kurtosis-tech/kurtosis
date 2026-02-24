@@ -1052,3 +1052,43 @@ jobs:
             echo 'HTTP request status code returned is '${status_code}' instead of 200'
             exit 1
           fi
+
+  # ============================================================================
+  # Gate job - single status check for branch protection / merge queue
+  # ============================================================================
+  build:
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - check-docs-only
+      - build-container-engine-lib
+      - build-contexts-config-store
+      - build-grpc-file-transfer
+      - build-metrics-library
+      - build-name-generator
+      - build-kurtosis-api-golang
+      - build-kurtosis-api-typescript
+      - build-files-artifacts-expander
+      - build-core-launcher
+      - build-api-container-server
+      - build-enclave-manager-webapp
+      - build-engine-launcher
+      - build-engine-server
+      - build-cli
+      - build-cli-all-arch
+      - test-basic-cli-docker
+      - test-ci-for-failure
+      - build-golang-testsuite-docker
+      - build-golang-testsuite-k8s
+      - build-typescript-testsuite-docker
+      - build-typescript-testsuite-k8s
+      - test-old-enclave-continuity
+      - test-reverse-proxy-docker
+      - test-reverse-proxy-k8s
+    steps:
+      - name: Check results
+        run: |
+          if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
+            echo "One or more jobs failed or were cancelled"
+            exit 1
+          fi
