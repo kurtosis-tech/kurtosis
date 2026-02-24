@@ -1,12 +1,12 @@
 ##############
 # Yaml Anchors
 ##############
-# Don't run cli jobs on  main branches
+# Don't run build workflow jobs - CI has been migrated to GitHub Actions
 filters_ignore_main: &filters_ignore_main
   filters:
     branches:
       ignore:
-        - main
+        - /.*/
 
 # Don't run on tags
 filters_ignore_tags: &filters_ignore_tags
@@ -1397,39 +1397,37 @@ workflows:
           filters:
             branches:
               ignore:
-                - main
-                - release-please--branches--main--components--kurtosis
-                - gh-readonly-queue/main/.*
+                - /.*/
 
       - build_container_engine_lib:
           filters:
             branches:
               ignore:
-                - main
+                - /.*/
 
       - build_contexts_config_store:
           filters:
             branches:
               ignore:
-                - main
+                - /.*/
 
       - build_grpc_file_transfer:
           filters:
             branches:
               ignore:
-                - main
+                - /.*/
 
       - build_metrics_library:
           filters:
             branches:
               ignore:
-                - main
+                - /.*/
 
       - build_name_generator:
           filters:
             branches:
               ignore:
-                - main
+                - /.*/
 
       - build_kurtosis_api_golang:
           # NOTE: Do NOT add our private Github user here; the API must be publicly-accessible so must build without them
@@ -1437,31 +1435,31 @@ workflows:
           filters:
             branches:
               ignore:
-                - main
+                - /.*/
       - build_kurtosis_api_typescript:
           filters:
             branches:
               ignore:
-                - main
+                - /.*/
       - build_files_artifacts_expander:
           context:
             - docker-user
           filters:
             branches:
               ignore:
-                - main
+                - /.*/
       - build_core_launcher:
           filters:
             branches:
               ignore:
-                - main
+                - /.*/
       - build_api_container_server:
           context:
             - docker-user
           filters:
             branches:
               ignore:
-                - main
+                - /.*/
 
       - build_enclave_manager_webapp:
           <<: *filters_ignore_main
@@ -1470,7 +1468,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - main
+                - /.*/
       - build_engine_server:
           context:
             - docker-user
@@ -1479,7 +1477,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - main
+                - /.*/
 
       - build_cli:
           <<: *filters_ignore_main
