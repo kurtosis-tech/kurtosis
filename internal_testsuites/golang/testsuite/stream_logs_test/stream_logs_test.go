@@ -29,9 +29,10 @@ const (
 	lastLogLine   = "successfully"
 
 	// Retry configuration for log retrieval
-	// Logs may not be immediately available due to Fluentbit/Vector flush timing
-	maxLogRetrievalRetries    = 5
-	logRetrievalRetryInterval = 5 * time.Second
+	// Logs may not be immediately available due to Fluentbit/Vector flush timing;
+	// in CI the flush can take well over 30 seconds so we allow up to ~100 s of retries.
+	maxLogRetrievalRetries    = 10
+	logRetrievalRetryInterval = 10 * time.Second
 )
 
 var (
