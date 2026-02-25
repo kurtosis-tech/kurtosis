@@ -7,7 +7,7 @@
     "@types/jest": "^29.0.0",
     "@types/node": "^16.11.11",
     "@types/utf8": "^3.0.0",
-    "axios": "^0.28.0",
+    "axios": "^0.30.0",
     "example-api-server-api-lib": "^0.3.4",
     "example-datastore-server-api-lib": "^0.4.4",
     "jest": "^27.3.1",
