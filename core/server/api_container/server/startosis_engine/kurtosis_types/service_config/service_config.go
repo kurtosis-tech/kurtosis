@@ -56,6 +56,7 @@ const (
 	TtyEnabledAttr                  = "tty_enabled"
 	DevicesAttr                     = "devices"
 	PublishUdpAttr                  = "publish_udp"
+	CapabilitiesAttr                = "capabilities"
 
 	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
@@ -247,6 +248,12 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					Name:              PublishUdpAttr,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Bool],
+					Validator:         nil,
+				},
+				{
+					Name:              CapabilitiesAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
 					Validator:         nil,
 				},
 			},
@@ -592,6 +599,18 @@ func (config *ServiceConfig) ToKurtosisType(
 		publishUdp = bool(publishUdpStarlark)
 	}
 
+	capabilities := []string{}
+	capabilitiesStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.List](config.KurtosisValueTypeDefault, CapabilitiesAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found && capabilitiesStarlark.Len() > 0 {
+		capabilities, interpretationErr = kurtosis_types.SafeCastToStringSlice(capabilitiesStarlark, CapabilitiesAttr)
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
+	}
+
 	serviceConfig, err := service.CreateServiceConfig(
 		imageName,
 		maybeImageBuildSpec,
@@ -623,6 +642,9 @@ func (config *ServiceConfig) ToKurtosisType(
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating a service config")
 	}
 	serviceConfig.SetFilesToBeMoved(filesToBeMoved)
+	if len(capabilities) > 0 {
+		serviceConfig.SetCapabilities(capabilities)
+	}
 	return serviceConfig, nil
 }
 

@@ -461,6 +461,7 @@ func NewServiceInfo(
 	labels map[string]string,
 	tiniEnabled bool,
 	ttyEnabled bool,
+	capabilities []string,
 
 ) *kurtosis_core_rpc_api_bindings.ServiceInfo {
 	return &kurtosis_core_rpc_api_bindings.ServiceInfo{
@@ -484,6 +485,7 @@ func NewServiceInfo(
 		Labels:                              labels,
 		TiniEnabled:                         &tiniEnabled,
 		TtyEnabled:                          &ttyEnabled,
+		Capabilities:                        capabilities,
 	}
 }
 

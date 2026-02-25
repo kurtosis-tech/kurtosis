@@ -315,6 +315,7 @@ func createStartServiceOperation(
 		nodeSelectors := serviceConfig.GetNodeSelectors()
 		imageDownloadMode := serviceConfig.GetImageDownloadMode()
 		devices := serviceConfig.GetDevices()
+		capabilities := serviceConfig.GetCapabilities()
 
 		matchingObjectAndResources, found := servicesObjectsAndResources[serviceUuid]
 		if !found {
@@ -465,6 +466,7 @@ func createStartServiceOperation(
 			minMemoryAllocationMegabytes,
 			user,
 			imageDownloadMode,
+			capabilities,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating the container specs for the user service pod with image '%v'", containerImageName)
@@ -703,6 +705,7 @@ func getUserServicePodContainerSpecs(
 	minMemoryAllocationMegabytes uint64,
 	user *service_user.ServiceUser,
 	imageDownloadMode image_download_mode.ImageDownloadMode,
+	capabilities []string,
 ) ([]apiv1.Container, error) {
 
 	var containerEnvVars []apiv1.EnvVar
@@ -786,17 +789,30 @@ func getUserServicePodContainerSpecs(
 		},
 	}
 
-	if user != nil {
-		uid := int64(user.GetUID())
+	if user != nil || len(capabilities) > 0 {
 		// nolint: exhaustruct
-		securityContext := &apiv1.SecurityContext{
-			RunAsUser: &uid,
+		securityContext := &apiv1.SecurityContext{}
+
+		if user != nil {
+			uid := int64(user.GetUID())
+			securityContext.RunAsUser = &uid
+
+			gid, gidIsSet := user.GetGID()
+			if gidIsSet {
+				gidAsInt64 := int64(gid)
+				securityContext.RunAsGroup = &gidAsInt64
+			}
 		}
 
-		gid, gidIsSet := user.GetGID()
-		if gidIsSet {
-			gidAsInt64 := int64(gid)
-			securityContext.RunAsGroup = &gidAsInt64
+		if len(capabilities) > 0 {
+			addCaps := []apiv1.Capability{}
+			for _, cap := range capabilities {
+				addCaps = append(addCaps, apiv1.Capability(cap))
+			}
+			securityContext.Capabilities = &apiv1.Capabilities{
+				Add:  addCaps,
+				Drop: nil,
+			}
 		}
 
 		containers[0].SecurityContext = securityContext
