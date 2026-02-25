@@ -22,7 +22,7 @@ jobs:
         with:
           sha: ${{ github.event.pull_request.head.sha }}
         id: PR
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - run: |
