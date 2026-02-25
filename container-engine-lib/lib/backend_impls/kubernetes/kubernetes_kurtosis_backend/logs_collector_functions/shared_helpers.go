@@ -139,7 +139,7 @@ func getLogsCollectorKubernetesResourcesForCluster(ctx context.Context, kubernet
 	logsCollectorConfigServiceAccounts, err := kubernetes_resource_collectors.CollectMatchingServiceAccounts(
 		ctx,
 		kubernetesManager,
-		namespace.Namespace,
+		namespace.Name,
 		logsCollectorDaemonSetSearchLabels,
 		resourceTypeLabelKeyStr,
 		map[string]bool{
