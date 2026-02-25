@@ -334,13 +334,14 @@ func (backend *KubernetesKurtosisBackend) DestroyEnclaves(
 	}
 
 	// if destroy is deleting ALL enclaves, now's a good time to clean up log stuff
+	// these are best-effort: don't fail the entire destroy if cleanup has issues
 	if filters.Statuses[enclave.EnclaveStatus_Running] {
 		if err := logs_collector_functions.CleanLogsCollector(ctx, fluentbit.NewFluentbitLogsCollector(), backend.kubernetesManager); err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error cleaning logs collector daemon set.")
+			logrus.Warnf("Failed to clean logs collector daemon set (best-effort): %v", err)
 		}
 
 		if err := logs_aggregator_functions.CleanLogsAggregator(ctx, vector.NewVectorLogsAggregatorResourcesManager(), backend.kubernetesManager); err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error cleaning logs aggregator deployment.")
+			logrus.Warnf("Failed to clean logs aggregator deployment (best-effort): %v", err)
 		}
 	}
 
