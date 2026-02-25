@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.16.4](https://github.com/kurtosis-tech/kurtosis/compare/1.16.3...1.16.4) (2026-02-25)
+
+
+### Bug Fixes
+
+* **k8s:** fix logs collector DaemonSet pods not being created ([#2911](https://github.com/kurtosis-tech/kurtosis/issues/2911)) ([16209aa](https://github.com/kurtosis-tech/kurtosis/commit/16209aaf9ba19a6fed4679deb8216b6c13de0a1a))
+
 ## [1.16.3](https://github.com/kurtosis-tech/kurtosis/compare/1.16.2...1.16.3) (2026-02-24)
 
 
