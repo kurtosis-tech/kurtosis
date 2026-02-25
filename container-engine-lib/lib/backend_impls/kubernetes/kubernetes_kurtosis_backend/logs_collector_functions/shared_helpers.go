@@ -278,8 +278,8 @@ func getLogsCollectorStatus(ctx context.Context, kubernetesManager *kubernetes_m
 		return container.ContainerStatus_Stopped, stacktrace.Propagate(err, "An error occurred getting pods managed by logs collector daemon set '%v'.", logsCollectorDaemonSet.Name)
 	}
 	if len(logsCollectorPods) < 1 {
-		// if there are no pods associated with logs collector daemon set, assume something is wrong and err
-		return container.ContainerStatus_Stopped, stacktrace.NewError("No pods managed by logs collector daemon set were found. There should be at least one. This is likely a bug in Kurtosis.")
+		logrus.Warnf("No pods managed by logs collector daemon set '%v' were found; treating collector as stopped.", logsCollectorDaemonSet.Name)
+		return container.ContainerStatus_Stopped, nil
 	}
 
 	runningPods := 0

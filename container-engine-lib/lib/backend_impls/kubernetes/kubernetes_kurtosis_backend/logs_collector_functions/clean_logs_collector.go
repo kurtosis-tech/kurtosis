@@ -10,9 +10,13 @@ func CleanLogsCollector(
 	ctx context.Context,
 	logsCollectorDaemonSet LogsCollectorDaemonSet,
 	kubernetesManager *kubernetes_manager.KubernetesManager) error {
-	_, k8sResources, err := getLogsCollectorObjAndResourcesForCluster(ctx, kubernetesManager)
+	k8sResources, err := getLogsCollectorKubernetesResourcesForCluster(ctx, kubernetesManager)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting logs collector object and resources for cluster.")
+		return stacktrace.Propagate(err, "An error occurred getting logs collector kubernetes resources for cluster.")
+	}
+
+	if k8sResources.daemonSet == nil {
+		return nil
 	}
 
 	if err := logsCollectorDaemonSet.Clean(ctx, k8sResources.daemonSet, kubernetesManager); err != nil {
