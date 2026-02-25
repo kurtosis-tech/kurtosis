@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -269,8 +270,8 @@ func getLogsCollectorsObjectFromKubernetesResources(ctx context.Context, kuberne
 }
 
 // TODO: container status is outdated for k8s pods (see TODO in shared_helpers.GetContainerStatusFromPod)
-// in the meantime logs collector status is container.ContainerStatus_Running if all pods managed by the logs collector DaemonSet are running
-// if one is failing/or stopped, the logs collector is to considered to be stopped
+// logs collector status is container.ContainerStatus_Running if at least one pod managed by the logs collector DaemonSet is running
+// if some pods are stopped while others are running, a warning is logged to surface partial degradation
 func getLogsCollectorStatus(ctx context.Context, kubernetesManager *kubernetes_manager.KubernetesManager, logsCollectorDaemonSet *v1.DaemonSet) (container.ContainerStatus, error) {
 	logsCollectorPods, err := kubernetesManager.GetPodsManagedByDaemonSet(ctx, logsCollectorDaemonSet)
 	if err != nil {
@@ -281,22 +282,30 @@ func getLogsCollectorStatus(ctx context.Context, kubernetesManager *kubernetes_m
 		return container.ContainerStatus_Stopped, stacktrace.NewError("No pods managed by logs collector daemon set were found. There should be at least one. This is likely a bug in Kurtosis.")
 	}
 
-	logsCollectorStatus := container.ContainerStatus_Running
+	runningPods := 0
+	stoppedPods := 0
 	for _, pod := range logsCollectorPods {
 		podStatus, err := shared_helpers.GetContainerStatusFromPod(pod)
 		if err != nil {
 			return container.ContainerStatus_Stopped, stacktrace.Propagate(err, "An error occurred retrieving container status for a pod managed by logs collectors collector daemon set '%v' with name: %v\n", logsCollectorDaemonSet.Name, pod.Name)
 		}
 
-		switch podStatus {
-		case container.ContainerStatus_Running:
-			continue
-		case container.ContainerStatus_Stopped:
-			return container.ContainerStatus_Stopped, nil
+		if podStatus == container.ContainerStatus_Running {
+			runningPods++
+		} else {
+			stoppedPods++
 		}
 	}
 
-	return logsCollectorStatus, nil
+	if runningPods == 0 {
+		return container.ContainerStatus_Stopped, nil
+	}
+
+	if stoppedPods > 0 {
+		logrus.Warnf("Logs collector daemon set '%v' has %d stopped pods out of %d total pods. The collector is partially degraded.", logsCollectorDaemonSet.Name, stoppedPods, len(logsCollectorPods))
+	}
+
+	return container.ContainerStatus_Running, nil
 }
 
 func waitForLogsCollectorAvailability(
