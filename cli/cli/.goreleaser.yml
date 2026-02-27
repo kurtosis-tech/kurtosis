@@ -52,7 +52,6 @@ archives:
       - scripts/completions/scripts/*
     name_template: kurtosis-cli_{{ .Version }}_{{ .Os }}_{{ .Arch }}
 
-# Gemfury accepts deb & rpm packages but not APK, so we build these two separately
 nfpms:
   - id: deb-and-rpm-packages
     package_name: kurtosis-cli
@@ -84,10 +83,9 @@ release:
 
   name_template: "{{ .Version }}"
 
-  # NOTE: these are the archive IDs, not the build/binary IDs
   ids:
     - cli
-    - cli-linux-packages
+    - deb-and-rpm-packages
 
 brews:
   # creates a brew formula representing the latest version
@@ -139,17 +137,6 @@ brews:
       fish_completion.install "scripts/completions/scripts/kurtosis.fish"
     caveats: |
       The kurtosis CLI is installed with tab completion support. For more details visit https://docs.kurtosis.com/.
-
-publishers:
-  # Inspired by https://netdevops.me/2021/building-and-publishing-deb/rpm-packages-with-goreleaser-and-fury.io/
-  - name: fury.io
-    ids:
-    - deb-and-rpm-packages
-    dir: "{{ dir .ArtifactPath }}"
-    env:
-      # This will get set by CI; see the CI config for how
-      - 'FURY_TOKEN={{ .Env.FURY_TOKEN }}'
-    cmd: "curl -F package=@{{ .ArtifactName }} https://{{ .Env.FURY_TOKEN }}@push.fury.io/kurtosis-tech/"
 
 source:
   # Kurt Core is a private project, and we definitely don't want to release source code

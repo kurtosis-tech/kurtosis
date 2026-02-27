@@ -46,7 +46,7 @@ sudo apt remove kurtosis-cli
 :::
 
 ```bash
-echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+echo "deb [trusted=yes] https://kurtosis-tech.github.io/kurtosis-cli-release-artifacts/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
 sudo apt update
 sudo apt remove kurtosis-cli
 sudo apt install kurtosis-cli=<version> -V
@@ -68,7 +68,7 @@ sudo yum remove kurtosis-cli
 ```bash
 echo '[kurtosis]
 name=Kurtosis
-baseurl=https://yum.fury.io/kurtosis-tech/
+baseurl=https://kurtosis-tech.github.io/kurtosis-cli-release-artifacts/rpm
 enabled=1
 gpgcheck=0' | sudo tee /etc/yum.repos.d/kurtosis.repo
 sudo yum remove kurtosis-cli

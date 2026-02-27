@@ -308,6 +308,76 @@ jobs:
 
       - name: Build and publish CLI
         env:
-          GEMFURY_PUBLISH_TOKEN: ${{ secrets.GEMFURY_PUBLISH_TOKEN }}
           KURTOSISBOT_GITHUB_TOKEN: ${{ secrets.KURTOSISBOT_GITHUB_TOKEN }}
         run: cli/cli/scripts/build.sh true true
+
+  # ============================================================================
+  # Update apt/rpm Package Repository (GitHub Pages)
+  # ============================================================================
+  update-package-repo:
+    runs-on: ubuntu-latest
+    needs: push-cli-artifacts
+    steps:
+      - name: Install repo tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev createrepo-c
+
+      - name: Checkout package repo
+        uses: actions/checkout@v4
+        with:
+          repository: kurtosis-tech/kurtosis-cli-release-artifacts
+          ref: gh-pages
+          token: ${{ secrets.KURTOSISBOT_GITHUB_TOKEN }}
+          fetch-depth: 0
+          path: repo
+
+      - name: Download deb/rpm from release
+        env:
+          GH_TOKEN: ${{ secrets.KURTOSISBOT_GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME}"
+
+          mkdir -p downloads
+          gh release download "${version}" \
+            --repo kurtosis-tech/kurtosis-cli-release-artifacts \
+            --pattern '*.deb' \
+            --pattern '*.rpm' \
+            --dir downloads
+
+          echo "Downloaded artifacts:"
+          ls -la downloads/
+
+      - name: Update apt repository
+        run: |
+          set -euo pipefail
+          cd repo
+
+          # Flat repo layout: debs and Packages file at the root (like Gemfury)
+          cp ../downloads/*.deb .
+
+          # Generate Packages index for all deb files in the root
+          dpkg-scanpackages --multiversion . > Packages
+          gzip -9c Packages > Packages.gz
+
+      - name: Update rpm repository
+        run: |
+          set -euo pipefail
+          cd repo
+
+          mkdir -p rpm/packages
+          cp ../downloads/*.rpm rpm/packages/
+
+          createrepo_c --update rpm/
+
+      - name: Push updated repo
+        run: |
+          set -euo pipefail
+          cd repo
+          git config user.name "kurtosisbot"
+          git config user.email "kurtosisbot@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          git commit -m "Update package repo for ${GITHUB_REF_NAME}"
+          git push
