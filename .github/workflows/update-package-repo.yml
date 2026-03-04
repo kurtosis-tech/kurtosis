@@ -88,5 +88,5 @@ jobs:
           publish_dir: ./repo
           keep_files: true
           user_name: kurtosisbot
-          user_email: kurtosisbot@users.noreply.github.com
+          user_email: kurtosisbot@kurtosistech.com
           commit_message: "Update package repo for ${{ steps.version.outputs.version }}"
