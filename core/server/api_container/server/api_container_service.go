@@ -160,6 +160,7 @@ func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rp
 	nonBlockingMode := args.GetNonBlockingMode()
 	downloadMode := convertFromImageDownloadModeAPI(ApiDownloadMode)
 	shouldExecuteInParallel := args.GetParallel()
+	scriptResourceCheck := args.ResourceCheck == nil || args.GetResourceCheck()
 
 	metricsErr := apicService.metricsClient.TrackKurtosisRun(startosis_constants.PackageIdPlaceholderForStandaloneScript, isNotRemote, dryRun, isScript, serializedParams)
 	if metricsErr != nil {
@@ -179,6 +180,7 @@ func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rp
 		downloadMode,
 		nonBlockingMode,
 		shouldExecuteInParallel,
+		scriptResourceCheck,
 		experimentalFeatures,
 		stream,
 	)
@@ -321,6 +323,7 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 	downloadMode := convertFromImageDownloadModeAPI(ApiDownloadMode)
 	nonBlockingMode := args.GetNonBlockingMode()
 	shouldExecuteInParallel := args.GetParallel()
+	resourceCheck := args.ResourceCheck == nil || args.GetResourceCheck()
 
 	packageGitHubAuthToken := args.GetGithubAuthToken()
 	if packageGitHubAuthToken != "" {
@@ -377,6 +380,7 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 		downloadMode,
 		nonBlockingMode,
 		shouldExecuteInParallel,
+		resourceCheck,
 		args.ExperimentalFeatures,
 		stream)
 
@@ -1039,10 +1043,11 @@ func (apicService *ApiContainerService) runStarlark(
 	imageDownloadMode image_download_mode.ImageDownloadMode,
 	nonBlockingMode bool,
 	shouldExecuteInParallel bool,
+	resourceCheck bool,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 	stream grpc.ServerStream,
 ) {
-	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, packageReplaceOptions, mainFunctionName, relativePathToMainFile, serializedStarlark, serializedParams, imageDownloadMode, nonBlockingMode, shouldExecuteInParallel, experimentalFeatures)
+	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, packageReplaceOptions, mainFunctionName, relativePathToMainFile, serializedStarlark, serializedParams, imageDownloadMode, nonBlockingMode, shouldExecuteInParallel, resourceCheck, experimentalFeatures)
 	for {
 		select {
 		case <-stream.Context().Done():

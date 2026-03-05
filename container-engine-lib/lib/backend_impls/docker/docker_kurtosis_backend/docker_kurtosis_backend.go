@@ -558,6 +558,9 @@ func (backend *DockerKurtosisBackend) DisconnectReverseProxyFromNetwork(ctx cont
 }
 
 func (backend *DockerKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, bool, error) {
+	if !isResourceInformationComplete {
+		return 0, 0, false, nil
+	}
 	availableMemory, availableCpu, err := backend.dockerManager.GetAvailableCPUAndMemory(ctx)
 	if err != nil {
 		return 0, 0, false, stacktrace.Propagate(err, "an error occurred fetching resource information from the docker backend")
