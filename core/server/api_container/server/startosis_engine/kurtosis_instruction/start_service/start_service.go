@@ -125,5 +125,8 @@ func (builtin *StartServiceCapabilities) UpdateDependencyGraph(instructionUuid t
 	dependencyGraph.UpdateInstructionShortDescriptor(instructionUuid, shortDescriptor)
 
 	dependencyGraph.ConsumesService(instructionUuid, string(builtin.serviceName))
+	// start_service changes service running state, so subsequent instructions
+	// that consume this service must wait for the start to complete.
+	dependencyGraph.ProducesService(instructionUuid, string(builtin.serviceName))
 	return nil
 }
