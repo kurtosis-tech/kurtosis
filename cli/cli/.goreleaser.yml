@@ -146,7 +146,7 @@ publishers:
     dir: "{{ dir .ArtifactPath }}"
     env:
       - 'FURY_TOKEN={{ .Env.FURY_TOKEN }}'
-    cmd: "curl --fail -F package=@{{ .ArtifactName }} https://{{ .Env.FURY_TOKEN }}@push.fury.io/kurtosis-tech/"
+    cmd: "curl -F package=@{{ .ArtifactName }} https://{{ .Env.FURY_TOKEN }}@push.fury.io/kurtosis-tech/"
 
 source:
   # Kurt Core is a private project, and we definitely don't want to release source code
