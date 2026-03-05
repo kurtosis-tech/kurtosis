@@ -258,6 +258,11 @@ func (builtin *ExecCapabilities) UpdateDependencyGraph(instructionUuid types.Sch
 	dependencyGraph.ConsumesService(instructionUuid, string(builtin.serviceName))
 	dependencyGraph.ConsumesAnyRuntimeValuesInList(instructionUuid, builtin.cmdList)
 
+	// exec mutates service state (creates/modifies files, changes processes, etc.)
+	// so it must produce the service to ensure subsequent instructions that consume
+	// the same service (e.g. store_service_files) wait for this exec to complete.
+	dependencyGraph.ProducesService(instructionUuid, string(builtin.serviceName))
+
 	returnValueStrings, interpretationErr := builtin.execRecipe.GetStarlarkReturnValuesAsStringList(builtin.resultUuid)
 	if interpretationErr != nil {
 		return stacktrace.Propagate(interpretationErr, "An error occurred while getting return value strings for exec recipe")
