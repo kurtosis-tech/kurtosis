@@ -16,6 +16,7 @@ const (
 	defaultNonBlockingMode        = false
 	defaultGitHubAuthToken        = ""
 	defaultParallel               = false
+	defaultResourceCheck          = true
 )
 
 var defaultExperimentalFeatureFlags = []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag(nil)
@@ -33,6 +34,7 @@ type StarlarkRunConfig struct {
 	NonBlockingMode          bool
 	GitHubAuthToken          string
 	Parallel                 bool
+	ResourceCheck            bool
 }
 
 type starlarkRunConfigOption func(*StarlarkRunConfig)
@@ -51,6 +53,7 @@ func NewRunStarlarkConfig(opts ...starlarkRunConfigOption) *StarlarkRunConfig {
 		NonBlockingMode:          defaultNonBlockingMode,
 		GitHubAuthToken:          defaultGitHubAuthToken,
 		Parallel:                 defaultParallel,
+		ResourceCheck:            defaultResourceCheck,
 	}
 
 	for _, opt := range opts {
@@ -131,5 +134,11 @@ func WithGitHubAuthToken(githubAuthToken string) starlarkRunConfigOption {
 func WithParallel(parallel bool) starlarkRunConfigOption {
 	return func(config *StarlarkRunConfig) {
 		config.Parallel = parallel
+	}
+}
+
+func WithResourceCheck(resourceCheck bool) starlarkRunConfigOption {
+	return func(config *StarlarkRunConfig) {
+		config.ResourceCheck = resourceCheck
 	}
 }
