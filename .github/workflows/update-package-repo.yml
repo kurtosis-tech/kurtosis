@@ -63,7 +63,7 @@ jobs:
           set -euo pipefail
           cd repo
 
-          # Flat repo layout: debs and Packages file at the root (like Gemfury)
+          # Flat repo layout: debs and Packages file at the root
           cp ../downloads/*.deb .
 
           # Generate Packages index for all deb files in the root

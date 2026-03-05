@@ -139,15 +139,6 @@ brews:
     caveats: |
       The kurtosis CLI is installed with tab completion support. For more details visit https://docs.kurtosis.com/.
 
-publishers:
-  - name: fury.io
-    ids:
-    - deb-and-rpm-packages
-    dir: "{{ dir .ArtifactPath }}"
-    env:
-      - 'FURY_TOKEN={{ .Env.FURY_TOKEN }}'
-    cmd: "curl -F package=@{{ .ArtifactName }} https://{{ .Env.FURY_TOKEN }}@push.fury.io/kurtosis-tech/"
-
 source:
   # Kurt Core is a private project, and we definitely don't want to release source code
   enabled: false
