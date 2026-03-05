@@ -60,6 +60,7 @@ func TestStarlark_RunshTaskFileArtifact(t *testing.T) {
 func TestStarlark_RunshTimesoutSuccess(t *testing.T) {
 	ctx := context.Background()
 	runResult, _ := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, runshTest, runshStarlarkWithTimeout)
+	require.NotNil(t, runResult, "RunScript returned nil result")
 	expectedErrorMessage := "The exec request timed out after 5 seconds"
 	require.NotNil(t, runResult.ExecutionError)
 	require.Contains(t, runResult.ExecutionError.GetErrorMessage(), expectedErrorMessage)
@@ -68,6 +69,7 @@ func TestStarlark_RunshTimesoutSuccess(t *testing.T) {
 func TestStarlark_RunshAcceptableCodes(t *testing.T) {
 	ctx := context.Background()
 	runResult, _ := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, runshTest, runStarlarkWithAcceptableCodes)
+	require.NotNil(t, runResult, "RunScript returned nil result")
 	expectedOutput := "Command returned with exit code '0' with no output\nCommand returned with exit code '1' with no output\nCommand returned with exit code '42' and the following output:\n--------------------\nHi\n\n--------------------\n"
 	require.Nil(t, runResult.ExecutionError)
 	require.Equal(t, expectedOutput, string(runResult.RunOutput))
