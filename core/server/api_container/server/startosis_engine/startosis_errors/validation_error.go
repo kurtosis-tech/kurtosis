@@ -63,7 +63,7 @@ func (err *ValidationError) Error() string {
 		serializedError.WriteString(err.msg)
 	}
 	if err.cause != nil {
-		serializedError.WriteString(fmt.Sprintf("\n%s%s", causedByPrefix, err.cause.Error()))
+		fmt.Fprintf(&serializedError,"\n%s%s", causedByPrefix, err.cause.Error())
 	}
 	return serializedError.String()
 }
