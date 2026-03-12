@@ -1,8 +1,8 @@
 module github.com/kurtosis-tech/kurtosis/cloud/api/golang
 
-go 1.23.0
+go 1.24.0
 
-toolchain go1.24.1
+toolchain go1.26.0
 
 require (
 	connectrpc.com/connect v1.11.1
