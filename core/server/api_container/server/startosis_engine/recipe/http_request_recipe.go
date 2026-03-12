@@ -95,7 +95,7 @@ func resultMapToStringInternal(resultMap map[string]starlark.Comparable) string 
 	extractedFieldString := strings.Builder{}
 	for resultKey, resultValue := range resultMap {
 		if strings.Contains(resultKey, extractKeyPrefix) {
-			extractedFieldString.WriteString(fmt.Sprintf("\n'%v': %v", resultKey, resultValue))
+			fmt.Fprintf(&extractedFieldString, "\n'%v': %v", resultKey, resultValue)
 		}
 	}
 	if extractedFieldString.Len() == 0 {
