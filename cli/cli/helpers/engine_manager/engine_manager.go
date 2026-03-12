@@ -191,6 +191,33 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(
 	kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 	func() error, error,
 ) {
+	return manager.startEngineIdempotentlyWithDefaultVersion(
+		ctx,
+		logLevel,
+		poolSize,
+		githubAuthTokenOverride,
+		restartAPIContainers,
+		domain,
+		logRetentionPeriodStr,
+		additionalSinks,
+		true,
+	)
+}
+
+func (manager *EngineManager) startEngineIdempotentlyWithDefaultVersion(
+	ctx context.Context,
+	logLevel logrus.Level,
+	poolSize uint8,
+	githubAuthTokenOverride string,
+	restartAPIContainers bool,
+	domain string,
+	logRetentionPeriodStr string,
+	additionalSinks logs_aggregator.Sinks,
+	shouldStartConfiguredGrafloki bool,
+) (
+	kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	func() error, error,
+) {
 	status, maybeHostMachinePortBinding, engineVersion, err := manager.GetEngineStatus(ctx)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
@@ -200,7 +227,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(
 
 	var lokiSink logs_aggregator.Sinks
 	var grafanaUrl string
-	if manager.clusterConfig.GetGraflokiConfig().ShouldStartBeforeEngine {
+	if shouldStartConfiguredGrafloki && manager.clusterConfig.GetGraflokiConfig().ShouldStartBeforeEngine {
 		lokiSink, grafanaUrl, err = grafloki.StartGrafloki(ctx, clusterType, manager.clusterConfig.GetGraflokiConfig())
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred starting Grafana and Loki before engine.")
@@ -258,6 +285,36 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 	kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 	func() error, error,
 ) {
+	return manager.startEngineIdempotentlyWithCustomVersion(
+		ctx,
+		engineImageVersionTag,
+		logLevel,
+		poolSize,
+		shouldStartInDebugMode,
+		githubAuthTokenOverride,
+		restartAPIContainers,
+		domain,
+		logRetentionPeriodStr,
+		additionalSinks,
+		true,
+	)
+}
+
+func (manager *EngineManager) startEngineIdempotentlyWithCustomVersion(ctx context.Context,
+	engineImageVersionTag string,
+	logLevel logrus.Level,
+	poolSize uint8,
+	shouldStartInDebugMode bool,
+	githubAuthTokenOverride string,
+	restartAPIContainers bool,
+	domain string,
+	logRetentionPeriodStr string,
+	additionalSinks logs_aggregator.Sinks,
+	shouldStartConfiguredGrafloki bool,
+) (
+	kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	func() error, error,
+) {
 	status, maybeHostMachinePortBinding, engineVersion, err := manager.GetEngineStatus(ctx)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
@@ -267,7 +324,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 
 	var lokiSink logs_aggregator.Sinks
 	var grafanaUrl string
-	if manager.clusterConfig.GetGraflokiConfig().ShouldStartBeforeEngine {
+	if shouldStartConfiguredGrafloki && manager.clusterConfig.GetGraflokiConfig().ShouldStartBeforeEngine {
 		lokiSink, grafanaUrl, err = grafloki.StartGrafloki(ctx, clusterType, manager.clusterConfig.GetGraflokiConfig())
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred starting Grafana and Loki before engine.")
@@ -407,6 +464,69 @@ func (manager *EngineManager) RestartEngineIdempotently(ctx context.Context,
 	kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 	func() error, error,
 ) {
+	return manager.restartEngineIdempotently(
+		ctx,
+		logLevel,
+		optionalVersionToUse,
+		restartEngineOnSameVersionIfAnyRunning,
+		poolSize,
+		shouldStartInDebugMode,
+		githubAuthTokenOverride,
+		shouldRestartAPIContainers,
+		domain,
+		logRetentionPeriodStr,
+		additionalSinks,
+		true,
+	)
+}
+
+func (manager *EngineManager) RestartEngineIdempotentlyWithoutConfiguredGrafloki(ctx context.Context,
+	logLevel logrus.Level,
+	optionalVersionToUse string,
+	restartEngineOnSameVersionIfAnyRunning bool,
+	poolSize uint8,
+	shouldStartInDebugMode bool,
+	githubAuthTokenOverride string,
+	shouldRestartAPIContainers bool,
+	domain string,
+	logRetentionPeriodStr string,
+	additionalSinks logs_aggregator.Sinks,
+) (
+	kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	func() error, error,
+) {
+	return manager.restartEngineIdempotently(
+		ctx,
+		logLevel,
+		optionalVersionToUse,
+		restartEngineOnSameVersionIfAnyRunning,
+		poolSize,
+		shouldStartInDebugMode,
+		githubAuthTokenOverride,
+		shouldRestartAPIContainers,
+		domain,
+		logRetentionPeriodStr,
+		additionalSinks,
+		false,
+	)
+}
+
+func (manager *EngineManager) restartEngineIdempotently(ctx context.Context,
+	logLevel logrus.Level,
+	optionalVersionToUse string,
+	restartEngineOnSameVersionIfAnyRunning bool,
+	poolSize uint8,
+	shouldStartInDebugMode bool,
+	githubAuthTokenOverride string,
+	shouldRestartAPIContainers bool,
+	domain string,
+	logRetentionPeriodStr string,
+	additionalSinks logs_aggregator.Sinks,
+	shouldStartConfiguredGrafloki bool,
+) (
+	kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	func() error, error,
+) {
 	var versionOfNewEngine string
 	// We try to do our best to restart an engine on the same version the current on is on
 	_, _, currentEngineVersion, err := manager.GetEngineStatus(ctx)
@@ -431,9 +551,9 @@ func (manager *EngineManager) RestartEngineIdempotently(ctx context.Context,
 	var engineClientCloseFunc func() error
 	var restartEngineErr error
 	if versionOfNewEngine != defaultEngineVersion {
-		_, engineClientCloseFunc, restartEngineErr = manager.StartEngineIdempotentlyWithCustomVersion(ctx, versionOfNewEngine, logLevel, poolSize, shouldStartInDebugMode, githubAuthTokenOverride, shouldRestartAPIContainers, domain, logRetentionPeriodStr, additionalSinks)
+		_, engineClientCloseFunc, restartEngineErr = manager.startEngineIdempotentlyWithCustomVersion(ctx, versionOfNewEngine, logLevel, poolSize, shouldStartInDebugMode, githubAuthTokenOverride, shouldRestartAPIContainers, domain, logRetentionPeriodStr, additionalSinks, shouldStartConfiguredGrafloki)
 	} else {
-		_, engineClientCloseFunc, restartEngineErr = manager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel, poolSize, githubAuthTokenOverride, shouldRestartAPIContainers, domain, logRetentionPeriodStr, additionalSinks)
+		_, engineClientCloseFunc, restartEngineErr = manager.startEngineIdempotentlyWithDefaultVersion(ctx, logLevel, poolSize, githubAuthTokenOverride, shouldRestartAPIContainers, domain, logRetentionPeriodStr, additionalSinks, shouldStartConfiguredGrafloki)
 	}
 	if restartEngineErr != nil {
 		return nil, nil, stacktrace.Propagate(restartEngineErr, "An error occurred starting a new engine")

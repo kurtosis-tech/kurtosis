@@ -8,6 +8,8 @@ Developing
 ----------
 * Run `cli/scripts/build.sh` to build the CLI into a binary
 * Run `cli/scripts/launch-cli.sh` to run arbitrary CLI commands with the locally-built binary
+* Run `kurtosis loki start` to start a local Loki instance and reconfigure the engine to send logs to it
+* Run `kurtosis grafloki start` to start both Grafana and Loki and reconfigure the engine to send logs to Loki
 * Run `internal_testsuites/scripts/build.sh` to build and run all the tests in all the supported languages.
 * Run `internal_testsuites/golang/scripts/build.sh` to run only `golang` tests. Replace `golang` with `typescript` to run typescript tests.
 * Run `internal_testsuites/golang/scripts/build.sh minikube` to build golang test suites against Kubernetes. Replace `golang` with `typescript` to run typescript tests against kubernetes. Note use `./scripts/run-all-tests-against-latest-code.sh minikube` if you want to run all tests and let the script handle Minikube setup for you.
