@@ -15,10 +15,11 @@ builds:
       - amd64
       - arm64
     env:
-      - CGO_ENABLED={{ if eq .Os "linux" }}1{{ else }}0{{ end }}
-      # Only override compilers if we are on CI and CGO is needed (linux only)
+      - CGO_ENABLED={{ if eq .Os "windows" }}0{{ else }}1{{ end }}
+      # Only override compilers if we are on CI, otherwise use the locally available C/C++ toolchain
       - >-
         {{- if index .Env "CI" }}
+          {{- if eq .Os "darwin" }}CC=o64h-clang{{- end }}
           {{- if eq .Os "linux" }}
             {{- if eq .Arch "amd64"}}CC=x86_64-linux-musl-gcc{{- end }}
               {{- if eq .Arch "arm64"}}CC=aarch64-linux-musl-gcc{{- end }}
@@ -26,6 +27,7 @@ builds:
         {{- end }}
       - >-
         {{- if index .Env "CI" }}
+          {{- if eq .Os "darwin" }}CXX=o64h-clang++{{- end }}
           {{- if eq .Os "linux" }}
             {{- if eq .Arch "amd64"}}CXX=x86_64-linux-musl-g++{{- end }}
               {{- if eq .Arch "arm64"}}CXX=aarch64-linux-musl-g++{{- end }}
