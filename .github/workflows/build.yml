@@ -397,7 +397,7 @@ jobs:
             goarch: arm64
             cgo: 1
             cc: aarch64-linux-musl-gcc
-          - runner: macos-13
+          - runner: macos-14
             goos: darwin
             goarch: amd64
             cgo: 1
