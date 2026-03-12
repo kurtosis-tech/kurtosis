@@ -254,16 +254,16 @@ func getFilesArtifactsExpanderContainerLogsBlockStr(
 	}
 
 	wrappedContainerLogsStrBuilder := strings.Builder{}
-	wrappedContainerLogsStrBuilder.WriteString(fmt.Sprintf(
+	fmt.Fprintf(&wrappedContainerLogsStrBuilder,
 		">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Logs for container '%v' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n",
 		containerId,
-	))
+	)
 	wrappedContainerLogsStrBuilder.WriteString(buffer.String())
 	wrappedContainerLogsStrBuilder.WriteString("\n")
-	wrappedContainerLogsStrBuilder.WriteString(fmt.Sprintf(
+	fmt.Fprintf(&wrappedContainerLogsStrBuilder,
 		">>>>>>>>>>>>>>>>>>>>>>>>>>>> End logs for container '%v' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<",
 		containerId,
-	))
+	)
 
 	return wrappedContainerLogsStrBuilder.String(), nil
 }
