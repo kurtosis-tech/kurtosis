@@ -2,7 +2,7 @@ module github.com/kurtosis-tech/kurtosis/core/server
 
 go 1.24.0
 
-toolchain go1.26.0
+toolchain go1.24.1
 
 replace (
 	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang

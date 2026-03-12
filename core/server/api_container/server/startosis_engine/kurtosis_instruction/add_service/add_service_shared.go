@@ -73,13 +73,13 @@ func makeAddServiceInterpretationReturnValue(serviceName starlark.String, servic
 
 func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEnvironment, serviceName service.ServiceName, serviceConfig *service.ServiceConfig) *startosis_errors.ValidationError {
 	if isValidServiceName := service.IsServiceNameValid(serviceName); !isValidServiceName {
-		return startosis_errors.NewValidationError(invalidServiceNameErrorText(serviceName))
+		return startosis_errors.NewValidationError("%s", invalidServiceNameErrorText(serviceName))
 	}
 
 	if persistentDirectories := serviceConfig.GetPersistentDirectories(); persistentDirectories != nil {
 		for _, directory := range persistentDirectories.ServiceDirpathToPersistentDirectory {
 			if !service_directory.IsPersistentKeyValid(directory.PersistentKey) {
-				return startosis_errors.NewValidationError(invalidPersistentKeyErrorText(directory.PersistentKey))
+				return startosis_errors.NewValidationError("%s", invalidPersistentKeyErrorText(directory.PersistentKey))
 			}
 			validatorEnvironment.AddPersistentKey(directory.PersistentKey)
 		}
@@ -121,7 +121,7 @@ func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEn
 	var portIds []string
 	for portId := range serviceConfig.GetPrivatePorts() {
 		if isValidPortName := service.IsPortNameValid(portId); !isValidPortName {
-			return startosis_errors.NewValidationError(invalidPortNameErrorText(portId))
+			return startosis_errors.NewValidationError("%s", invalidPortNameErrorText(portId))
 		}
 		portIds = append(portIds, portId)
 	}

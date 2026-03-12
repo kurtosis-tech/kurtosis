@@ -29,7 +29,7 @@
     },
     "homepage": "https://github.com/kurtosis-tech/kurtosis",
     "engines": {
-        "node": ">=16.13.0"
+        "node": ">=22.0.0"
     },
     "dependencies": {
         "@bufbuild/connect": "^0.12.0",

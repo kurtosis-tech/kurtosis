@@ -450,7 +450,7 @@ func GetEngineAndLogsComponentsNetwork(
 		)
 	}
 	if numMatchingNetworks == 0 {
-		return nil, stacktrace.NewError(fmt.Sprintf("No matching network found with the configured name: %v", bridgeNetworkName))
+		return nil, stacktrace.NewError("%s", fmt.Sprintf("No matching network found with the configured name: %v", bridgeNetworkName))
 	}
 	return matchingNetworks[0], nil
 }

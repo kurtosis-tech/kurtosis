@@ -2,7 +2,7 @@ module github.com/kurtosis-tech/kurtosis/connect-server
 
 go 1.24.0
 
-toolchain go1.26.0
+toolchain go1.24.1
 
 require (
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
