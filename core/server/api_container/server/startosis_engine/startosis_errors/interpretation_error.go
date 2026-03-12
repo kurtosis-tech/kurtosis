@@ -94,10 +94,10 @@ func (err *InterpretationError) Error() string {
 		serializedError.WriteString(err.msg)
 	}
 	if err.cause != nil {
-		fmt.Fprintf(&serializedError,"\n%s%s", causedByPrefix, err.cause.Error())
+		fmt.Fprintf(&serializedError, "\n%s%s", causedByPrefix, err.cause.Error())
 	}
 	for _, stacktraceElement := range err.stacktrace {
-		fmt.Fprintf(&serializedError,"\n%s%s", stacktracePrefix, stacktraceElement.String())
+		fmt.Fprintf(&serializedError, "\n%s%s", stacktracePrefix, stacktraceElement.String())
 	}
 	return serializedError.String()
 }
