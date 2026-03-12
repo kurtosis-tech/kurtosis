@@ -2992,10 +2992,10 @@ func (manager *KubernetesManager) getPodInfoBlockStr(
 	// We go through all this work so that the user can get detailed information about their pod without needing to dive
 	// through the Kubernetes API
 	resultStrBuilder := strings.Builder{}
-	resultStrBuilder.WriteString(fmt.Sprintf(
+	fmt.Fprintf(&resultStrBuilder,
 		">>>>>>>>>>>>>>>>>>>>>>>>>> Pod %v <<<<<<<<<<<<<<<<<<<<<<<<<<\n",
 		podName,
-	))
+	)
 	resultStrBuilder.WriteString("Container Statuses:")
 	for _, containerStatusStr := range renderContainerStatuses(pod.Status.ContainerStatuses, containerStatusLineBulletPoint) {
 		resultStrBuilder.WriteString(containerStatusStr)
@@ -3005,24 +3005,24 @@ func (manager *KubernetesManager) getPodInfoBlockStr(
 	for _, podContainer := range pod.Spec.Containers {
 		containerName := podContainer.Name
 
-		resultStrBuilder.WriteString(fmt.Sprintf(
+		fmt.Fprintf(&resultStrBuilder,
 			"-------------------- Container %v Logs --------------------\n",
 			podContainer.Name,
-		))
+		)
 
 		containerLogsStr := manager.getSingleContainerLogs(ctx, namespaceName, podName, containerName)
 		resultStrBuilder.WriteString(containerLogsStr)
 		resultStrBuilder.WriteString("\n")
 
-		resultStrBuilder.WriteString(fmt.Sprintf(
+		fmt.Fprintf(&resultStrBuilder,
 			"------------------ End Container %v Logs ---------------------\n",
 			containerName,
-		))
+		)
 	}
-	resultStrBuilder.WriteString(fmt.Sprintf(
+	fmt.Fprintf(&resultStrBuilder,
 		">>>>>>>>>>>>>>>>>>>>>>>> End Pod %v <<<<<<<<<<<<<<<<<<<<<<<<<<<",
 		pod.Name,
-	))
+	)
 
 	return resultStrBuilder.String()
 }

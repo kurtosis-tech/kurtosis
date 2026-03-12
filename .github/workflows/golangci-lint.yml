@@ -18,7 +18,7 @@ on:
   merge_group:
 
 env:
-  GOLINT_VERSION: v2.0.1
+  GOLINT_VERSION: v2.11.3
 
 jobs:
   check-if-code-change:
@@ -28,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          go-version: '1.23'
+          go-version: '1.26'
           fetch-depth: 0
       - run: |
           if git --no-pager diff --exit-code origin/main...HEAD -- . ':!docs' ':!*.md'; then
@@ -60,7 +60,7 @@ jobs:
       - uses: actions/setup-go@v5
         if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
         with:
-          go-version: '1.23'
+          go-version: '1.26'
       - uses: actions/checkout@v4
         if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
       # Generate versions
@@ -73,4 +73,4 @@ jobs:
           version: ${{ env.GOLINT_VERSION }}
           working-directory: ${{ matrix.directory }}
           args: --timeout=3m
-          skip-pkg-cache: true
+          skip-cache: true
