@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  GO_VERSION: '1.24.1'
+  GO_VERSION: '1.26.0'
   RUST_VERSION: '1.88.0'
   API_NODE_VERSION: '22.16.0'
   UI_NODE_VERSION: '22.16.0'
