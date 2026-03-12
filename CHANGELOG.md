@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.16.6](https://github.com/kurtosis-tech/kurtosis/compare/1.16.5...1.16.6) (2026-03-05)
+
+
+### Miscellaneous Chores
+
+* Release-As:1.16.6 ([#2925](https://github.com/kurtosis-tech/kurtosis/issues/2925)) ([5cb43c4](https://github.com/kurtosis-tech/kurtosis/commit/5cb43c47433acf482b22bbc21706f24c5ee2f222))
+
+## [1.16.5](https://github.com/kurtosis-tech/kurtosis/compare/1.16.4...1.16.5) (2026-03-04)
+
+
+### Miscellaneous Chores
+
+* release 1.16.5 ([#2922](https://github.com/kurtosis-tech/kurtosis/issues/2922)) ([3a63816](https://github.com/kurtosis-tech/kurtosis/commit/3a63816a734e7d914e8bc206d3022dbd5f6ae9be))
+
 ## [1.16.4](https://github.com/kurtosis-tech/kurtosis/compare/1.16.3...1.16.4) (2026-02-25)
 
 
