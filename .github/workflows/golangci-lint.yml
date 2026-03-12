@@ -73,4 +73,4 @@ jobs:
           version: ${{ env.GOLINT_VERSION }}
           working-directory: ${{ matrix.directory }}
           args: --timeout=3m
-          skip-pkg-cache: true
+          skip-cache: true
