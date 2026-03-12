@@ -2,7 +2,7 @@ module github.com/kurtosis-tech/kurtosis/contexts-config-store
 
 go 1.24.0
 
-toolchain go1.26.0
+toolchain go1.24.1
 
 require (
 	github.com/adrg/xdg v0.4.0

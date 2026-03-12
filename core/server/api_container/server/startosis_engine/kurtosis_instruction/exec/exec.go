@@ -198,7 +198,7 @@ func (builtin *ExecCapabilities) Execute(ctx context.Context, _ *builtin_argumen
 	}
 	if !builtin.skipCodeCheck && !builtin.isAcceptableCode(result) {
 		errorMessage := fmt.Sprintf("Exec returned exit code '%v' that is not part of the acceptable status codes '%v', with output:", result["code"], builtin.acceptableCodes)
-		return "", stacktrace.NewError(formatErrorMessage(errorMessage, result["output"].String()))
+		return "", stacktrace.NewError("%s", formatErrorMessage(errorMessage, result["output"].String()))
 	}
 
 	if err := builtin.runtimeValueStore.SetValue(builtin.resultUuid, result); err != nil {
