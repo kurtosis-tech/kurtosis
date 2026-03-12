@@ -366,7 +366,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y musl-tools
           sudo ln -sf /usr/bin/musl-gcc /usr/local/bin/x86_64-linux-musl-gcc
-          sudo ln -sf /usr/bin/musl-gcc /usr/local/bin/x86_64-linux-musl-g++
 
       - name: Generate Kurtosis Version
         run: scripts/generate-kurtosis-version.sh
