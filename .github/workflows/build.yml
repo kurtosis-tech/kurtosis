@@ -439,6 +439,11 @@ jobs:
           sudo apt-get install -y musl-tools
           sudo ln -sf /usr/bin/musl-gcc "/usr/local/bin/${{ matrix.cc }}"
 
+      - name: Run go generate
+        run: |
+          cd cli/cli
+          go generate ./...
+
       - name: Build CLI
         env:
           GOOS: ${{ matrix.goos }}
@@ -447,7 +452,6 @@ jobs:
           CC: ${{ matrix.cc }}
         run: |
           cd cli/cli
-          go generate ./...
           if [ "$GOOS" = "linux" ]; then
             go build -tags osusergo -ldflags '-linkmode external -extldflags "-static"' .
           else
