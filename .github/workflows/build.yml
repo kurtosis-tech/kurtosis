@@ -352,7 +352,7 @@ jobs:
   build-cli:
     runs-on: ubuntu-latest
     container:
-      image: docker/tilt-releaser@sha256:9d05f87976ccdf8a3434443fac2b867ca99a81c8423008437c767c04784969e4
+      image: docker/tilt-releaser:latest
       env:
         GOTOOLCHAIN: auto
     needs: check-docs-only
@@ -391,7 +391,7 @@ jobs:
   build-cli-all-arch:
     runs-on: ubuntu-latest
     container:
-      image: docker/tilt-releaser@sha256:9d05f87976ccdf8a3434443fac2b867ca99a81c8423008437c767c04784969e4
+      image: docker/tilt-releaser:latest
       env:
         GOTOOLCHAIN: auto
     needs: check-docs-only
