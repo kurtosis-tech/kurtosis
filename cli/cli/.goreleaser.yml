@@ -93,7 +93,7 @@ brews:
   - name: kurtosis-cli
     ids:
       - cli
-    tap:
+    repository:
       owner: kurtosis-tech
       name: homebrew-tap
     commit_author:
@@ -118,7 +118,7 @@ brews:
   - name: kurtosis-cli@{{ .Tag }}
     ids:
       - cli
-    tap:
+    repository:
       owner: kurtosis-tech
       name: homebrew-tap
     commit_author:
