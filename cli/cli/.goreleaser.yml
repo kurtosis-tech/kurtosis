@@ -8,17 +8,14 @@ builds:
     binary: "{{ .Env.CLI_BINARY_FILENAME }}"
     main: .
     goos:
-      # darwin is excluded from cross-compilation because the osxcross SDK in
-      # the tilt-releaser container is too old for Go 1.26 (missing macOS 12+ APIs).
-      # See https://github.com/kurtosis-tech/kurtosis/issues/2940 for the plan to
-      # build darwin binaries on native macOS runners instead.
+      - darwin
       - linux
       - windows
     goarch:
       - amd64
       - arm64
     env:
-      - CGO_ENABLED={{ if eq .Os "linux" }}1{{ else }}0{{ end }}
+      - CGO_ENABLED={{ if eq .Os "windows" }}0{{ else }}1{{ end }}
       # Only override compilers if we are on CI, otherwise use the locally available C/C++ toolchain
       - >-
         {{- if index .Env "CI" }}

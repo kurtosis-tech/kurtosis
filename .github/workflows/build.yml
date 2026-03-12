@@ -19,7 +19,6 @@ env:
   RUST_VERSION: '1.88.0'
   API_NODE_VERSION: '22.16.0'
   UI_NODE_VERSION: '22.16.0'
-  TILT_RELEASER_SHA: '9d05f87976ccdf8a3434443fac2b867ca99a81c8423008437c767c04784969e4'
   WORKSPACE_PATH: /tmp/workspace
   CLI_DIST_PATH: cli/cli/dist
   # Note: After download-artifact, the binary is at cli_linux_amd64_v1/kurtosis (without cli/cli/dist prefix)
@@ -351,33 +350,26 @@ jobs:
   # ============================================================================
   build-cli:
     runs-on: ubuntu-latest
-    container:
-      image: docker/tilt-releaser@sha256:9d05f87976ccdf8a3434443fac2b867ca99a81c8423008437c767c04784969e4
-      env:
-        GOTOOLCHAIN: auto
     needs: check-docs-only
     if: needs.check-docs-only.outputs.has-code-changes == 'true'
     steps:
       - uses: actions/checkout@v4
 
-      - name: Mark git directory as safe
-        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: cli/cli/go.sum
+
+      - name: Install musl toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools
+          sudo ln -sf /usr/bin/musl-gcc /usr/local/bin/x86_64-linux-musl-gcc
+          sudo ln -sf /usr/bin/musl-gcc /usr/local/bin/x86_64-linux-musl-g++
 
       - name: Generate Kurtosis Version
         run: scripts/generate-kurtosis-version.sh
-
-      - name: Update apt key
-        run: curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
-
-      - name: Restore Go cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            /go/pkg/mod
-            /root/.cache/go-build
-          key: cli-go-mod-v2-${{ hashFiles('cli/cli/go.sum') }}
-          restore-keys: |
-            cli-go-mod-v2-
 
       - name: Build CLI (single architecture)
         run: cli/cli/scripts/build.sh false
@@ -389,37 +381,79 @@ jobs:
           retention-days: 1
 
   build-cli-all-arch:
-    runs-on: ubuntu-latest
-    container:
-      image: docker/tilt-releaser@sha256:9d05f87976ccdf8a3434443fac2b867ca99a81c8423008437c767c04784969e4
-      env:
-        GOTOOLCHAIN: auto
     needs: check-docs-only
     if: needs.check-docs-only.outputs.has-code-changes == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            goos: linux
+            goarch: amd64
+            cgo: 1
+            cc: x86_64-linux-musl-gcc
+          - runner: ubuntu-24.04-arm
+            goos: linux
+            goarch: arm64
+            cgo: 1
+            cc: aarch64-linux-musl-gcc
+          - runner: macos-13
+            goos: darwin
+            goarch: amd64
+            cgo: 1
+            cc: ""
+          - runner: macos-latest
+            goos: darwin
+            goarch: arm64
+            cgo: 1
+            cc: ""
+          - runner: windows-latest
+            goos: windows
+            goarch: amd64
+            cgo: 0
+            cc: ""
+          - runner: windows-latest
+            goos: windows
+            goarch: arm64
+            cgo: 0
+            cc: ""
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
 
-      - name: Mark git directory as safe
-        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: cli/cli/go.sum
 
       - name: Generate Kurtosis Version
         run: scripts/generate-kurtosis-version.sh
 
-      - name: Update apt key
-        run: curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
+      - name: Install musl toolchain
+        if: matrix.goos == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools
+          sudo ln -sf /usr/bin/musl-gcc "/usr/local/bin/${{ matrix.cc }}"
 
-      - name: Restore Go cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            /go/pkg/mod
-            /root/.cache/go-build
-          key: cli-go-mod-v2-${{ hashFiles('cli/cli/go.sum') }}
-          restore-keys: |
-            cli-go-mod-v2-
-
-      - name: Build CLI (all architectures)
-        run: cli/cli/scripts/build.sh true
+      - name: Build CLI
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: ${{ matrix.cgo }}
+          CC: ${{ matrix.cc }}
+        run: |
+          cd cli/cli
+          go generate ./...
+          if [ "$GOOS" = "linux" ]; then
+            go build -tags osusergo -ldflags '-linkmode external -extldflags "-static"' .
+          else
+            go build .
+          fi
 
   # ============================================================================
   # Test Jobs - Docker Backend
