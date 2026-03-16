@@ -8,30 +8,23 @@ builds:
     binary: "{{ .Env.CLI_BINARY_FILENAME }}"
     main: .
     goos:
-      # darwin is excluded from cross-compilation because the osxcross SDK in
-      # the tilt-releaser container is too old for Go 1.26 (missing macOS 12+ APIs).
-      # See https://github.com/kurtosis-tech/kurtosis/issues/2940 for the plan to
-      # build darwin binaries on native macOS runners instead.
+      - darwin
       - linux
       - windows
     goarch:
       - amd64
       - arm64
     env:
-      - CGO_ENABLED={{ if eq .Os "linux" }}1{{ else }}0{{ end }}
-      # Only override compilers if we are on CI, otherwise use the locally available C/C++ toolchain
+      - CGO_ENABLED={{ if eq .Os "windows" }}0{{ else }}1{{ end }}
+      # Only override CC if we are on CI, otherwise use the locally available C toolchain.
+      # CXX is intentionally NOT overridden — system g++ is used for C++ files (e.g.
+      # go-tree-sitter) since musl-gcc cannot find C++ standard library headers.
+      # The final binary is still statically linked via CC (musl-gcc) + -extldflags "-static".
       - >-
         {{- if index .Env "CI" }}
           {{- if eq .Os "linux" }}
             {{- if eq .Arch "amd64"}}CC=x86_64-linux-musl-gcc{{- end }}
               {{- if eq .Arch "arm64"}}CC=aarch64-linux-musl-gcc{{- end }}
-          {{- end }}
-        {{- end }}
-      - >-
-        {{- if index .Env "CI" }}
-          {{- if eq .Os "linux" }}
-            {{- if eq .Arch "amd64"}}CXX=x86_64-linux-musl-g++{{- end }}
-              {{- if eq .Arch "arm64"}}CXX=aarch64-linux-musl-g++{{- end }}
           {{- end }}
         {{- end }}
     ldflags:
