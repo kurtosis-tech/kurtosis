@@ -2836,6 +2836,12 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 	deadline := time.Now().Add(podWaitForAvailabilityTimeout)
 	var latestPodStatus *apiv1.PodStatus
 	for time.Now().Before(deadline) {
+		select {
+		case <-ctx.Done():
+			return stacktrace.Propagate(ctx.Err(), "Context cancelled while waiting for pod '%v' to become available", podName)
+		default:
+		}
+
 		pod, err := manager.GetPod(ctx, namespaceName, podName)
 		if err != nil {
 			// We shouldn't get an error on getting the pod, even if it's not ready
@@ -2849,6 +2855,17 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 		case apiv1.PodRunning:
 			return nil
 		case apiv1.PodPending:
+			// check if pod is unschedulable (e.g. targeting a node with taints it doesn't tolerate)
+			for _, condition := range pod.Status.Conditions {
+				if condition.Type == apiv1.PodScheduled && condition.Status == apiv1.ConditionFalse && condition.Reason == apiv1.PodReasonUnschedulable {
+					return stacktrace.NewError(
+						"Pod '%v' in namespace '%v' is unschedulable: %v",
+						podName,
+						namespaceName,
+						condition.Message,
+					)
+				}
+			}
 			for _, containerStatus := range pod.Status.ContainerStatuses {
 				containerName := containerStatus.Name
 				maybeContainerWaitingState := containerStatus.State.Waiting
