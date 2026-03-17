@@ -753,7 +753,7 @@ jobs:
       - name: Run testsuite
         run: ./internal_testsuites/golang/scripts/test.sh docker false
 
-  build-golang-testsuite-k8s:
+  build-golang-testsuite-k8s-matrix:
     runs-on: ubuntu-latest
     needs:
       - check-docs-only
@@ -806,6 +806,17 @@ jobs:
         working-directory: internal_testsuites/golang
         run: |
           CGO_ENABLED=0 go test ${{ matrix.packages }} -p 4 -count=1 -timeout 15m -tags kubernetes
+
+  build-golang-testsuite-k8s:
+    if: always()
+    needs: [check-docs-only, build-golang-testsuite-k8s-matrix]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check matrix result
+        run: |
+          if [ "${{ needs.build-golang-testsuite-k8s-matrix.result }}" = "failure" ] || [ "${{ needs.build-golang-testsuite-k8s-matrix.result }}" = "cancelled" ]; then
+            exit 1
+          fi
 
   build-typescript-testsuite-docker:
     runs-on: ubuntu-latest
