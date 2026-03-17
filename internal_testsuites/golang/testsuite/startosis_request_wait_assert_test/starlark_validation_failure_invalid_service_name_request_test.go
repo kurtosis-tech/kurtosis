@@ -32,6 +32,7 @@ func (suite *StartosisRequestWaitAssertTestSuite) TestStarlark_InvalidServiceReq
 	runResult, _ := suite.RunScript(ctx, requestInvalidServiceNameScript)
 
 	t := suite.T()
+	require.NotNil(t, runResult, "RunScript returned nil result")
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.NotEmpty(t, runResult.ValidationErrors, "Expected validation error")
 	require.Len(t, runResult.ValidationErrors, 1)
