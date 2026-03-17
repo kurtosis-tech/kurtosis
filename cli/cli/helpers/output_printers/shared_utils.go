@@ -173,7 +173,7 @@ func formatRunOutput(runFinishedEvent *kurtosis_core_rpc_api_bindings.StarlarkRu
 	}
 	runSuccessMsg.WriteString(durationMsg)
 	if runFinishedEvent.GetSerializedOutput() != "" {
-		runSuccessMsg.WriteString(fmt.Sprintf(" Output was:\n%v", runFinishedEvent.GetSerializedOutput()))
+		fmt.Fprintf(&runSuccessMsg, " Output was:\n%v", runFinishedEvent.GetSerializedOutput())
 	} else {
 		runSuccessMsg.WriteString(" No output was returned.")
 	}

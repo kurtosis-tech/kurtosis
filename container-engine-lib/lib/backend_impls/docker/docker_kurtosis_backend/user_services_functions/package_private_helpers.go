@@ -260,16 +260,16 @@ func removeUserServiceDockerResources(
 			*/
 			if err := dockerManager.RemoveVolume(ctx, volumeName); err != nil {
 				errStrBuilder := strings.Builder{}
-				errStrBuilder.WriteString(fmt.Sprintf(
+				fmt.Fprintf(&errStrBuilder,
 					">>>>>>>>>>>>>>>>>> Removal error for volume %v <<<<<<<<<<<<<<<<<<<<<<<<<<<\n",
 					volumeName,
-				))
+				)
 				errStrBuilder.WriteString(err.Error())
 				errStrBuilder.WriteString("\n")
-				errStrBuilder.WriteString(fmt.Sprintf(
+				fmt.Fprintf(&errStrBuilder,
 					">>>>>>>>>>>>>>> End removal error for volume %v <<<<<<<<<<<<<<<<<<<<<<<<<<",
 					volumeName,
-				))
+				)
 				failedVolumeErrStrs = append(failedVolumeErrStrs, errStrBuilder.String())
 			}
 		}
