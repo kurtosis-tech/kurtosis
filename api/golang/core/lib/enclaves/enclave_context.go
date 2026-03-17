@@ -646,7 +646,7 @@ func runReceiveStarlarkResponseLineRoutine(cancelCtxFunc context.CancelFunc, str
 
 func getErrFromStarlarkRunResult(result *StarlarkRunResult) error {
 	if result.InterpretationError != nil {
-		return stacktrace.NewError(result.InterpretationError.GetErrorMessage())
+		return stacktrace.NewError("%s", result.InterpretationError.GetErrorMessage())
 	}
 	if len(result.ValidationErrors) > 0 {
 		errorMessages := []string{}
@@ -656,7 +656,7 @@ func getErrFromStarlarkRunResult(result *StarlarkRunResult) error {
 		return stacktrace.NewError("Found %v validation errors: %v", len(result.ValidationErrors), strings.Join(errorMessages, "\n"))
 	}
 	if result.ExecutionError != nil {
-		return stacktrace.NewError(result.ExecutionError.GetErrorMessage())
+		return stacktrace.NewError("%s", result.ExecutionError.GetErrorMessage())
 	}
 	return nil
 }

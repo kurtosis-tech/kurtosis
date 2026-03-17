@@ -2,8 +2,6 @@ name: Build
 
 on:
   pull_request:
-    branches-ignore:
-      - main
   push:
     branches-ignore:
       - main
@@ -15,11 +13,10 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  GO_VERSION: '1.23.7'
+  GO_VERSION: '1.26.0'
   RUST_VERSION: '1.88.0'
-  API_NODE_VERSION: '16.13.0'
-  UI_NODE_VERSION: '18.19.0'
-  TILT_RELEASER_SHA: '9d05f87976ccdf8a3434443fac2b867ca99a81c8423008437c767c04784969e4'
+  API_NODE_VERSION: '22.16.0'
+  UI_NODE_VERSION: '22.16.0'
   WORKSPACE_PATH: /tmp/workspace
   CLI_DIST_PATH: cli/cli/dist
   # Note: After download-artifact, the binary is at cli_linux_amd64_v1/kurtosis (without cli/cli/dist prefix)
@@ -38,7 +35,7 @@ jobs:
     outputs:
       has-code-changes: ${{ steps.check.outputs.has-code-changes }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -53,9 +50,9 @@ jobs:
     needs: check-docs-only
     if: needs.check-docs-only.outputs.has-code-changes == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
@@ -69,9 +66,9 @@ jobs:
     needs: check-docs-only
     if: needs.check-docs-only.outputs.has-code-changes == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
@@ -85,9 +82,9 @@ jobs:
     needs: check-docs-only
     if: needs.check-docs-only.outputs.has-code-changes == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
@@ -101,9 +98,9 @@ jobs:
     needs: check-docs-only
     if: needs.check-docs-only.outputs.has-code-changes == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
@@ -117,9 +114,9 @@ jobs:
     needs: check-docs-only
     if: needs.check-docs-only.outputs.has-code-changes == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
@@ -136,9 +133,9 @@ jobs:
     needs: check-docs-only
     if: needs.check-docs-only.outputs.has-code-changes == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
@@ -152,9 +149,9 @@ jobs:
     needs: check-docs-only
     if: needs.check-docs-only.outputs.has-code-changes == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.API_NODE_VERSION }}
 
@@ -169,9 +166,9 @@ jobs:
     needs: check-docs-only
     if: needs.check-docs-only.outputs.has-code-changes == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
@@ -181,7 +178,7 @@ jobs:
         run: scripts/generate-kurtosis-version.sh
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Build and save image
         run: |
@@ -192,7 +189,7 @@ jobs:
           echo "Version that will be persisted: ${version_to_publish}"
           docker save -o ${{ env.FILES_ARTIFACTS_EXPANDER_IMAGE_FILENAME }} "${image_name_with_version}"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: files-artifacts-expander-image
           path: ${{ env.FILES_ARTIFACTS_EXPANDER_IMAGE_FILENAME }}
@@ -203,9 +200,9 @@ jobs:
     needs: check-docs-only
     if: needs.check-docs-only.outputs.has-code-changes == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
@@ -222,9 +219,9 @@ jobs:
     needs: check-docs-only
     if: needs.check-docs-only.outputs.has-code-changes == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
@@ -239,7 +236,7 @@ jobs:
         run: scripts/generate-kurtosis-version.sh
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Build and save image
         run: |
@@ -250,7 +247,7 @@ jobs:
           echo "Version that will be persisted: ${version_to_publish}"
           docker save -o ${{ env.CORE_IMAGE_FILENAME }} "${image_name_with_version}"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: core-server-image
           path: ${{ env.CORE_IMAGE_FILENAME }}
@@ -263,12 +260,12 @@ jobs:
       github.ref_type == 'tag' ||
       needs.check-docs-only.outputs.has-code-changes == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           fetch-tags: true
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.UI_NODE_VERSION }}
           cache: 'yarn'
@@ -282,7 +279,7 @@ jobs:
       - name: Build
         run: enclave-manager/scripts/build.sh
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: enclave-manager-webapp
           path: engine/server/webapp/
@@ -293,9 +290,9 @@ jobs:
     needs: check-docs-only
     if: needs.check-docs-only.outputs.has-code-changes == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
@@ -312,15 +309,15 @@ jobs:
     needs: [check-docs-only, build-enclave-manager-webapp]
     if: needs.check-docs-only.outputs.has-code-changes == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
           cache-dependency-path: engine/server/go.sum
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: enclave-manager-webapp
           path: engine/server/webapp
@@ -329,7 +326,7 @@ jobs:
         run: scripts/generate-kurtosis-version.sh
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Build and save image
         run: |
@@ -340,7 +337,7 @@ jobs:
           echo "Version that will be persisted: ${version_to_publish}"
           docker save -o ${{ env.ENGINE_IMAGE_FILENAME }} "${image_name_with_version}"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: engine-server-image
           path: ${{ env.ENGINE_IMAGE_FILENAME }}
@@ -351,71 +348,124 @@ jobs:
   # ============================================================================
   build-cli:
     runs-on: ubuntu-latest
-    container:
-      image: docker/tilt-releaser@sha256:9d05f87976ccdf8a3434443fac2b867ca99a81c8423008437c767c04784969e4
     needs: check-docs-only
     if: needs.check-docs-only.outputs.has-code-changes == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - name: Mark git directory as safe
-        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: cli/cli/go.sum
+
+      - name: Install musl toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools
+          sudo ln -sf /usr/bin/musl-gcc /usr/local/bin/x86_64-linux-musl-gcc
 
       - name: Generate Kurtosis Version
         run: scripts/generate-kurtosis-version.sh
 
-      - name: Update apt key
-        run: curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
-
-      - name: Restore Go cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            /go/pkg/mod
-            /root/.cache/go-build
-          key: cli-go-mod-v2-${{ hashFiles('cli/cli/go.sum') }}
-          restore-keys: |
-            cli-go-mod-v2-
-
       - name: Build CLI (single architecture)
         run: cli/cli/scripts/build.sh false
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: cli-binary
           path: ${{ env.CLI_DIST_PATH }}/
           retention-days: 1
 
-  build-cli-all-arch:
-    runs-on: ubuntu-latest
-    container:
-      image: docker/tilt-releaser@sha256:9d05f87976ccdf8a3434443fac2b867ca99a81c8423008437c767c04784969e4
+  build-cli-all-arch-matrix:
     needs: check-docs-only
     if: needs.check-docs-only.outputs.has-code-changes == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            goos: linux
+            goarch: amd64
+            cgo: 1
+            cc: x86_64-linux-musl-gcc
+          - runner: ubuntu-24.04-arm
+            goos: linux
+            goarch: arm64
+            cgo: 1
+            cc: aarch64-linux-musl-gcc
+          - runner: macos-15
+            goos: darwin
+            goarch: amd64
+            cgo: 1
+            cc: ""
+          - runner: macos-latest
+            goos: darwin
+            goarch: arm64
+            cgo: 1
+            cc: ""
+          - runner: windows-latest
+            goos: windows
+            goarch: amd64
+            cgo: 0
+            cc: ""
+          - runner: windows-latest
+            goos: windows
+            goarch: arm64
+            cgo: 0
+            cc: ""
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - name: Mark git directory as safe
-        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: cli/cli/go.sum
 
       - name: Generate Kurtosis Version
         run: scripts/generate-kurtosis-version.sh
 
-      - name: Update apt key
-        run: curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
+      - name: Install musl toolchain
+        if: matrix.goos == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools
+          sudo ln -sf /usr/bin/musl-gcc "/usr/local/bin/${{ matrix.cc }}"
 
-      - name: Restore Go cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            /go/pkg/mod
-            /root/.cache/go-build
-          key: cli-go-mod-v2-${{ hashFiles('cli/cli/go.sum') }}
-          restore-keys: |
-            cli-go-mod-v2-
+      - name: Run go generate
+        run: |
+          cd cli/cli
+          go generate ./...
 
-      - name: Build CLI (all architectures)
-        run: cli/cli/scripts/build.sh true
+      - name: Build CLI
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: ${{ matrix.cgo }}
+          CC: ${{ matrix.cc }}
+        run: |
+          cd cli/cli
+          if [ "$GOOS" = "linux" ]; then
+            go build -tags osusergo -ldflags '-linkmode external -extldflags "-static"' .
+          else
+            go build .
+          fi
+
+  build-cli-all-arch:
+    if: always()
+    needs: [check-docs-only, build-cli-all-arch-matrix]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check matrix result
+        run: |
+          if [ "${{ needs.build-cli-all-arch-matrix.result }}" = "failure" ] || [ "${{ needs.build-cli-all-arch-matrix.result }}" = "cancelled" ]; then
+            exit 1
+          fi
 
   # ============================================================================
   # Test Jobs - Docker Backend
@@ -430,13 +480,14 @@ jobs:
       - build-files-artifacts-expander
     if: needs.check-docs-only.outputs.has-code-changes == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
+          cache: false
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: ${{ env.WORKSPACE_PATH }}
           merge-multiple: true
@@ -624,13 +675,14 @@ jobs:
       - build-files-artifacts-expander
     if: needs.check-docs-only.outputs.has-code-changes == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
+          cache: false
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: ${{ env.WORKSPACE_PATH }}
           merge-multiple: true
@@ -669,15 +721,15 @@ jobs:
       - build-files-artifacts-expander
     if: needs.check-docs-only.outputs.has-code-changes == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
           cache-dependency-path: internal_testsuites/golang/go.sum
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: ${{ env.WORKSPACE_PATH }}
           merge-multiple: true
@@ -699,7 +751,7 @@ jobs:
       - name: Run testsuite
         run: ./internal_testsuites/golang/scripts/test.sh docker false
 
-  build-golang-testsuite-k8s:
+  build-golang-testsuite-k8s-matrix:
     runs-on: ubuntu-latest
     needs:
       - check-docs-only
@@ -708,16 +760,28 @@ jobs:
       - build-engine-server
       - build-files-artifacts-expander
     if: needs.check-docs-only.outputs.has-code-changes == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - shard: 1
+            packages: ./testsuite/startosis_run_sh_task_test/... ./testsuite/stream_logs_test/... ./testsuite/startosis-block-local-absolute-locators_test/... ./testsuite/upload_download_files_test/... ./testsuite/destroy_enclave_test/... ./testsuite/startosis_test/...
+          - shard: 2
+            packages: ./testsuite/startosis_add_service_test/... ./testsuite/persisted_logs_test/... ./testsuite/startosis_replace_test/... ./testsuite/startosis_directory_test/... ./testsuite/startosis_upload_file_test/... ./testsuite/startlark_user_passing_test/... ./testsuite/starlark_exec_test/... ./testsuite/render_templates_test/...
+          - shard: 3
+            packages: ./testsuite/startosis_package_test/... ./testsuite/startosis_request_wait_assert_test/... ./testsuite/startosis_ports_wait_test/... ./testsuite/enclave_and_service_identifiers_test/... ./testsuite/basic_datastore_test/... ./testsuite/startosis_remove_service_test/... ./testsuite/startosis_remote_package_test/... ./testsuite/store_web_files_test/...
+          - shard: 4
+            packages: ./testsuite/starlark_run_python_test/... ./testsuite/startosis_idempotency_test/... ./testsuite/search_logs_test/... ./testsuite/startosis_subpackage_test/... ./testsuite/startosis_stop_service_test/... ./testsuite/startosis_start_service_test/... ./testsuite/startosis_add_service_with_port_spec_test/... ./testsuite/basic_datastore_and_api_test/...
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
           cache-dependency-path: internal_testsuites/golang/go.sum
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: ${{ env.WORKSPACE_PATH }}
           merge-multiple: true
@@ -736,8 +800,21 @@ jobs:
           workspace-path: ${{ env.WORKSPACE_PATH }}
           kurtosis-binpath: ${{ env.KURTOSIS_BINPATH }}
 
-      - name: Run testsuite
-        run: ./internal_testsuites/golang/scripts/test.sh kubernetes false
+      - name: Run testsuite (shard ${{ matrix.shard }})
+        working-directory: internal_testsuites/golang
+        run: |
+          CGO_ENABLED=0 go test ${{ matrix.packages }} -p 4 -count=1 -timeout 15m -tags kubernetes
+
+  build-golang-testsuite-k8s:
+    if: always()
+    needs: [check-docs-only, build-golang-testsuite-k8s-matrix]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check matrix result
+        run: |
+          if [ "${{ needs.build-golang-testsuite-k8s-matrix.result }}" = "failure" ] || [ "${{ needs.build-golang-testsuite-k8s-matrix.result }}" = "cancelled" ]; then
+            exit 1
+          fi
 
   build-typescript-testsuite-docker:
     runs-on: ubuntu-latest
@@ -749,13 +826,13 @@ jobs:
       - build-files-artifacts-expander
     if: needs.check-docs-only.outputs.has-code-changes == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.UI_NODE_VERSION }}
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: ${{ env.WORKSPACE_PATH }}
           merge-multiple: true
@@ -793,7 +870,7 @@ jobs:
           done
           zip -r "${output_dirname}.zip" "${output_dirname}" || true
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: enclave-dumps-typescript-docker
@@ -814,13 +891,13 @@ jobs:
       - build-files-artifacts-expander
     if: needs.check-docs-only.outputs.has-code-changes == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.UI_NODE_VERSION }}
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: ${{ env.WORKSPACE_PATH }}
           merge-multiple: true
@@ -861,13 +938,14 @@ jobs:
       - build-files-artifacts-expander
     if: needs.check-docs-only.outputs.has-code-changes == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
+          cache: false
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: ${{ env.WORKSPACE_PATH }}
           merge-multiple: true
@@ -875,7 +953,7 @@ jobs:
       # Install released Kurtosis CLI from apt
       - name: Install released Kurtosis CLI
         run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          echo "deb [trusted=yes] https://sdk.kurtosis.com/kurtosis-cli-release-artifacts/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
           sudo apt-get update
           sudo apt-get install -y kurtosis-cli
 
@@ -953,13 +1031,14 @@ jobs:
       - build-files-artifacts-expander
     if: needs.check-docs-only.outputs.has-code-changes == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
+          cache: false
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: ${{ env.WORKSPACE_PATH }}
           merge-multiple: true
@@ -1027,13 +1106,14 @@ jobs:
       - build-files-artifacts-expander
     if: needs.check-docs-only.outputs.has-code-changes == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
+          cache: false
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: ${{ env.WORKSPACE_PATH }}
           merge-multiple: true

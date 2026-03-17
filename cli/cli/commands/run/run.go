@@ -788,7 +788,7 @@ func getOrCreateEnclaveContext(
 		enclaveContext, err = kurtosisContext.CreateEnclave(ctx, enclaveIdentifierOrName)
 	}
 	if err != nil {
-		return nil, false, stacktrace.Propagate(err, fmt.Sprintf("Unable to create new enclave with name '%s'", enclaveIdentifierOrName))
+		return nil, false, stacktrace.Propagate(err, "%s", fmt.Sprintf("Unable to create new enclave with name '%s'", enclaveIdentifierOrName))
 	}
 	logrus.Infof("Enclave '%v' created successfully", enclaveContext.GetEnclaveName())
 	return enclaveContext, isNewEnclaveFlagWhenCreated, nil

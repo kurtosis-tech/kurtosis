@@ -355,7 +355,7 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 	// run the command passed in by user in the container
 	runShResult, err := executeWithWait(ctx, builtin.serviceNetwork, builtin.name, builtin.wait, fullCommandToRun)
 	if err != nil {
-		return "", stacktrace.Propagate(err, fmt.Sprintf("error occurred while executing one time task command: %v ", builtin.run))
+		return "", stacktrace.Propagate(err, "%s", fmt.Sprintf("error occurred while executing one time task command: %v ", builtin.run))
 	}
 
 	result := map[string]starlark.Comparable{
@@ -371,7 +371,7 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 	// throw an error as execution if returned code is not an  acceptable exit code
 	if !builtin.skipCodeCheck && !isAcceptableCode(builtin.acceptableCodes, result) {
 		errorMessage := fmt.Sprintf("Run sh returned exit code '%v' that is not part of the acceptable status codes '%v', with output:", result["code"], builtin.acceptableCodes)
-		return "", stacktrace.NewError(formatErrorMessage(errorMessage, result["output"].String()))
+		return "", stacktrace.NewError("%s", formatErrorMessage(errorMessage, result["output"].String()))
 	}
 
 	if builtin.storeSpecList != nil {

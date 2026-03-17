@@ -723,7 +723,7 @@ func (apicService *ApiContainerService) GetStarlarkPackagePlanYaml(ctx context.C
 		image_download_mode.ImageDownloadMode_Always,
 		instructions_plan.NewInstructionsPlan())
 	if apiInterpretationError != nil {
-		interpretationError = startosis_errors.NewInterpretationError(apiInterpretationError.GetErrorMessage())
+		interpretationError = startosis_errors.NewInterpretationError("%s", apiInterpretationError.GetErrorMessage())
 		return nil, stacktrace.Propagate(interpretationError, "An interpretation error occurred interpreting package for retrieving plan yaml for package: %v", packageIdFromArgs)
 	}
 	planYamlStr, err := instructionsPlan.GenerateYamlWithInstructions(plan_yaml.CreateEmptyPlan(packageIdFromArgs))
@@ -759,7 +759,7 @@ func (apicService *ApiContainerService) GetStarlarkScriptPlanYaml(ctx context.Co
 		instructions_plan.NewInstructionsPlan(),
 	)
 	if apiInterpretationError != nil {
-		return nil, startosis_errors.NewInterpretationError(apiInterpretationError.GetErrorMessage())
+		return nil, startosis_errors.NewInterpretationError("%s", apiInterpretationError.GetErrorMessage())
 	}
 	planYamlStr, err := instructionsPlan.GenerateYamlWithInstructions(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript))
 	if err != nil {
@@ -1271,7 +1271,7 @@ func getTextRepresentation(reader io.Reader, lineCount int) (*string, error) {
 				return nil, stacktrace.NewError("File has no text representation because '%v' is not printable", char)
 			}
 		}
-		textRepresentation.WriteString(fmt.Sprintf("%s\n", line))
+		fmt.Fprintf(&textRepresentation, "%s\n", line)
 	}
 
 	if err := scanner.Err(); err != nil {
