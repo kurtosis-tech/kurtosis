@@ -263,7 +263,7 @@ func copyFilesFromTask(ctx context.Context, serviceNetwork service_network.Servi
 	for _, storeSpec := range storeSpecList {
 		_, err := serviceNetwork.CopyFilesFromService(ctx, serviceName, storeSpec.GetSrc(), storeSpec.GetName())
 		if err != nil {
-			return stacktrace.Propagate(err, fmt.Sprintf("error occurred while copying file or directory at path: %v", storeSpec.GetSrc()))
+			return stacktrace.Propagate(err, "%s", fmt.Sprintf("error occurred while copying file or directory at path: %v", storeSpec.GetSrc()))
 		}
 	}
 	return nil

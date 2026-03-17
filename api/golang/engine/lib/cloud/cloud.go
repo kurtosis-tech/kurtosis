@@ -45,6 +45,8 @@ func CreateCloudClient(connectionStr string, caCertChain string) (api.KurtosisCl
 		KeyLogWriter:                        nil,
 		EncryptedClientHelloConfigList:      nil,
 		EncryptedClientHelloRejectionVerify: nil,
+		GetEncryptedClientHelloKeys:         nil,
+		EncryptedClientHelloKeys:            nil,
 	}
 	conn, err := grpc.Dial(connectionStr, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
 	if err != nil {

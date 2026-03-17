@@ -585,7 +585,7 @@ def run(plan):
 		[]startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 2, 26)),
 		},
-		errorMsg,
+		"%s", errorMsg,
 	).ToAPIType()
 	require.Equal(suite.T(), expectedError, interpretationError)
 	require.Nil(suite.T(), instructionsPlan)

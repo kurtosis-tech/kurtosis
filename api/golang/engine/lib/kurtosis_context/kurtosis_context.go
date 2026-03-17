@@ -494,7 +494,7 @@ func validateEngineApiVersion(ctx context.Context, engineServiceClient kurtosis_
 		if grpcErrorCode == codes.Unavailable {
 			errorStr = "The Kurtosis Engine Server is unavailable and is probably not running; you will need to start it using the Kurtosis CLI before you can create a connection to it"
 		}
-		return stacktrace.Propagate(err, errorStr)
+		return stacktrace.Propagate(err, "%s", errorStr)
 	}
 	runningEngineVersionStr := getEngineInfoResponse.GetEngineVersion()
 
