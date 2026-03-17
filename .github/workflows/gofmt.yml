@@ -36,6 +36,7 @@ jobs:
     - uses: actions/setup-go@v6
       with:
         go-version: '1.26'
+        cache: false
     - run: scripts/generate-kurtosis-version.sh
     - uses: Jerome1337/gofmt-action@v1.0.5
       with:
