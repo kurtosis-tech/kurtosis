@@ -74,7 +74,6 @@ export VERSION="${version}"
 if "${should_publish_arg}"; then
     # These environment variables will be set ONLY when publishing, in the CI environment
     # See the CI config for details on how these get set
-    export FURY_TOKEN="${GEMFURY_PUBLISH_TOKEN}"
     export GITHUB_TOKEN="${KURTOSISBOT_GITHUB_TOKEN}"
 fi
 # ^^^^^^^^ Goreleaser variables ^^^^^^^^^^^^^^^^^^^
