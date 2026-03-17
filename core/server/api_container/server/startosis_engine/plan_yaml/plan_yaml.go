@@ -1,6 +1,10 @@
 package plan_yaml
 
-import "sort"
+import (
+	"sort"
+
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
+)
 
 const (
 	shell  TaskType = "sh"
@@ -8,11 +12,18 @@ const (
 	exec   TaskType = "exec"
 )
 
-type privatePlanYaml struct {
+// PlanYaml contains information about the effect of an InstructionsPlan or sequence of instructions on the state of the Enclave.
+// It also includes useful metadata about the plan, such as the package dependencies and the instructions with their dependencies.
+type PlanYaml struct {
 	PackageId      string           `yaml:"packageId,omitempty"`
 	Services       []*Service       `yaml:"services,omitempty"`
 	FilesArtifacts []*FilesArtifact `yaml:"filesArtifacts,omitempty"`
 	Tasks          []*Task          `yaml:"tasks,omitempty"`
+
+	Images              []string `yaml:"images,omitempty"`
+	PackageDependencies []string `yaml:"packageDependencies,omitempty"`
+
+	Instructions []dependency_graph.InstructionWithDependencies `yaml:"instructions,omitempty"`
 }
 
 // Service represents a service in the system.
@@ -110,3 +121,16 @@ type Task struct {
 
 // TaskType represents the type of task (either python or shell)
 type TaskType string
+
+type Package struct {
+	PackageId       string
+	ContainerImages []string
+}
+
+type PackageDependencyGraph struct {
+	RootPackageId string
+
+	PackageIndex map[string]Package
+
+	PackageGraph map[string][]Package
+}

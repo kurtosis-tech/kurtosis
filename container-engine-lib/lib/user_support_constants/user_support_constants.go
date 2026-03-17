@@ -31,7 +31,6 @@ const (
 	FeedbackEmail                     = "feedback@" + OldDomain
 	FeedbackEmailLink                 = "mailto:" + FeedbackEmail
 	KurtosisTechTwitterProfileLink    = "https://twitter.com/KurtosisTech"
-	KurtosisCloudLink                 = "https://cloud." + Domain
 
 	//    If you add new URLs above, make sure to add them to the urlsToValidateInTest below!!!
 	// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
@@ -56,6 +55,5 @@ var urlsToValidateInTest = []string{
 	KurtosisDiscordUrl,
 	KurtosisOnBoardCalendlyUrl,
 	HowImportWorksLink,
-	KurtosisCloudLink,
 	KurtosisTechTwitterProfileLink,
 }

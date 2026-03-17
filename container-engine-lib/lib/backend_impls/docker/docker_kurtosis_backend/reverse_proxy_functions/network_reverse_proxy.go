@@ -18,7 +18,11 @@ var (
 	autoAssignIpAddressToReverseProxy net.IP = nil
 )
 
-func ConnectReverseProxyToNetwork(ctx context.Context, dockerManager *docker_manager.DockerManager, networkId string) error {
+func ConnectReverseProxyToNetwork(
+	ctx context.Context,
+	dockerManager *docker_manager.DockerManager,
+	networkId string,
+) error {
 	maybeReverseProxyObject, maybeReverseProxyContainerId, err := getReverseProxyObjectAndContainerId(ctx, dockerManager)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while retrieving the reverse proxy object and container id")

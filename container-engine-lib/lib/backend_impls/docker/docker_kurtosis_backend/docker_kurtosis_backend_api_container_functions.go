@@ -3,9 +3,11 @@ package docker_kurtosis_backend
 import (
 	"context"
 	"encoding/json"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"net"
+	"os"
 	"time"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
 
@@ -79,6 +81,11 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	githubAuthStorageVolumeName, err := backend.getGitHubAuthStorageVolume(ctx)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the GitHub auth storage volume name.")
+	}
+
+	dockerConfigStorageVolumeName, err := backend.getDockerConfigStorageVolume(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the Docker config storage volume name.")
 	}
 
 	// Get the Docker network ID where we'll start the new API container
@@ -185,14 +192,23 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		usedPorts[debugServerDockerPort] = docker_manager.NewManualPublishingSpec(uint16(apicDebugServerPort))
 	}
 
+	// Get the correct host socket path from the environment variable passed by the CLI
+	// This is the actual host socket path that needs to be bind mounted
+	hostSocketPath := os.Getenv("HOST_DOCKER_SOCKET")
+	if hostSocketPath == "" {
+		// Fallback to detecting it if not provided (shouldn't happen in normal operation)
+		hostSocketPath = shared_helpers.GetDockerSocketPath(backend.dockerManager.IsPodman())
+	}
 	bindMounts := map[string]string{
-		// Necessary so that the API container can interact with the Docker engine
-		consts.DockerSocketFilepath: consts.DockerSocketFilepath,
+		// Necessary so that the API container can interact with the Docker/Podman engine
+		// Map the host socket to the standard location inside the container
+		hostSocketPath: consts.DockerSocketFilepath,
 	}
 
 	volumeMounts := map[string]string{
-		enclaveDataVolumeName:       enclaveDataVolumeDirpath,
-		githubAuthStorageVolumeName: consts.GitHubAuthStorageDirPath,
+		enclaveDataVolumeName:         enclaveDataVolumeDirpath,
+		githubAuthStorageVolumeName:   consts.GitHubAuthStorageDirPath,
+		dockerConfigStorageVolumeName: consts.DockerConfigStorageDirPath,
 	}
 
 	labelStrs := map[string]string{}
@@ -285,7 +301,8 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	}
 	logrus.Debugf("...APIC is available in enclave '%v'", enclaveUuid)
 
-	bridgeNetworkIpAddress, err := backend.dockerManager.GetContainerIP(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn, containerId)
+	bridgeNetworkName := backend.dockerManager.GetBridgeNetworkName()
+	bridgeNetworkIpAddress, err := backend.dockerManager.GetContainerIP(ctx, bridgeNetworkName, containerId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while getting bridge network ip address for enclave with id: '%v'", enclaveUuid)
 	}
@@ -415,6 +432,9 @@ func (backend *DockerKurtosisBackend) getMatchingApiContainers(ctx context.Conte
 		docker_label_key.ContainerTypeDockerLabelKey.GetString(): label_value_consts.APIContainerContainerTypeDockerLabelValue.GetString(),
 		// NOTE: we do NOT use the enclave UUID label here, and instead do postfiltering, because Docker has no way to do disjunctive search!
 	}
+
+	// TODO: dockerManager.GetContainersByLabels lists all APIContainers and inspects them so the performance of any upstream call to retrieve even a single APIContainer will always scale with the number of enclaves
+	// TODO: Consider caching enclave ID -> container ID mapping to avoid inspecting all API containers
 	allApiContainers, err := backend.dockerManager.GetContainersByLabels(ctx, apiContainerSearchLabels, consts.ShouldFetchAllContainersWhenRetrievingContainers)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred fetching API containers using labels: %+v", apiContainerSearchLabels)
@@ -423,10 +443,6 @@ func (backend *DockerKurtosisBackend) getMatchingApiContainers(ctx context.Conte
 	allMatchingApiContainers := map[string]*api_container.APIContainer{}
 	for _, apiContainer := range allApiContainers {
 		containerId := apiContainer.GetId()
-		bridgeNetworkIpAddress, err := backend.dockerManager.GetContainerIP(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn, containerId)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred while getting bridge network ip address for container with id: '%v'", containerId)
-		}
 
 		isProductionEnclave, err := getProductionMode(apiContainer)
 		if err != nil {
@@ -437,7 +453,9 @@ func (backend *DockerKurtosisBackend) getMatchingApiContainers(ctx context.Conte
 			apiContainer.GetLabels(),
 			apiContainer.GetStatus(),
 			apiContainer.GetHostPortBindings(),
-			bridgeNetworkIpAddress,
+			// Bridge network IP address will be filled in later if this APIContainer passes the post-filter.
+			// This avoids unnessarily calling GetContainerIP/InspectContainer on all API containers
+			"",
 			isProductionEnclave,
 		)
 		if err != nil {
@@ -445,20 +463,29 @@ func (backend *DockerKurtosisBackend) getMatchingApiContainers(ctx context.Conte
 		}
 
 		// If the ID filter is specified, drop API containers not matching it
-		if filters.EnclaveIDs != nil && len(filters.EnclaveIDs) > 0 {
+		if len(filters.EnclaveIDs) > 0 {
 			if _, found := filters.EnclaveIDs[apicObj.GetEnclaveID()]; !found {
 				continue
 			}
 		}
 
 		// If status filter is specified, drop API containers not matching it
-		if filters.Statuses != nil && len(filters.Statuses) > 0 {
+		if len(filters.Statuses) > 0 {
 			if _, found := filters.Statuses[apicObj.GetStatus()]; !found {
 				continue
 			}
 		}
 
-		allMatchingApiContainers[containerId] = apicObj
+		bridgeNetworkIpAddress, err := backend.dockerManager.GetContainerIP(ctx, backend.dockerManager.GetBridgeNetworkName(), containerId)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred while getting bridge network ip address for container with id: '%v'", containerId)
+		}
+		apicObjWithBridgeNetworkIpAddress, err := getApiContainerObjectFromContainerInfoWithBridgeNetworkIpAddress(apicObj, bridgeNetworkIpAddress)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred while getting API container object with bridge network ip address for container with id: '%v'", containerId)
+		}
+
+		allMatchingApiContainers[containerId] = apicObjWithBridgeNetworkIpAddress
 	}
 
 	return allMatchingApiContainers, nil
@@ -469,7 +496,7 @@ func getApiContainerObjectFromContainerInfo(
 	labels map[string]string,
 	containerStatus types.ContainerStatus,
 	allHostMachinePortBindings map[nat.Port]*nat.PortBinding,
-	bridgeNetworkIpAddress string,
+	bridgeNetworkIpAddrStr string,
 	isProductionEnclave bool,
 ) (*api_container.APIContainer, error) {
 	enclaveId, found := labels[docker_label_key.EnclaveUUIDDockerLabelKey.GetString()]
@@ -489,9 +516,16 @@ func getApiContainerObjectFromContainerInfo(
 		return nil, stacktrace.NewError("Couldn't parse private IP address string '%v' to an IP", privateIpAddrStr)
 	}
 
-	bridgeNetworkIpAddressAddr := net.ParseIP(bridgeNetworkIpAddress)
-	if privateIpAddr == nil {
-		return nil, stacktrace.NewError("Couldn't parse bridge network IP address string '%v' to an IP", bridgeNetworkIpAddressAddr)
+	var bridgeNetworkIpAddr net.IP
+
+	// Parse the bridge network IP address only if present (some APIContainers, e.g. stopped ones, may not be connected to the bridge network)
+	if bridgeNetworkIpAddrStr != "" {
+		bridgeNetworkIpAddr = net.ParseIP(bridgeNetworkIpAddrStr)
+		if bridgeNetworkIpAddr == nil {
+			return nil, stacktrace.NewError("Couldn't parse bridge network IP address string '%v' to an IP", bridgeNetworkIpAddrStr)
+		}
+	} else {
+		logrus.Debugf("Received empty bridge network IP address for API container '%v' when attempting to convert to APIC info to object. This APIContainer is likely not connected to the bridge network.", containerId)
 	}
 
 	privateGrpcPortSpec, err := getPrivateApiContainerPorts(labels)
@@ -529,10 +563,27 @@ func getApiContainerObjectFromContainerInfo(
 		privateGrpcPortSpec,
 		publicIpAddr,
 		publicGrpcPortSpec,
-		bridgeNetworkIpAddressAddr,
+		bridgeNetworkIpAddr,
 		isProductionEnclave,
 	)
 
+	return result, nil
+}
+
+func getApiContainerObjectFromContainerInfoWithBridgeNetworkIpAddress(
+	apicObj *api_container.APIContainer,
+	bridgeNetworkIpAddress string,
+) (*api_container.APIContainer, error) {
+	result := api_container.NewAPIContainer(
+		apicObj.GetEnclaveID(),
+		apicObj.GetStatus(),
+		apicObj.GetPrivateIPAddress(),
+		apicObj.GetPrivateGRPCPort(),
+		apicObj.GetPublicIPAddress(),
+		apicObj.GetPublicGRPCPort(),
+		net.ParseIP(bridgeNetworkIpAddress),
+		apicObj.IsProductionEnclave(),
+	)
 	return result, nil
 }
 

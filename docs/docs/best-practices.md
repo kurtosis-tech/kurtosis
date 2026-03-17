@@ -20,6 +20,7 @@ Passing [package parameters][package-parameterization] via the CLI can get hairy
    ```bash
    kurtosis run github.com/user/repo --args-file my-params.json
    ```
+
 Choosing the right wait
 -----------------------
 Kurtosis has three different types of waits. Described here are the three, with tips on when to use each:

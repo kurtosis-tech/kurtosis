@@ -85,7 +85,7 @@ const SHOULD_FOLLOW_LOGS_VALUES_BY_REQUEST: boolean[] = [
 ]
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-const MILLISECONDS_TO_WAIT_FOR_LOGS = 4000
+const MILLISECONDS_TO_WAIT_FOR_LOGS = 10000
 
 jest.setTimeout(180000);
 

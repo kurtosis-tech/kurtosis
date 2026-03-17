@@ -111,7 +111,7 @@ func runMain() error {
 
 		// NOTE: We don't use stacktrace here because the actual stacktraces we care about are the ones from the threads!
 		return fmt.Errorf(
-			"The following errors occurred when trying to expand files artifacts:\n%v",
+			"the following errors occurred when trying to expand files artifacts:\n%v",
 			strings.Join(allIndexedResultErrStrs, "\n\n"),
 		)
 	}

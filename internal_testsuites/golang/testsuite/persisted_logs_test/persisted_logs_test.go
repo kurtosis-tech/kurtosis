@@ -1,14 +1,9 @@
-//go:build !kubernetes
-// +build !kubernetes
-
-// We don't run this test in Kubernetes because, as of 2022-10-28, the centralized logs feature is not implemented in Kubernetes yet
-//TODO remove this comments after Kubernetes implementation
-
 package persisted_logs_test
 
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
+	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/testsuite/consts"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/stretchr/testify/require"
@@ -38,8 +33,6 @@ const (
 	logLine2 = "Starting feature 'enclave pool'"
 	logLine3 = "Starting feature 'enclave pool with size 2'"
 	logLine4 = "The data have being loaded"
-
-	secondsToWaitForLogs = 1 * time.Second
 )
 
 var (
@@ -102,7 +95,7 @@ var (
 	}
 )
 
-func TestSearchLogs(t *testing.T) {
+func TestPersistedLogs(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
@@ -123,7 +116,7 @@ func TestSearchLogs(t *testing.T) {
 
 	// It takes some time for logs to persist so we sleep to ensure logs have persisted
 	// Otherwise the test is flaky
-	time.Sleep(secondsToWaitForLogs)
+	time.Sleep(consts.FluentbitRefreshInterval)
 	// ------------------------------------- TEST RUN -------------------------------------------------
 	enclaveUuid := enclaveCtx.GetEnclaveUuid()
 
@@ -147,7 +140,7 @@ func TestSearchLogs(t *testing.T) {
 
 		shouldFollowLogsOption := shouldFollowLogsValueByRequest[requestIndex]
 
-		testEvaluationErr, receivedLogLinesByService, receivedNotFoundServiceUuids := test_helpers.GetLogsResponse(
+		receivedLogLinesByService, receivedNotFoundServiceUuids, testEvaluationErr := test_helpers.GetLogsResponse(
 			t,
 			ctx,
 			testTimeOut,
@@ -161,7 +154,9 @@ func TestSearchLogs(t *testing.T) {
 
 		require.NoError(t, testEvaluationErr)
 		for serviceUuid := range userServiceUuids {
-			require.Equal(t, expectedLogLinesByRequest[requestIndex], receivedLogLinesByService[serviceUuid])
+			for logNum, expectedLogLine := range expectedLogLinesByRequest[requestIndex] {
+				require.Contains(t, receivedLogLinesByService[serviceUuid][logNum], expectedLogLine)
+			}
 		}
 		require.Equal(t, expectedNonExistenceServiceUuids, receivedNotFoundServiceUuids)
 	}

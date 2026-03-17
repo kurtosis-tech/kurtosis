@@ -430,7 +430,7 @@ func forwardDataChunkStream[T dataChunkStreamReceiver, U dataChunkStreamSender](
 			return stacktrace.Propagate(readErr, "Error reading Kurtosis execution lines from Kurtosis core stream")
 		}
 		if writeErr := streamToWriteTo.Send(dataChunk); writeErr != nil {
-			return stacktrace.Propagate(readErr, "Received a Kurtosis execution line but failed forwarding it back to the user")
+			return stacktrace.Propagate(writeErr, "Received a Kurtosis execution line but failed forwarding it back to the user")
 		}
 	}
 }

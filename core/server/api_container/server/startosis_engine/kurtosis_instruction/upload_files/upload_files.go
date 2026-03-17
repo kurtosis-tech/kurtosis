@@ -4,7 +4,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
+
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
@@ -14,10 +17,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
-	"github.com/kurtosis-tech/kurtosis/path-compression"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
+	path_compression "github.com/kurtosis-tech/kurtosis/path-compression"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
-	"os"
 )
 
 const (
@@ -219,7 +222,7 @@ func (builtin *UploadFilesCapabilities) FillPersistableAttributes(builder *encla
 	)
 }
 
-func (builtin *UploadFilesCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
+func (builtin *UploadFilesCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerator) error {
 	err := plan.AddUploadFiles(builtin.artifactName, builtin.src)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred updating plan with upload files.")
@@ -229,4 +232,13 @@ func (builtin *UploadFilesCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) err
 
 func (builtin *UploadFilesCapabilities) Description() string {
 	return builtin.description
+}
+
+// UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
+func (builtin *UploadFilesCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
+	shortDescriptor := fmt.Sprintf("upload_files(%s, %s)", builtin.src, builtin.artifactName)
+	dependencyGraph.UpdateInstructionShortDescriptor(instructionUuid, shortDescriptor)
+
+	dependencyGraph.ProducesFilesArtifact(instructionUuid, string(builtin.artifactName))
+	return nil
 }

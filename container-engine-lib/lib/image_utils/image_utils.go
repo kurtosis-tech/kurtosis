@@ -37,7 +37,7 @@ func GetRepoTags(imageFilePath string) ([]string, error) {
 
 	tarReader := tar.NewReader(gzipReader)
 
-	var found bool = false
+	var found = false
 	for {
 		header, err := tarReader.Next()
 		if err == io.EOF {

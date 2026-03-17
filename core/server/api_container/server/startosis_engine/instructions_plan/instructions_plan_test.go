@@ -1,10 +1,13 @@
 package instructions_plan
 
 import (
+	"testing"
+
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/mock_instruction"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
-	"testing"
+
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
 )
 
 func TestAddInstruction(t *testing.T) {
@@ -27,7 +30,7 @@ func TestAddInstruction(t *testing.T) {
 func TestAddScheduledInstruction(t *testing.T) {
 	plan := NewInstructionsPlan()
 
-	instruction1Uuid := ScheduledInstructionUuid("instruction1")
+	instruction1Uuid := types.ScheduledInstructionUuid("instruction1")
 	instruction1 := mock_instruction.NewMockKurtosisInstruction(t)
 	instruction1ReturnedValue := starlark.MakeInt(1)
 	scheduleInstruction := NewScheduledInstruction(instruction1Uuid, instruction1, instruction1ReturnedValue)
@@ -51,7 +54,7 @@ func TestGeneratePlan(t *testing.T) {
 	plan := NewInstructionsPlan()
 
 	// add instruction1 which is marked as executed
-	instruction1Uuid := ScheduledInstructionUuid("instruction1")
+	instruction1Uuid := types.ScheduledInstructionUuid("instruction1")
 	instruction1 := mock_instruction.NewMockKurtosisInstruction(t)
 	instruction1ReturnedValue := starlark.None
 	scheduleInstruction1 := NewScheduledInstruction(instruction1Uuid, instruction1, instruction1ReturnedValue)
@@ -61,7 +64,7 @@ func TestGeneratePlan(t *testing.T) {
 	plan.instructionsSequence = append(plan.instructionsSequence, instruction1Uuid)
 
 	// add instruction2 which by default is not executed
-	instruction2Uuid := ScheduledInstructionUuid("instruction2")
+	instruction2Uuid := types.ScheduledInstructionUuid("instruction2")
 	instruction2 := mock_instruction.NewMockKurtosisInstruction(t)
 	instruction2ReturnedValue := starlark.MakeInt(1)
 	scheduleInstruction2 := NewScheduledInstruction(instruction2Uuid, instruction2, instruction2ReturnedValue)

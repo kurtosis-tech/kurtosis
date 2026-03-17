@@ -124,6 +124,38 @@ pub mod container {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct FilesArtifactsList {
+    #[prost(string, repeated, tag = "1")]
+    pub files_artifacts_identifiers: ::prost::alloc::vec::Vec<
+        ::prost::alloc::string::String,
+    >,
+}
+/// Equivalent of user on ServiceConfig
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct User {
+    #[prost(uint32, tag = "1")]
+    pub uid: u32,
+    #[prost(uint32, tag = "2")]
+    pub gid: u32,
+}
+/// Equivalent of tolerations on ServiceConfig
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Toleration {
+    #[prost(string, tag = "1")]
+    pub key: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub operator: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub value: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
+    pub effect: ::prost::alloc::string::String,
+    #[prost(int64, tag = "5")]
+    pub toleration_seconds: i64,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ServiceInfo {
     /// UUID of the service
     #[prost(string, tag = "1")]
@@ -159,6 +191,44 @@ pub struct ServiceInfo {
     /// Docker container or Kubernetes pod container
     #[prost(message, optional, tag = "9")]
     pub container: ::core::option::Option<Container>,
+    /// Mapping of directory paths on service to names of files artifacts that are mounted to that directory
+    #[prost(map = "string, message", tag = "10")]
+    pub service_dir_paths_to_files_artifacts_list: ::std::collections::HashMap<
+        ::prost::alloc::string::String,
+        FilesArtifactsList,
+    >,
+    #[prost(uint32, tag = "11")]
+    pub max_millicpus: u32,
+    #[prost(uint32, tag = "12")]
+    pub min_millicpus: u32,
+    #[prost(uint32, tag = "13")]
+    pub max_memory_megabytes: u32,
+    #[prost(uint32, tag = "14")]
+    pub min_memory_megabytes: u32,
+    /// Optional user identity for the service
+    #[prost(message, optional, tag = "15")]
+    pub user: ::core::option::Option<User>,
+    /// Optional list of Kubernetes tolerations
+    #[prost(message, repeated, tag = "16")]
+    pub tolerations: ::prost::alloc::vec::Vec<Toleration>,
+    /// Optional node selectors for pod placement
+    #[prost(map = "string, string", tag = "17")]
+    pub node_selectors: ::std::collections::HashMap<
+        ::prost::alloc::string::String,
+        ::prost::alloc::string::String,
+    >,
+    /// Optional labels
+    #[prost(map = "string, string", tag = "18")]
+    pub labels: ::std::collections::HashMap<
+        ::prost::alloc::string::String,
+        ::prost::alloc::string::String,
+    >,
+    /// Whether Tini is enabled
+    #[prost(bool, optional, tag = "19")]
+    pub tini_enabled: ::core::option::Option<bool>,
+    /// Wheter TTy is enabled
+    #[prost(bool, optional, tag = "20")]
+    pub tty_enabled: ::core::option::Option<bool>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -190,6 +260,9 @@ pub struct RunStarlarkScriptArgs {
     /// Defaults to false
     #[prost(bool, optional, tag = "10")]
     pub non_blocking_mode: ::core::option::Option<bool>,
+    /// If true, executes the package in parallel meaning each instruction runs as soon as its dependencies are finished
+    #[prost(bool, optional, tag = "17")]
+    pub parallel: ::core::option::Option<bool>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -239,6 +312,9 @@ pub struct RunStarlarkPackageArgs {
     /// token that will be used to authenticate requests for this package
     #[prost(string, optional, tag = "16")]
     pub github_auth_token: ::core::option::Option<::prost::alloc::string::String>,
+    /// If true, executes the package in parallel meaning each instruction runs as soon as its dependencies are finished
+    #[prost(bool, optional, tag = "17")]
+    pub parallel: ::core::option::Option<bool>,
     /// Deprecated: If the package is local, it should have been uploaded with UploadStarlarkPackage prior to calling
     /// RunStarlarkPackage. If the package is remote and must be cloned within the APIC, use the standalone boolean flag
     /// clone_package below
@@ -325,12 +401,18 @@ pub struct StarlarkInstruction {
     pub is_skipped: bool,
     #[prost(string, tag = "6")]
     pub description: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "7")]
+    pub instruction_id: ::core::option::Option<::prost::alloc::string::String>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct StarlarkInstructionResult {
     #[prost(string, tag = "1")]
     pub serialized_instruction_result: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub execution_duration: ::core::option::Option<::prost_types::Duration>,
+    #[prost(string, optional, tag = "3")]
+    pub instruction_id: ::core::option::Option<::prost::alloc::string::String>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -398,6 +480,8 @@ pub struct StarlarkRunProgress {
     pub total_steps: u32,
     #[prost(uint32, tag = "3")]
     pub current_step_number: u32,
+    #[prost(string, optional, tag = "4")]
+    pub instruction_id: ::core::option::Option<::prost::alloc::string::String>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -406,6 +490,8 @@ pub struct StarlarkRunFinishedEvent {
     pub is_run_successful: bool,
     #[prost(string, optional, tag = "2")]
     pub serialized_output: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(message, optional, tag = "3")]
+    pub total_execution_duration: ::core::option::Option<::prost_types::Duration>,
 }
 /// ==============================================================================================
 ///                                           Get Services
@@ -719,13 +805,16 @@ pub struct StarlarkPackagePlanYamlArgs {
     /// This should be a valid JSON string
     #[prost(string, optional, tag = "2")]
     pub serialized_params: ::core::option::Option<::prost::alloc::string::String>,
+    /// whether or not this is package yaml should be pulled from on disk package or cloned
+    #[prost(bool, tag = "3")]
+    pub is_remote: bool,
     /// The relative main file filepath, the default value is the "main.star" file in the root of a package
-    #[prost(string, optional, tag = "3")]
+    #[prost(string, optional, tag = "4")]
     pub relative_path_to_main_file: ::core::option::Option<
         ::prost::alloc::string::String,
     >,
     /// The name of the main function, the default value is "run"
-    #[prost(string, optional, tag = "4")]
+    #[prost(string, optional, tag = "5")]
     pub main_function_name: ::core::option::Option<::prost::alloc::string::String>,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]

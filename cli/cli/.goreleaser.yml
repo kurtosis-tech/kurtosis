@@ -16,21 +16,15 @@ builds:
       - arm64
     env:
       - CGO_ENABLED={{ if eq .Os "windows" }}0{{ else }}1{{ end }}
-      # Only override compilers if we are on CI, otherwise use the locally available C/C++ toolchain
+      # Only override CC if we are on CI, otherwise use the locally available C toolchain.
+      # CXX is intentionally NOT overridden — system g++ is used for C++ files (e.g.
+      # go-tree-sitter) since musl-gcc cannot find C++ standard library headers.
+      # The final binary is still statically linked via CC (musl-gcc) + -extldflags "-static".
       - >-
         {{- if index .Env "CI" }}
-          {{- if eq .Os "darwin" }}CC=o64h-clang{{- end }}
           {{- if eq .Os "linux" }}
             {{- if eq .Arch "amd64"}}CC=x86_64-linux-musl-gcc{{- end }}
               {{- if eq .Arch "arm64"}}CC=aarch64-linux-musl-gcc{{- end }}
-          {{- end }}
-        {{- end }}
-      - >-
-        {{- if index .Env "CI" }}
-          {{- if eq .Os "darwin" }}CXX=o64h-clang++{{- end }}
-          {{- if eq .Os "linux" }}
-            {{- if eq .Arch "amd64"}}CXX=x86_64-linux-musl-g++{{- end }}
-              {{- if eq .Arch "arm64"}}CXX=aarch64-linux-musl-g++{{- end }}
           {{- end }}
         {{- end }}
     ldflags:
@@ -52,7 +46,6 @@ archives:
       - scripts/completions/scripts/*
     name_template: kurtosis-cli_{{ .Version }}_{{ .Os }}_{{ .Arch }}
 
-# Gemfury accepts deb & rpm packages but not APK, so we build these two separately
 nfpms:
   - id: deb-and-rpm-packages
     package_name: kurtosis-cli
@@ -84,17 +77,17 @@ release:
 
   name_template: "{{ .Version }}"
 
-  # NOTE: these are the archive IDs, not the build/binary IDs
   ids:
     - cli
     - cli-linux-packages
+    - deb-and-rpm-packages
 
 brews:
   # creates a brew formula representing the latest version
   - name: kurtosis-cli
     ids:
       - cli
-    tap:
+    repository:
       owner: kurtosis-tech
       name: homebrew-tap
     commit_author:
@@ -119,7 +112,7 @@ brews:
   - name: kurtosis-cli@{{ .Tag }}
     ids:
       - cli
-    tap:
+    repository:
       owner: kurtosis-tech
       name: homebrew-tap
     commit_author:
@@ -139,17 +132,6 @@ brews:
       fish_completion.install "scripts/completions/scripts/kurtosis.fish"
     caveats: |
       The kurtosis CLI is installed with tab completion support. For more details visit https://docs.kurtosis.com/.
-
-publishers:
-  # Inspired by https://netdevops.me/2021/building-and-publishing-deb/rpm-packages-with-goreleaser-and-fury.io/
-  - name: fury.io
-    ids:
-    - deb-and-rpm-packages
-    dir: "{{ dir .ArtifactPath }}"
-    env:
-      # This will get set by CI; see the CI config for how
-      - 'FURY_TOKEN={{ .Env.FURY_TOKEN }}'
-    cmd: "curl -F package=@{{ .ArtifactName }} https://{{ .Env.FURY_TOKEN }}@push.fury.io/kurtosis-tech/"
 
 source:
   # Kurt Core is a private project, and we definitely don't want to release source code

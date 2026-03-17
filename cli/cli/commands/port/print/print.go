@@ -47,7 +47,7 @@ const (
 var expectedRelativeOrder = map[string]int{
 	protocolStr: 0,
 	ipStr:       1,
-	numberStr:   2, //nolint:gomnd
+	numberStr:   2, //nolint:mnd
 }
 
 var (
@@ -146,7 +146,7 @@ func run(
 	publicPort, found := publicPorts[portIdentifier]
 	if !found {
 		return stacktrace.NewError(
-			fmt.Sprintf("Port Identifier: '%v' is not found for service: '%v' in enclave '%v'", portIdentifier, serviceIdentifier, enclaveIdentifier),
+			"%s", fmt.Sprintf("Port Identifier: '%v' is not found for service: '%v' in enclave '%v'", portIdentifier, serviceIdentifier, enclaveIdentifier),
 		)
 	}
 

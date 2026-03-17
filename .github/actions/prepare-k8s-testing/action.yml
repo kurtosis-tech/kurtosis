@@ -1,0 +1,80 @@
+name: 'Prepare Kubernetes Testing'
+description: 'Setup K3D/K3S cluster, load images, and configure Kurtosis for Kubernetes backend'
+inputs:
+  workspace-path:
+    description: 'Path to workspace with artifacts'
+    required: true
+  kurtosis-binpath:
+    description: 'Path to Kurtosis CLI binary'
+    required: true
+  reverse-proxy-port:
+    description: 'Port for reverse proxy entrypoint'
+    default: '9730'
+  core-image-filename:
+    description: 'Filename of the core server image tarball'
+    default: 'core-server-image.tgz'
+  engine-image-filename:
+    description: 'Filename of the engine server image tarball'
+    default: 'engine-server-image.tgz'
+  files-artifacts-expander-image-filename:
+    description: 'Filename of the files artifacts expander image tarball'
+    default: 'files-artifacts-expander-image.tgz'
+runs:
+  using: composite
+  steps:
+    - name: Install K3D
+      shell: bash
+      run: curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+
+    - name: Create K3D/K3S cluster
+      shell: bash
+      run: k3d cluster create -p "${{ inputs.reverse-proxy-port }}:80@loadbalancer" --servers 1 --wait --verbose
+
+    - name: Load Docker images
+      shell: bash
+      run: |
+        docker load -i "${{ inputs.workspace-path }}/${{ inputs.core-image-filename }}"
+        docker load -i "${{ inputs.workspace-path }}/${{ inputs.engine-image-filename }}"
+        docker load -i "${{ inputs.workspace-path }}/${{ inputs.files-artifacts-expander-image-filename }}"
+
+    - name: Import images into K3S cluster
+      shell: bash
+      run: |
+        kurtosis_version="$(./scripts/get-docker-tag.sh)"
+        k3d image import "kurtosistech/core:$kurtosis_version" \
+                         "kurtosistech/engine:$kurtosis_version" \
+                         "kurtosistech/files-artifacts-expander:$kurtosis_version"
+
+    - name: Configure Kurtosis for K8s
+      shell: bash
+      run: |
+        KURTOSIS_CONFIG_FILEPATH=$(${{ inputs.kurtosis-binpath }} config path)
+        cat << EOF > "$KURTOSIS_CONFIG_FILEPATH"
+        config-version: 2
+        should-send-metrics: true
+        kurtosis-clusters:
+          docker:
+            type: docker
+          k3d-k3s-default:
+            type: kubernetes
+            config:
+              kubernetes-cluster-name: k3d-k3s-default
+              storage-class: local-path
+              enclave-size-in-megabytes: 2048
+        EOF
+
+    - name: Set K3S Kurtosis cluster
+      shell: bash
+      run: |
+        mkdir -p ~/.local/share/kurtosis
+        echo -n "k3d-k3s-default" > ~/.local/share/kurtosis/cluster-setting
+        echo "Kurtosis cluster-setting file content: $(cat ~/.local/share/kurtosis/cluster-setting)"
+        ${{ inputs.kurtosis-binpath }} cluster set k3d-k3s-default --cli-log-level trace
+
+    - name: Start Kurtosis engine in K8s backend
+      shell: bash
+      run: ${{ inputs.kurtosis-binpath }} engine start --cli-log-level=debug --enclave-pool-size 2
+
+    - name: Run Kurtosis gateway (background)
+      shell: bash
+      run: ${{ inputs.kurtosis-binpath }} gateway &

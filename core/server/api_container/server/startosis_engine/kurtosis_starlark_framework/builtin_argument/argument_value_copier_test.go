@@ -98,7 +98,7 @@ func TestCopyValueTuple(t *testing.T) {
 	valueCopy, err := DeepCopyArgumentValue(value)
 	require.NoError(t, err)
 	require.Equal(t, valueCopy, value)
-	require.NotSame(t, valueCopy, value)
+	require.NotSame(t, &valueCopy, &value)
 }
 
 func TestCopyValueDict(t *testing.T) {

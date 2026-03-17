@@ -36,6 +36,8 @@ Because of this additional layer of abstraction, we are able to introduce severa
 - First-class plug-and-play composability; it's expected for users to import stack definitions into larger stacks, and this experience is optimized
 - The ability to get all of the above, but running over _either_ the docker engine or k8s, at your election
 
+`NOTE: we do NOT recommend using Kurtosis to deploy long term production environments at this moment. Any issues/Discords related to production usage will be closed.`
+
 How do I get going?
 ===================
 To see Kurtosis in action, first install it using the instructions [here](https://docs.kurtosis.com/install).
@@ -67,6 +69,97 @@ To read about how Kurtosis works, see [our documentation][docs].
 To see where we're going with the product, check out the roadmap [here](https://github.com/kurtosis-tech/kurtosis/wiki/Short%E2%80%90term-Roadmap).
 
 Got more questions? Drop them in our [Github Discussions](https://github.com/kurtosis-tech/kurtosis/discussions/new?category=q-a) where we, or other community members, can help answer.
+
+Claude Code Skills
+========================
+
+This repository includes [Claude Code](https://claude.ai/download) skills that teach Claude how to work with Kurtosis. Skills are structured prompts in the `skills/` directory that give Claude operational knowledge about building, debugging, deploying, and managing Kurtosis enclaves.
+
+### Available Skills
+
+| Skill | Description |
+|-------|-------------|
+| `clean` | Clean up enclaves and artifacts |
+| `cli-local-build` | Build the CLI from source |
+| `cluster-manage` | Manage Kurtosis clusters |
+| `context-manage` | Manage Kurtosis contexts |
+| `docker-debug` | Debug Docker-based enclaves |
+| `docker-local-build` | Build and load Docker images locally |
+| `dump` | Dump enclave state for debugging |
+| `enclave-inspect` | Inspect running enclaves |
+| `engine-manage` | Start, stop, and restart the engine |
+| `files-inspect` | Inspect files artifacts |
+| `gateway` | Manage the Kurtosis gateway |
+| `grafloki` | Query Grafana and Loki observability |
+| `import-compose` | Import Docker Compose files |
+| `k8s-clean-cluster` | Clean Kurtosis resources from K8s |
+| `k8s-debug-pods` | Debug pods on Kubernetes |
+| `k8s-dev-deploy` | Build and deploy dev images to K8s |
+| `lint` | Lint the codebase |
+| `port-forward` | Forward ports from enclaves |
+| `portal` | Manage the Kurtosis portal |
+| `run-package` | Run Starlark packages |
+| `service-manage` | Manage services within enclaves |
+| `starlark-dev` | Develop Starlark packages |
+
+### Installing Skills
+
+Skills are auto-discovered by Claude Code when present in a project's `skills/` directory. There are several ways to install them:
+
+#### Option 1: Clone the repository (contributors)
+
+If you're contributing to Kurtosis, skills are already included:
+
+```bash
+git clone https://github.com/kurtosis-tech/kurtosis.git
+cd kurtosis
+```
+
+Claude Code will automatically discover the skills when you open a conversation in this directory.
+
+#### Option 2: Copy skills into your project
+
+Copy the `skills/` directory into any project where you want Claude to have Kurtosis knowledge:
+
+```bash
+# From the kurtosis repo, copy skills into your project
+cp -r /path/to/kurtosis/skills /path/to/your-project/skills
+```
+
+#### Option 3: Symlink from another project
+
+If you want to keep skills in sync with the Kurtosis repo without copying:
+
+```bash
+# Symlink the entire skills directory
+ln -s /path/to/kurtosis/skills /path/to/your-project/skills
+
+# Or symlink individual skills
+mkdir -p /path/to/your-project/skills
+ln -s /path/to/kurtosis/skills/run-package /path/to/your-project/skills/run-package
+```
+
+#### Option 4: Install globally for all projects
+
+To make Kurtosis skills available across all your Claude Code projects, add them to your global Claude configuration:
+
+```bash
+# Copy skills to your global Claude config
+cp -r /path/to/kurtosis/skills ~/.claude/skills
+```
+
+### Using Skills
+
+Once installed, skills are invoked as slash commands in Claude Code:
+
+```
+/clean          # Clean up enclaves
+/run-package    # Run a Starlark package
+/docker-debug   # Debug Docker containers
+/k8s-debug-pods # Debug Kubernetes pods
+```
+
+You can also reference skills naturally in conversation — Claude will use the relevant skill context automatically when discussing Kurtosis topics.
 
 Contributing to Kurtosis
 ========================
@@ -162,21 +255,21 @@ On MacOS:
 brew install docker
 ```
 
-#### Go (1.20 or above)
+#### Go (1.23 or above)
 
 On MacOS:
 ```bash
-brew install go@1.20
+brew install go@1.23
 # Add the Go binary dir to your PATH
-PATH="${BREW_PREFIX}/opt/go@1.20/bin:$PATH"
+PATH="${BREW_PREFIX}/opt/go@1.23/bin:$PATH"
 # Add the GOPATH bin dir to your PATH
 PATH="${HOME}/go/bin:$PATH"
 ```
 
 On Ubuntu:
 ```bash
-wget https://go.dev/dl/go1.20.8.linux-amd64.tar.gz
-tar -C /usr/local -zxf go1.20.8.linux-amd64.tar.gz
+wget https://go.dev/dl/go1.23.7.linux-amd64.tar.gz
+tar -C /usr/local -zxf go1.23.7.linux-amd64.tar.gz
 # Add the following to your bashrc or equivalent.
 export PATH=$PATH:/usr/local/go/bin
 ```
@@ -263,6 +356,14 @@ To build the entire project, run:
 ./scripts/build.sh
 ```
 
+**Note:** If you encounter module import errors related to `github.com/kurtosis-tech/kurtosis/kurtosis_version`, you may need to generate the version constants first:
+
+```bash
+./scripts/generate-kurtosis-version.sh
+```
+
+This script generates the required `kurtosis_version.go` file that contains version constants used throughout the codebase. The file is automatically generated during the build process, but may need to be run manually in some development scenarios.
+
 To only build a specific project, run the script on `./PROJECT/PATH/script/build.sh`, for example:
 
 ```bash
@@ -273,16 +374,55 @@ To only build a specific project, run the script on `./PROJECT/PATH/script/build
 ./cli/scripts/build.sh
 ```
 
+
 If there are any changes to the Protobuf files in the `api` subdirectory, the Protobuf bindings must be regenerated:
 
 ```bash
 ./api/scripts/regenerate-protobuf-bindings.sh
 ```
 
-Build scripts also run unit tests as part of the build process.
+If you are developing Kurtosis over a Podman cluster, run:
+
+```bash
+./scripts/build.sh false true # no debug image, use podman
+```
+
+This will use the Podman image builder for building images. See documentation in scripts for more details on build options.
+
+Running Dev Version
+----------------------
+
+After building the project, run `./cli/cli/scripts/launch-cli.sh` just like you would the kurtosis command. This will launch the latest locally built version of the CLI, which will also start the engine and core containers using their latest built images.
+
+You can verify this by running `./cli/cli/launch-cli.sh engine status` and
+```
+A Kurtosis engine is running with the following info:
+Version:   53d823 <-- or `-dirty` depending on the commit
+```
+
+The version will be identical to the version on the latest dev versions of the engine image created - (can verify with `docker images`). Enclaves started by the engine will be started with the same version as the engine. 
+
+If you'd like to specify a different core image version than that of the engine, you can do so with the `--api-container-version` flag on `enclave add` (e.g. `./cli/cli/scripts/build.sh enclave add --api-container-version <image tag>`).
+
+If you are working on multiple dev versions of the engine at a time, you can use `engine restart --version <image tag>` to specify exactly what version of the engine to use.
+
+For frequent contributors, we recommend attaching an alias to `kurtosis` and `./cli/cli/scripts/launch-cli.sh`. 
+
+```bash
+alias kt="kurtosis"
+alias dkt="$(pwd)/cli/cli/scripts/launch-cli.sh"
+```
+
+If you want tab completion on the recently built CLI, you can alias it to `kurtosis`:
+
+```bash
+alias kurtosis="$(pwd)/cli/cli/scripts/launch-cli.sh"
+kurtosis enclave add
+```
 
 Unit Test Instructions
 ----------------------
+Build scripts also run unit tests as part of the build process.
 
 For all Go modules, run `go test ./...` on the module folder. For example:
 
@@ -321,22 +461,6 @@ $ ./internal_testsuites/scripts/test.sh
 
 If you are developing the Typescript test, make sure that you have first built `api/typescript`. Any
 changes made to the Typescript package within `api/typescript` aren't hot loaded as of 2022-09-29.
-
-Dev Run Instructions
---------------------
-
-Once the project has built, run `./cli/cli/scripts/launch-cli.sh` as if it was the `kurtosis` command:
-
-```bash
-./cli/cli/scripts/launch-cli.sh enclave add
-```
-
-If you want tab completion on the recently built CLI, you can alias it to `kurtosis`:
-
-```bash
-alias kurtosis="$(pwd)/cli/cli/scripts/launch-cli.sh"
-kurtosis enclave add
-```
 
 Run Debug Instructions (for Golang code so far)
 ----------------------------------------------
@@ -472,6 +596,31 @@ ktdev gateway
 ```
 
 </details>
+
+Sponsoring Kurtosis
+========================
+Kurtosis is an open source tool maintained by [MAINTAINERS](./MAINTAINERS.md). If you find Kurtosis useful or use it for work, please consider [supporting the continued development of Kurtosis](https://github.com/sponsors/tedim52). Thank you 🙏 
+
+<p>
+  <a href="https://www.bloctopus.io/">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/tedim52/.github/refs/heads/main/content/sponsors/bloctopus-dark.png">
+      <img alt="bloctopus logo" src="https://raw.githubusercontent.com/tedim52/.github/refs/heads/main/content/sponsors/bloctopus-light.png" width="auto" height="70">
+    </picture>
+  </a>
+  <a href="https://antithesis.com/">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/tedim52/.github/refs/heads/main/content/sponsors/antithesis-dark.svg">
+      <img alt="antithesis logo" src="https://raw.githubusercontent.com/tedim52/.github/refs/heads/main/content/sponsors/antithesis-light.svg" width="auto" height="70">
+    </picture>
+  </a>
+  <a href="https://ethereum.foundation/">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/tedim52/.github/refs/heads/main/content/sponsors/ethereum.png"></source>
+      <img alt="ethereum logo" src="https://raw.githubusercontent.com/tedim52/.github/refs/heads/main/content/sponsors/ethereum.png" width="auto" height="70"></img>
+    </picture>
+  </a>
+</p>
 
 <!-------- ONLY LINKS BELOW THIS POINT -------->
 [enclave]: https://docs.kurtosis.com/advanced-concepts/enclaves

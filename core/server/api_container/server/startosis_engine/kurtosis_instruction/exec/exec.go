@@ -3,8 +3,11 @@ package exec
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/tasks"
@@ -18,9 +21,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
-	"strings"
 )
 
 var defaultAcceptableCodes = []int64{
@@ -114,7 +117,6 @@ type ExecCapabilities struct {
 }
 
 func (builtin *ExecCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
-
 	serviceNameArgumentValue, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ServiceNameArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceNameArgName)
@@ -185,13 +187,18 @@ func (builtin *ExecCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet,
 }
 
 func (builtin *ExecCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
-	result, err := builtin.execRecipe.Execute(ctx, builtin.serviceNetwork, builtin.runtimeValueStore, builtin.serviceName)
+	serviceNameStr := string(builtin.serviceName)
+	service, err := builtin.serviceNetwork.GetService(ctx, serviceNameStr)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "Error executing exec recipe")
+		return "", stacktrace.Propagate(err, "An error occurred while getting service '%s'", serviceNameStr)
+	}
+	result, err := builtin.execRecipe.Execute(ctx, builtin.serviceNetwork, builtin.runtimeValueStore, service)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while executing exec recipe on service '%s'", serviceNameStr)
 	}
 	if !builtin.skipCodeCheck && !builtin.isAcceptableCode(result) {
 		errorMessage := fmt.Sprintf("Exec returned exit code '%v' that is not part of the acceptable status codes '%v', with output:", result["code"], builtin.acceptableCodes)
-		return "", stacktrace.NewError(formatErrorMessage(errorMessage, result["output"].String()))
+		return "", stacktrace.NewError("%s", formatErrorMessage(errorMessage, result["output"].String()))
 	}
 
 	if err := builtin.runtimeValueStore.SetValue(builtin.resultUuid, result); err != nil {
@@ -214,7 +221,7 @@ func (builtin *ExecCapabilities) FillPersistableAttributes(builder *enclave_plan
 	builder.SetType(ExecBuiltinName)
 }
 
-func (builtin *ExecCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYaml) error {
+func (builtin *ExecCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYamlGenerator) error {
 	err := planYaml.AddExec(string(builtin.serviceName), builtin.description, builtin.returnValue, builtin.cmdList, builtin.acceptableCodes)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred updating plan with exec.")
@@ -241,4 +248,22 @@ func formatErrorMessage(errorMessage string, errorFromExec string) string {
 	splitErrorMessageNewLine := strings.Split(errorFromExec, "\n")
 	reformattedErrorMessage := strings.Join(splitErrorMessageNewLine, "\n  ")
 	return fmt.Sprintf("%v\n  %v", errorMessage, reformattedErrorMessage)
+}
+
+// UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
+func (builtin *ExecCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error { // store outputs
+	shortDescriptor := fmt.Sprintf("exec(%s %s)", builtin.serviceName, builtin.description)
+	dependencyGraph.UpdateInstructionShortDescriptor(instructionUuid, shortDescriptor)
+
+	dependencyGraph.ConsumesService(instructionUuid, string(builtin.serviceName))
+	dependencyGraph.ConsumesAnyRuntimeValuesInList(instructionUuid, builtin.cmdList)
+
+	returnValueStrings, interpretationErr := builtin.execRecipe.GetStarlarkReturnValuesAsStringList(builtin.resultUuid)
+	if interpretationErr != nil {
+		return stacktrace.Propagate(interpretationErr, "An error occurred while getting return value strings for exec recipe")
+	}
+	for _, returnValueString := range returnValueStrings {
+		dependencyGraph.ProducesRuntimeValue(instructionUuid, returnValueString)
+	}
+	return nil
 }

@@ -31,6 +31,10 @@ const (
 	startingInterpretationMsg = "Interpreting plan - execution will begin shortly"
 	startingValidationMsg     = "Starting validation"
 	startingExecutionMsg      = "Starting execution"
+
+	InterpretationInstructionId = "interpretation"
+	ValidationInstructionId     = "validation"
+	ExecutionInstructionId      = "execution"
 )
 
 func NewStartosisRunner(interpreter *StartosisInterpreter, validator *StartosisValidator, executor *StartosisExecutor) *StartosisRunner {
@@ -57,6 +61,7 @@ func (runner *StartosisRunner) Run(
 	serializedParams string,
 	imageDownloadMode image_download_mode.ImageDownloadMode,
 	nonBlockingMode bool,
+	shouldExecuteInParallel bool,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 ) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	runner.mutex.Lock()
@@ -93,8 +98,8 @@ func (runner *StartosisRunner) Run(
 			serializedParams)
 
 		// Interpretation starts > send progress info (this line will be invisible as interpretation is super quick)
-		progressInfo := binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
-			startingInterpretationMsg, defaultCurrentStepNumber, defaultTotalStepsNumber)
+		progressInfo := binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfoWithInstructionId(
+			startingInterpretationMsg, defaultCurrentStepNumber, defaultTotalStepsNumber, InterpretationInstructionId)
 		starlarkRunResponseLines <- progressInfo
 
 		// TODO: once we have feature flags, add a switch here to call InterpretAndOptimizePlan if the feature flag is
@@ -115,6 +120,7 @@ func (runner *StartosisRunner) Run(
 				enclave_structure.NewEnclaveComponents(),
 				resolver.NewInstructionsPlanMask(0),
 				imageDownloadMode,
+				instructions_plan.NewInstructionsPlan(),
 			)
 		} else {
 			serializedScriptOutput, instructionsPlan, interpretationError = runner.startosisInterpreter.InterpretAndOptimizePlan(
@@ -147,9 +153,16 @@ func (runner *StartosisRunner) Run(
 			return
 		}
 
+		instructionDependencyGraph, interpretationErr := instructionsPlan.GenerateInstructionsDependencyGraph()
+		if interpretationErr != nil {
+			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromInterpretationError(interpretationErr.ToAPIType())
+			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent()
+			return
+		}
+
 		// Validation starts > send progress info
-		progressInfo = binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
-			startingValidationMsg, defaultCurrentStepNumber, totalNumberOfInstructions)
+		progressInfo = binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfoWithInstructionId(
+			startingValidationMsg, defaultCurrentStepNumber, totalNumberOfInstructions, ValidationInstructionId)
 		starlarkRunResponseLines <- progressInfo
 
 		validationErrorsChan := runner.startosisValidator.Validate(ctx, instructionsSequence, imageDownloadMode)
@@ -162,11 +175,18 @@ func (runner *StartosisRunner) Run(
 		logrus.Debugf("Successfully validated Starlark script")
 
 		// Execution starts > send progress info. This will soon be overridden byt the first instruction execution
-		progressInfo = binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
-			startingExecutionMsg, defaultCurrentStepNumber, totalNumberOfInstructions)
+		progressInfo = binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfoWithInstructionId(
+			startingExecutionMsg, defaultCurrentStepNumber, totalNumberOfInstructions, ExecutionInstructionId)
 		starlarkRunResponseLines <- progressInfo
 
-		executionResponseLinesChan := runner.startosisExecutor.Execute(ctx, dryRun, parallelism, instructionsPlan.GetIndexOfFirstInstruction(), instructionsSequence, serializedScriptOutput)
+		var executionResponseLinesChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine
+		if shouldExecuteInParallel {
+			logrus.Infof("Executing Kurtosis instructions in parallel with parallelism: %d", parallelism)
+			executionResponseLinesChan = runner.startosisExecutor.ExecuteInParallel(ctx, dryRun, parallelism, instructionsPlan.GetIndexOfFirstInstruction(), instructionsSequence, serializedScriptOutput, instructionDependencyGraph)
+		} else {
+			logrus.Infof("Executing Kurtosis instructions in serial")
+			executionResponseLinesChan = runner.startosisExecutor.Execute(ctx, dryRun, parallelism, instructionsPlan.GetIndexOfFirstInstruction(), instructionsSequence, serializedScriptOutput)
+		}
 		if isRunFinished, isRunSuccessful := forwardKurtosisResponseLineChannelUntilSourceIsClosed(executionResponseLinesChan, starlarkRunResponseLines); !isRunFinished {
 			logrus.Warnf("Execution finished but no 'RunFinishedEvent' was received through the stream. This is unexpected as every execution should be terminal.")
 		} else if !isRunSuccessful {

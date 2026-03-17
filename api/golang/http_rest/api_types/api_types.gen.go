@@ -340,6 +340,9 @@ type RunStarlarkPackage struct {
 	// NonBlockingMode Defaults to false
 	NonBlockingMode *bool `json:"non_blocking_mode,omitempty"`
 
+	// Parallel Defaults to false
+	Parallel *bool `json:"parallel,omitempty"`
+
 	// Parallelism Defaults to 4
 	Parallelism *int32 `json:"parallelism,omitempty"`
 
@@ -371,6 +374,9 @@ type RunStarlarkScript struct {
 
 	// NonBlockingMode Defaults to false
 	NonBlockingMode *bool `json:"non_blocking_mode,omitempty"`
+
+	// Parallel Defaults to false
+	Parallel *bool `json:"parallel,omitempty"`
 
 	// Parallelism Defaults to 4
 	Parallelism *int32 `json:"parallelism,omitempty"`

@@ -3,14 +3,16 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"strings"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
 	"github.com/xtgo/uuid"
-	"reflect"
-	"strings"
-	"time"
+	v1 "k8s.io/api/core/v1"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -32,13 +34,18 @@ import (
 
 // shared constants
 const (
-	ImageNameArgName  = "image"
-	TaskNameArgName   = "name"
-	RunArgName        = "run"
-	StoreFilesArgName = "store"
-	WaitArgName       = "wait"
-	FilesArgName      = "files"
-	EnvVarsArgName    = "env_vars"
+	ImageNameArgName       = "image"
+	TaskNameArgName        = "name"
+	RunArgName             = "run"
+	StoreFilesArgName      = "store"
+	WaitArgName            = "wait"
+	FilesArgName           = "files"
+	EnvVarsArgName         = "env_vars"
+	AcceptableCodesArgName = "acceptable_codes"
+	SkipCodeCheckArgName   = "skip_code_check"
+	NodeSelectorsArgName   = "node_selectors"
+	TolerationsArgName     = "tolerations"
+	defaultSkipCodeCheck   = false
 
 	newlineChar = "\n"
 
@@ -58,15 +65,23 @@ const (
 	tiniEnabled = true
 )
 
+var defaultAcceptableCodes = []int64{
+	0, // EXIT_SUCCESS
+}
+
+// runCommandToStreamTaskLogs sets the entrypoint of a task container with a command that creates and tails a log file for tasks run on the container
+// all tasks redirect output to the task log file (see getCommandToRunForStreamingLogs for details) where they will be picked up by the main process
+// and streamed to stdout via tail -F
+// By sending to stdout, task output get picked up by our logging infrastructure - making task logs available via kurtosis service logs
 var runCommandToStreamTaskLogs = []string{shellWrapperCommand, "-c", fmt.Sprintf("touch %s && tail -F %s", taskLogFilePath, taskLogFilePath)}
 
 // Wraps [commandToRun] to enable streaming logs from tasks.
-// Uses curly braces to execute the command(s) in the current shell.
-// Adds an extra echo to ensure each log ends with a newline.
-// Uses tee to direct output to the task log file while maintaining output to stdout.
-// Redirects stderr to stdout.
+// This command is crafted carefully to allow outputting logs to task log file, outputting to stdout, and retaining the exit code from [commandToRun]
+// Solution is adapted from 3rd answer in this stack exchange post: https://unix.stackexchange.com/questions/14270/get-exit-status-of-process-thats-piped-to-another. Read detailed explanation of command.
+// compared to solution in post, an extra echo >> is added to add a newline after all logs are processed, this is a hack to make sure the last log line gets processed runCommandToStreamTaskLogs
 func getCommandToRunForStreamingLogs(commandToRun string) []string {
-	return []string{shellWrapperCommand, "-c", fmt.Sprintf("{ %v; } %v %v %v %v %v %v %v %v", commandToRun, "2>&1", "|", "tee", taskLogFilePath, "&&", "echo", ">>", taskLogFilePath)}
+	fullCmd := []string{shellWrapperCommand, "-c", fmt.Sprintf("{ { { { %v; echo $? >&3; } | tee %v >&4; echo >> %v; } 3>&1; } | { read xs; exit $xs; } } 4>&1", commandToRun, taskLogFilePath, taskLogFilePath)}
+	return fullCmd
 }
 
 func parseStoreFilesArg(serviceNetwork service_network.ServiceNetwork, arguments *builtin_argument.ArgumentValuesSet) ([]*store_spec.StoreSpec, *startosis_errors.InterpretationError) {
@@ -134,7 +149,7 @@ func parseWaitArg(arguments *builtin_argument.ArgumentValuesSet) (string, *start
 	return waitTimeout, nil
 }
 
-func createInterpretationResult(resultUuid string, storeSpecList []*store_spec.StoreSpec) *starlarkstruct.Struct {
+func createInterpretationResult(resultUuid string, storeSpecList []*store_spec.StoreSpec) (*starlarkstruct.Struct, string, string) {
 	runCodeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, runResultCodeKey)
 	runOutputValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, runResultOutputKey)
 
@@ -152,7 +167,7 @@ func createInterpretationResult(resultUuid string, storeSpecList []*store_spec.S
 	}
 	dict[runFilesArtifactsKey] = artifactNamesList
 	result := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
-	return result
+	return result, runCodeValue, runOutputValue
 }
 
 func validateTasksCommon(validatorEnvironment *startosis_validator.ValidatorEnvironment, storeSpecList []*store_spec.StoreSpec, serviceDirpathsToArtifactIdentifiers map[string][]string, serviceConfig *service.ServiceConfig) *startosis_errors.ValidationError {
@@ -248,7 +263,7 @@ func copyFilesFromTask(ctx context.Context, serviceNetwork service_network.Servi
 	for _, storeSpec := range storeSpecList {
 		_, err := serviceNetwork.CopyFilesFromService(ctx, serviceName, storeSpec.GetSrc(), storeSpec.GetName())
 		if err != nil {
-			return stacktrace.Propagate(err, fmt.Sprintf("error occurred while copying file or directory at path: %v", storeSpec.GetSrc()))
+			return stacktrace.Propagate(err, "%s", fmt.Sprintf("error occurred while copying file or directory at path: %v", storeSpec.GetSrc()))
 		}
 	}
 	return nil
@@ -285,8 +300,35 @@ func getServiceConfig(
 	maybeNixBuildSpec *nix_build_spec.NixBuildSpec,
 	filesArtifactExpansion *service_directory.FilesArtifactsExpansion,
 	envVars *map[string]string,
+	nodeSelectors *map[string]string,
+	tolerations []v1.Toleration,
 ) (*service.ServiceConfig, error) {
-	serviceConfig, err := service.CreateServiceConfig(maybeImageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, nil, nil, runCommandToStreamTaskLogs, nil, *envVars, filesArtifactExpansion, nil, 0, 0, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, tiniEnabled)
+	serviceConfig, err := service.CreateServiceConfig(
+		maybeImageName,
+		maybeImageBuildSpec,
+		maybeImageRegistrySpec,
+		maybeNixBuildSpec,
+		nil,
+		nil,
+		runCommandToStreamTaskLogs,
+		nil,
+		*envVars,
+		filesArtifactExpansion,
+		nil,
+		0,
+		0,
+		service_config.DefaultPrivateIPAddrPlaceholder,
+		0,
+		0,
+		map[string]string{},
+		nil,
+		tolerations,
+		*nodeSelectors,
+		image_download_mode.ImageDownloadMode_Missing,
+		tiniEnabled,
+		false,
+		[]string{},
+		false)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating service config")
 	}
@@ -325,6 +367,42 @@ func extractEnvVarsIfDefined(arguments *builtin_argument.ArgumentValuesSet) (*ma
 	return &envVars, nil
 }
 
+func extractNodeSelectorsIfDefined(arguments *builtin_argument.ArgumentValuesSet) (*map[string]string, *startosis_errors.InterpretationError) {
+	nodeSelectors := map[string]string{}
+	if arguments.IsSet(NodeSelectorsArgName) {
+		nodeSelectorsStarlark, err := builtin_argument.ExtractArgumentValue[*starlark.Dict](arguments, NodeSelectorsArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", EnvVarsArgName)
+		}
+		if nodeSelectorsStarlark != nil && nodeSelectorsStarlark.Len() > 0 {
+			var interpretationErr *startosis_errors.InterpretationError
+			nodeSelectors, interpretationErr = kurtosis_types.SafeCastToMapStringString(nodeSelectorsStarlark, NodeSelectorsArgName)
+			if interpretationErr != nil {
+				return nil, interpretationErr
+			}
+		}
+	}
+	return &nodeSelectors, nil
+}
+
+func extractTolerationsIfDefined(arguments *builtin_argument.ArgumentValuesSet) ([]v1.Toleration, *startosis_errors.InterpretationError) {
+	tolerations := []v1.Toleration{}
+	if arguments.IsSet(TolerationsArgName) {
+		tolerationsStarlark, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, TolerationsArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", TolerationsArgName)
+		}
+		if tolerationsStarlark != nil && tolerationsStarlark.Len() > 0 {
+			var interpretationErr *startosis_errors.InterpretationError
+			tolerations, interpretationErr = service_config.ConvertTolerations(tolerationsStarlark)
+			if interpretationErr != nil {
+				return nil, interpretationErr
+			}
+		}
+	}
+	return tolerations, nil
+}
+
 func getTaskNameFromArgs(arguments *builtin_argument.ArgumentValuesSet) (string, error) {
 	if arguments.IsSet(TaskNameArgName) {
 		taskName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, TaskNameArgName)
@@ -336,4 +414,13 @@ func getTaskNameFromArgs(arguments *builtin_argument.ArgumentValuesSet) (string,
 		randomUuid := uuid.NewRandom()
 		return fmt.Sprintf("task-%v", randomUuid.String()), nil
 	}
+}
+
+func isAcceptableCode(acceptableCodes []int64, recipeResult map[string]starlark.Comparable) bool {
+	for _, acceptableCode := range acceptableCodes {
+		if recipeResult[runResultCodeKey] == starlark.MakeInt64(acceptableCode) {
+			return true
+		}
+	}
+	return false
 }

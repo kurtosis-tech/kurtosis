@@ -20,11 +20,12 @@ package enclaves
 import (
 	"context"
 	"encoding/json"
-	"github.com/kurtosis-tech/kurtosis/path-compression"
 	"io"
 	"os"
 	"path"
 	"strings"
+
+	path_compression "github.com/kurtosis-tech/kurtosis/path-compression"
 
 	yaml_convert "github.com/ghodss/yaml"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
@@ -63,7 +64,6 @@ var supportedDockerComposeYmlFilenames = []string{
 	"docker_compose.yaml",
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#enclavecontext
 type EnclaveContext struct {
 	client kurtosis_core_rpc_api_bindings.ApiContainerServiceClient
 
@@ -88,17 +88,14 @@ func NewEnclaveContext(
 	}
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#getenclaveuuid---enclaveuuid
 func (enclaveCtx *EnclaveContext) GetEnclaveUuid() EnclaveUUID {
 	return enclaveCtx.enclaveUuid
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#getenclavename---string
 func (enclaveCtx *EnclaveContext) GetEnclaveName() string {
 	return enclaveCtx.enclaveName
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#runstarlarkscriptstring-serializedstarlarkscript-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
 func (enclaveCtx *EnclaveContext) RunStarlarkScript(
 	ctx context.Context,
 	serializedScript string,
@@ -120,7 +117,8 @@ func (enclaveCtx *EnclaveContext) RunStarlarkScript(
 		runConfig.CloudInstanceId,
 		runConfig.CloudUserId,
 		runConfig.ImageDownload,
-		runConfig.NonBlockingMode)
+		runConfig.NonBlockingMode,
+		runConfig.Parallel)
 	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 
 	stream, err := enclaveCtx.client.RunStarlarkScript(ctxWithCancel, executeStartosisScriptArgs)
@@ -133,7 +131,6 @@ func (enclaveCtx *EnclaveContext) RunStarlarkScript(
 	return starlarkResponseLineChan, cancelCtxFunc, nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#runstarlarkscriptblockingstring-serializedstarlarkscript-boolean-dryrun---starlarkrunresult-runresult-error-error
 func (enclaveCtx *EnclaveContext) RunStarlarkScriptBlocking(
 	ctx context.Context,
 	serializedScript string,
@@ -147,7 +144,6 @@ func (enclaveCtx *EnclaveContext) RunStarlarkScriptBlocking(
 	return starlarkResponse, getErrFromStarlarkRunResult(starlarkResponse)
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#runstarlarkpackagestring-packagerootpath-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
 func (enclaveCtx *EnclaveContext) RunStarlarkPackage(
 	ctx context.Context,
 	packageRootPath string,
@@ -184,7 +180,8 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackage(
 		runConfig.CloudUserId,
 		runConfig.ImageDownload,
 		runConfig.NonBlockingMode,
-		runConfig.GitHubAuthToken)
+		runConfig.GitHubAuthToken,
+		runConfig.Parallel)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Error preparing package '%s' for execution", packageRootPath)
 	}
@@ -261,7 +258,6 @@ func (enclaveCtx *EnclaveContext) uploadLocalStarlarkPackageDependencies(package
 	return nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#runstarlarkpackageblockingstring-packagerootpath-string-serializedparams-boolean-dryrun---starlarkrunresult-runresult-error-error
 func (enclaveCtx *EnclaveContext) RunStarlarkPackageBlocking(
 	ctx context.Context,
 	packageRootPath string,
@@ -290,7 +286,6 @@ func maybeParseYaml(serializedParams string) (string, error) {
 	return serializedParamsStr, nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#runstarlarkremotepackagestring-packageid-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
 func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(
 	ctx context.Context,
 	packageId string,
@@ -309,7 +304,7 @@ func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(
 	}()
 
 	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
-	executeStartosisScriptArgs := binding_constructors.NewRunStarlarkRemotePackageArgs(packageId, runConfig.RelativePathToMainFile, runConfig.MainFunctionName, serializedParams, runConfig.DryRun, runConfig.Parallelism, runConfig.ExperimentalFeatureFlags, runConfig.CloudInstanceId, runConfig.CloudUserId, runConfig.ImageDownload, runConfig.NonBlockingMode, runConfig.GitHubAuthToken)
+	executeStartosisScriptArgs := binding_constructors.NewRunStarlarkRemotePackageArgs(packageId, runConfig.RelativePathToMainFile, runConfig.MainFunctionName, serializedParams, runConfig.DryRun, runConfig.Parallelism, runConfig.ExperimentalFeatureFlags, runConfig.CloudInstanceId, runConfig.CloudUserId, runConfig.ImageDownload, runConfig.NonBlockingMode, runConfig.Parallel, runConfig.GitHubAuthToken)
 
 	stream, err := enclaveCtx.client.RunStarlarkPackage(ctxWithCancel, executeStartosisScriptArgs)
 	if err != nil {
@@ -330,7 +325,6 @@ func isValidJSON(maybeJson string) bool {
 	return true
 }
 
-// Docs available at https://docs.kurtosis.com/sdk/#runstarlarkremotepackageblockingstring-packageid-string-serializedparams-boolean-dryrun---starlarkrunresult-runresult-error-error
 func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackageBlocking(
 	ctx context.Context,
 	packageId string,
@@ -344,7 +338,6 @@ func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackageBlocking(
 	return starlarkResponse, getErrFromStarlarkRunResult(starlarkResponse)
 }
 
-// Docs available at https://docs.kurtosis.com/sdk#getservicecontextstring-serviceidentifier---servicecontext-servicecontext
 func (enclaveCtx *EnclaveContext) GetServiceContext(serviceIdentifier string) (*services.ServiceContext, error) {
 	serviceIdentifierMapForArgs := map[string]bool{serviceIdentifier: true}
 	getServiceInfoArgs := binding_constructors.NewGetServicesArgs(serviceIdentifierMapForArgs)
@@ -373,7 +366,6 @@ func (enclaveCtx *EnclaveContext) GetServiceContext(serviceIdentifier string) (*
 	return serviceContext, nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk#getservicecontexts--mapstring--bool---servicecontext-servicecontext
 func (enclaveCtx *EnclaveContext) GetServiceContexts(serviceIdentifiers map[string]bool) (map[services.ServiceName]*services.ServiceContext, error) {
 	getServiceInfoArgs := binding_constructors.NewGetServicesArgs(serviceIdentifiers)
 	response, err := enclaveCtx.client.GetServices(context.Background(), getServiceInfoArgs)
@@ -396,7 +388,6 @@ func (enclaveCtx *EnclaveContext) GetServiceContexts(serviceIdentifiers map[stri
 	return serviceContexts, nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk#getservices---mapservicename--serviceuuid-serviceidentifiers
 func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceName]services.ServiceUUID, error) {
 	getServicesArgs := binding_constructors.NewGetServicesArgs(map[string]bool{})
 	response, err := enclaveCtx.client.GetServices(context.Background(), getServicesArgs)
@@ -413,7 +404,6 @@ func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceName]servic
 	return serviceInfos, nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk#uploadfilesstring-pathtoupload-string-artifactname
 func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string, artifactName string) (services.FilesArtifactUUID, services.FileArtifactName, error) {
 	content, contentSize, _, err := path_compression.CompressPath(pathToUpload, enforceMaxFileSizeLimit)
 	if err != nil {
@@ -449,7 +439,6 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string, artifactName 
 	return services.FilesArtifactUUID(response.GetUuid()), services.FileArtifactName(response.GetName()), nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk#storewebfilesstring-urltodownload-string-artifactname
 func (enclaveCtx *EnclaveContext) StoreWebFiles(ctx context.Context, urlToStoreWeb string, artifactName string) (services.FilesArtifactUUID, error) {
 	args := binding_constructors.NewStoreWebFilesArtifactArgs(urlToStoreWeb, artifactName)
 	response, err := enclaveCtx.client.StoreWebFilesArtifact(ctx, args)
@@ -459,7 +448,6 @@ func (enclaveCtx *EnclaveContext) StoreWebFiles(ctx context.Context, urlToStoreW
 	return services.FilesArtifactUUID(response.Uuid), nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk#downloadfilesartifact-fileidentifier-string
 func (enclaveCtx *EnclaveContext) DownloadFilesArtifact(ctx context.Context, artifactIdentifier string) ([]byte, error) {
 	args := binding_constructors.DownloadFilesArtifactArgs(artifactIdentifier)
 
@@ -494,7 +482,6 @@ func (enclaveCtx *EnclaveContext) InspectFilesArtifact(ctx context.Context, arti
 	return response, nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk#getexistingandhistoricalserviceidentifiers---serviceidentifiers-serviceidentifiers
 func (enclaveCtx *EnclaveContext) GetExistingAndHistoricalServiceIdentifiers(ctx context.Context) (*services.ServiceIdentifiers, error) {
 	response, err := enclaveCtx.client.GetExistingAndHistoricalServiceIdentifiers(ctx, &emptypb.Empty{})
 	if err != nil {
@@ -503,7 +490,6 @@ func (enclaveCtx *EnclaveContext) GetExistingAndHistoricalServiceIdentifiers(ctx
 	return services.NewServiceIdentifiers(enclaveCtx.enclaveName, response.AllIdentifiers), nil
 }
 
-// Docs available at https://docs.kurtosis.com/#getallfilesartifactnamesanduuids---filesartifactnameanduuid-filesartifactnamesanduuids
 func (enclaveCtx *EnclaveContext) GetAllFilesArtifactNamesAndUuids(ctx context.Context) ([]*kurtosis_core_rpc_api_bindings.FilesArtifactNameAndUuid, error) {
 	response, err := enclaveCtx.client.ListFilesArtifactNamesAndUuids(ctx, &emptypb.Empty{})
 	if err != nil {
@@ -512,7 +498,6 @@ func (enclaveCtx *EnclaveContext) GetAllFilesArtifactNamesAndUuids(ctx context.C
 	return response.GetFileNamesAndUuids(), nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk#connectservices
 func (enclaveCtx *EnclaveContext) ConnectServices(ctx context.Context, connect kurtosis_core_rpc_api_bindings.Connect) error {
 	args := binding_constructors.NewConnectServicesArgs(connect)
 	_, err := enclaveCtx.client.ConnectServices(ctx, args)
@@ -522,11 +507,79 @@ func (enclaveCtx *EnclaveContext) ConnectServices(ctx context.Context, connect k
 	return nil
 }
 
-// Docs available at https://docs.kurtosis.com/#getstarlarkrun
 func (enclaveCtx *EnclaveContext) GetStarlarkRun(ctx context.Context) (*kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse, error) {
 	response, err := enclaveCtx.client.GetStarlarkRun(ctx, &emptypb.Empty{})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while getting the last starlark run")
+	}
+	return response, nil
+}
+
+func (enclaveCtx *EnclaveContext) GetStarlarkRemotePackagePlanYaml(ctx context.Context, packageId string, serializedParams string) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
+	serializedParams, err := maybeParseYaml(serializedParams)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred when parsing YAML args for package '%s':\n%s", packageId, serializedParams)
+	}
+	response, err := enclaveCtx.client.GetStarlarkPackagePlanYaml(ctx, &kurtosis_core_rpc_api_bindings.StarlarkPackagePlanYamlArgs{
+		PackageId:              packageId,
+		SerializedParams:       &serializedParams,
+		IsRemote:               true,
+		RelativePathToMainFile: nil,
+		MainFunctionName:       nil,
+	})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while getting the Starlark package plan yaml.")
+	}
+	return response, nil
+}
+
+func (enclaveCtx *EnclaveContext) GetStarlarkPackagePlanYaml(ctx context.Context, packageRootPath string, serializedParams string) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
+	packageName, packageReplaceOptions, err := getPackageNameAndReplaceOptions(packageRootPath)
+	if err != nil {
+		return nil, err
+	}
+
+	serializedParams, err = maybeParseYaml(serializedParams)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred when parsing YAML args for package '%s':\n%s", packageName, serializedParams)
+	}
+
+	err = enclaveCtx.uploadStarlarkPackage(packageName, packageRootPath)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error uploading package '%s' prior to executing it", packageRootPath)
+	}
+
+	if len(packageReplaceOptions) > 0 {
+		if err = enclaveCtx.uploadLocalStarlarkPackageDependencies(packageRootPath, packageReplaceOptions); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred while uploading the local starlark package dependencies from the replace options '%+v'", packageReplaceOptions)
+		}
+	}
+
+	response, err := enclaveCtx.client.GetStarlarkPackagePlanYaml(ctx, &kurtosis_core_rpc_api_bindings.StarlarkPackagePlanYamlArgs{
+		PackageId:              packageName,
+		SerializedParams:       &serializedParams,
+		IsRemote:               false,
+		RelativePathToMainFile: nil,
+		MainFunctionName:       nil,
+	})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while getting the Starlark package plan yaml.")
+	}
+	return response, nil
+}
+
+func (enclaveCtx *EnclaveContext) GetStarlarkScriptPlanYaml(ctx context.Context, serializedScript string, serializedParams string) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
+	serializedParams, err := maybeParseYaml(serializedParams)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred when parsing YAML args for package '%v'", serializedParams)
+	}
+	response, err := enclaveCtx.client.GetStarlarkScriptPlanYaml(ctx, &kurtosis_core_rpc_api_bindings.StarlarkScriptPlanYamlArgs{
+		SerializedScript: serializedScript,
+		SerializedParams: &serializedParams,
+		MainFunctionName: nil,
+	})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while getting the starlark script plan yaml.")
 	}
 	return response, nil
 }
@@ -591,7 +644,7 @@ func runReceiveStarlarkResponseLineRoutine(cancelCtxFunc context.CancelFunc, str
 
 func getErrFromStarlarkRunResult(result *StarlarkRunResult) error {
 	if result.InterpretationError != nil {
-		return stacktrace.NewError(result.InterpretationError.GetErrorMessage())
+		return stacktrace.NewError("%s", result.InterpretationError.GetErrorMessage())
 	}
 	if len(result.ValidationErrors) > 0 {
 		errorMessages := []string{}
@@ -601,7 +654,7 @@ func getErrFromStarlarkRunResult(result *StarlarkRunResult) error {
 		return stacktrace.NewError("Found %v validation errors: %v", len(result.ValidationErrors), strings.Join(errorMessages, "\n"))
 	}
 	if result.ExecutionError != nil {
-		return stacktrace.NewError(result.ExecutionError.GetErrorMessage())
+		return stacktrace.NewError("%s", result.ExecutionError.GetErrorMessage())
 	}
 	return nil
 }
@@ -619,6 +672,7 @@ func (enclaveCtx *EnclaveContext) assembleRunStartosisPackageArg(
 	imageDownloadMode kurtosis_core_rpc_api_bindings.ImageDownloadMode,
 	nonBlockingMode bool,
 	githubAuthToken string,
+	parallel bool,
 ) (*kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, error) {
 
 	return binding_constructors.NewRunStarlarkPackageArgs(
@@ -633,6 +687,7 @@ func (enclaveCtx *EnclaveContext) assembleRunStartosisPackageArg(
 		cloudUserId,
 		imageDownloadMode,
 		nonBlockingMode,
+		parallel,
 		githubAuthToken), nil
 }
 
@@ -689,6 +744,7 @@ func (enclaveCtx *EnclaveContext) convertServiceInfoToServiceContext(serviceInfo
 		serviceCtxPrivatePorts,
 		serviceInfo.GetMaybePublicIpAddr(),
 		serviceCtxPublicPorts,
+		serviceInfo.Labels,
 	)
 
 	return serviceContext, nil

@@ -111,7 +111,7 @@ def run(plan, args):
 
 var (
 	emptyPrivatePorts            = map[string]*kurtosis_core_rpc_api_bindings.Port{}
-	emptyFileArtifactMountPoints = map[string]string{}
+	emptyFileArtifactMountPoints = map[string][]string{}
 	emptyEntrypointArgs          = []string{}
 	emptyCmdArgs                 = []string{}
 	emptyEnvVars                 = map[string]string{}
@@ -456,13 +456,12 @@ func GetLogsResponse(
 	shouldFollowLogs bool,
 	logLineFilter *kurtosis_context.LogLineFilter,
 ) (
-	error,
 	map[services.ServiceUUID][]string,
 	map[services.ServiceUUID]bool,
+	error,
 ) {
-
 	if expectedLogLinesByService == nil {
-		return stacktrace.NewError("The 'expectedLogLinesByService' can't be nil because it is needed for handling the retry strategy"), nil, nil
+		return nil, nil, stacktrace.NewError("The 'expectedLogLinesByService' can't be nil because it is needed for handling the retry strategy")
 	}
 
 	receivedLogLinesByService := map[services.ServiceUUID][]string{}
@@ -509,7 +508,7 @@ func GetLogsResponse(
 				if len(expectedLogLines) == noExpectedLogLines && !found {
 					receivedLogLines = []string{}
 				} else if !found {
-					return stacktrace.NewError("Expected to receive log lines for service with UUID '%v' but none was found in the received log lines by service map '%+v'", serviceUuid, receivedLogLinesByService), nil, nil
+					return nil, nil, stacktrace.NewError("Expected to receive log lines for service with UUID '%v' but none was found in the received log lines by service map '%+v'", serviceUuid, receivedLogLinesByService)
 				}
 				if len(receivedLogLines) != len(expectedLogLines) {
 					break
@@ -523,7 +522,7 @@ func GetLogsResponse(
 		}
 	}
 
-	return testEvaluationErr, receivedLogLinesByService, receivedNotFoundServiceGuids
+	return receivedLogLinesByService, receivedNotFoundServiceGuids, testEvaluationErr
 }
 
 func AddServicesWithLogLines(
@@ -589,7 +588,7 @@ func GenerateRandomTempFile(byteSize int, filePathOptional string) (string, func
 //
 // ====================================================================================================
 func getDatastoreServiceConfigStarlark() string {
-	return services.GetServiceConfigStarlark(datastoreImage, map[string]*kurtosis_core_rpc_api_bindings.Port{datastorePortId: datastorePortSpec}, emptyFileArtifactMountPoints, emptyEntrypointArgs, emptyCmdArgs, emptyEnvVars, emptyPrivateIpAddrPlaceholder, emptyCpuAllocationMillicpus, emptyMemoryAllocationMegabytes, 0, 0)
+	return services.GetSimpleServiceConfigStarlark(datastoreImage, map[string]*kurtosis_core_rpc_api_bindings.Port{datastorePortId: datastorePortSpec}, emptyFileArtifactMountPoints, emptyEntrypointArgs, emptyCmdArgs, emptyEnvVars, emptyPrivateIpAddrPlaceholder, emptyCpuAllocationMillicpus, emptyMemoryAllocationMegabytes, 0, 0)
 }
 
 func getApiServiceServiceConfigStarlark(apiConfigArtifactName string) string {
@@ -599,7 +598,7 @@ func getApiServiceServiceConfigStarlark(apiConfigArtifactName string) string {
 		path.Join(configMountpathOnApiContainer, configFilename),
 	}
 
-	return services.GetServiceConfigStarlark(apiServiceImage, map[string]*kurtosis_core_rpc_api_bindings.Port{apiPortId: apiPortSpec}, map[string]string{configMountpathOnApiContainer: apiConfigArtifactName}, emptyEntrypointArgs, startCmd, emptyEnvVars, emptyPrivateIpAddrPlaceholder, emptyCpuAllocationMillicpus, emptyMemoryAllocationMegabytes, 0, 0)
+	return services.GetSimpleServiceConfigStarlark(apiServiceImage, map[string]*kurtosis_core_rpc_api_bindings.Port{apiPortId: apiPortSpec}, map[string][]string{configMountpathOnApiContainer: {apiConfigArtifactName}}, emptyEntrypointArgs, startCmd, emptyEnvVars, emptyPrivateIpAddrPlaceholder, emptyCpuAllocationMillicpus, emptyMemoryAllocationMegabytes, 0, 0)
 }
 
 func createApiConfigFile(datastoreIP string) (string, error) {
@@ -648,12 +647,12 @@ func getFileContents(ipAddress string, portNum uint16, realtiveFilepath string) 
 }
 
 func getFileServerServiceConfigStarlark(filesArtifactMountPoints map[string]services.FilesArtifactUUID) string {
-	filesArtifactMountPointsStr := map[string]string{}
+	filesArtifactMountPointsStr := map[string][]string{}
 	for k, v := range filesArtifactMountPoints {
-		filesArtifactMountPointsStr[k] = string(v)
+		filesArtifactMountPointsStr[k] = []string{string(v)}
 	}
 
-	return services.GetServiceConfigStarlark(fileServerServiceImage, map[string]*kurtosis_core_rpc_api_bindings.Port{fileServerPortId: fileServerPortSpec}, filesArtifactMountPointsStr, emptyEntrypointArgs, emptyCmdArgs, emptyEnvVars, emptyPrivateIpAddrPlaceholder, emptyCpuAllocationMillicpus, emptyMemoryAllocationMegabytes, 0, 0)
+	return services.GetSimpleServiceConfigStarlark(fileServerServiceImage, map[string]*kurtosis_core_rpc_api_bindings.Port{fileServerPortId: fileServerPortSpec}, filesArtifactMountPointsStr, emptyEntrypointArgs, emptyCmdArgs, emptyEnvVars, emptyPrivateIpAddrPlaceholder, emptyCpuAllocationMillicpus, emptyMemoryAllocationMegabytes, 0, 0)
 }
 
 func createDatastoreClient(ipAddr string, portNum uint16) (datastore_rpc_api_bindings.DatastoreServiceClient, func(), error) {
@@ -702,11 +701,11 @@ func getServiceWithLogLinesServiceConfigStarlark(logLines []string) string {
 
 	logLineSeparator := " "
 	logLinesStr := strings.Join(logLinesWithQuotes, logLineSeparator)
-	echoLogLinesLoopCmdStr := fmt.Sprintf("for logLine in %s; do echo \"$logLine\"; done;", logLinesStr)
+	echoLogLinesLoopCmdStr := fmt.Sprintf("for logLine in %s; do echo \"$logLine\"; done;sleep 10000s", logLinesStr)
 
 	cmdArgs := []string{echoLogLinesLoopCmdStr}
 
-	return services.GetServiceConfigStarlark(dockerGettingStartedImage, emptyPrivatePorts, emptyFileArtifactMountPoints, entrypointArgs, cmdArgs, emptyEnvVars, emptyPrivateIpAddrPlaceholder, emptyCpuAllocationMillicpus, emptyMemoryAllocationMegabytes, 0, 0)
+	return services.GetSimpleServiceConfigStarlark(dockerGettingStartedImage, emptyPrivatePorts, emptyFileArtifactMountPoints, entrypointArgs, cmdArgs, emptyEnvVars, emptyPrivateIpAddrPlaceholder, emptyCpuAllocationMillicpus, emptyMemoryAllocationMegabytes, 0, 0)
 }
 
 func SkipFlakyTest(t *testing.T, testName string) {

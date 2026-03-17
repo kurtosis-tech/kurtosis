@@ -10,12 +10,6 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/service_registration"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/render_templates"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_identifiers"
-	"github.com/kurtosis-tech/kurtosis/path-compression"
 	"io"
 	"net"
 	"net/http"
@@ -24,6 +18,13 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/service_registration"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/render_templates"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_identifiers"
+	path_compression "github.com/kurtosis-tech/kurtosis/path-compression"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -79,9 +80,11 @@ type DefaultServiceNetwork struct {
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory
 
 	serviceRegistrationRepository *service_registration.ServiceRegistrationRepository
+	serviceRegistrationMutex      *sync.Mutex // VERY IMPORTANT TO CHECK AT THE START OF EVERY METHOD!
 
 	// This contains all service identifiers ever successfully created
 	serviceIdentifiersRepository *service_identifiers.ServiceIdentifiersRepository
+	serviceIdentifiersMutex      *sync.Mutex // VERY IMPORTANT TO CHECK AT THE START OF EVERY METHOD!
 }
 
 func NewDefaultServiceNetwork(
@@ -109,7 +112,9 @@ func NewDefaultServiceNetwork(
 		enclaveDataDir:  enclaveDataDir,
 
 		serviceRegistrationRepository: serviceRegistrationRepository,
+		serviceRegistrationMutex:      &sync.Mutex{},
 		serviceIdentifiersRepository:  serviceIdentifiersRepository,
+		serviceIdentifiersMutex:       &sync.Mutex{},
 	}, nil
 }
 
@@ -158,8 +163,6 @@ func (network *DefaultServiceNetwork) AddServices(
 	map[service.ServiceName]error,
 	error,
 ) {
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
 	batchSuccessfullyStarted := false
 	startedServices := map[service.ServiceName]*service.Service{}
 	failedServices := map[service.ServiceName]error{}
@@ -169,6 +172,7 @@ func (network *DefaultServiceNetwork) AddServices(
 	}
 
 	// Save the services currently running in enclave for later
+	network.serviceRegistrationMutex.Lock()
 	currentlyRunningServicesInEnclave := map[service.ServiceName]bool{}
 	allServiceNamesFromServiceRegistrations, err := network.serviceRegistrationRepository.GetAllServiceNames()
 	if err != nil {
@@ -177,6 +181,7 @@ func (network *DefaultServiceNetwork) AddServices(
 	for serviceName := range allServiceNamesFromServiceRegistrations {
 		currentlyRunningServicesInEnclave[serviceName] = true
 	}
+	network.serviceRegistrationMutex.Unlock()
 
 	// We register all the services one by one
 	serviceSuccessfullyRegistered := map[service.ServiceName]*service.ServiceRegistration{}
@@ -250,17 +255,25 @@ func (network *DefaultServiceNetwork) AddServices(
 		return nil, nil, stacktrace.NewError("This is a Kurtosis internal bug. The batch of services being started does not fit the number of services that were requested. (service started: '%v', requested: '%v')", result, requested)
 	}
 
-	for _, startedService := range startedServices {
-		serviceRegistration := startedService.GetRegistration()
-		serviceIdentifier := service_identifiers.NewServiceIdentifier(serviceRegistration.GetUUID(), serviceRegistration.GetName())
-		if err := network.serviceIdentifiersRepository.AddServiceIdentifier(serviceIdentifier); err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred adding a new service identifier '%+v' into the repository", serviceIdentifier)
+	err = func() error {
+		network.serviceIdentifiersMutex.Lock()
+		defer network.serviceIdentifiersMutex.Unlock()
+		for _, startedService := range startedServices {
+			serviceRegistration := startedService.GetRegistration()
+			serviceIdentifier := service_identifiers.NewServiceIdentifier(serviceRegistration.GetUUID(), serviceRegistration.GetName())
+			if err := network.serviceIdentifiersRepository.AddServiceIdentifier(serviceIdentifier); err != nil {
+				return stacktrace.Propagate(err, "An error occurred adding a new service identifier '%+v' into the repository", serviceIdentifier)
+			}
+			serviceName := serviceRegistration.GetName()
+			serviceStatus := service.ServiceStatus_Started
+			if err := network.serviceRegistrationRepository.UpdateStatus(serviceName, serviceStatus); err != nil {
+				return stacktrace.Propagate(err, "An error occurred while updating service status to '%s' in service registration for service '%s' after the service was started", serviceStatus, serviceName)
+			}
 		}
-		serviceName := serviceRegistration.GetName()
-		serviceStatus := service.ServiceStatus_Started
-		if err := network.serviceRegistrationRepository.UpdateStatus(serviceName, serviceStatus); err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred while updating service status to '%s' in service registration for service '%s' after the service was started", serviceStatus, serviceName)
-		}
+		return nil
+	}()
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred while adding service identifiers and updating service status")
 	}
 
 	batchSuccessfullyStarted = true
@@ -388,19 +401,19 @@ func (network *DefaultServiceNetwork) RemoveService(
 	ctx context.Context,
 	serviceIdentifier string,
 ) (service.ServiceUUID, error) {
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
 
-	serviceName, err := network.getServiceNameForIdentifierUnlocked(serviceIdentifier)
+	serviceName, err := network.getServiceNameForIdentifierLocked(serviceIdentifier)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while fetching name for service identifier '%v'", serviceIdentifier)
 	}
 
+	network.serviceRegistrationMutex.Lock()
 	serviceToRemove, err := network.serviceRegistrationRepository.Get(serviceName)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred getting the service registration for service '%s'", serviceName)
 	}
 	serviceUuid := serviceToRemove.GetUUID()
+	network.serviceRegistrationMutex.Unlock()
 
 	// We stop the service, rather than destroying it, so that we can keep logs around
 	stopServiceFilters := &service.ServiceFilters{
@@ -418,9 +431,11 @@ func (network *DefaultServiceNetwork) RemoveService(
 		return "", stacktrace.Propagate(err, "An error occurred stopping service '%v'", serviceUuid)
 	}
 
+	network.serviceRegistrationMutex.Lock()
 	if err := network.serviceRegistrationRepository.Delete(serviceName); err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred deleting the service registration for service '%v' from the repository", serviceName)
 	}
+	network.serviceRegistrationMutex.Unlock()
 
 	return serviceUuid, nil
 }
@@ -563,10 +578,7 @@ func (network *DefaultServiceNetwork) StopServices(
 func (network *DefaultServiceNetwork) RunExec(ctx context.Context, serviceIdentifier string, userServiceCommand []string) (*exec_result.ExecResult, error) {
 	// NOTE: This will block all other operations while this command is running!!!! We might need to change this so it's
 	// asynchronous
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
-
-	serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
+	serviceRegistration, err := network.getServiceRegistrationForIdentifierLocked(serviceIdentifier)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while getting service registration for identifier '%v'", serviceIdentifier)
 	}
@@ -577,7 +589,7 @@ func (network *DefaultServiceNetwork) RunExec(ctx context.Context, serviceIdenti
 	}
 
 	successfulExecCommands, failedExecCommands, err := network.kurtosisBackend.RunUserServiceExecCommands(
-		ctx, network.enclaveUuid, userServiceCommands)
+		ctx, network.enclaveUuid, "", userServiceCommands)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -612,7 +624,7 @@ func (network *DefaultServiceNetwork) RunExecs(ctx context.Context, userServiceC
 
 	userServiceCommandsByServiceUuid := map[service.ServiceUUID][]string{}
 	for serviceIdentifier, userServiceCommand := range userServiceCommands {
-		serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
+		serviceRegistration, err := network.getServiceRegistrationForIdentifierLocked(serviceIdentifier)
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred while getting service registration for identifier '%v'", serviceIdentifier)
 		}
@@ -620,7 +632,7 @@ func (network *DefaultServiceNetwork) RunExecs(ctx context.Context, userServiceC
 		userServiceCommandsByServiceUuid[serviceUuid] = userServiceCommand
 	}
 
-	successfulExecs, failedExecs, err := network.kurtosisBackend.RunUserServiceExecCommands(ctx, network.enclaveUuid, userServiceCommandsByServiceUuid)
+	successfulExecs, failedExecs, err := network.kurtosisBackend.RunUserServiceExecCommands(ctx, network.enclaveUuid, "", userServiceCommandsByServiceUuid)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An unexpected error occurred running multiple exec commands "+
 			"on user services:\n%v", userServiceCommands)
@@ -628,12 +640,9 @@ func (network *DefaultServiceNetwork) RunExecs(ctx context.Context, userServiceC
 	return successfulExecs, failedExecs, nil
 }
 
-func (network *DefaultServiceNetwork) HttpRequestService(ctx context.Context, serviceIdentifier string, portId string, method string, contentType string, endpoint string, body string, headers map[string]string) (*http.Response, error) {
+func (network *DefaultServiceNetwork) HttpRequestService(ctx context.Context, userService *service.Service, portId string, method string, contentType string, endpoint string, body string, headers map[string]string) (*http.Response, error) {
+	serviceIdentifier := userService.GetRegistration().GetName()
 	logrus.Debugf("Making a request '%v' '%v' '%v' '%v' '%v' '%v'", serviceIdentifier, portId, method, contentType, endpoint, body)
-	userService, getServiceErr := network.GetService(ctx, serviceIdentifier)
-	if getServiceErr != nil {
-		return nil, stacktrace.Propagate(getServiceErr, "An error occurred when getting service '%v' for HTTP request", serviceIdentifier)
-	}
 	port, found := userService.GetPrivatePorts()[portId]
 	if !found {
 		return nil, stacktrace.NewError("An error occurred when getting port '%v' from service '%v' for HTTP request", serviceIdentifier, portId)
@@ -696,14 +705,10 @@ func (network *DefaultServiceNetwork) GetServices(ctx context.Context) (map[serv
 }
 
 func (network *DefaultServiceNetwork) GetService(ctx context.Context, serviceIdentifier string) (*service.Service, error) {
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
-
-	serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
+	serviceRegistration, err := network.getServiceRegistrationForIdentifierLocked(serviceIdentifier)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while fetching registration for service identifier '%v'", serviceIdentifier)
 	}
-
 	serviceUuid := serviceRegistration.GetUUID()
 
 	getServiceFilters := &service.ServiceFilters{
@@ -992,13 +997,13 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 			},
 			Statuses: nil,
 		}
-		_, failedToDestroyUuids, err := network.kurtosisBackend.DestroyUserServices(context.Background(), network.enclaveUuid, userServiceFilters)
+		_, failedToDestroyUuids, err := network.kurtosisBackend.StopUserServices(context.Background(), network.enclaveUuid, userServiceFilters)
 		if err != nil {
-			logrus.Errorf("Attempted to destroy the services with UUIDs '%v' but had no success. You must manually destroy the services! The following error had occurred:\n'%v'", serviceToDestroyUuid, err)
+			logrus.Errorf("Attempted to stop the services with UUIDs '%v' but had no success. You must manually stop the services! The following error had occurred:\n'%v'", serviceToDestroyUuid, err)
 			return
 		}
 		if failedToDestroyErr, found := failedToDestroyUuids[serviceToDestroyUuid]; found {
-			logrus.Errorf("Attempted to destroy the services with UUIDs '%v' but had no success. You must manually destroy the services! The following error had occurred:\n'%v'", serviceToDestroyUuid, failedToDestroyErr)
+			logrus.Errorf("Attempted to stop the services with UUIDs '%v' but had no success. You must manually stop the services! The following error had occurred:\n'%v'", serviceToDestroyUuid, failedToDestroyErr)
 		}
 	}()
 
@@ -1272,6 +1277,12 @@ func (network *DefaultServiceNetwork) renderTemplatesUnlocked(templatesAndDataBy
 }
 
 // This isn't thread safe and must be called from a thread safe context
+func (network *DefaultServiceNetwork) getServiceNameForIdentifierLocked(serviceIdentifier string) (service.ServiceName, error) {
+	network.serviceRegistrationMutex.Lock()
+	defer network.serviceRegistrationMutex.Unlock()
+	return network.getServiceNameForIdentifierUnlocked(serviceIdentifier)
+}
+
 func (network *DefaultServiceNetwork) getServiceNameForIdentifierUnlocked(serviceIdentifier string) (service.ServiceName, error) {
 	maybeServiceUuid := service.ServiceUUID(serviceIdentifier)
 	serviceUuidToServiceName := map[service.ServiceUUID]service.ServiceName{}
@@ -1485,6 +1496,14 @@ func mergeAndGetAllPrivateAndPublicServicePorts(service *service.Service) map[st
 }
 
 // This isn't thread safe and must be called from a thread safe context
+func (network *DefaultServiceNetwork) getServiceRegistrationForIdentifierLocked(
+	serviceIdentifier string,
+) (*service.ServiceRegistration, error) {
+	network.serviceRegistrationMutex.Lock()
+	defer network.serviceRegistrationMutex.Unlock()
+	return network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
+}
+
 func (network *DefaultServiceNetwork) getServiceRegistrationForIdentifierUnlocked(
 	serviceIdentifier string,
 ) (*service.ServiceRegistration, error) {

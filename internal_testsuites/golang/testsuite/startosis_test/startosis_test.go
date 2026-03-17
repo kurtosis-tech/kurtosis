@@ -184,7 +184,9 @@ scrape_configs:
     static_configs:
       - targets: ['foobar.com']
         labels:
-          test: "pass"`
+          test: "pass"
+    fallback_scrape_protocol: "<no value>"
+`
 	logrus.Infof("Checking that the file got mounted on " + serviceIdForDependentService)
 	serviceCtx, err = enclaveCtx.GetServiceContext(serviceIdForDependentService)
 	require.Nil(t, err, "Unexpected Error Creating Service Context")

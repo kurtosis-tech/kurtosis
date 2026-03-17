@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
@@ -76,10 +77,40 @@ type privateServiceConfig struct {
 	FilesToBeMoved map[string]string
 
 	TiniEnabled bool
+
+	TtyEnabled bool
+
+	Devices []string
+
+	PublishUdp bool
 }
 
-func CreateServiceConfig(containerImageName string, imageBuildSpec *image_build_spec.ImageBuildSpec, imageRegistrySpec *image_registry_spec.ImageRegistrySpec, nixBuildSpec *nix_build_spec.NixBuildSpec, privatePorts map[string]*port_spec.PortSpec, publicPorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, envVars map[string]string, filesArtifactExpansion *service_directory.FilesArtifactsExpansion, persistentDirectories *service_directory.PersistentDirectories, cpuAllocationMillicpus uint64, memoryAllocationMegabytes uint64, privateIPAddrPlaceholder string, minCpuMilliCpus uint64, minMemoryMegaBytes uint64, labels map[string]string, user *service_user.ServiceUser, tolerations []v1.Toleration, nodeSelectors map[string]string, imageDownloadMode image_download_mode.ImageDownloadMode, tiniEnabled bool) (*ServiceConfig, error) {
-
+func CreateServiceConfig(
+	containerImageName string,
+	imageBuildSpec *image_build_spec.ImageBuildSpec,
+	imageRegistrySpec *image_registry_spec.ImageRegistrySpec,
+	nixBuildSpec *nix_build_spec.NixBuildSpec,
+	privatePorts map[string]*port_spec.PortSpec,
+	publicPorts map[string]*port_spec.PortSpec,
+	entrypointArgs []string,
+	cmdArgs []string,
+	envVars map[string]string,
+	filesArtifactExpansion *service_directory.FilesArtifactsExpansion,
+	persistentDirectories *service_directory.PersistentDirectories,
+	cpuAllocationMillicpus uint64,
+	memoryAllocationMegabytes uint64,
+	privateIPAddrPlaceholder string,
+	minCpuMilliCpus uint64,
+	minMemoryMegaBytes uint64,
+	labels map[string]string,
+	user *service_user.ServiceUser,
+	tolerations []v1.Toleration,
+	nodeSelectors map[string]string,
+	imageDownloadMode image_download_mode.ImageDownloadMode,
+	tiniEnabled bool,
+	ttyEnabled bool,
+	devices []string,
+	publishUdp bool) (*ServiceConfig, error) {
 	if err := ValidateServiceConfigLabels(labels); err != nil {
 		return nil, stacktrace.Propagate(err, "Invalid service config labels '%+v'", labels)
 	}
@@ -109,6 +140,9 @@ func CreateServiceConfig(containerImageName string, imageBuildSpec *image_build_
 		ImageDownloadMode:            imageDownloadMode,
 		FilesToBeMoved:               map[string]string{},
 		TiniEnabled:                  tiniEnabled,
+		TtyEnabled:                   ttyEnabled,
+		Devices:                      devices,
+		PublishUdp:                   publishUdp,
 	}
 	return &ServiceConfig{internalServiceConfig}, nil
 }
@@ -263,8 +297,11 @@ func (serviceConfig *ServiceConfig) GetTiniEnabled() bool {
 	return serviceConfig.privateServiceConfig.TiniEnabled
 }
 
-func (serviceConfig *ServiceConfig) UnmarshalJSON(data []byte) error {
+func (serviceConfig *ServiceConfig) GetTtyEnabled() bool {
+	return serviceConfig.privateServiceConfig.TtyEnabled
+}
 
+func (serviceConfig *ServiceConfig) UnmarshalJSON(data []byte) error {
 	// Suppressing exhaustruct requirement because we want an object with zero values
 	// nolint: exhaustruct
 	unmarshalledPrivateStructPtr := &privateServiceConfig{}
@@ -275,4 +312,50 @@ func (serviceConfig *ServiceConfig) UnmarshalJSON(data []byte) error {
 
 	serviceConfig.privateServiceConfig = unmarshalledPrivateStructPtr
 	return nil
+}
+
+func GetEmptyServiceConfig() *ServiceConfig {
+	emptyServiceConfig, _ := CreateServiceConfig(
+		"",
+		nil,
+		nil,
+		nil,
+		map[string]*port_spec.PortSpec{},
+		map[string]*port_spec.PortSpec{},
+		[]string{},
+		[]string{},
+		map[string]string{},
+		&service_directory.FilesArtifactsExpansion{
+			ExpanderImage:                        "",
+			ExpanderEnvVars:                      nil,
+			ServiceDirpathsToArtifactIdentifiers: nil,
+			ExpanderDirpathsToServiceDirpaths:    nil,
+		},
+		&service_directory.PersistentDirectories{
+			ServiceDirpathToPersistentDirectory: map[string]service_directory.PersistentDirectory{},
+		},
+		0,
+		0,
+		"",
+		0,
+		0,
+		map[string]string{},
+		nil,
+		[]v1.Toleration{},
+		map[string]string{},
+		image_download_mode.ImageDownloadMode_Always,
+		false,
+		false,
+		[]string{},
+		false,
+	)
+	return emptyServiceConfig
+}
+
+func (serviceConfig *ServiceConfig) GetDevices() []string {
+	return serviceConfig.privateServiceConfig.Devices
+}
+
+func (serviceConfig *ServiceConfig) GetPublishUdp() bool {
+	return serviceConfig.privateServiceConfig.PublishUdp
 }

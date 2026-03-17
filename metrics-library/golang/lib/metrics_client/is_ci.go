@@ -25,7 +25,6 @@ var ciEnvironmentVariables = []string{
 	"TEAMCITY_VERSION",
 	// Travis
 	"TRAVIS",
-
 	// Platform Agnostic Variables
 	"CI",
 }

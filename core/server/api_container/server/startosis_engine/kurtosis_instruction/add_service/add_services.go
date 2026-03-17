@@ -3,15 +3,21 @@ package add_service
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"strings"
+	"sync"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
@@ -19,12 +25,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
-	"reflect"
-	"strings"
-	"sync"
 )
 
 const (
@@ -61,6 +65,12 @@ func NewAddServices(
 						return nil
 					},
 				},
+				{
+					Name:              ForceUpdateArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Bool],
+					Validator:         nil,
+				},
 			},
 		},
 
@@ -76,8 +86,10 @@ func NewAddServices(
 
 				resultUuids:       map[service.ServiceName]string{}, // populated at interpretation time
 				readyConditions:   nil,                              // populated at interpretation time
+				returnValue:       nil,                              // populated at interpretation time
 				description:       "",                               // populated at interpretation time
 				imageDownloadMode: imageDownloadMode,
+				forceUpdate:       defaultForceUpdate, // populated at interpretation time
 			}
 		},
 
@@ -102,9 +114,11 @@ type AddServicesCapabilities struct {
 	readyConditions map[service.ServiceName]*service_config.ReadyCondition
 
 	resultUuids map[service.ServiceName]string
+	returnValue *starlark.Dict
 	description string
 
 	imageDownloadMode image_download_mode.ImageDownloadMode
+	forceUpdate       bool
 }
 
 func (builtin *AddServicesCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -127,6 +141,16 @@ func (builtin *AddServicesCapabilities) Interpret(locatorOfModuleInWhichThisBuil
 	builtin.serviceConfigs = serviceConfigs
 	builtin.readyConditions = readyConditions
 
+	forceUpdate := defaultForceUpdate
+	if arguments.IsSet(ForceUpdateArgName) {
+		forceUpdateValue, err := builtin_argument.ExtractArgumentValue[starlark.Bool](arguments, ForceUpdateArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ForceUpdateArgName)
+		}
+		forceUpdate = bool(forceUpdateValue)
+	}
+	builtin.forceUpdate = forceUpdate
+
 	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, fmt.Sprintf(addServicesDescriptionFormatStr, len(builtin.serviceConfigs), getNamesAsCommaSeparatedList(builtin.serviceConfigs)))
 
 	resultUuids, returnValue, interpretationErr := makeAndPersistAddServicesInterpretationReturnValue(builtin.serviceConfigs, builtin.runtimeValueStore, builtin.interpretationTimeValueStore)
@@ -134,6 +158,20 @@ func (builtin *AddServicesCapabilities) Interpret(locatorOfModuleInWhichThisBuil
 		return nil, interpretationErr
 	}
 	builtin.resultUuids = resultUuids
+	builtin.returnValue = returnValue
+
+	// Debug: verify returnValue matches serviceConfigs at interpretation time
+	for _, serviceTuple := range builtin.returnValue.Items() {
+		serviceNameVal := serviceTuple.Index(0)
+		if serviceNameStr, ok := serviceNameVal.(starlark.String); ok {
+			if _, found := builtin.serviceConfigs[service.ServiceName(serviceNameStr.GoString())]; !found {
+				return nil, startosis_errors.NewInterpretationError(
+					"Consistency check failed at interpretation time: service '%s' in returnValue but not in serviceConfigs; serviceConfigs has %d entries",
+					serviceNameStr.GoString(), len(builtin.serviceConfigs))
+			}
+		}
+	}
+
 	return returnValue, nil
 }
 
@@ -228,18 +266,26 @@ func (builtin *AddServicesCapabilities) Execute(ctx context.Context, _ *builtin_
 	}()
 
 	instructionResult := strings.Builder{}
-	instructionResult.WriteString(fmt.Sprintf("Successfully added the following '%d' services:", len(startedServices)))
+	fmt.Fprintf(&instructionResult, "Successfully added the following '%d' services:", len(startedServices))
 	for serviceName, serviceObj := range startedAndUpdatedService {
 		if err := fillAddServiceReturnValueWithRuntimeValues(serviceObj, builtin.resultUuids[serviceName], builtin.runtimeValueStore); err != nil {
 			return "", stacktrace.Propagate(err, "An error occurred while adding service return values with result key UUID '%s'", builtin.resultUuids[serviceName])
 		}
-		instructionResult.WriteString(fmt.Sprintf("\n  Service '%s' added with UUID '%s'", serviceName, serviceObj.GetRegistration().GetUUID()))
+		fmt.Fprintf(&instructionResult, "\n  Service '%s' added with UUID '%s'", serviceName, serviceObj.GetRegistration().GetUUID())
 	}
 	shouldDeleteAllStartedServices = false
 	return instructionResult.String(), nil
 }
 
 func (builtin *AddServicesCapabilities) TryResolveWith(instructionsAreEqual bool, other *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+	// if force_update is set, always recreate all services regardless of config equality
+	if builtin.forceUpdate {
+		for serviceName := range builtin.serviceConfigs {
+			enclaveComponents.AddService(serviceName, enclave_structure.ComponentIsUpdated)
+		}
+		return enclave_structure.InstructionIsUpdate
+	}
+
 	if instructionsAreEqual {
 		for serviceName := range builtin.serviceConfigs {
 			enclaveComponents.AddService(serviceName, enclave_structure.ComponentWasLeftIntact)
@@ -346,11 +392,11 @@ func (builtin *AddServicesCapabilities) allServicesReadinessCheck(
 	failedServiceChecksSyncMap := &sync.Map{}
 
 	wg := &sync.WaitGroup{}
-	for serviceName := range startedServices {
+	for serviceName, service := range startedServices {
 		wg.Add(1)
 		// The concurrencyControlChan will block if the buffer is currently full
 		concurrencyControlChan <- true
-		go builtin.runServiceReadinessCheck(ctx, wg, concurrencyControlChan, serviceName, failedServiceChecksSyncMap)
+		go builtin.runServiceReadinessCheck(ctx, wg, concurrencyControlChan, serviceName, service, failedServiceChecksSyncMap)
 	}
 	wg.Wait()
 
@@ -370,9 +416,60 @@ func (builtin *AddServicesCapabilities) allServicesReadinessCheck(
 	return failedServiceChecksRegularMap
 }
 
-func (builtin *AddServicesCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
-	// TOOD: Implement
-	logrus.Warn("ADD SERVICES NOT IMPLEMENTED YET FOR UPDATING PLAN YAML.")
+func (builtin *AddServicesCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerator) error {
+	// ImageBuildSpec, ImageSpec, and NixBuildSpec are not supported yet for add_services, only container image name
+	// Providing emptyImgVal will cause the plan yaml generator to use the container image name as the image name
+	var emptyImgVal starlark.Value = nil
+	for serviceName, serviceConfig := range builtin.serviceConfigs {
+		returnValue, found, err := builtin.returnValue.Get(starlark.String(serviceName))
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting the return value for service '%s'", serviceName)
+		}
+		if !found {
+			return stacktrace.NewError("Expected to find a Service object in the return value for service '%s', but none was found; this is a bug in Kurtosis", serviceName)
+		}
+		returnValueService, ok := returnValue.(*kurtosis_types.Service)
+		if !ok {
+			return stacktrace.NewError("Expected to be able to cast the return value for service '%s' to a Service object, but got '%s'", serviceName, reflect.TypeOf(returnValue))
+		}
+		err = updatePlanYamlWithService(plan, serviceName, returnValueService, serviceConfig, emptyImgVal)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (builtin *AddServicesCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
+	// Iterate over serviceConfigs as the source of truth (it's always set correctly in Interpret())
+	// Look up service objects from returnValue for each service
+	serviceNames := make([]string, 0, len(builtin.serviceConfigs))
+	for serviceName, serviceConfig := range builtin.serviceConfigs {
+		serviceNameStr := string(serviceName)
+		serviceNames = append(serviceNames, serviceNameStr)
+
+		// Look up the service object in returnValue
+		serviceObjVal, found, err := builtin.returnValue.Get(starlark.String(serviceName))
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting the return value for service '%s'", serviceNameStr)
+		}
+		if !found {
+			return stacktrace.NewError("Expected to find a Service object in the return value for service '%s', but none was found; this is a bug in Kurtosis", serviceNameStr)
+		}
+		serviceObj, ok := serviceObjVal.(*kurtosis_types.Service)
+		if !ok {
+			return stacktrace.NewError("Expected to be able to cast the return value for service '%s' to a Service object, but got '%s'", serviceNameStr, reflect.TypeOf(serviceObjVal))
+		}
+
+		err = addServiceToDependencyGraph(instructionUuid, dependencyGraph, serviceNameStr, serviceObj, serviceConfig)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred updating the dependency graph with service '%s'", serviceNameStr)
+		}
+	}
+
+	serviceNamesStr := strings.Join(serviceNames, ", ")
+	shortDescriptor := fmt.Sprintf("add_services(%d services: %s)", len(builtin.serviceConfigs), serviceNamesStr)
+	dependencyGraph.UpdateInstructionShortDescriptor(instructionUuid, shortDescriptor)
 	return nil
 }
 
@@ -394,6 +491,7 @@ func (builtin *AddServicesCapabilities) runServiceReadinessCheck(
 	wg *sync.WaitGroup,
 	concurrencyControlChan chan bool,
 	serviceName service.ServiceName,
+	service *service.Service,
 	failedServiceChecks *sync.Map,
 ) {
 	var serviceErr error
@@ -415,6 +513,7 @@ func (builtin *AddServicesCapabilities) runServiceReadinessCheck(
 		builtin.serviceNetwork,
 		builtin.runtimeValueStore,
 		serviceName,
+		service,
 		readyConditions,
 	); err != nil {
 		serviceErr = stacktrace.Propagate(err, "An error occurred while checking if service '%v' is ready", serviceName)

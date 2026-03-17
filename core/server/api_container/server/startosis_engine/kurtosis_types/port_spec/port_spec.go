@@ -130,7 +130,7 @@ func CreatePortSpecUsingGoValues(
 		args = append(args, starlark.String(portUrl))
 	}
 
-	argumentDefinitions := NewPortSpecType().KurtosisBaseBuiltin.Arguments
+	argumentDefinitions := NewPortSpecType().Arguments
 	argumentValuesSet := builtin_argument.NewArgumentValuesSet(argumentDefinitions, args)
 	kurtosisDefaultValue, interpretationErr := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(PortSpecTypeName, argumentValuesSet)
 	if interpretationErr != nil {

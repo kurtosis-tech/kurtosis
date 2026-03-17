@@ -21,7 +21,7 @@ func ForwardKurtosisExecutionStream[T any](streamToReadFrom grpc.ClientStream, s
 		}
 
 		if writeErr := streamToWriteTo.SendMsg(starlarkRunResponseLine); writeErr != nil {
-			return stacktrace.Propagate(readErr, "Received a Kurtosis execution line but failed forwarding it back to the user")
+			return stacktrace.Propagate(writeErr, "Received a Kurtosis execution line but failed forwarding it back to the user")
 		}
 	}
 }

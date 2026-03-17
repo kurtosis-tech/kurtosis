@@ -1,6 +1,7 @@
 import * as jspb from 'google-protobuf'
 
 import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb';
+import * as google_protobuf_duration_pb from 'google-protobuf/google/protobuf/duration_pb';
 
 
 export class Port extends jspb.Message {
@@ -105,6 +106,82 @@ export namespace Container {
   }
 }
 
+export class FilesArtifactsList extends jspb.Message {
+  getFilesArtifactsIdentifiersList(): Array<string>;
+  setFilesArtifactsIdentifiersList(value: Array<string>): FilesArtifactsList;
+  clearFilesArtifactsIdentifiersList(): FilesArtifactsList;
+  addFilesArtifactsIdentifiers(value: string, index?: number): FilesArtifactsList;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): FilesArtifactsList.AsObject;
+  static toObject(includeInstance: boolean, msg: FilesArtifactsList): FilesArtifactsList.AsObject;
+  static serializeBinaryToWriter(message: FilesArtifactsList, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): FilesArtifactsList;
+  static deserializeBinaryFromReader(message: FilesArtifactsList, reader: jspb.BinaryReader): FilesArtifactsList;
+}
+
+export namespace FilesArtifactsList {
+  export type AsObject = {
+    filesArtifactsIdentifiersList: Array<string>,
+  }
+}
+
+export class User extends jspb.Message {
+  getUid(): number;
+  setUid(value: number): User;
+
+  getGid(): number;
+  setGid(value: number): User;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): User.AsObject;
+  static toObject(includeInstance: boolean, msg: User): User.AsObject;
+  static serializeBinaryToWriter(message: User, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): User;
+  static deserializeBinaryFromReader(message: User, reader: jspb.BinaryReader): User;
+}
+
+export namespace User {
+  export type AsObject = {
+    uid: number,
+    gid: number,
+  }
+}
+
+export class Toleration extends jspb.Message {
+  getKey(): string;
+  setKey(value: string): Toleration;
+
+  getOperator(): string;
+  setOperator(value: string): Toleration;
+
+  getValue(): string;
+  setValue(value: string): Toleration;
+
+  getEffect(): string;
+  setEffect(value: string): Toleration;
+
+  getTolerationSeconds(): number;
+  setTolerationSeconds(value: number): Toleration;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): Toleration.AsObject;
+  static toObject(includeInstance: boolean, msg: Toleration): Toleration.AsObject;
+  static serializeBinaryToWriter(message: Toleration, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): Toleration;
+  static deserializeBinaryFromReader(message: Toleration, reader: jspb.BinaryReader): Toleration;
+}
+
+export namespace Toleration {
+  export type AsObject = {
+    key: string,
+    operator: string,
+    value: string,
+    effect: string,
+    tolerationSeconds: number,
+  }
+}
+
 export class ServiceInfo extends jspb.Message {
   getServiceUuid(): string;
   setServiceUuid(value: string): ServiceInfo;
@@ -135,6 +212,47 @@ export class ServiceInfo extends jspb.Message {
   hasContainer(): boolean;
   clearContainer(): ServiceInfo;
 
+  getServiceDirPathsToFilesArtifactsListMap(): jspb.Map<string, FilesArtifactsList>;
+  clearServiceDirPathsToFilesArtifactsListMap(): ServiceInfo;
+
+  getMaxMillicpus(): number;
+  setMaxMillicpus(value: number): ServiceInfo;
+
+  getMinMillicpus(): number;
+  setMinMillicpus(value: number): ServiceInfo;
+
+  getMaxMemoryMegabytes(): number;
+  setMaxMemoryMegabytes(value: number): ServiceInfo;
+
+  getMinMemoryMegabytes(): number;
+  setMinMemoryMegabytes(value: number): ServiceInfo;
+
+  getUser(): User | undefined;
+  setUser(value?: User): ServiceInfo;
+  hasUser(): boolean;
+  clearUser(): ServiceInfo;
+
+  getTolerationsList(): Array<Toleration>;
+  setTolerationsList(value: Array<Toleration>): ServiceInfo;
+  clearTolerationsList(): ServiceInfo;
+  addTolerations(value?: Toleration, index?: number): Toleration;
+
+  getNodeSelectorsMap(): jspb.Map<string, string>;
+  clearNodeSelectorsMap(): ServiceInfo;
+
+  getLabelsMap(): jspb.Map<string, string>;
+  clearLabelsMap(): ServiceInfo;
+
+  getTiniEnabled(): boolean;
+  setTiniEnabled(value: boolean): ServiceInfo;
+  hasTiniEnabled(): boolean;
+  clearTiniEnabled(): ServiceInfo;
+
+  getTtyEnabled(): boolean;
+  setTtyEnabled(value: boolean): ServiceInfo;
+  hasTtyEnabled(): boolean;
+  clearTtyEnabled(): ServiceInfo;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServiceInfo.AsObject;
   static toObject(includeInstance: boolean, msg: ServiceInfo): ServiceInfo.AsObject;
@@ -154,6 +272,32 @@ export namespace ServiceInfo {
     shortenedUuid: string,
     serviceStatus: ServiceStatus,
     container?: Container.AsObject,
+    serviceDirPathsToFilesArtifactsListMap: Array<[string, FilesArtifactsList.AsObject]>,
+    maxMillicpus: number,
+    minMillicpus: number,
+    maxMemoryMegabytes: number,
+    minMemoryMegabytes: number,
+    user?: User.AsObject,
+    tolerationsList: Array<Toleration.AsObject>,
+    nodeSelectorsMap: Array<[string, string]>,
+    labelsMap: Array<[string, string]>,
+    tiniEnabled?: boolean,
+    ttyEnabled?: boolean,
+  }
+
+  export enum UserCase { 
+    _USER_NOT_SET = 0,
+    USER = 15,
+  }
+
+  export enum TiniEnabledCase { 
+    _TINI_ENABLED_NOT_SET = 0,
+    TINI_ENABLED = 19,
+  }
+
+  export enum TtyEnabledCase { 
+    _TTY_ENABLED_NOT_SET = 0,
+    TTY_ENABLED = 20,
   }
 }
 
@@ -206,6 +350,11 @@ export class RunStarlarkScriptArgs extends jspb.Message {
   hasNonBlockingMode(): boolean;
   clearNonBlockingMode(): RunStarlarkScriptArgs;
 
+  getParallel(): boolean;
+  setParallel(value: boolean): RunStarlarkScriptArgs;
+  hasParallel(): boolean;
+  clearParallel(): RunStarlarkScriptArgs;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RunStarlarkScriptArgs.AsObject;
   static toObject(includeInstance: boolean, msg: RunStarlarkScriptArgs): RunStarlarkScriptArgs.AsObject;
@@ -226,6 +375,7 @@ export namespace RunStarlarkScriptArgs {
     cloudUserId?: string,
     imageDownloadMode?: ImageDownloadMode,
     nonBlockingMode?: boolean,
+    parallel?: boolean,
   }
 
   export enum SerializedParamsCase { 
@@ -266,6 +416,11 @@ export namespace RunStarlarkScriptArgs {
   export enum NonBlockingModeCase { 
     _NON_BLOCKING_MODE_NOT_SET = 0,
     NON_BLOCKING_MODE = 10,
+  }
+
+  export enum ParallelCase { 
+    _PARALLEL_NOT_SET = 0,
+    PARALLEL = 17,
   }
 }
 
@@ -341,6 +496,11 @@ export class RunStarlarkPackageArgs extends jspb.Message {
   hasGithubAuthToken(): boolean;
   clearGithubAuthToken(): RunStarlarkPackageArgs;
 
+  getParallel(): boolean;
+  setParallel(value: boolean): RunStarlarkPackageArgs;
+  hasParallel(): boolean;
+  clearParallel(): RunStarlarkPackageArgs;
+
   getStarlarkPackageContentCase(): RunStarlarkPackageArgs.StarlarkPackageContentCase;
 
   serializeBinary(): Uint8Array;
@@ -368,6 +528,7 @@ export namespace RunStarlarkPackageArgs {
     imageDownloadMode?: ImageDownloadMode,
     nonBlockingMode?: boolean,
     githubAuthToken?: string,
+    parallel?: boolean,
   }
 
   export enum StarlarkPackageContentCase { 
@@ -429,6 +590,11 @@ export namespace RunStarlarkPackageArgs {
   export enum GithubAuthTokenCase { 
     _GITHUB_AUTH_TOKEN_NOT_SET = 0,
     GITHUB_AUTH_TOKEN = 16,
+  }
+
+  export enum ParallelCase { 
+    _PARALLEL_NOT_SET = 0,
+    PARALLEL = 17,
   }
 }
 
@@ -560,6 +726,11 @@ export class StarlarkInstruction extends jspb.Message {
   getDescription(): string;
   setDescription(value: string): StarlarkInstruction;
 
+  getInstructionId(): string;
+  setInstructionId(value: string): StarlarkInstruction;
+  hasInstructionId(): boolean;
+  clearInstructionId(): StarlarkInstruction;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StarlarkInstruction.AsObject;
   static toObject(includeInstance: boolean, msg: StarlarkInstruction): StarlarkInstruction.AsObject;
@@ -576,12 +747,28 @@ export namespace StarlarkInstruction {
     executableInstruction: string,
     isSkipped: boolean,
     description: string,
+    instructionId?: string,
+  }
+
+  export enum InstructionIdCase { 
+    _INSTRUCTION_ID_NOT_SET = 0,
+    INSTRUCTION_ID = 7,
   }
 }
 
 export class StarlarkInstructionResult extends jspb.Message {
   getSerializedInstructionResult(): string;
   setSerializedInstructionResult(value: string): StarlarkInstructionResult;
+
+  getExecutionDuration(): google_protobuf_duration_pb.Duration | undefined;
+  setExecutionDuration(value?: google_protobuf_duration_pb.Duration): StarlarkInstructionResult;
+  hasExecutionDuration(): boolean;
+  clearExecutionDuration(): StarlarkInstructionResult;
+
+  getInstructionId(): string;
+  setInstructionId(value: string): StarlarkInstructionResult;
+  hasInstructionId(): boolean;
+  clearInstructionId(): StarlarkInstructionResult;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StarlarkInstructionResult.AsObject;
@@ -594,6 +781,18 @@ export class StarlarkInstructionResult extends jspb.Message {
 export namespace StarlarkInstructionResult {
   export type AsObject = {
     serializedInstructionResult: string,
+    executionDuration?: google_protobuf_duration_pb.Duration.AsObject,
+    instructionId?: string,
+  }
+
+  export enum ExecutionDurationCase { 
+    _EXECUTION_DURATION_NOT_SET = 0,
+    EXECUTION_DURATION = 2,
+  }
+
+  export enum InstructionIdCase { 
+    _INSTRUCTION_ID_NOT_SET = 0,
+    INSTRUCTION_ID = 3,
   }
 }
 
@@ -763,6 +962,11 @@ export class StarlarkRunProgress extends jspb.Message {
   getCurrentStepNumber(): number;
   setCurrentStepNumber(value: number): StarlarkRunProgress;
 
+  getInstructionId(): string;
+  setInstructionId(value: string): StarlarkRunProgress;
+  hasInstructionId(): boolean;
+  clearInstructionId(): StarlarkRunProgress;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StarlarkRunProgress.AsObject;
   static toObject(includeInstance: boolean, msg: StarlarkRunProgress): StarlarkRunProgress.AsObject;
@@ -776,6 +980,12 @@ export namespace StarlarkRunProgress {
     currentStepInfoList: Array<string>,
     totalSteps: number,
     currentStepNumber: number,
+    instructionId?: string,
+  }
+
+  export enum InstructionIdCase { 
+    _INSTRUCTION_ID_NOT_SET = 0,
+    INSTRUCTION_ID = 4,
   }
 }
 
@@ -787,6 +997,11 @@ export class StarlarkRunFinishedEvent extends jspb.Message {
   setSerializedOutput(value: string): StarlarkRunFinishedEvent;
   hasSerializedOutput(): boolean;
   clearSerializedOutput(): StarlarkRunFinishedEvent;
+
+  getTotalExecutionDuration(): google_protobuf_duration_pb.Duration | undefined;
+  setTotalExecutionDuration(value?: google_protobuf_duration_pb.Duration): StarlarkRunFinishedEvent;
+  hasTotalExecutionDuration(): boolean;
+  clearTotalExecutionDuration(): StarlarkRunFinishedEvent;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StarlarkRunFinishedEvent.AsObject;
@@ -800,11 +1015,17 @@ export namespace StarlarkRunFinishedEvent {
   export type AsObject = {
     isRunSuccessful: boolean,
     serializedOutput?: string,
+    totalExecutionDuration?: google_protobuf_duration_pb.Duration.AsObject,
   }
 
   export enum SerializedOutputCase { 
     _SERIALIZED_OUTPUT_NOT_SET = 0,
     SERIALIZED_OUTPUT = 2,
+  }
+
+  export enum TotalExecutionDurationCase { 
+    _TOTAL_EXECUTION_DURATION_NOT_SET = 0,
+    TOTAL_EXECUTION_DURATION = 3,
   }
 }
 
@@ -1546,6 +1767,9 @@ export class StarlarkPackagePlanYamlArgs extends jspb.Message {
   hasSerializedParams(): boolean;
   clearSerializedParams(): StarlarkPackagePlanYamlArgs;
 
+  getIsRemote(): boolean;
+  setIsRemote(value: boolean): StarlarkPackagePlanYamlArgs;
+
   getRelativePathToMainFile(): string;
   setRelativePathToMainFile(value: string): StarlarkPackagePlanYamlArgs;
   hasRelativePathToMainFile(): boolean;
@@ -1568,6 +1792,7 @@ export namespace StarlarkPackagePlanYamlArgs {
   export type AsObject = {
     packageId: string,
     serializedParams?: string,
+    isRemote: boolean,
     relativePathToMainFile?: string,
     mainFunctionName?: string,
   }
@@ -1579,12 +1804,12 @@ export namespace StarlarkPackagePlanYamlArgs {
 
   export enum RelativePathToMainFileCase { 
     _RELATIVE_PATH_TO_MAIN_FILE_NOT_SET = 0,
-    RELATIVE_PATH_TO_MAIN_FILE = 3,
+    RELATIVE_PATH_TO_MAIN_FILE = 4,
   }
 
   export enum MainFunctionNameCase { 
     _MAIN_FUNCTION_NAME_NOT_SET = 0,
-    MAIN_FUNCTION_NAME = 4,
+    MAIN_FUNCTION_NAME = 5,
   }
 }
 

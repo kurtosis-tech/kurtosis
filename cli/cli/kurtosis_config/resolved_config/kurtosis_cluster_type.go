@@ -6,4 +6,5 @@ type KurtosisClusterType int
 const (
 	KurtosisClusterType_Docker KurtosisClusterType = iota
 	KurtosisClusterType_Kubernetes
+	KurtosisClusterType_Podman
 )

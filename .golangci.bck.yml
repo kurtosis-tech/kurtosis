@@ -1,0 +1,9 @@
+linters:
+  enable:
+    - exhaustruct
+    - exportloopref
+    - gomnd
+    - staticcheck
+    - exhaustive
+  max-issues-per-linter: 0
+  sort-results: true

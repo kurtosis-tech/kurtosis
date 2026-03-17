@@ -12,13 +12,6 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/docker_compose_transpiler"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_run"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/git_package_content_provider"
 	"io"
 	"math"
 	"net/http"
@@ -27,6 +20,17 @@ import (
 	"strings"
 	"time"
 	"unicode"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/docker_compose_transpiler"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_run"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/git_package_content_provider"
 
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 
@@ -101,6 +105,13 @@ type ApiContainerService struct {
 	metricsClient metrics_client.MetricsClient
 
 	githubAuthProvider *git_package_content_provider.GitHubPackageAuthProvider
+
+	// NOTE: interpretationTimeValueStore is modified by the StarlarkInterpreter - allowing APIContainer to have access to it
+	// allows retrieving service configs of running services but it is NOT mutex protected, thus this object should never modify
+	// the interpretationTimeValueStore or it could mess with interpretation
+	// TODO: Either mutex protect the interpretationTimeValueStore OR compose the interpretationTimeValueStore of a separate mutex protected `serviceConfigRepository` object
+	// and allow both ApiContainerService and interpretationTimeValueStore to have access to that
+	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore
 }
 
 func NewApiContainerService(
@@ -113,6 +124,7 @@ func NewApiContainerService(
 	metricsClient metrics_client.MetricsClient,
 	githubAuthProvider *git_package_content_provider.GitHubPackageAuthProvider,
 	starlarkRunRepository *starlark_run.StarlarkRunRepository,
+	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore,
 ) (*ApiContainerService, error) {
 
 	if err := initStarlarkRun(starlarkRunRepository, restartPolicy); err != nil {
@@ -120,14 +132,15 @@ func NewApiContainerService(
 	}
 
 	service := &ApiContainerService{
-		filesArtifactStore:     filesArtifactStore,
-		serviceNetwork:         serviceNetwork,
-		startosisRunner:        startosisRunner,
-		startosisInterpreter:   startosisInterpreter,
-		packageContentProvider: startosisModuleContentProvider,
-		starlarkRunRepository:  starlarkRunRepository,
-		metricsClient:          metricsClient,
-		githubAuthProvider:     githubAuthProvider,
+		filesArtifactStore:           filesArtifactStore,
+		serviceNetwork:               serviceNetwork,
+		startosisRunner:              startosisRunner,
+		startosisInterpreter:         startosisInterpreter,
+		packageContentProvider:       startosisModuleContentProvider,
+		starlarkRunRepository:        starlarkRunRepository,
+		metricsClient:                metricsClient,
+		githubAuthProvider:           githubAuthProvider,
+		interpretationTimeValueStore: interpretationTimeValueStore,
 	}
 
 	return service, nil
@@ -146,8 +159,9 @@ func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rp
 	ApiDownloadMode := shared_utils.GetOrDefault(args.ImageDownloadMode, defaultImageDownloadMode)
 	nonBlockingMode := args.GetNonBlockingMode()
 	downloadMode := convertFromImageDownloadModeAPI(ApiDownloadMode)
+	shouldExecuteInParallel := args.GetParallel()
 
-	metricsErr := apicService.metricsClient.TrackKurtosisRun(startosis_constants.PackageIdPlaceholderForStandaloneScript, isNotRemote, dryRun, isScript)
+	metricsErr := apicService.metricsClient.TrackKurtosisRun(startosis_constants.PackageIdPlaceholderForStandaloneScript, isNotRemote, dryRun, isScript, serializedParams)
 	if metricsErr != nil {
 		logrus.Warn("An error occurred tracking kurtosis run event")
 	}
@@ -164,6 +178,7 @@ func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rp
 		serializedParams,
 		downloadMode,
 		nonBlockingMode,
+		shouldExecuteInParallel,
 		experimentalFeatures,
 		stream,
 	)
@@ -305,6 +320,7 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 	ApiDownloadMode := shared_utils.GetOrDefault(args.ImageDownloadMode, defaultImageDownloadMode)
 	downloadMode := convertFromImageDownloadModeAPI(ApiDownloadMode)
 	nonBlockingMode := args.GetNonBlockingMode()
+	shouldExecuteInParallel := args.GetParallel()
 
 	packageGitHubAuthToken := args.GetGithubAuthToken()
 	if packageGitHubAuthToken != "" {
@@ -338,7 +354,7 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 	}
 	logrus.Debugf("package replace options received '%+v'", detectedPackageReplaceOptions)
 
-	metricsErr := apicService.metricsClient.TrackKurtosisRun(detectedPackageId, isRemote, dryRun, isNotScript)
+	metricsErr := apicService.metricsClient.TrackKurtosisRun(detectedPackageId, isRemote, dryRun, isNotScript, serializedParams)
 	if metricsErr != nil {
 		logrus.Warn("An error occurred tracking kurtosis run event")
 	}
@@ -349,7 +365,20 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 		actualRelativePathToMainFile,
 		scriptWithRunFunction,
 		serializedParams)
-	apicService.runStarlark(int(parallelism), dryRun, detectedPackageId, detectedPackageReplaceOptions, mainFuncName, actualRelativePathToMainFile, scriptWithRunFunction, serializedParams, downloadMode, nonBlockingMode, args.ExperimentalFeatures, stream)
+	apicService.runStarlark(
+		int(parallelism),
+		dryRun,
+		detectedPackageId,
+		detectedPackageReplaceOptions,
+		mainFuncName,
+		actualRelativePathToMainFile,
+		scriptWithRunFunction,
+		serializedParams,
+		downloadMode,
+		nonBlockingMode,
+		shouldExecuteInParallel,
+		args.ExperimentalFeatures,
+		stream)
 
 	return nil
 }
@@ -453,7 +482,8 @@ func (apicService *ApiContainerService) GetServices(ctx context.Context, args *k
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "an error occurred while fetching all services from the backend")
 	}
-	serviceInfos, err = getServiceInfosFromServiceObjs(allServices)
+
+	serviceInfos, err = apicService.getServiceInfosFromServiceObjs(allServices)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "an error occurred while converting the service obj into service info")
 	}
@@ -670,7 +700,7 @@ func (apicService *ApiContainerService) GetStarlarkPackagePlanYaml(ctx context.C
 	var detectedPackageReplaceOptions map[string]string
 	var actualRelativePathToMainFile string
 	scriptWithRunFunction, actualRelativePathToMainFile, detectedPackageId, detectedPackageReplaceOptions, interpretationError =
-		apicService.runStarlarkPackageSetup(packageIdFromArgs, true, nil, requestedRelativePathToMainFile)
+		apicService.runStarlarkPackageSetup(packageIdFromArgs, args.IsRemote, nil, requestedRelativePathToMainFile)
 	if interpretationError != nil {
 		return nil, stacktrace.Propagate(interpretationError, "An interpretation error occurred setting up the package for retrieving plan yaml for package: %v", packageIdFromArgs)
 	}
@@ -686,12 +716,13 @@ func (apicService *ApiContainerService) GetStarlarkPackagePlanYaml(ctx context.C
 		false,
 		enclave_structure.NewEnclaveComponents(),
 		resolver.NewInstructionsPlanMask(0),
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlan())
 	if apiInterpretationError != nil {
-		interpretationError = startosis_errors.NewInterpretationError(apiInterpretationError.GetErrorMessage())
+		interpretationError = startosis_errors.NewInterpretationError("%s", apiInterpretationError.GetErrorMessage())
 		return nil, stacktrace.Propagate(interpretationError, "An interpretation error occurred interpreting package for retrieving plan yaml for package: %v", packageIdFromArgs)
 	}
-	planYamlStr, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(packageIdFromArgs))
+	planYamlStr, err := instructionsPlan.GenerateYamlWithInstructions(plan_yaml.CreateEmptyPlan(packageIdFromArgs))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred generating plan yaml for package: %v", packageIdFromArgs)
 	}
@@ -720,11 +751,13 @@ func (apicService *ApiContainerService) GetStarlarkScriptPlanYaml(ctx context.Co
 		false,
 		enclave_structure.NewEnclaveComponents(),
 		resolver.NewInstructionsPlanMask(0),
-		image_download_mode.ImageDownloadMode_Always)
+		image_download_mode.ImageDownloadMode_Always,
+		instructions_plan.NewInstructionsPlan(),
+	)
 	if apiInterpretationError != nil {
-		return nil, startosis_errors.NewInterpretationError(apiInterpretationError.GetErrorMessage())
+		return nil, startosis_errors.NewInterpretationError("%s", apiInterpretationError.GetErrorMessage())
 	}
-	planYamlStr, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript))
+	planYamlStr, err := instructionsPlan.GenerateYamlWithInstructions(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript))
 	if err != nil {
 		return nil, err
 	}
@@ -779,6 +812,17 @@ func transformPortSpecMapToApiPortsMap(apiPorts map[string]*port_spec.PortSpec) 
 		result[portId] = publicApiPort
 	}
 	return result, nil
+}
+
+func transformServiceDirPathsToFileArtifactsToApiPortsFilesArtifactsList(serviceDirPathsToFilesArtifactsIdentifiers map[string][]string) map[string]*kurtosis_core_rpc_api_bindings.FilesArtifactsList {
+	result := map[string]*kurtosis_core_rpc_api_bindings.FilesArtifactsList{}
+	for svcName, filesArtifactsIdentifiers := range serviceDirPathsToFilesArtifactsIdentifiers {
+		filesArtifactsList := &kurtosis_core_rpc_api_bindings.FilesArtifactsList{
+			FilesArtifactsIdentifiers: filesArtifactsIdentifiers,
+		}
+		result[svcName] = filesArtifactsList
+	}
+	return result
 }
 
 func (apicService *ApiContainerService) waitForEndpointAvailability(
@@ -859,12 +903,13 @@ func makeHttpRequest(httpMethod string, url string, body string) (*http.Response
 		err  error
 	)
 
-	if httpMethod == http.MethodPost {
+	switch httpMethod {
+	case http.MethodPost:
 		var bodyByte = []byte(body)
 		resp, err = http.Post(url, "application/json", bytes.NewBuffer(bodyByte))
-	} else if httpMethod == http.MethodGet {
+	case http.MethodGet:
 		resp, err = http.Get(url)
-	} else {
+	default:
 		return nil, stacktrace.NewError("HTTP method '%v' not allowed", httpMethod)
 	}
 
@@ -885,9 +930,20 @@ func (apicService *ApiContainerService) getServiceInfoForIdentifier(ctx context.
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting info for service '%v'", serviceIdentifier)
 	}
-	serviceInfo, err := getServiceInfoFromServiceObj(serviceObj)
+
+	var serviceConfig *service.ServiceConfig
+	serviceConfig, err = apicService.interpretationTimeValueStore.GetServiceConfig(serviceObj.GetRegistration().GetName())
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "an error occurred while converting service obj for service with id '%v' to service info", serviceIdentifier)
+		// if no service config was found, instead of failing - we just give an empty service config
+		// this is because the service config info in the interpretationTimeValueStore is not persisted to the enclave db yet
+		// so on apic restarts the information will be lost - but we still want to service information about existing services
+		// in the future, service config information should be persisted
+		serviceConfig = service.GetEmptyServiceConfig()
+	}
+
+	serviceInfo, err := getServiceInfoFromServiceObj(serviceObj, serviceConfig)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "A error occurred while converting service obj for service with id '%v' to service info", serviceIdentifier)
 	}
 	return serviceInfo, nil
 }
@@ -982,10 +1038,11 @@ func (apicService *ApiContainerService) runStarlark(
 	serializedParams string,
 	imageDownloadMode image_download_mode.ImageDownloadMode,
 	nonBlockingMode bool,
+	shouldExecuteInParallel bool,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 	stream grpc.ServerStream,
 ) {
-	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, packageReplaceOptions, mainFunctionName, relativePathToMainFile, serializedStarlark, serializedParams, imageDownloadMode, nonBlockingMode, experimentalFeatures)
+	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, packageReplaceOptions, mainFunctionName, relativePathToMainFile, serializedStarlark, serializedParams, imageDownloadMode, nonBlockingMode, shouldExecuteInParallel, experimentalFeatures)
 	for {
 		select {
 		case <-stream.Context().Done():
@@ -1020,7 +1077,7 @@ func (apicService *ApiContainerService) runStarlark(
 				} else {
 					numberOfServicesAfterRunFinished = len(serviceNames)
 				}
-				if err := apicService.metricsClient.TrackKurtosisRunFinishedEvent(packageId, numberOfServicesAfterRunFinished, isSuccessful); err != nil {
+				if err := apicService.metricsClient.TrackKurtosisRunFinishedEvent(packageId, numberOfServicesAfterRunFinished, isSuccessful, serializedParams); err != nil {
 					logrus.Warn("An error occurred tracking the run-finished event")
 				}
 			}
@@ -1033,19 +1090,28 @@ func (apicService *ApiContainerService) runStarlark(
 	}
 }
 
-func getServiceInfosFromServiceObjs(services map[service.ServiceUUID]*service.Service) (map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo, error) {
+func (apicService *ApiContainerService) getServiceInfosFromServiceObjs(services map[service.ServiceUUID]*service.Service) (map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo, error) {
 	serviceInfos := map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo{}
 	for uuid, serviceObj := range services {
-		serviceInfo, err := getServiceInfoFromServiceObj(serviceObj)
+		var serviceConfig *service.ServiceConfig
+		serviceConfig, err := apicService.interpretationTimeValueStore.GetServiceConfig(serviceObj.GetRegistration().GetName())
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "there was an error converting the service obj for service with uuid '%v' and name '%v' to service info", uuid, serviceObj.GetRegistration().GetName())
+			// if no service config was found, instead of failing - we just give an empty service config
+			// this is because the service config info in the interpretationTimeValueStore is not persisted to the enclave db yet
+			// so on apic restarts the information will be lost - but we still want to service information about existing services
+			// in the future, service config information should be persisted
+			serviceConfig = service.GetEmptyServiceConfig()
+		}
+		serviceInfo, err := getServiceInfoFromServiceObj(serviceObj, serviceConfig)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "There was an error converting the service obj for service with uuid '%v' and name '%v' to service info", uuid, serviceObj.GetRegistration().GetName())
 		}
 		serviceInfos[serviceInfo.Name] = serviceInfo
 	}
 	return serviceInfos, nil
 }
 
-func getServiceInfoFromServiceObj(serviceObj *service.Service) (*kurtosis_core_rpc_api_bindings.ServiceInfo, error) {
+func getServiceInfoFromServiceObj(serviceObj *service.Service, serviceConfig *service.ServiceConfig) (*kurtosis_core_rpc_api_bindings.ServiceInfo, error) {
 	privatePorts := serviceObj.GetPrivatePorts()
 	privateIp := serviceObj.GetRegistration().GetPrivateIP()
 	maybePublicIp := serviceObj.GetMaybePublicIP()
@@ -1085,6 +1151,44 @@ func getServiceInfoFromServiceObj(serviceObj *service.Service) (*kurtosis_core_r
 		EnvVars:        serviceContainer.GetEnvVars(),
 	}
 
+	maxMillicpus := uint32(serviceConfig.GetCPUAllocationMillicpus())
+	minMillicpus := uint32(serviceConfig.GetMinCPUAllocationMillicpus())
+	maxMemoryMegabytes := uint32(serviceConfig.GetMemoryAllocationMegabytes())
+	minMemoryMegabytes := uint32(serviceConfig.GetMinMemoryAllocationMegabytes())
+
+	serviceDirPathsToFilesArtifactsList := map[string]*kurtosis_core_rpc_api_bindings.FilesArtifactsList{}
+
+	if serviceConfig.GetFilesArtifactsExpansion() != nil {
+		serviceDirPathsToFilesArtifactsList = transformServiceDirPathsToFileArtifactsToApiPortsFilesArtifactsList(serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers)
+	}
+
+	var user *service_user.ServiceUser
+	var apiUser *kurtosis_core_rpc_api_bindings.User
+	if serviceConfig.GetUser() != nil {
+		user = serviceConfig.GetUser()
+		var gid uint32 = 0
+		userGid, existsGuid := user.GetGID()
+		if existsGuid {
+			gid = uint32(userGid)
+		}
+		apiUser = &kurtosis_core_rpc_api_bindings.User{
+			Uid: uint32(user.GetUID()),
+			Gid: gid,
+		}
+	}
+
+	tolerations := serviceConfig.GetTolerations()
+	apiTolerations := []*kurtosis_core_rpc_api_bindings.Toleration{}
+	for _, toleration := range tolerations {
+		apiTolerations = append(apiTolerations, &kurtosis_core_rpc_api_bindings.Toleration{
+			Key:               toleration.Key,
+			Operator:          string(toleration.Operator),
+			Value:             toleration.Value,
+			Effect:            string(toleration.Effect),
+			TolerationSeconds: *toleration.TolerationSeconds,
+		})
+	}
+
 	serviceInfoResponse := binding_constructors.NewServiceInfo(
 		serviceUuidStr,
 		serviceNameStr,
@@ -1095,7 +1199,19 @@ func getServiceInfoFromServiceObj(serviceObj *service.Service) (*kurtosis_core_r
 		publicApiPorts,
 		serviceStatus,
 		serviceInfoContainer,
+		serviceDirPathsToFilesArtifactsList,
+		maxMillicpus,
+		minMillicpus,
+		maxMemoryMegabytes,
+		minMemoryMegabytes,
+		apiUser,
+		apiTolerations,
+		serviceConfig.GetNodeSelectors(),
+		serviceConfig.GetLabels(),
+		serviceConfig.GetTiniEnabled(),
+		serviceConfig.GetTtyEnabled(),
 	)
+
 	return serviceInfoResponse, nil
 }
 
@@ -1150,7 +1266,7 @@ func getTextRepresentation(reader io.Reader, lineCount int) (*string, error) {
 				return nil, stacktrace.NewError("File has no text representation because '%v' is not printable", char)
 			}
 		}
-		textRepresentation.WriteString(fmt.Sprintf("%s\n", line))
+		fmt.Fprintf(&textRepresentation, "%s\n", line)
 	}
 
 	if err := scanner.Err(); err != nil {

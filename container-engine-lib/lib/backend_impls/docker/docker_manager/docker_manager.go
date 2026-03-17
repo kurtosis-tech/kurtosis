@@ -2,7 +2,6 @@
  * Copyright (c) 2021 - present Kurtosis Technologies Inc.
  * All Rights Reserved.
  */
-
 package docker_manager
 
 import (
@@ -25,6 +24,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/api/types/volume"
@@ -157,6 +157,15 @@ const (
 	buildkitSessionSharedKey = ""
 
 	nixCmdPath = "/nix/var/nix/profiles/default/bin/nix"
+
+	//The Docker or Podman network name where all the containers in the engine and logs service context will be added
+	NameOfNetworkToStartEngineAndLogServiceContainersInDocker = "bridge"
+	NameOfNetworkToStartEngineAndLogServiceContainersInPodman = "podman"
+
+	dockerContainerStatusExited = "exited"
+	podmanContainerStatusExited = "stopped"
+
+	defaultContainerStopTimeout = 1 * time.Second
 )
 
 type RestartPolicy string
@@ -188,6 +197,8 @@ type DockerManager struct {
 	// We need to use a specific docker client with no timeout for long-running requests on docker, such as tailing
 	// service logs for a long time, or even downloading large container images than can take longer than the timeout
 	dockerClientNoTimeout *client.Client
+
+	podmanMode bool
 }
 
 /*
@@ -199,6 +210,19 @@ Args:
 	dockerClient: The Docker client that will be used when interacting with the underlying Docker engine the Docker engine.
 */
 func CreateDockerManager(dockerClientOpts []client.Opt) (*DockerManager, error) {
+	return newDockerManager(dockerClientOpts)
+}
+
+func CreatePodmanManager(dockerClientOpts []client.Opt) (*DockerManager, error) {
+	dockerManager, err := newDockerManager(dockerClientOpts)
+	if err != nil {
+		return nil, err // already wrapped
+	}
+	dockerManager.podmanMode = true
+	return dockerManager, nil
+}
+
+func newDockerManager(dockerClientOpts []client.Opt) (*DockerManager, error) {
 	optsWithTimeout := []client.Opt{
 		client.WithTimeout(dockerClientTimeout),
 	}
@@ -215,6 +239,7 @@ func CreateDockerManager(dockerClientOpts []client.Opt) (*DockerManager, error) 
 	return &DockerManager{
 		dockerClient:          dockerClient,
 		dockerClientNoTimeout: dockerClientNoTimeout,
+		podmanMode:            false,
 	}, nil
 }
 
@@ -281,13 +306,13 @@ func (manager *DockerManager) ListNetworks(ctx context.Context) ([]types.Network
 	return networks, nil
 }
 
-func (manager *DockerManager) PruneUnusedImages(ctx context.Context) ([]types.ImageSummary, error) {
+func (manager *DockerManager) PruneUnusedImages(ctx context.Context) ([]image.Summary, error) {
 	unusedImages, err := manager.ListUnusedImages(ctx)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to list unused images")
 	}
 	logrus.Debugf("List of unused images to be pruned '%v'", unusedImages)
-	successfulPrunedImages := []types.ImageSummary{}
+	successfulPrunedImages := []image.Summary{}
 	for _, image := range unusedImages {
 		imagePruneResponse, err := manager.dockerClient.ImageRemove(ctx, image.ID, types.ImageRemoveOptions{}) //nolint:exhaustruct
 		if err != nil {
@@ -306,12 +331,12 @@ func containsSemVer(s string) bool {
 	return matched
 }
 
-func (manager *DockerManager) ListUnusedImages(ctx context.Context) ([]types.ImageSummary, error) {
+func (manager *DockerManager) ListUnusedImages(ctx context.Context) ([]image.Summary, error) {
 	images, err := manager.dockerClient.ImageList(ctx, types.ImageListOptions{}) //nolint:exhaustruct
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to list Docker images")
 	}
-	containers, err := manager.dockerClient.ContainerList(ctx, types.ContainerListOptions{All: true}) //nolint:exhaustruct
+	containers, err := manager.dockerClient.ContainerList(ctx, container.ListOptions{All: true}) //nolint:exhaustruct
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to list Docker images")
 	}
@@ -321,7 +346,7 @@ func (manager *DockerManager) ListUnusedImages(ctx context.Context) ([]types.Ima
 		usedImages[cont.ImageID] = true
 	}
 
-	unusedImages := []types.ImageSummary{}
+	unusedImages := []image.Summary{}
 	for _, image := range images {
 		if _, used := usedImages[image.ID]; used {
 			logrus.Debugf("Skipping image '%v' since its in use", image.ID)
@@ -359,6 +384,18 @@ func (manager *DockerManager) GetNetworksByName(ctx context.Context, name string
 	return networks, nil
 }
 
+func (manager *DockerManager) GetBridgeNetworkName() string {
+	if manager.podmanMode {
+		return NameOfNetworkToStartEngineAndLogServiceContainersInPodman
+	}
+	return NameOfNetworkToStartEngineAndLogServiceContainersInDocker
+}
+
+// IsPodman returns true if the DockerManager is using Podman as the container runtime
+func (manager *DockerManager) IsPodman() bool {
+	return manager.podmanMode
+}
+
 /*
 GetNetworksByLabels
 Gets networks matching the given labels
@@ -391,6 +428,37 @@ func (manager *DockerManager) GetContainerIdsConnectedToNetwork(context context.
 		result = append(result, containerId)
 	}
 	return result, nil
+}
+
+func (manager *DockerManager) GetContainerIPOnNetwork(context context.Context, containerId string, networkId string) (string, error) {
+	inspectResponse, err := manager.dockerClient.NetworkInspect(context, networkId, types.NetworkInspectOptions{
+		Scope:   "",
+		Verbose: false,
+	})
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Failed to get network information for network with ID '%v'", networkId)
+	}
+	for id, c := range inspectResponse.Containers {
+		if id == containerId {
+			ip, _, err := net.ParseCIDR(c.IPv4Address)
+			if err != nil {
+				return "", stacktrace.Propagate(err, "Failed to parse IPv4 address '%s'", c.IPv4Address)
+			}
+			return ip.String(), nil
+		}
+	}
+	return "", stacktrace.NewError("Could not find container '%v' IP on network '%v'.", containerId, networkId)
+}
+
+func (manager *DockerManager) GetNetworkIdByName(ctx context.Context, networkName string) (string, error) {
+	n, err := manager.dockerClient.NetworkInspect(ctx, networkName, types.NetworkInspectOptions{
+		Scope:   "",
+		Verbose: false,
+	})
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Failed to inspect the '%v' network.", networkName)
+	}
+	return n.ID, nil
 }
 
 /*
@@ -481,6 +549,26 @@ func (manager *DockerManager) GetVolumesByLabels(ctx context.Context, labels map
 
 	result := []*volume.Volume{}
 	if resp.Volumes != nil {
+		if manager.podmanMode {
+			// Podman returns volumes that match any of the provided labels (a union match),
+			// whereas Docker only returns volumes that match all labels (an intersection match).
+			// To ensure consistent behavior across both runtimes, we manually filter Podman's results
+			// to include only volumes that match all specified labels.
+			for _, vol := range resp.Volumes {
+				allLabelsMatch := true
+
+				for label, val := range labels {
+					if volValue, exists := vol.Labels[label]; !exists || volValue != val {
+						allLabelsMatch = false
+						break
+					}
+				}
+
+				if allLabelsMatch {
+					result = append(result, vol)
+				}
+			}
+		}
 		result = resp.Volumes
 	}
 
@@ -539,10 +627,12 @@ func (manager *DockerManager) CreateAndStartContainer(
 		return "", nil, stacktrace.Propagate(err, "An error occurred fetching image '%v'", dockerImage)
 	}
 
-	idFilterArgs := filters.NewArgs(filters.KeyValuePair{
-		Key:   networkIdSearchFilterKey,
-		Value: args.networkId,
-	})
+	idFilterArgs := filters.NewArgs(
+		filters.KeyValuePair{
+			Key:   networkIdSearchFilterKey,
+			Value: args.networkId,
+		},
+	)
 	networks, err := manager.getNetworksByFilterArgs(ctx, idFilterArgs)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred checking for the existence of network with ID %v", args.networkId)
@@ -593,7 +683,8 @@ func (manager *DockerManager) CreateAndStartContainer(
 		args.memoryAllocationMegabytes,
 		args.loggingDriverConfig,
 		args.containerInitEnabled,
-		args.restartPolicy)
+		args.restartPolicy,
+		args.devices)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
@@ -647,7 +738,8 @@ func (manager *DockerManager) CreateAndStartContainer(
 	functionFinishedSuccessfully := false
 	defer func() {
 		if !functionFinishedSuccessfully {
-			if err := manager.KillContainer(ctx, containerId); err != nil {
+			// Instead of killing the container, stop it so that logs are still available
+			if err := manager.StopContainer(ctx, containerId, defaultContainerStopTimeout); err != nil {
 				logrus.Error("The container creation function didn't finish successfully, meaning we needed to kill the container we created. However, the killing threw an error:")
 				fmt.Fprintln(logrus.StandardLogger().Out, err)
 				logrus.Errorf("ACTION NEEDED: You'll need to manually kill this container with ID '%v'", containerId)
@@ -668,7 +760,7 @@ func (manager *DockerManager) CreateAndStartContainer(
 			 2) This resize is very important - if we don't do it, then the output will look garbled for
 				 lines longer than the user's terminal
 		*/
-		resizeOpts := types.ResizeOptions{
+		resizeOpts := container.ResizeOptions{
 			Height: args.interactiveModeTtySize.Height,
 			Width:  args.interactiveModeTtySize.Width,
 		}
@@ -804,14 +896,28 @@ func (manager *DockerManager) GetContainerIps(ctx context.Context, containerId s
 		return nil, stacktrace.Propagate(err, "An error occurred inspecting container with ID '%v'", containerId)
 	}
 	allNetworkInfo := resp.NetworkSettings.Networks
-	for _, networkInfo := range allNetworkInfo {
-		containerIps[networkInfo.NetworkID] = networkInfo.IPAddress
+	if manager.podmanMode {
+		for networkKey, networkInfo := range allNetworkInfo {
+			// podman does not return the networkID properly and as such we need to make sure we get it.
+			network, err := manager.dockerClient.NetworkInspect(ctx, networkInfo.NetworkID, types.NetworkInspectOptions{
+				Scope:   "",
+				Verbose: false,
+			})
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred inspecting network: '%v'", networkKey)
+			}
+			containerIps[network.ID] = networkInfo.IPAddress
+		}
+	} else {
+		for _, networkInfo := range allNetworkInfo {
+			containerIps[networkInfo.NetworkID] = networkInfo.IPAddress
+		}
 	}
 	return containerIps, nil
 }
 
 func (manager *DockerManager) AttachToContainer(ctx context.Context, containerId string) (types.HijackedResponse, error) {
-	attachOpts := types.ContainerAttachOptions{
+	attachOpts := container.AttachOptions{
 		Stream:     true,
 		Stdin:      true,
 		Stdout:     true,
@@ -836,16 +942,14 @@ Args:
 	containerId: ID of Docker container to start
 */
 func (manager *DockerManager) StartContainer(context context.Context, containerId string) error {
-	options := types.ContainerStartOptions{
+	options := container.StartOptions{
 		CheckpointID:  "",
 		CheckpointDir: "",
 	}
 	err := manager.dockerClient.ContainerStart(context, containerId, options)
 	if err != nil {
-		containerLogs := manager.getFailedContainerLogsOrErrorString(context, containerId)
-		containerLogsHeader := "\n--------------------- CONTAINER LOGS -----------------------\n"
-		containerLogsFooter := "\n------------------- END CONTAINER LOGS --------------------"
-		return stacktrace.Propagate(err, "Could not start Docker container with ID '%v'; logs are below:%v%v%v", containerId, containerLogsHeader, containerLogs, containerLogsFooter)
+		errorStr := manager.getFormattedFailedContainerLogsOrErrorString(context, containerId)
+		return stacktrace.Propagate(err, "Could not start Docker container with ID '%v'; logs are below:%v", containerId, errorStr)
 	}
 
 	return nil
@@ -908,7 +1012,7 @@ Args:
 	containerId: ID of Docker container to remove
 */
 func (manager *DockerManager) RemoveContainer(ctx context.Context, containerId string) error {
-	removeOpts := &types.ContainerRemoveOptions{
+	removeOpts := &container.RemoveOptions{
 		RemoveVolumes: shouldRemoveAnonymousVolumesWhenRemovingContainers,
 		RemoveLinks:   shouldRemoveLinksWhenRemovingContainers,
 		Force:         shouldKillContainersWhenRemovingContainers,
@@ -972,7 +1076,7 @@ func (manager *DockerManager) GetContainerLogs(
 		return nil, stacktrace.Propagate(err, "An error occurred communicating with docker engine")
 	}
 
-	containerLogOpts := types.ContainerLogsOptions{
+	containerLogOpts := container.LogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
 		Since:      "",
@@ -990,13 +1094,13 @@ func (manager *DockerManager) GetContainerLogs(
 }
 
 /*
-RunExecCommand
+RunUserServiceExecCommands
 Executes the given command inside the container with the given ID, blocking until the command completes
 */
-func (manager *DockerManager) RunExecCommand(context context.Context, containerId string, command []string, logOutput io.Writer) (int32, error) {
+func (manager *DockerManager) RunUserServiceExecCommands(context context.Context, containerId, userId string, command []string, logOutput io.Writer) (int32, error) {
 	dockerClient := manager.dockerClient
 	execConfig := types.ExecConfig{
-		User:         "",
+		User:         userId,
 		Privileged:   false,
 		Tty:          false,
 		ConsoleSize:  nil,
@@ -1294,7 +1398,7 @@ func (manager *DockerManager) FetchLatestImage(ctx context.Context, dockerImage 
 
 func (manager *DockerManager) FetchImage(ctx context.Context, image string, registrySpec *image_registry_spec.ImageRegistrySpec, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
 	var err error
-	var pulledFromRemote bool = true
+	var pulledFromRemote = true
 	logrus.Debugf("Fetching image '%s' with image download mode: %s", image, downloadMode)
 
 	switch image_fetching := downloadMode; image_fetching {
@@ -1553,7 +1657,7 @@ func (manager *DockerManager) CopyFromContainer(ctx context.Context, containerId
 		}
 	}
 
-	tarStreamReadCloser, _, err := manager.dockerClient.CopyFromContainer(
+	tarStreamReadCloser, _, err := manager.dockerClientNoTimeout.CopyFromContainer(
 		ctx,
 		containerId,
 		srcPath)
@@ -1572,6 +1676,13 @@ func (manager *DockerManager) GetAvailableCPUAndMemory(ctx context.Context) (com
 	}
 	// cpu isn't complete on windows but is complete on linux
 	return compute_resources.MemoryInMegaBytes(availableMemoryInBytes), compute_resources.CpuMilliCores(availableCpuInMilliCores), nil
+}
+
+func (manager *DockerManager) getFormattedFailedContainerLogsOrErrorString(ctx context.Context, containerId string) string {
+	containerLogs := manager.getFailedContainerLogsOrErrorString(ctx, containerId)
+	containerLogsHeader := "\n--------------------- CONTAINER LOGS -----------------------\n"
+	containerLogsFooter := "\n------------------- END CONTAINER LOGS --------------------"
+	return containerLogsHeader + containerLogs + containerLogsFooter
 }
 
 // =================================================================================================================
@@ -1714,6 +1825,7 @@ func (manager *DockerManager) getContainerHostConfig(
 	loggingDriverConfig LoggingDriver,
 	useInit bool,
 	restartPolicy RestartPolicy,
+	devices []string,
 ) (hostConfig *container.HostConfig, err error) {
 
 	bindsList := make([]string, 0, len(bindMounts))
@@ -1735,10 +1847,14 @@ func (manager *DockerManager) getContainerHostConfig(
 		case noPublishing:
 			continue
 		case automaticPublishing:
+			hostIp := ""
+			if manager.podmanMode {
+				hostIp = expectedHostIp // podman requires to be 0.0.0.0
+			}
 			portMap[containerPort] = []nat.PortBinding{
 				// Leaving this struct empty will cause Docker to automatically choose an interface IP & port on the host machine
 				{
-					HostIP:   "",
+					HostIP:   hostIp,
 					HostPort: "",
 				},
 			}
@@ -1774,6 +1890,16 @@ func (manager *DockerManager) getContainerHostConfig(
 		securityOptsSlice = append(securityOptsSlice, securityOptStr)
 	}
 
+	if manager.podmanMode {
+		// When running in Podman, we need to explicitly disable SELinux and AppArmor
+		// This avoids permission errors/capability restrictions when mounting host volumes or running
+		// privileged workloads.
+		// Podman applies these by default, unlike Docker.
+		// See: https://docs.podman.io/en/latest/markdown/podman-run.1.html#security-options
+		securityOptsSlice = append(securityOptsSlice, "label=disable")
+		securityOptsSlice = append(securityOptsSlice, "apparmor:unconfined")
+	}
+
 	extraHosts := []string{}
 	if needsToAccessDockerHostMachine {
 		// This explicit specification is necessary because in Docker-for-Linux, the magic "host.docker.internal"
@@ -1801,7 +1927,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		CPURealtimeRuntime:   0,
 		CpusetCpus:           "",
 		CpusetMems:           "",
-		Devices:              nil,
+		Devices:              convertDevicesToDockerDeviceMapping(devices),
 		DeviceCgroupRules:    nil,
 		DeviceRequests:       nil,
 		KernelMemory:         0,
@@ -1844,7 +1970,6 @@ func (manager *DockerManager) getContainerHostConfig(
 	// NOTE: Do NOT use PublishAllPorts here!!!! This will work if a Dockerfile doesn't have an EXPOSE directive, but
 	//  if the Dockerfile *does* have and EXPOSE directive then _only_ the ports with EXPOSE will be published
 	// See also: https://www.ctl.io/developers/blog/post/docker-networking-rules/
-
 	containerHostConfigPtr := &container.HostConfig{
 		Binds:           bindsList,
 		ContainerIDFile: "",
@@ -1852,7 +1977,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		NetworkMode:     container.NetworkMode(networkMode),
 		PortBindings:    portMap,
 		RestartPolicy: container.RestartPolicy{
-			Name:              string(restartPolicy),
+			Name:              container.RestartPolicyMode(restartPolicy),
 			MaximumRetryCount: 0,
 		},
 		AutoRemove:      false,
@@ -1976,7 +2101,7 @@ func (manager *DockerManager) killContainerWithRetriesWhenErrorResponseFromDaemo
 func (manager *DockerManager) removeContainerWithRetriesOnFailureForZombieProcesses(
 	ctx context.Context,
 	containerId string,
-	options *types.ContainerRemoveOptions,
+	options *container.RemoveOptions,
 	maxRetries uint8,
 	timeBetweenRetries time.Duration,
 ) error {
@@ -2028,7 +2153,7 @@ func getHostPortBindingsOnExpectedInterface(hostPortBindingsOnAllInterfaces nat.
 }
 
 func (manager *DockerManager) getContainersByFilterArgs(ctx context.Context, filterArgs filters.Args, shouldShowStoppedContainers bool) ([]*docker_manager_types.Container, error) {
-	opts := types.ContainerListOptions{
+	opts := container.ListOptions{
 		Size:    false,
 		All:     shouldShowStoppedContainers,
 		Latest:  false,
@@ -2062,13 +2187,20 @@ func (manager *DockerManager) getContainersByFilterArgs(ctx context.Context, fil
 // 2- the container runs successfully and exited with 0, in this case this method will also return true and nil
 // 3- the container dies, in this case this method will return false and the error with the container logs
 func (manager *DockerManager) didContainerStartSuccessfully(ctx context.Context, containerId string, dockerImage string) (bool, error) {
-
 	containerJson, err := manager.InspectContainer(ctx, containerId)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting container JSON info for container with ID '%v'", containerId)
 	}
 	containerState := containerJson.State
-	containerStatus, err := getContainerStatusByDockerContainerState(containerState.Status)
+
+	logrus.Debugf("Container with id '%v' has status '%v' and exited with exit code '%v'", containerId, containerState.Status, containerState.ExitCode)
+	var containerStatusStr string
+	if manager.IsPodman() && containerState.Status == podmanContainerStatusExited {
+		containerStatusStr = dockerContainerStatusExited
+	} else {
+		containerStatusStr = containerState.Status
+	}
+	containerStatus, err := getContainerStatusByDockerContainerState(containerStatusStr)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting ContainerStatus from Docker container state '%v'", containerState.Status)
 	}
@@ -2085,10 +2217,8 @@ func (manager *DockerManager) didContainerStartSuccessfully(ctx context.Context,
 	}
 
 	if !isContainerRunning {
-		containerLogs := manager.getFailedContainerLogsOrErrorString(ctx, containerId)
-		containerLogsHeader := "\n--------------------- CONTAINER LOGS -----------------------\n"
-		containerLogsFooter := "\n------------------- END CONTAINER LOGS --------------------"
-		return false, stacktrace.NewError("Container '%v' (with image '%v') die with a non zero exit code rapidly after it was started. This likely indicates a misconfiguration with how the container was started. Container should either exit gracefully or keep running for Kurtosis to consider it in a good state; logs are below:%v%v%v", containerId, dockerImage, containerLogsHeader, containerLogs, containerLogsFooter)
+		errorStr := manager.getFormattedFailedContainerLogsOrErrorString(ctx, containerId)
+		return false, stacktrace.NewError("Container '%v' (with image '%v') die with a non zero exit code rapidly after it was started. This likely indicates a misconfiguration with how the container was started. Container should either exit gracefully or keep running for Kurtosis to consider it in a good state; logs are below:%v", containerId, dockerImage, errorStr)
 	}
 
 	return true, nil
@@ -2128,6 +2258,7 @@ func newContainerFromDockerContainer(dockerContainer types.ContainerJSON) (*dock
 		dockerContainer.Config.Entrypoint,
 		dockerContainer.Config.Cmd,
 		containerEnvArgs,
+		dockerContainer.NetworkSettings.IPAddress,
 	)
 
 	return newContainer, nil
@@ -2237,6 +2368,23 @@ func convertMillicpusToNanoCPUs(value uint64) uint64 {
 	return value * millicpusToNanoCPUsFactor
 }
 
+// convertDevicesToDockerDeviceMapping converts device paths (e.g., "/dev/tpm0") to Docker's DeviceMapping format.
+// Each device is mounted with the same path in the container as on the host, with read-write-mknod permissions.
+func convertDevicesToDockerDeviceMapping(devices []string) []container.DeviceMapping {
+	if len(devices) == 0 {
+		return nil
+	}
+	deviceMappings := make([]container.DeviceMapping, 0, len(devices))
+	for _, devicePath := range devices {
+		deviceMappings = append(deviceMappings, container.DeviceMapping{
+			PathOnHost:        devicePath,
+			PathInContainer:   devicePath,
+			CgroupPermissions: "rwm", // read, write, mknod
+		})
+	}
+	return deviceMappings
+}
+
 func getEndpointSettingsForIpAddress(ipAddress string, alias string) *network.EndpointSettings {
 	ipamConfig := &network.EndpointIPAMConfig{
 		IPv4Address:  ipAddress,
@@ -2258,6 +2406,7 @@ func getEndpointSettingsForIpAddress(ipAddress string, alias string) *network.En
 		GlobalIPv6PrefixLen: 0,
 		MacAddress:          "",
 		DriverOpts:          nil,
+		DNSNames:            []string{},
 	}
 
 	if alias != emptyNetworkAlias {
@@ -2279,23 +2428,52 @@ func pullImage(dockerClient *client.Client, imageName string, registrySpec *imag
 		PrivilegeFunc: nil,
 		Platform:      platform,
 	}
-	if registrySpec != nil {
-		authConfig := registry.AuthConfig{
-			Username:      registrySpec.GetUsername(),
-			Password:      registrySpec.GetPassword(),
-			Email:         "",
-			Auth:          "",
-			ServerAddress: registrySpec.GetRegistryAddr(),
-			IdentityToken: "",
-			RegistryToken: "",
-		}
-		encodedAuthConfig, err := registry.EncodeAuthConfig(authConfig)
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred while converting registry auth to base64"), false
-		}
-		imagePullOptions.RegistryAuth = encodedAuthConfig
 
+	// Try to obtain the auth configuration from the docker config file
+	authConfig, err := GetAuthFromDockerConfig(imageName)
+	if err != nil {
+		logrus.Warnf("An error occurred while getting auth config for image: %s: %s", imageName, err.Error())
+		logrus.Warnf("Falling back to pulling image with no auth config.")
 	}
+
+	if authConfig != nil {
+		authFromConfig, err := registry.EncodeAuthConfig(*authConfig)
+		if err != nil {
+			logrus.Warnf("An error occurred while encoding auth config for image: %s: %s", imageName, err.Error())
+			logrus.Warnf("Falling back to pulling image with no auth config.")
+		} else {
+			imagePullOptions.RegistryAuth = authFromConfig
+			logrus.Infof("Using system authentication to pull image: %s", imageName)
+		}
+	}
+
+	// If the registry spec is defined, use that for authentication
+	if registrySpec != nil {
+		username := registrySpec.GetUsername()
+		password := registrySpec.GetPassword()
+		registryAddr := registrySpec.GetRegistryAddr()
+		// Verify that the username, password, and registry address are not empty
+		if username != "" && password != "" && registryAddr != "" {
+			authConfig := registry.AuthConfig{
+				Username:      username,
+				Password:      password,
+				Email:         "",
+				Auth:          "",
+				ServerAddress: registryAddr,
+				IdentityToken: "",
+				RegistryToken: "",
+			}
+			encodedAuthConfig, err := registry.EncodeAuthConfig(authConfig)
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred while converting registry auth to base64"), false
+			}
+			imagePullOptions.RegistryAuth = encodedAuthConfig
+			logrus.Infof("Using ImageRegistrySpec authentication to pull image: %s", imageName)
+		} else {
+			logrus.Warnf("Registry spec is defined but username, password, or registry address is empty")
+		}
+	}
+
 	out, err := dockerClient.ImagePull(pullImageCtx, imageName, imagePullOptions)
 	if err != nil {
 		return stacktrace.Propagate(err, "Tried pulling image '%v' with platform '%v' but failed", imageName, platform), false
@@ -2328,7 +2506,7 @@ func getFreeMemoryAndCPU(ctx context.Context, dockerClient *client.Client) (comp
 	if err != nil {
 		return 0, 0, stacktrace.Propagate(err, "An error occurred while running info on docker")
 	}
-	containers, err := dockerClient.ContainerList(ctx, types.ContainerListOptions{
+	containers, err := dockerClient.ContainerList(ctx, container.ListOptions{
 		Size:    false,
 		All:     false,
 		Latest:  false,

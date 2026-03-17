@@ -8,11 +8,11 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/file_layout"
 	"io/fs"
 	"math"
 	"net"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"path"
 	"path/filepath"
@@ -32,20 +32,20 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/configs"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
 	em_api "github.com/kurtosis-tech/kurtosis/enclave-manager/server"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args/kurtosis_backend_config"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/kurtosis_backend"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/file_layout"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_file_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/stream_logs_strategy"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
-	restApi "github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/streaming"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/utils"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/analytics_logger"
@@ -53,7 +53,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/source"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 	echomiddleware "github.com/labstack/echo/v4/middleware"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
@@ -73,6 +72,7 @@ const (
 	functionPathSeparator     = "."
 	emptyFunctionName         = ""
 	webappPortAddr            = ":9711"
+	pprofPath                 = "/debug/pprof/"
 
 	remoteBackendConfigFilename = "remote_backend_config.json"
 	pathToStaticFolder          = "/run/webapp"
@@ -180,7 +180,7 @@ func runMain() error {
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing a duration from provided log retention period string: %v", serverArgs.LogRetentionPeriod)
 	}
-	logsDatabaseClient := getLogsDatabaseClient(serverArgs.KurtosisBackendType, kurtosisBackend, logRetentionPeriodDuration)
+	logsDatabaseClient := getLogsDatabaseClient(kurtosisBackend, logRetentionPeriodDuration)
 	logsDatabaseClient.StartLogFileManagement(ctx)
 
 	enclaveManager, err := getEnclaveManager(
@@ -195,7 +195,10 @@ func runMain() error {
 		serverArgs.IsCI,
 		serverArgs.CloudUserID,
 		serverArgs.CloudInstanceID,
-		serverArgs.KurtosisLocalBackendConfig)
+		serverArgs.KurtosisLocalBackendConfig,
+		serverArgs.LogsCollectorFilters,
+		serverArgs.LogsCollectorParsers,
+	)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create an enclave manager for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
 	}
@@ -213,8 +216,9 @@ func runMain() error {
 		}
 		logrus.Debugf("Created environment js file with content: \n%s", envJsFileContent)
 
+		handler := http.NewServeMux()
 		fileServer := http.FileServer(http.Dir(pathToStaticFolder))
-		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handler.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			path, err := filepath.Abs(r.URL.Path)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
@@ -236,6 +240,7 @@ func runMain() error {
 			w.Header().Add("Cache-Control", "no-store")
 			fileServer.ServeHTTP(w, r)
 		})
+		handler.Handle(pprofPath, http.HandlerFunc(http.DefaultServeMux.ServeHTTP))
 
 		err := http.ListenAndServe(webappPortAddr, handler)
 		if err != nil {
@@ -334,11 +339,15 @@ func getEnclaveManager(
 	cloudUserId metrics_client.CloudUserID,
 	cloudInstanceId metrics_client.CloudInstanceID,
 	kurtosisLocalBackendConfig interface{},
+	logsCollectorFilters []logs_collector.Filter,
+	logsCollectorParsers []logs_collector.Parser,
 ) (*enclave_manager.EnclaveManager, error) {
 	var apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier
 	switch kurtosisBackendType {
 	case args.KurtosisBackendType_Docker:
 		apiContainerKurtosisBackendConfigSupplier = api_container_launcher.NewDockerKurtosisBackendConfigSupplier()
+	case args.KurtosisBackendType_Podman:
+		apiContainerKurtosisBackendConfigSupplier = api_container_launcher.NewPodmanKurtosisBackendConfigSupplier()
 	case args.KurtosisBackendType_Kubernetes:
 		kurtosisLocalBackendConfigKubernetesType, ok := kurtosisLocalBackendConfig.(kurtosis_backend_config.KubernetesBackendConfig)
 		if !ok {
@@ -362,6 +371,8 @@ func getEnclaveManager(
 		isCI,
 		cloudUserId,
 		cloudInstanceId,
+		logsCollectorFilters,
+		logsCollectorParsers,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating enclave manager for backend type '%+v' using pool-size '%v' and engine version '%v'", kurtosisBackendType, poolSize, engineVersion)
@@ -378,6 +389,11 @@ func getKurtosisBackend(ctx context.Context, kurtosisBackendType args.KurtosisBa
 		kurtosisBackend, err = backend_creator.GetDockerKurtosisBackend(apiContainerModeArgsForKurtosisBackend, remoteBackendConfigMaybe)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
+		}
+	case args.KurtosisBackendType_Podman:
+		kurtosisBackend, err = backend_creator.GetPodmanKurtosisBackend(apiContainerModeArgsForKurtosisBackend, remoteBackendConfigMaybe)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting local Podman Kurtosis backend")
 		}
 	case args.KurtosisBackendType_Kubernetes:
 		if remoteBackendConfigMaybe != nil {
@@ -404,27 +420,22 @@ func getKurtosisBackend(ctx context.Context, kurtosisBackendType args.KurtosisBa
 	return kurtosisBackend, nil
 }
 
-// if cluster is docker, return logs client for centralized logging, otherwise use logs db of kurtosis backend which uses k8s logs under the hood
-func getLogsDatabaseClient(kurtosisBackendType args.KurtosisBackendType, kurtosisBackend backend_interface.KurtosisBackend, logRetentionPeriod time.Duration) centralized_logs.LogsDatabaseClient {
+// getLogsDatabaseClient returns a logs db client that uses a persistent volume for storage, retrieval, and streaming of logs
+func getLogsDatabaseClient(kurtosisBackend backend_interface.KurtosisBackend, logRetentionPeriod time.Duration) centralized_logs.LogsDatabaseClient {
 	var logsDatabaseClient centralized_logs.LogsDatabaseClient
-	switch kurtosisBackendType {
-	case args.KurtosisBackendType_Docker:
-		realTime := logs_clock.NewRealClock()
+	realTime := logs_clock.NewRealClock()
 
-		logRetentionPeriodInWeeks := int(math.Ceil(logRetentionPeriod.Hours() / float64(numHoursInAWeek)))
-		if logRetentionPeriodInWeeks < 1 {
-			logRetentionPeriodInWeeks = 1
-		}
-		logrus.Infof("Setting log retention period to '%v' week(s).", logRetentionPeriodInWeeks)
-		osFs := volume_filesystem.NewOsVolumeFilesystem()
-		perWeekFileLayout := file_layout.NewPerWeekFileLayout(realTime)
-		logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, osFs, perWeekFileLayout, realTime, logRetentionPeriodInWeeks)
-		perWeekStreamLogsStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(realTime, logRetentionPeriodInWeeks)
-
-		logsDatabaseClient = persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs, logFileManager, perWeekStreamLogsStrategy)
-	case args.KurtosisBackendType_Kubernetes:
-		logsDatabaseClient = kurtosis_backend.NewKurtosisBackendLogsDatabaseClient(kurtosisBackend)
+	logRetentionPeriodInWeeks := int(math.Ceil(logRetentionPeriod.Hours() / float64(numHoursInAWeek)))
+	if logRetentionPeriodInWeeks < 1 {
+		logRetentionPeriodInWeeks = 1
 	}
+	logrus.Infof("Setting log retention period to '%v' week(s).", logRetentionPeriodInWeeks)
+	osFs := volume_filesystem.NewOsVolumeFilesystem()
+	perWeekFileLayout := file_layout.NewPerWeekFileLayout(realTime)
+	logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, osFs, perWeekFileLayout, realTime, logRetentionPeriodInWeeks)
+	perWeekStreamLogsStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(realTime, logRetentionPeriodInWeeks)
+
+	logsDatabaseClient = persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs, logFileManager, perWeekStreamLogsStrategy)
 	return logsDatabaseClient
 }
 
@@ -461,13 +472,13 @@ func restApiServer(
 	logrus.Infof("Setting-up CORS policy to accept requests from origins: %v", allowOrigins)
 
 	// nolint:exhaustruct
-	echoApiRouter.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+	echoApiRouter.Use(echomiddleware.CORSWithConfig(echomiddleware.CORSConfig{
 		AllowOrigins: allowOrigins,
 		AllowHeaders: defaultCORSHeaders,
 	}))
 
 	// ============================== Engine Management API ======================================
-	engineRuntime := restApi.EngineRuntime{
+	engineRuntime := server.EngineRuntime{
 		ImageVersionTag: serverArgs.ImageVersionTag,
 		EnclaveManager:  enclave_manager,
 		LogsDbClient:    logsDatabaseClient,
@@ -481,7 +492,7 @@ func restApiServer(
 		AllowedOrigins: allowOrigins,
 		AllowedMethods: defaultCORSHeaders,
 	})
-	webSocketRuntime := restApi.WebSocketRuntime{
+	webSocketRuntime := server.WebSocketRuntime{
 		ImageVersionTag:             serverArgs.ImageVersionTag,
 		EnclaveManager:              enclave_manager,
 		MetricsUserID:               serverArgs.MetricsUserID,
@@ -494,7 +505,7 @@ func restApiServer(
 	loggingApi.RegisterHandlers(echoApiRouter, webSocketRuntime)
 
 	// ============================== Engine Management API ======================================
-	enclaveRuntime, err := restApi.NewEnclaveRuntime(ctx, *enclave_manager, asyncStarlarkLogs, false)
+	enclaveRuntime, err := server.NewEnclaveRuntime(ctx, *enclave_manager, asyncStarlarkLogs, false)
 	if err != nil {
 		newErr := stacktrace.Propagate(err, "Failed to initialize %T", enclaveRuntime)
 		return newErr

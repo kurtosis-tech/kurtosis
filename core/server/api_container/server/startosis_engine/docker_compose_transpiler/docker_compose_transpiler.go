@@ -347,7 +347,7 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services, packag
 		// Finally, create Starlark Service Config object based on kwargs
 		argumentValuesSet, interpretationErr := builtin_argument.CreateNewArgumentValuesSet(
 			service_config.ServiceConfigTypeName,
-			service_config.NewServiceConfigType().KurtosisBaseBuiltin.Arguments,
+			service_config.NewServiceConfigType().Arguments,
 			[]starlark.Value{},
 			serviceConfigKwargs,
 		)
@@ -390,7 +390,7 @@ func getStarlarkImageBuildSpec(composeBuild *types.BuildConfig, serviceName stri
 
 	imageBuildSpecArgumentValuesSet, interpretationErr := builtin_argument.CreateNewArgumentValuesSet(
 		service_config.ImageBuildSpecTypeName,
-		service_config.NewImageBuildSpecType().KurtosisBaseBuiltin.Arguments,
+		service_config.NewImageBuildSpecType().Arguments,
 		[]starlark.Value{},
 		imageBuildSpecKwargs,
 	)
@@ -580,7 +580,7 @@ func getStarlarkPersistentDirectory(persistenceKey string) (starlark.Value, erro
 
 	argumentValuesSet, interpretationErr := builtin_argument.CreateNewArgumentValuesSet(
 		directory.DirectoryTypeName,
-		directory.NewDirectoryType().KurtosisBaseBuiltin.Arguments,
+		directory.NewDirectoryType().Arguments,
 		[]starlark.Value{},
 		directoryKwargs,
 	)

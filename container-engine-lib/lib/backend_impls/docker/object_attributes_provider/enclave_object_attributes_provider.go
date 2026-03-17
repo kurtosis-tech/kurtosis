@@ -237,7 +237,19 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContain
 	}
 	labels[docker_label_key.ContainerTypeDockerLabelKey] = label_value_consts.UserServiceContainerTypeDockerLabelValue
 	labels[docker_label_key.PortSpecsDockerLabelKey] = serializedPortsSpec
+
 	labels[docker_label_key.PrivateIPDockerLabelKey] = privateIpLabelValue
+	serviceUuidLabel, err := docker_label_value.CreateNewDockerLabelValue(serviceUuidStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from GUID string '%v'", serviceUuidStr)
+	}
+	labels[docker_label_key.LogsServiceUUIDDockerLabelKey] = serviceUuidLabel
+
+	serviceNameLabel, err := docker_label_value.CreateNewDockerLabelValue(serviceNameStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from service name string '%v'", serviceNameStr)
+	}
+	labels[docker_label_key.LogsServiceNameDockerLabelKey] = serviceNameLabel
 
 	// add user custom label
 	for userLabelKey, userLabelValue := range userLabels {
@@ -487,14 +499,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveOb
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from GUID string '%v'", guid)
 	}
-	shortGuidStr := uuid_generator.ShortenedUUIDString(guid)
-	shortGuidLabelValue, err := docker_label_value.CreateNewDockerLabelValue(shortGuidStr)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a short GUID Docker label value from GUID string '%v'", guid)
-	}
 	labels[docker_label_key.GUIDDockerLabelKey] = guidLabelValue
-	labels[docker_label_key.LogsServiceUUIDDockerLabelKey] = guidLabelValue
-	labels[docker_label_key.LogsServiceShortUUIDDockerLabelKey] = shortGuidLabelValue
 	return labels, nil
 }
 
@@ -508,7 +513,6 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveOb
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from ID string '%v'", id)
 	}
 	labels[docker_label_key.IDDockerLabelKey] = idLabelValue
-	labels[docker_label_key.LogsServiceNameDockerLabelKey] = idLabelValue
 	return labels, nil
 }
 

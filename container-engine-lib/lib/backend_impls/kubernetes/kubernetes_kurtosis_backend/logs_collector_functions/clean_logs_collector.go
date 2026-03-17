@@ -1,0 +1,27 @@
+package logs_collector_functions
+
+import (
+	"context"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
+	"github.com/kurtosis-tech/stacktrace"
+)
+
+func CleanLogsCollector(
+	ctx context.Context,
+	logsCollectorDaemonSet LogsCollectorDaemonSet,
+	kubernetesManager *kubernetes_manager.KubernetesManager) error {
+	k8sResources, err := getLogsCollectorKubernetesResourcesForCluster(ctx, kubernetesManager)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting logs collector kubernetes resources for cluster.")
+	}
+
+	if k8sResources.daemonSet == nil {
+		return nil
+	}
+
+	if err := logsCollectorDaemonSet.Clean(ctx, k8sResources.daemonSet, kubernetesManager); err != nil {
+		return stacktrace.Propagate(err, "An error occurred cleaning logs collector daemon set '%v'", k8sResources.daemonSet.Name)
+	}
+
+	return nil
+}

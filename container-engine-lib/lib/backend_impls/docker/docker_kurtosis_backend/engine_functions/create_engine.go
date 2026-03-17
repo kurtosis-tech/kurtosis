@@ -3,8 +3,11 @@ package engine_functions
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/github_auth_storage_creator"
 	"time"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/docker_config_storage_creator"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/github_auth_storage_creator"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
@@ -29,9 +32,9 @@ const (
 	enclaveManagerUIPort                        = 9711
 	enclaveManagerAPIPort                       = 8081
 	engineDebugServerPort                       = 50102 // in ClI this is 50101 and 50103 for the APIC
+	defaultHttpLogsAggregatorPortNum            = 8686
 	maxWaitForEngineAvailabilityRetries         = 40
 	timeBetweenWaitForEngineAvailabilityRetries = 2 * time.Second
-	logsStorageDirPath                          = "/var/log/kurtosis/"
 )
 
 func CreateEngine(
@@ -42,6 +45,8 @@ func CreateEngine(
 	envVars map[string]string,
 	shouldStartInDebugMode bool,
 	gitAuthToken string,
+	sinks logs_aggregator.Sinks,
+	shouldEnablePersistentVolumeLogsCollection bool,
 	dockerManager *docker_manager.DockerManager,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 ) (
@@ -101,8 +106,12 @@ func CreateEngine(
 	_, removeLogsAggregatorFunc, err := logs_aggregator_functions.CreateLogsAggregator(
 		ctx,
 		logsAggregatorContainer,
+		defaultHttpLogsAggregatorPortNum,
+		sinks,
+		shouldEnablePersistentVolumeLogsCollection,
 		dockerManager,
-		objAttrsProvider)
+		objAttrsProvider,
+	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err,
 			"An error occurred attempting to create logging components for engine with GUID '%v' in Docker network with network id '%v'.", engineGuidStr, targetNetworkId)
@@ -121,7 +130,8 @@ func CreateEngine(
 		engineGuid,
 		reverseProxyContainer,
 		dockerManager,
-		objAttrsProvider)
+		objAttrsProvider,
+	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err,
 			"An error occurred attempting to create reverse proxy for engine with GUID '%v' in Docker network with network id '%v'.", engineGuidStr, targetNetworkId)
@@ -249,14 +259,38 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred creating GitHub auth storage.")
 	}
 
+	// Configure Docker Config by writing the provided config files to a volume that's accessible by the engine
+	dockerConfigStorageVolObjAttrs, err := objAttrsProvider.ForDockerConfigStorageVolume()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred retrieving object attributes for GitHub auth storage.")
+	}
+	dockerConfigStorageVolNameStr := dockerConfigStorageVolObjAttrs.GetName().GetString()
+	dockerConfigStorageVolLabelStrs := map[string]string{}
+	for labelKey, labelValue := range dockerConfigStorageVolObjAttrs.GetLabels() {
+		dockerConfigStorageVolLabelStrs[labelKey.GetString()] = labelValue.GetString()
+	}
+	// This volume is created idempotently (like logs storage volume) and just write the token to the file everytime the engine starts
+	if err = dockerManager.CreateVolume(ctx, dockerConfigStorageVolNameStr, dockerConfigStorageVolLabelStrs); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating Docker config storage volume.")
+	}
+	logrus.Tracef("Creating Docker config storage")
+	err = docker_config_storage_creator.CreateDockerConfigStorage(ctx, targetNetworkId, dockerConfigStorageVolNameStr, consts.DockerConfigStorageDirPath, dockerManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating Docker config storage.")
+	}
+
+	// Get the correct socket path based on DOCKER_HOST or runtime (Docker/Podman)
+	hostSocketPath := shared_helpers.GetDockerSocketPath(dockerManager.IsPodman())
 	bindMounts := map[string]string{
-		// Necessary so that the engine server can interact with the Docker engine
-		consts.DockerSocketFilepath: consts.DockerSocketFilepath,
+		// Necessary so that the engine server can interact with the Docker/Podman engine
+		// Map the host socket to the standard location inside the container
+		hostSocketPath: consts.DockerSocketFilepath,
 	}
 
 	volumeMounts := map[string]string{
-		logsStorageVolNameStr:       logsStorageDirPath,
-		githubAuthStorageVolNameStr: consts.GitHubAuthStorageDirPath,
+		logsStorageVolNameStr:         logsAggregatorContainer.GetLogsBaseDirPath(),
+		githubAuthStorageVolNameStr:   consts.GitHubAuthStorageDirPath,
+		dockerConfigStorageVolNameStr: consts.DockerConfigStorageDirPath,
 	}
 
 	if serverArgs.OnBastionHost {
@@ -274,6 +308,11 @@ func CreateEngine(
 	for labelKey, labelValue := range engineAttrs.GetLabels() {
 		labelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
+
+	// Pass the host's Docker socket path to the engine for API container bind mounts
+	// We use a separate env var because DOCKER_HOST inside the engine should point to /var/run/docker.sock
+	hostSocketPath = shared_helpers.GetDockerSocketPath(dockerManager.IsPodman())
+	envVars["HOST_DOCKER_SOCKET"] = hostSocketPath
 
 	createAndStartArgsBuilder := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		containerImageAndTag,

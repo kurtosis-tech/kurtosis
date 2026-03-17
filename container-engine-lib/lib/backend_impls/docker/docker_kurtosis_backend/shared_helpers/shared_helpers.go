@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
 	"io"
 	"net"
 	"os"
@@ -13,6 +12,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
 
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
@@ -264,6 +265,20 @@ func GetIpAndPortInfoFromContainer(
 	}
 
 	for portId, privatePortSpec := range privatePortSpecs {
+		// If this is a UDP port and there's no host binding for it, skip it
+		// This happens when publish_udp=false - UDP ports are not published to the host
+		if privatePortSpec.GetTransportProtocol() == port_spec.TransportProtocol_UDP {
+			dockerPrivatePort, err := GetDockerPortFromPortSpec(privatePortSpec)
+			if err != nil {
+				return nil, nil, nil, nil, stacktrace.Propagate(err,
+					"An error occurred creating Docker port for private port spec '%+v'", privatePortSpec)
+			}
+			if _, found := hostMachinePortBindings[dockerPrivatePort]; !found {
+				// UDP port wasn't published (publish_udp=false), skip it
+				continue
+			}
+		}
+
 		portPublicIp, publicPortSpec, err := GetPublicPortBindingFromPrivatePortSpec(privatePortSpec, hostMachinePortBindings)
 		if err != nil {
 			return nil, nil, nil, nil, stacktrace.Propagate(
@@ -324,19 +339,19 @@ func GetMatchingUserServiceObjsAndDockerResourcesNoMutex(
 	resultServiceObjs := map[service.ServiceUUID]*service.Service{}
 	resultDockerResources := map[service.ServiceUUID]*UserServiceDockerResources{}
 	for uuid, serviceObj := range matchingServiceObjs {
-		if filters.UUIDs != nil && len(filters.UUIDs) > 0 {
+		if len(filters.UUIDs) > 0 {
 			if _, found := filters.UUIDs[serviceObj.GetRegistration().GetUUID()]; !found {
 				continue
 			}
 		}
 
-		if filters.Names != nil && len(filters.Names) > 0 {
+		if len(filters.Names) > 0 {
 			if _, found := filters.Names[serviceObj.GetRegistration().GetName()]; !found {
 				continue
 			}
 		}
 
-		if filters.Statuses != nil && len(filters.Statuses) > 0 {
+		if len(filters.Statuses) > 0 {
 			if _, found := filters.Statuses[serviceObj.GetContainer().GetStatus()]; !found {
 				continue
 			}
@@ -367,10 +382,10 @@ func WaitForPortAvailabilityUsingNetstat(
 	maxRetries uint,
 	timeBetweenRetries time.Duration,
 ) error {
+	portHex := fmt.Sprintf("%04X", portSpec.GetNumber())
 	commandStr := fmt.Sprintf(
-		"[ -n \"$(netstat -anp %v | grep LISTEN | grep %v)\" ]",
-		strings.ToLower(portSpec.GetTransportProtocol().String()),
-		portSpec.GetNumber(),
+		"grep -i ':%s ' /proc/net/tcp /proc/net/tcp6 2>/dev/null | grep -qi ' 0A '",
+		portHex,
 	)
 	execCmd := []string{
 		"sh",
@@ -379,13 +394,13 @@ func WaitForPortAvailabilityUsingNetstat(
 	}
 	for i := uint(0); i < maxRetries; i++ {
 		outputBuffer := &bytes.Buffer{}
-		exitCode, err := dockerManager.RunExecCommand(ctx, containerId, execCmd, outputBuffer)
+		exitCode, err := dockerManager.RunUserServiceExecCommands(ctx, containerId, "", execCmd, outputBuffer)
 		if err == nil {
 			if exitCode == netstatSuccessExitCode {
 				return nil
 			}
 			logrus.Debugf(
-				"Netstat availability-waiting command '%v' returned without a Docker error, but exited with non-%v exit code '%v' and logs:\n%v",
+				"Port availability command '%v' returned without a Docker error, but exited with non-%v exit code '%v' and logs:\n%v",
 				commandStr,
 				netstatSuccessExitCode,
 				exitCode,
@@ -393,14 +408,14 @@ func WaitForPortAvailabilityUsingNetstat(
 			)
 		} else {
 			logrus.Debugf(
-				"Netstat availability-waiting command '%v' experienced a Docker error:\n%v",
+				"Port availability command '%v' experienced a Docker error:\n%v",
 				commandStr,
 				err,
 			)
 		}
 
 		// Tiny optimization to not sleep if we're not going to run the loop again
-		if i < maxRetries {
+		if i < maxRetries-1 {
 			time.Sleep(timeBetweenRetries)
 		}
 	}
@@ -417,24 +432,27 @@ func GetEngineAndLogsComponentsNetwork(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
 ) (*types.Network, error) {
-	matchingNetworks, err := dockerManager.GetNetworksByName(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn)
+	bridgeNetworkName := dockerManager.GetBridgeNetworkName()
+	matchingNetworks, err := dockerManager.GetNetworksByName(ctx, bridgeNetworkName)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred getting networks matching the network we want to start the engine in, '%v'",
-			consts.NameOfNetworkToStartEngineAndLogServiceContainersIn,
+			bridgeNetworkName,
 		)
 	}
 	numMatchingNetworks := len(matchingNetworks)
-	if numMatchingNetworks == 0 && numMatchingNetworks > 1 {
+	if numMatchingNetworks > 1 {
 		return nil, stacktrace.NewError(
 			"Expected exactly one network matching the name of the network that we want to start the engine in, '%v', but got %v",
-			consts.NameOfNetworkToStartEngineAndLogServiceContainersIn,
+			bridgeNetworkName,
 			numMatchingNetworks,
 		)
 	}
-	targetNetwork := matchingNetworks[0]
-	return targetNetwork, nil
+	if numMatchingNetworks == 0 {
+		return nil, stacktrace.NewError("%s", fmt.Sprintf("No matching network found with the configured name: %v", bridgeNetworkName))
+	}
+	return matchingNetworks[0], nil
 }
 
 func DumpContainers(ctx context.Context, dockerManager *docker_manager.DockerManager, containers []*types.Container, outputDirpath string) error {
@@ -493,7 +511,7 @@ func DumpContainers(ctx context.Context, dockerManager *docker_manager.DockerMan
 		}
 
 		// NOTE: We don't use stacktrace here because the actual stacktraces we care about are the ones from the threads!
-		return fmt.Errorf("The following errors occurred when trying to dump information :\n%v",
+		return fmt.Errorf("the following errors occurred when trying to dump information :\n%v",
 			strings.Join(allIndexedResultErrStrs, "\n\n"))
 	}
 
@@ -767,4 +785,24 @@ func dumpContainerInfo(
 	}
 
 	return nil
+}
+
+// GetDockerSocketPath returns the Docker socket path to use, checking DOCKER_HOST env var first,
+// then falling back to appropriate defaults for Docker/Podman
+func GetDockerSocketPath(isPodman bool) string {
+	// Check if DOCKER_HOST environment variable is set
+	dockerHost := os.Getenv("DOCKER_HOST")
+	if dockerHost != "" {
+		// Extract socket path from DOCKER_HOST (e.g., "unix:///path/to/socket" -> "/path/to/socket")
+		if strings.HasPrefix(dockerHost, "unix://") {
+			return strings.TrimPrefix(dockerHost, "unix://")
+		}
+		// If DOCKER_HOST is set but not a unix socket, fall back to defaults
+	}
+
+	// Fall back to default paths based on Docker/Podman
+	if isPodman {
+		return "/run/user/1020/podman/podman.sock"
+	}
+	return consts.DockerSocketFilepath
 }

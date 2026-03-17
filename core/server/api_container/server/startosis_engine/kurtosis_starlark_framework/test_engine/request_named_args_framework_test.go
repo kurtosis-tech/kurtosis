@@ -2,6 +2,11 @@ package test_engine
 
 import (
 	"fmt"
+	"io"
+	"net/http"
+	"strings"
+	"testing"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/request"
@@ -10,10 +15,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
-	"io"
-	"net/http"
-	"strings"
-	"testing"
 )
 
 const (
@@ -27,6 +28,8 @@ const (
 	requestResponseBody = `{"value": "Hello World!"}`
 )
 
+var requestTestCaseService *service.Service = getService(requestTestCaseServiceName)
+
 type requestWithNamedArgsTestCase struct {
 	*testing.T
 	serviceNetwork    *service_network.MockServiceNetwork
@@ -34,9 +37,17 @@ type requestWithNamedArgsTestCase struct {
 }
 
 func (suite *KurtosisPlanInstructionTestSuite) TestRequestWithNamedArgs() {
-	suite.serviceNetwork.EXPECT().HttpRequestService(
+	suite.serviceNetwork.EXPECT().GetService(
 		mock.Anything,
 		string(requestTestCaseServiceName),
+	).Times(1).Return(
+		requestTestCaseService,
+		nil,
+	)
+
+	suite.serviceNetwork.EXPECT().HttpRequestService(
+		mock.Anything,
+		requestTestCaseService,
 		requestPortId,
 		requestMethod,
 		requestContentType,

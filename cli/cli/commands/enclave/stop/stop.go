@@ -81,7 +81,7 @@ func run(
 		)
 		// We use this rather than stacktrace because stacktrace gets messy
 		return fmt.Errorf(
-			"One or more errors occurred when stopping enclaves:\n%v",
+			"one or more errors occurred when stopping enclaves:\n%v",
 			joinedErrorsStr,
 		)
 	}

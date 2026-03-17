@@ -2,7 +2,9 @@ package logs_collector_functions
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions/implementations/fluentbit"
+	"net"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/availability_checker"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
@@ -12,7 +14,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"net"
 )
 
 const (
@@ -31,6 +32,8 @@ func CreateLogsCollectorForEnclave(
 	logsCollectorHttpPortNumber uint16,
 	logsCollectorContainer LogsCollectorContainer,
 	logsAggregator *logs_aggregator.LogsAggregator,
+	logsCollectorFilters []logs_collector.Filter,
+	logsCollectorParsers []logs_collector.Parser,
 	dockerManager *docker_manager.DockerManager,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 ) (
@@ -67,6 +70,8 @@ func CreateLogsCollectorForEnclave(
 		logsCollectorHttpPortNumber,
 		logsCollectorTcpPortId,
 		logsCollectorHttpPortId,
+		logsCollectorFilters,
+		logsCollectorParsers,
 		enclaveNetwork.GetId(),
 		objAttrsProvider,
 		dockerManager,
@@ -84,9 +89,9 @@ func CreateLogsCollectorForEnclave(
 			enclaveNetwork,
 		)
 	}
-	shouldRemoveLogsCollectorContainerFunc := true
+	shouldRemoveLogsCollectorContainer := true
 	defer func() {
-		if shouldRemoveLogsCollectorContainerFunc {
+		if shouldRemoveLogsCollectorContainer {
 			removeLogsCollectorContainerFunc()
 		}
 	}()
@@ -116,16 +121,16 @@ func CreateLogsCollectorForEnclave(
 		return nil, stacktrace.Propagate(err, "An error occurred getting logs collector object using container ID '%v', labels '%+v', status '%v' and host machine port bindings '%+v'", containerId, containerLabels, defaultContainerStatusForNewLogsCollectorContainer, hostMachinePortBindings)
 	}
 
-	logsCollectorAvailabilityChecker := fluentbit.NewFluentbitAvailabilityChecker(logsCollectorObj.GetBridgeNetworkIpAddress(), logsCollectorObj.GetPrivateHttpPort().GetNumber())
-
 	logrus.Debugf("Checking for logs collector availability in enclave '%v'...", enclaveUuid)
-	if err = logsCollectorAvailabilityChecker.WaitForAvailability(); err != nil {
+
+	logsCollectorAvailabilityEndpoint := logsCollectorContainer.GetHttpHealthCheckEndpoint()
+	if err = availability_checker.WaitForAvailability(logsCollectorObj.GetBridgeNetworkIpAddress(), logsCollectorObj.GetPrivateHttpPort().GetNumber(), logsCollectorAvailabilityEndpoint); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while waiting for the log container to become available")
 	}
 	logrus.Debugf("...logs collector is available in enclave '%v'", enclaveUuid)
 	logrus.Debugf("Logs collector successfully created with container ID '%v' for enclave '%v'", containerId, enclaveUuid)
 
 	shouldDisconnectLogsCollectorFromEnclaveNetwork = false
-	shouldRemoveLogsCollectorContainerFunc = false
+	shouldRemoveLogsCollectorContainer = false
 	return logsCollectorObj, nil
 }
