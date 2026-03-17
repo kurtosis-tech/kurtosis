@@ -70,6 +70,13 @@ jobs:
           dpkg-scanpackages --multiversion . > Packages
           gzip -9c Packages > Packages.gz
 
+          # Generate Release file to suppress apt "Ign" warnings
+          apt-ftparchive release . > Release
+
+          # Create empty Translation file to prevent 404 on Translation-en
+          touch Translation-en
+          gzip -9c Translation-en > Translation-en.gz
+
       - name: Update rpm repository
         run: |
           set -euo pipefail
