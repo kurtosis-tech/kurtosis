@@ -1,0 +1,99 @@
+name: Update Package Repository
+
+on:
+  # Run automatically after a successful publish
+  workflow_run:
+    workflows: ["Publish"]
+    types: [completed]
+
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version to publish (e.g. 1.16.4)'
+        required: true
+
+jobs:
+  update-package-repo:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            # Get the tag from the workflow run that triggered us
+            echo "version=${{ github.event.workflow_run.head_branch }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install repo tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev createrepo-c
+
+      - name: Checkout existing GitHub Pages
+        uses: actions/checkout@v4
+        with:
+          repository: kurtosis-tech/kurtosis-cli-release-artifacts
+          ref: gh-pages
+          token: ${{ secrets.KURTOSISBOT_GITHUB_TOKEN }}
+          path: repo
+
+      - name: Download deb/rpm from release
+        env:
+          GH_TOKEN: ${{ secrets.KURTOSISBOT_GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          version="${{ steps.version.outputs.version }}"
+
+          mkdir -p downloads
+          gh release download "${version}" \
+            --repo kurtosis-tech/kurtosis-cli-release-artifacts \
+            --pattern '*.deb' \
+            --pattern '*.rpm' \
+            --dir downloads
+
+          echo "Downloaded artifacts:"
+          ls -la downloads/
+
+      - name: Update apt repository
+        run: |
+          set -euo pipefail
+          cd repo
+
+          # Flat repo layout: debs and Packages file at the root (like Gemfury)
+          cp ../downloads/*.deb .
+
+          # Generate Packages index for all deb files in the root
+          dpkg-scanpackages --multiversion . > Packages
+          gzip -9c Packages > Packages.gz
+
+          # Generate Release file to suppress apt "Ign" warnings
+          apt-ftparchive release . > Release
+
+          # Create empty Translation file to prevent 404 on Translation-en
+          touch Translation-en
+          gzip -9c Translation-en > Translation-en.gz
+
+      - name: Update rpm repository
+        run: |
+          set -euo pipefail
+          cd repo
+
+          mkdir -p rpm/packages
+          cp ../downloads/*.rpm rpm/packages/
+
+          createrepo_c --update rpm/
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          personal_token: ${{ secrets.KURTOSISBOT_GITHUB_TOKEN }}
+          external_repository: kurtosis-tech/kurtosis-cli-release-artifacts
+          publish_dir: ./repo
+          keep_files: true
+          user_name: kurtosisbot
+          user_email: kurtosisbot@kurtosistech.com
+          commit_message: "Update package repo for ${{ steps.version.outputs.version }}"
