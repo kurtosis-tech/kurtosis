@@ -762,6 +762,18 @@ jobs:
       - build-engine-server
       - build-files-artifacts-expander
     if: needs.check-docs-only.outputs.has-code-changes == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - shard: 1
+            packages: ./testsuite/startosis_run_sh_task_test/... ./testsuite/stream_logs_test/... ./testsuite/startosis-block-local-absolute-locators_test/... ./testsuite/upload_download_files_test/... ./testsuite/destroy_enclave_test/... ./testsuite/startosis_test/...
+          - shard: 2
+            packages: ./testsuite/startosis_add_service_test/... ./testsuite/persisted_logs_test/... ./testsuite/startosis_replace_test/... ./testsuite/startosis_directory_test/... ./testsuite/startosis_upload_file_test/... ./testsuite/startlark_user_passing_test/... ./testsuite/starlark_exec_test/... ./testsuite/render_templates_test/...
+          - shard: 3
+            packages: ./testsuite/startosis_package_test/... ./testsuite/startosis_request_wait_assert_test/... ./testsuite/startosis_ports_wait_test/... ./testsuite/enclave_and_service_identifiers_test/... ./testsuite/basic_datastore_test/... ./testsuite/startosis_remove_service_test/... ./testsuite/startosis_remote_package_test/... ./testsuite/store_web_files_test/...
+          - shard: 4
+            packages: ./testsuite/starlark_run_python_test/... ./testsuite/startosis_idempotency_test/... ./testsuite/search_logs_test/... ./testsuite/startosis_subpackage_test/... ./testsuite/startosis_stop_service_test/... ./testsuite/startosis_start_service_test/... ./testsuite/startosis_add_service_with_port_spec_test/... ./testsuite/basic_datastore_and_api_test/...
     steps:
       - uses: actions/checkout@v6
 
@@ -790,8 +802,10 @@ jobs:
           workspace-path: ${{ env.WORKSPACE_PATH }}
           kurtosis-binpath: ${{ env.KURTOSIS_BINPATH }}
 
-      - name: Run testsuite
-        run: ./internal_testsuites/golang/scripts/test.sh kubernetes false
+      - name: Run testsuite (shard ${{ matrix.shard }})
+        working-directory: internal_testsuites/golang
+        run: |
+          CGO_ENABLED=0 go test ${{ matrix.packages }} -p 4 -count=1 -timeout 15m -tags kubernetes
 
   build-typescript-testsuite-docker:
     runs-on: ubuntu-latest
