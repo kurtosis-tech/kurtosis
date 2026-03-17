@@ -19,7 +19,7 @@ jobs:
   publish-kurtosis-sdk-rust:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -36,9 +36,9 @@ jobs:
   publish-kurtosis-api-typescript:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.API_NODE_VERSION }}
           registry-url: 'https://registry.npmjs.org'
@@ -55,9 +55,9 @@ jobs:
   publish-kurtosis-ui-libs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.UI_NODE_VERSION }}
           registry-url: 'https://registry.npmjs.org'
@@ -83,7 +83,7 @@ jobs:
   publish-files-artifacts-expander-image:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-go@v6
         with:
@@ -130,7 +130,7 @@ jobs:
   publish-api-container-server-image:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-go@v6
         with:
@@ -182,12 +182,12 @@ jobs:
   build-enclave-manager-webapp:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           fetch-tags: true
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.UI_NODE_VERSION }}
           cache: 'yarn'
@@ -201,7 +201,7 @@ jobs:
       - name: Build
         run: enclave-manager/scripts/build.sh
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           name: enclave-manager-webapp
           path: engine/server/webapp/
@@ -211,7 +211,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-enclave-manager-webapp
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-go@v6
         with:
@@ -219,7 +219,7 @@ jobs:
           cache: true
           cache-dependency-path: engine/server/go.sum
 
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           name: enclave-manager-webapp
           path: engine/server/webapp
@@ -279,7 +279,7 @@ jobs:
       - publish-engine-server-image
       - publish-files-artifacts-expander-image
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Mark git directory as safe
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
