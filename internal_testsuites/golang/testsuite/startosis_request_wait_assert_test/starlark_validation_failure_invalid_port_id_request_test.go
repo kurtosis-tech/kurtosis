@@ -32,6 +32,7 @@ func (suite *StartosisRequestWaitAssertTestSuite) TestStarlark_InvalidPortIdRequ
 	runResult, _ := suite.RunScript(ctx, requestInvalidPortIDFailScript)
 
 	t := suite.T()
+	require.NotNil(t, runResult, "RunScript returned nil result")
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.NotEmpty(t, runResult.ValidationErrors, "Expected validation errors")
 	require.Len(t, runResult.ValidationErrors, 1)
