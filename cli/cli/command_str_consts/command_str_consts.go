@@ -82,6 +82,8 @@ const (
 	GitHubLogoutCmdStr      = "logout"
 	GitHubTokenCmdStr       = "token"
 	GitHubStatusCmdStr      = "status"
+	LokiCmdStr              = "loki"
+	LokiStartCmdStr         = "start"
 	GraflokiCmdStr          = "grafloki"
 	GraflokiStartCmdStr     = "start"
 	GraflokiStopCmdStr      = "stop"
