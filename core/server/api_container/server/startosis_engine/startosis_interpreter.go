@@ -509,7 +509,7 @@ func generateInterpretationError(err error) *startosis_errors.InterpretationErro
 		} else {
 			errorMsg = fmt.Sprintf("%s%s", evaluationErrorPrefix, slError.Unwrap().Error())
 		}
-		return startosis_errors.NewInterpretationErrorWithCustomMsg(stacktrace, errorMsg)
+		return startosis_errors.NewInterpretationErrorWithCustomMsg(stacktrace, "%s", errorMsg)
 	case *startosis_errors.InterpretationError:
 		// If it's already an interpretation error -> nothing to convert
 		return slError

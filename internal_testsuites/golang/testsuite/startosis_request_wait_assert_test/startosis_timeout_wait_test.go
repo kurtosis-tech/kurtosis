@@ -31,6 +31,7 @@ func (suite *StartosisRequestWaitAssertTestSuite) TestStartosis_TimeoutWait() {
 	ctx := context.Background()
 	t := suite.T()
 	runResult, _ := suite.RunScript(ctx, timeoutWaitStartosisScript)
+	require.NotNil(t, runResult, "RunScript returned nil result")
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")

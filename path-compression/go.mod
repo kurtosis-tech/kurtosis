@@ -1,8 +1,6 @@
 module github.com/kurtosis-tech/kurtosis/path-compression
 
-go 1.23.0
-
-toolchain go1.23.7
+go 1.26.0
 
 require (
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409

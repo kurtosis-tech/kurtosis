@@ -47,9 +47,9 @@ func (printer *spotlightMessagePrinter) Print(message string) {
 
 func (printer *spotlightMessagePrinter) PrintWithLogger(message string) {
 	frame, formattedMsgLine := printer.getFrameAndFormattedMsgLine(message)
-	logrus.Infof(frame)
-	logrus.Infof(formattedMsgLine)
-	logrus.Infof(frame)
+	logrus.Infof("%s", frame)
+	logrus.Infof("%s", formattedMsgLine)
+	logrus.Infof("%s", frame)
 }
 
 // ====================================================================================================
