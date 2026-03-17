@@ -21,7 +21,7 @@ The `add_service` instruction adds a service to the Kurtosis enclave within whic
 service = plan.add_service(
     # The service name of the service being created.
     # The service name is a reference to the service, which can be used in the future to refer to the service.
-    # Service names of active services are unique per enclave and needs to be formatted according to RFC 1035. 
+    # Service names of active services are unique per enclave and needs to be formatted according to RFC 1035.
     # Specifically, 1-63 lowercase alphanumeric characters with dashes and cannot start or end with dashes.
     # Also service names have to start with a lowercase alphabet.
     # MANDATORY
@@ -33,7 +33,13 @@ service = plan.add_service(
 
     # A human friendly description for the end user of the package
     # OPTIONAL (Default: Adding service with name 'SERVICE_NAME' and image 'SERVICE_IMAGE')
-    description = "adding a service"  
+    description = "adding a service",
+
+    # Force recreation of the service even if the config hasn't changed.
+    # Useful when the underlying container image has changed (same tag, new content)
+    # and you want to ensure the service is recreated with the latest image.
+    # OPTIONAL (Default: False)
+    force_update = False,
 )
 ```
 
@@ -89,7 +95,13 @@ all_services = plan.add_services(
 
     # A human friendly description for the end user of the package
     # OPTIONAL (Default: Adding 'NUMBER_OF_SERVICES' services with names 'SERVICE_NAMES')
-    description = "adding services"
+    description = "adding services",
+
+    # Force recreation of all services even if the configs haven't changed.
+    # Useful when the underlying container images have changed (same tag, new content)
+    # and you want to ensure the services are recreated with the latest images.
+    # OPTIONAL (Default: False)
+    force_update = False,
 )
 ```
 
@@ -284,7 +296,7 @@ result = plan.exec(
     
     # If the recipe returns a code that does not belong on this list, this instruction will fail.
     # OPTIONAL (Defaults to [0])
-    acceptable_codes = [0, 0], # Here both 0 and 1 are valid codes that we want to accept and not fail the instruction
+    acceptable_codes = [0, 1], # Here both 0 and 1 are valid codes that we want to accept and not fail the instruction
     
     # If False, instruction will never fail based on code (acceptable_codes will be ignored).
     # You can chain this call with assert to check codes after request is done.
@@ -570,6 +582,15 @@ The `run_python` instruction executes a one-time execution task. It runs the Pyt
             "/coinbase/address.json"
         ],
 
+        # If the script returns a code that isn't a part of this list, this instruction will fail at execution time.
+        # OPTIONAL (Defaults to [0])
+        acceptable_codes = [0, 1], # Here both 0 and 1 are valid codes that we want to accept and not fail the instruction
+
+        # If False, instruction will never fail based on code (acceptable_codes will be ignored).
+        # You can chain this call with assert to check codes after request is done.
+        # OPTIONAL (Defaults to False)
+        skip_code_check = False,
+  
         # The time to allow for the command to complete. If the Python script takes longer than this,
         # Kurtosis will kill the script and mark it as failed.
         # You may specify a custom wait timeout duration or disable the feature entirely.
@@ -580,6 +601,24 @@ The `run_python` instruction executes a one-time execution task. It runs the Pyt
         # The feature is enabled by default with a default timeout of 180s
         # OPTIONAL (Default: "180s")
         wait="180s"
+
+        # Defines Kubernetes node selectors for scheduling the task on specific nodes
+        # OPTIONAL (Default: {})
+        node_selectors = {
+            "node-type": "high-memory",
+            "zone": "us-west-1a",
+        },
+
+        # Defines Kubernetes tolerations for scheduling the task on nodes with matching taints
+        # OPTIONAL (Default: [])
+        tolerations = [
+            Toleration(
+                key="high-memory",
+                operator="Equal",
+                value="true", 
+                effect="NoSchedule"
+            ),
+        ],
 
         # A human friendly description for the end user of the package
         # OPTIONAL (Default: Running Python script)
@@ -655,6 +694,15 @@ The `run_sh` instruction executes a one-time execution task. It runs the bash co
             "/coinbase/address.json"
         ],
 
+        # If the script returns a code that isn't a part of this list, this instruction will fail at execution time.
+        # OPTIONAL (Defaults to [0])
+        acceptable_codes = [0, 1], # Here both 0 and 1 are valid codes that we want to accept and not fail the instruction
+
+        # If False, instruction will never fail based on code (acceptable_codes will be ignored).
+        # You can chain this call with assert to check codes after request is done.
+        # OPTIONAL (Defaults to False)
+        skip_code_check = False,
+          
         # The time to allow for the command to complete. If the command takes longer than this,
         # Kurtosis will kill the command and mark it as failed.
         # You may specify a custom wait timeout duration or disable the feature entirely.
@@ -665,6 +713,24 @@ The `run_sh` instruction executes a one-time execution task. It runs the bash co
         # The feature is enabled by default with a default timeout of 180s
         # OPTIONAL (Default: "180s")
         wait="180s"
+
+        # Defines Kubernetes node selectors for scheduling the task on specific nodes
+        # OPTIONAL (Default: {})
+        node_selectors = {
+            "node-type": "high-memory",
+            "zone": "us-west-1a",
+        },
+
+        # Defines Kubernetes tolerations for scheduling the task on nodes with matching taints
+        # OPTIONAL (Default: [])
+        tolerations = [
+            Toleration(
+                key="high-memory",
+                operator="Equal",
+                value="true", 
+                effect="NoSchedule"
+            ),
+        ],
 
         # A human friendly description for the end user of the package
         # OPTIONAL (Default: Running sh script)
@@ -866,6 +932,24 @@ recipe_result = plan.wait(
 # The assertion has passed, so we can use `recipe_result` just like the result of `plan.request` or `plan.exec`
 plan.print(recipe_result["code"])
 ```
+
+get_cluster_type
+----------------
+
+The `get_cluster_type` instruction returns the type of cluster backend that Kurtosis is currently running on.
+
+```python
+# Returns a string representing the cluster type ("docker", "kubernetes", "podman")
+cluster_type = plan.get_cluster_type()
+if cluster_type == "docker":
+    ...
+
+plan.print("Running on cluster type: " + cluster_type)
+```
+
+This instruction takes no arguments and returns a string indicating the backend cluster type. This is useful when you need to conditionally execute different logic based on whether you're running on Docker, Kubernetes, or other supported backends. Possi
+
+
 
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->

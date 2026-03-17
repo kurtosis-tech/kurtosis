@@ -5,10 +5,48 @@ slug: '/whats-new'
 toc_max_heading_level: 2
 ---
 
-What's New In Kurtosis
-======================
+# What's New In Kurtosis
 
 For detailed information about the changes in each release, see [the changelog](/changelog).
+
+## 2025-05-05
+
+### Logging Architecture Improvements
+
+Kurtosis now supports exporting logs from enclaves to external systems like Elasticsearch, CloudWatch, S3, and more. Built on top of [Vector](https://vector.dev/), this new logging architecture enables highly flexible log forwarding via configurable "sinks" in your Kurtosis config file.
+
+This unlocks new capabilities, including:
+
+- Streaming logs to observability platforms like Kibana, OpenSearch, or Loki
+- Long-term log storage in cloud services like AWS S3
+- Integration with security and audit pipelines
+- Real-time search and filtering of logs
+- Custom filtering and transformation using Fluent Bit-style filters
+
+You can configure different sinks per cluster, and supported sink types mirror those provided by Vector.
+
+To get started, check out our guide on [Exporting Logs to External Services](./guides/exporting-logs.md).
+
+### `service update` Command
+
+A new `service update` command lets you modify services in-place within a running enclave—without tearing down the entire environment.
+
+Use it to update only the parts of the service config you want, including:
+
+- `--image` – update the container image
+- `--entrypoint` – override the binary the container runs
+- `--env` – add or override environment variables
+- `--ports` – change private port definitions
+- `--files` – mount new or updated file artifacts
+- `--cmd` – override the command executed in the container
+
+Example:
+
+```bash
+kurtosis service update my-enclave test-service \
+  --image my-custom-image \
+```
+
 
 2024-02-26
 ----------

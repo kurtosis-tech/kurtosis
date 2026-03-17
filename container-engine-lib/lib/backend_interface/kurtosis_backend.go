@@ -50,6 +50,12 @@ type KurtosisBackend interface {
 		envVars map[string]string,
 		shouldStartInDebugMode bool,
 		githubAuthToken string,
+		sinks logs_aggregator.Sinks,
+		shouldTurnOffPersistentVolumeLogsCollection bool,
+		// logsCollectorFilters and logsCollectorParsers needs to be passed into both CreateEngine and CreateLogsCollectorForEnclave
+		// this is because over Docker, CreateLogsCollectorForEnclave creates the logs collector and over k8s CreateEngine does
+		logsCollectorFilters []logs_collector.Filter,
+		logsCollectorParsers []logs_collector.Parser,
 	) (
 		*engine.Engine,
 		error,
@@ -241,8 +247,6 @@ type KurtosisBackend interface {
 	)
 
 	// RemoveRegisteredUserServiceProcesses removes the running user service process but keeps the service registration
-	// TODO: As we don't persist user service logs anywhere, removing the container/pod will also remove all its
-	//  logs. We need a persistent log storage to address this issue.
 	RemoveRegisteredUserServiceProcesses(
 		ctx context.Context,
 		enclaveUuid enclave.EnclaveUUID,
@@ -280,9 +284,10 @@ type KurtosisBackend interface {
 	RunUserServiceExecCommands(
 		ctx context.Context,
 		enclaveUuid enclave.EnclaveUUID,
+		containerUser string,
 		userServiceCommands map[service.ServiceUUID][]string,
 	) (
-		succesfulUserServiceExecResults map[service.ServiceUUID]*exec_result.ExecResult,
+		successfulUserServiceExecResults map[service.ServiceUUID]*exec_result.ExecResult,
 		erroredUserServiceUuids map[service.ServiceUUID]error,
 		resultErr error,
 	)
@@ -329,7 +334,12 @@ type KurtosisBackend interface {
 		resultErr error, // Represents an error with the function itself, rather than the user services
 	)
 
-	CreateLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error)
+	// TODO: this should be removed from KurtosisBackend interface, as nobody consumes it - all CRUD for LogsAggregator is used/managed by engine
+	CreateLogsAggregator(
+		ctx context.Context,
+		httpPortNum uint16,
+		sinks logs_aggregator.Sinks,
+	) (*logs_aggregator.LogsAggregator, error)
 
 	// Returns nil if logs aggregator was not found
 	GetLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error)
@@ -337,7 +347,17 @@ type KurtosisBackend interface {
 	DestroyLogsAggregator(ctx context.Context) error
 
 	// Create a new Logs Collector for sending container's logs to the logs aggregator server
-	CreateLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, logsCollectorHttpPortNumber uint16, logsCollectorTcpPortNumber uint16) (*logs_collector.LogsCollector, error)
+	CreateLogsCollectorForEnclave(
+		ctx context.Context,
+		enclaveUuid enclave.EnclaveUUID,
+		logsCollectorHttpPortNumber uint16,
+		logsCollectorTcpPortNumber uint16,
+		logsCollectorFilters []logs_collector.Filter,
+		logsCollectorParsers []logs_collector.Parser,
+	) (
+		*logs_collector.LogsCollector,
+		error,
+	)
 
 	// Gets the logs collector, if nothing is found returns nil
 	GetLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (*logs_collector.LogsCollector, error)

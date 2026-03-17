@@ -2,38 +2,53 @@ package vector
 
 import (
 	"fmt"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
 const (
 	shBinaryFilepath = "/bin/sh"
-	printfCmdName    = "printf"
 	shCmdFlag        = "-c"
+	httpProtocolStr  = "http"
 )
 
 type vectorContainerConfigProvider struct {
-	config *VectorConfig
+	httpPortNumber uint16
 }
 
-func newVectorContainerConfigProvider(config *VectorConfig) *vectorContainerConfigProvider {
-	return &vectorContainerConfigProvider{config: config}
+func newVectorContainerConfigProvider(httpPortNumber uint16) *vectorContainerConfigProvider {
+	return &vectorContainerConfigProvider{
+		httpPortNumber: httpPortNumber,
+	}
+}
+
+func (vector *vectorContainerConfigProvider) GetPrivateHttpPortSpec() (*port_spec.PortSpec, error) {
+	privateHttpPortSpec, err := port_spec.NewPortSpec(vector.httpPortNumber, httpTransportProtocol, httpProtocolStr, nil, "")
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating the Vector server's private HTTP port spec object using number '%v' and protocol '%v'",
+			vector.httpPortNumber,
+			httpTransportProtocol,
+		)
+	}
+	return privateHttpPortSpec, nil
 }
 
 func (vector *vectorContainerConfigProvider) GetContainerArgs(
 	containerName string,
 	containerLabels map[string]string,
 	networkId string,
+	configVolumeName string,
+	dataVolumeName string,
 	logsStorageVolumeName string,
 ) (*docker_manager.CreateAndStartContainerArgs, error) {
-
 	volumeMounts := map[string]string{
 		logsStorageVolumeName: logsStorageDirpath,
-	}
-
-	logsAggregatorConfigContentStr, err := vector.config.getConfigFileContent()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the Loki server's configuration content")
+		configVolumeName:      configDirpath,
+		dataVolumeName:        dataDirPath,
 	}
 
 	// Create cmd to
@@ -42,10 +57,7 @@ func (vector *vectorContainerConfigProvider) GetContainerArgs(
 	overrideCmd := []string{
 		shCmdFlag,
 		fmt.Sprintf(
-			"%v '%v' > %v && %v %v=%v",
-			printfCmdName,
-			logsAggregatorConfigContentStr,
-			configFilepath,
+			"%v %v=%v",
 			binaryFilepath,
 			configFileFlag,
 			configFilepath,

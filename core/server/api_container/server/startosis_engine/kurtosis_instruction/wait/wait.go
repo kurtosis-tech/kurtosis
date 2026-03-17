@@ -3,8 +3,11 @@ package wait
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
@@ -17,9 +20,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
-	"time"
 )
 
 const (
@@ -105,6 +108,7 @@ func NewWait(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *r
 				timeout:     0,   // populated at interpretation time
 				resultUuid:  "",  // populated at interpretation time
 				description: "",  // populated at interpretation time
+				returnValue: nil, // populated at interpretation time
 			}
 		},
 
@@ -133,6 +137,7 @@ type WaitCapabilities struct {
 
 	resultUuid  string
 	description string
+	returnValue *starlark.Dict
 }
 
 func (builtin *WaitCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -223,6 +228,7 @@ func (builtin *WaitCapabilities) Interpret(_ string, arguments *builtin_argument
 	builtin.timeout = timeout
 	builtin.resultUuid = resultUuid
 	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, fmt.Sprintf(descriptionFormatStr, builtin.timeout, builtin.serviceName))
+	builtin.returnValue = returnValue
 
 	return returnValue, nil
 }
@@ -247,11 +253,17 @@ func (builtin *WaitCapabilities) Execute(ctx context.Context, _ *builtin_argumen
 
 	startTime := time.Now()
 
+	service, err := builtin.serviceNetwork.GetService(ctx, string(builtin.serviceName))
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while getting service '%s'", builtin.serviceName)
+	}
+
 	lastResult, tries, err := shared_helpers.ExecuteServiceAssertionWithRecipe(
 		ctx,
 		builtin.serviceNetwork,
 		builtin.runtimeValueStore,
 		builtin.serviceName,
+		service,
 		builtin.recipe,
 		builtin.valueField,
 		builtin.assertion,
@@ -294,11 +306,30 @@ func (builtin *WaitCapabilities) FillPersistableAttributes(builder *enclave_plan
 	builder.SetType(WaitBuiltinName)
 }
 
-func (builtin *WaitCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
+func (builtin *WaitCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerator) error {
 	// wait does not affect the plan
 	return nil
 }
 
 func (builtin *WaitCapabilities) Description() string {
 	return builtin.description
+}
+
+// UpdateDependencyGraph updates the dependency graph with the effects of running this instruction.
+func (builtin *WaitCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
+	shortDescriptor := fmt.Sprintf("wait(%s, %s)", builtin.serviceName, builtin.description)
+	dependencyGraph.UpdateInstructionShortDescriptor(instructionUuid, shortDescriptor)
+
+	dependencyGraph.AddWaitInstruction(instructionUuid) // every downstream instruction depends on this wait
+	dependencyGraph.ConsumesService(instructionUuid, string(builtin.serviceName))
+
+	returnValueStrings, interpretationErr := builtin.recipe.GetStarlarkReturnValuesAsStringList(builtin.resultUuid)
+	if interpretationErr != nil {
+		return stacktrace.Propagate(interpretationErr, "An error occurred while getting return value strings for recipe")
+	}
+	for _, returnValueString := range returnValueStrings {
+		dependencyGraph.ProducesRuntimeValue(instructionUuid, returnValueString)
+	}
+
+	return nil
 }

@@ -3,16 +3,17 @@ package test_engine
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/http"
+	"strings"
+	"testing"
+
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"io"
-	"net/http"
-	"strings"
-	"testing"
 )
 
 type postHttpRequestRecipeMinimalTestCase struct {
@@ -24,7 +25,7 @@ type postHttpRequestRecipeMinimalTestCase struct {
 func (suite *KurtosisTypeConstructorTestSuite) TestPostHttpRequestRecipeMinimal() {
 	suite.serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
-		string(testServiceName),
+		testService,
 		testPrivatePortId,
 		"POST",
 		"application/json",
@@ -66,7 +67,7 @@ func (t *postHttpRequestRecipeMinimalTestCase) Assert(typeValue builtin_argument
 	postHttpRequestRecipe, ok := typeValue.(*recipe.PostHttpRequestRecipe)
 	require.True(t, ok)
 
-	_, err := postHttpRequestRecipe.Execute(context.Background(), t.serviceNetwork, t.runtimeValueStore, testServiceName)
+	_, err := postHttpRequestRecipe.Execute(context.Background(), t.serviceNetwork, t.runtimeValueStore, testService)
 	require.NoError(t, err)
 
 	returnValue, interpretationErr := postHttpRequestRecipe.CreateStarlarkReturnValue("result-fake-uuid")

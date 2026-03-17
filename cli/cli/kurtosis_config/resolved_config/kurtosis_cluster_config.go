@@ -2,20 +2,26 @@ package resolved_config
 
 import (
 	"context"
-	v2 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v2"
 	"strings"
+
+	v7 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v7"
+	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/configs"
-	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/stacktrace"
+	apiv1 "k8s.io/api/core/v1"
 )
 
 const (
 	defaultKubernetesEnclaveDataVolumeSizeInMegabytes = uint(1024)
+	// this will schedule engine on node selected by k8s scheduler
+	defaultEngineNodeName = ""
 )
 
 type kurtosisBackendSupplier func(ctx context.Context) (backend_interface.KurtosisBackend, error)
@@ -24,9 +30,28 @@ type KurtosisClusterConfig struct {
 	kurtosisBackendSupplier     kurtosisBackendSupplier
 	engineBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
 	clusterType                 KurtosisClusterType
+	logsAggregator              LogsAggregatorConfig
+	logsCollector               LogsCollectorConfig
+	graflokiConfig              GrafanaLokiConfig
+	shouldEnableDefaultLogsSink bool
 }
 
-func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v2.KurtosisClusterConfigV2) (*KurtosisClusterConfig, error) {
+type LogsAggregatorConfig struct {
+	Sinks logs_aggregator.Sinks
+}
+
+type LogsCollectorConfig struct {
+	Filters []logs_collector.Filter
+	Parsers []logs_collector.Parser
+}
+
+type GrafanaLokiConfig struct {
+	ShouldStartBeforeEngine bool
+	GrafanaImage            string
+	LokiImage               string
+}
+
+func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v7.KurtosisClusterConfigV7) (*KurtosisClusterConfig, error) {
 	if overrides.Type == nil {
 		return nil, stacktrace.NewError("Kurtosis cluster must have a defined type")
 	}
@@ -47,10 +72,56 @@ func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v2.Kurto
 		return nil, stacktrace.Propagate(err, "An error occurred getting the suppliers that cluster '%v' will use", clusterId)
 	}
 
+	logsAggregator := LogsAggregatorConfig{
+		Sinks: nil,
+	}
+
+	if overrides.LogsAggregator != nil {
+		if len(overrides.LogsAggregator.Sinks) > 0 {
+			for sinkId := range overrides.LogsAggregator.Sinks {
+				// We add a default file sink as the logs database for certain log commands (i.e. kurtosis service logs) to work, hence this validation
+				// A potential improvement would be that all log-related commands are compatible with user-defined sinks
+				if sinkId == logs_aggregator.DefaultSinkId {
+					return nil, stacktrace.NewError("The LogsAggregator Sinks had a sink named %s which is reserved for Kurtosis default sink", logs_aggregator.DefaultSinkId)
+				}
+			}
+
+			logsAggregator.Sinks = overrides.LogsAggregator.Sinks
+		}
+	}
+
+	logsCollector := LogsCollectorConfig{
+		Filters: nil,
+		Parsers: nil,
+	}
+
+	if overrides.LogsCollector != nil {
+		logsCollector.Filters = overrides.LogsCollector.Filters
+		logsCollector.Parsers = overrides.LogsCollector.Parsers
+	}
+
+	var grafloki GrafanaLokiConfig
+	if overrides.GrafanaLokiConfig != nil {
+		grafloki = GrafanaLokiConfig{
+			ShouldStartBeforeEngine: overrides.GrafanaLokiConfig.ShouldStartBeforeEngine,
+			GrafanaImage:            overrides.GrafanaLokiConfig.GrafanaImage,
+			LokiImage:               overrides.GrafanaLokiConfig.LokiImage,
+		}
+	}
+
+	shouldEnableDefaultLogsSink := DefaultShouldEnableDefaultLogsSink
+	if overrides.ShouldEnableDefaultLogsSink != nil {
+		shouldEnableDefaultLogsSink = *overrides.ShouldEnableDefaultLogsSink
+	}
+
 	return &KurtosisClusterConfig{
 		kurtosisBackendSupplier:     backendSupplier,
 		engineBackendConfigSupplier: engineBackendConfigSupplier,
 		clusterType:                 clusterType,
+		logsAggregator:              logsAggregator,
+		logsCollector:               logsCollector,
+		graflokiConfig:              grafloki,
+		shouldEnableDefaultLogsSink: shouldEnableDefaultLogsSink,
 	}, nil
 }
 
@@ -70,12 +141,28 @@ func (clusterConfig *KurtosisClusterConfig) GetClusterType() KurtosisClusterType
 	return clusterConfig.clusterType
 }
 
+func (clusterConfig *KurtosisClusterConfig) GetLogsAggregatorConfig() LogsAggregatorConfig {
+	return clusterConfig.logsAggregator
+}
+
+func (clusterConfig *KurtosisClusterConfig) GetLogsCollectorConfig() LogsCollectorConfig {
+	return clusterConfig.logsCollector
+}
+
+func (clusterConfig *KurtosisClusterConfig) GetGraflokiConfig() GrafanaLokiConfig {
+	return clusterConfig.graflokiConfig
+}
+
+func (clusterConfig *KurtosisClusterConfig) ShouldEnableDefaultLogsSink() bool {
+	return clusterConfig.shouldEnableDefaultLogsSink
+}
+
 // ====================================================================================================
 //
 //	Private Helpers
 //
 // ====================================================================================================
-func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesConfig *v2.KubernetesClusterConfigV2) (
+func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesConfig *v7.KubernetesClusterConfigV7) (
 	kurtosisBackendSupplier,
 	engine_server_launcher.KurtosisBackendConfigSupplier,
 	error,
@@ -111,6 +198,34 @@ func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesC
 		}
 
 		engineConfigSupplier = engine_server_launcher.NewDockerKurtosisBackendConfigSupplier()
+	case KurtosisClusterType_Podman:
+		if kubernetesConfig != nil {
+			return nil, nil, stacktrace.NewError(
+				"Cluster '%v' defines cluster config, but config must not be provided when cluster type is '%v'",
+				clusterId,
+				clusterType.String(),
+			)
+		}
+
+		backendSupplier = func(_ context.Context) (backend_interface.KurtosisBackend, error) {
+			var remoteBackendConfigMaybe *configs.KurtosisRemoteBackendConfig
+			currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred retrieving the current context")
+			}
+			if store.IsRemote(currentContext) {
+				remoteBackendConfigMaybe = configs.NewRemoteBackendConfigFromRemoteContext(currentContext.GetRemoteContextV0())
+			}
+			// Get a local or remote podman backend based on the existence of the remote backend config.
+			// We do not pass APIC mode args since we are dealing with the engine here.
+			backend, err := backend_creator.GetPodmanKurtosisBackend(backend_creator.NoAPIContainerModeArgs, remoteBackendConfigMaybe)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred creating the Docker Kurtosis backend")
+			}
+			return backend, nil
+		}
+
+		engineConfigSupplier = engine_server_launcher.NewPodmanKurtosisBackendConfigSupplier()
 	case KurtosisClusterType_Kubernetes:
 		if kubernetesConfig == nil {
 			return nil, nil, stacktrace.NewError(
@@ -144,8 +259,16 @@ func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesC
 			enclaveDataVolumeSizeInMb = *kubernetesConfig.EnclaveSizeInMegabytes
 		}
 
+		engineNodeName := defaultEngineNodeName
+		if kubernetesConfig.EngineNodeName != nil {
+			engineNodeName = *kubernetesConfig.EngineNodeName
+		}
+
+		nodeSelectors := kubernetesConfig.NodeSelectors
+		tolerations := convertTolerations(kubernetesConfig.Tolerations)
+
 		backendSupplier = func(ctx context.Context) (backend_interface.KurtosisBackend, error) {
-			backend, err := kubernetes_kurtosis_backend.GetCLIBackend(ctx, *kubernetesConfig.StorageClass)
+			backend, err := kubernetes_kurtosis_backend.GetCLIBackend(ctx, *kubernetesConfig.StorageClass, engineNodeName, nodeSelectors, tolerations)
 			if err != nil {
 				return nil, stacktrace.Propagate(
 					err,
@@ -168,4 +291,38 @@ func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesC
 		)
 	}
 	return backendSupplier, engineConfigSupplier, nil
+}
+
+func convertTolerations(configTolerations []*v7.KubernetesTolerationV7) []apiv1.Toleration {
+	if len(configTolerations) == 0 {
+		return nil
+	}
+	result := make([]apiv1.Toleration, 0, len(configTolerations))
+	for _, t := range configTolerations {
+		var key string
+		if t.Key != nil {
+			key = *t.Key
+		}
+		var operator apiv1.TolerationOperator
+		if t.Operator != nil {
+			operator = apiv1.TolerationOperator(*t.Operator)
+		}
+		var value string
+		if t.Value != nil {
+			value = *t.Value
+		}
+		var effect apiv1.TaintEffect
+		if t.Effect != nil {
+			effect = apiv1.TaintEffect(*t.Effect)
+		}
+		toleration := apiv1.Toleration{
+			Key:               key,
+			Operator:          operator,
+			Value:             value,
+			Effect:            effect,
+			TolerationSeconds: t.TolerationSeconds,
+		}
+		result = append(result, toleration)
+	}
+	return result
 }

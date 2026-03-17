@@ -48,14 +48,14 @@ func getMatchingEngines(ctx context.Context, filters *engine.EngineFilters, dock
 		}
 
 		// If the GUID filter is specified, drop engines not matching it
-		if filters.GUIDs != nil && len(filters.GUIDs) > 0 {
+		if len(filters.GUIDs) > 0 {
 			if _, found := filters.GUIDs[engineObj.GetGUID()]; !found {
 				continue
 			}
 		}
 
 		// If status filter is specified, drop engines not matching it
-		if filters.Statuses != nil && len(filters.Statuses) > 0 {
+		if len(filters.Statuses) > 0 {
 			if _, found := filters.Statuses[engineObj.GetStatus()]; !found {
 				continue
 			}

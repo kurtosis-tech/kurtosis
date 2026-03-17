@@ -64,7 +64,7 @@ func DumpKurtosis(ctx context.Context, outputDirpath string, backend backend_int
 			allIndexedEnclaveErrors = append(allIndexedEnclaveErrors, indexedEnclaveErrorStr)
 		}
 
-		return fmt.Errorf("Errors occurred while dumping information for some enclaves :\n'%v'", strings.Join(allIndexedEnclaveErrors, errorSeparator))
+		return fmt.Errorf("errors occurred while dumping information for some enclaves :\n'%v'", strings.Join(allIndexedEnclaveErrors, errorSeparator))
 	}
 
 	return nil

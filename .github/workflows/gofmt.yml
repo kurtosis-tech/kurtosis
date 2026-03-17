@@ -16,15 +16,14 @@ jobs:
     outputs:
       change: ${{ steps.check.outputs.change }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
-          go-version: '1.20'
           fetch-depth: 0
       - run: |
           if git --no-pager diff --exit-code origin/main...HEAD -- . ':!docs' ':!*.md'; then
-            echo "::set-output name=change::false"
+            echo "change=false" >> "$GITHUB_OUTPUT"
           else
-            echo "::set-output name=change::true"
+            echo "change=true" >> "$GITHUB_OUTPUT"
           fi
         id: check
   gofmt:
@@ -33,10 +32,11 @@ jobs:
     name: gofmt
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/setup-go@v3
+    - uses: actions/checkout@v6
+    - uses: actions/setup-go@v6
       with:
-        go-version: '1.20'
-    - uses: actions/checkout@v3
+        go-version: '1.26'
+        cache: false
     - run: scripts/generate-kurtosis-version.sh
     - uses: Jerome1337/gofmt-action@v1.0.5
       with:

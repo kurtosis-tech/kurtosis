@@ -7,6 +7,8 @@ import (
 
 	"github.com/docker/docker/api/types/volume"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_aggregator_functions"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_aggregator_functions/implementations/vector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
@@ -173,7 +175,6 @@ func (backend *DockerKurtosisBackend) GetEnclaves(
 	map[enclave.EnclaveUUID]*enclave.Enclave,
 	error,
 ) {
-
 	allMatchingNetworkInfo, err := backend.getMatchingEnclaveNetworkInfo(ctx, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave networks matching filters '%+v'", filters)
@@ -215,7 +216,6 @@ func (backend *DockerKurtosisBackend) GetEnclaves(
 			productionMode,
 		)
 	}
-
 	return result, nil
 }
 
@@ -402,6 +402,15 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 		erroredEnclaveUuids[enclaveUuid] = networkRemovalErr
 	}
 
+	// if destroy is deleting ALL enclaves, now's a good time to clean up log stuff
+	if filters.Statuses[enclave.EnclaveStatus_Running] {
+		// TODO: Potentially clean logs collector as well, similar to Kubernetes backend
+
+		if err := logs_aggregator_functions.CleanLogsAggregator(ctx, vector.NewVectorLogsAggregatorContainer(), backend.objAttrsProvider, backend.dockerManager); err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred cleaning logs aggregator container.")
+		}
+	}
+
 	return successfulNetworkRemovalEnclaveUuids, erroredEnclaveUuids, nil
 }
 
@@ -445,7 +454,7 @@ func (backend *DockerKurtosisBackend) getMatchingEnclaveNetworkInfo(
 			return nil, stacktrace.Propagate(err, "An error occurred getting enclave ID from network '%+v'; this is a bug in Kurtosis", kurtosisNetwork)
 		}
 
-		if filters.UUIDs != nil && len(filters.UUIDs) > 0 {
+		if len(filters.UUIDs) > 0 {
 			if _, found := filters.UUIDs[enclaveUuid]; !found {
 				continue
 			}
@@ -462,7 +471,7 @@ func (backend *DockerKurtosisBackend) getMatchingEnclaveNetworkInfo(
 			return nil, stacktrace.Propagate(err, "An error occurred getting enclave status and containers from network for enclave '%v'", enclaveUuid)
 		}
 
-		if filters.Statuses != nil && len(filters.Statuses) > 0 {
+		if len(filters.Statuses) > 0 {
 			if _, found := filters.Statuses[status]; !found {
 				continue
 			}

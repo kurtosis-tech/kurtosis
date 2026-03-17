@@ -3,8 +3,13 @@ package startosis_engine
 import (
 	"context"
 	"fmt"
+	"path"
+	"strings"
+	"sync"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
+	"github.com/kurtosis-tech/kurtosis/core/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/print_builtin"
@@ -20,13 +25,11 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/git_package_content_provider"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/resolve"
 	"go.starlark.net/starlark"
 	"go.starlark.net/syntax"
-	"path"
-	"strings"
-	"sync"
 )
 
 const (
@@ -62,11 +65,24 @@ type StartosisInterpreter struct {
 	starlarkValueSerde           *kurtosis_types.StarlarkValueSerde
 	enclaveEnvVars               string
 	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore
+	// This is a function that allows the consumer of the interpreter to adjust the default builtins.
+	// It is useful when external libraries or helpers need to be plugged in to kurtosis,
+	// for example when running unit tests using the starlarktest package
+	processBuiltins StartosisInterpreterBuiltinsProcessor
+
+	kurtosisBackendType args.KurtosisBackendType
 }
+
+// StartosisInterpreterBuiltinsProcessor is a builtins transformer function
+type StartosisInterpreterBuiltinsProcessor func(thread *starlark.Thread, predeclared starlark.StringDict) starlark.StringDict
 
 type SerializedInterpretationOutput string
 
-func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, packageContentProvider startosis_packages.PackageContentProvider, runtimeValueStore *runtime_value_store.RuntimeValueStore, starlarkValueSerde *kurtosis_types.StarlarkValueSerde, enclaveVarEnvs string, interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore) *StartosisInterpreter {
+func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, packageContentProvider startosis_packages.PackageContentProvider, runtimeValueStore *runtime_value_store.RuntimeValueStore, starlarkValueSerde *kurtosis_types.StarlarkValueSerde, enclaveVarEnvs string, interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore, kurtosisBackendType args.KurtosisBackendType) *StartosisInterpreter {
+	return NewStartosisInterpreterWithBuiltinsProcessor(serviceNetwork, packageContentProvider, runtimeValueStore, starlarkValueSerde, enclaveVarEnvs, interpretationTimeValueStore, nil, kurtosisBackendType)
+}
+
+func NewStartosisInterpreterWithBuiltinsProcessor(serviceNetwork service_network.ServiceNetwork, packageContentProvider startosis_packages.PackageContentProvider, runtimeValueStore *runtime_value_store.RuntimeValueStore, starlarkValueSerde *kurtosis_types.StarlarkValueSerde, enclaveVarEnvs string, interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore, processBuiltins StartosisInterpreterBuiltinsProcessor, kurtosisBackendType args.KurtosisBackendType) *StartosisInterpreter {
 	return &StartosisInterpreter{
 		mutex:                        &sync.Mutex{},
 		serviceNetwork:               serviceNetwork,
@@ -75,6 +91,8 @@ func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, pack
 		enclaveEnvVars:               enclaveVarEnvs,
 		starlarkValueSerde:           starlarkValueSerde,
 		interpretationTimeValueStore: interpretationTimeValueStore,
+		processBuiltins:              processBuiltins,
+		kurtosisBackendType:          kurtosisBackendType,
 	}
 }
 
@@ -106,7 +124,7 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 	// run interpretation with no mask at all to generate the list of instructions as if the enclave was empty
 	enclaveComponents := enclave_structure.NewEnclaveComponents()
 	emptyPlanInstructionsMask := resolver.NewInstructionsPlanMask(0)
-	naiveInstructionsPlanSerializedScriptOutput, naiveInstructionsPlan, interpretationErrorApi := interpreter.Interpret(ctx, packageId, mainFunctionName, packageReplaceOptions, relativePathtoMainFile, serializedStarlark, serializedJsonParams, nonBlockingMode, enclaveComponents, emptyPlanInstructionsMask, imageDownloadMode)
+	naiveInstructionsPlanSerializedScriptOutput, naiveInstructionsPlan, interpretationErrorApi := interpreter.Interpret(ctx, packageId, mainFunctionName, packageReplaceOptions, relativePathtoMainFile, serializedStarlark, serializedJsonParams, nonBlockingMode, enclaveComponents, emptyPlanInstructionsMask, imageDownloadMode, instructions_plan.NewInstructionsPlan())
 	if interpretationErrorApi != nil {
 		return startosis_constants.NoOutputObject, nil, interpretationErrorApi
 	}
@@ -155,6 +173,7 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 			// -> Then recopy all instructions past this match from the enclave state to the mask
 			// Those instructions are the instructions that will mask the instructions for the newly submitted plan
 			numberOfInstructionCopiedToMask := 0
+			// TODO: here once we have InstructionDependencyGraph, we can use it to recopy only the instructions that are dependent on the matching instruction
 			for copyIdx := matchingInstructionIdx; copyIdx < len(currentEnclavePlanSequence); copyIdx++ {
 				if numberOfInstructionCopiedToMask >= potentialMask.Size() {
 					// the mask is already full, can't recopy more instructions, stop here
@@ -174,8 +193,8 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 			return naiveInstructionsPlanSerializedScriptOutput, optimizedPlan, nil
 		}
 
-		// Now that we have a potential plan mask, try running interpretation again using this plan mask
-		attemptSerializedScriptOutput, attemptInstructionsPlan, interpretationErrorApi := interpreter.Interpret(ctx, packageId, mainFunctionName, packageReplaceOptions, relativePathtoMainFile, serializedStarlark, serializedJsonParams, nonBlockingMode, enclaveComponents, potentialMask, imageDownloadMode)
+		// Now that we have a potential plan mask, try running interpretation again using this plan mask and a new instructions plan
+		attemptSerializedScriptOutput, attemptInstructionsPlan, interpretationErrorApi := interpreter.Interpret(ctx, packageId, mainFunctionName, packageReplaceOptions, relativePathtoMainFile, serializedStarlark, serializedJsonParams, nonBlockingMode, enclaveComponents, potentialMask, imageDownloadMode, instructions_plan.NewInstructionsPlan())
 		if interpretationErrorApi != nil {
 			// Note: there's no real reason why this interpretation would fail with an error, given that the package
 			// has been interpreted once already (right above). But to be on the safe side, check the error
@@ -227,10 +246,11 @@ func (interpreter *StartosisInterpreter) Interpret(
 	enclaveComponents *enclave_structure.EnclaveComponents,
 	instructionsPlanMask *resolver.InstructionsPlanMask,
 	imageDownloadMode image_download_mode.ImageDownloadMode,
+	instructionsPlan *instructions_plan.InstructionsPlan,
 ) (string, *instructions_plan.InstructionsPlan, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
 	interpreter.mutex.Lock()
 	defer interpreter.mutex.Unlock()
-	newInstructionsPlan := instructions_plan.NewInstructionsPlan()
+	newInstructionsPlan := instructionsPlan
 	logrus.Debugf("Interpreting package '%v' with contents '%v' and params '%v'", packageId, serializedStarlark, serializedJsonParams)
 	moduleLocator := packageId
 	if packageId != startosis_constants.PackageIdPlaceholderForStandaloneScript {
@@ -275,7 +295,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 	if mainFuncParamsNum >= minimumParamsRequiredForPlan {
 		firstParamName, _ := mainFunction.Param(planParamIndex)
 		if firstParamName == planParamName {
-			kurtosisPlanInstructions := KurtosisPlanInstructions(packageId, interpreter.serviceNetwork, interpreter.recipeExecutor, interpreter.packageContentProvider, packageReplaceOptions, nonBlockingMode, interpreter.interpretationTimeValueStore, imageDownloadMode)
+			kurtosisPlanInstructions := KurtosisPlanInstructions(packageId, interpreter.serviceNetwork, interpreter.recipeExecutor, interpreter.packageContentProvider, packageReplaceOptions, nonBlockingMode, interpreter.interpretationTimeValueStore, imageDownloadMode, interpreter.kurtosisBackendType)
 			planModule := plan_module.PlanModule(newInstructionsPlan, enclaveComponents, interpreter.starlarkValueSerde, instructionsPlanMask, kurtosisPlanInstructions)
 			argsTuple = append(argsTuple, planModule)
 		}
@@ -357,7 +377,12 @@ func (interpreter *StartosisInterpreter) buildBindings(
 	moduleGlobalCache map[string]*startosis_packages.ModuleCacheEntry,
 	packageReplaceOptions map[string]string,
 ) (*starlark.StringDict, *startosis_errors.InterpretationError) {
+	packagePrefix := getModulePrefix(packageId)
 	recursiveInterpretForModuleLoading := func(moduleId string, serializedStartosis string) (starlark.StringDict, *startosis_errors.InterpretationError) {
+		modulePrefix := getModulePrefix(moduleId)
+		if modulePrefix != packagePrefix {
+			instructionPlan.AddPackageDependency(modulePrefix)
+		}
 		result, err := interpreter.interpretInternal(packageId, moduleId, serializedStartosis, instructionPlan, moduleGlobalCache, packageReplaceOptions)
 		if err != nil {
 			return nil, err
@@ -383,7 +408,26 @@ func (interpreter *StartosisInterpreter) buildBindings(
 	for _, kurtosisTypeConstructors := range KurtosisTypeConstructors() {
 		predeclared[kurtosisTypeConstructors.Name()] = kurtosisTypeConstructors
 	}
+
+	// Allow the consumers to adjust the builtins
+	//
+	// This is useful for adding e.g. starlarktest package
+	// for unit testing of kurtosis scripts
+	if interpreter.processBuiltins != nil {
+		predeclared = interpreter.processBuiltins(thread, predeclared)
+	}
+
 	return &predeclared, nil
+}
+
+const (
+	numModIdSeparators = 3
+)
+
+// gets the prefix of a module id
+// eg. "github.com/kurtosis-tech/postgres-package/main.star" returns "github.com/kurtosis-tech/postgres-package"
+func getModulePrefix(moduleId string) string {
+	return strings.Join(strings.SplitN(moduleId, git_package_content_provider.OsPathSeparatorString, numModIdSeparators+1)[:numModIdSeparators], git_package_content_provider.OsPathSeparatorString)
 }
 
 func findFirstEqualInstructionPastIndex(currentEnclaveInstructionsList []*enclave_plan_persistence.EnclavePlanInstruction, naiveInstructionsList []*instructions_plan.ScheduledInstruction, minIndex int) int {
@@ -465,7 +509,7 @@ func generateInterpretationError(err error) *startosis_errors.InterpretationErro
 		} else {
 			errorMsg = fmt.Sprintf("%s%s", evaluationErrorPrefix, slError.Unwrap().Error())
 		}
-		return startosis_errors.NewInterpretationErrorWithCustomMsg(stacktrace, errorMsg)
+		return startosis_errors.NewInterpretationErrorWithCustomMsg(stacktrace, "%s", errorMsg)
 	case *startosis_errors.InterpretationError:
 		// If it's already an interpretation error -> nothing to convert
 		return slError

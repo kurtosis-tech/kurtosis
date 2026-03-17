@@ -74,7 +74,7 @@ func extractExitCodeAfterExecution(err error) int {
 	// if unknown command is entered - display help command
 	if strings.Contains(errorMessageFromCli, commandNotFound) {
 		helpUsageText := fmt.Sprintf("Run '%v --help' for usage.\n", commands.RootCmd.CommandPath())
-		commands.RootCmd.PrintErrf(output_printers.FormatError(helpUsageText))
+		commands.RootCmd.PrintErrf("%s", output_printers.FormatError(helpUsageText))
 	}
 
 	return errorExitCode

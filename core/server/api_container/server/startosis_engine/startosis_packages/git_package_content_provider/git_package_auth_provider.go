@@ -46,7 +46,7 @@ func (gitAuth *GitHubPackageAuthProvider) GetGitHubTokenForPackage(packageId str
 
 // store as <package id>.txt, which is usually github locator, so swap out the slashes
 func getGitHubTokenFileName(packageId string) string {
-	return fmt.Sprintf("%v.txt", strings.Replace(packageId, "/", "-", -1))
+	return fmt.Sprintf("%v.txt", strings.ReplaceAll(packageId, "/", "-"))
 }
 
 func (gitAuth *GitHubPackageAuthProvider) GetGitHubTokenForUser() string {

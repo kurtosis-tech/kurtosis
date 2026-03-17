@@ -41,7 +41,8 @@ import (
 )
 
 const (
-	isResourceInformationComplete = true
+	isResourceInformationComplete                     = true
+	defaultShouldEnablePersistentVolumeLogsCollection = true
 )
 
 type DockerKurtosisBackend struct {
@@ -114,6 +115,10 @@ func (backend *DockerKurtosisBackend) CreateEngine(
 	envVars map[string]string,
 	shouldStartInDebugMode bool,
 	gitAuthToken string,
+	sinks logs_aggregator.Sinks,
+	shouldEnablePersistentVolumeLogsCollection bool,
+	logsCollectorFilters []logs_collector.Filter, // ignored on docker backend for create engine
+	logsCollectorParsers []logs_collector.Parser, // ignored on docker backend for create engine
 ) (
 	*engine.Engine,
 	error,
@@ -126,6 +131,8 @@ func (backend *DockerKurtosisBackend) CreateEngine(
 		envVars,
 		shouldStartInDebugMode,
 		gitAuthToken,
+		sinks,
+		shouldEnablePersistentVolumeLogsCollection,
 		backend.dockerManager,
 		backend.objAttrsProvider,
 	)
@@ -232,12 +239,13 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 		return nil, nil, stacktrace.NewError("Expected the logs collector to have an ip address in the enclave network but it does not.")
 	}
 
-	logsCollectorAvailabilityChecker := fluentbit.NewFluentbitAvailabilityChecker(logsCollectorIpAddressInEnclaveNetwork, logsCollector.GetPrivateHttpPort().GetNumber())
-
 	var restartPolicy docker_manager.RestartPolicy = docker_manager.NoRestart
 	if backend.productionMode {
 		restartPolicy = docker_manager.RestartAlways
 	}
+
+	// Podman doesn't support the Fluentd logging driver, so turn off logs collection when using podman
+	shouldTurnOnLogsCollection := !backend.dockerManager.IsPodman()
 
 	successfullyStartedService, failedService, err := user_service_functions.StartRegisteredUserServices(
 		ctx,
@@ -245,11 +253,14 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 		services,
 		backend.serviceRegistrationRepository,
 		logsCollector,
-		logsCollectorAvailabilityChecker,
+		logsCollectorIpAddressInEnclaveNetwork,
+		logsCollector.GetPrivateHttpPort().GetNumber(),
+		fluentbit.NewFluentbitLogsCollectorContainer().GetHttpHealthCheckEndpoint(),
 		backend.objAttrsProvider,
 		freeIpAddrProviderForEnclave,
 		backend.dockerManager,
-		restartPolicy)
+		restartPolicy,
+		shouldTurnOnLogsCollection)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Unexpected error while starting user service")
 	}
@@ -297,13 +308,14 @@ func (backend *DockerKurtosisBackend) GetUserServiceLogs(
 func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
+	containerUser string,
 	userServiceCommands map[service.ServiceUUID][]string,
 ) (
 	map[service.ServiceUUID]*exec_result.ExecResult,
 	map[service.ServiceUUID]error,
 	error,
 ) {
-	return user_service_functions.RunUserServiceExecCommands(ctx, enclaveUuid, userServiceCommands, backend.dockerManager)
+	return user_service_functions.RunUserServiceExecCommands(ctx, enclaveUuid, containerUser, userServiceCommands, backend.dockerManager)
 }
 
 func (backend *DockerKurtosisBackend) RunUserServiceExecCommandWithStreamedOutput(
@@ -374,12 +386,19 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 	return successfullyDestroyedServices, failedServices, nil
 }
 
-func (backend *DockerKurtosisBackend) CreateLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error) {
+func (backend *DockerKurtosisBackend) CreateLogsAggregator(
+	ctx context.Context,
+	httpPortNum uint16,
+	sinks logs_aggregator.Sinks,
+) (*logs_aggregator.LogsAggregator, error) {
 	logsAggregatorContainer := vector.NewVectorLogsAggregatorContainer() //Declaring the implementation
 
 	logsAggregator, _, err := logs_aggregator_functions.CreateLogsAggregator(
 		ctx,
 		logsAggregatorContainer,
+		httpPortNum,
+		sinks,
+		defaultShouldEnablePersistentVolumeLogsCollection,
 		backend.dockerManager,
 		backend.objAttrsProvider,
 	)
@@ -414,6 +433,8 @@ func (backend *DockerKurtosisBackend) CreateLogsCollectorForEnclave(
 	enclaveUuid enclave.EnclaveUUID,
 	logsCollectorTcpPortNumber uint16,
 	logsCollectorHttpPortNumber uint16,
+	logsCollectorFilters []logs_collector.Filter,
+	logsCollectorParsers []logs_collector.Parser,
 ) (
 	*logs_collector.LogsCollector,
 	error,
@@ -449,6 +470,8 @@ func (backend *DockerKurtosisBackend) CreateLogsCollectorForEnclave(
 		logsCollectorHttpPortNumber,
 		logsCollectorContainer,
 		logsAggregator,
+		logsCollectorFilters,
+		logsCollectorParsers,
 		backend.dockerManager,
 		backend.objAttrsProvider,
 	)
@@ -614,6 +637,25 @@ func (backend *DockerKurtosisBackend) getGitHubAuthStorageVolume(ctx context.Con
 	}
 	if len(foundVolumes) == 0 {
 		return "", stacktrace.NewError("No GitHub auth storage volume found.")
+	}
+	volume := foundVolumes[0]
+	return volume.Name, nil
+}
+
+// Guaranteed to either return a Docker config storage volume name or throw an error
+func (backend *DockerKurtosisBackend) getDockerConfigStorageVolume(ctx context.Context) (string, error) {
+	volumeSearchLabels := map[string]string{
+		docker_label_key.VolumeTypeDockerLabelKey.GetString(): label_value_consts.DockerConfigStorageVolumeTypeDockerLabelValue.GetString(),
+	}
+	foundVolumes, err := backend.dockerManager.GetVolumesByLabels(ctx, volumeSearchLabels)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting Docker config storage volumes matching labels '%+v'", volumeSearchLabels)
+	}
+	if len(foundVolumes) > 1 {
+		return "", stacktrace.NewError("Found multiple Docker config storage volumes. This should never happen")
+	}
+	if len(foundVolumes) == 0 {
+		return "", stacktrace.NewError("No Docker config storage volume found.")
 	}
 	volume := foundVolumes[0]
 	return volume.Name, nil

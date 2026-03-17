@@ -1,7 +1,10 @@
 package binding_constructors
 
 import (
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 // The generated bindings don't come with constructors (leaving it up to the user to initialize all the fields), so we
@@ -45,6 +48,7 @@ func NewRunStarlarkScriptArgs(
 	cloudUserId string,
 	imageDownloadMode kurtosis_core_rpc_api_bindings.ImageDownloadMode,
 	nonBlockingMode bool,
+	parallel bool,
 ) *kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs {
 	cloudInstanceIdCopy := new(string)
 	*cloudInstanceIdCopy = cloudInstanceId
@@ -54,6 +58,8 @@ func NewRunStarlarkScriptArgs(
 	*imageDownloadModeCopy = imageDownloadMode
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
+	parallelCopy := new(bool)
+	*parallelCopy = parallel
 	return &kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs{
 		SerializedScript:     serializedString,
 		SerializedParams:     &serializedParams,
@@ -65,6 +71,7 @@ func NewRunStarlarkScriptArgs(
 		CloudUserId:          cloudUserIdCopy,
 		ImageDownloadMode:    imageDownloadModeCopy,
 		NonBlockingMode:      &nonBlockingMode,
+		Parallel:             parallelCopy,
 	}
 }
 
@@ -80,6 +87,7 @@ func NewRunStarlarkPackageArgs(
 	cloudUserId string,
 	imageDownloadMode kurtosis_core_rpc_api_bindings.ImageDownloadMode,
 	nonBlockingMode bool,
+	parallel bool,
 	githubAuthToken string,
 ) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
 	parallelismCopy := new(int32)
@@ -93,6 +101,8 @@ func NewRunStarlarkPackageArgs(
 	clonePackage := false
 	githubAuthTokenCopy := new(string)
 	*githubAuthTokenCopy = githubAuthToken
+	parallelCopy := new(bool)
+	*parallelCopy = parallel
 	return &kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs{
 		PackageId:              packageId,
 		ClonePackage:           &clonePackage,
@@ -108,6 +118,7 @@ func NewRunStarlarkPackageArgs(
 		ImageDownloadMode:      imageDownloadModeCopy,
 		NonBlockingMode:        &nonBlockingMode,
 		GithubAuthToken:        githubAuthTokenCopy,
+		Parallel:               parallelCopy,
 	}
 }
 
@@ -123,6 +134,7 @@ func NewRunStarlarkRemotePackageArgs(
 	cloudUserId string,
 	imageDownloadMode kurtosis_core_rpc_api_bindings.ImageDownloadMode,
 	nonBlockingMode bool,
+	parallel bool,
 	githubAuthToken string,
 ) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
 	parallelismCopy := new(int32)
@@ -136,6 +148,8 @@ func NewRunStarlarkRemotePackageArgs(
 	clonePackage := true
 	githubAuthTokenCopy := new(string)
 	*githubAuthTokenCopy = githubAuthToken
+	parallelCopy := new(bool)
+	*parallelCopy = parallel
 	return &kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs{
 		PackageId:              packageId,
 		ClonePackage:           &clonePackage,
@@ -150,6 +164,7 @@ func NewRunStarlarkRemotePackageArgs(
 		CloudUserId:            cloudUserIdCopy,
 		ImageDownloadMode:      imageDownloadModeCopy,
 		NonBlockingMode:        &nonBlockingMode,
+		Parallel:               &parallel,
 		GithubAuthToken:        githubAuthTokenCopy,
 	}
 }
@@ -160,9 +175,20 @@ func NewRunStarlarkRemotePackageArgs(
 //
 // ==============================================================================================
 func NewStarlarkRunResponseLineFromInstruction(instruction *kurtosis_core_rpc_api_bindings.StarlarkInstruction) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+	starlarkInstructionCopy := instruction
 	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
 		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_Instruction{
-			Instruction: instruction,
+			Instruction: starlarkInstructionCopy,
+		},
+	}
+}
+
+func NewStarlarkRunResponseLineFromInstructionWithInstructionId(instruction *kurtosis_core_rpc_api_bindings.StarlarkInstruction, instructionId string) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+	starlarkInstructionCopy := instruction
+	starlarkInstructionCopy.InstructionId = &instructionId
+	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
+		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_Instruction{
+			Instruction: starlarkInstructionCopy,
 		},
 	}
 }
@@ -187,11 +213,27 @@ func NewStarlarkRunResponseLineFromWarning(warningMessage string) *kurtosis_core
 	}
 }
 
-func NewStarlarkRunResponseLineFromInstructionResult(serializedInstructionResult string) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+func NewStarlarkRunResponseLineFromInstructionResult(serializedInstructionResult string, executionDuration time.Duration) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
 		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_InstructionResult{
 			InstructionResult: &kurtosis_core_rpc_api_bindings.StarlarkInstructionResult{
 				SerializedInstructionResult: serializedInstructionResult,
+				ExecutionDuration:           durationpb.New(executionDuration),
+				InstructionId:               nil,
+			},
+		},
+	}
+}
+
+func NewStarlarkRunResponseLineFromInstructionResultWithInstructionId(serializedInstructionResult string, executionDuration time.Duration, instructionId string) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+	instructionIdPtr := new(string)
+	*instructionIdPtr = instructionId
+	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
+		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_InstructionResult{
+			InstructionResult: &kurtosis_core_rpc_api_bindings.StarlarkInstructionResult{
+				SerializedInstructionResult: serializedInstructionResult,
+				ExecutionDuration:           durationpb.New(executionDuration),
+				InstructionId:               instructionIdPtr,
 			},
 		},
 	}
@@ -240,6 +282,22 @@ func NewStarlarkRunResponseLineFromSinglelineProgressInfo(currentStepInfo string
 				CurrentStepInfo:   []string{currentStepInfo},
 				TotalSteps:        totalSteps,
 				CurrentStepNumber: currentStepNumber,
+				InstructionId:     nil,
+			},
+		},
+	}
+}
+
+func NewStarlarkRunResponseLineFromSinglelineProgressInfoWithInstructionId(currentStepInfo string, currentStepNumber uint32, totalSteps uint32, instructionId string) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+	instructionIdPtr := new(string)
+	*instructionIdPtr = instructionId
+	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
+		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_ProgressInfo{
+			ProgressInfo: &kurtosis_core_rpc_api_bindings.StarlarkRunProgress{
+				CurrentStepInfo:   []string{currentStepInfo},
+				TotalSteps:        totalSteps,
+				CurrentStepNumber: currentStepNumber,
+				InstructionId:     instructionIdPtr,
 			},
 		},
 	}
@@ -252,6 +310,7 @@ func NewStarlarkRunResponseLineFromMultilineProgressInfo(currentStepInfoMultilin
 				CurrentStepInfo:   currentStepInfoMultiline,
 				TotalSteps:        totalSteps,
 				CurrentStepNumber: currentStepNumber,
+				InstructionId:     nil,
 			},
 		},
 	}
@@ -261,19 +320,33 @@ func NewStarlarkRunResponseLineFromRunFailureEvent() *kurtosis_core_rpc_api_bind
 	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
 		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_RunFinishedEvent{
 			RunFinishedEvent: &kurtosis_core_rpc_api_bindings.StarlarkRunFinishedEvent{
-				IsRunSuccessful:  false,
-				SerializedOutput: nil,
+				IsRunSuccessful:        false,
+				TotalExecutionDuration: durationpb.New(0),
+				SerializedOutput:       nil,
 			},
 		},
 	}
 }
 
-func NewStarlarkRunResponseLineFromRunSuccessEvent(serializedOutputObject string) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+func NewStarlarkRunResponseLineFromRunFailureEventWithDuration(totalExecutionDuration time.Duration) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
 		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_RunFinishedEvent{
 			RunFinishedEvent: &kurtosis_core_rpc_api_bindings.StarlarkRunFinishedEvent{
-				IsRunSuccessful:  true,
-				SerializedOutput: &serializedOutputObject,
+				IsRunSuccessful:        false,
+				TotalExecutionDuration: durationpb.New(totalExecutionDuration),
+				SerializedOutput:       nil,
+			},
+		},
+	}
+}
+
+func NewStarlarkRunResponseLineFromRunSuccessEvent(serializedOutputObject string, totalExecutionDuration time.Duration) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
+		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_RunFinishedEvent{
+			RunFinishedEvent: &kurtosis_core_rpc_api_bindings.StarlarkRunFinishedEvent{
+				IsRunSuccessful:        true,
+				TotalExecutionDuration: durationpb.New(totalExecutionDuration),
+				SerializedOutput:       &serializedOutputObject,
 			},
 		},
 	}
@@ -287,6 +360,21 @@ func NewStarlarkInstruction(position *kurtosis_core_rpc_api_bindings.StarlarkIns
 		Arguments:             arguments,
 		IsSkipped:             isSkipped,
 		Description:           description,
+		InstructionId:         nil,
+	}
+}
+
+func NewStarlarkInstructionWithInstructionId(position *kurtosis_core_rpc_api_bindings.StarlarkInstructionPosition, name string, executableInstruction string, arguments []*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg, isSkipped bool, description string, instructionId string) *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
+	instructionIdPtr := new(string)
+	*instructionIdPtr = instructionId
+	return &kurtosis_core_rpc_api_bindings.StarlarkInstruction{
+		InstructionName:       name,
+		Position:              position,
+		ExecutableInstruction: executableInstruction,
+		Arguments:             arguments,
+		IsSkipped:             isSkipped,
+		Description:           description,
+		InstructionId:         &instructionId,
 	}
 }
 
@@ -362,17 +450,40 @@ func NewServiceInfo(
 	maybePublicPorts map[string]*kurtosis_core_rpc_api_bindings.Port,
 	serviceStatus kurtosis_core_rpc_api_bindings.ServiceStatus,
 	container *kurtosis_core_rpc_api_bindings.Container,
+	serviceDirPathsToFilesArtifactsList map[string]*kurtosis_core_rpc_api_bindings.FilesArtifactsList,
+	minMillicpus uint32,
+	maxMillicpus uint32,
+	minMemoryMegabytes uint32,
+	maxMemoryMegabytes uint32,
+	user *kurtosis_core_rpc_api_bindings.User,
+	tolerations []*kurtosis_core_rpc_api_bindings.Toleration,
+	nodeSelectors map[string]string,
+	labels map[string]string,
+	tiniEnabled bool,
+	ttyEnabled bool,
+
 ) *kurtosis_core_rpc_api_bindings.ServiceInfo {
 	return &kurtosis_core_rpc_api_bindings.ServiceInfo{
-		ServiceUuid:       uuid,
-		Name:              name,
-		ShortenedUuid:     shortenedUuid,
-		PrivateIpAddr:     privateIpAddr,
-		PrivatePorts:      privatePorts,
-		MaybePublicIpAddr: maybePublicIpAddr,
-		MaybePublicPorts:  maybePublicPorts,
-		ServiceStatus:     serviceStatus,
-		Container:         container,
+		ServiceUuid:                         uuid,
+		Name:                                name,
+		ShortenedUuid:                       shortenedUuid,
+		PrivateIpAddr:                       privateIpAddr,
+		PrivatePorts:                        privatePorts,
+		MaybePublicIpAddr:                   maybePublicIpAddr,
+		MaybePublicPorts:                    maybePublicPorts,
+		ServiceStatus:                       serviceStatus,
+		Container:                           container,
+		ServiceDirPathsToFilesArtifactsList: serviceDirPathsToFilesArtifactsList,
+		MaxMillicpus:                        maxMillicpus,
+		MinMillicpus:                        minMillicpus,
+		MaxMemoryMegabytes:                  maxMemoryMegabytes,
+		MinMemoryMegabytes:                  minMemoryMegabytes,
+		User:                                user,
+		Tolerations:                         tolerations,
+		NodeSelectors:                       nodeSelectors,
+		Labels:                              labels,
+		TiniEnabled:                         &tiniEnabled,
+		TtyEnabled:                          &ttyEnabled,
 	}
 }
 

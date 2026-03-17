@@ -8,6 +8,11 @@ package inspect
 import (
 	"context"
 	"fmt"
+	"sort"
+	"strings"
+	"time"
+	"unicode/utf8"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
@@ -22,10 +27,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"sort"
-	"strings"
-	"time"
-	"unicode/utf8"
 )
 
 const (
@@ -142,7 +143,7 @@ func PrintEnclaveInspect(ctx context.Context, kurtosisCtx *kurtosis_context.Kurt
 	// Add creation time row
 	enclaveCreationTime := enclaveInfo.GetCreationTime()
 	if enclaveCreationTime == nil {
-		return stacktrace.Propagate(err, "Expected to get the enclave creation time from the enclave info received but it was not received, this is a bug in Kurtosis")
+		return stacktrace.NewError("Expected to get the enclave creation time from the enclave info received but it was not received, this is a bug in Kurtosis")
 	}
 	enclaveCreationTimeStr := enclaveCreationTime.AsTime().Local().Format(time.RFC1123)
 	keyValuePrinter.AddPair(enclaveCreationTimeTitleName, enclaveCreationTimeStr)
@@ -176,7 +177,7 @@ func PrintEnclaveInspect(ctx context.Context, kurtosisCtx *kurtosis_context.Kurt
 		}
 
 		numRunesInHeader := utf8.RuneLen(' ') + utf8.RuneCountInString(header) + utf8.RuneLen(' ') // there will be a space before and after the header
-		numPadChars := (headerWidthChars - numRunesInHeader) / 2                                   //nolint:gomnd
+		numPadChars := (headerWidthChars - numRunesInHeader) / 2                                   //nolint:mnd
 		padStr := strings.Repeat(headerPadChar, numPadChars)
 		fmt.Printf("%v %v %v\n", padStr, header, padStr)
 

@@ -86,7 +86,8 @@ func CreateReverseProxy(
 		ctx,
 		containerId,
 		defaultContainerStatusForNewReverseProxyContainer,
-		dockerManager)
+		dockerManager,
+	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting reverse proxy object using container ID '%v', labels '%+v', status '%v'.", containerId, containerLabels, defaultContainerStatusForNewReverseProxyContainer)
 	}

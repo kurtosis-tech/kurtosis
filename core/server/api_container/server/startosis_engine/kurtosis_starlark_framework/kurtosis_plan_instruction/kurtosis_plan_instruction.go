@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
@@ -89,7 +90,7 @@ func (builtin *KurtosisPlanInstructionWrapper) CreateBuiltin() func(thread *star
 					enclavePlanInstructionPulledFromMaskMaybe.ReturnedValue)
 			}
 			scheduledInstruction := instructions_plan.NewScheduledInstruction(
-				instructions_plan.ScheduledInstructionUuid(enclavePlanInstructionPulledFromMaskMaybe.Uuid),
+				types.ScheduledInstructionUuid(enclavePlanInstructionPulledFromMaskMaybe.Uuid),
 				instructionWrapper,
 				returnedValue,
 			).Executed(true)

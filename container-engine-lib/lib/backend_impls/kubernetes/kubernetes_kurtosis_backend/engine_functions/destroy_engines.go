@@ -11,12 +11,13 @@ func DestroyEngines(
 	ctx context.Context,
 	filters *engine.EngineFilters,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
+	engineNodeName string,
 ) (
 	resultSuccessfulEngineGuids map[engine.EngineGUID]bool,
 	resultErroredEngineGuids map[engine.EngineGUID]error,
 	resultErr error,
 ) {
-	_, matchingResources, err := getMatchingEngineObjectsAndKubernetesResources(ctx, filters, kubernetesManager)
+	_, matchingResources, err := getMatchingEngineObjectsAndKubernetesResources(ctx, filters, kubernetesManager, engineNodeName)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engine Kubernetes resources matching filters: %+v", filters)
 	}

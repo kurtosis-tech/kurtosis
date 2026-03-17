@@ -3,8 +3,9 @@ package user_services_functions
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"strings"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
 
@@ -313,6 +314,7 @@ func createStartServiceOperation(
 		tolerations := serviceConfig.GetTolerations()
 		nodeSelectors := serviceConfig.GetNodeSelectors()
 		imageDownloadMode := serviceConfig.GetImageDownloadMode()
+		devices := serviceConfig.GetDevices()
 
 		matchingObjectAndResources, found := servicesObjectsAndResources[serviceUuid]
 		if !found {
@@ -371,6 +373,65 @@ func createStartServiceOperation(
 				userServiceContainerVolumeMounts = append(userServiceContainerVolumeMounts, *volumeAndClaim.GetVolumeMount(serviceMountDirPath))
 			}
 		}
+
+		// Add device volumes if devices are specified
+		if len(devices) > 0 {
+			for _, devicePath := range devices {
+				deviceType := apiv1.HostPathCharDev
+				// Try to detect if it's a block device (common patterns: /dev/sd*, /dev/nvme*, /dev/vd*)
+				// For TPM devices (/dev/tpm*), they are character devices
+				volumeName := "kurtosis-device-" + strings.ReplaceAll(strings.TrimPrefix(devicePath, "/dev/"), "/", "-")
+				deviceVolume := apiv1.Volume{
+					Name: volumeName,
+					VolumeSource: apiv1.VolumeSource{
+						HostPath: &apiv1.HostPathVolumeSource{
+							Path: devicePath,
+							Type: &deviceType,
+						},
+						EmptyDir:              nil,
+						GCEPersistentDisk:     nil,
+						AWSElasticBlockStore:  nil,
+						GitRepo:               nil,
+						Secret:                nil,
+						NFS:                   nil,
+						ISCSI:                 nil,
+						Glusterfs:             nil,
+						PersistentVolumeClaim: nil,
+						RBD:                   nil,
+						FlexVolume:            nil,
+						Cinder:                nil,
+						CephFS:                nil,
+						Flocker:               nil,
+						DownwardAPI:           nil,
+						FC:                    nil,
+						AzureFile:             nil,
+						ConfigMap:             nil,
+						VsphereVolume:         nil,
+						Quobyte:               nil,
+						AzureDisk:             nil,
+						PhotonPersistentDisk:  nil,
+						Projected:             nil,
+						PortworxVolume:        nil,
+						ScaleIO:               nil,
+						StorageOS:             nil,
+						CSI:                   nil,
+						Ephemeral:             nil,
+					},
+				}
+				podVolumes = append(podVolumes, deviceVolume)
+
+				deviceVolumeMount := apiv1.VolumeMount{
+					Name:             volumeName,
+					MountPath:        devicePath,
+					ReadOnly:         false,
+					SubPath:          "",
+					MountPropagation: nil,
+					SubPathExpr:      "",
+				}
+				userServiceContainerVolumeMounts = append(userServiceContainerVolumeMounts, deviceVolumeMount)
+			}
+		}
+
 		defer func() {
 			if !shouldDestroyPersistentVolumesAndClaims {
 				return
@@ -421,9 +482,7 @@ func createStartServiceOperation(
 			podVolumes,
 			userServiceServiceAccountName,
 			restartPolicy,
-			tolerations,
-			nodeSelectors,
-		)
+			tolerations, nodeSelectors)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating pod '%v' using image '%v'", podName, containerImageName)
 		}
@@ -655,6 +714,22 @@ func getUserServicePodContainerSpecs(
 		}
 		containerEnvVars = append(containerEnvVars, envVar)
 	}
+
+	// Add K8S_POD_IP environment variable using Kubernetes Downward API
+	podIPEnvVar := apiv1.EnvVar{
+		Name:  "K8S_POD_IP",
+		Value: "",
+		ValueFrom: &apiv1.EnvVarSource{
+			FieldRef: &apiv1.ObjectFieldSelector{
+				FieldPath:  "status.podIP",
+				APIVersion: "",
+			},
+			ResourceFieldRef: nil,
+			ConfigMapKeyRef:  nil,
+			SecretKeyRef:     nil,
+		},
+	}
+	containerEnvVars = append(containerEnvVars, podIPEnvVar)
 
 	kubernetesContainerPorts, err := getKubernetesContainerPortsFromPrivatePortSpecs(privatePorts)
 	if err != nil {

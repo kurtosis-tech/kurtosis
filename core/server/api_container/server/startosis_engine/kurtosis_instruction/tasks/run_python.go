@@ -3,6 +3,8 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
@@ -11,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/store_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
@@ -24,10 +27,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
-	"strings"
 )
 
 const (
@@ -46,6 +49,8 @@ const (
 
 	runPythonDefaultDescription = "Running Python script"
 )
+
+var defaultPythonPackages = []string{"bash"}
 
 func NewRunPythonService(
 	serviceNetwork service_network.ServiceNetwork,
@@ -106,6 +111,34 @@ func NewRunPythonService(
 						return builtin_argument.DurationOrNone(value, WaitArgName)
 					},
 				},
+				{
+					Name:              AcceptableCodesArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
+					Validator:         nil,
+				},
+				{
+					Name:              SkipCodeCheckArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Bool],
+					Validator:         nil,
+				},
+				{
+					Name:              NodeSelectorsArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return builtin_argument.StringMappingToString(value, NodeSelectorsArgName)
+					},
+				},
+				{
+					Name:              TolerationsArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return nil
+					},
+				},
 			},
 		},
 
@@ -127,6 +160,10 @@ func NewRunPythonService(
 				wait:                   DefaultWaitTimeoutDurationStr,
 				description:            "",  // populated at interpretation time
 				returnValue:            nil, // populated at interpretation time
+				runCodeValue:           "",  // populated at interpretation time
+				runOutputValue:         "",  // populated at interpretation time
+				skipCodeCheck:          false,
+				acceptableCodes:        nil, // populated at interpretation time
 			}
 		},
 
@@ -138,6 +175,8 @@ func NewRunPythonService(
 			FilesArgName:           true,
 			StoreFilesArgName:      true,
 			WaitArgName:            true,
+			NodeSelectorsArgName:   true,
+			TolerationsArgName:     true,
 		},
 	}
 }
@@ -159,11 +198,15 @@ type RunPythonCapabilities struct {
 	packageContentProvider startosis_packages.PackageContentProvider
 	packageReplaceOptions  map[string]string
 
-	returnValue   *starlarkstruct.Struct
-	serviceConfig *service.ServiceConfig
-	storeSpecList []*store_spec.StoreSpec
-	wait          string
-	description   string
+	returnValue     *starlarkstruct.Struct
+	runCodeValue    string
+	runOutputValue  string
+	serviceConfig   *service.ServiceConfig
+	storeSpecList   []*store_spec.StoreSpec
+	wait            string
+	description     string
+	acceptableCodes []int64
+	skipCodeCheck   bool
 }
 
 func (builtin *RunPythonCapabilities) Interpret(locatorOfModuleInWhichThisBuiltinIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -191,6 +234,7 @@ func (builtin *RunPythonCapabilities) Interpret(locatorOfModuleInWhichThisBuilti
 		builtin.pythonArguments = argsList
 	}
 
+	builtin.packages = defaultPythonPackages
 	if arguments.IsSet(PackagesArgName) {
 		packagesValue, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, PackagesArgName)
 		if err != nil {
@@ -200,7 +244,7 @@ func (builtin *RunPythonCapabilities) Interpret(locatorOfModuleInWhichThisBuilti
 		if sliceParsingErr != nil {
 			return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while converting Starlark list of packages to a golang string slice")
 		}
-		builtin.packages = packagesList
+		builtin.packages = append(builtin.packages, packagesList...)
 	}
 
 	var maybeImageName string
@@ -250,12 +294,22 @@ func (builtin *RunPythonCapabilities) Interpret(locatorOfModuleInWhichThisBuilti
 	}
 
 	envVars, interpretationErr := extractEnvVarsIfDefined(arguments)
-	if err != nil {
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	nodeSelectors, interpretationErr := extractNodeSelectorsIfDefined(arguments)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	tolerations, interpretationErr := extractTolerationsIfDefined(arguments)
+	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 
 	// build a service config from image and files artifacts expansion.
-	builtin.serviceConfig, err = getServiceConfig(maybeImageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, filesArtifactExpansion, envVars)
+	builtin.serviceConfig, err = getServiceConfig(maybeImageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, filesArtifactExpansion, envVars, nodeSelectors, tolerations)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating service config for run python.")
 	}
@@ -276,6 +330,29 @@ func (builtin *RunPythonCapabilities) Interpret(locatorOfModuleInWhichThisBuilti
 		builtin.wait = waitTimeout
 	}
 
+	acceptableCodes := defaultAcceptableCodes
+	if arguments.IsSet(AcceptableCodesArgName) {
+		acceptableCodesValue, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, AcceptableCodesArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%v' argument", acceptableCodes)
+		}
+		acceptableCodes, err = kurtosis_types.SafeCastToIntegerSlice(acceptableCodesValue)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to parse '%v' argument", acceptableCodes)
+		}
+	}
+	builtin.acceptableCodes = acceptableCodes
+
+	skipCodeCheck := defaultSkipCodeCheck
+	if arguments.IsSet(SkipCodeCheckArgName) {
+		skipCodeCheckArgumentValue, err := builtin_argument.ExtractArgumentValue[starlark.Bool](arguments, SkipCodeCheckArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", SkipCodeCheckArgName)
+		}
+		skipCodeCheck = bool(skipCodeCheckArgumentValue)
+	}
+	builtin.skipCodeCheck = skipCodeCheck
+
 	resultUuid, err := builtin.runtimeValueStore.CreateValue()
 	if err != nil {
 		return nil, startosis_errors.NewInterpretationError("An error occurred while generating UUID for future reference for %v instruction", RunPythonBuiltinName)
@@ -284,7 +361,7 @@ func (builtin *RunPythonCapabilities) Interpret(locatorOfModuleInWhichThisBuilti
 
 	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, runPythonDefaultDescription)
 
-	builtin.returnValue = createInterpretationResult(resultUuid, builtin.storeSpecList)
+	builtin.returnValue, builtin.runCodeValue, builtin.runOutputValue = createInterpretationResult(resultUuid, builtin.storeSpecList)
 	return builtin.returnValue, nil
 }
 
@@ -325,7 +402,7 @@ func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_ar
 	// run the command passed in by user in the container
 	runPythonExecutionResult, err := executeWithWait(ctx, builtin.serviceNetwork, builtin.name, builtin.wait, fullCommandToRun)
 	if err != nil {
-		return "", stacktrace.Propagate(err, fmt.Sprintf("error occurred while executing one time task command: %v ", builtin.run))
+		return "", stacktrace.Propagate(err, "%s", fmt.Sprintf("error occurred while executing one time task command: %v ", builtin.run))
 	}
 
 	result := map[string]starlark.Comparable{
@@ -338,10 +415,10 @@ func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_ar
 	}
 	instructionResult := resultMapToString(result, RunPythonBuiltinName)
 
-	// throw an error as execution of the command failed
-	if runPythonExecutionResult.GetExitCode() != 0 {
-		errorMessage := fmt.Sprintf("Python command: %q exited with code %d and output", commandToRun, runPythonExecutionResult.GetExitCode())
-		return "", stacktrace.NewError(formatErrorMessage(errorMessage, runPythonExecutionResult.GetOutput()))
+	// throw an error as execution of the command is not a part of acceptable codes
+	if !builtin.skipCodeCheck && !isAcceptableCode(builtin.acceptableCodes, result) {
+		errorMessage := fmt.Sprintf("Run python returned exit code '%v' that is not part of the acceptable status codes '%v', with output:", result["code"], builtin.acceptableCodes)
+		return "", stacktrace.NewError("%s", formatErrorMessage(errorMessage, result["output"].String()))
 	}
 
 	if builtin.storeSpecList != nil {
@@ -373,10 +450,32 @@ func (builtin *RunPythonCapabilities) FillPersistableAttributes(builder *enclave
 	builder.SetType(RunPythonBuiltinName)
 }
 
-func (builtin *RunPythonCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
+func (builtin *RunPythonCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerator) error {
 	err := plan.AddRunPython(builtin.run, builtin.description, builtin.returnValue, builtin.serviceConfig, builtin.storeSpecList, builtin.pythonArguments, builtin.packages)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred updating plan with run python")
+	}
+	return nil
+}
+
+func (builtin *RunPythonCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
+	shortDescriptor := fmt.Sprintf("run_python(%s)", builtin.description)
+	dependencyGraph.UpdateInstructionShortDescriptor(instructionUuid, shortDescriptor)
+
+	if builtin.serviceConfig.GetFilesArtifactsExpansion() != nil {
+		for _, filesArtifactNames := range builtin.serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
+			for _, filesArtifactName := range filesArtifactNames {
+				dependencyGraph.ConsumesFilesArtifact(instructionUuid, filesArtifactName)
+			}
+		}
+	}
+	dependencyGraph.ConsumesAnyRuntimeValuesInString(instructionUuid, builtin.run)
+	dependencyGraph.ConsumesAnyRuntimeValuesInList(instructionUuid, builtin.pythonArguments)
+
+	dependencyGraph.ProducesRuntimeValue(instructionUuid, builtin.runCodeValue)
+	dependencyGraph.ProducesRuntimeValue(instructionUuid, builtin.runOutputValue)
+	for _, storeSpec := range builtin.storeSpecList {
+		dependencyGraph.ProducesFilesArtifact(instructionUuid, storeSpec.GetName())
 	}
 	return nil
 }

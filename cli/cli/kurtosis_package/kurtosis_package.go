@@ -26,7 +26,7 @@ func InitializeKurtosisPackage(packageDirpath string, packageName string, isExec
 	// validate package name
 	_, err := shared_utils.ParseGitURL(packageName)
 	if err != nil {
-		return stacktrace.Propagate(err, "An erro occurred validating package name '%v', invalid GitHub URL", packageName)
+		return stacktrace.Propagate(err, "An error occurred validating package name '%v', invalid GitHub URL", packageName)
 	}
 
 	logrus.Debugf("Initializaing the '%s' Kurtosis package...", packageName)

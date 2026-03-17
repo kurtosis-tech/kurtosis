@@ -31,4 +31,10 @@ type LogsDatabaseClient interface {
 		map[service.ServiceUUID]bool,
 		error,
 	)
+
+	StartLogFileManagement(ctx context.Context)
+
+	RemoveEnclaveLogs(enclaveUuid string) error
+
+	RemoveAllLogs() error
 }

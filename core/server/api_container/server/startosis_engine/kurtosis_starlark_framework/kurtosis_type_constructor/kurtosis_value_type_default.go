@@ -32,7 +32,7 @@ func CreateKurtosisStarlarkTypeDefault(name string, arguments *builtin_argument.
 
 func ExtractAttrValue[AttrValueType starlark.Value](value *KurtosisValueTypeDefault, attrName string) (AttrValueType, bool, *startosis_errors.InterpretationError) {
 	var result AttrValueType
-	attrValue, err := value.Struct.Attr(attrName)
+	attrValue, err := value.Attr(attrName)
 	if err != nil {
 		// starlarkstruct.Struct.Attr() throws an error only when the attribute does not exist. Therefore, we know here
 		// this is not a real error, it's just that the attribute name could not be found.
@@ -51,8 +51,8 @@ func ExtractAttrValue[AttrValueType starlark.Value](value *KurtosisValueTypeDefa
 
 func (value *KurtosisValueTypeDefault) Copy() (*KurtosisValueTypeDefault, error) {
 	copiedStructDict := starlark.StringDict{}
-	value.Struct.ToStringDict(copiedStructDict)
-	copiedStruct := starlarkstruct.FromStringDict(value.Struct.Constructor(), copiedStructDict)
+	value.ToStringDict(copiedStructDict)
+	copiedStruct := starlarkstruct.FromStringDict(value.Constructor(), copiedStructDict)
 
 	argumentValues := make([]starlark.Value, len(value.arguments.GetDefinition()))
 	for idx, argumentDefinition := range value.arguments.GetDefinition() {

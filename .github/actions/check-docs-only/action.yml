@@ -1,0 +1,25 @@
+name: 'Check Docs Only Changes'
+description: 'Determine if only docs/markdown files changed compared to main branch'
+outputs:
+  has-code-changes:
+    description: 'true if non-docs files changed, false otherwise'
+    value: ${{ steps.check.outputs.has-code-changes }}
+runs:
+  using: composite
+  steps:
+    - name: Fetch main branch for comparison
+      shell: bash
+      run: git fetch origin main --depth=1
+
+    - name: Check for code changes
+      id: check
+      shell: bash
+      run: |
+        # Check if there are changes outside docs/ and *.md files
+        if git --no-pager diff --exit-code origin/main...HEAD -- . ':!docs' ':!*.md' > /dev/null 2>&1; then
+          echo "Only docs/markdown changes detected - skipping build"
+          echo "has-code-changes=false" >> $GITHUB_OUTPUT
+        else
+          echo "Code changes detected - proceeding with build"
+          echo "has-code-changes=true" >> $GITHUB_OUTPUT
+        fi

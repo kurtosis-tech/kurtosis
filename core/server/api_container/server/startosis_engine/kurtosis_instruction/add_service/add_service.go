@@ -3,9 +3,12 @@ package add_service
 import (
 	"context"
 	"fmt"
+	"reflect"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
@@ -21,9 +24,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
-	"reflect"
 )
 
 const (
@@ -31,8 +34,11 @@ const (
 
 	ServiceNameArgName   = "name"
 	ServiceConfigArgName = "config"
+	ForceUpdateArgName   = "force_update"
 
 	addServiceDescriptionFormatStr = "Adding service with name '%v' and image '%v'"
+
+	defaultForceUpdate = false
 )
 
 func NewAddService(
@@ -69,6 +75,12 @@ func NewAddService(
 						return nil
 					},
 				},
+				{
+					Name:              ForceUpdateArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Bool],
+					Validator:         nil,
+				},
 			},
 		},
 
@@ -90,6 +102,7 @@ func NewAddService(
 				returnValue:                  nil, // populated at interpretation time
 				imageVal:                     nil, // populated at interpretation time
 				imageDownloadMode:            imageDownloadMode,
+				forceUpdate:                  defaultForceUpdate, // populated at interpretation time
 			}
 		},
 
@@ -121,6 +134,7 @@ type AddServiceCapabilities struct {
 	description string
 
 	imageDownloadMode image_download_mode.ImageDownloadMode
+	forceUpdate       bool
 }
 
 func (builtin *AddServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -154,9 +168,19 @@ func (builtin *AddServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuilt
 		return nil, interpretationErr
 	}
 
+	forceUpdate := defaultForceUpdate
+	if arguments.IsSet(ForceUpdateArgName) {
+		forceUpdateValue, err := builtin_argument.ExtractArgumentValue[starlark.Bool](arguments, ForceUpdateArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ForceUpdateArgName)
+		}
+		forceUpdate = bool(forceUpdateValue)
+	}
+
 	builtin.serviceName = service.ServiceName(serviceName.GoString())
 	builtin.serviceConfig = apiServiceConfig
 	builtin.readyCondition = readyCondition
+	builtin.forceUpdate = forceUpdate
 	builtin.resultUuid, err = builtin.runtimeValueStore.GetOrCreateValueAssociatedWithService(builtin.serviceName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to create runtime value to hold '%v' command return values", AddServiceBuiltinName)
@@ -211,12 +235,12 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Unexpected error occurred starting service '%s'", replacedServiceName)
 	}
-
 	if err := runServiceReadinessCheck(
 		ctx,
 		builtin.serviceNetwork,
 		builtin.runtimeValueStore,
 		replacedServiceName,
+		startedService,
 		builtin.readyCondition,
 	); err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while checking if service '%v' is ready", replacedServiceName)
@@ -245,6 +269,12 @@ func (builtin *AddServiceCapabilities) TryResolveWith(instructionsAreEqual bool,
 	if !other.HasOnlyServiceName(builtin.serviceName) {
 		enclaveComponents.AddService(builtin.serviceName, enclave_structure.ComponentIsNew)
 		return enclave_structure.InstructionIsUnknown
+	}
+
+	// if force_update is set, always recreate the service regardless of config equality
+	if builtin.forceUpdate {
+		enclaveComponents.AddService(builtin.serviceName, enclave_structure.ComponentIsUpdated)
+		return enclave_structure.InstructionIsUpdate
 	}
 
 	// if service names are equal but the instructions are not equal, it means the service config has been updated.
@@ -286,41 +316,26 @@ func (builtin *AddServiceCapabilities) FillPersistableAttributes(builder *enclav
 	)
 }
 
-func (builtin *AddServiceCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYaml) error {
-	var buildContextLocator string
-	var targetStage string
-	var registryAddress string
-	var interpretationErr *startosis_errors.InterpretationError
-
-	// set image values based on type of image
-	if builtin.imageVal != nil {
-		switch starlarkImgVal := builtin.imageVal.(type) {
-		case *service_config.ImageBuildSpec:
-			buildContextLocator, interpretationErr = starlarkImgVal.GetBuildContextLocator()
-			if interpretationErr != nil {
-				return startosis_errors.WrapWithInterpretationError(interpretationErr, "An error occurred getting build context locator")
-			}
-			targetStage, interpretationErr = starlarkImgVal.GetTargetStage()
-			if interpretationErr != nil {
-				return startosis_errors.WrapWithInterpretationError(interpretationErr, "An error occurred getting target stage.")
-			}
-		case *service_config.ImageSpec:
-			registryAddress, interpretationErr = starlarkImgVal.GetRegistryAddrIfSet()
-			if interpretationErr != nil {
-				return startosis_errors.WrapWithInterpretationError(interpretationErr, "An error occurred getting registry address.")
-			}
-		default:
-			// assume NixBuildSpec or regular image
-		}
-	}
-
-	err := planYaml.AddService(builtin.serviceName, builtin.returnValue, builtin.serviceConfig, buildContextLocator, targetStage, registryAddress)
+func (builtin *AddServiceCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYamlGenerator) error {
+	err := updatePlanYamlWithService(planYaml, builtin.serviceName, builtin.returnValue, builtin.serviceConfig, builtin.imageVal)
 	if err != nil {
-		return stacktrace.NewError("An error occurred updating the plan with service: %v", builtin.serviceName)
+		return err
 	}
 	return nil
 }
 
 func (builtin *AddServiceCapabilities) Description() string {
 	return builtin.description
+}
+
+// UpdateDependencyGraph updates the dependency graph with the effects of running this instruction
+func (builtin *AddServiceCapabilities) UpdateDependencyGraph(instructionsUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
+	shortDescriptor := fmt.Sprintf("add_service(%s)", builtin.serviceName)
+	dependencyGraph.UpdateInstructionShortDescriptor(instructionsUuid, shortDescriptor)
+
+	err := addServiceToDependencyGraph(instructionsUuid, dependencyGraph, string(builtin.serviceName), builtin.returnValue, builtin.serviceConfig)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred updating the dependency graph with service '%s'", builtin.serviceName)
+	}
+	return nil
 }

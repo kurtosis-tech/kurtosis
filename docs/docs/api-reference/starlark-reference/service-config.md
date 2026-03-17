@@ -139,6 +139,14 @@ config = ServiceConfig(
         )
     },
 
+    # Whether to publish UDP ports to the host machine.
+    # By default, UDP ports are not published to the host to avoid port exhaustion issues,
+    # as each published UDP port consumes a host port.
+    # Set to True if you need to access UDP ports from outside the enclave.
+    # This only applies to Docker.
+    # OPTIONAL (Default: False)
+    publish_udp = False,
+
     # A mapping of path_on_container_where_contents_will_be_mounted -> Directory object or file artifact name
     # For more info on what a Directory object is, see below
     #
@@ -255,7 +263,23 @@ config = ServiceConfig(
     # The tini_enabled field allows you to set the `--init` options when a container is started in Docker.
     # OPTIONAL
     # Default (true)
-    tini_enabled = True
+    tini_enabled = True,
+
+    # The tty_enabled field enables TTY mode for the container, allowing interactive terminal sessions.
+    # When set to True, the container will be created with TTY support enabled for interactive use.
+    # OPTIONAL
+    # Default (false)
+    tty_enabled = False,
+
+    # The devices field allows you to mount host devices into the container.
+    # Each device path (e.g., "/dev/tpm0") will be mounted at the same path inside the container.
+    # Devices are mounted with read-write-mknod permissions.
+    # This is useful for accessing hardware devices like TPM modules, GPUs, or other specialized hardware.
+    # OPTIONAL (Default: [])
+    devices = [
+        "/dev/tpm0",
+        "/dev/tpmrm0",
+    ]
 )
 ```
 Note that `ImageBuildSpec` can only be used in packages and not standalone scripts as it relies on build context in package. More info on [`ImageBuildSpec`](./image-build-spec.md) here.

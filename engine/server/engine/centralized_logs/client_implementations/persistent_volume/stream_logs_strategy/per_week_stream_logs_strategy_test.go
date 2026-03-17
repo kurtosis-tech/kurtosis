@@ -25,6 +25,8 @@ const (
 	defaultDay  = 0 // sunday
 )
 
+// TODO: migrate GetLogFilePaths tests to FileLayout interface when it is fully merged
+// for now, leave them duplicated so there's an extra layer of testing as the migration happens
 func TestGetLogFilePaths(t *testing.T) {
 	filesystem := volume_filesystem.NewMockedVolumeFilesystem()
 

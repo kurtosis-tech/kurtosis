@@ -17,7 +17,7 @@ func DeepCopyArgumentValue[StarlarkValueType starlark.Value](genericArgValue Sta
 	}
 	copiedValue, ok := genericCopiedValue.(StarlarkValueType)
 	if !ok {
-		return copiedValue, fmt.Errorf("Error copying argument value '%s'. Unexpected type returned (original type: '%s', returned type: '%s')", genericArgValue, reflect.TypeOf(genericArgValue), reflect.TypeOf(genericCopiedValue))
+		return copiedValue, fmt.Errorf("error copying argument value '%s'. Unexpected type returned (original type: '%s', returned type: '%s')", genericArgValue, reflect.TypeOf(genericArgValue), reflect.TypeOf(genericCopiedValue))
 	}
 	return copiedValue, nil
 }
@@ -40,7 +40,7 @@ func deepCopyArgumentValueInternal(genericArgValue starlark.Value) (starlark.Val
 		for idx := 0; idx < argValue.Len(); idx++ {
 			copiedItem, err := deepCopyArgumentValueInternal(argValue.Index(idx))
 			if err != nil {
-				return nil, fmt.Errorf("Cannot copy starlark.List object: '%s'. Item at index '%d' failed to be copied. Error was: %s", argValue.String(), idx, err.Error())
+				return nil, fmt.Errorf("cannot copy starlark.List object: '%s'. Item at index '%d' failed to be copied. Error was: %s", argValue.String(), idx, err.Error())
 			}
 			copiedList[idx] = copiedItem
 		}
@@ -53,10 +53,10 @@ func deepCopyArgumentValueInternal(genericArgValue starlark.Value) (starlark.Val
 		for idx := 0; iterator.Next(&item); idx++ {
 			copiedItem, err := deepCopyArgumentValueInternal(item)
 			if err != nil {
-				return nil, fmt.Errorf("Cannot copy starlark.Set object: '%s'. Item '%s' failed to be copied. Error was: %s", argValue.String(), item, err.Error())
+				return nil, fmt.Errorf("cannot copy starlark.Set object: '%s'. Item '%s' failed to be copied. Error was: %s", argValue.String(), item, err.Error())
 			}
 			if err = copiedSet.Insert(copiedItem); err != nil {
-				return nil, fmt.Errorf("Cannot copy starlark.Set object: '%s'. Item '%s' could not be persisted to the copy. Error was: %s", argValue.String(), item, err.Error())
+				return nil, fmt.Errorf("cannot copy starlark.Set object: '%s'. Item '%s' could not be persisted to the copy. Error was: %s", argValue.String(), item, err.Error())
 			}
 		}
 		valueCopy = copiedSet
@@ -68,7 +68,7 @@ func deepCopyArgumentValueInternal(genericArgValue starlark.Value) (starlark.Val
 		for idx := 0; iterator.Next(&item); idx++ {
 			copiedItem, err := deepCopyArgumentValueInternal(item)
 			if err != nil {
-				return nil, fmt.Errorf("Cannot copy starlark.Tuple object: '%s'. Item '%s' failed to be copied. Error was: %s", argValue.String(), item, err.Error())
+				return nil, fmt.Errorf("cannot copy starlark.Tuple object: '%s'. Item '%s' failed to be copied. Error was: %s", argValue.String(), item, err.Error())
 			}
 			copiedTuple[idx] = copiedItem
 		}
@@ -79,19 +79,19 @@ func deepCopyArgumentValueInternal(genericArgValue starlark.Value) (starlark.Val
 		for _, key := range allKeys {
 			value, found, err := argValue.Get(key)
 			if err != nil || !found {
-				return nil, fmt.Errorf("Iterating over all keys from the dictionary: '%s', the key '%s' could not be found. Error was: '%s'", argValue, key, err.Error())
+				return nil, fmt.Errorf("iterating over all keys from the dictionary: '%s', the key '%s' could not be found. Error was: '%s'", argValue, key, err.Error())
 			}
 			copiedKey, err := deepCopyArgumentValueInternal(key)
 			if err != nil {
-				return nil, fmt.Errorf("Iterating over all keys from the dictionary: '%s', the key '%s' could not be copied. Error was: '%s'", argValue, key, err.Error())
+				return nil, fmt.Errorf("iterating over all keys from the dictionary: '%s', the key '%s' could not be copied. Error was: '%s'", argValue, key, err.Error())
 			}
 			copiedValue, err := deepCopyArgumentValueInternal(value)
 			if err != nil {
-				return nil, fmt.Errorf("Iterating over all keys from the dictionary: '%s', the value '%s' associated with key '%s' could not be copied. Error was: '%s'", argValue, value, key, err.Error())
+				return nil, fmt.Errorf("iterating over all keys from the dictionary: '%s', the value '%s' associated with key '%s' could not be copied. Error was: '%s'", argValue, value, key, err.Error())
 			}
 			err = dictCopy.SetKey(copiedKey, copiedValue)
 			if err != nil {
-				return nil, fmt.Errorf("Iterating over all keys from the dictionary: '%s', the value '%s' associated with key '%s' could not be persisted to the copied object. Error was: '%s'", argValue, value, key, err.Error())
+				return nil, fmt.Errorf("iterating over all keys from the dictionary: '%s', the value '%s' associated with key '%s' could not be persisted to the copied object. Error was: '%s'", argValue, value, key, err.Error())
 			}
 		}
 		valueCopy = dictCopy
@@ -102,7 +102,7 @@ func deepCopyArgumentValueInternal(genericArgValue starlark.Value) (starlark.Val
 	case KurtosisValueType:
 		valueCopy, err = argValue.Copy()
 	default:
-		logrus.Warnf("Cannot copy value of argument '%s' as the type is not handled, returning the original "+
+		logrus.Warnf("cannot copy value of argument '%s' as the type is not handled, returning the original "+
 			"object but it might provoke unexpected behaviour downstream", argValue.String())
 		valueCopy = argValue
 	}

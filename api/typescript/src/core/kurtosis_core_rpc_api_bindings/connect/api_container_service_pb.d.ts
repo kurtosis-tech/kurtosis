@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
+import type { BinaryReadOptions, Duration, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3 } from "@bufbuild/protobuf";
 
 /**
@@ -236,6 +236,107 @@ export declare enum Container_Status {
 }
 
 /**
+ * @generated from message api_container_api.FilesArtifactsList
+ */
+export declare class FilesArtifactsList extends Message<FilesArtifactsList> {
+  /**
+   * @generated from field: repeated string files_artifacts_identifiers = 1;
+   */
+  filesArtifactsIdentifiers: string[];
+
+  constructor(data?: PartialMessage<FilesArtifactsList>);
+
+  static readonly runtime: typeof proto3;
+  static readonly typeName = "api_container_api.FilesArtifactsList";
+  static readonly fields: FieldList;
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): FilesArtifactsList;
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): FilesArtifactsList;
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): FilesArtifactsList;
+
+  static equals(a: FilesArtifactsList | PlainMessage<FilesArtifactsList> | undefined, b: FilesArtifactsList | PlainMessage<FilesArtifactsList> | undefined): boolean;
+}
+
+/**
+ * Equivalent of user on ServiceConfig
+ *
+ * @generated from message api_container_api.User
+ */
+export declare class User extends Message<User> {
+  /**
+   * @generated from field: uint32 uid = 1;
+   */
+  uid: number;
+
+  /**
+   * @generated from field: uint32 gid = 2;
+   */
+  gid: number;
+
+  constructor(data?: PartialMessage<User>);
+
+  static readonly runtime: typeof proto3;
+  static readonly typeName = "api_container_api.User";
+  static readonly fields: FieldList;
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): User;
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): User;
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): User;
+
+  static equals(a: User | PlainMessage<User> | undefined, b: User | PlainMessage<User> | undefined): boolean;
+}
+
+/**
+ * Equivalent of tolerations on ServiceConfig
+ *
+ * @generated from message api_container_api.Toleration
+ */
+export declare class Toleration extends Message<Toleration> {
+  /**
+   * @generated from field: string key = 1;
+   */
+  key: string;
+
+  /**
+   * @generated from field: string operator = 2;
+   */
+  operator: string;
+
+  /**
+   * @generated from field: string value = 3;
+   */
+  value: string;
+
+  /**
+   * @generated from field: string effect = 4;
+   */
+  effect: string;
+
+  /**
+   * @generated from field: int64 toleration_seconds = 5;
+   */
+  tolerationSeconds: bigint;
+
+  constructor(data?: PartialMessage<Toleration>);
+
+  static readonly runtime: typeof proto3;
+  static readonly typeName = "api_container_api.Toleration";
+  static readonly fields: FieldList;
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Toleration;
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Toleration;
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Toleration;
+
+  static equals(a: Toleration | PlainMessage<Toleration> | undefined, b: Toleration | PlainMessage<Toleration> | undefined): boolean;
+}
+
+/**
  * @generated from message api_container_api.ServiceInfo
  */
 export declare class ServiceInfo extends Message<ServiceInfo> {
@@ -305,6 +406,75 @@ export declare class ServiceInfo extends Message<ServiceInfo> {
    * @generated from field: api_container_api.Container container = 9;
    */
   container?: Container;
+
+  /**
+   * Mapping of directory paths on service to names of files artifacts that are mounted to that directory
+   *
+   * @generated from field: map<string, api_container_api.FilesArtifactsList> service_dir_paths_to_files_artifacts_list = 10;
+   */
+  serviceDirPathsToFilesArtifactsList: { [key: string]: FilesArtifactsList };
+
+  /**
+   * @generated from field: uint32 max_millicpus = 11;
+   */
+  maxMillicpus: number;
+
+  /**
+   * @generated from field: uint32 min_millicpus = 12;
+   */
+  minMillicpus: number;
+
+  /**
+   * @generated from field: uint32 max_memory_megabytes = 13;
+   */
+  maxMemoryMegabytes: number;
+
+  /**
+   * @generated from field: uint32 min_memory_megabytes = 14;
+   */
+  minMemoryMegabytes: number;
+
+  /**
+   * Optional user identity for the service
+   *
+   * @generated from field: optional api_container_api.User user = 15;
+   */
+  user?: User;
+
+  /**
+   * Optional list of Kubernetes tolerations
+   *
+   * @generated from field: repeated api_container_api.Toleration tolerations = 16;
+   */
+  tolerations: Toleration[];
+
+  /**
+   * Optional node selectors for pod placement
+   *
+   * @generated from field: map<string, string> node_selectors = 17;
+   */
+  nodeSelectors: { [key: string]: string };
+
+  /**
+   * Optional labels
+   *
+   * @generated from field: map<string, string> labels = 18;
+   */
+  labels: { [key: string]: string };
+
+  /**
+   * Whether Tini is enabled
+   *
+   * @generated from field: optional bool tini_enabled = 19;
+   */
+  tiniEnabled?: boolean;
+
+  /**
+   * Wheter TTy is enabled
+   *
+   * @generated from field: optional bool tty_enabled = 20;
+   */
+  ttyEnabled?: boolean;
 
   constructor(data?: PartialMessage<ServiceInfo>);
 
@@ -388,6 +558,13 @@ export declare class RunStarlarkScriptArgs extends Message<RunStarlarkScriptArgs
    * @generated from field: optional bool non_blocking_mode = 10;
    */
   nonBlockingMode?: boolean;
+
+  /**
+   * If true, executes the package in parallel meaning each instruction runs as soon as its dependencies are finished
+   *
+   * @generated from field: optional bool parallel = 17;
+   */
+  parallel?: boolean;
 
   constructor(data?: PartialMessage<RunStarlarkScriptArgs>);
 
@@ -525,6 +702,13 @@ export declare class RunStarlarkPackageArgs extends Message<RunStarlarkPackageAr
    * @generated from field: optional string github_auth_token = 16;
    */
   githubAuthToken?: string;
+
+  /**
+   * If true, executes the package in parallel meaning each instruction runs as soon as its dependencies are finished
+   *
+   * @generated from field: optional bool parallel = 17;
+   */
+  parallel?: boolean;
 
   constructor(data?: PartialMessage<RunStarlarkPackageArgs>);
 
@@ -693,6 +877,11 @@ export declare class StarlarkInstruction extends Message<StarlarkInstruction> {
    */
   description: string;
 
+  /**
+   * @generated from field: optional string instruction_id = 7;
+   */
+  instructionId?: string;
+
   constructor(data?: PartialMessage<StarlarkInstruction>);
 
   static readonly runtime: typeof proto3;
@@ -716,6 +905,16 @@ export declare class StarlarkInstructionResult extends Message<StarlarkInstructi
    * @generated from field: string serialized_instruction_result = 1;
    */
   serializedInstructionResult: string;
+
+  /**
+   * @generated from field: optional google.protobuf.Duration execution_duration = 2;
+   */
+  executionDuration?: Duration;
+
+  /**
+   * @generated from field: optional string instruction_id = 3;
+   */
+  instructionId?: string;
 
   constructor(data?: PartialMessage<StarlarkInstructionResult>);
 
@@ -933,6 +1132,11 @@ export declare class StarlarkRunProgress extends Message<StarlarkRunProgress> {
    */
   currentStepNumber: number;
 
+  /**
+   * @generated from field: optional string instruction_id = 4;
+   */
+  instructionId?: string;
+
   constructor(data?: PartialMessage<StarlarkRunProgress>);
 
   static readonly runtime: typeof proto3;
@@ -961,6 +1165,11 @@ export declare class StarlarkRunFinishedEvent extends Message<StarlarkRunFinishe
    * @generated from field: optional string serialized_output = 2;
    */
   serializedOutput?: string;
+
+  /**
+   * @generated from field: optional google.protobuf.Duration total_execution_duration = 3;
+   */
+  totalExecutionDuration?: Duration;
 
   constructor(data?: PartialMessage<StarlarkRunFinishedEvent>);
 
@@ -1915,16 +2124,23 @@ export declare class StarlarkPackagePlanYamlArgs extends Message<StarlarkPackage
   serializedParams?: string;
 
   /**
+   * whether or not this is package yaml should be pulled from on disk package or cloned
+   *
+   * @generated from field: bool is_remote = 3;
+   */
+  isRemote: boolean;
+
+  /**
    * The relative main file filepath, the default value is the "main.star" file in the root of a package
    *
-   * @generated from field: optional string relative_path_to_main_file = 3;
+   * @generated from field: optional string relative_path_to_main_file = 4;
    */
   relativePathToMainFile?: string;
 
   /**
    * The name of the main function, the default value is "run"
    *
-   * @generated from field: optional string main_function_name = 4;
+   * @generated from field: optional string main_function_name = 5;
    */
   mainFunctionName?: string;
 

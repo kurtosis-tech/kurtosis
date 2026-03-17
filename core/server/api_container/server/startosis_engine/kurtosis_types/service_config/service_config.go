@@ -2,6 +2,9 @@ package service_config
 
 import (
 	"fmt"
+	"math"
+	"path"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
@@ -24,8 +27,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"go.starlark.net/starlark"
 	v1 "k8s.io/api/core/v1"
-	"math"
-	"path"
 )
 
 const (
@@ -52,6 +53,9 @@ const (
 	NodeSelectorsAttr               = "node_selectors"
 	FilesToBeMovedAttr              = "files_to_be_moved"
 	TiniEnabledAttr                 = "tini_enabled"
+	TtyEnabledAttr                  = "tty_enabled"
+	DevicesAttr                     = "devices"
+	PublishUdpAttr                  = "publish_udp"
 
 	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
@@ -127,7 +131,7 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					},
 					Deprecation: starlark_warning.Deprecation(
 						starlark_warning.DeprecationDate{
-							Day: 25, Year: 2023, Month: 6, //nolint:gomnd
+							Day: 25, Year: 2023, Month: 6, //nolint:mnd
 						},
 						"This field is being deprecated in favour of `max_cpu` to set a maximum cpu a container can use",
 						nil,
@@ -142,7 +146,7 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					},
 					Deprecation: starlark_warning.Deprecation(
 						starlark_warning.DeprecationDate{
-							Day: 25, Year: 2023, Month: 6, //nolint:gomnd
+							Day: 25, Year: 2023, Month: 6, //nolint:mnd
 						},
 						"This field is being deprecated in favour of `max_memory` to set maximum memory a container can use",
 						nil,
@@ -223,6 +227,24 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 				},
 				{
 					Name:              TiniEnabledAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Bool],
+					Validator:         nil,
+				},
+				{
+					Name:              TtyEnabledAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Bool],
+					Validator:         nil,
+				},
+				{
+					Name:              DevicesAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
+					Validator:         nil,
+				},
+				{
+					Name:              PublishUdpAttr,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Bool],
 					Validator:         nil,
@@ -501,7 +523,7 @@ func (config *ServiceConfig) ToKurtosisType(
 		return nil, interpretationErr
 	}
 	if found {
-		tolerations, interpretationErr = convertTolerations(tolerationsStarlarkList)
+		tolerations, interpretationErr = ConvertTolerations(tolerationsStarlarkList)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
@@ -540,6 +562,36 @@ func (config *ServiceConfig) ToKurtosisType(
 		tiniEnabled = bool(tiniEnabledStarlark)
 	}
 
+	ttyEnabled := false
+	ttyStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Bool](config.KurtosisValueTypeDefault, TtyEnabledAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found {
+		ttyEnabled = bool(ttyStarlark)
+	}
+
+	devices := []string{}
+	devicesStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.List](config.KurtosisValueTypeDefault, DevicesAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found && devicesStarlark.Len() > 0 {
+		devices, interpretationErr = kurtosis_types.SafeCastToStringSlice(devicesStarlark, DevicesAttr)
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
+	}
+
+	publishUdp := false
+	publishUdpStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Bool](config.KurtosisValueTypeDefault, PublishUdpAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found {
+		publishUdp = bool(publishUdpStarlark)
+	}
+
 	serviceConfig, err := service.CreateServiceConfig(
 		imageName,
 		maybeImageBuildSpec,
@@ -563,6 +615,9 @@ func (config *ServiceConfig) ToKurtosisType(
 		nodeSelectors,
 		imageDownloadMode,
 		tiniEnabled,
+		ttyEnabled,
+		devices,
+		publishUdp,
 	)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating a service config")
@@ -752,7 +807,7 @@ func ConvertImage(
 	}
 }
 
-func convertTolerations(tolerationsList *starlark.List) ([]v1.Toleration, *startosis_errors.InterpretationError) {
+func ConvertTolerations(tolerationsList *starlark.List) ([]v1.Toleration, *startosis_errors.InterpretationError) {
 	var outputValue []v1.Toleration
 	iterator := tolerationsList.Iterate()
 	defer iterator.Done()

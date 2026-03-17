@@ -8,11 +8,11 @@ import (
 	"strings"
 )
 
-const _KurtosisBackendTypeName = "dockerkubernetes"
+const _KurtosisBackendTypeName = "dockerkubernetespodman"
 
-var _KurtosisBackendTypeIndex = [...]uint8{0, 6, 16}
+var _KurtosisBackendTypeIndex = [...]uint8{0, 6, 16, 22}
 
-const _KurtosisBackendTypeLowerName = "dockerkubernetes"
+const _KurtosisBackendTypeLowerName = "dockerkubernetespodman"
 
 func (i KurtosisBackendType) String() string {
 	if i >= KurtosisBackendType(len(_KurtosisBackendTypeIndex)-1) {
@@ -27,20 +27,24 @@ func _KurtosisBackendTypeNoOp() {
 	var x [1]struct{}
 	_ = x[KurtosisBackendType_Docker-(0)]
 	_ = x[KurtosisBackendType_Kubernetes-(1)]
+	_ = x[KurtosisBackendType_Podman-(2)]
 }
 
-var _KurtosisBackendTypeValues = []KurtosisBackendType{KurtosisBackendType_Docker, KurtosisBackendType_Kubernetes}
+var _KurtosisBackendTypeValues = []KurtosisBackendType{KurtosisBackendType_Docker, KurtosisBackendType_Kubernetes, KurtosisBackendType_Podman}
 
 var _KurtosisBackendTypeNameToValueMap = map[string]KurtosisBackendType{
-	_KurtosisBackendTypeName[0:6]:       KurtosisBackendType_Docker,
-	_KurtosisBackendTypeLowerName[0:6]:  KurtosisBackendType_Docker,
-	_KurtosisBackendTypeName[6:16]:      KurtosisBackendType_Kubernetes,
-	_KurtosisBackendTypeLowerName[6:16]: KurtosisBackendType_Kubernetes,
+	_KurtosisBackendTypeName[0:6]:        KurtosisBackendType_Docker,
+	_KurtosisBackendTypeLowerName[0:6]:   KurtosisBackendType_Docker,
+	_KurtosisBackendTypeName[6:16]:       KurtosisBackendType_Kubernetes,
+	_KurtosisBackendTypeLowerName[6:16]:  KurtosisBackendType_Kubernetes,
+	_KurtosisBackendTypeName[16:22]:      KurtosisBackendType_Podman,
+	_KurtosisBackendTypeLowerName[16:22]: KurtosisBackendType_Podman,
 }
 
 var _KurtosisBackendTypeNames = []string{
 	_KurtosisBackendTypeName[0:6],
 	_KurtosisBackendTypeName[6:16],
+	_KurtosisBackendTypeName[16:22],
 }
 
 // KurtosisBackendTypeString retrieves an enum value from the enum constants string name.

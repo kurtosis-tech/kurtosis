@@ -23,7 +23,8 @@ const (
 	pongWait = 60 * time.Second
 	// Send pings to peer with this period. Must be less than pongWait.
 	// nolint:gomnd
-	pingPeriod = (pongWait * 9) / 10
+	numPongsToWait = 9
+	pingPeriod     = (pongWait * numPongsToWait) / 10
 )
 
 type WebsocketPump[T interface{}] struct {

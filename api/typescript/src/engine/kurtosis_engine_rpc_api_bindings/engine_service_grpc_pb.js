@@ -61,6 +61,17 @@ function deserialize_engine_api_DestroyEnclaveArgs(buffer_arg) {
   return engine_service_pb.DestroyEnclaveArgs.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_engine_api_GetEnclavesByUuidsArgs(arg) {
+  if (!(arg instanceof engine_service_pb.GetEnclavesByUuidsArgs)) {
+    throw new Error('Expected argument of type engine_api.GetEnclavesByUuidsArgs');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_engine_api_GetEnclavesByUuidsArgs(buffer_arg) {
+  return engine_service_pb.GetEnclavesByUuidsArgs.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_engine_api_GetEnclavesResponse(arg) {
   if (!(arg instanceof engine_service_pb.GetEnclavesResponse)) {
     throw new Error('Expected argument of type engine_api.GetEnclavesResponse');
@@ -167,7 +178,7 @@ createEnclave: {
     responseSerialize: serialize_engine_api_CreateEnclaveResponse,
     responseDeserialize: deserialize_engine_api_CreateEnclaveResponse,
   },
-  // Returns information about the existing enclaves
+  // Returns information about the requested enclaves or all enclaves if none specified.
 getEnclaves: {
     path: '/engine_api.EngineService/GetEnclaves',
     requestStream: false,
@@ -176,6 +187,18 @@ getEnclaves: {
     responseType: engine_service_pb.GetEnclavesResponse,
     requestSerialize: serialize_google_protobuf_Empty,
     requestDeserialize: deserialize_google_protobuf_Empty,
+    responseSerialize: serialize_engine_api_GetEnclavesResponse,
+    responseDeserialize: deserialize_engine_api_GetEnclavesResponse,
+  },
+  // Returns information about the requested enclaves or all enclaves if none specified.
+getEnclavesByUuids: {
+    path: '/engine_api.EngineService/GetEnclavesByUuids',
+    requestStream: false,
+    responseStream: false,
+    requestType: engine_service_pb.GetEnclavesByUuidsArgs,
+    responseType: engine_service_pb.GetEnclavesResponse,
+    requestSerialize: serialize_engine_api_GetEnclavesByUuidsArgs,
+    requestDeserialize: deserialize_engine_api_GetEnclavesByUuidsArgs,
     responseSerialize: serialize_engine_api_GetEnclavesResponse,
     responseDeserialize: deserialize_engine_api_GetEnclavesResponse,
   },

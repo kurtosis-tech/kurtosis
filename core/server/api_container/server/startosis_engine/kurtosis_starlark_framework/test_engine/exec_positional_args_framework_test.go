@@ -2,6 +2,8 @@ package test_engine
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/exec"
@@ -10,7 +12,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
-	"testing"
 )
 
 type execWithPositionalArgsTestCase struct {
@@ -20,6 +21,14 @@ type execWithPositionalArgsTestCase struct {
 }
 
 func (suite *KurtosisPlanInstructionTestSuite) TestExecWithPositionalArgs() {
+	suite.serviceNetwork.EXPECT().GetService(
+		mock.Anything,
+		string(execServiceName),
+	).Times(1).Return(
+		getService(execServiceName),
+		nil,
+	)
+
 	suite.serviceNetwork.EXPECT().RunExec(
 		mock.Anything,
 		string(execServiceName),

@@ -45,6 +45,19 @@ func StopUserServices(
 			}
 		}
 
+		ingress := resources.Ingress
+		if ingress != nil {
+			if err := kubernetesManager.RemoveIngress(ctx, ingress); err != nil {
+				erroredUuids[serviceUuid] = stacktrace.Propagate(
+					err,
+					"An error occurred removing Kubernetes ingress '%v' in namespace '%v'",
+					ingress.Name,
+					namespaceName,
+				)
+				continue
+			}
+		}
+
 		successfulUuids[serviceUuid] = true
 	}
 	return successfulUuids, erroredUuids, nil

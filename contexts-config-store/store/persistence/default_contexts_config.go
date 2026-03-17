@@ -1,11 +1,12 @@
 package persistence
 
 import (
+	"strings"
+
 	"github.com/google/uuid"
 	api "github.com/kurtosis-tech/kurtosis/contexts-config-store/api/golang"
 	"github.com/kurtosis-tech/kurtosis/contexts-config-store/api/golang/generated"
 	"github.com/kurtosis-tech/stacktrace"
-	"strings"
 )
 
 const (
@@ -20,7 +21,7 @@ func NewDefaultContextsConfig() (*generated.KurtosisContextsConfig, error) {
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to generate a random UUID for the default context")
 	}
-	newContextUuidStr := strings.Replace(randomUuid.String(), "-", "", -1)
+	newContextUuidStr := strings.ReplaceAll(randomUuid.String(), "-", "")
 
 	defaultContextUuid := api.NewContextUuid(newContextUuidStr)
 	defaultContext := api.NewLocalOnlyContext(defaultContextUuid, DefaultContextName)

@@ -3,9 +3,12 @@ package user_service_functions
 import (
 	"context"
 	"fmt"
+	"net"
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/availability_checker"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
@@ -120,11 +123,16 @@ func StartRegisteredUserServices(
 	services map[service.ServiceUUID]*service.ServiceConfig,
 	serviceRegistrationRepository *service_registration.ServiceRegistrationRepository,
 	logsCollector *logs_collector.LogsCollector,
-	logsCollectorAvailabilityChecker logs_collector_functions.LogsCollectorAvailabilityChecker,
+	// these values will be used to conduct a health check on the fluent log collector in this enclave
+	// to ensure the services logs are captured when it starts
+	logsCollectorIpAddr net.IP,
+	logsCollectorPortNum uint16,
+	logsCollectorAvailabilityEndpoint string,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	freeIpProviderForEnclave *free_ip_addr_tracker.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
 	restartPolicy docker_manager.RestartPolicy,
+	shouldTurnOnLogsCollection bool,
 ) (
 	map[service.ServiceUUID]*service.Service,
 	map[service.ServiceUUID]error,
@@ -202,7 +210,7 @@ func StartRegisteredUserServices(
 	// Check if the logs collector is available
 	// As the container logs are sent asynchronously we'd not know whether they're being received by the collector and there would be no errors if the collector never comes up
 	// The least we can do is check if the collector server is healthy before starting the user service, if in case it gets shut down later we can't do much about it anyway.
-	if err = logsCollectorAvailabilityChecker.WaitForAvailability(); err != nil {
+	if err = availability_checker.WaitForAvailability(logsCollectorIpAddr, logsCollectorPortNum, logsCollectorAvailabilityEndpoint); err != nil {
 		return nil, nil,
 			stacktrace.Propagate(err, "An error occurred while waiting to see if the logs collector was available.")
 	}
@@ -213,7 +221,7 @@ func StartRegisteredUserServices(
 	}
 
 	// The following docker labels will be added into the logs stream which is necessary for filtering, retrieving persisted logs
-	logsCollectorLabels := logs_collector_functions.GetKurtosisTrackedLogsCollectorLabels()
+	logsCollectorLabels := logs_collector_functions.GetLabelsForLogsTrackingLogsOfUserServiceContainers()
 
 	successfulStarts, failedStarts, err := runStartServiceOperationsInParallel(
 		ctx,
@@ -226,6 +234,7 @@ func StartRegisteredUserServices(
 		restartPolicy,
 		logsCollectorEnclaveAddr,
 		logsCollectorLabels,
+		shouldTurnOnLogsCollection,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while trying to start services in parallel.")
@@ -460,7 +469,8 @@ func runStartServiceOperationsInParallel(
 	dockerManager *docker_manager.DockerManager,
 	restartPolicy docker_manager.RestartPolicy,
 	logsCollectorAddress string,
-	logsCollectorLabels logs_collector_functions.LogsCollectorLabels,
+	logsCollectorLabels []string,
+	shouldTurnOnLogsCollection bool,
 ) (
 	map[service.ServiceUUID]*service.Service,
 	map[service.ServiceUUID]error,
@@ -488,6 +498,7 @@ func runStartServiceOperationsInParallel(
 			restartPolicy,
 			logsCollectorAddress,
 			logsCollectorLabels,
+			shouldTurnOnLogsCollection,
 		)
 	}
 
@@ -523,7 +534,8 @@ func createStartServiceOperation(
 	dockerManager *docker_manager.DockerManager,
 	restartPolicy docker_manager.RestartPolicy,
 	logsCollectorAddress string,
-	logsCollectorLabels logs_collector_functions.LogsCollectorLabels,
+	logsCollectorLabels []string,
+	shouldTurnOnLogsCollection bool,
 ) operation_parallelizer.Operation {
 	id := serviceRegistration.GetName()
 	privateIpAddr := serviceRegistration.GetPrivateIP()
@@ -543,6 +555,9 @@ func createStartServiceOperation(
 		user := serviceConfig.GetUser()
 		filesToBeMoved := serviceConfig.GetFilesToBeMoved()
 		tiniEnabled := serviceConfig.GetTiniEnabled()
+		ttyEnabled := serviceConfig.GetTtyEnabled()
+		devices := serviceConfig.GetDevices()
+		publishUdp := serviceConfig.GetPublishUdp()
 
 		// We replace the placeholder value with the actual private IP address
 		privateIPAddrStr := privateIpAddr.String()
@@ -664,20 +679,14 @@ func createStartServiceOperation(
 					return nil, stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v', but it was not found", portId, privatePortSpec.GetNumber())
 				}
 				dockerUsedPorts[dockerPort] = docker_manager.NewManualPublishingSpec(publicPortSpec.GetNumber())
+			} else if !publishUdp && privatePortSpec.GetTransportProtocol() == port_spec.TransportProtocol_UDP {
+				// When publish_udp=false and port is UDP, don't publish to host
+				// This avoids Docker Desktop 4.41.2+ UDP port publishing issues
+				dockerUsedPorts[dockerPort] = docker_manager.NewNoPublishingSpec()
 			} else {
 				dockerUsedPorts[dockerPort] = docker_manager.NewAutomaticPublishingSpec()
 			}
 		}
-
-		if logsCollectorAddress == "" {
-			return nil, stacktrace.NewError("Expected to have a logs collector server address value to send the user service logs, but it is empty")
-		}
-
-		// The container will be configured to send the logs to the Fluentbit logs collector server
-		fluentdLoggingDriverCnfg := docker_manager.NewFluentdLoggingDriver(
-			logsCollectorAddress,
-			logsCollectorLabels,
-		)
 
 		createAndStartArgsBuilder := docker_manager.NewCreateAndStartContainerArgsBuilder(
 			containerImageName,
@@ -703,19 +712,42 @@ func createStartServiceOperation(
 			tiniEnabled,
 		).WithVolumeMounts(
 			volumeMounts,
-		).WithLoggingDriver(
-			fluentdLoggingDriverCnfg,
 		).WithRestartPolicy(
 			restartPolicy,
 		).WithUser(
 			user,
 		)
 
+		if shouldTurnOnLogsCollection {
+			if logsCollectorAddress == "" {
+				return nil, stacktrace.NewError("Expected to have a logs collector server address value to send the user service logs, but it is empty")
+			}
+
+			// The container will be configured to send the logs to the Fluentbit logs collector server
+			fluentdLoggingDriverCnfg := docker_manager.NewFluentdLoggingDriver(
+				logsCollectorAddress,
+				logsCollectorLabels,
+			)
+			createAndStartArgsBuilder.WithLoggingDriver(
+				fluentdLoggingDriverCnfg,
+			)
+		}
+
 		if entrypointArgs != nil {
 			createAndStartArgsBuilder.WithEntrypointArgs(entrypointArgs)
 		}
 		if cmdArgs != nil {
 			createAndStartArgsBuilder.WithCmdArgs(cmdArgs)
+		}
+
+		if ttyEnabled {
+			// We don't care bout the height/width of the TTY. We just need it to be not nil.
+			defaultTtySize := &docker_manager.InteractiveModeTtySize{Height: 0, Width: 0}
+			createAndStartArgsBuilder.WithInteractiveModeTtySize(defaultTtySize)
+		}
+
+		if len(devices) > 0 {
+			createAndStartArgsBuilder.WithDevices(devices)
 		}
 
 		createAndStartArgs := createAndStartArgsBuilder.Build()

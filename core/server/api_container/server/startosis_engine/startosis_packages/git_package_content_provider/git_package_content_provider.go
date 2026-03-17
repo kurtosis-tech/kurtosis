@@ -44,7 +44,7 @@ const (
 	filePathToKurtosisOrComposeYamlNotFound  = ""
 	replaceCountPackageDirWithGithubConstant = 1
 
-	osPathSeparatorString = string(os.PathSeparator)
+	OsPathSeparatorString = string(os.PathSeparator)
 
 	onlyOneReplace = 1
 
@@ -230,7 +230,7 @@ func (provider *GitPackageContentProvider) StorePackageContents(packageId string
 
 	tempFile, err := os.CreateTemp(defaultTmpDir, temporaryArchiveFilePattern)
 	if err != nil {
-		return "", startosis_errors.NewInterpretationError("An error occurred while creating temporary file to write compressed '%v' to", packageId)
+		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while creating temporary file to write compressed '%v' to temporary directory '%v' with temporary archive file pattern '%v'.", packageId, defaultTmpDir, temporaryArchiveFilePattern)
 	}
 	defer os.Remove(tempFile.Name())
 
@@ -465,7 +465,7 @@ func (provider *GitPackageContentProvider) cloneWithRetries(parsedURL *shared_ut
 		// We silence the underlying error here as it can be confusing to the user. For example, when there's a typo in
 		// the repo name, pointing to a non existing repo, the underlying error is: "authentication required"
 		logrus.Errorf("Error cloning git repository: '%s' to '%s'. Error was: \n%s", parsedURL.GetGitURL(), gitClonePath, err.Error())
-		return nil, startosis_errors.NewInterpretationError("Error in cloning git repository '%s' to '%s'. Make sure that '%v' exists or if it's a private repository, that you are logged into GitHub via `kurtosis github login`.", parsedURL.GetGitURL(), gitClonePath, parsedURL.GetGitURL())
+		return nil, startosis_errors.NewInterpretationError("Error in cloning git repository '%s' to '%s'. Make sure that '%v' exists or if it's a private repository, that you are logged into GitHub via `kurtosis github login`.\nIf this is NOT a private repo, there could be an issue with MTUs configured by Docker networks. Please refer to discussion and articles at this issue: https://github.com/kurtosis-tech/kurtosis/issues/2150", parsedURL.GetGitURL(), gitClonePath, parsedURL.GetGitURL())
 	}
 	return repo, nil
 }
@@ -549,8 +549,8 @@ func validatePackageNameMatchesKurtosisYamlLocation(kurtosisYaml *yaml_parser.Ku
 	packageNameFromAbsPackagePath := strings.Replace(absPathToKurtosisYmlInThePackage, packageDir, shared_utils.GithubDomainPrefix, replaceCountPackageDirWithGithubConstant)
 	packageName := kurtosisYaml.GetPackageName()
 
-	if strings.HasSuffix(packageName, osPathSeparatorString) {
-		return startosis_errors.NewInterpretationError("Kurtosis package name cannot have trailing %q; package name: %v and kurtosis.yml is found at: %v", osPathSeparatorString, packageName, packageNameFromAbsPackagePath)
+	if strings.HasSuffix(packageName, OsPathSeparatorString) {
+		return startosis_errors.NewInterpretationError("Kurtosis package name cannot have trailing %q; package name: %v and kurtosis.yml is found at: %v", OsPathSeparatorString, packageName, packageNameFromAbsPackagePath)
 	}
 
 	// re-using ParseGitURL with packageName found from kurtosis.yml as it already does some validations
@@ -592,8 +592,8 @@ func getKurtosisOrComposeYamlPathForFileUrlInternal(absPathToFile string, packag
 		return filePathToKurtosisOrComposeYamlNotFound, startosis_errors.NewInterpretationError("Absolute path to file: %v must start with following prefix %v", absPathToFile, packagesDir)
 	}
 
-	removeTrailingPathSeparator := strings.Trim(beginSearchForKurtosisYamlFromRepo, osPathSeparatorString)
-	dirs := strings.Split(removeTrailingPathSeparator, osPathSeparatorString)
+	removeTrailingPathSeparator := strings.Trim(beginSearchForKurtosisYamlFromRepo, OsPathSeparatorString)
+	dirs := strings.Split(removeTrailingPathSeparator, OsPathSeparatorString)
 	logrus.Debugf("Found directories: %v", dirs)
 
 	var validYamlFilenames []string
@@ -619,7 +619,7 @@ func getKurtosisOrComposeYamlPathForFileUrlInternal(absPathToFile string, packag
 }
 
 func isLocalDependencyReplace(replace string) bool {
-	if strings.HasPrefix(replace, osPathSeparatorString) || strings.HasPrefix(replace, dotRelativePathIndicatorString) {
+	if strings.HasPrefix(replace, OsPathSeparatorString) || strings.HasPrefix(replace, dotRelativePathIndicatorString) {
 		return true
 	}
 	return false

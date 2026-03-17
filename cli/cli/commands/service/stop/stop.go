@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_client_factory"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/shared_starlark_calls"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
@@ -82,6 +83,16 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting an enclave context from enclave info for enclave '%v'", enclaveIdentifier)
 	}
 
+	metricsClient, closeMetricsClientFunc, err := metrics_client_factory.GetMetricsClient()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting metrics client.")
+	}
+	defer func() {
+		if err = closeMetricsClientFunc(); err != nil {
+			logrus.Warnf("An error occurred closing metrics client:\n%v", closeMetricsClientFunc())
+		}
+	}()
+
 	for _, serviceIdentifier := range serviceIdentifiers {
 		logrus.Infof("Stopping service '%v'", serviceIdentifier)
 		serviceContext, err := enclaveCtx.GetServiceContext(serviceIdentifier)
@@ -90,6 +101,11 @@ func run(
 		}
 
 		serviceName := serviceContext.GetServiceName()
+
+		err = metricsClient.TrackStopService(enclaveIdentifier, string(serviceName))
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred tracking service update metric.")
+		}
 
 		if err := shared_starlark_calls.StopServiceStarlarkCommand(ctx, enclaveCtx, serviceName); err != nil {
 			return stacktrace.Propagate(err, "An error occurred stopping service '%v' from enclave '%v'", serviceIdentifier, enclaveIdentifier)

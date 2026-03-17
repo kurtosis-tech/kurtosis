@@ -91,6 +91,6 @@ export class NodeTgzArchiver implements GenericTgzArchiver{
                  `The file size of ${stats.size} bytes and read size of ${data.length} bytes are not equal.`))
          }
 
-         return ok(data)
+         return ok(new Uint8Array(data))
     }
 }

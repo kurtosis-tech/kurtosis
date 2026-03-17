@@ -25,7 +25,7 @@ var (
 	githubAuthStore GitHubAuthStore
 	once            sync.Once
 
-	NoTokenFound = errors.New("no token found for currently logged in user")
+	ErrNoTokenFound = errors.New("no token found for currently logged in user")
 )
 
 // GitHubAuthStore stores information about a GitHub user that has authorized Kurtosis CLI to perform git operations on their behalf
@@ -39,7 +39,7 @@ type GitHubAuthStore interface {
 	// GetAuthToken returns authToken for the user if they exist
 	// If [authToken] doesn't exist in system credential storage, attempts to retrieve token from plain text file
 	// Returns empty string if no user exists
-	// Returns NoTokenFound err if user exists but no [authToken] was found
+	// Returns ErrNoTokenFound err if user exists but no [authToken] was found
 	GetAuthToken() (string, error)
 
 	// SetUser sets current user to [username] and stores their [authToken] in system credential storage if it exists
@@ -132,14 +132,14 @@ func (store *githubConfigStoreImpl) GetAuthToken() (string, error) {
 		return "", stacktrace.Propagate(err, "An error occurred verifying if GitHub auth token file exists for GitHub user: %v.", username)
 	}
 	if !githubAuthTokenFileExists {
-		return "", NoTokenFound
+		return "", ErrNoTokenFound
 	}
 	authToken, err = store.getGitHubAuthTokenFromFile()
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred getting auth token from file for GitHub user: %v", username)
 	}
 	if authToken == "" {
-		return "", NoTokenFound
+		return "", ErrNoTokenFound
 	}
 	return authToken, nil
 }

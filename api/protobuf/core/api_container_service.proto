@@ -6,6 +6,7 @@ package api_container_api;
 option go_package = "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings";
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/duration.proto";
 
 service ApiContainerService {
   // Executes a Starlark script on the user's behalf
@@ -111,6 +112,30 @@ enum ImageDownloadMode {
 	missing = 1;
 }
 
+message FilesArtifactsList {
+  repeated string files_artifacts_identifiers = 1;
+}
+
+// Equivalent of user on ServiceConfig
+message User {
+  uint32 uid = 1;
+
+  uint32 gid = 2;
+}
+
+// Equivalent of tolerations on ServiceConfig
+message Toleration {
+  string key = 1;
+
+  string operator = 2;
+
+  string value = 3;
+
+  string effect = 4;
+
+  int64 toleration_seconds = 5;
+}
+
 message ServiceInfo {
   // UUID of the service
   string service_uuid = 1;
@@ -142,6 +167,35 @@ message ServiceInfo {
 
   // Docker container or Kubernetes pod container
   Container container = 9;
+
+  // Mapping of directory paths on service to names of files artifacts that are mounted to that directory
+  map<string, FilesArtifactsList> service_dir_paths_to_files_artifacts_list = 10;
+
+  uint32 max_millicpus = 11;
+
+  uint32 min_millicpus = 12;
+
+  uint32 max_memory_megabytes = 13;
+
+  uint32 min_memory_megabytes = 14;
+
+  // Optional user identity for the service
+  optional User user = 15;
+
+  // Optional list of Kubernetes tolerations
+  repeated Toleration tolerations = 16;
+
+  // Optional node selectors for pod placement
+  map<string, string> node_selectors = 17;
+
+  // Optional labels
+  map<string, string> labels = 18;
+
+  // Whether Tini is enabled
+  optional bool tini_enabled = 19;
+
+  // Wheter TTy is enabled
+  optional bool tty_enabled = 20;
 }
 
 // ==============================================================================================
@@ -185,6 +239,9 @@ message RunStarlarkScriptArgs {
 
   // Defaults to false
   optional bool non_blocking_mode = 10;
+
+  // If true, executes the package in parallel meaning each instruction runs as soon as its dependencies are finished
+  optional bool parallel = 17;
 }
 
 message RunStarlarkPackageArgs {
@@ -238,6 +295,9 @@ message RunStarlarkPackageArgs {
 
   // token that will be used to authenticate requests for this package
   optional string github_auth_token = 16;
+
+  // If true, executes the package in parallel meaning each instruction runs as soon as its dependencies are finished
+  optional bool parallel = 17;
 }
 
 enum KurtosisFeatureFlag {
@@ -279,10 +339,16 @@ message StarlarkInstruction {
   bool is_skipped = 5;
 
   string description = 6;
+
+  optional string instruction_id = 7;
 }
 
 message StarlarkInstructionResult {
   string serialized_instruction_result = 1;
+
+  optional google.protobuf.Duration execution_duration = 2;
+
+  optional string instruction_id = 3;
 }
 
 message StarlarkInstructionArg {
@@ -327,12 +393,16 @@ message StarlarkRunProgress {
   uint32 total_steps = 2;
 
   uint32 current_step_number = 3;
+
+  optional string instruction_id = 4;
 }
 
 message StarlarkRunFinishedEvent {
   bool is_run_successful = 1;
 
   optional string serialized_output = 2;
+  
+  optional google.protobuf.Duration total_execution_duration = 3;
 }
 
 // ==============================================================================================
@@ -607,9 +677,12 @@ message StarlarkPackagePlanYamlArgs {
   // This should be a valid JSON string
   optional string serialized_params = 2;
 
+  // whether or not this is package yaml should be pulled from on disk package or cloned
+  bool is_remote = 3;
+
   // The relative main file filepath, the default value is the "main.star" file in the root of a package
-  optional string relative_path_to_main_file = 3;
+  optional string relative_path_to_main_file = 4;
 
   // The name of the main function, the default value is "run"
-  optional string main_function_name = 4;
+  optional string main_function_name = 5;
 }

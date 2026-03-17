@@ -3,6 +3,7 @@ package tasks
 import (
 	"context"
 	"fmt"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
@@ -10,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/store_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
@@ -23,6 +25,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
@@ -90,6 +93,34 @@ func NewRunShService(
 						return builtin_argument.DurationOrNone(value, WaitArgName)
 					},
 				},
+				{
+					Name:              AcceptableCodesArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
+					Validator:         nil,
+				},
+				{
+					Name:              SkipCodeCheckArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Bool],
+					Validator:         nil,
+				},
+				{
+					Name:              NodeSelectorsArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return builtin_argument.StringMappingToString(value, NodeSelectorsArgName)
+					},
+				},
+				{
+					Name:              TolerationsArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return nil
+					},
+				},
 			},
 		},
 
@@ -109,16 +140,22 @@ func NewRunShService(
 				wait:                   DefaultWaitTimeoutDurationStr,
 				description:            "",  // populated at interpretation time
 				returnValue:            nil, // populated at interpretation time
+				runCodeValue:           "",  // populated at interpretation time
+				runOutputValue:         "",  // populated at interpretation time
+				skipCodeCheck:          false,
+				acceptableCodes:        nil, // populated at interpretation time
 			}
 		},
 
 		DefaultDisplayArguments: map[string]bool{
-			RunArgName:        true,
-			ImageNameArgName:  true,
-			FilesArgName:      true,
-			StoreFilesArgName: true,
-			WaitArgName:       true,
-			EnvVarsArgName:    true,
+			RunArgName:           true,
+			ImageNameArgName:     true,
+			FilesArgName:         true,
+			StoreFilesArgName:    true,
+			WaitArgName:          true,
+			EnvVarsArgName:       true,
+			NodeSelectorsArgName: true,
+			TolerationsArgName:   true,
 		},
 	}
 }
@@ -137,11 +174,15 @@ type RunShCapabilities struct {
 	packageContentProvider startosis_packages.PackageContentProvider
 	packageReplaceOptions  map[string]string
 
-	serviceConfig *service.ServiceConfig
-	storeSpecList []*store_spec.StoreSpec
-	returnValue   *starlarkstruct.Struct
-	wait          string
-	description   string
+	serviceConfig   *service.ServiceConfig
+	storeSpecList   []*store_spec.StoreSpec
+	returnValue     *starlarkstruct.Struct
+	runCodeValue    string
+	runOutputValue  string
+	wait            string
+	description     string
+	acceptableCodes []int64
+	skipCodeCheck   bool
 }
 
 func (builtin *RunShCapabilities) Interpret(locatorOfModuleInWhichThisBuiltinIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -204,12 +245,22 @@ func (builtin *RunShCapabilities) Interpret(locatorOfModuleInWhichThisBuiltinIsB
 	}
 
 	envVars, interpretationErr := extractEnvVarsIfDefined(arguments)
-	if err != nil {
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	nodeSelectors, interpretationErr := extractNodeSelectorsIfDefined(arguments)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	tolerations, interpretationErr := extractTolerationsIfDefined(arguments)
+	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 
 	// build a service config from image and files artifacts expansion.
-	builtin.serviceConfig, err = getServiceConfig(maybeImageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, filesArtifactExpansion, envVars)
+	builtin.serviceConfig, err = getServiceConfig(maybeImageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, filesArtifactExpansion, envVars, nodeSelectors, tolerations)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating service config using for run sh task.")
 	}
@@ -230,6 +281,29 @@ func (builtin *RunShCapabilities) Interpret(locatorOfModuleInWhichThisBuiltinIsB
 		builtin.wait = waitTimeout
 	}
 
+	acceptableCodes := defaultAcceptableCodes
+	if arguments.IsSet(AcceptableCodesArgName) {
+		acceptableCodesValue, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, AcceptableCodesArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%v' argument", acceptableCodes)
+		}
+		acceptableCodes, err = kurtosis_types.SafeCastToIntegerSlice(acceptableCodesValue)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to parse '%v' argument", acceptableCodes)
+		}
+	}
+	builtin.acceptableCodes = acceptableCodes
+
+	skipCodeCheck := defaultSkipCodeCheck
+	if arguments.IsSet(SkipCodeCheckArgName) {
+		skipCodeCheckArgumentValue, err := builtin_argument.ExtractArgumentValue[starlark.Bool](arguments, SkipCodeCheckArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", SkipCodeCheckArgName)
+		}
+		skipCodeCheck = bool(skipCodeCheckArgumentValue)
+	}
+	builtin.skipCodeCheck = skipCodeCheck
+
 	resultUuid, err := builtin.runtimeValueStore.CreateValue()
 	if err != nil {
 		return nil, startosis_errors.NewInterpretationError("An error occurred while generating UUID for future reference for %v instruction", RunShBuiltinName)
@@ -242,7 +316,7 @@ func (builtin *RunShCapabilities) Interpret(locatorOfModuleInWhichThisBuiltinIsB
 	}
 	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, defaultDescription)
 
-	builtin.returnValue = createInterpretationResult(resultUuid, builtin.storeSpecList)
+	builtin.returnValue, builtin.runCodeValue, builtin.runOutputValue = createInterpretationResult(resultUuid, builtin.storeSpecList)
 	return builtin.returnValue, nil
 }
 
@@ -279,14 +353,14 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 	fullCommandToRun := getCommandToRunForStreamingLogs(commandToRun)
 
 	// run the command passed in by user in the container
-	createDefaultDirectoryResult, err := executeWithWait(ctx, builtin.serviceNetwork, builtin.name, builtin.wait, fullCommandToRun)
+	runShResult, err := executeWithWait(ctx, builtin.serviceNetwork, builtin.name, builtin.wait, fullCommandToRun)
 	if err != nil {
-		return "", stacktrace.Propagate(err, fmt.Sprintf("error occurred while executing one time task command: %v ", builtin.run))
+		return "", stacktrace.Propagate(err, "%s", fmt.Sprintf("error occurred while executing one time task command: %v ", builtin.run))
 	}
 
 	result := map[string]starlark.Comparable{
-		runResultOutputKey: starlark.String(createDefaultDirectoryResult.GetOutput()),
-		runResultCodeKey:   starlark.MakeInt(int(createDefaultDirectoryResult.GetExitCode())),
+		runResultOutputKey: starlark.String(runShResult.GetOutput()),
+		runResultCodeKey:   starlark.MakeInt(int(runShResult.GetExitCode())),
 	}
 
 	if err := builtin.runtimeValueStore.SetValue(builtin.resultUuid, result); err != nil {
@@ -294,10 +368,10 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 	}
 	instructionResult := resultMapToString(result, RunShBuiltinName)
 
-	// throw an error as execution of the command failed
-	if createDefaultDirectoryResult.GetExitCode() != 0 {
-		errorMessage := fmt.Sprintf("Shell command: %q exited with code %d and output", commandToRun, createDefaultDirectoryResult.GetExitCode())
-		return "", stacktrace.NewError(formatErrorMessage(errorMessage, createDefaultDirectoryResult.GetOutput()))
+	// throw an error as execution if returned code is not an  acceptable exit code
+	if !builtin.skipCodeCheck && !isAcceptableCode(builtin.acceptableCodes, result) {
+		errorMessage := fmt.Sprintf("Run sh returned exit code '%v' that is not part of the acceptable status codes '%v', with output:", result["code"], builtin.acceptableCodes)
+		return "", stacktrace.NewError("%s", formatErrorMessage(errorMessage, result["output"].String()))
 	}
 
 	if builtin.storeSpecList != nil {
@@ -329,10 +403,36 @@ func (builtin *RunShCapabilities) FillPersistableAttributes(builder *enclave_pla
 	builder.SetType(RunShBuiltinName)
 }
 
-func (builtin *RunShCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
+func (builtin *RunShCapabilities) UpdatePlan(plan *plan_yaml.PlanYamlGenerator) error {
 	err := plan.AddRunSh(builtin.run, builtin.description, builtin.returnValue, builtin.serviceConfig, builtin.storeSpecList)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred adding run sh task to the plan")
+	}
+	return nil
+}
+
+func (builtin *RunShCapabilities) UpdateDependencyGraph(instructionUuid types.ScheduledInstructionUuid, dependencyGraph *dependency_graph.InstructionDependencyGraph) error {
+	shortDescriptor := fmt.Sprintf("run_sh(%s)", builtin.description)
+	dependencyGraph.UpdateInstructionShortDescriptor(instructionUuid, shortDescriptor)
+
+	if builtin.serviceConfig.GetFilesArtifactsExpansion() != nil {
+		for _, filesArtifactNames := range builtin.serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
+			for _, filesArtifactName := range filesArtifactNames {
+				dependencyGraph.ConsumesFilesArtifact(instructionUuid, filesArtifactName)
+			}
+		}
+	}
+	envVarValues := make([]string, 0, len(builtin.serviceConfig.GetEnvVars()))
+	for _, v := range builtin.serviceConfig.GetEnvVars() {
+		envVarValues = append(envVarValues, v)
+	}
+	dependencyGraph.ConsumesAnyRuntimeValuesInList(instructionUuid, envVarValues)
+	dependencyGraph.ConsumesAnyRuntimeValuesInString(instructionUuid, builtin.run)
+
+	dependencyGraph.ProducesRuntimeValue(instructionUuid, builtin.runCodeValue)
+	dependencyGraph.ProducesRuntimeValue(instructionUuid, builtin.runOutputValue)
+	for _, storeSpec := range builtin.storeSpecList {
+		dependencyGraph.ProducesFilesArtifact(instructionUuid, storeSpec.GetName())
 	}
 	return nil
 }
@@ -366,7 +466,7 @@ func replaceMagicStringsInEnvVars(runtimeValueStore *runtime_value_store.Runtime
 		}
 	}
 
-	renderedServiceConfig, err := service.CreateServiceConfig(serviceConfig.GetContainerImageName(), serviceConfig.GetImageBuildSpec(), serviceConfig.GetImageRegistrySpec(), serviceConfig.GetNixBuildSpec(), serviceConfig.GetPrivatePorts(), serviceConfig.GetPublicPorts(), serviceConfig.GetEntrypointArgs(), serviceConfig.GetCmdArgs(), envVars, serviceConfig.GetFilesArtifactsExpansion(), serviceConfig.GetPersistentDirectories(), serviceConfig.GetCPUAllocationMillicpus(), serviceConfig.GetMemoryAllocationMegabytes(), serviceConfig.GetPrivateIPAddrPlaceholder(), serviceConfig.GetMinCPUAllocationMillicpus(), serviceConfig.GetMinMemoryAllocationMegabytes(), serviceConfig.GetLabels(), serviceConfig.GetUser(), serviceConfig.GetTolerations(), serviceConfig.GetNodeSelectors(), serviceConfig.GetImageDownloadMode(), tiniEnabled)
+	renderedServiceConfig, err := service.CreateServiceConfig(serviceConfig.GetContainerImageName(), serviceConfig.GetImageBuildSpec(), serviceConfig.GetImageRegistrySpec(), serviceConfig.GetNixBuildSpec(), serviceConfig.GetPrivatePorts(), serviceConfig.GetPublicPorts(), serviceConfig.GetEntrypointArgs(), serviceConfig.GetCmdArgs(), envVars, serviceConfig.GetFilesArtifactsExpansion(), serviceConfig.GetPersistentDirectories(), serviceConfig.GetCPUAllocationMillicpus(), serviceConfig.GetMemoryAllocationMegabytes(), serviceConfig.GetPrivateIPAddrPlaceholder(), serviceConfig.GetMinCPUAllocationMillicpus(), serviceConfig.GetMinMemoryAllocationMegabytes(), serviceConfig.GetLabels(), serviceConfig.GetUser(), serviceConfig.GetTolerations(), serviceConfig.GetNodeSelectors(), serviceConfig.GetImageDownloadMode(), tiniEnabled, serviceConfig.GetTtyEnabled(), serviceConfig.GetDevices(), serviceConfig.GetPublishUdp())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a service config with env var magric strings replaced.")
 	}

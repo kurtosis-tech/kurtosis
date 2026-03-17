@@ -3,6 +3,7 @@ package startosis_add_service_test
 import (
 	"context"
 	"fmt"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -54,6 +55,7 @@ func (suite *StartosisAddServiceTestSuite) TestStartosis_AddServiceWithReadyCond
 	runResult, _ := suite.RunScript(ctx, script)
 
 	t := suite.T()
+	require.NotNil(t, runResult, "RunScript returned nil result")
 	expectedLastAssertionErrorStr := fmt.Sprintf("Verification failed '%v' '==' '%v'", okStatusCode, serverErrorStatusCode)
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")

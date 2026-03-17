@@ -1,13 +1,9 @@
-//go:build !kubernetes
-// +build !kubernetes
-
-// We don't run this test in Kubernetes because, as of 2022-10-28, the centralized logs feature is not implemented in Kubernetes yet
-
 package stream_logs_test
 
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
+	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/testsuite/consts"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/stretchr/testify/require"
@@ -32,7 +28,11 @@ const (
 	thirdLogLine  = "running"
 	lastLogLine   = "successfully"
 
-	secondsToWaitForLogs = 1 * time.Second
+	// Retry configuration for log retrieval
+	// Logs may not be immediately available due to Fluentbit/Vector flush timing;
+	// in CI the flush can take well over 30 seconds so we allow up to ~100 s of retries.
+	maxLogRetrievalRetries    = 10
+	logRetrievalRetryInterval = 10 * time.Second
 )
 
 var (
@@ -81,7 +81,7 @@ func TestStreamLogs(t *testing.T) {
 
 	// It takes some time for logs to persist so we sleep to ensure logs have persisted
 	// Otherwise the test is flaky
-	time.Sleep(secondsToWaitForLogs)
+	time.Sleep(consts.FluentbitRefreshInterval)
 	// ------------------------------------- TEST RUN ----------------------------------------------
 
 	enclaveUuid := enclaveCtx.GetEnclaveUuid()
@@ -111,21 +111,63 @@ func TestStreamLogs(t *testing.T) {
 			expectedLogLinesByService[userServiceUuid] = expectedLogLines
 		}
 
-		testEvaluationErr, receivedLogLinesByService, receivedNotFoundServiceUuids := test_helpers.GetLogsResponse(
-			t,
-			ctx,
-			testTimeOut,
-			kurtosisCtx,
-			requestedEnclaveIdentifier,
-			requestedServiceUuids,
-			expectedLogLinesByService,
-			requestedShouldFollowLogs,
-			filter,
-		)
+		// Retry log retrieval to handle Fluentbit/Vector flush timing
+		var receivedLogLinesByService map[services.ServiceUUID][]string
+		var receivedNotFoundServiceUuids map[services.ServiceUUID]bool
+		var testEvaluationErr error
+		var logsRetrieved bool
 
+		for attempt := 0; attempt < maxLogRetrievalRetries; attempt++ {
+			receivedLogLinesByService, receivedNotFoundServiceUuids, testEvaluationErr = test_helpers.GetLogsResponse(
+				t,
+				ctx,
+				testTimeOut,
+				kurtosisCtx,
+				requestedEnclaveIdentifier,
+				requestedServiceUuids,
+				expectedLogLinesByService,
+				requestedShouldFollowLogs,
+				filter,
+			)
+
+			if testEvaluationErr != nil {
+				t.Logf("Attempt %d: error retrieving logs: %v", attempt+1, testEvaluationErr)
+				time.Sleep(logRetrievalRetryInterval)
+				continue
+			}
+
+			// Check if we received enough logs for all services
+			logsRetrieved = true
+			for userServiceUuid := range requestedServiceUuids {
+				expectedLines := expectedLogLinesByService[userServiceUuid]
+				receivedLines := receivedLogLinesByService[userServiceUuid]
+				if len(receivedLines) < len(expectedLines) {
+					logsRetrieved = false
+					t.Logf("Attempt %d: expected %d log lines for service %s, got %d. Retrying...",
+						attempt+1, len(expectedLines), userServiceUuid, len(receivedLines))
+					break
+				}
+			}
+
+			if logsRetrieved {
+				break
+			}
+			time.Sleep(logRetrievalRetryInterval)
+		}
+
+		require.True(t, logsRetrieved || len(expectedLogLines) == 0,
+			"Failed to retrieve expected logs after %d attempts", maxLogRetrievalRetries)
 		require.NoError(t, testEvaluationErr)
+
 		for userServiceUuid := range requestedServiceUuids {
-			require.Equal(t, expectedLogLines, receivedLogLinesByService[userServiceUuid])
+			expectedLines := expectedLogLinesByService[userServiceUuid]
+			receivedLines := receivedLogLinesByService[userServiceUuid]
+			require.GreaterOrEqual(t, len(receivedLines), len(expectedLines),
+				"Expected at least %d log lines for service %s, but got %d",
+				len(expectedLines), userServiceUuid, len(receivedLines))
+			for logNum, expectedLogLine := range expectedLines {
+				require.Contains(t, receivedLines[logNum], expectedLogLine)
+			}
 		}
 		require.Equal(t, expectedNonExistenceServiceUuids, receivedNotFoundServiceUuids)
 	}

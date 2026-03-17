@@ -301,6 +301,26 @@ export namespace StopEnclaveArgs {
   }
 }
 
+export class GetEnclavesByUuidsArgs extends jspb.Message {
+  getEnclaveUuidsList(): Array<string>;
+  setEnclaveUuidsList(value: Array<string>): GetEnclavesByUuidsArgs;
+  clearEnclaveUuidsList(): GetEnclavesByUuidsArgs;
+  addEnclaveUuids(value: string, index?: number): GetEnclavesByUuidsArgs;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GetEnclavesByUuidsArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: GetEnclavesByUuidsArgs): GetEnclavesByUuidsArgs.AsObject;
+  static serializeBinaryToWriter(message: GetEnclavesByUuidsArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetEnclavesByUuidsArgs;
+  static deserializeBinaryFromReader(message: GetEnclavesByUuidsArgs, reader: jspb.BinaryReader): GetEnclavesByUuidsArgs;
+}
+
+export namespace GetEnclavesByUuidsArgs {
+  export type AsObject = {
+    enclaveUuidsList: Array<string>,
+  }
+}
+
 export class DestroyEnclaveArgs extends jspb.Message {
   getEnclaveIdentifier(): string;
   setEnclaveIdentifier(value: string): DestroyEnclaveArgs;

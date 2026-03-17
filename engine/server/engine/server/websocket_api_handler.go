@@ -7,7 +7,6 @@ import (
 
 	user_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_file_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/mapping/to_http"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/streaming"
@@ -36,8 +35,6 @@ type WebSocketRuntime struct {
 
 	// The clients for consuming container logs from the logs' database server
 	LogsDatabaseClient centralized_logs.LogsDatabaseClient
-
-	LogFileManager *log_file_manager.LogFileManager
 
 	MetricsClient metrics_client.MetricsClient
 

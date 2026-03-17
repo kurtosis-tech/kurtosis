@@ -16,8 +16,10 @@ service EngineService {
   // ==============================================================================================
   // Creates a new Kurtosis Enclave
   rpc CreateEnclave(CreateEnclaveArgs) returns (CreateEnclaveResponse) {};
-  // Returns information about the existing enclaves
+  // Returns information about the requested enclaves or all enclaves if none specified.
   rpc GetEnclaves(google.protobuf.Empty) returns (GetEnclavesResponse) {};
+  // Returns information about the requested enclaves or all enclaves if none specified.
+  rpc GetEnclavesByUuids(GetEnclavesByUuidsArgs) returns (GetEnclavesResponse) {};
   // Returns information about all existing & historical enclaves
   rpc GetExistingAndHistoricalEnclaveIdentifiers(google.protobuf.Empty) returns (GetExistingAndHistoricalEnclaveIdentifiersResponse) {}
   // Stops all containers in an enclave
@@ -177,6 +179,14 @@ message GetExistingAndHistoricalEnclaveIdentifiersResponse {
 message StopEnclaveArgs {
   //The identifier(uuid, shortened uuid, name) of the Kurtosis enclave to stop
   string enclave_identifier = 1;
+}
+
+// ==============================================================================================
+//                                       Get Enclaves
+// ==============================================================================================
+message GetEnclavesByUuidsArgs {
+  //The enclave uuid of the Kurtosis enclaves to get. An empty list of enclave uuids will retrieve all enclaves.
+  repeated string enclave_uuids = 1;
 }
 
 // ==============================================================================================

@@ -7,9 +7,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/multi_os_command_executor"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 )
 
 var WebCmd = &lowlevel.LowlevelKurtosisCommand{
@@ -35,9 +35,7 @@ func run(_ context.Context, _ *flags.ParsedFlags, _ *args.ParsedArgs) error {
 		return stacktrace.Propagate(err, "tried fetching the current Kurtosis context but failed, we can't switch clusters without this information. This is a bug in Kurtosis")
 	}
 	if store.IsRemote(currentKurtosisContext) {
-		if err := multi_os_command_executor.OpenFile(user_support_constants.KurtosisCloudLink); err != nil {
-			return stacktrace.Propagate(err, "An error occurred while opening the Kurtosis Cloud Web UI")
-		}
+		logrus.Warn("Kurtosis Cloud has been deprecated. Switch to a local kurtosis context to use the local Kurtosis web UI instead.")
 	}
 
 	if err := multi_os_command_executor.OpenFile(webUILink); err != nil {

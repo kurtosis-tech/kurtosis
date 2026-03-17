@@ -2,10 +2,12 @@ package logs_collector_functions
 
 import (
 	"context"
+
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 )
 
 type LogsCollectorContainer interface {
@@ -18,8 +20,13 @@ type LogsCollectorContainer interface {
 		httpPortNumber uint16,
 		logsCollectorTcpPortId string,
 		logsCollectorHttpPortId string,
+		logsCollectorFilters []logs_collector.Filter,
+		logsCollectorParsers []logs_collector.Parser,
 		targetNetworkId string,
 		objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 		dockerManager *docker_manager.DockerManager,
 	) (string, map[string]string, map[nat.Port]*nat.PortBinding, func(), error)
+
+	// GetHttpHealthCheckEndpoint returns endpoint for verifying the availability of the logs collector application on container
+	GetHttpHealthCheckEndpoint() string
 }

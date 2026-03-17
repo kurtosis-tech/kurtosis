@@ -44,6 +44,9 @@ const (
 	// KurtosisEnclaveManagerServerGetEnclavesProcedure is the fully-qualified name of the
 	// KurtosisEnclaveManagerServer's GetEnclaves RPC.
 	KurtosisEnclaveManagerServerGetEnclavesProcedure = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/GetEnclaves"
+	// KurtosisEnclaveManagerServerGetEnclavesByUuidsProcedure is the fully-qualified name of the
+	// KurtosisEnclaveManagerServer's GetEnclavesByUuids RPC.
+	KurtosisEnclaveManagerServerGetEnclavesByUuidsProcedure = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/GetEnclavesByUuids"
 	// KurtosisEnclaveManagerServerGetServicesProcedure is the fully-qualified name of the
 	// KurtosisEnclaveManagerServer's GetServices RPC.
 	KurtosisEnclaveManagerServerGetServicesProcedure = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/GetServices"
@@ -108,6 +111,7 @@ const (
 type KurtosisEnclaveManagerServerClient interface {
 	Check(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.HealthCheckRequest]) (*connect.Response[kurtosis_enclave_manager_api_bindings.HealthCheckResponse], error)
 	GetEnclaves(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error)
+	GetEnclavesByUuids(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetEnclavesByUuidsRequest]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error)
 	GetServices(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetServicesRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse], error)
 	GetServiceLogs(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs]) (*connect.ServerStreamForClient[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse], error)
 	ListFilesArtifactNamesAndUuids(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetListFilesArtifactNamesAndUuidsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse], error)
@@ -148,6 +152,11 @@ func NewKurtosisEnclaveManagerServerClient(httpClient connect.HTTPClient, baseUR
 		getEnclaves: connect.NewClient[emptypb.Empty, kurtosis_engine_rpc_api_bindings.GetEnclavesResponse](
 			httpClient,
 			baseURL+KurtosisEnclaveManagerServerGetEnclavesProcedure,
+			opts...,
+		),
+		getEnclavesByUuids: connect.NewClient[kurtosis_enclave_manager_api_bindings.GetEnclavesByUuidsRequest, kurtosis_engine_rpc_api_bindings.GetEnclavesResponse](
+			httpClient,
+			baseURL+KurtosisEnclaveManagerServerGetEnclavesByUuidsProcedure,
 			opts...,
 		),
 		getServices: connect.NewClient[kurtosis_enclave_manager_api_bindings.GetServicesRequest, kurtosis_core_rpc_api_bindings.GetServicesResponse](
@@ -252,6 +261,7 @@ func NewKurtosisEnclaveManagerServerClient(httpClient connect.HTTPClient, baseUR
 type kurtosisEnclaveManagerServerClient struct {
 	check                          *connect.Client[kurtosis_enclave_manager_api_bindings.HealthCheckRequest, kurtosis_enclave_manager_api_bindings.HealthCheckResponse]
 	getEnclaves                    *connect.Client[emptypb.Empty, kurtosis_engine_rpc_api_bindings.GetEnclavesResponse]
+	getEnclavesByUuids             *connect.Client[kurtosis_enclave_manager_api_bindings.GetEnclavesByUuidsRequest, kurtosis_engine_rpc_api_bindings.GetEnclavesResponse]
 	getServices                    *connect.Client[kurtosis_enclave_manager_api_bindings.GetServicesRequest, kurtosis_core_rpc_api_bindings.GetServicesResponse]
 	getServiceLogs                 *connect.Client[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs, kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]
 	listFilesArtifactNamesAndUuids *connect.Client[kurtosis_enclave_manager_api_bindings.GetListFilesArtifactNamesAndUuidsRequest, kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse]
@@ -281,6 +291,12 @@ func (c *kurtosisEnclaveManagerServerClient) Check(ctx context.Context, req *con
 // GetEnclaves calls kurtosis_enclave_manager.KurtosisEnclaveManagerServer.GetEnclaves.
 func (c *kurtosisEnclaveManagerServerClient) GetEnclaves(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
 	return c.getEnclaves.CallUnary(ctx, req)
+}
+
+// GetEnclavesByUuids calls
+// kurtosis_enclave_manager.KurtosisEnclaveManagerServer.GetEnclavesByUuids.
+func (c *kurtosisEnclaveManagerServerClient) GetEnclavesByUuids(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.GetEnclavesByUuidsRequest]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
+	return c.getEnclavesByUuids.CallUnary(ctx, req)
 }
 
 // GetServices calls kurtosis_enclave_manager.KurtosisEnclaveManagerServer.GetServices.
@@ -393,6 +409,7 @@ func (c *kurtosisEnclaveManagerServerClient) UpgradeKurtosisVersion(ctx context.
 type KurtosisEnclaveManagerServerHandler interface {
 	Check(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.HealthCheckRequest]) (*connect.Response[kurtosis_enclave_manager_api_bindings.HealthCheckResponse], error)
 	GetEnclaves(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error)
+	GetEnclavesByUuids(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetEnclavesByUuidsRequest]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error)
 	GetServices(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetServicesRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse], error)
 	GetServiceLogs(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs], *connect.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]) error
 	ListFilesArtifactNamesAndUuids(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetListFilesArtifactNamesAndUuidsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse], error)
@@ -428,6 +445,11 @@ func NewKurtosisEnclaveManagerServerHandler(svc KurtosisEnclaveManagerServerHand
 	kurtosisEnclaveManagerServerGetEnclavesHandler := connect.NewUnaryHandler(
 		KurtosisEnclaveManagerServerGetEnclavesProcedure,
 		svc.GetEnclaves,
+		opts...,
+	)
+	kurtosisEnclaveManagerServerGetEnclavesByUuidsHandler := connect.NewUnaryHandler(
+		KurtosisEnclaveManagerServerGetEnclavesByUuidsProcedure,
+		svc.GetEnclavesByUuids,
 		opts...,
 	)
 	kurtosisEnclaveManagerServerGetServicesHandler := connect.NewUnaryHandler(
@@ -531,6 +553,8 @@ func NewKurtosisEnclaveManagerServerHandler(svc KurtosisEnclaveManagerServerHand
 			kurtosisEnclaveManagerServerCheckHandler.ServeHTTP(w, r)
 		case KurtosisEnclaveManagerServerGetEnclavesProcedure:
 			kurtosisEnclaveManagerServerGetEnclavesHandler.ServeHTTP(w, r)
+		case KurtosisEnclaveManagerServerGetEnclavesByUuidsProcedure:
+			kurtosisEnclaveManagerServerGetEnclavesByUuidsHandler.ServeHTTP(w, r)
 		case KurtosisEnclaveManagerServerGetServicesProcedure:
 			kurtosisEnclaveManagerServerGetServicesHandler.ServeHTTP(w, r)
 		case KurtosisEnclaveManagerServerGetServiceLogsProcedure:
@@ -584,6 +608,10 @@ func (UnimplementedKurtosisEnclaveManagerServerHandler) Check(context.Context, *
 
 func (UnimplementedKurtosisEnclaveManagerServerHandler) GetEnclaves(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.GetEnclaves is not implemented"))
+}
+
+func (UnimplementedKurtosisEnclaveManagerServerHandler) GetEnclavesByUuids(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetEnclavesByUuidsRequest]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.GetEnclavesByUuids is not implemented"))
 }
 
 func (UnimplementedKurtosisEnclaveManagerServerHandler) GetServices(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetServicesRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse], error) {
