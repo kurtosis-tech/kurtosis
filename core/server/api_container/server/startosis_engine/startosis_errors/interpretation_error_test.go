@@ -12,7 +12,7 @@ const (
 
 func TestInterpretationError_serializationSimpleError(t *testing.T) {
 	errorString := "This is an error!"
-	errorToSerialize := NewInterpretationError(errorString)
+	errorToSerialize := NewInterpretationError("%s", errorString)
 
 	require.Equal(t, errorString, errorToSerialize.Error())
 }
