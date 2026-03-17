@@ -15,6 +15,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	defaultEngineVersion                   = ""
+	restartEngineOnSameVersionIfAnyRunning = true
+	dontRestartAPIContainers               = false
+)
+
 var LokiStartCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:               command_str_consts.LokiStartCmdStr,
 	ShortDescription:         "Starts a Loki instance.",
@@ -50,12 +56,12 @@ func run(
 	_, engineClientCloseFunc, err := engineManager.RestartEngineIdempotently(
 		ctx,
 		defaults.DefaultEngineLogLevel,
-		"",
-		true,
+		defaultEngineVersion,
+		restartEngineOnSameVersionIfAnyRunning,
 		defaults.DefaultEngineEnclavePoolSize,
 		defaults.DefaultEnableDebugMode,
 		defaults.DefaultGitHubAuthTokenOverride,
-		false,
+		dontRestartAPIContainers,
 		defaults.DefaultDomain,
 		defaults.DefaultLogRetentionPeriod,
 		lokiSink,

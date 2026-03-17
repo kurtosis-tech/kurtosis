@@ -14,6 +14,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	defaultEngineVersion                   = ""
+	restartEngineOnSameVersionIfAnyRunning = true
+	dontRestartAPIContainers               = false
+)
+
 var GraflokiStartCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:               command_str_consts.GraflokiStartCmdStr,
 	ShortDescription:         "Starts a Grafana/Loki instance.",
@@ -59,12 +65,12 @@ func run(
 	_, engineClientCloseFunc, err := engineManager.RestartEngineIdempotently(
 		ctx,
 		defaults.DefaultEngineLogLevel,
-		"",
-		true,
+		defaultEngineVersion,
+		restartEngineOnSameVersionIfAnyRunning,
 		defaults.DefaultEngineEnclavePoolSize,
 		defaults.DefaultEnableDebugMode,
 		defaults.DefaultGitHubAuthTokenOverride,
-		false,
+		dontRestartAPIContainers,
 		defaults.DefaultDomain,
 		defaults.DefaultLogRetentionPeriod,
 		lokiSink,
