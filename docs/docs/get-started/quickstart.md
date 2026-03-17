@@ -73,7 +73,8 @@ In this step, you saw two ways to interact with your enclave:
 1. Accessing URLs via automatically generated local port bindings
 2. Transferring [files artifacts][files-artifacts-reference] to your machine, for inspection
 
-<details><summary>More ways to interact with an enclave</summary>
+<details>
+<summary>More ways to interact with an enclave</summary>
 
 You can also do a set of actions you would expect from a standard Docker or Kubernetes deployments, like:
 1. Shell into a service: `kurtosis service shell quickstart service-c-1`
@@ -111,7 +112,8 @@ Each service is partying, but they're each partying for different reasons at the
 
 To inspect how each of these changes happened, check out the following:
 
-<details><summary><b>See that the count of each service changed</b></summary>
+<details>
+<summary><b>See that the count of each service changed</b></summary>
 
 You can see 2 instances of Service A and 2 instances of Service B in the CLI output:
 
@@ -135,7 +137,8 @@ You should see the rendered config file with the contents:
 
 </details>
 
-<details><summary><b>See a feature flag turned on by a configuration file on disk</b></summary>
+<details>
+<summary><b>See a feature flag turned on by a configuration file on disk</b></summary>
 
 Service A has the `party_mode` flagged turned on by virtue of its configuration file. You can see that with by downloading the `service-a-rendered-config` files artifact, as you've seen before:
 
@@ -154,7 +157,8 @@ You should see the config file contents with the feature flag turned on:
 
 </details>
 
-<details><summary><b>See a feature flag turned on by an command line argument</b></summary>
+<details>
+<summary><b>See a feature flag turned on by an command line argument</b></summary>
 
 Service B has the `party_mode` flag turned on by virtue of a command line flag. To see this, run:
 ```console
@@ -170,7 +174,8 @@ CMD:
 
 </details>
 
-<details><summary><b>See a feature flag turned on by an environment variable</b></summary>
+<details>
+<summary><b>See a feature flag turned on by an environment variable</b></summary>
 
 Service C has the `party_mode` flag turned on by virtue of an environment variable. To see the environment variable flag is indeed enabled, run:
 
