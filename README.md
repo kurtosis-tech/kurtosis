@@ -70,6 +70,97 @@ To see where we're going with the product, check out the roadmap [here](https://
 
 Got more questions? Drop them in our [Github Discussions](https://github.com/kurtosis-tech/kurtosis/discussions/new?category=q-a) where we, or other community members, can help answer.
 
+Claude Code Skills
+========================
+
+This repository includes [Claude Code](https://claude.ai/download) skills that teach Claude how to work with Kurtosis. Skills are structured prompts in the `skills/` directory that give Claude operational knowledge about building, debugging, deploying, and managing Kurtosis enclaves.
+
+### Available Skills
+
+| Skill | Description |
+|-------|-------------|
+| `clean` | Clean up enclaves and artifacts |
+| `cli-local-build` | Build the CLI from source |
+| `cluster-manage` | Manage Kurtosis clusters |
+| `context-manage` | Manage Kurtosis contexts |
+| `docker-debug` | Debug Docker-based enclaves |
+| `docker-local-build` | Build and load Docker images locally |
+| `dump` | Dump enclave state for debugging |
+| `enclave-inspect` | Inspect running enclaves |
+| `engine-manage` | Start, stop, and restart the engine |
+| `files-inspect` | Inspect files artifacts |
+| `gateway` | Manage the Kurtosis gateway |
+| `grafloki` | Query Grafana and Loki observability |
+| `import-compose` | Import Docker Compose files |
+| `k8s-clean-cluster` | Clean Kurtosis resources from K8s |
+| `k8s-debug-pods` | Debug pods on Kubernetes |
+| `k8s-dev-deploy` | Build and deploy dev images to K8s |
+| `lint` | Lint the codebase |
+| `port-forward` | Forward ports from enclaves |
+| `portal` | Manage the Kurtosis portal |
+| `run-package` | Run Starlark packages |
+| `service-manage` | Manage services within enclaves |
+| `starlark-dev` | Develop Starlark packages |
+
+### Installing Skills
+
+Skills are auto-discovered by Claude Code when present in a project's `skills/` directory. There are several ways to install them:
+
+#### Option 1: Clone the repository (contributors)
+
+If you're contributing to Kurtosis, skills are already included:
+
+```bash
+git clone https://github.com/kurtosis-tech/kurtosis.git
+cd kurtosis
+```
+
+Claude Code will automatically discover the skills when you open a conversation in this directory.
+
+#### Option 2: Copy skills into your project
+
+Copy the `skills/` directory into any project where you want Claude to have Kurtosis knowledge:
+
+```bash
+# From the kurtosis repo, copy skills into your project
+cp -r /path/to/kurtosis/skills /path/to/your-project/skills
+```
+
+#### Option 3: Symlink from another project
+
+If you want to keep skills in sync with the Kurtosis repo without copying:
+
+```bash
+# Symlink the entire skills directory
+ln -s /path/to/kurtosis/skills /path/to/your-project/skills
+
+# Or symlink individual skills
+mkdir -p /path/to/your-project/skills
+ln -s /path/to/kurtosis/skills/run-package /path/to/your-project/skills/run-package
+```
+
+#### Option 4: Install globally for all projects
+
+To make Kurtosis skills available across all your Claude Code projects, add them to your global Claude configuration:
+
+```bash
+# Copy skills to your global Claude config
+cp -r /path/to/kurtosis/skills ~/.claude/skills
+```
+
+### Using Skills
+
+Once installed, skills are invoked as slash commands in Claude Code:
+
+```
+/clean          # Clean up enclaves
+/run-package    # Run a Starlark package
+/docker-debug   # Debug Docker containers
+/k8s-debug-pods # Debug Kubernetes pods
+```
+
+You can also reference skills naturally in conversation — Claude will use the relevant skill context automatically when discussing Kurtosis topics.
+
 Contributing to Kurtosis
 ========================
 
