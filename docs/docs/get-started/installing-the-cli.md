@@ -15,6 +15,44 @@ import TabItem from '@theme/TabItem';
 
 The instructions in this guide will walk you through installing the latest version of Kurtosis.
 
+:::warning Migrating from Gemfury?
+The old Gemfury-hosted apt/yum repositories (`apt.fury.io/kurtosis-tech` and `yum.fury.io/kurtosis-tech`) are **no longer supported**. If you previously installed Kurtosis via Gemfury, switch to the new repository with a single command:
+
+**apt (Ubuntu/Debian):**
+```bash
+echo "deb [trusted=yes] https://sdk.kurtosis.com/kurtosis-cli-release-artifacts/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list && sudo apt update
+```
+
+**yum (RHEL/CentOS):**
+```bash
+sudo sed -i 's|https://yum.fury.io/kurtosis-tech/|https://sdk.kurtosis.com/kurtosis-cli-release-artifacts/rpm/|' /etc/yum.repos.d/kurtosis.repo && sudo yum makecache
+```
+
+**Note:** If you need to install a Kurtosis version for version `1.15.6` or earlier, you should still use the old Gemfury repositories:
+
+<details>
+<summary>Gemfury install instructions (version 1.15.6 or earlier)</summary>
+
+**apt (Ubuntu/Debian):**
+```bash
+echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+sudo apt update
+sudo apt install kurtosis-cli=<version>
+```
+
+**yum (RHEL/CentOS):**
+```bash
+echo '[kurtosis]
+name=Kurtosis
+baseurl=https://yum.fury.io/kurtosis-tech/
+enabled=1
+gpgcheck=0' | sudo tee /etc/yum.repos.d/kurtosis.repo
+sudo yum install kurtosis-cli-<version>
+```
+
+</details>
+:::
+
 I. Install & Start Docker
 -----------------
 
@@ -49,7 +87,7 @@ xcode-select --install
 <TabItem value="apt" label="apt (Ubuntu)">
 
 ```bash
-echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+echo "deb [trusted=yes] https://sdk.kurtosis.com/kurtosis-cli-release-artifacts/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
 sudo apt update
 sudo apt install kurtosis-cli
 ```
@@ -60,7 +98,7 @@ sudo apt install kurtosis-cli
 ```bash
 echo '[kurtosis]
 name=Kurtosis
-baseurl=https://yum.fury.io/kurtosis-tech/
+baseurl=https://sdk.kurtosis.com/kurtosis-cli-release-artifacts/rpm/
 enabled=1
 gpgcheck=0' | sudo tee /etc/yum.repos.d/kurtosis.repo
 sudo yum install kurtosis-cli
