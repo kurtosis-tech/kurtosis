@@ -1216,16 +1216,18 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestRemoveServiceComes
 	plan.remove_service(name = "serviceA")
 `
 
+	// exec (2) now ProducesService, so store_service_files (3) depends on exec (2) not add_service (1).
+	// remove_service (4) depends on exec (2) and store_service_files (3); add_service (1) is
+	// transitively covered through exec (2).
 	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
 		types.ScheduledInstructionUuid("1"): {},
 		types.ScheduledInstructionUuid("2"): {
 			types.ScheduledInstructionUuid("1"),
 		},
 		types.ScheduledInstructionUuid("3"): {
-			types.ScheduledInstructionUuid("1"),
+			types.ScheduledInstructionUuid("2"),
 		},
 		types.ScheduledInstructionUuid("4"): {
-			types.ScheduledInstructionUuid("1"),
 			types.ScheduledInstructionUuid("2"),
 			types.ScheduledInstructionUuid("3"),
 		},
@@ -1743,13 +1745,15 @@ func (suite *StartosisIntepreterDependencyGraphTestSuite) TestStoreServiceFilesD
 	)
 
 `
+	// exec (2) now ProducesService, so store_service_files (3) depends on exec (2) only.
+	// The depends_on runtime value also resolves to exec (2), so it's not a separate dependency.
+	// add_service (1) is transitively covered through exec (2).
 	expectedDependencyGraph := map[types.ScheduledInstructionUuid][]types.ScheduledInstructionUuid{
 		types.ScheduledInstructionUuid("1"): {},
 		types.ScheduledInstructionUuid("2"): {
 			types.ScheduledInstructionUuid("1"),
 		},
 		types.ScheduledInstructionUuid("3"): {
-			types.ScheduledInstructionUuid("1"),
 			types.ScheduledInstructionUuid("2"),
 		},
 	}
