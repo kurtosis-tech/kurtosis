@@ -6,9 +6,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/grafloki"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/kurtosis_config_getter"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/logs_engine_restart"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -51,10 +52,31 @@ func run(
 	//logrus.Infof("Grafana running at %v", grafanaUrl)
 
 	logrus.Infof("Configuring engine to send logs to Loki...")
-	err = logs_engine_restart.RestartEngineWithLogsSink(ctx, lokiSink, false)
+	engineManager, err := engine_manager.NewEngineManager(ctx)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
+	}
+	_, engineClientCloseFunc, err := engineManager.RestartEngineIdempotently(
+		ctx,
+		defaults.DefaultEngineLogLevel,
+		"",
+		true,
+		defaults.DefaultEngineEnclavePoolSize,
+		defaults.DefaultEnableDebugMode,
+		defaults.DefaultGitHubAuthTokenOverride,
+		false,
+		defaults.DefaultDomain,
+		defaults.DefaultLogRetentionPeriod,
+		lokiSink,
+	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred restarting engine to be configured to send logs to Loki.")
 	}
+	defer func() {
+		if closeErr := engineClientCloseFunc(); closeErr != nil {
+			logrus.Warnf("Error closing the engine client:\n'%v'", closeErr)
+		}
+	}()
 
 	return nil
 }
