@@ -81,6 +81,9 @@ Export the full enclave state for offline debugging:
 
 ```bash
 kurtosis enclave dump <enclave-name> /tmp/enclave-dump
+
+# Verify the dump completed successfully
+ls -la /tmp/enclave-dump/
 ```
 
 This exports:
@@ -90,6 +93,15 @@ This exports:
 - Enclave metadata
 
 Useful for sharing with others to debug issues.
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Enclave not found | Typo or enclave was removed | Run `kurtosis enclave ls` to see available enclaves |
+| Dump directory empty | Enclave has no services | Check `kurtosis enclave inspect` — enclave may be idle |
+| Inspect shows STOPPED services | Services crashed or were stopped | Check logs with `kurtosis service logs` before restarting |
+| K8s namespace missing | Enclave was cleaned up | Re-run the package to recreate the enclave |
 
 ## Enclave lifecycle
 

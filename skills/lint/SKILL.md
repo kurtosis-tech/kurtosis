@@ -59,6 +59,7 @@ kurtosis lint ./my-package/
 # Check docstrings
 kurtosis lint -c ./my-package/
 
-# Auto-format before commit
+# Fix-and-retry pattern: auto-fix, then re-lint to verify
 kurtosis lint -f ./my-package/
+kurtosis lint ./my-package/
 ```

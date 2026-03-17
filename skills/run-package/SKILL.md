@@ -115,6 +115,21 @@ kurtosis run --pull --dependencies ./my-package
 kurtosis run --show-enclave-inspect=false ./my-package
 ```
 
+## Safe deployment workflow
+
+Preview, execute, then verify:
+
+```bash
+# 1. Dry run — validate the plan without making changes
+kurtosis run --dry-run --enclave my-testnet github.com/ethpandaops/ethereum-package --args-file config.yaml
+
+# 2. Execute — run the package for real
+kurtosis run --enclave my-testnet github.com/ethpandaops/ethereum-package --args-file config.yaml
+
+# 3. Verify — confirm services are running correctly
+kurtosis enclave inspect my-testnet
+```
+
 ## Debug mode
 
 ```bash
