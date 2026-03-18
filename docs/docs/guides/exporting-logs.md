@@ -503,11 +503,15 @@ The [`match`][fluentbit-match] pattern uses Fluentbit's pattern matching syntax.
 For more information about available filters and their parameters, refer to the [Fluentbit documentation][fluentbit-filters].
 :::
 
-### Grafloki
+### Local Loki and Grafloki
 
-For ease of setup, Kurtosis CLI comes with a feature to start a local Grafana and Loki instance that the engine gets configured to send logs to. See [grafloki start][grafloki-start] for more info.
+For ease of setup, Kurtosis CLI comes with two local logging helpers:
+
+- [`kurtosis loki start`][loki-start] starts a local Loki instance and configures the engine to send logs to it.
+- [`kurtosis grafloki start`][grafloki-start] starts both Grafana and Loki and configures the engine to send logs to Loki.
 
 <!-------------------- ONLY LINKS BELOW THIS POINT ----------------------->
+[loki-start]: ../cli-reference/loki-start.md
 [grafloki-start]: ../cli-reference/grafloki-start.md
 [fluentbit]: https://docs.fluentbit.io/manual
 [fluentbit-filters]: https://docs.fluentbit.io/manual/pipeline/filters
@@ -515,5 +519,4 @@ For ease of setup, Kurtosis CLI comes with a feature to start a local Grafana an
 [fluentbit-grep]: https://docs.fluentbit.io/manual/pipeline/filters/grep
 [fluentbit-parsers]: https://docs.fluentbit.io/manual/pipeline/parsers
 [fluentbit-match]: https://docs.fluentbit.io/manual/concepts/key-concepts#match
-
 

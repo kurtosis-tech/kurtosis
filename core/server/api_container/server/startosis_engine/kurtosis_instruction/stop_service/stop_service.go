@@ -125,5 +125,8 @@ func (builtin *StopServiceCapabilities) UpdateDependencyGraph(instructionUuid ty
 	dependencyGraph.UpdateInstructionShortDescriptor(instructionUuid, shortDescriptor)
 
 	dependencyGraph.ConsumesService(instructionUuid, string(builtin.serviceName))
+	// stop_service changes service running state, so subsequent instructions
+	// that consume this service must wait for the stop to complete.
+	dependencyGraph.ProducesService(instructionUuid, string(builtin.serviceName))
 	return nil
 }

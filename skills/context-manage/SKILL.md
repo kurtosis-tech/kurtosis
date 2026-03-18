@@ -52,9 +52,20 @@ kurtosis context ls
 # Switch to a different environment
 kurtosis context set staging
 
+# Verify the switch succeeded
+kurtosis context ls
+
 # Start portal if using a remote context
 kurtosis portal start
 
 # Switch back to local
 kurtosis context set default
 ```
+
+## Error handling
+
+| Scenario | Behavior | Resolution |
+|----------|----------|------------|
+| Switch to non-existent context | Command fails with error | Run `kurtosis context ls` to see available contexts |
+| Remove active context | Command fails — cannot remove active | Switch to another context first with `kurtosis context set` |
+| Engine running after switch | Engine still connected to old context | Run `kurtosis engine restart` after switching contexts |
