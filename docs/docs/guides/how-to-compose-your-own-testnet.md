@@ -112,7 +112,7 @@ The name of the enclave created above is `delicate-swamp`. We can confirm that t
 kurtosis enclave ls
 ```
 
-which shows my enclase as `RUNNING` with name `delicate-swamp`:
+which shows my enclave as `RUNNING` with name `delicate-swamp`:
 
 ```bash
 UUID           Name             Status     Creation Time
