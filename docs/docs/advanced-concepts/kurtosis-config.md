@@ -67,12 +67,13 @@ kurtosis-clusters:
             - key: Add
               value: "timestamp ${time}"
 
-    # Optional. Enables sending logs to a locally managed Grafana + Loki instance via `kurtosis grafloki start`.
+    # Optional. Configures the locally managed Loki / Grafana+Loki helpers used by
+    # `kurtosis loki start` and `kurtosis grafloki start`.
     grafana-loki:
       grafana-image: "grafana/grafana:11.6.0"
       loki-image: "grafana/loki:2.9.4"
 
-      # Starts Grafana and Loki before engine - useful if Grafana Loki is default logging setup
+      # Starts Grafana and Loki before engine - useful if Grafana + Loki is the default logging setup
       should-start-before-engine: true 
 
   kube:  # A named Kubernetes cluster

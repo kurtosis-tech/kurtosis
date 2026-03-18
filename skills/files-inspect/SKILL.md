@@ -60,17 +60,20 @@ The command returns the artifact name and UUID for use in subsequent service con
 
 ## Inspect files inside a running service
 
-When you need to verify files were mounted correctly:
+Verify files were mounted correctly by checking content matches expectations:
 
 ```bash
-# Shell into the service and browse
-kurtosis service shell <enclave-name> <service-name>
-ls -la /mounted/path/
-cat /mounted/path/config.yaml
-
-# Or run a one-off command
+# List files at the mount path to confirm they exist
 kurtosis service exec <enclave-name> <service-name> -- ls -la /mounted/path/
+
+# Inspect file contents to verify correctness
 kurtosis service exec <enclave-name> <service-name> -- cat /mounted/path/config.yaml
+
+# Compare against expected content (e.g., check a key value)
+kurtosis service exec <enclave-name> <service-name> -- sh -c "grep 'expected_key' /mounted/path/config.yaml"
+
+# Or shell in for interactive exploration
+kurtosis service shell <enclave-name> <service-name>
 ```
 
 ## Starlark file patterns
@@ -86,6 +89,12 @@ plan.add_service(
         image="my-image:latest",
         files={"/etc/myapp": artifact},
     ),
+)
+
+# Verify files were mounted correctly
+plan.exec(
+    service_name="my-service",
+    recipe=ExecRecipe(command=["ls", "-la", "/etc/myapp/"]),
 )
 ```
 
@@ -145,6 +154,27 @@ kubectl logs <pod-name> -n kt-<enclave-name> -c files-artifact-expander
 
 # If the expander image is failing (ImagePullBackOff), check image tag
 kubectl describe pod <pod-name> -n kt-<enclave-name> | grep "files-artifacts-expander"
+```
+
+## Debugging workflow
+
+When files aren't working as expected, follow these steps:
+
+```bash
+# 1. List artifacts in the enclave to verify they exist
+kurtosis enclave inspect <enclave-name>
+
+# 2. Download the artifact and inspect its contents locally
+kurtosis files download <enclave-name> <artifact-name> /tmp/debug-artifact
+cat /tmp/debug-artifact/config.yaml
+
+# 3. Verify the mount path inside the service
+kurtosis service exec <enclave-name> <service-name> -- ls -la /mounted/path/
+
+# 4. Check file contents match expectations
+kurtosis service exec <enclave-name> <service-name> -- cat /mounted/path/config.yaml
+
+# 5. If mismatch: check template data or upload source
 ```
 
 ## Common issues
