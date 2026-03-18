@@ -1,8 +1,7 @@
 module github.com/kurtosis-tech/kurtosis/cli/cli
 
-go 1.23.0
+go 1.26.0
 
-toolchain go1.23.7
 
 replace (
 	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang

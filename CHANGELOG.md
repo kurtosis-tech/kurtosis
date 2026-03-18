@@ -1,5 +1,106 @@
 # Changelog
 
+## [1.16.6](https://github.com/kurtosis-tech/kurtosis/compare/1.16.5...1.16.6) (2026-03-05)
+
+
+### Miscellaneous Chores
+
+* Release-As:1.16.6 ([#2925](https://github.com/kurtosis-tech/kurtosis/issues/2925)) ([5cb43c4](https://github.com/kurtosis-tech/kurtosis/commit/5cb43c47433acf482b22bbc21706f24c5ee2f222))
+
+## [1.16.5](https://github.com/kurtosis-tech/kurtosis/compare/1.16.4...1.16.5) (2026-03-04)
+
+
+### Miscellaneous Chores
+
+* release 1.16.5 ([#2922](https://github.com/kurtosis-tech/kurtosis/issues/2922)) ([3a63816](https://github.com/kurtosis-tech/kurtosis/commit/3a63816a734e7d914e8bc206d3022dbd5f6ae9be))
+
+## [1.16.4](https://github.com/kurtosis-tech/kurtosis/compare/1.16.3...1.16.4) (2026-02-25)
+
+
+### Bug Fixes
+
+* **k8s:** fix logs collector DaemonSet pods not being created ([#2911](https://github.com/kurtosis-tech/kurtosis/issues/2911)) ([16209aa](https://github.com/kurtosis-tech/kurtosis/commit/16209aaf9ba19a6fed4679deb8216b6c13de0a1a))
+
+## [1.16.3](https://github.com/kurtosis-tech/kurtosis/compare/1.16.2...1.16.3) (2026-02-24)
+
+
+### Bug Fixes
+
+* **ci:** fix publish workflow env vars and version bumping ([#2908](https://github.com/kurtosis-tech/kurtosis/issues/2908)) ([be6e597](https://github.com/kurtosis-tech/kurtosis/commit/be6e597dd6589fa23f4908563970e6695ade192e))
+
+
+### Miscellaneous Chores
+
+* release 1.16.3 ([#2910](https://github.com/kurtosis-tech/kurtosis/issues/2910)) ([de629eb](https://github.com/kurtosis-tech/kurtosis/commit/de629eb8595268b63acbaaf550c866140bc7b2ec))
+
+## [1.16.2](https://github.com/kurtosis-tech/kurtosis/compare/1.16.1...1.16.2) (2026-02-24)
+
+
+### Miscellaneous Chores
+
+* release 1.16.2 ([#2906](https://github.com/kurtosis-tech/kurtosis/issues/2906)) ([08729a0](https://github.com/kurtosis-tech/kurtosis/commit/08729a00e11e5f4f338525cd9da3cfef107e1b0f))
+
+## [1.16.1](https://github.com/kurtosis-tech/kurtosis/compare/1.16.0...1.16.1) (2026-02-24)
+
+
+### Bug Fixes
+
+* **ci:** use correct dtolnay/rust-toolchain action for Rust publishing ([#2903](https://github.com/kurtosis-tech/kurtosis/issues/2903)) ([020bf44](https://github.com/kurtosis-tech/kurtosis/commit/020bf44b23d4fd2bc90b76ee0b4f1e7bb2858931))
+
+
+### Miscellaneous Chores
+
+* release 1.16.1 ([#2905](https://github.com/kurtosis-tech/kurtosis/issues/2905)) ([07c5892](https://github.com/kurtosis-tech/kurtosis/commit/07c589234264efd57150417f8f157affa5f58c8a))
+
+## [1.16.0](https://github.com/kurtosis-tech/kurtosis/compare/1.15.2...1.16.0) (2026-02-24)
+
+
+### Features
+
+* **config:** add config overrides V7 objects and update resolved config ([40de020](https://github.com/kurtosis-tech/kurtosis/commit/40de020566866a2fe49629e7fdcf08e7a717ea22))
+* **config:** introduce ConfigVersion_v7 for Kurtosis config overrides ([#2891](https://github.com/kurtosis-tech/kurtosis/issues/2891)) ([40de020](https://github.com/kurtosis-tech/kurtosis/commit/40de020566866a2fe49629e7fdcf08e7a717ea22))
+* **config:** introduce KurtosisConfigV7 and v6 to v7 migrator ([40de020](https://github.com/kurtosis-tech/kurtosis/commit/40de020566866a2fe49629e7fdcf08e7a717ea22))
+* **k8s:** upgrade KurtosisConfig version to v7 and pass node ([40de020](https://github.com/kurtosis-tech/kurtosis/commit/40de020566866a2fe49629e7fdcf08e7a717ea22))
+* **kubernetes:** add support for configuring node selectors and ([40de020](https://github.com/kurtosis-tech/kurtosis/commit/40de020566866a2fe49629e7fdcf08e7a717ea22))
+* **kubernetes:** allow specifying node selectors and tolerations for ([40de020](https://github.com/kurtosis-tech/kurtosis/commit/40de020566866a2fe49629e7fdcf08e7a717ea22))
+
+
+### Bug Fixes
+
+* **ci:** fix build triggers for merge queue and release-please ([#2900](https://github.com/kurtosis-tech/kurtosis/issues/2900)) ([2d04bc1](https://github.com/kurtosis-tech/kurtosis/commit/2d04bc14095a40fead62f50cb8cdb0e3e95df02a))
+* **PortsTable.tsx:** use optional chaining and nullish coalescing for public port retrieval ([#2894](https://github.com/kurtosis-tech/kurtosis/issues/2894)) ([f1364ab](https://github.com/kurtosis-tech/kurtosis/commit/f1364abf75e5f099488e25913dbe79a369a3a5ef))
+* **publish:** update Docker Hub secret names ([#2899](https://github.com/kurtosis-tech/kurtosis/issues/2899)) ([e4637ce](https://github.com/kurtosis-tech/kurtosis/commit/e4637cee825aa66916529a625901c826353e397b))
+* **test:** increase log flush wait times in TestStreamLogs ([#2896](https://github.com/kurtosis-tech/kurtosis/issues/2896)) ([bd6047a](https://github.com/kurtosis-tech/kurtosis/commit/bd6047a4c38a110fff2e1ef8d9a113bb907b500c))
+* **test:** prevent panic in TestSearchLogs when logs are not yet persisted ([#2895](https://github.com/kurtosis-tech/kurtosis/issues/2895)) ([0306759](https://github.com/kurtosis-tech/kurtosis/commit/0306759109be392f70748cc01a4f64e66400bd66))
+
+## [1.15.2](https://github.com/kurtosis-tech/kurtosis/compare/1.15.1...1.15.2) (2026-01-22)
+
+
+### Bug Fixes
+
+* Improve rootless Docker/Podman compatibility with proper socket detection and bind mounting ([#2803](https://github.com/kurtosis-tech/kurtosis/issues/2803)) ([3f19727](https://github.com/kurtosis-tech/kurtosis/commit/3f197273db2a915b21575c0d5d8ff04b94dffe2b))
+* revert don't publish udp ports ([#2818](https://github.com/kurtosis-tech/kurtosis/issues/2818)) ([#2872](https://github.com/kurtosis-tech/kurtosis/issues/2872)) ([fcf87bd](https://github.com/kurtosis-tech/kurtosis/commit/fcf87bd789b974d66f6ad9c56534c4dd5f5b2ef6))
+
+## [1.15.1](https://github.com/kurtosis-tech/kurtosis/compare/1.15.0...1.15.1) (2026-01-14)
+
+
+### Bug Fixes
+
+* add retry logic to stream logs test to handle flakiness ([#2869](https://github.com/kurtosis-tech/kurtosis/issues/2869)) ([f22aa29](https://github.com/kurtosis-tech/kurtosis/commit/f22aa299fda047dfeaa3295cb21c0d4028c512dc))
+* **ci:** use CIRCLE_TAG instead of git describe for tag detection ([#2868](https://github.com/kurtosis-tech/kurtosis/issues/2868)) ([06aa6b0](https://github.com/kurtosis-tech/kurtosis/commit/06aa6b0a6ebbc422676cb0f2c61b67db67366945))
+
+## [1.15.0](https://github.com/kurtosis-tech/kurtosis/compare/1.14.1...1.15.0) (2026-01-14)
+
+
+### Features
+
+* add force_restart ([#2864](https://github.com/kurtosis-tech/kurtosis/issues/2864)) ([38cca6f](https://github.com/kurtosis-tech/kurtosis/commit/38cca6f9945bb8bf5f6c0121bb1d8cfa05b84731))
+
+
+### Bug Fixes
+
+* use writeErr instead of readErr in stream forwarding ([#2867](https://github.com/kurtosis-tech/kurtosis/issues/2867)) ([d6dfcf7](https://github.com/kurtosis-tech/kurtosis/commit/d6dfcf7d7147a736720914e64f5d2617d0724540))
+
 ## [1.14.1](https://github.com/kurtosis-tech/kurtosis/compare/1.14.0...1.14.1) (2025-12-16)
 
 

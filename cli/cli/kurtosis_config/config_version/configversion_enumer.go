@@ -7,11 +7,11 @@ import (
 	"strings"
 )
 
-const _ConfigVersionName = "ConfigVersion_v0ConfigVersion_v1ConfigVersion_v2ConfigVersion_v3ConfigVersion_v4ConfigVersion_v5ConfigVersion_v6"
+const _ConfigVersionName = "ConfigVersion_v0ConfigVersion_v1ConfigVersion_v2ConfigVersion_v3ConfigVersion_v4ConfigVersion_v5ConfigVersion_v6ConfigVersion_v7"
 
-var _ConfigVersionIndex = [...]uint8{0, 16, 32, 48, 64, 80, 96, 112}
+var _ConfigVersionIndex = [...]uint8{0, 16, 32, 48, 64, 80, 96, 112, 128}
 
-const _ConfigVersionLowerName = "configversion_v0configversion_v1configversion_v2configversion_v3configversion_v4configversion_v5configversion_v6"
+const _ConfigVersionLowerName = "configversion_v0configversion_v1configversion_v2configversion_v3configversion_v4configversion_v5configversion_v6configversion_v7"
 
 func (i ConfigVersion) String() string {
 	if i >= ConfigVersion(len(_ConfigVersionIndex)-1) {
@@ -31,25 +31,28 @@ func _ConfigVersionNoOp() {
 	_ = x[ConfigVersion_v4-(4)]
 	_ = x[ConfigVersion_v5-(5)]
 	_ = x[ConfigVersion_v6-(6)]
+	_ = x[ConfigVersion_v7-(7)]
 }
 
-var _ConfigVersionValues = []ConfigVersion{ConfigVersion_v0, ConfigVersion_v1, ConfigVersion_v2, ConfigVersion_v3, ConfigVersion_v4, ConfigVersion_v5, ConfigVersion_v6}
+var _ConfigVersionValues = []ConfigVersion{ConfigVersion_v0, ConfigVersion_v1, ConfigVersion_v2, ConfigVersion_v3, ConfigVersion_v4, ConfigVersion_v5, ConfigVersion_v6, ConfigVersion_v7}
 
 var _ConfigVersionNameToValueMap = map[string]ConfigVersion{
-	_ConfigVersionName[0:16]:        ConfigVersion_v0,
-	_ConfigVersionLowerName[0:16]:   ConfigVersion_v0,
-	_ConfigVersionName[16:32]:       ConfigVersion_v1,
-	_ConfigVersionLowerName[16:32]:  ConfigVersion_v1,
-	_ConfigVersionName[32:48]:       ConfigVersion_v2,
-	_ConfigVersionLowerName[32:48]:  ConfigVersion_v2,
-	_ConfigVersionName[48:64]:       ConfigVersion_v3,
-	_ConfigVersionLowerName[48:64]:  ConfigVersion_v3,
-	_ConfigVersionName[64:80]:       ConfigVersion_v4,
-	_ConfigVersionLowerName[64:80]:  ConfigVersion_v4,
-	_ConfigVersionName[80:96]:       ConfigVersion_v5,
-	_ConfigVersionLowerName[80:96]:  ConfigVersion_v5,
-	_ConfigVersionName[96:112]:      ConfigVersion_v6,
-	_ConfigVersionLowerName[96:112]: ConfigVersion_v6,
+	_ConfigVersionName[0:16]:         ConfigVersion_v0,
+	_ConfigVersionLowerName[0:16]:    ConfigVersion_v0,
+	_ConfigVersionName[16:32]:        ConfigVersion_v1,
+	_ConfigVersionLowerName[16:32]:   ConfigVersion_v1,
+	_ConfigVersionName[32:48]:        ConfigVersion_v2,
+	_ConfigVersionLowerName[32:48]:   ConfigVersion_v2,
+	_ConfigVersionName[48:64]:        ConfigVersion_v3,
+	_ConfigVersionLowerName[48:64]:   ConfigVersion_v3,
+	_ConfigVersionName[64:80]:        ConfigVersion_v4,
+	_ConfigVersionLowerName[64:80]:   ConfigVersion_v4,
+	_ConfigVersionName[80:96]:        ConfigVersion_v5,
+	_ConfigVersionLowerName[80:96]:   ConfigVersion_v5,
+	_ConfigVersionName[96:112]:       ConfigVersion_v6,
+	_ConfigVersionLowerName[96:112]:  ConfigVersion_v6,
+	_ConfigVersionName[112:128]:      ConfigVersion_v7,
+	_ConfigVersionLowerName[112:128]: ConfigVersion_v7,
 }
 
 var _ConfigVersionNames = []string{
@@ -60,6 +63,7 @@ var _ConfigVersionNames = []string{
 	_ConfigVersionName[64:80],
 	_ConfigVersionName[80:96],
 	_ConfigVersionName[96:112],
+	_ConfigVersionName[112:128],
 }
 
 // ConfigVersionString retrieves an enum value from the enum constants string name.

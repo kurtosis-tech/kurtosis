@@ -65,6 +65,7 @@ func (suite *StartosisAddServiceTestSuite) TestStartosis_AddServicesWithReadyCon
 	runResult, _ := suite.RunScript(ctx, script)
 
 	t := suite.T()
+	require.NotNil(t, runResult, "RunScript returned nil result")
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")

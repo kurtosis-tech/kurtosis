@@ -1248,6 +1248,8 @@ func (manager *KubernetesManager) CreateDaemonSet(
 	initContainers []apiv1.Container,
 	containers []apiv1.Container,
 	volumes []apiv1.Volume,
+	nodeSelector map[string]string,
+	tolerations []apiv1.Toleration,
 ) (*v1.DaemonSet, error) {
 	daemonSetClient := manager.kubernetesClientSet.AppsV1().DaemonSets(namespaceName)
 
@@ -1277,7 +1279,23 @@ func (manager *KubernetesManager) CreateDaemonSet(
 			MatchExpressions: nil,
 		},
 		Template: apiv1.PodTemplateSpec{
-			ObjectMeta: daemonSetMeta,
+			ObjectMeta: metav1.ObjectMeta{
+				Name:                       "",
+				GenerateName:               "",
+				Namespace:                  "",
+				SelfLink:                   "",
+				UID:                        "",
+				ResourceVersion:            "",
+				Generation:                 0,
+				CreationTimestamp:          metav1.Time{Time: time.Time{}},
+				DeletionTimestamp:          nil,
+				DeletionGracePeriodSeconds: nil,
+				Labels:                     daemonSetLabels,
+				Annotations:                daemonSetAnnotations,
+				OwnerReferences:            nil,
+				Finalizers:                 nil,
+				ManagedFields:              nil,
+			},
 			Spec: apiv1.PodSpec{
 				Volumes:                       volumes,
 				InitContainers:                initContainers,
@@ -1287,7 +1305,7 @@ func (manager *KubernetesManager) CreateDaemonSet(
 				TerminationGracePeriodSeconds: nil,
 				ActiveDeadlineSeconds:         nil,
 				DNSPolicy:                     "",
-				NodeSelector:                  nil,
+				NodeSelector:                  nodeSelector,
 				ServiceAccountName:            daemonSetServiceAccountName,
 				DeprecatedServiceAccount:      "",
 				AutomountServiceAccountToken:  nil,
@@ -1302,7 +1320,7 @@ func (manager *KubernetesManager) CreateDaemonSet(
 				Subdomain:                     "",
 				Affinity:                      nil,
 				SchedulerName:                 "",
-				Tolerations:                   nil,
+				Tolerations:                   tolerations,
 				HostAliases:                   nil,
 				PriorityClassName:             "",
 				Priority:                      nil,
@@ -1474,6 +1492,8 @@ func (manager *KubernetesManager) CreateDeployment(
 	containers []apiv1.Container,
 	volumes []apiv1.Volume,
 	affinity *apiv1.Affinity,
+	nodeSelector map[string]string,
+	tolerations []apiv1.Toleration,
 ) (*v1.Deployment, error) {
 	deploymentClient := manager.kubernetesClientSet.AppsV1().Deployments(namespaceName)
 
@@ -1522,7 +1542,7 @@ func (manager *KubernetesManager) CreateDeployment(
 				TerminationGracePeriodSeconds: nil,
 				ActiveDeadlineSeconds:         nil,
 				DNSPolicy:                     "",
-				NodeSelector:                  nil,
+				NodeSelector:                  nodeSelector,
 				ServiceAccountName:            "",
 				DeprecatedServiceAccount:      "",
 				AutomountServiceAccountToken:  nil,
@@ -1536,7 +1556,7 @@ func (manager *KubernetesManager) CreateDeployment(
 				Subdomain:                     "",
 				Affinity:                      affinity,
 				SchedulerName:                 "",
-				Tolerations:                   nil,
+				Tolerations:                   tolerations,
 				HostAliases:                   nil,
 				PriorityClassName:             "",
 				Priority:                      nil,
@@ -2816,6 +2836,12 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 	deadline := time.Now().Add(podWaitForAvailabilityTimeout)
 	var latestPodStatus *apiv1.PodStatus
 	for time.Now().Before(deadline) {
+		select {
+		case <-ctx.Done():
+			return stacktrace.Propagate(ctx.Err(), "Context cancelled while waiting for pod '%v' to become available", podName)
+		default:
+		}
+
 		pod, err := manager.GetPod(ctx, namespaceName, podName)
 		if err != nil {
 			// We shouldn't get an error on getting the pod, even if it's not ready
@@ -2829,6 +2855,17 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 		case apiv1.PodRunning:
 			return nil
 		case apiv1.PodPending:
+			// check if pod is unschedulable (e.g. targeting a node with taints it doesn't tolerate)
+			for _, condition := range pod.Status.Conditions {
+				if condition.Type == apiv1.PodScheduled && condition.Status == apiv1.ConditionFalse && condition.Reason == apiv1.PodReasonUnschedulable {
+					return stacktrace.NewError(
+						"Pod '%v' in namespace '%v' is unschedulable: %v",
+						podName,
+						namespaceName,
+						condition.Message,
+					)
+				}
+			}
 			for _, containerStatus := range pod.Status.ContainerStatuses {
 				containerName := containerStatus.Name
 				maybeContainerWaitingState := containerStatus.State.Waiting
@@ -2955,10 +2992,10 @@ func (manager *KubernetesManager) getPodInfoBlockStr(
 	// We go through all this work so that the user can get detailed information about their pod without needing to dive
 	// through the Kubernetes API
 	resultStrBuilder := strings.Builder{}
-	resultStrBuilder.WriteString(fmt.Sprintf(
+	fmt.Fprintf(&resultStrBuilder,
 		">>>>>>>>>>>>>>>>>>>>>>>>>> Pod %v <<<<<<<<<<<<<<<<<<<<<<<<<<\n",
 		podName,
-	))
+	)
 	resultStrBuilder.WriteString("Container Statuses:")
 	for _, containerStatusStr := range renderContainerStatuses(pod.Status.ContainerStatuses, containerStatusLineBulletPoint) {
 		resultStrBuilder.WriteString(containerStatusStr)
@@ -2968,24 +3005,24 @@ func (manager *KubernetesManager) getPodInfoBlockStr(
 	for _, podContainer := range pod.Spec.Containers {
 		containerName := podContainer.Name
 
-		resultStrBuilder.WriteString(fmt.Sprintf(
+		fmt.Fprintf(&resultStrBuilder,
 			"-------------------- Container %v Logs --------------------\n",
 			podContainer.Name,
-		))
+		)
 
 		containerLogsStr := manager.getSingleContainerLogs(ctx, namespaceName, podName, containerName)
 		resultStrBuilder.WriteString(containerLogsStr)
 		resultStrBuilder.WriteString("\n")
 
-		resultStrBuilder.WriteString(fmt.Sprintf(
+		fmt.Fprintf(&resultStrBuilder,
 			"------------------ End Container %v Logs ---------------------\n",
 			containerName,
-		))
+		)
 	}
-	resultStrBuilder.WriteString(fmt.Sprintf(
+	fmt.Fprintf(&resultStrBuilder,
 		">>>>>>>>>>>>>>>>>>>>>>>> End Pod %v <<<<<<<<<<<<<<<<<<<<<<<<<<<",
 		pod.Name,
-	))
+	)
 
 	return resultStrBuilder.String()
 }

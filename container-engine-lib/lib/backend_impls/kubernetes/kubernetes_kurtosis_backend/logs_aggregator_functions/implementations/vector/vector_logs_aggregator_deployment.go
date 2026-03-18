@@ -42,6 +42,8 @@ func (logsAggregator *vectorLogsAggregatorResourcesManager) CreateAndStart(
 	engineNamespace string,
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
+	nodeSelector map[string]string,
+	tolerations []apiv1.Toleration,
 ) (
 	*apiv1.Service,
 	*appsv1.Deployment,
@@ -92,7 +94,7 @@ func (logsAggregator *vectorLogsAggregatorResourcesManager) CreateAndStart(
 		}
 	}()
 
-	deployment, deploymentLabels, err := createLogsAggregatorDeployment(ctx, engineNamespace, namespace.Name, logsListeningPortNum, configMap.Name, logsAggregatorAttrProvider, kubernetesManager)
+	deployment, deploymentLabels, err := createLogsAggregatorDeployment(ctx, engineNamespace, namespace.Name, logsListeningPortNum, configMap.Name, logsAggregatorAttrProvider, kubernetesManager, nodeSelector, tolerations)
 	if err != nil {
 		return nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while trying to create daemon set for fluent bit logs collector.")
 	}
@@ -162,6 +164,8 @@ func createLogsAggregatorDeployment(
 	configMapName string,
 	objAttrProvider object_attributes_provider.KubernetesLogsAggregatorObjectAttributesProvider,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
+	nodeSelector map[string]string,
+	tolerations []apiv1.Toleration,
 ) (
 	*appsv1.Deployment,
 	map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue,
@@ -290,6 +294,8 @@ func createLogsAggregatorDeployment(
 		containers,
 		volumes,
 		affinity,
+		nodeSelector,
+		tolerations,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred creating deployment for vector logs aggregator.")

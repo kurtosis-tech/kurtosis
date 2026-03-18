@@ -58,6 +58,12 @@ type KubernetesKurtosisBackend struct {
 
 	// Name of node that engine will get scheduled on via a node selector
 	engineNodeName string
+
+	// Node selectors from config for scheduling Kurtosis pods
+	nodeSelectors map[string]string
+
+	// Tolerations from config for scheduling Kurtosis pods on tainted nodes
+	tolerations []apiv1.Toleration
 }
 
 func (backend *KubernetesKurtosisBackend) DumpKurtosis(ctx context.Context, outputDirpath string) error {
@@ -73,6 +79,8 @@ func newKubernetesKurtosisBackend(
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
 	productionMoe bool,
 	engineNodeName string,
+	nodeSelectors map[string]string,
+	tolerations []apiv1.Toleration,
 ) *KubernetesKurtosisBackend {
 	objAttrsProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
 	return &KubernetesKurtosisBackend{
@@ -83,6 +91,8 @@ func newKubernetesKurtosisBackend(
 		apiContainerModeArgs: apiContainerModeArgs,
 		productionMode:       productionMoe,
 		engineNodeName:       engineNodeName,
+		nodeSelectors:        nodeSelectors,
+		tolerations:          tolerations,
 	}
 }
 
@@ -101,6 +111,8 @@ func NewAPIContainerKubernetesKurtosisBackend(
 		modeArgs,
 		productionMode,
 		anyNodeEngineNodeName,
+		nil,
+		nil,
 	)
 }
 
@@ -115,12 +127,16 @@ func NewEngineServerKubernetesKurtosisBackend(
 		nil,
 		noProductionMode,
 		anyNodeEngineNodeName,
+		nil,
+		nil,
 	)
 }
 
 func NewCLIModeKubernetesKurtosisBackend(
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 	engineNodeName string,
+	nodeSelectors map[string]string,
+	tolerations []apiv1.Toleration,
 ) *KubernetesKurtosisBackend {
 	modeArgs := &shared_helpers.CliModeArgs{}
 	return newKubernetesKurtosisBackend(
@@ -130,6 +146,8 @@ func NewCLIModeKubernetesKurtosisBackend(
 		nil,
 		noProductionMode,
 		engineNodeName,
+		nodeSelectors,
+		tolerations,
 	)
 }
 
@@ -174,6 +192,8 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 		backend.engineNodeName,
 		backend.kubernetesManager,
 		backend.objAttrsProvider,
+		backend.nodeSelectors,
+		backend.tolerations,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -489,7 +509,9 @@ func (backend *KubernetesKurtosisBackend) CreateLogsAggregator(ctx context.Conte
 		sinks,
 		defaultShouldTurnOffPersistentVolumeLogsCollection,
 		backend.objAttrsProvider,
-		backend.kubernetesManager)
+		backend.kubernetesManager,
+		backend.nodeSelectors,
+		backend.tolerations)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating logs aggregator.")
 	}

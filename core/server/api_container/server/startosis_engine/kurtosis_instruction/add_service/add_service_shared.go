@@ -73,13 +73,13 @@ func makeAddServiceInterpretationReturnValue(serviceName starlark.String, servic
 
 func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEnvironment, serviceName service.ServiceName, serviceConfig *service.ServiceConfig) *startosis_errors.ValidationError {
 	if isValidServiceName := service.IsServiceNameValid(serviceName); !isValidServiceName {
-		return startosis_errors.NewValidationError(invalidServiceNameErrorText(serviceName))
+		return startosis_errors.NewValidationError("%s", invalidServiceNameErrorText(serviceName))
 	}
 
 	if persistentDirectories := serviceConfig.GetPersistentDirectories(); persistentDirectories != nil {
 		for _, directory := range persistentDirectories.ServiceDirpathToPersistentDirectory {
 			if !service_directory.IsPersistentKeyValid(directory.PersistentKey) {
-				return startosis_errors.NewValidationError(invalidPersistentKeyErrorText(directory.PersistentKey))
+				return startosis_errors.NewValidationError("%s", invalidPersistentKeyErrorText(directory.PersistentKey))
 			}
 			validatorEnvironment.AddPersistentKey(directory.PersistentKey)
 		}
@@ -121,7 +121,7 @@ func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEn
 	var portIds []string
 	for portId := range serviceConfig.GetPrivatePorts() {
 		if isValidPortName := service.IsPortNameValid(portId); !isValidPortName {
-			return startosis_errors.NewValidationError(invalidPortNameErrorText(portId))
+			return startosis_errors.NewValidationError("%s", invalidPortNameErrorText(portId))
 		}
 		portIds = append(portIds, portId)
 	}
@@ -212,7 +212,7 @@ func replaceMagicStrings(
 		}
 	}
 
-	renderedServiceConfig, err := service.CreateServiceConfig(serviceConfig.GetContainerImageName(), serviceConfig.GetImageBuildSpec(), serviceConfig.GetImageRegistrySpec(), serviceConfig.GetNixBuildSpec(), serviceConfig.GetPrivatePorts(), serviceConfig.GetPublicPorts(), entrypoints, cmdArgs, envVars, serviceConfig.GetFilesArtifactsExpansion(), serviceConfig.GetPersistentDirectories(), serviceConfig.GetCPUAllocationMillicpus(), serviceConfig.GetMemoryAllocationMegabytes(), serviceConfig.GetPrivateIPAddrPlaceholder(), serviceConfig.GetMinCPUAllocationMillicpus(), serviceConfig.GetMinMemoryAllocationMegabytes(), serviceConfig.GetLabels(), serviceConfig.GetUser(), serviceConfig.GetTolerations(), serviceConfig.GetNodeSelectors(), serviceConfig.GetImageDownloadMode(), serviceConfig.GetTiniEnabled(), serviceConfig.GetTtyEnabled(), serviceConfig.GetDevices())
+	renderedServiceConfig, err := service.CreateServiceConfig(serviceConfig.GetContainerImageName(), serviceConfig.GetImageBuildSpec(), serviceConfig.GetImageRegistrySpec(), serviceConfig.GetNixBuildSpec(), serviceConfig.GetPrivatePorts(), serviceConfig.GetPublicPorts(), entrypoints, cmdArgs, envVars, serviceConfig.GetFilesArtifactsExpansion(), serviceConfig.GetPersistentDirectories(), serviceConfig.GetCPUAllocationMillicpus(), serviceConfig.GetMemoryAllocationMegabytes(), serviceConfig.GetPrivateIPAddrPlaceholder(), serviceConfig.GetMinCPUAllocationMillicpus(), serviceConfig.GetMinMemoryAllocationMegabytes(), serviceConfig.GetLabels(), serviceConfig.GetUser(), serviceConfig.GetTolerations(), serviceConfig.GetNodeSelectors(), serviceConfig.GetImageDownloadMode(), serviceConfig.GetTiniEnabled(), serviceConfig.GetTtyEnabled(), serviceConfig.GetDevices(), serviceConfig.GetPublishUdp())
 
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred creating a service config")
@@ -310,6 +310,9 @@ func addServiceToDependencyGraph(
 	service *kurtosis_types.Service,
 	serviceConfig *service.ServiceConfig,
 ) error {
+	if serviceConfig == nil {
+		return stacktrace.NewError("Service config for service '%s' is nil; this is a bug in Kurtosis", serviceName)
+	}
 	if serviceConfig.GetFilesArtifactsExpansion() != nil {
 		for _, filesArtifactNames := range serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
 			for _, filesArtifactName := range filesArtifactNames {

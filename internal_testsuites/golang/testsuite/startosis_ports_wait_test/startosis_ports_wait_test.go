@@ -58,6 +58,7 @@ func (suite *StartosisPortsWaitTestSuite) TestStartosis_AssertFailBecausePortIsN
 	runResult, _ := suite.RunScript(ctx, assertFailScript)
 
 	t := suite.T()
+	require.NotNil(t, runResult, "RunScript returned nil result")
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
@@ -69,6 +70,7 @@ func (suite *StartosisPortsWaitTestSuite) TestStartosis_AssertFailBecauseEmptySt
 	runResult, _ := suite.RunScript(ctx, assertFailScript2)
 
 	t := suite.T()
+	require.NotNil(t, runResult, "RunScript returned nil result")
 
 	require.NotNil(t, runResult.InterpretationError, "Expected interpretation error coming from wait validation")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")

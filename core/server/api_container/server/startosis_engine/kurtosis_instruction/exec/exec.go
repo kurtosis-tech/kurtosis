@@ -198,7 +198,7 @@ func (builtin *ExecCapabilities) Execute(ctx context.Context, _ *builtin_argumen
 	}
 	if !builtin.skipCodeCheck && !builtin.isAcceptableCode(result) {
 		errorMessage := fmt.Sprintf("Exec returned exit code '%v' that is not part of the acceptable status codes '%v', with output:", result["code"], builtin.acceptableCodes)
-		return "", stacktrace.NewError(formatErrorMessage(errorMessage, result["output"].String()))
+		return "", stacktrace.NewError("%s", formatErrorMessage(errorMessage, result["output"].String()))
 	}
 
 	if err := builtin.runtimeValueStore.SetValue(builtin.resultUuid, result); err != nil {
@@ -257,6 +257,11 @@ func (builtin *ExecCapabilities) UpdateDependencyGraph(instructionUuid types.Sch
 
 	dependencyGraph.ConsumesService(instructionUuid, string(builtin.serviceName))
 	dependencyGraph.ConsumesAnyRuntimeValuesInList(instructionUuid, builtin.cmdList)
+
+	// exec mutates service state (creates/modifies files, changes processes, etc.)
+	// so it must produce the service to ensure subsequent instructions that consume
+	// the same service (e.g. store_service_files) wait for this exec to complete.
+	dependencyGraph.ProducesService(instructionUuid, string(builtin.serviceName))
 
 	returnValueStrings, interpretationErr := builtin.execRecipe.GetStarlarkReturnValuesAsStringList(builtin.resultUuid)
 	if interpretationErr != nil {

@@ -150,8 +150,12 @@ func TestSearchLogs(t *testing.T) {
 
 		require.NoError(t, testEvaluationErr)
 		for serviceUuid := range userServiceUuids {
-			for logNum, expectedLogLine := range expectedLogLinesByRequest[requestIndex] {
-				require.Contains(t, receivedLogLinesByService[serviceUuid][logNum], expectedLogLine)
+			receivedLogLines := receivedLogLinesByService[serviceUuid]
+			expectedLogLines := expectedLogLinesByRequest[requestIndex]
+			require.GreaterOrEqual(t, len(receivedLogLines), len(expectedLogLines),
+				"Expected at least %d log lines for service %s but got %d", len(expectedLogLines), serviceUuid, len(receivedLogLines))
+			for logNum, expectedLogLine := range expectedLogLines {
+				require.Contains(t, receivedLogLines[logNum], expectedLogLine)
 			}
 		}
 		require.Equal(t, expectedNonExistenceServiceUuids, receivedNotFoundServiceUuids)

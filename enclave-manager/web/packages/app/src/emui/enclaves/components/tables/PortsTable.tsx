@@ -51,7 +51,7 @@ export const getPortTableRows = (
       link = `https://${port.number}-${shortUUID(serviceUUID)}-${shortUUID(enclaveUUID)}.${window.env.domain}`;
     } else {
       link = `${port.maybeApplicationProtocol ? port.maybeApplicationProtocol + "://" : ""}${publicIp}:${
-        publicPorts[name].number
+        publicPorts[name]?.number ?? port.number
       }`;
     }
     return {
@@ -59,7 +59,7 @@ export const getPortTableRows = (
         applicationProtocol: port.maybeApplicationProtocol,
         transportProtocol: transportProtocolToString(port.transportProtocol),
         privatePort: port.number,
-        publicPort: publicPorts[name].number,
+        publicPort: publicPorts[name]?.number ?? port.number,
         name: isDefined(serviceName) ? `${serviceName}:${name}` : name,
         locked: privatePorts[name].locked,
         enclaveShortUuid: shortUUID(enclaveUUID),

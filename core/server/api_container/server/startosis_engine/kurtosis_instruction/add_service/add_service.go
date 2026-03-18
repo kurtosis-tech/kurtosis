@@ -34,8 +34,11 @@ const (
 
 	ServiceNameArgName   = "name"
 	ServiceConfigArgName = "config"
+	ForceUpdateArgName   = "force_update"
 
 	addServiceDescriptionFormatStr = "Adding service with name '%v' and image '%v'"
+
+	defaultForceUpdate = false
 )
 
 func NewAddService(
@@ -72,6 +75,12 @@ func NewAddService(
 						return nil
 					},
 				},
+				{
+					Name:              ForceUpdateArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Bool],
+					Validator:         nil,
+				},
 			},
 		},
 
@@ -93,6 +102,7 @@ func NewAddService(
 				returnValue:                  nil, // populated at interpretation time
 				imageVal:                     nil, // populated at interpretation time
 				imageDownloadMode:            imageDownloadMode,
+				forceUpdate:                  defaultForceUpdate, // populated at interpretation time
 			}
 		},
 
@@ -124,6 +134,7 @@ type AddServiceCapabilities struct {
 	description string
 
 	imageDownloadMode image_download_mode.ImageDownloadMode
+	forceUpdate       bool
 }
 
 func (builtin *AddServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -157,9 +168,19 @@ func (builtin *AddServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuilt
 		return nil, interpretationErr
 	}
 
+	forceUpdate := defaultForceUpdate
+	if arguments.IsSet(ForceUpdateArgName) {
+		forceUpdateValue, err := builtin_argument.ExtractArgumentValue[starlark.Bool](arguments, ForceUpdateArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ForceUpdateArgName)
+		}
+		forceUpdate = bool(forceUpdateValue)
+	}
+
 	builtin.serviceName = service.ServiceName(serviceName.GoString())
 	builtin.serviceConfig = apiServiceConfig
 	builtin.readyCondition = readyCondition
+	builtin.forceUpdate = forceUpdate
 	builtin.resultUuid, err = builtin.runtimeValueStore.GetOrCreateValueAssociatedWithService(builtin.serviceName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to create runtime value to hold '%v' command return values", AddServiceBuiltinName)
@@ -248,6 +269,12 @@ func (builtin *AddServiceCapabilities) TryResolveWith(instructionsAreEqual bool,
 	if !other.HasOnlyServiceName(builtin.serviceName) {
 		enclaveComponents.AddService(builtin.serviceName, enclave_structure.ComponentIsNew)
 		return enclave_structure.InstructionIsUnknown
+	}
+
+	// if force_update is set, always recreate the service regardless of config equality
+	if builtin.forceUpdate {
+		enclaveComponents.AddService(builtin.serviceName, enclave_structure.ComponentIsUpdated)
+		return enclave_structure.InstructionIsUpdate
 	}
 
 	// if service names are equal but the instructions are not equal, it means the service config has been updated.
