@@ -53,6 +53,10 @@ The locally built CLI works exactly like the installed one. Use the full path to
 
 # Restart engine after switching
 /tmp/kurtosis engine restart
+
+# Verify engine is running on the expected backend
+/tmp/kurtosis engine status
+/tmp/kurtosis cluster get
 ```
 
 ## Build with race detector
