@@ -35,8 +35,8 @@ func OutputGraphVisual(instructions []dependency_graph.InstructionWithDependenci
 			continue
 		}
 		nodeLabel := escapeLabel(instruction.ShortDescriptor)
-		dotGraph.WriteString(fmt.Sprintf("  \"%s\" [label=\"%s\"];\n",
-			instruction.InstructionUuid, nodeLabel))
+		fmt.Fprintf(&dotGraph, "  \"%s\" [label=\"%s\"];\n",
+			instruction.InstructionUuid, nodeLabel)
 	}
 
 	dotGraph.WriteString("\n")
@@ -47,8 +47,8 @@ func OutputGraphVisual(instructions []dependency_graph.InstructionWithDependenci
 			continue
 		}
 		for _, dependency := range instruction.Dependencies {
-			dotGraph.WriteString(fmt.Sprintf("  \"%s\" -> \"%s\";\n",
-				dependency, instruction.InstructionUuid))
+			fmt.Fprintf(&dotGraph, "  \"%s\" -> \"%s\";\n",
+				dependency, instruction.InstructionUuid)
 		}
 	}
 
@@ -112,7 +112,7 @@ func OutputMermaidGraph(instructions []dependency_graph.InstructionWithDependenc
 		}
 		nodeLabel := escapeLabel(instruction.ShortDescriptor)
 		nodeId := sanitizeNodeId(string(instruction.InstructionUuid))
-		mermaidGraph.WriteString(fmt.Sprintf("  %s[\"%s\"]\n", nodeId, nodeLabel))
+		fmt.Fprintf(&mermaidGraph, "  %s[\"%s\"]\n", nodeId, nodeLabel)
 	}
 
 	mermaidGraph.WriteString("\n")
@@ -125,7 +125,7 @@ func OutputMermaidGraph(instructions []dependency_graph.InstructionWithDependenc
 		targetNodeId := sanitizeNodeId(string(instruction.InstructionUuid))
 		for _, dependency := range instruction.Dependencies {
 			sourceNodeId := sanitizeNodeId(string(dependency))
-			mermaidGraph.WriteString(fmt.Sprintf("  %s --> %s\n", sourceNodeId, targetNodeId))
+			fmt.Fprintf(&mermaidGraph, "  %s --> %s\n", sourceNodeId, targetNodeId)
 		}
 	}
 

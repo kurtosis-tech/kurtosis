@@ -12,6 +12,8 @@ kurtosis grafloki start
 
 This command starts a local Grafana/Loki instance and restarts the Kurtosis engine with an updated configuration. The new configuration includes a log sink that routes logs to the local Grafana/Loki instance.
 
+If you only need the Loki sink and do not want Grafana provisioned, use [loki start][loki-start] instead.
+
 Read more about sinks and how to [export logs][export-logs] from Kurtosis.
 
 Kurtosis Config allows configuring `grafana-loki` and `should-enable-default-logs-sink` configurations.
@@ -34,3 +36,4 @@ kurtosis-clusters:
 
 <!-------------------- ONLY LINKS BELOW THIS POINT ----------------------->
 [export-logs]: ../guides/exporting-logs.md
+[loki-start]: ./loki-start.md

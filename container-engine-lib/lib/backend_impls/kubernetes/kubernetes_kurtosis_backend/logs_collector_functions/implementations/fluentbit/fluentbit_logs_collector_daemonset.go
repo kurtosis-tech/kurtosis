@@ -23,10 +23,11 @@ import (
 )
 
 const (
-	httpProtocolStr = "http"
-	emptyUrl        = ""
-	retryInterval   = 1 * time.Second
-	maxRetries      = 30
+	httpProtocolStr       = "http"
+	emptyUrl              = ""
+	retryInterval         = 1 * time.Second
+	maxRetries            = 30
+	perNodeCleanupTimeout = 2 * time.Minute
 )
 
 var noWait *port_spec.Wait = nil
@@ -709,7 +710,8 @@ func (fluentbit *fluentbitLogsCollector) Clean(
 		return stacktrace.Propagate(err, "An error occurred getting pods managed by daemon set '%v' in namespace '%v'.", logsCollectorDaemonSet.Name, logsCollectorDaemonSet.Namespace)
 	}
 	if len(pods) == 0 {
-		return stacktrace.Propagate(err, "No pods found for logs collector daemon set '%v' in namespace '%v'.", logsCollectorDaemonSet.Name, logsCollectorDaemonSet.Namespace)
+		logrus.Warnf("No pods found for logs collector daemon set '%v' in namespace '%v'; skipping clean.", logsCollectorDaemonSet.Name, logsCollectorDaemonSet.Namespace)
+		return nil
 	}
 	var nodeNames []string
 	for _, pod := range pods {
@@ -733,18 +735,21 @@ func (fluentbit *fluentbitLogsCollector) Clean(
 		return stacktrace.Propagate(err, "An error occurred updating daemon set '%v' with node selectors '%v'", logsCollectorName, evictNodeSelectors)
 	}
 
-	// need to wait for pods to be terminated to unmount checkpoint volumes
+	// wait for pods to be terminated to unmount checkpoint volumes (best-effort per pod)
 	for _, pod := range pods {
 		if err := kubernetesManager.WaitForPodTermination(ctx, pod.Namespace, pod.Name); err != nil {
-			return stacktrace.Propagate(err, "An error occurred waiting for pod '%v' in namespace '%v'.", pod.Name, pod.Namespace)
+			logrus.Warnf("Failed to wait for pod '%v' termination in namespace '%v' (best-effort): %v", pod.Name, pod.Namespace, err)
 		}
 	}
 
-	// execute remove on all pods
+	// execute remove on all nodes (best-effort per node — tainted/unhealthy nodes are skipped)
+	// use a short timeout per node to avoid blocking on unschedulable nodes
 	for _, node := range nodeNames {
-		if err = kubernetesManager.RemoveDirPathFromNode(ctx, logsCollectorDaemonSet.Namespace, node, fluentBitCheckpointDbMountPath); err != nil {
-			return stacktrace.Propagate(err, "An error occurred removing dir path '%v' from node '%v' via a pod in namespace '%v'.", fluentBitCheckpointDbMountPath, node, logsCollectorDaemonSet.Namespace)
+		nodeCtx, nodeCancel := context.WithTimeout(ctx, perNodeCleanupTimeout)
+		if err = kubernetesManager.RemoveDirPathFromNode(nodeCtx, logsCollectorDaemonSet.Namespace, node, fluentBitCheckpointDbMountPath); err != nil {
+			logrus.Warnf("Failed to remove dir path '%v' from node '%v' (best-effort): %v", fluentBitCheckpointDbMountPath, node, err)
 		}
+		nodeCancel()
 	}
 
 	latestLogsCollectorDaemonSet, err := kubernetesManager.GetDaemonSet(ctx, logsCollectorDaemonSet.Namespace, logsCollectorName)
@@ -762,9 +767,9 @@ func (fluentbit *fluentbitLogsCollector) Clean(
 		return stacktrace.Propagate(err, "An error occurred updating daemon set '%v' with node selectors '%v'", logsCollectorName, evictNodeSelectors)
 	}
 
-	//before continuing, ensure logs collector is up again
+	// before continuing, ensure logs collector is up again
 	if err := waitForAtLeastOneActivePodManagedByDaemonSet(ctx, logsCollectorDaemonSet, kubernetesManager); err != nil {
-		return stacktrace.Propagate(err, "An error occurred waiting for at least one pod managed by daemon set '%v' has become available.", logsCollectorName)
+		logrus.Warnf("Logs collector did not come back up after clean (best-effort): %v", err)
 	}
 
 	logrus.Infof("Successfully cleaned logs collector.")

@@ -31,7 +31,7 @@ jobs:
       }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Enforce to use yarn
@@ -56,15 +56,12 @@ jobs:
         run: yarn --cwd ./docs build
         if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED != 0
       - name: Publish to Cloudflare Pages
-        uses: cloudflare/pages-action@v1
         if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED != 0
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: ${{ secrets.CLOUDFLARE_PROJECT_NAME }}
-          directory: docs/build/
-          # as we publish on tag we want to tell CF that the branch is still main so that it can deploy to production
-          branch: ${GITHUB_REF##*/}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          DEPLOY_COMMIT_MSG: ${{ github.event.head_commit.message || github.sha }}
+        run: npx --yes wrangler pages deploy docs/build/ --project-name=${{ secrets.CLOUDFLARE_PROJECT_NAME }} --branch=${GITHUB_REF##*/} --commit-message="${DEPLOY_COMMIT_MSG%%$'\n'*}" --commit-dirty=true
   reindex-website-main:
     runs-on: ubuntu-latest
     name: Update website search index via Algolia Crawler
