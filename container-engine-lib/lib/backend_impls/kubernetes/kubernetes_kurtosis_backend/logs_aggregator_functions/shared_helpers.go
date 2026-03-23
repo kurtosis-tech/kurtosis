@@ -247,6 +247,8 @@ func waitForLogsAggregatorAvailability(
 	healthCheckPortNum uint16,
 	k8sResources *logsAggregatorKubernetesResources,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
+	nodeSelectors map[string]string,
+	tolerations []apiv1.Toleration,
 ) error {
 	availabilityCheckerNamespace := k8sResources.namespace.Name
 	aggregatorHost := k8sResources.service.Spec.ClusterIP
@@ -294,7 +296,7 @@ func waitForLogsAggregatorAvailability(
 				StdinOnce:                false,
 				TTY:                      false,
 			},
-		}, nil, "", apiv1.RestartPolicyNever, nil, nil)
+		}, nil, "", apiv1.RestartPolicyNever, tolerations, nodeSelectors)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating pod '%v' in namespace '%v'.", availabilityCheckPodName, availabilityCheckerNamespace)
 	}
