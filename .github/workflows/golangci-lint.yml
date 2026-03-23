@@ -71,6 +71,7 @@ jobs:
         uses: golangci/golangci-lint-action@v9
         with:
           version: ${{ env.GOLINT_VERSION }}
+          install-mode: goinstall
           working-directory: ${{ matrix.directory }}
           args: --timeout=3m
           skip-cache: true
