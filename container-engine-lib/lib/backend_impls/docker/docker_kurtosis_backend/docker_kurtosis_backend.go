@@ -41,7 +41,6 @@ import (
 )
 
 const (
-	isResourceInformationComplete                     = true
 	defaultShouldEnablePersistentVolumeLogsCollection = true
 )
 
@@ -558,14 +557,11 @@ func (backend *DockerKurtosisBackend) DisconnectReverseProxyFromNetwork(ctx cont
 }
 
 func (backend *DockerKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, bool, error) {
-	if !isResourceInformationComplete {
-		return 0, 0, false, nil
-	}
 	availableMemory, availableCpu, err := backend.dockerManager.GetAvailableCPUAndMemory(ctx)
 	if err != nil {
 		return 0, 0, false, stacktrace.Propagate(err, "an error occurred fetching resource information from the docker backend")
 	}
-	return availableMemory, availableCpu, isResourceInformationComplete, nil
+	return availableMemory, availableCpu, true, nil
 }
 
 func (backend *DockerKurtosisBackend) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) (string, error) {
