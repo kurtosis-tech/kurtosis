@@ -465,7 +465,19 @@ func restApiServer(
 	// This is how you set up a basic Echo router
 	echoRouter := echo.New()
 	echoApiRouter := echoRouter.Group(pathToApiGroup)
-	echoApiRouter.Use(echomiddleware.Logger())
+	echoApiRouter.Use(echomiddleware.RequestLoggerWithConfig(echomiddleware.RequestLoggerConfig{ //nolint:exhaustruct
+		LogStatus: true,
+		LogURI:    true,
+		LogMethod: true,
+		LogValuesFunc: func(c echo.Context, v echomiddleware.RequestLoggerValues) error {
+			logrus.WithFields(logrus.Fields{
+				"method": v.Method,
+				"uri":    v.URI,
+				"status": v.Status,
+			}).Info("request")
+			return nil
+		},
+	}))
 
 	// Setup CORS policies for the REST API server
 	allowOrigins := utils.DerefWith(serverArgs.AllowedCORSOrigins, defaultCORSOrigins)
