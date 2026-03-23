@@ -29,7 +29,7 @@
                 import ./nix-pkgs/grpc-tools-node.nix { inherit pkgs; };
             in [
               goreleaser
-              go_1_23
+              unstable_pkgs.go_1_26
               gopls
               delve
               enumer
