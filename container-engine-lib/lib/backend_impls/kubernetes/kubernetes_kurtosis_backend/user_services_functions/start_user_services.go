@@ -422,12 +422,13 @@ func createStartServiceOperation(
 				podVolumes = append(podVolumes, deviceVolume)
 
 				deviceVolumeMount := apiv1.VolumeMount{
-					Name:             volumeName,
-					MountPath:        devicePath,
-					ReadOnly:         false,
-					SubPath:          "",
-					MountPropagation: nil,
-					SubPathExpr:      "",
+					Name:              volumeName,
+					MountPath:         devicePath,
+					ReadOnly:          false,
+					RecursiveReadOnly: nil,
+					SubPath:           "",
+					MountPropagation:  nil,
+					SubPathExpr:       "",
 				}
 				userServiceContainerVolumeMounts = append(userServiceContainerVolumeMounts, deviceVolumeMount)
 			}

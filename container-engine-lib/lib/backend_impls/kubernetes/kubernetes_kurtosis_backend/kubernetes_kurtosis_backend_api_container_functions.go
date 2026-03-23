@@ -1106,8 +1106,13 @@ func getApiContainerContainersAndVolumes(
 			Ports: containerPorts,
 			VolumeMounts: []apiv1.VolumeMount{
 				{
-					Name:      enclaveDataDirVolumeName,
-					MountPath: enclaveDataVolumeDirpath,
+					Name:              enclaveDataDirVolumeName,
+					ReadOnly:          false,
+					RecursiveReadOnly: nil,
+					MountPath:         enclaveDataVolumeDirpath,
+					SubPath:           "",
+					MountPropagation:  nil,
+					SubPathExpr:       "",
 				},
 			},
 		},
