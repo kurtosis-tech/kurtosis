@@ -6,4 +6,4 @@ root_dirpath="$(dirname "${script_dirpath}")"
 
 GOLINT_VERSION="v2.11.3"
 
-find $root_dirpath -type f -name 'go.mod' -exec sh -c 'dir=$(dirname "{}") && cd "$dir" && echo "$dir" && go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@'"$GOLINT_VERSION"' run' \;
+find $root_dirpath -type f -name 'go.mod' -exec sh -c 'dir=$(dirname "{}") && cd "$dir" && echo "$dir" && GOTOOLCHAIN=local go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@'"$GOLINT_VERSION"' run' \;
