@@ -1,0 +1,5 @@
+plugins:
+  - - remark-validate-links
+    - skipPathPatterns:
+        - '/img/'
+  - remark-lint-no-undefined-references

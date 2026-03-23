@@ -208,7 +208,12 @@ func GetAuthFromDockerConfig(repo string) (*registry.AuthConfig, error) {
 	}
 
 	// 3. Fallback to credentials in "auths" if no credStore is available
-	if auth, exists := authConfig.Auths[registryHost]; exists {
+	// Docker login may store registry keys without the https:// prefix (e.g. "ghcr.io" instead of "https://ghcr.io")
+	auth, exists := authConfig.Auths[registryHost]
+	if !exists {
+		auth, exists = authConfig.Auths[strings.TrimPrefix(registryHost, "https://")]
+	}
+	if exists {
 		// Apply '/' to the end of the registry host if it doesn't have it
 		if !strings.HasSuffix(registryHost, "/") {
 			registryHost = registryHost + "/"

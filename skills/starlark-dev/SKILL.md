@@ -155,20 +155,25 @@ def run(plan, args):
 
 ## Testing
 
+Use a dry-run → execute → verify workflow:
+
 ```bash
-# Run and check output
+# 1. Validate the plan without executing
+kurtosis run --dry-run ./my-package
+
+# 2. Run and check output
 kurtosis run ./my-package
 
-# Inspect the created enclave
+# 3. Inspect the created enclave
 kurtosis enclave inspect <enclave-name>
 
-# Check service logs
+# 4. Check service logs
 kurtosis service logs <enclave-name> <service-name>
 
-# Shell into a service to verify state
+# 5. Shell into a service to verify state
 kurtosis service shell <enclave-name> <service-name>
 
-# Clean up after testing
+# 6. Clean up after testing
 kurtosis clean -a
 ```
 

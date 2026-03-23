@@ -82,6 +82,18 @@ kurtosis service update <enclave-name> <service-name>
 
 ## Common patterns
 
+### Verify after operations
+
+Always confirm stop/start/rm succeeded:
+
+```bash
+# Check service state changed as expected
+kurtosis enclave inspect <enclave-name>
+
+# For start: verify the service responds
+kurtosis service exec <enclave-name> <service-name> -- wget -qO- http://localhost:8080/health
+```
+
 ### Check if a service is healthy
 
 ```bash
@@ -122,3 +134,13 @@ plan.add_service(name="dest-svc", config=ServiceConfig(
     files={"/input": artifact},
 ))
 ```
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Service won't start | Port conflict or image issue | Check logs with `kurtosis service logs`, verify image exists |
+| Exec command hangs | Container has no shell | Use a base image with shell or `exec -- /bin/sh -c "command"` |
+| Logs show no output | Service crashed immediately | Use `kurtosis service logs -a` to see full history |
+| Service not listed | Wrong enclave | Run `kurtosis enclave ls` and `kurtosis enclave inspect` to find it |
+| Stop has no effect | Service already stopped | Check status with `kurtosis enclave inspect` first |

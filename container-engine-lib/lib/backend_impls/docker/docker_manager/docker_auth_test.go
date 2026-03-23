@@ -209,6 +209,33 @@ func TestGetAuthConfigForRepoBase64Auth(t *testing.T) {
 	assert.Contains(t, registries, "https://ghcr.io")
 }
 
+func TestGetAuthConfigForRepoBase64AuthWithoutHttpsPrefix(t *testing.T) {
+	// Verify that registry keys stored without the https:// prefix (as produced by "docker login ghcr.io")
+	// are resolved correctly.
+	expectedUser := "ghuser"
+	expectedPassword := "ghpassword"
+	encodedAuth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", expectedUser, expectedPassword)))
+
+	cfg := fmt.Sprintf(`
+	{
+		"auths": {
+			"ghcr.io": {
+				"auth": "%s"
+			}
+		}
+	}`, encodedAuth)
+
+	tmpDir := writeStaticConfig(t, cfg)
+	defer os.RemoveAll(tmpDir)
+
+	authConfig, err := GetAuthFromDockerConfig("ghcr.io/my-org/my-image:latest")
+	assert.NoError(t, err)
+	assert.NotNil(t, authConfig, "Auth config should not be nil")
+	assert.Equal(t, encodedAuth, authConfig.Auth, "Auth should match")
+	assert.Equal(t, expectedUser, authConfig.Username, "Username should match")
+	assert.Equal(t, expectedPassword, authConfig.Password, "Password should match")
+}
+
 func TestGetAuthConfigForRepoOSX(t *testing.T) {
 	t.Skip("Skipping test that requires macOS keychain")
 

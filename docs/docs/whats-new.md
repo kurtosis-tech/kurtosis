@@ -7,7 +7,7 @@ toc_max_heading_level: 2
 
 # What's New In Kurtosis
 
-For detailed information about the changes in each release, see [the changelog](/changelog).
+For detailed information about the changes in each release, see [the changelog](./changelog.md).
 
 ## 2025-05-05
 
