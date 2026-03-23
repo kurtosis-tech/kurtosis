@@ -320,6 +320,8 @@ func createLogsCollectorDaemonSet(
 			TerminationMessagePolicy: "",
 			ImagePullPolicy:          "",
 			SecurityContext:          nil,
+			RestartPolicy:            nil,
+			RestartPolicyRules:       nil,
 			Stdin:                    false,
 			StdinOnce:                false,
 			TTY:                      false,
@@ -331,7 +333,8 @@ func createLogsCollectorDaemonSet(
 				//
 				{
 					Name:             varLogVolumeName,
-					ReadOnly:         false,
+					ReadOnly:          false,
+					RecursiveReadOnly: nil,
 					MountPath:        varLogMountPath,
 					SubPath:          "",
 					MountPropagation: nil,
@@ -339,7 +342,8 @@ func createLogsCollectorDaemonSet(
 				},
 				{
 					Name:             varLibDockerContainersVolumeName,
-					ReadOnly:         false,
+					ReadOnly:          false,
+					RecursiveReadOnly: nil,
 					MountPath:        varLibDockerContainersMountPath,
 					SubPath:          "",
 					MountPropagation: nil,
@@ -347,7 +351,8 @@ func createLogsCollectorDaemonSet(
 				},
 				{
 					Name:             varLogDockerContainersVolumeName,
-					ReadOnly:         false,
+					ReadOnly:          false,
+					RecursiveReadOnly: nil,
 					MountPath:        varLogDockerContainersMountPath,
 					SubPath:          "",
 					MountPropagation: nil,

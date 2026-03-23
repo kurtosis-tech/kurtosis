@@ -866,6 +866,7 @@ func (manager *KubernetesManager) RemoveRoleBindings(ctx context.Context, roleBi
 		OrphanDependents:   nil,
 		PropagationPolicy:  nil,
 		DryRun:             nil,
+		IgnoreStoreReadErrorWithClusterBreakingPotential: nil,
 	}
 	if err := client.Delete(ctx, name, deleteOptions); err != nil {
 		return stacktrace.Propagate(err, "Failed to delete role bindings with name '%s' in namespace '%v'", name, namespace)
@@ -954,6 +955,7 @@ func (manager *KubernetesManager) RemoveClusterRole(ctx context.Context, cluster
 		OrphanDependents:   nil,
 		PropagationPolicy:  nil,
 		DryRun:             nil,
+		IgnoreStoreReadErrorWithClusterBreakingPotential: nil,
 	}
 	if err := client.Delete(ctx, name, deleteOptions); err != nil {
 		return stacktrace.Propagate(err, "Failed to delete cluster role with name '%s'", name)
@@ -1042,6 +1044,7 @@ func (manager *KubernetesManager) RemoveClusterRoleBindings(ctx context.Context,
 		OrphanDependents:   nil,
 		PropagationPolicy:  nil,
 		DryRun:             nil,
+		IgnoreStoreReadErrorWithClusterBreakingPotential: nil,
 	}
 	if err := client.Delete(ctx, name, deleteOptions); err != nil {
 		return stacktrace.Propagate(err, "Failed to delete cluster role binding with name '%s'", name)

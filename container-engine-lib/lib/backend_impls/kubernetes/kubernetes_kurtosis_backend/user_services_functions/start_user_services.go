@@ -416,6 +416,7 @@ func createStartServiceOperation(
 						StorageOS:             nil,
 						CSI:                   nil,
 						Ephemeral:             nil,
+						Image:                 nil,
 					},
 				}
 				podVolumes = append(podVolumes, deviceVolume)

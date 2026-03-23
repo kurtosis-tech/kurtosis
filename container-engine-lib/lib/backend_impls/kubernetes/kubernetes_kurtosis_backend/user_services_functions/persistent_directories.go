@@ -50,6 +50,7 @@ func (volumeAndClaim *kubernetesVolumeWithClaim) GetVolume() *apiv1.Volume {
 			StorageOS:            nil,
 			CSI:                  nil,
 			Ephemeral:            nil,
+			Image:                nil,
 		},
 	}
 }

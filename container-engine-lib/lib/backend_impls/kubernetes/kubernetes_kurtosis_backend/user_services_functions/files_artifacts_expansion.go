@@ -58,6 +58,7 @@ func prepareFilesArtifactsExpansionResources(
 				StorageOS:             nil,
 				CSI:                   nil,
 				Ephemeral:             nil,
+				Image:                 nil,
 			},
 		},
 	}
