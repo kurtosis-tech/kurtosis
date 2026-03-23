@@ -74,3 +74,28 @@ On Kubernetes, port forwarding goes through the gateway. If ports stop working, 
 pkill -f "kurtosis gateway"
 kurtosis gateway &
 ```
+
+## Troubleshooting
+
+When a port is unreachable, follow this diagnostic workflow:
+
+```bash
+# 1. Verify the enclave is running and check port mappings
+kurtosis enclave inspect <enclave-name>
+
+# 2. Confirm the specific service is running (not STOPPED)
+kurtosis service inspect <enclave-name> <service-name>
+
+# 3. If service is running but port fails, check service logs for errors
+kurtosis service logs <enclave-name> <service-name>
+
+# 4. On Kubernetes, verify the gateway is running
+kurtosis gateway
+```
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Port not accessible | Service not running or port not exposed | Check step 1-2 above |
+| Connection refused | Service crashed or wrong interface | Check service logs (step 3) |
+| No port mapping shown | Ran with `--no-connect` | Re-run without `--no-connect` |
+| K8s ports unreachable | Gateway not running | Restart gateway (step 4) |
