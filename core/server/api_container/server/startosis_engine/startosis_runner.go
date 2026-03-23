@@ -62,6 +62,7 @@ func (runner *StartosisRunner) Run(
 	imageDownloadMode image_download_mode.ImageDownloadMode,
 	nonBlockingMode bool,
 	shouldExecuteInParallel bool,
+	resourceCheck bool,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 ) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	runner.mutex.Lock()
@@ -165,7 +166,7 @@ func (runner *StartosisRunner) Run(
 			startingValidationMsg, defaultCurrentStepNumber, totalNumberOfInstructions, ValidationInstructionId)
 		starlarkRunResponseLines <- progressInfo
 
-		validationErrorsChan := runner.startosisValidator.Validate(ctx, instructionsSequence, imageDownloadMode)
+		validationErrorsChan := runner.startosisValidator.Validate(ctx, instructionsSequence, imageDownloadMode, resourceCheck)
 		if isRunFinished, isRunSuccessful := forwardKurtosisResponseLineChannelUntilSourceIsClosed(validationErrorsChan, starlarkRunResponseLines); isRunFinished {
 			if !isRunSuccessful {
 				logrus.Warnf("An error occurred validating the sequence of Kurtosis instructions. See logs above for more details")

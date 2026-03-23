@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -56,7 +57,7 @@ func NewStartosisValidator(kurtosisBackend *backend_interface.KurtosisBackend, s
 	}
 }
 
-func (validator *StartosisValidator) Validate(ctx context.Context, instructionsSequence []*instructions_plan.ScheduledInstruction, imageDownloadMode image_download_mode.ImageDownloadMode) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+func (validator *StartosisValidator) Validate(ctx context.Context, instructionsSequence []*instructions_plan.ScheduledInstruction, imageDownloadMode image_download_mode.ImageDownloadMode, resourceCheck bool) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	starlarkRunResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 	go func() {
 		defer close(starlarkRunResponseLineStream)
@@ -81,12 +82,17 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructionsS
 			return
 		}
 
-		availableMemoryInMegaBytes, availableCpuInMilliCores, isResourceInformationComplete, err := (*validator.backend).GetAvailableCPUAndMemory(ctx)
-		if err != nil {
-			wrappedValidationError := startosis_errors.WrapWithValidationError(err, "Couldn't create validator environment as we ran into errors fetching information about available cpu & memory")
-			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromValidationError(wrappedValidationError.ToAPIType())
-			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent()
-			return
+		var availableMemoryInMegaBytes compute_resources.MemoryInMegaBytes
+		var availableCpuInMilliCores compute_resources.CpuMilliCores
+		var isResourceInformationComplete bool
+		if resourceCheck {
+			availableMemoryInMegaBytes, availableCpuInMilliCores, isResourceInformationComplete, err = (*validator.backend).GetAvailableCPUAndMemory(ctx)
+			if err != nil {
+				wrappedValidationError := startosis_errors.WrapWithValidationError(err, "Couldn't create validator environment as we ran into errors fetching information about available cpu & memory")
+				starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromValidationError(wrappedValidationError.ToAPIType())
+				starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent()
+				return
+			}
 		}
 
 		environment := startosis_validator.NewValidatorEnvironment(
