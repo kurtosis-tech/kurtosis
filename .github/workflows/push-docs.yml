@@ -31,7 +31,7 @@ jobs:
       }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
       - name: Enforce to use yarn
@@ -70,7 +70,7 @@ jobs:
       github.ref == 'refs/heads/main'
       }}
     steps:
-      - uses: fjogeleit/http-request-action@v2
+      - uses: fjogeleit/http-request-action@551353b829c3646756b2ec2b3694f819d7957495 # v2.0.0
         with:
           url: "https://crawler.algolia.com/api/1/crawlers/${{ secrets.ALGOLIA_CRAWLER_ID }}/reindex"
           method: "POST"
@@ -78,30 +78,3 @@ jobs:
           password: ${{ secrets.ALGOLIA_CRAWLER_API_KEY }}
           customHeaders: '{"Content-Type": "application/json"}'
     needs: publish
-  # check-index:
-  #   runs-on: ubuntu-latest
-  #   name: Checks that the latest index is still working
-  #   if: ${{
-  #     github.event_name == 'push' &&
-  #     github.ref == 'refs/heads/main'
-  #     }}
-  #   steps:
-  #     - uses: fjogeleit/http-request-action@v2
-  #       id: search
-  #       with:
-  #         url: "https://NTSX40VZB8-dsn.algolia.net/1/indexes/kurtosis/query"
-  #         method: 'POST'
-  #         customHeaders: '{"X-Algolia-API-Key": "4269c726c2fea4e6cddfeb9a21cd3d4e", "X-Algolia-Application-Id": "NTSX40VZB8"}'
-  #         data: '{ "params": "query=add_service&hitsPerPage=2&getRankingInfo=1" }'
-  #     - name: Show Response
-  #       run: |
-  #         #!/bin/bash
-  #         set -eou pipefail
-
-  #         if (( ${{ fromJson(steps.search.outputs.response).nbHits }} > 100 )); then
-  #           echo "Results are greater than 100"
-  #         else
-  #           echo "Results are not greater than 100"
-  #           exit 1
-  #         fi
-  #   needs: reindex-website-main
