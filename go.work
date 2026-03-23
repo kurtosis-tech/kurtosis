@@ -1,6 +1,5 @@
 go 1.26.0
 
-
 use (
 	./api/golang
 	./cli/cli
