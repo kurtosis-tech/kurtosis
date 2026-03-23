@@ -1092,6 +1092,7 @@ func getApiContainerContainersAndVolumes(
 			ResourceFieldRef: nil,
 			ConfigMapKeyRef:  nil,
 			SecretKeyRef:     nil,
+			FileKeyRef:       nil,
 		},
 	}
 	containerEnvVars = append(containerEnvVars, ownNamespaceEnvVar)
@@ -1148,6 +1149,7 @@ func getApiContainerContainersAndVolumes(
 				StorageOS:            nil,
 				CSI:                  nil,
 				Ephemeral:            nil,
+				Image:                nil,
 			},
 		},
 	}

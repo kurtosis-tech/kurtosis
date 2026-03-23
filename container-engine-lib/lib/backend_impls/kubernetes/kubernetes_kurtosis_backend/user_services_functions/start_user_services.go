@@ -727,6 +727,7 @@ func getUserServicePodContainerSpecs(
 			ResourceFieldRef: nil,
 			ConfigMapKeyRef:  nil,
 			SecretKeyRef:     nil,
+			FileKeyRef:       nil,
 		},
 	}
 	containerEnvVars = append(containerEnvVars, podIPEnvVar)

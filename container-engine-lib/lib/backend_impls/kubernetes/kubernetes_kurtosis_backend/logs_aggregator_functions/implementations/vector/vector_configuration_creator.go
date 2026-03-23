@@ -78,12 +78,13 @@ func (vector *vectorConfigurationCreator) CreateConfiguration(
 			Args:    []string{"validate", vectorConfigFilePath},
 			VolumeMounts: []apiv1.VolumeMount{
 				{
-					Name:             vectorConfigVolumeName,
-					ReadOnly:         true,
-					MountPath:        vectorConfigMountPath,
-					SubPath:          "",
-					MountPropagation: nil,
-					SubPathExpr:      "",
+					Name:              vectorConfigVolumeName,
+					ReadOnly:          true,
+					MountPath:         vectorConfigMountPath,
+					SubPath:           "",
+					MountPropagation:  nil,
+					SubPathExpr:       "",
+					RecursiveReadOnly: nil,
 				},
 			},
 			WorkingDir: "",
@@ -108,6 +109,8 @@ func (vector *vectorConfigurationCreator) CreateConfiguration(
 			Stdin:                    false,
 			StdinOnce:                false,
 			TTY:                      false,
+			RestartPolicy:            nil,
+			RestartPolicyRules:       nil,
 		},
 	}
 

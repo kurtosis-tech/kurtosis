@@ -1,11 +1,14 @@
 import { isDefined } from "kurtosis-ui-components";
 import { useCallback, useMemo } from "react";
 import { Controller } from "react-hook-form";
-import { Mention, MentionsInput } from "react-mentions";
+import { Mention as MentionOrig, MentionsInput as MentionsInputOrig } from "react-mentions";
 import { useNodeId } from "reactflow";
 import { KurtosisFormInputProps } from "../../form/types";
 import { useVariableContext } from "../VariableContextProvider";
 import "./MentionStringArgumentInput.css";
+
+const MentionsInput = MentionsInputOrig as any;
+const Mention = MentionOrig as any;
 
 type MentionStringArgumentInputProps<DataModel extends object> = KurtosisFormInputProps<DataModel> & {
   multiline?: boolean;
@@ -73,14 +76,14 @@ export const MentionStringArgumentInput = <DataModel extends object>({
             singleLine={!multiline}
             value={field.value}
             disabled={disabled}
-            onChange={(e, newValue, newPlainTextValue, mentions) => field.onChange(newValue)}
+            onChange={(_e: any, newValue: string) => field.onChange(newValue)}
           >
             <Mention
               className={"mentions__mention"}
               trigger={/(?<=^|.*[ :/@#$])(([^ :/@#$]{2,}))$/}
               markup={"{{__id__}}"}
               data={handleQuery}
-              displayTransform={(id) =>
+              displayTransform={(id: string) =>
                 variables.find((variable) => variable.id === id)?.displayName || "Missing Variable"
               }
             />

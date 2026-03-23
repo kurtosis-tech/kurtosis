@@ -3,7 +3,6 @@ package docker_manager
 import (
 	"testing"
 
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/go-connections/nat"
 	"github.com/stretchr/testify/assert"
@@ -68,17 +67,17 @@ func TestConvertMemoryAllocationToBytesReturnsCorrectValue(t *testing.T) {
 // We had a bug on 2022-09-19 where having IPv4 and IPv6 ports was incorrectly selecting the IPv6 one
 // nolint: exhaustruct
 func TestCorrectPortIsSelectedWhenIPv6IsPresent(t *testing.T) {
-	dockerContainer := types.ContainerJSON{
-		ContainerJSONBase: &types.ContainerJSONBase{
+	dockerContainer := container.InspectResponse{
+		ContainerJSONBase: &container.ContainerJSONBase{
 			ID:    "abc123",
 			Name:  "noname",
 			Image: "nginx",
-			State: &types.ContainerState{
+			State: &container.State{
 				Status: "running",
 			},
 		},
-		NetworkSettings: &types.NetworkSettings{
-			NetworkSettingsBase: types.NetworkSettingsBase{
+		NetworkSettings: &container.NetworkSettings{
+			NetworkSettingsBase: container.NetworkSettingsBase{ //nolint:staticcheck // SA1019: NetworkSettingsBase is deprecated but still needed for Ports field
 				Ports: nat.PortMap{
 					"7443/tcp": []nat.PortBinding{
 						{

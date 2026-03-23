@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/build"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/image"
@@ -591,10 +592,10 @@ func (manager *DockerManager) RemoveVolume(ctx context.Context, volumeName strin
 	return nil
 }
 
-func (manager *DockerManager) InspectContainer(ctx context.Context, containerId string) (types.ContainerJSON, error) {
+func (manager *DockerManager) InspectContainer(ctx context.Context, containerId string) (container.InspectResponse, error) {
 	result, err := manager.dockerClient.ContainerInspect(ctx, containerId)
 	if err != nil {
-		return types.ContainerJSON{}, stacktrace.Propagate(err, "An error occurred inspecting container '%v'", containerId)
+		return container.InspectResponse{}, stacktrace.Propagate(err, "An error occurred inspecting container '%v'", containerId)
 	}
 	return result, nil
 }
@@ -1517,7 +1518,7 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 		value := v // Go uses a single variable for loop iterations which lead to unexpected behaviours.
 		buildArgsMapStringStringPtr[k] = &value
 	}
-	imageBuildOpts := types.ImageBuildOptions{
+	imageBuildOpts := build.ImageBuildOptions{
 		Tags:           []string{imageName},
 		SuppressOutput: false,
 		RemoteContext:  "",    // We don't have a remote context (we're uploading it)
@@ -1551,13 +1552,13 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 		SessionID:   buildkitSession.ID(),
 		Platform:    "",
 		// Version specifies the version of the underlying builder to use
-		Version: types.BuilderBuildKit, // Use 2 for BuildKit
+		Version: build.BuilderBuildKit, // Use 2 for BuildKit
 		// BuildID is an optional identifier that can be passed together with the
 		// build request. The same identifier can be used to gracefully cancel the
 		// build with the cancel request.
 		BuildID: "",
 		// Outputs defines configurations for exporting build results. Only supported in BuildKit mode.
-		Outputs: []types.ImageBuildOutput{},
+		Outputs: []build.ImageBuildOutput{},
 	}
 	imageBuildResponse, err := manager.dockerClientNoTimeout.ImageBuild(ctx, buildContextTarReader, imageBuildOpts)
 	if err != nil {
@@ -1778,7 +1779,7 @@ func (manager *DockerManager) getNetworksByFilterArgs(ctx context.Context, args 
 }
 
 func (manager *DockerManager) getImagePlatform(ctx context.Context, imageName string) (string, error) {
-	imageInspect, _, err := manager.dockerClient.ImageInspectWithRaw(ctx, imageName)
+	imageInspect, err := manager.dockerClient.ImageInspect(ctx, imageName)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "an error occurred while running image inspect on image '%v'", imageName)
 	}
@@ -1787,7 +1788,7 @@ func (manager *DockerManager) getImagePlatform(ctx context.Context, imageName st
 }
 
 func (manager *DockerManager) GetEntryPointAndCommand(ctx context.Context, imageName string) ([]string, []string, error) {
-	imageInspect, _, err := manager.dockerClient.ImageInspectWithRaw(ctx, imageName)
+	imageInspect, err := manager.dockerClient.ImageInspect(ctx, imageName)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "an error occurred while running image inspect on image '%v'", imageName)
 	}
@@ -2167,7 +2168,7 @@ func (manager *DockerManager) getContainersByFilterArgs(ctx context.Context, fil
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the docker containers with filter args '%+v'", filterArgs)
 	}
-	dockerContainersDetails := []types.ContainerJSON{}
+	dockerContainersDetails := []container.InspectResponse{}
 	for _, dockerContainer := range dockerContainers {
 		dockerContainerDetails, err := manager.InspectContainer(ctx, dockerContainer.ID)
 		if err != nil {
@@ -2225,7 +2226,7 @@ func (manager *DockerManager) didContainerStartSuccessfully(ctx context.Context,
 	return true, nil
 }
 
-func newContainersListFromDockerContainersList(dockerContainers []types.ContainerJSON) ([]*docker_manager_types.Container, error) {
+func newContainersListFromDockerContainersList(dockerContainers []container.InspectResponse) ([]*docker_manager_types.Container, error) {
 	containers := make([]*docker_manager_types.Container, 0, len(dockerContainers))
 	for _, dockerContainer := range dockerContainers {
 		container, err := newContainerFromDockerContainer(dockerContainer)
@@ -2237,7 +2238,7 @@ func newContainersListFromDockerContainersList(dockerContainers []types.Containe
 	return containers, nil
 }
 
-func newContainerFromDockerContainer(dockerContainer types.ContainerJSON) (*docker_manager_types.Container, error) {
+func newContainerFromDockerContainer(dockerContainer container.InspectResponse) (*docker_manager_types.Container, error) {
 	containerStatus, err := getContainerStatusByDockerContainerState(dockerContainer.State.Status)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting ContainerStatus from Docker container state '%v'", dockerContainer.State.Status)
@@ -2259,7 +2260,7 @@ func newContainerFromDockerContainer(dockerContainer types.ContainerJSON) (*dock
 		dockerContainer.Config.Entrypoint,
 		dockerContainer.Config.Cmd,
 		containerEnvArgs,
-		dockerContainer.NetworkSettings.IPAddress,
+		dockerContainer.NetworkSettings.IPAddress, //nolint:staticcheck // SA1019: IPAddress is deprecated but still functional; will migrate to Networks map in future
 	)
 
 	return newContainer, nil
@@ -2408,6 +2409,7 @@ func getEndpointSettingsForIpAddress(ipAddress string, alias string) *network.En
 		MacAddress:          "",
 		DriverOpts:          nil,
 		DNSNames:            []string{},
+		GwPriority:          0,
 	}
 
 	if alias != emptyNetworkAlias {

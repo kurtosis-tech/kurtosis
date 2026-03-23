@@ -104,6 +104,7 @@ var (
 		OrphanDependents:   nil,
 		PropagationPolicy:  &globalDeletePolicy,
 		DryRun:             nil,
+		IgnoreStoreReadErrorWithClusterBreakingPotential: nil,
 	}
 	globalCreateOptions = metav1.CreateOptions{
 		TypeMeta: metav1.TypeMeta{
@@ -209,6 +210,7 @@ func (manager *KubernetesManager) CreateService(ctx context.Context, namespace s
 		AllocateLoadBalancerNodePorts: nil,
 		LoadBalancerClass:             nil,
 		InternalTrafficPolicy:         nil,
+		TrafficDistribution:           nil,
 	}
 
 	service := &apiv1.Service{
@@ -406,18 +408,22 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(
 					apiv1.ResourceStorage: *resource.NewQuantity(requiredSize, resource.BinarySI),
 				},
 			},
-			VolumeName:       "", // we use dynamic provisioning this should happen automagically
-			StorageClassName: &manager.storageClass,
-			VolumeMode:       nil,
-			DataSource:       nil,
-			DataSourceRef:    nil,
+			VolumeName:                "", // we use dynamic provisioning this should happen automagically
+			StorageClassName:          &manager.storageClass,
+			VolumeMode:                nil,
+			DataSource:                nil,
+			DataSourceRef:             nil,
+			VolumeAttributesClassName: nil,
 		},
 		Status: apiv1.PersistentVolumeClaimStatus{
-			Phase:              "",
-			AccessModes:        nil,
-			Capacity:           nil,
-			Conditions:         nil,
-			AllocatedResources: nil,
+			Phase:                            "",
+			AccessModes:                      nil,
+			Capacity:                         nil,
+			Conditions:                       nil,
+			AllocatedResources:               nil,
+			AllocatedResourceStatuses:        nil,
+			CurrentVolumeAttributesClassName: nil,
+			ModifyVolumeStatus:               nil,
 		},
 	}
 
@@ -681,6 +687,7 @@ func (manager *KubernetesManager) RemoveServiceAccount(ctx context.Context, serv
 		OrphanDependents:   nil,
 		PropagationPolicy:  nil,
 		DryRun:             nil,
+		IgnoreStoreReadErrorWithClusterBreakingPotential: nil,
 	}
 	if err := client.Delete(ctx, name, deleteOptions); err != nil {
 		return stacktrace.Propagate(err, "Failed to delete service account with name '%s' in namespace '%v'", name, namespace)
@@ -769,6 +776,7 @@ func (manager *KubernetesManager) RemoveRole(ctx context.Context, role *rbacv1.R
 		OrphanDependents:   nil,
 		PropagationPolicy:  nil,
 		DryRun:             nil,
+		IgnoreStoreReadErrorWithClusterBreakingPotential: nil,
 	}
 	if err := client.Delete(ctx, name, deleteOptions); err != nil {
 		return stacktrace.Propagate(err, "Failed to delete role with name '%s' in namespace '%v'", name, namespace)
@@ -1124,6 +1132,9 @@ func (manager *KubernetesManager) CreatePod(
 		HostUsers:                 nil,
 		SchedulingGates:           nil,
 		ResourceClaims:            nil,
+		Resources:                 nil,
+		HostnameOverride:          nil,
+		WorkloadRef:               nil,
 	}
 
 	podToCreate := &apiv1.Pod{
@@ -1134,20 +1145,26 @@ func (manager *KubernetesManager) CreatePod(
 		ObjectMeta: podMeta,
 		Spec:       podSpec,
 		Status: apiv1.PodStatus{
-			Phase:                      "",
-			Conditions:                 nil,
-			Message:                    "",
-			Reason:                     "",
-			NominatedNodeName:          "",
-			HostIP:                     "",
-			PodIP:                      "",
-			PodIPs:                     nil,
-			StartTime:                  nil,
-			InitContainerStatuses:      nil,
-			ContainerStatuses:          nil,
-			QOSClass:                   "",
-			EphemeralContainerStatuses: nil,
-			Resize:                     "",
+			Phase:                       "",
+			Conditions:                  nil,
+			Message:                     "",
+			Reason:                      "",
+			NominatedNodeName:           "",
+			HostIP:                      "",
+			HostIPs:                     nil,
+			PodIP:                       "",
+			PodIPs:                      nil,
+			StartTime:                   nil,
+			InitContainerStatuses:       nil,
+			ContainerStatuses:           nil,
+			QOSClass:                    "",
+			EphemeralContainerStatuses:  nil,
+			Resize:                      "",
+			ObservedGeneration:          0,
+			ResourceClaimStatuses:       nil,
+			ExtendedResourceClaimStatus: nil,
+			AllocatedResources:          nil,
+			Resources:                   nil,
 		},
 	}
 
@@ -1334,6 +1351,9 @@ func (manager *KubernetesManager) CreateDaemonSet(
 				HostUsers:                     nil,
 				SchedulingGates:               nil,
 				ResourceClaims:                nil,
+				Resources:                     nil,
+				HostnameOverride:              nil,
+				WorkloadRef:                   nil,
 			},
 		},
 		UpdateStrategy: v1.DaemonSetUpdateStrategy{
@@ -1570,6 +1590,9 @@ func (manager *KubernetesManager) CreateDeployment(
 				HostUsers:                     nil,
 				SchedulingGates:               nil,
 				ResourceClaims:                nil,
+				Resources:                     nil,
+				HostnameOverride:              nil,
+				WorkloadRef:                   nil,
 			},
 		},
 		MinReadySeconds:      0,
@@ -1592,6 +1615,7 @@ func (manager *KubernetesManager) CreateDeployment(
 			UpdatedReplicas:     0,
 			AvailableReplicas:   0,
 			UnavailableReplicas: 0,
+			TerminatingReplicas: nil,
 		},
 	}
 
@@ -1810,6 +1834,7 @@ func (kubernetesManager *KubernetesManager) GetVolumeSourceForHostPath(mountPath
 		StorageOS:             nil,
 		CSI:                   nil,
 		Ephemeral:             nil,
+		Image:                 nil,
 	}
 }
 
@@ -1849,6 +1874,7 @@ func (kubernetesManager *KubernetesManager) GetVolumeSourceForConfigMap(configMa
 		StorageOS:             nil,
 		CSI:                   nil,
 		Ephemeral:             nil,
+		Image:                 nil,
 	}
 }
 
@@ -1881,6 +1907,7 @@ func (manager *KubernetesManager) GetContainerLogs(
 		TailLines:                    nil,
 		LimitBytes:                   nil,
 		InsecureSkipTLSVerifyBackend: false,
+		Stream:                       nil,
 	}
 
 	getLogsRequest := manager.kubernetesClientSet.CoreV1().Pods(namespaceName).GetLogs(podName, options)
@@ -2182,12 +2209,13 @@ func (manager *KubernetesManager) RemoveDirPathFromNode(ctx context.Context, nam
 				ResizePolicy: nil,
 				VolumeMounts: []apiv1.VolumeMount{
 					{
-						Name:             hostVolumeName,
-						ReadOnly:         false,
-						MountPath:        mountPath,
-						SubPath:          "",
-						MountPropagation: nil,
-						SubPathExpr:      "",
+						Name:              hostVolumeName,
+						ReadOnly:          false,
+						MountPath:         mountPath,
+						SubPath:           "",
+						MountPropagation:  nil,
+						SubPathExpr:       "",
+						RecursiveReadOnly: nil,
 					},
 				},
 				VolumeDevices:            nil,
@@ -2210,10 +2238,13 @@ func (manager *KubernetesManager) RemoveDirPathFromNode(ctx context.Context, nam
 					RunAsUser:                nil,
 					SELinuxOptions:           nil,
 					WindowsOptions:           nil,
+					AppArmorProfile:          nil,
 				},
-				Stdin:     false,
-				StdinOnce: false,
-				TTY:       false,
+				Stdin:              false,
+				StdinOnce:          false,
+				TTY:                false,
+				RestartPolicy:      nil,
+				RestartPolicyRules: nil,
 			},
 		}, []apiv1.Volume{
 			{
@@ -2678,6 +2709,9 @@ func (manager *KubernetesManager) CreateJob(
 		SchedulingGates:               nil,
 		ResourceClaims:                nil,
 		ShareProcessNamespace:         nil,
+		Resources:                     nil,
+		HostnameOverride:              nil,
+		WorkloadRef:                   nil,
 	}
 
 	manualSelectors := jobLabels != nil
@@ -2698,8 +2732,13 @@ func (manager *KubernetesManager) CreateJob(
 		Completions:             nil,
 		ActiveDeadlineSeconds:   nil,
 		PodFailurePolicy:        nil,
+		SuccessPolicy:           nil,
 		CompletionMode:          nil,
 		Suspend:                 nil,
+		BackoffLimitPerIndex:    nil,
+		MaxFailedIndexes:        nil,
+		PodReplacementPolicy:    nil,
+		ManagedBy:               nil,
 	}
 
 	jobToCreate := &batchv1.Job{
@@ -2716,7 +2755,9 @@ func (manager *KubernetesManager) CreateJob(
 			Active:                  0,
 			Succeeded:               0,
 			Failed:                  0,
+			Terminating:             nil,
 			CompletedIndexes:        "",
+			FailedIndexes:           nil,
 			Ready:                   nil,
 			UncountedTerminatedPods: nil,
 		},
