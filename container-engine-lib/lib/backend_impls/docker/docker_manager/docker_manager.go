@@ -267,11 +267,11 @@ func (manager *DockerManager) CreateNetwork(context context.Context, name string
 		AuxAddress: nil,
 	}}
 
-	resp, err := manager.dockerClient.NetworkCreate(context, name, types.NetworkCreate{
-		CheckDuplicate: false,
-		Driver:         dockerNetworkDriver,
-		Scope:          "",
-		EnableIPv6:     false,
+	resp, err := manager.dockerClient.NetworkCreate(context, name, network.CreateOptions{
+		Driver:     dockerNetworkDriver,
+		Scope:      "",
+		EnableIPv4: nil,
+		EnableIPv6: nil,
 		IPAM: &network.IPAM{
 			Driver:  "",
 			Options: nil,
@@ -293,8 +293,8 @@ func (manager *DockerManager) CreateNetwork(context context.Context, name string
 	return resp.ID, nil
 }
 
-func (manager *DockerManager) ListNetworks(ctx context.Context) ([]types.NetworkResource, error) {
-	networks, err := manager.dockerClient.NetworkList(ctx, types.NetworkListOptions{
+func (manager *DockerManager) ListNetworks(ctx context.Context) ([]network.Inspect, error) {
+	networks, err := manager.dockerClient.NetworkList(ctx, network.ListOptions{
 		Filters: filters.Args{},
 	})
 	if err != nil {
@@ -313,13 +313,13 @@ func (manager *DockerManager) PruneUnusedImages(ctx context.Context) ([]image.Su
 	}
 	logrus.Debugf("List of unused images to be pruned '%v'", unusedImages)
 	successfulPrunedImages := []image.Summary{}
-	for _, image := range unusedImages {
-		imagePruneResponse, err := manager.dockerClient.ImageRemove(ctx, image.ID, types.ImageRemoveOptions{}) //nolint:exhaustruct
+	for _, img := range unusedImages {
+		imagePruneResponse, err := manager.dockerClient.ImageRemove(ctx, img.ID, image.RemoveOptions{}) //nolint:exhaustruct
 		if err != nil {
-			return successfulPrunedImages, stacktrace.Propagate(err, "Failed to remove image '%v'", image.ID)
+			return successfulPrunedImages, stacktrace.Propagate(err, "Failed to remove image '%v'", img.ID)
 		}
-		logrus.Debugf("Pruned image '%v' with response '%v'", image, imagePruneResponse)
-		successfulPrunedImages = append(successfulPrunedImages, image)
+		logrus.Debugf("Pruned image '%v' with response '%v'", img, imagePruneResponse)
+		successfulPrunedImages = append(successfulPrunedImages, img)
 	}
 	return successfulPrunedImages, nil
 }
@@ -332,7 +332,7 @@ func containsSemVer(s string) bool {
 }
 
 func (manager *DockerManager) ListUnusedImages(ctx context.Context) ([]image.Summary, error) {
-	images, err := manager.dockerClient.ImageList(ctx, types.ImageListOptions{}) //nolint:exhaustruct
+	images, err := manager.dockerClient.ImageList(ctx, image.ListOptions{}) //nolint:exhaustruct
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to list Docker images")
 	}
@@ -416,7 +416,7 @@ func (manager *DockerManager) GetNetworksByLabels(ctx context.Context, labels ma
 }
 
 func (manager *DockerManager) GetContainerIdsConnectedToNetwork(context context.Context, networkId string) ([]string, error) {
-	inspectResponse, err := manager.dockerClient.NetworkInspect(context, networkId, types.NetworkInspectOptions{
+	inspectResponse, err := manager.dockerClient.NetworkInspect(context, networkId, network.InspectOptions{
 		Scope:   "",
 		Verbose: false,
 	})
@@ -431,7 +431,7 @@ func (manager *DockerManager) GetContainerIdsConnectedToNetwork(context context.
 }
 
 func (manager *DockerManager) GetContainerIPOnNetwork(context context.Context, containerId string, networkId string) (string, error) {
-	inspectResponse, err := manager.dockerClient.NetworkInspect(context, networkId, types.NetworkInspectOptions{
+	inspectResponse, err := manager.dockerClient.NetworkInspect(context, networkId, network.InspectOptions{
 		Scope:   "",
 		Verbose: false,
 	})
@@ -451,7 +451,7 @@ func (manager *DockerManager) GetContainerIPOnNetwork(context context.Context, c
 }
 
 func (manager *DockerManager) GetNetworkIdByName(ctx context.Context, networkName string) (string, error) {
-	n, err := manager.dockerClient.NetworkInspect(ctx, networkName, types.NetworkInspectOptions{
+	n, err := manager.dockerClient.NetworkInspect(ctx, networkName, network.InspectOptions{
 		Scope:   "",
 		Verbose: false,
 	})
@@ -899,7 +899,7 @@ func (manager *DockerManager) GetContainerIps(ctx context.Context, containerId s
 	if manager.podmanMode {
 		for networkKey, networkInfo := range allNetworkInfo {
 			// podman does not return the networkID properly and as such we need to make sure we get it.
-			network, err := manager.dockerClient.NetworkInspect(ctx, networkInfo.NetworkID, types.NetworkInspectOptions{
+			network, err := manager.dockerClient.NetworkInspect(ctx, networkInfo.NetworkID, network.InspectOptions{
 				Scope:   "",
 				Verbose: false,
 			})
@@ -1099,7 +1099,7 @@ Executes the given command inside the container with the given ID, blocking unti
 */
 func (manager *DockerManager) RunUserServiceExecCommands(context context.Context, containerId, userId string, command []string, logOutput io.Writer) (int32, error) {
 	dockerClient := manager.dockerClient
-	execConfig := types.ExecConfig{
+	execConfig := container.ExecOptions{
 		User:         userId,
 		Privileged:   false,
 		Tty:          false,
@@ -1126,7 +1126,7 @@ func (manager *DockerManager) RunUserServiceExecCommands(context context.Context
 		return 0, stacktrace.NewError("Got back an empty exec ID when running '%v' on container '%v'", command, containerId)
 	}
 
-	execStartConfig := types.ExecStartCheck{
+	execStartConfig := container.ExecStartOptions{
 		// Can not be run in detached mode or else response from ContainerExecAttach doesn't return output
 		Detach:      false,
 		Tty:         false,
@@ -1168,7 +1168,7 @@ func (manager *DockerManager) RunUserServiceExecCommands(context context.Context
 
 func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.Context, containerId string, command []string) (chan string, chan *exec_result.ExecResult, error) {
 	dockerClient := manager.dockerClient
-	execConfig := types.ExecConfig{
+	execConfig := container.ExecOptions{
 		User:         "",
 		Privileged:   false,
 		Tty:          false,
@@ -1193,7 +1193,7 @@ func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.C
 		return nil, nil, stacktrace.NewError("Got back an empty exec ID when running '%v' on container '%v'", command, containerId)
 	}
 
-	execStartConfig := types.ExecStartCheck{
+	execStartConfig := container.ExecStartOptions{
 		// Can not be run in detached mode or else response from ContainerExecAttach doesn't return output
 		Detach:      false,
 		Tty:         false,
@@ -1465,7 +1465,7 @@ func (manager *DockerManager) NixBuild(ctx context.Context, nixBuildSpec *nix_bu
 		return "", stacktrace.Propagate(err, "Failed to open generated Nix image on %s", imageFile)
 	}
 
-	_, err = manager.dockerClient.ImageLoad(ctx, image, false)
+	_, err = manager.dockerClient.ImageLoad(ctx, image)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Failed to load Nix image %s in docker", imageFile)
 	}
@@ -1493,7 +1493,7 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 
 	// Generate a new session every time because per https://github.com/moby/buildkit/issues/1432 sharing sessions is an optimization
 	// Don't bother reusing sessions so that we don't hit bugs
-	buildkitSession, err := bksession.NewSession(ctx, sessionName, buildkitSessionSharedKey)
+	buildkitSession, err := bksession.NewSession(ctx, buildkitSessionSharedKey)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error generating a Docker Buildkit session with sessionName: %v", sessionName)
 	}
@@ -1600,7 +1600,7 @@ func getBuildContextReader(contextDirPath string) (io.Reader, error) {
 }
 
 func (manager *DockerManager) CreateContainerExec(context context.Context, containerId string, cmd []string) (*types.HijackedResponse, error) {
-	config := types.ExecConfig{
+	config := container.ExecOptions{
 		User:         "",
 		Privileged:   false,
 		Tty:          shouldAttachStandardStreamsToTtyWhenCreatingContainerExec,
@@ -1625,7 +1625,7 @@ func (manager *DockerManager) CreateContainerExec(context context.Context, conta
 		return nil, stacktrace.NewError("the Exec ID was empty")
 	}
 
-	execStartCheck := types.ExecStartCheck{
+	execStartCheck := container.ExecStartOptions{
 		Detach:      false,
 		Tty:         true,
 		ConsoleSize: nil,
@@ -1715,11 +1715,12 @@ func (manager *DockerManager) isImageAvailableLocally(imageName string) (bool, e
 	filterArgs := filters.NewArgs(referenceArg)
 	images, err := manager.dockerClient.ImageList(
 		checkImageAvailabilityCtx,
-		types.ImageListOptions{
+		image.ListOptions{
 			All:            true,
 			Filters:        filterArgs,
 			SharedSize:     false,
 			ContainerCount: false,
+			Manifests:      false,
 		})
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to list images.")
@@ -1761,13 +1762,13 @@ func (manager *DockerManager) pullImage(context context.Context, imageName strin
 	return nil
 }
 
-func (manager *DockerManager) getNetworksByFilterArgs(ctx context.Context, args filters.Args) ([]types.NetworkResource, error) {
-	// NOTE: Even though this returns a `NetworkResource` object which has a Containers field on it, this is a lie!!
+func (manager *DockerManager) getNetworksByFilterArgs(ctx context.Context, args filters.Args) ([]network.Inspect, error) {
+	// NOTE: Even though this returns a `network.Inspect` object which has a Containers field on it, this is a lie!!
 	// For whatever insane reason, Docker doesn't fill this field out when NetworkList is used and there doesn't seem to
 	// be a way to get it to do so. Instead, we'd have to do an InspectNetwork call.
 	networks, err := manager.dockerClient.NetworkList(
 		ctx,
-		types.NetworkListOptions{
+		network.ListOptions{
 			Filters: args,
 		})
 	if err != nil {
@@ -2284,7 +2285,7 @@ func getLabelsFilterArgs(searchFilterKey string, labels map[string]string) filte
 	return labelsFilterList
 }
 
-func newNetworkListFromDockerNetworkList(dockerNetworks []types.NetworkResource) ([]*docker_manager_types.Network, error) {
+func newNetworkListFromDockerNetworkList(dockerNetworks []network.Inspect) ([]*docker_manager_types.Network, error) {
 	networks := []*docker_manager_types.Network{}
 
 	for _, dockerNetwork := range dockerNetworks {
@@ -2298,7 +2299,7 @@ func newNetworkListFromDockerNetworkList(dockerNetworks []types.NetworkResource)
 	return networks, nil
 }
 
-func newNetworkFromDockerNetwork(dockerNetwork types.NetworkResource) (*docker_manager_types.Network, error) {
+func newNetworkFromDockerNetwork(dockerNetwork network.Inspect) (*docker_manager_types.Network, error) {
 	if len(dockerNetwork.IPAM.Config) == 0 {
 		return nil, stacktrace.NewError("Kurtosis Docker network with ID %v does not contains any IPAM config.", dockerNetwork.ID)
 	}
@@ -2422,7 +2423,7 @@ func pullImage(dockerClient *client.Client, imageName string, registrySpec *imag
 	// if the fist request fails the image will be ready for following request making the process faster
 	pullImageCtx := context.Background()
 	logrus.Tracef("Starting pulling '%s' for platform '%s'", imageName, platform)
-	imagePullOptions := types.ImagePullOptions{
+	imagePullOptions := image.PullOptions{
 		All:           false,
 		RegistryAuth:  "",
 		PrivilegeFunc: nil,
@@ -2538,7 +2539,7 @@ func getFreeMemoryAndCPU(ctx context.Context, dockerClient *client.Client) (comp
 				logrus.Errorf("An unexpected error occured while fetching information about container '%v':\n%v", containerId, err)
 				return
 			}
-			var containerStats types.Stats
+			var containerStats container.StatsResponse
 			if err = json.NewDecoder(containerStatsResponse.Body).Decode(&containerStats); err != nil {
 				logrus.Errorf("an error occurred while unmarshalling stats response for container with id '%v':\n%v", containerId, err)
 				return

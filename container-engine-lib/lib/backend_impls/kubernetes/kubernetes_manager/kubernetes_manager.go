@@ -398,14 +398,13 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(
 				apiv1.ReadWriteOnce, // ReadWriteOncePod would be better, but it's a fairly recent feature
 			},
 			Selector: nil,
-			Resources: apiv1.ResourceRequirements{
+			Resources: apiv1.VolumeResourceRequirements{
 				Limits: nil,
 				Requests: apiv1.ResourceList{
 					// we give each claim 100% of the corresponding volume. Since we have a 1:1 mapping between volumes
 					// and claims right now, it's the best we can do
 					apiv1.ResourceStorage: *resource.NewQuantity(requiredSize, resource.BinarySI),
 				},
-				Claims: nil,
 			},
 			VolumeName:       "", // we use dynamic provisioning this should happen automagically
 			StorageClassName: &manager.storageClass,
@@ -419,7 +418,6 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(
 			Capacity:           nil,
 			Conditions:         nil,
 			AllocatedResources: nil,
-			ResizeStatus:       nil,
 		},
 	}
 
