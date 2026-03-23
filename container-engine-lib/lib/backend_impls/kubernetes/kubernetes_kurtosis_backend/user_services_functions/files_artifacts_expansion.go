@@ -70,22 +70,24 @@ func prepareFilesArtifactsExpansionResources(
 		subdirName := strconv.Itoa(volumeSubdirIndex)
 
 		expanderContainerMount := apiv1.VolumeMount{
-			Name:             filesArtifactExpansionVolumeName,
-			ReadOnly:         isFilesArtifactExpansionVolumeReadOnly,
-			MountPath:        requestedExpanderDirpath,
-			SubPath:          subdirName,
-			MountPropagation: nil,
-			SubPathExpr:      "",
+			Name:              filesArtifactExpansionVolumeName,
+			ReadOnly:          isFilesArtifactExpansionVolumeReadOnly,
+			RecursiveReadOnly: nil,
+			MountPath:         requestedExpanderDirpath,
+			SubPath:           subdirName,
+			MountPropagation:  nil,
+			SubPathExpr:       "",
 		}
 		volumeMountsOnExpanderContainer = append(volumeMountsOnExpanderContainer, expanderContainerMount)
 
 		userServiceContainerMount := apiv1.VolumeMount{
-			Name:             filesArtifactExpansionVolumeName,
-			ReadOnly:         isFilesArtifactExpansionVolumeReadOnly,
-			MountPath:        requestedUserServiceDirpath,
-			SubPath:          subdirName,
-			MountPropagation: nil,
-			SubPathExpr:      "",
+			Name:              filesArtifactExpansionVolumeName,
+			ReadOnly:          isFilesArtifactExpansionVolumeReadOnly,
+			RecursiveReadOnly: nil,
+			MountPath:         requestedUserServiceDirpath,
+			SubPath:           subdirName,
+			MountPropagation:  nil,
+			SubPathExpr:       "",
 		}
 		volumeMountsOnUserServiceContainer = append(volumeMountsOnUserServiceContainer, userServiceContainerMount)
 
