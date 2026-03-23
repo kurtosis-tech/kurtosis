@@ -214,6 +214,8 @@ func createLokiResources(ctx context.Context, k8sManager *kubernetes_manager.Kub
 				Stdin:                    false,
 				StdinOnce:                false,
 				TTY:                      false,
+				RestartPolicy:            nil,
+				RestartPolicyRules:       nil,
 			},
 		},
 		[]apiv1.Volume{},
@@ -403,6 +405,8 @@ func createGrafanaResources(ctx context.Context, k8sManager *kubernetes_manager.
 				Stdin:                    false,
 				StdinOnce:                false,
 				TTY:                      false,
+				RestartPolicy:            nil,
+				RestartPolicyRules:       nil,
 			},
 		},
 		[]apiv1.Volume{{
@@ -444,6 +448,7 @@ func createGrafanaResources(ctx context.Context, k8sManager *kubernetes_manager.
 				StorageOS:             nil,
 				CSI:                   nil,
 				Ephemeral:             nil,
+				Image:                 nil,
 			},
 		}},
 		&apiv1.Affinity{
