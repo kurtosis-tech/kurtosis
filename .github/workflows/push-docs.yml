@@ -70,7 +70,7 @@ jobs:
       github.ref == 'refs/heads/main'
       }}
     steps:
-      - uses: fjogeleit/http-request-action@v1
+      - uses: fjogeleit/http-request-action@v2
         with:
           url: "https://crawler.algolia.com/api/1/crawlers/${{ secrets.ALGOLIA_CRAWLER_ID }}/reindex"
           method: "POST"
@@ -86,7 +86,7 @@ jobs:
   #     github.ref == 'refs/heads/main'
   #     }}
   #   steps:
-  #     - uses: fjogeleit/http-request-action@v1
+  #     - uses: fjogeleit/http-request-action@v2
   #       id: search
   #       with:
   #         url: "https://NTSX40VZB8-dsn.algolia.net/1/indexes/kurtosis/query"
