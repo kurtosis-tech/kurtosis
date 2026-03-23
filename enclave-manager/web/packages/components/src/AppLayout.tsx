@@ -3,8 +3,8 @@ import { createContext, PropsWithChildren, ReactElement, useContext } from "reac
 import { KurtosisBreadcrumbs } from "./KurtosisBreadcrumbs";
 import {
   MAIN_APP_BOTTOM_PADDING,
-  MAIN_APP_LEFT_PADDING_WITHOUT_NAV,
   MAIN_APP_LEFT_PADDING_WITH_NAV,
+  MAIN_APP_LEFT_PADDING_WITHOUT_NAV,
   MAIN_APP_MAX_WIDTH,
   MAIN_APP_RIGHT_PADDING,
   MAIN_APP_TOP_PADDING,
