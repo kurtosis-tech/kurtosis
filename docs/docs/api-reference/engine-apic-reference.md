@@ -195,15 +195,15 @@ Enclaves
 
 This Kurtosis provided class is a collection of various different [EnclaveInfo][enclaveinfo] objects, by UUID, shortened UUID, and name.
 
-### Map<String, EnclaveInfo> `enclavesByUuid`
+### `Map<String, EnclaveInfo>` `enclavesByUuid`
 
 A map from UUIDs to the enclave info for the enclave with the given UUID.
 
-### Map<String, EnclaveInfo> `enclavesByName`
+### `Map<String, EnclaveInfo>` `enclavesByName`
 
 A map from names to the enclave info for the enclave with the given name
 
-### Map<String, EnclaveInfo[]> `enclavesByShortenedUuid`
+### `Map<String, EnclaveInfo[]>` `enclavesByShortenedUuid`
 
 A map from shortened UUID (first 12 characters of UUID) to the enclave infos of the enclaves it matches too.
 

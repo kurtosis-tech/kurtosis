@@ -105,7 +105,7 @@ This mechanism reduces enclave creation time by using a running `idle` enclave w
 
 To enable this feature you have to run the following:
 
-1. Run `kurtosis engine restart --enclave-pool-size {pool-size-number}`. If you already follow the previous step and replace the {pool-size-number} with an integer
+1. Run `kurtosis engine restart --enclave-pool-size {pool-size-number}`. If you already follow the previous step and replace the `{pool-size-number}` with an integer
 
 OR
 

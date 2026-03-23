@@ -55,3 +55,12 @@ kurtosis context set <context-name>
 # Start portal for the remote context
 kurtosis portal start
 ```
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Portal won't start | Port conflict or stale process | Run `kurtosis portal stop` then `kurtosis portal start` |
+| Status shows not running | Portal crashed or was killed | Restart with `kurtosis portal start` |
+| Services unreachable via portal | Portal not started for current context | Run `kurtosis portal status` to check, then `kurtosis portal start` |
+| Connection refused errors | Wrong context or portal not needed | Verify context with `kurtosis context ls` — local Docker doesn't need portal |

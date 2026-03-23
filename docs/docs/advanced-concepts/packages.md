@@ -152,4 +152,4 @@ def run(plan):
 [how-do-kurtosis-imports-work-explanation]: ../advanced-concepts/how-do-kurtosis-imports-work.md
 [plan]: ./plan.md
 [kurtosis-run-arguments]: ../cli-reference/run.md#arguments
-[published]: /quickstart-write-a-package#publishing-your-kurtosis-package-for-others-to-use
+[published]: ../get-started/write-your-first-package.md
