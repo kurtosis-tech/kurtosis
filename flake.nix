@@ -31,7 +31,6 @@
               goreleaser
               go_1_23
               gopls
-              golangci-lint
               delve
               enumer
               go-mockery
