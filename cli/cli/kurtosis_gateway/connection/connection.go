@@ -211,7 +211,7 @@ func (connection *gatewayConnectionToKurtosisImpl) GetGrpcClientConn() (resultCl
 	}
 	localGrpcPortNum := localPorts[grpcPortId].GetNumber()
 	localGrpcServerAddress := fmt.Sprintf("%v:%v", localHostIpStr, localGrpcPortNum)
-	grpcConnection, err := grpc.Dial(localGrpcServerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	grpcConnection, err := grpc.NewClient(localGrpcServerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to create a GRPC client connection on address '%v', but a non-nil error was returned", localGrpcServerAddress)
 	}
