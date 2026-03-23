@@ -37,6 +37,11 @@
     "test": "craco test",
     "eject": "craco eject"
   },
+  "jest": {
+    "moduleNameMapper": {
+      "^@chakra-ui/utils/(.*)$": "@chakra-ui/utils/dist/cjs/$1.cjs"
+    }
+  },
   "eslintConfig": {
     "extends": [
       "react-app",
