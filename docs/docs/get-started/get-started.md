@@ -20,7 +20,8 @@ To quickly see what Kurtosis feels like, check out the example snippets below:
 kurtosis run github.com/kurtosis-tech/basic-service-package
 ```
 
-<details><summary><b>Output</b></summary>
+<details>
+<summary><b>Output</b></summary>
 
 *CLI Output*
 
@@ -29,20 +30,21 @@ kurtosis run github.com/kurtosis-tech/basic-service-package
 *Example Service C UI, mapped locally*
 
 ![service-c-default.png](/img/home/service-c-default.png)
- 
+
 </details>
 
 ### Local deploy with feature flag and different numbers of each service
 
 ```console
 kurtosis run github.com/kurtosis-tech/basic-service-package \
-  '{"service_a_count": 2, 
-    "service_b_count": 2, 
+  '{"service_a_count": 2,
+    "service_b_count": 2,
     "service_c_count": 1,
     "party_mode": true}'
 ```
 
-<details><summary><b>Output</b></summary>
+<details>
+<summary><b>Output</b></summary>
 
 *CLI Output*
 
@@ -51,7 +53,7 @@ kurtosis run github.com/kurtosis-tech/basic-service-package \
 *Example Service C UI, mapped locally*
 
 ![service-c-partying.png](/img/home/service-c-partying.png)
- 
+
 </details>
 
 ### Remote deploy on Kubernetes
@@ -61,13 +63,14 @@ kurtosis cluster set remote-kubernetes; kurtosis gateway > /dev/null 2>&1 &
 ```
 ```console
 kurtosis run github.com/kurtosis-tech/basic-service-package \
-  '{"service_a_count": 2, 
-    "service_b_count": 2, 
+  '{"service_a_count": 2,
+    "service_b_count": 2,
     "service_c_count": 1,
     "party_mode": true}'
 ```
 
-<details><summary><b>Output</b></summary>
+<details>
+<summary><b>Output</b></summary>
 
 **Note:** The experience on remote k8s is the same as local Docker.
 
@@ -78,5 +81,5 @@ kurtosis run github.com/kurtosis-tech/basic-service-package \
 *Example Service C UI, mapped locally*
 
 ![service-c-partying.png](/img/home/service-c-k8s.png)
- 
+
 </details>

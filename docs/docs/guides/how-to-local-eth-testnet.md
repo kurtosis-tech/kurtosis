@@ -247,7 +247,7 @@ Save your edited params file in any directory you wish (in the example below, it
 ```bash
 kurtosis clean -a && kurtosis run --enclave local-eth-testnet github.com/ethpandaops/ethereum-package --args-file ~/eth-network-params.yaml
 ```
-:::TIP
+:::tip
 Note that the `kurtosis clean -a` command is used here to instruct Kurtosis to destroy the old testnet and its contents before starting a new one up.
 :::
 Again, Kurtosis will work for a bit and print out the individual steps that are taking place. Eventually, the output should look something like:
