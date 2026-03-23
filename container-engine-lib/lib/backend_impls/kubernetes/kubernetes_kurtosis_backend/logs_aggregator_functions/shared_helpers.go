@@ -295,6 +295,9 @@ func waitForLogsAggregatorAvailability(
 				TTY:                      false,
 			},
 		}, nil, "", apiv1.RestartPolicyNever, nil, nil)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating pod '%v' in namespace '%v'.", availabilityCheckPodName, availabilityCheckerNamespace)
+	}
 	defer func() {
 		// Don't block on removing the availability checker pod because this can take a while sometimes in k8s
 		go func() {
@@ -305,9 +308,6 @@ func waitForLogsAggregatorAvailability(
 			}
 		}()
 	}()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating pod '%v' in namespace '%v'.", availabilityCheckPodName, availabilityCheckerNamespace)
-	}
 
 	cmdStr := []string{
 		"sh",

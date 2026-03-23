@@ -18,11 +18,11 @@ jobs:
     if: contains(github.head_ref, 'release-please') != true && contains(github.head_ref, 'breaking-release') == true
     runs-on: ubuntu-latest
     steps:
-      - uses: 8BitJonny/gh-get-current-pr@3
+      - uses: 8BitJonny/gh-get-current-pr@4056877062a1f3b624d5d4c2bedefa9cf51435c9 # v4.0.0
         with:
           sha: ${{ github.event.pull_request.head.sha }}
         id: PR
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
       - run: |
@@ -46,7 +46,7 @@ jobs:
             echo "${remaining_commits}" >> $GITHUB_ENV
           fi
           echo 'EOF'>> $GITHUB_ENV
-      - uses: tzkhan/pr-update-action@v2
+      - uses: tzkhan/pr-update-action@bbd4c9395df8a9c4ef075b8b7fe29f2ca76cdca9 # v2
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           # added this though it isn't used
