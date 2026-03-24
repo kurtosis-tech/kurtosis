@@ -279,7 +279,18 @@ config = ServiceConfig(
     devices = [
         "/dev/tpm0",
         "/dev/tpmrm0",
-    ]
+    ],
+
+    # Linux capabilities to add to the container.
+    # On Docker, these map to --cap-add flags. On Kubernetes, they are set via SecurityContext.Capabilities.Add.
+    # This is useful for advanced networking (packet capture, traffic shaping), debugging, or accessing
+    # privileged kernel features without running the container as fully privileged.
+    # See https://man7.org/linux/man-pages/man7/capabilities.7.html for the full list of capabilities.
+    # OPTIONAL (Default: [])
+    capabilities = [
+        "NET_RAW",
+        "NET_ADMIN",
+    ],
 )
 ```
 Note that `ImageBuildSpec` can only be used in packages and not standalone scripts as it relies on build context in package. More info on [`ImageBuildSpec`](./image-build-spec.md) here.
