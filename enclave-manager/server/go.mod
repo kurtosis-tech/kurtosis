@@ -5,7 +5,7 @@ go 1.26.0
 require (
 	connectrpc.com/connect v1.19.1
 	github.com/google/go-github/v60 v60.0.0
-	github.com/kurtosis-tech/kurtosis/api/golang v1.16.6
+	github.com/kurtosis-tech/kurtosis/api/golang v1.17.1
 	github.com/kurtosis-tech/kurtosis/cloud/api/golang v0.0.0-20230828153722-32770ca96513
 	github.com/kurtosis-tech/kurtosis/connect-server v0.0.0-20230828153722-32770ca96513
 	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0-20240325164203-1197d5589b85
@@ -61,9 +61,9 @@ require (
 	go.opentelemetry.io/otel/metric v1.39.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.39.0 // indirect
 	go.opentelemetry.io/otel/trace v1.39.0 // indirect
-	golang.org/x/net v0.51.0 // indirect
-	golang.org/x/sys v0.41.0 // indirect
-	golang.org/x/text v0.34.0 // indirect
+	golang.org/x/net v0.52.0 // indirect
+	golang.org/x/sys v0.42.0 // indirect
+	golang.org/x/text v0.35.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251222181119-0a764e51fe1b // indirect
 	google.golang.org/grpc v1.79.3 // indirect
 	gotest.tools/v3 v3.5.0 // indirect
