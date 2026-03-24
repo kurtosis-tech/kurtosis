@@ -1,6 +1,7 @@
 name: Verify NPM Token
 
 on:
+  workflow_call:
   pull_request:
     branches: [main]
     paths:
@@ -10,7 +11,7 @@ on:
 jobs:
   verify-npm-token:
     runs-on: ubuntu-latest
-    if: startsWith(github.head_ref, 'release-please--')
+    if: ${{ github.event_name == 'workflow_call' || startsWith(github.head_ref, 'release-please--') }}
     steps:
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:

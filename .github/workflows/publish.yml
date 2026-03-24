@@ -17,27 +17,14 @@ jobs:
   # Verify Secrets
   # ============================================================================
   verify-npm-token:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
-        with:
-          node-version: ${{ env.API_NODE_VERSION }}
-          registry-url: 'https://registry.npmjs.org'
-
-      - name: Verify NPM Access Token
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPMJS_AUTH_TOKEN }}
-        run: |
-          if ! npm whoami --registry https://registry.npmjs.org 2>/dev/null; then
-            echo "::error::NPM access token is invalid or expired. Please update the NPMJS_AUTH_TOKEN secret."
-            exit 1
-          fi
-          echo "NPM token is valid (authenticated as $(npm whoami --registry https://registry.npmjs.org))"
+    uses: ./.github/workflows/verify-npm-token.yml
+    secrets: inherit
 
   # ============================================================================
   # Publish SDK/API Packages
   # ============================================================================
   publish-kurtosis-sdk-rust:
+    needs: verify-npm-token
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -104,6 +91,7 @@ jobs:
   # Publish Docker Images
   # ============================================================================
   publish-files-artifacts-expander-image:
+    needs: verify-npm-token
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -151,6 +139,7 @@ jobs:
           scripts/docker-image-builder.sh "${push_to_dockerhub}" "${dockerfile_filepath}" "${podman_mode}" "${image_name_with_version}" "${image_name_to_publish_semver}" "${image_name_to_publish_latest}"
 
   publish-api-container-server-image:
+    needs: verify-npm-token
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -203,6 +192,7 @@ jobs:
           scripts/docker-image-builder.sh "${push_to_dockerhub}" "${dockerfile_filepath}" "${podman_mode}" "${image_name_with_version}" "${image_name_to_publish_semver}" "${image_name_to_publish_latest}"
 
   build-enclave-manager-webapp:
+    needs: verify-npm-token
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -232,7 +222,9 @@ jobs:
 
   publish-engine-server-image:
     runs-on: ubuntu-latest
-    needs: build-enclave-manager-webapp
+    needs:
+      - verify-npm-token
+      - build-enclave-manager-webapp
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
