@@ -449,7 +449,9 @@ func (provider *GitPackageContentProvider) cloneWithRetries(parsedURL *shared_ut
 				Username: "",
 				Password: "",
 			},
-			Shared: false,
+			Shared:     false,
+			ClientCert: nil,
+			ClientKey:  nil,
 		})
 
 		if err == nil {

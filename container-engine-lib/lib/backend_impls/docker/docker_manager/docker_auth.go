@@ -223,7 +223,7 @@ func GetAuthFromDockerConfig(repo string) (*registry.AuthConfig, error) {
 			Username:      auth.Username,
 			Password:      auth.Password,
 			Auth:          auth.Auth,
-			Email:         auth.Email,
+			Email:         auth.Email, //nolint:staticcheck // SA1019: Email is deprecated but still functional
 			IdentityToken: auth.IdentityToken,
 			RegistryToken: auth.RegistryToken,
 		}

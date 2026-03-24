@@ -295,6 +295,8 @@ func waitForLogsAggregatorAvailability(
 				Stdin:                    false,
 				StdinOnce:                false,
 				TTY:                      false,
+				RestartPolicy:            nil,
+				RestartPolicyRules:       nil,
 			},
 		}, nil, "", apiv1.RestartPolicyNever, tolerations, nodeSelectors)
 	if err != nil {
