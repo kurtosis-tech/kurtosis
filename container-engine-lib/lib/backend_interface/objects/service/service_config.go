@@ -146,6 +146,7 @@ func CreateServiceConfig(
 		TtyEnabled:                   ttyEnabled,
 		Devices:                      devices,
 		PublishUdp:                   publishUdp,
+		Capabilities:                 nil,
 	}
 	return &ServiceConfig{internalServiceConfig}, nil
 }
