@@ -50,18 +50,20 @@ func (volumeAndClaim *kubernetesVolumeWithClaim) GetVolume() *apiv1.Volume {
 			StorageOS:            nil,
 			CSI:                  nil,
 			Ephemeral:            nil,
+			Image:                nil,
 		},
 	}
 }
 
 func (volumeAndClaim *kubernetesVolumeWithClaim) GetVolumeMount(mountPath string) *apiv1.VolumeMount {
 	return &apiv1.VolumeMount{
-		Name:             volumeAndClaim.VolumeClaimName,
-		ReadOnly:         false,
-		MountPath:        mountPath,
-		SubPath:          "",
-		MountPropagation: nil,
-		SubPathExpr:      "",
+		Name:              volumeAndClaim.VolumeClaimName,
+		ReadOnly:          false,
+		RecursiveReadOnly: nil,
+		MountPath:         mountPath,
+		SubPath:           "",
+		MountPropagation:  nil,
+		SubPathExpr:       "",
 	}
 }
 

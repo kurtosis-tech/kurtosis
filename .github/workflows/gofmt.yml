@@ -16,7 +16,7 @@ jobs:
     outputs:
       change: ${{ steps.check.outputs.change }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
       - run: |
@@ -32,13 +32,13 @@ jobs:
     name: gofmt
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v6
-    - uses: actions/setup-go@v6
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+    - uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
       with:
         go-version: '1.26'
         cache: false
     - run: scripts/generate-kurtosis-version.sh
-    - uses: Jerome1337/gofmt-action@v1.0.5
+    - uses: Jerome1337/gofmt-action@d5eabd189843f1d568286a54578159978b7c0fb1 # v1.0.5
       with:
         gofmt-path: './'
         gofmt-flags: '-l -d -s'

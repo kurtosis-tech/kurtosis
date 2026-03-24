@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	bolt "go.etcd.io/bbolt"
+	bbolterrors "go.etcd.io/bbolt/errors"
 	"net"
 )
 
@@ -68,7 +69,7 @@ func GetOrCreateNewFreeIpAddrTracker(subnet *net.IPNet, alreadyTakenIps map[stri
 		return nil, stacktrace.Propagate(err, "An error occurred while building free IP address tracker")
 	}
 	// Bucket does exist, skipping population step
-	if err == bolt.ErrBucketExists {
+	if err == bbolterrors.ErrBucketExists {
 		logrus.Debugf("Taken IP addresses loaded from database")
 	} else {
 		logrus.Debugf("Taken IP addresses saved to database")

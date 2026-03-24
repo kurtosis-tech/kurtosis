@@ -1092,6 +1092,7 @@ func getApiContainerContainersAndVolumes(
 			ResourceFieldRef: nil,
 			ConfigMapKeyRef:  nil,
 			SecretKeyRef:     nil,
+			FileKeyRef:       nil,
 		},
 	}
 	containerEnvVars = append(containerEnvVars, ownNamespaceEnvVar)
@@ -1105,8 +1106,13 @@ func getApiContainerContainersAndVolumes(
 			Ports: containerPorts,
 			VolumeMounts: []apiv1.VolumeMount{
 				{
-					Name:      enclaveDataDirVolumeName,
-					MountPath: enclaveDataVolumeDirpath,
+					Name:              enclaveDataDirVolumeName,
+					ReadOnly:          false,
+					RecursiveReadOnly: nil,
+					MountPath:         enclaveDataVolumeDirpath,
+					SubPath:           "",
+					MountPropagation:  nil,
+					SubPathExpr:       "",
 				},
 			},
 		},
@@ -1148,6 +1154,7 @@ func getApiContainerContainersAndVolumes(
 				StorageOS:            nil,
 				CSI:                  nil,
 				Ephemeral:            nil,
+				Image:                nil,
 			},
 		},
 	}

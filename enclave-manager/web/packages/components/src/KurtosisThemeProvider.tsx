@@ -1,3 +1,4 @@
+import type { ChakraProviderProps } from "@chakra-ui/react";
 import {
   ChakraProvider,
   defineStyle,
@@ -7,7 +8,6 @@ import {
   Tooltip,
   useColorMode,
 } from "@chakra-ui/react";
-import type { ChakraProviderProps } from "@chakra-ui/react/dist/chakra-provider";
 import { cssVar } from "@chakra-ui/styled-system";
 import { mode } from "@chakra-ui/theme-tools";
 import { PropsWithChildren, useEffect } from "react";

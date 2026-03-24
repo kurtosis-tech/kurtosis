@@ -75,7 +75,7 @@ func CreateLogsAggregator(
 	logrus.Debugf("Checking for logs aggregator availability in namespace '%v'...", kubernetesResources.namespace.Name)
 
 	healthCheckEndpoint, healthCheckPortNum := logsAggregatorResourcesManager.GetHTTPHealthCheckEndpointAndPort()
-	if err = waitForLogsAggregatorAvailability(ctx, healthCheckEndpoint, healthCheckPortNum, kubernetesResources, kubernetesManager); err != nil {
+	if err = waitForLogsAggregatorAvailability(ctx, healthCheckEndpoint, healthCheckPortNum, kubernetesResources, kubernetesManager, nodeSelector, tolerations); err != nil {
 		return nil, removeLogsAggregatorFunc, stacktrace.Propagate(err, "An error occurred while waiting for the logs aggregator deployment to become available")
 	}
 	logrus.Debugf("...logs aggregator is available in namepsace '%v'", kubernetesResources.namespace.Name)

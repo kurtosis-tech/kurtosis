@@ -416,17 +416,19 @@ func createStartServiceOperation(
 						StorageOS:             nil,
 						CSI:                   nil,
 						Ephemeral:             nil,
+						Image:                 nil,
 					},
 				}
 				podVolumes = append(podVolumes, deviceVolume)
 
 				deviceVolumeMount := apiv1.VolumeMount{
-					Name:             volumeName,
-					MountPath:        devicePath,
-					ReadOnly:         false,
-					SubPath:          "",
-					MountPropagation: nil,
-					SubPathExpr:      "",
+					Name:              volumeName,
+					MountPath:         devicePath,
+					ReadOnly:          false,
+					RecursiveReadOnly: nil,
+					SubPath:           "",
+					MountPropagation:  nil,
+					SubPathExpr:       "",
 				}
 				userServiceContainerVolumeMounts = append(userServiceContainerVolumeMounts, deviceVolumeMount)
 			}
@@ -727,6 +729,7 @@ func getUserServicePodContainerSpecs(
 			ResourceFieldRef: nil,
 			ConfigMapKeyRef:  nil,
 			SecretKeyRef:     nil,
+			FileKeyRef:       nil,
 		},
 	}
 	containerEnvVars = append(containerEnvVars, podIPEnvVar)

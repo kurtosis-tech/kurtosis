@@ -49,6 +49,7 @@ func GetOrCreateEnclaveDatabase(enclaveDatabaseDirpath string) (*EnclaveDB, erro
 			OpenFile:        nil,
 			Mlock:           false,
 			PreLoadFreelist: false,
+			Logger:          nil,
 		})
 	})
 	if databaseOpenError != nil {

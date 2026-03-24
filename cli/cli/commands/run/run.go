@@ -1062,7 +1062,9 @@ func pullPackagesLocally(packageDependencies []string) (map[string]string, error
 				Username: "",
 				Password: "",
 			},
-			Shared: false,
+			Shared:     false,
+			ClientCert: nil,
+			ClientKey:  nil,
 		})
 		if err != nil && !errors.Is(err, git.ErrRepositoryAlreadyExists) {
 			return nil, stacktrace.Propagate(err, "An error occurred cloning package '%s' to '%s'.", dependency, localPackagePath)
