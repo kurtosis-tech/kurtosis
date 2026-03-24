@@ -290,6 +290,8 @@ config = ServiceConfig(
     capabilities = [
         "NET_RAW",
         "NET_ADMIN",
+        "SYS_PTRACE",
+        "SYS_ADMIN",
     ],
 )
 ```
