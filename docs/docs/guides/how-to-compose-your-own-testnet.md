@@ -211,7 +211,7 @@ The ethereum-package supports hundreds of configurations, including:
 - Mocking gas prices and block times
 - Pre-funding specific wallet addresses
 
-Configuration is accomplished by modifying the `network_params.yaml` file. An extensive list of customization options can be found in the (ethereum-package documentation)[https://github.com/ethpandaops/ethereum-package/tree/main?tab=readme-ov-file#configuration].
+Configuration is accomplished by modifying the `network_params.yaml` file. An extensive list of customization options can be found in the [ethereum-package documentation](https://github.com/ethpandaops/ethereum-package/tree/main?tab=readme-ov-file#configuration).
 
 In addition, ready-to-go configuration files are available as [examples](https://github.com/ethpandaops/ethereum-package/tree/main/examples).
 
