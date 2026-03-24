@@ -42,9 +42,7 @@ jobs:
         with:
           node-version: ${{ env.API_NODE_VERSION }}
           registry-url: 'https://registry.npmjs.org'
-
-      - name: Set always-auth
-        run: npm config set //registry.npmjs.org/:always-auth true
+          always-auth: true
 
       - name: Build
         run: api/typescript/scripts/build.sh
@@ -64,9 +62,7 @@ jobs:
         with:
           node-version: ${{ env.UI_NODE_VERSION }}
           registry-url: 'https://registry.npmjs.org'
-
-      - name: Set always-auth
-        run: npm config set //registry.npmjs.org/:always-auth true
+          always-auth: true
 
       - name: Install yarn
         run: npm install -g yarn
