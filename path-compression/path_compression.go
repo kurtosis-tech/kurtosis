@@ -25,6 +25,26 @@ const (
 	readonlyPermissions       = 0400
 )
 
+// ComputeContentHash computes an MD5 hash of the content at pathToHash.
+// The hash includes both file paths (relative to root) and file contents, but NOT filesystem
+// metadata like modification timestamps. This makes it stable across builds.
+func ComputeContentHash(pathToHash string) ([]byte, error) {
+	rules := loadIgnoreRules(pathToHash)
+	filesInPathRecursive, err := listFilesInPathDeterministic(pathToHash, true, rules)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "There was an error listing files in '%s' for hashing", pathToHash)
+	}
+	hasher := md5.New()
+	for _, filePath := range filesInPathRecursive {
+		pathRelativeToRoot := strings.Replace(filePath, pathToHash, "", 1)
+		hasher.Write([]byte(pathRelativeToRoot))
+		if err = writeFileContent(filePath, hasher); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred computing content hash for '%s' in '%s'", filePath, pathToHash)
+		}
+	}
+	return hasher.Sum(nil), nil
+}
+
 // CompressPath is similar to CompressPathToFile but opens the archive and returns a ReadCloser to it.
 // It's the consumer's responsibility to make sure the result gets closed appropriately
 func CompressPath(pathToCompress string, enforceMaxFileSizeLimit bool) (io.ReadCloser, uint64, []byte, error) {
@@ -46,26 +66,14 @@ func CompressPath(pathToCompress string, enforceMaxFileSizeLimit bool) (io.ReadC
 // Note: the MD5 is NOT the MD% of the archive file itself. See inline comments below for more info on this MD5 hash
 func CompressPathToFile(pathToCompress string, enforceMaxFileSizeLimit bool) (string, uint64, []byte, error) {
 	// First we compute the hash of the content about to be compressed
-	// Note that we're computing this "complex" hash here because the way tar.gz works, it writes files metadata to the
-	// archive, like last date of modification for each file. In our case, we just want to hash the content, regardless
-	// of those metadata.
-	filesInPathRecursive, err := listFilesInPathDeterministic(pathToCompress, true)
+	compressedFileContentMd5, err := ComputeContentHash(pathToCompress)
 	if err != nil {
-		return "", 0, nil, stacktrace.Propagate(err, "There was an error in getting a list of files in the directory '%s' provided", pathToCompress)
-	}
-	compressedFileContentMd5 := md5.New()
-	for _, filePath := range filesInPathRecursive {
-		pathRelativeToRoot := strings.Replace(filePath, pathToCompress, "", 1)
-		// we write both the file path relative to the root AND the file content to the hash, such that if the structure
-		// of the archive change but the files remains the same, the hash will change as well
-		compressedFileContentMd5.Write([]byte(pathRelativeToRoot))
-		if err = writeFileContent(filePath, compressedFileContentMd5); err != nil {
-			return "", 0, nil, stacktrace.Propagate(err, "An error occurred computing files artifact hash for '%s' in '%s'", filePath, pathToCompress)
-		}
+		return "", 0, nil, stacktrace.Propagate(err, "An error occurred computing content hash for '%s'", pathToCompress)
 	}
 
 	// Then we compress the content into an archive
-	filepathsToUpload, err := listFilesInPathDeterministic(pathToCompress, false)
+	rules := loadIgnoreRules(pathToCompress)
+	filepathsToUpload, err := listFilesInPathDeterministic(pathToCompress, false, rules)
 	if err != nil {
 		return "", 0, nil, stacktrace.Propagate(err, "There was an error in getting a list of files in the directory '%s' provided", pathToCompress)
 	}
@@ -138,15 +146,16 @@ func CompressPathToFile(pathToCompress string, enforceMaxFileSizeLimit bool) (st
 				"Manipulation (i.e. uploads or downloads) of files larger than 2 GB is currently disallowed in Kurtosis.")
 	}
 
-	return compressedFilePath, compressedFileSize, compressedFileContentMd5.Sum(nil), nil
+	return compressedFilePath, compressedFileSize, compressedFileContentMd5, nil
 }
 
 // listFilesInPathDeterministic returns the list of file paths in the path passed as an argument.
-// If the path points to a file, it only returns the given file path
-// If recursiveMode is true, it recursively iterates over the directory inside the given path
-func listFilesInPathDeterministic(path string, recursiveMode bool) ([]string, error) {
+// If the path points to a file, it only returns the given file path.
+// If recursiveMode is true, it recursively iterates over the directory inside the given path.
+// If rules is non-nil, files/directories matching the ignore rules are excluded.
+func listFilesInPathDeterministic(path string, recursiveMode bool, rules *ignoreRules) ([]string, error) {
 	var listOfFiles []string
-	err := listFilesInPathInternal(&listOfFiles, path, recursiveMode, true)
+	err := listFilesInPathInternal(&listOfFiles, path, path, recursiveMode, true, rules)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error listing files in '%s'", path)
 	}
@@ -154,7 +163,7 @@ func listFilesInPathDeterministic(path string, recursiveMode bool) ([]string, er
 	return listOfFiles, nil
 }
 
-func listFilesInPathInternal(filesInPath *[]string, path string, recursiveMode bool, topLevel bool) error {
+func listFilesInPathInternal(filesInPath *[]string, rootPath string, path string, recursiveMode bool, topLevel bool, rules *ignoreRules) error {
 	trimmedPath := strings.TrimRight(path, string(filepath.Separator))
 	uploadFileInfo, err := os.Stat(trimmedPath)
 	if err != nil {
@@ -169,9 +178,18 @@ func listFilesInPathInternal(filesInPath *[]string, path string, recursiveMode b
 		}
 		for _, fileInDirectory := range filesInDirectory {
 			fileInDirectoryPath := filepath.Join(trimmedPath, fileInDirectory.Name())
+
+			// Check ignore rules
+			if rules != nil {
+				relativePath := strings.TrimPrefix(fileInDirectoryPath, strings.TrimRight(rootPath, string(filepath.Separator))+string(filepath.Separator))
+				if rules.shouldIgnore(relativePath, fileInDirectory.IsDir()) {
+					continue
+				}
+			}
+
 			*filesInPath = append(*filesInPath, fileInDirectoryPath)
 			if recursiveMode && fileInDirectory.IsDir() {
-				err := listFilesInPathInternal(filesInPath, fileInDirectoryPath, recursiveMode, false)
+				err := listFilesInPathInternal(filesInPath, rootPath, fileInDirectoryPath, recursiveMode, false, rules)
 				if err != nil {
 					return stacktrace.Propagate(err, "Error recursively listing files in '%s'", fileInDirectoryPath)
 				}
