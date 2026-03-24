@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.17.1](https://github.com/kurtosis-tech/kurtosis/compare/1.17.0...1.17.1) (2026-03-24)
+
+
+### Bug Fixes
+
+* update publish workflow language versions to match build ([#2965](https://github.com/kurtosis-tech/kurtosis/issues/2965)) ([9fe7b87](https://github.com/kurtosis-tech/kurtosis/commit/9fe7b877a8272bed9766f2bdd219557ab5917ae9))
+
 ## [1.17.0](https://github.com/kurtosis-tech/kurtosis/compare/1.16.6...1.17.0) (2026-03-24)
 
 
