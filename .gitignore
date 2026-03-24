@@ -1,6 +1,9 @@
 # Ignoring the file that gets generated with the repo's version
 /kurtosis_version/kurtosis_version.go
 
+# Go workspace sum file (checksums live in individual module go.sum files)
+go.work.sum
+
 # IntelliJ
 .idea
 *.iws
