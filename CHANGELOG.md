@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.17.4](https://github.com/kurtosis-tech/kurtosis/compare/1.17.3...1.17.4) (2026-03-25)
+
+
+### Bug Fixes
+
+* **ci:** detect npm tokens that require OTP before publish ([#2976](https://github.com/kurtosis-tech/kurtosis/issues/2976)) ([71f3938](https://github.com/kurtosis-tech/kurtosis/commit/71f393855ab2962dc57e65e2f271614ca1a3f4ed))
+
 ## [1.17.3](https://github.com/kurtosis-tech/kurtosis/compare/1.17.2...1.17.3) (2026-03-25)
 
 
