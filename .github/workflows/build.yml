@@ -473,8 +473,6 @@ jobs:
     with:
       go-version: '1.26.0'
       dry-run: true
-    secrets:
-      KURTOSISBOT_GITHUB_TOKEN: ${{ secrets.KURTOSISBOT_GITHUB_TOKEN }}
 
   # ============================================================================
   # Test Jobs - Docker Backend

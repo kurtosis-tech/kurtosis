@@ -67,12 +67,12 @@ jobs:
           restore-keys: |
             cli-go-mod-v2-
 
+      - name: Build CLI (dry-run)
+        if: inputs.dry-run
+        run: cli/cli/scripts/build.sh true false
+
       - name: Build and publish CLI
+        if: ${{ !inputs.dry-run }}
         env:
           KURTOSISBOT_GITHUB_TOKEN: ${{ secrets.KURTOSISBOT_GITHUB_TOKEN }}
-        run: |
-          if [ "${{ inputs.dry-run }}" = "true" ]; then
-            cli/cli/scripts/build.sh true false
-          else
-            cli/cli/scripts/build.sh true true
-          fi
+        run: cli/cli/scripts/build.sh true true
