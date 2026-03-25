@@ -14,9 +14,14 @@ on:
         required: false
         type: string
         default: ''
+      dry-run:
+        description: 'If true, build all targets with --snapshot but do not publish.'
+        required: false
+        type: boolean
+        default: false
     secrets:
       KURTOSISBOT_GITHUB_TOKEN:
-        required: true
+        required: false
 
 jobs:
   push-cli-artifacts:
@@ -65,4 +70,9 @@ jobs:
       - name: Build and publish CLI
         env:
           KURTOSISBOT_GITHUB_TOKEN: ${{ secrets.KURTOSISBOT_GITHUB_TOKEN }}
-        run: cli/cli/scripts/build.sh true true
+        run: |
+          if [ "${{ inputs.dry-run }}" = "true" ]; then
+            cli/cli/scripts/build.sh true false
+          else
+            cli/cli/scripts/build.sh true true
+          fi

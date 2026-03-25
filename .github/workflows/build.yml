@@ -394,11 +394,6 @@ jobs:
             goarch: arm64
             cgo: 1
             cc: aarch64-linux-musl-gcc
-          - runner: macos-15
-            goos: darwin
-            goarch: amd64
-            cgo: 1
-            cc: ""
           - runner: macos-latest
             goos: darwin
             goarch: arm64
@@ -466,6 +461,20 @@ jobs:
           if [ "${{ needs.build-cli-all-arch-matrix.result }}" = "failure" ] || [ "${{ needs.build-cli-all-arch-matrix.result }}" = "cancelled" ]; then
             exit 1
           fi
+
+  # ============================================================================
+  # Dry-run CLI release (tilt-releaser + goreleaser, no publish)
+  # Catches cross-compilation failures before release time.
+  # ============================================================================
+  build-cli-release-dry-run:
+    needs: check-docs-only
+    if: needs.check-docs-only.outputs.has-code-changes == 'true'
+    uses: ./.github/workflows/push-cli-artifacts.yml
+    with:
+      go-version: '1.26.0'
+      dry-run: true
+    secrets:
+      KURTOSISBOT_GITHUB_TOKEN: ${{ secrets.KURTOSISBOT_GITHUB_TOKEN }}
 
   # ============================================================================
   # Test Jobs - Docker Backend
