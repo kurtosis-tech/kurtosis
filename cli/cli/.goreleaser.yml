@@ -14,6 +14,9 @@ builds:
     goarch:
       - amd64
       - arm64
+    ignore:
+      - goos: darwin
+        goarch: amd64
     env:
       - CGO_ENABLED={{ if eq .Os "windows" }}0{{ else }}1{{ end }}
       # Only override CC if we are on CI, otherwise use the locally available C toolchain.
