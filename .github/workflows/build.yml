@@ -362,8 +362,9 @@ jobs:
       - name: Install musl toolchain
         run: |
           sudo apt-get update
-          sudo apt-get install -y musl-tools
+          sudo apt-get install -y musl-tools g++-multilib
           sudo ln -sf /usr/bin/musl-gcc /usr/local/bin/x86_64-linux-musl-gcc
+          sudo ln -sf /usr/bin/g++ /usr/local/bin/x86_64-linux-musl-g++
 
       - name: Generate Kurtosis Version
         run: scripts/generate-kurtosis-version.sh
@@ -466,6 +467,18 @@ jobs:
           if [ "${{ needs.build-cli-all-arch-matrix.result }}" = "failure" ] || [ "${{ needs.build-cli-all-arch-matrix.result }}" = "cancelled" ]; then
             exit 1
           fi
+
+  # ============================================================================
+  # Dry-run CLI release (tilt-releaser + goreleaser, no publish)
+  # Catches cross-compilation failures before release time.
+  # ============================================================================
+  build-cli-release-dry-run:
+    needs: check-docs-only
+    if: needs.check-docs-only.outputs.has-code-changes == 'true'
+    uses: ./.github/workflows/push-cli-artifacts.yml
+    with:
+      go-version: '1.26.0'
+      dry-run: true
 
   # ============================================================================
   # Test Jobs - Docker Backend
