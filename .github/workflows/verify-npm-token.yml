@@ -27,3 +27,14 @@ jobs:
             exit 1
           fi
           echo "NPM token is valid (authenticated as $(npm whoami --registry https://registry.npmjs.org))"
+
+          # Detect tokens that will require OTP during publish.
+          # Automation/granular tokens get 403 on profile endpoints (they bypass 2FA).
+          # Classic publish tokens can read the profile — if the account has 2FA for writes, publish will fail with EOTP.
+          if profile_json=$(npm profile get --json --registry https://registry.npmjs.org 2>/dev/null); then
+            tfa_mode=$(echo "$profile_json" | jq -r '.tfa.mode // "disabled"')
+            if [ "$tfa_mode" = "auth-and-writes" ]; then
+              echo "::error::NPM account requires 2FA for publish (auth-and-writes). CI cannot provide OTP. Please use an Automation or Granular Access Token."
+              exit 1
+            fi
+          fi
