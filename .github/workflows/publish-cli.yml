@@ -1,6 +1,3 @@
-# Manual workflow to re-publish CLI artifacts for a specific release.
-# Use this when the CLI publish step failed during a full publish run
-# and the other artifacts (Docker images, SDK packages) already succeeded.
 name: Publish CLI
 
 on:
@@ -11,58 +8,11 @@ on:
         required: true
         type: string
 
-env:
-  GO_VERSION: '1.26.0'
-
 jobs:
   push-cli-artifacts:
-    runs-on: ubuntu-latest
-    container:
-      image: docker/tilt-releaser@sha256:9d05f87976ccdf8a3434443fac2b867ca99a81c8423008437c767c04784969e4
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: ${{ inputs.release_tag }}
-
-      - name: Mark git directory as safe
-        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
-
-      # The tilt-releaser container ships Go 1.23.6, but go.work and go.mod
-      # require Go 1.26.0 (bumped in #2939). With GOTOOLCHAIN=local the
-      # bundled Go refuses to build, so we install the required version
-      # manually. We download from go.dev rather than using actions/setup-go
-      # because setup-go relies on the runner tool-cache which is not
-      # available inside container jobs.
-      - name: Install Go ${{ env.GO_VERSION }}
-        run: |
-          curl -fsSL "https://go.dev/dl/go${{ env.GO_VERSION }}.linux-amd64.tar.gz" -o /tmp/go.tar.gz
-          rm -rf /usr/local/go
-          tar -C /usr/local -xzf /tmp/go.tar.gz
-          echo "/usr/local/go/bin" >> "$GITHUB_PATH"
-
-      - name: Install goreleaser
-        run: |
-          echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | tee /etc/apt/sources.list.d/goreleaser.list
-          curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
-          apt update
-          apt install -y goreleaser
-
-      - name: Generate Kurtosis Version
-        run: |
-          version="$(cat version.txt)"
-          scripts/generate-kurtosis-version.sh $version
-
-      - name: Restore Go cache
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
-        with:
-          path: |
-            /go/pkg/mod
-            /root/.cache/go-build
-          key: cli-go-mod-v2-${{ hashFiles('cli/cli/go.sum') }}
-          restore-keys: |
-            cli-go-mod-v2-
-
-      - name: Build and publish CLI
-        env:
-          KURTOSISBOT_GITHUB_TOKEN: ${{ secrets.KURTOSISBOT_GITHUB_TOKEN }}
-        run: cli/cli/scripts/build.sh true true
+    uses: ./.github/workflows/push-cli-artifacts.yml
+    with:
+      go-version: '1.26.0'
+      checkout-ref: ${{ inputs.release_tag }}
+    secrets:
+      KURTOSISBOT_GITHUB_TOKEN: ${{ secrets.KURTOSISBOT_GITHUB_TOKEN }}
