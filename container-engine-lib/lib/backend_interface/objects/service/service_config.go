@@ -83,6 +83,9 @@ type privateServiceConfig struct {
 	Devices []string
 
 	PublishUdp bool
+
+	// Linux capabilities to add to the container (e.g., "NET_ADMIN", "SYS_PTRACE")
+	Capabilities []string
 }
 
 func CreateServiceConfig(
@@ -143,6 +146,7 @@ func CreateServiceConfig(
 		TtyEnabled:                   ttyEnabled,
 		Devices:                      devices,
 		PublishUdp:                   publishUdp,
+		Capabilities:                 nil,
 	}
 	return &ServiceConfig{internalServiceConfig}, nil
 }
@@ -358,4 +362,12 @@ func (serviceConfig *ServiceConfig) GetDevices() []string {
 
 func (serviceConfig *ServiceConfig) GetPublishUdp() bool {
 	return serviceConfig.privateServiceConfig.PublishUdp
+}
+
+func (serviceConfig *ServiceConfig) GetCapabilities() []string {
+	return serviceConfig.privateServiceConfig.Capabilities
+}
+
+func (serviceConfig *ServiceConfig) SetCapabilities(capabilities []string) {
+	serviceConfig.privateServiceConfig.Capabilities = capabilities
 }

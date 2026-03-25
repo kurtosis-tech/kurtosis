@@ -1215,6 +1215,7 @@ func getServiceInfoFromServiceObj(serviceObj *service.Service, serviceConfig *se
 		serviceConfig.GetLabels(),
 		serviceConfig.GetTiniEnabled(),
 		serviceConfig.GetTtyEnabled(),
+		serviceConfig.GetCapabilities(),
 	)
 
 	return serviceInfoResponse, nil
