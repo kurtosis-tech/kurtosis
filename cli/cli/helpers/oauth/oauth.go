@@ -43,8 +43,13 @@ func AuthFlow() (string, string, error) {
 	minimumScopes := []string{"repo"}
 
 	callbackURI := "http://127.0.0.1/callback"
+	host, err := oauth.NewGitHubHost(fmt.Sprintf("https://%s/", oauthHost))
+	if err != nil {
+		return "", "", fmt.Errorf("an error occurred creating GitHub OAuth host: %w", err)
+	}
+
 	flow := &oauth.Flow{ // nolint: exhaustruct
-		Host:         oauth.GitHubHost(fmt.Sprintf("https://%s/", oauthHost)),
+		Host:         host,
 		ClientID:     oauthClientID,
 		ClientSecret: oauthClientSecret,
 		CallbackURI:  callbackURI,
