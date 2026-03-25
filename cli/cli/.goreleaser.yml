@@ -28,8 +28,11 @@ builds:
           {{- end }}
         {{- end }}
     ldflags:
+      # -lresolv is needed because Go 1.26+ pulls in res_search via the cgo
+      # DNS resolver.  Without it, static linking with g++ (used for C++ deps
+      # like go-tree-sitter) fails with "undefined reference to res_search".
       - >-
-        {{- if eq .Os "linux" }}-linkmode external -extldflags "-static"{{- end }}
+        {{- if eq .Os "linux" }}-linkmode external -extldflags "-static -lresolv"{{- end }}
     tags:
       - osusergo
 # In order for releasing-to-Github to work, we have to create these archives
