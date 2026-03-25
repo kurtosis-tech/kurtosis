@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.17.3](https://github.com/kurtosis-tech/kurtosis/compare/1.17.2...1.17.3) (2026-03-25)
+
+
+### Bug Fixes
+
+* **ci:** fix verify-npm-token job being skipped during publish ([#2974](https://github.com/kurtosis-tech/kurtosis/issues/2974)) ([20410c9](https://github.com/kurtosis-tech/kurtosis/commit/20410c93e1d7777204ffce071052fb4ccafe9337))
+
 ## [1.17.2](https://github.com/kurtosis-tech/kurtosis/compare/1.17.1...1.17.2) (2026-03-25)
 
 
