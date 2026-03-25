@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.17.5](https://github.com/kurtosis-tech/kurtosis/compare/1.17.4...1.17.5) (2026-03-25)
+
+
+### Bug Fixes
+
+* **ci:** add -lresolv to static link flags for Linux CLI build ([#2980](https://github.com/kurtosis-tech/kurtosis/issues/2980)) ([5edcb0c](https://github.com/kurtosis-tech/kurtosis/commit/5edcb0ce16bddb474d1df6c0d0397cccb9ffc21c))
+* **ci:** install Go 1.26.0 in tilt-releaser for CLI publish ([#2978](https://github.com/kurtosis-tech/kurtosis/issues/2978)) ([19c5630](https://github.com/kurtosis-tech/kurtosis/commit/19c563059858f5fdbe99c59d9a67e1dc90f98c8c))
+* **ci:** remove stale apt-key call in CLI publish job ([#2982](https://github.com/kurtosis-tech/kurtosis/issues/2982)) ([4311379](https://github.com/kurtosis-tech/kurtosis/commit/4311379e53800007a23b7cc01ac00589e253f55e))
+* **ci:** update tilt-releaser image to fix CLI static linking ([#2981](https://github.com/kurtosis-tech/kurtosis/issues/2981)) ([04745ae](https://github.com/kurtosis-tech/kurtosis/commit/04745ae6b1737221331932696e2a34a84c30e5c8))
+
 ## [1.17.4](https://github.com/kurtosis-tech/kurtosis/compare/1.17.3...1.17.4) (2026-03-25)
 
 
