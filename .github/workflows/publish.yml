@@ -10,7 +10,7 @@ env:
   RUST_VERSION: '1.88.0'
   API_NODE_VERSION: '22.16.0'
   UI_NODE_VERSION: '22.16.0'
-  TILT_RELEASER_SHA: '9d05f87976ccdf8a3434443fac2b867ca99a81c8423008437c767c04784969e4'
+  TILT_RELEASER_SHA: '304fa435c4b18d71d1aeae4578762625fc43ab69bc24656e20d150ee23dc2b2b'
 
 jobs:
   # ============================================================================
@@ -286,7 +286,7 @@ jobs:
   push-cli-artifacts:
     runs-on: ubuntu-latest
     container:
-      image: docker/tilt-releaser@sha256:9d05f87976ccdf8a3434443fac2b867ca99a81c8423008437c767c04784969e4
+      image: docker/tilt-releaser@sha256:304fa435c4b18d71d1aeae4578762625fc43ab69bc24656e20d150ee23dc2b2b
     needs:
       - publish-kurtosis-api-typescript
       - publish-kurtosis-sdk-rust
@@ -298,6 +298,16 @@ jobs:
 
       - name: Mark git directory as safe
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      # The tilt-releaser image ships Go 1.25.6 but go.work requires 1.26.0.
+      # Install the required version from go.dev directly since actions/setup-go
+      # is unreliable inside container jobs.
+      - name: Install Go ${{ env.GO_VERSION }}
+        run: |
+          curl -fsSL "https://go.dev/dl/go${{ env.GO_VERSION }}.linux-amd64.tar.gz" -o /tmp/go.tar.gz
+          rm -rf /usr/local/go
+          tar -C /usr/local -xzf /tmp/go.tar.gz
+          echo "/usr/local/go/bin" >> "$GITHUB_PATH"
 
       - name: Install goreleaser
         run: |
