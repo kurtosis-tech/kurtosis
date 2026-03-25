@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.17.7](https://github.com/kurtosis-tech/kurtosis/compare/1.17.6...1.17.7) (2026-03-25)
+
+
+### Bug Fixes
+
+* kurtosis dump fails with permission denied on restrictive file artifacts ([#2991](https://github.com/kurtosis-tech/kurtosis/issues/2991)) ([f36ae68](https://github.com/kurtosis-tech/kurtosis/commit/f36ae687d73d3a135b4a1e9331a4dd59ab5f8042))
+* replace deprecated goreleaser changelog.skip ([#2988](https://github.com/kurtosis-tech/kurtosis/issues/2988)) ([28e7841](https://github.com/kurtosis-tech/kurtosis/commit/28e78419cfe56191e8d626deab86a84052b668d1))
+* **security:** bump cli/cli/v2 and cli/go-gh/v2 in cli module ([#2990](https://github.com/kurtosis-tech/kurtosis/issues/2990)) ([98e2078](https://github.com/kurtosis-tech/kurtosis/commit/98e20787bdf4e3a101a6d143ffd3f5b5ad8d6c19))
+* **security:** bump go.opentelemetry.io/otel/sdk to v1.40.0 ([#2989](https://github.com/kurtosis-tech/kurtosis/issues/2989)) ([847d57b](https://github.com/kurtosis-tech/kurtosis/commit/847d57bb60eacc93665a82ef89c9da444a398ec6))
+
 ## [1.17.6](https://github.com/kurtosis-tech/kurtosis/compare/1.17.5...1.17.6) (2026-03-25)
 
 
