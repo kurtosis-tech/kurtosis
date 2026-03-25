@@ -3,13 +3,13 @@ package path_compression
 import (
 	"context"
 	"crypto/md5"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 
-	"github.com/jm33-m0/arc/v2"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/mholt/archives"
 
@@ -17,6 +17,7 @@ import (
 )
 
 const (
+	extractDirPermissions     = 0755
 	kurtosisDataTransferLimit = 2000 * 1024 * 1024 // ~2 GB
 	tempCompressionDirPattern = "upload-compression-cache-"
 	compressionExtension      = ".tgz"
@@ -243,10 +244,73 @@ func mapFilePathOnDiskToRelativePathInArchive(pathToCompress string, filesToUplo
 	return filenameMappings
 }
 
-// Unarchive is a drop in replacement for mholt/archiver.Unarchive
-// mholt/archiver was updated to mholt/archives in Kurtosis due to https://nvd.nist.gov/vuln/detail/CVE-2025-3445
-// The successor to mholt/archiver is mholt/archives but because it doesn't have an Unarchive function, we reimplement it here
-// Implementation is from: https://github.com/jm33-m0/arc
+// Unarchive extracts an archive to a destination directory.
+// Unlike the previous arc.Unarchive implementation, directories are always
+// created with 0755 permissions (matching the old mholt/archiver behavior).
+// This prevents "permission denied" errors when archives contain directories
+// with restrictive permissions (e.g. validator secrets with 0500).
 func Unarchive(source, destination string) error {
-	return arc.Unarchive(source, destination)
+	archiveFile, err := os.Open(source)
+	if err != nil {
+		return fmt.Errorf("open archive %s: %w", source, err)
+	}
+	defer archiveFile.Close()
+
+	format, input, err := archives.Identify(context.Background(), source, archiveFile)
+	if err != nil {
+		return fmt.Errorf("identify format: %w", err)
+	}
+
+	extractor, ok := format.(archives.Extractor)
+	if !ok {
+		return fmt.Errorf("unsupported format for extraction")
+	}
+
+	if err := os.MkdirAll(destination, extractDirPermissions); err != nil {
+		return fmt.Errorf("creating destination directory: %w", err)
+	}
+
+	handler := func(ctx context.Context, f archives.FileInfo) error {
+		clean := filepath.Clean("/" + f.NameInArchive)
+		relative := strings.TrimPrefix(clean, string(os.PathSeparator))
+		dstPath := filepath.Join(destination, relative)
+
+		if !strings.HasPrefix(filepath.Clean(dstPath)+string(os.PathSeparator), filepath.Clean(destination)+string(os.PathSeparator)) {
+			return fmt.Errorf("illegal file path: %s", dstPath)
+		}
+
+		if f.IsDir() {
+			return os.MkdirAll(dstPath, extractDirPermissions)
+		}
+
+		if f.LinkTarget != "" {
+			return nil
+		}
+
+		if err := os.MkdirAll(filepath.Dir(dstPath), extractDirPermissions); err != nil {
+			return fmt.Errorf("mkdir: %w", err)
+		}
+
+		reader, err := f.Open()
+		if err != nil {
+			return fmt.Errorf("open file: %w", err)
+		}
+		defer reader.Close()
+
+		out, err := os.OpenFile(dstPath, os.O_CREATE|os.O_WRONLY, f.Mode())
+		if err != nil {
+			return fmt.Errorf("create file: %w", err)
+		}
+		defer out.Close()
+
+		if _, err := io.Copy(out, reader); err != nil {
+			return fmt.Errorf("copy: %w", err)
+		}
+		return nil
+	}
+
+	if err := extractor.Extract(context.Background(), input, handler); err != nil {
+		return fmt.Errorf("extracting files: %w", err)
+	}
+	return nil
 }
