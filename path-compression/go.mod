@@ -3,7 +3,6 @@ module github.com/kurtosis-tech/kurtosis/path-compression
 go 1.26.0
 
 require (
-	github.com/jm33-m0/arc/v2 v2.0.1
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/mholt/archives v0.1.5
 	github.com/sirupsen/logrus v1.9.4
