@@ -15,16 +15,19 @@ builds:
       - amd64
       - arm64
     env:
-      - CGO_ENABLED={{ if eq .Os "linux" }}1{{ else }}0{{ end }}
+      - CGO_ENABLED={{ if eq .Os "windows" }}0{{ else }}1{{ end }}
       # Only override CC if we are on CI, otherwise use the locally available C toolchain.
-      # CXX is intentionally NOT overridden — system g++ is used for C++ files (e.g.
-      # go-tree-sitter) since musl-gcc cannot find C++ standard library headers.
-      # The final binary is still statically linked via CC (musl-gcc) + -extldflags "-static".
+      # The tilt-releaser container provides osxcross (o64h-clang, oa64-clang) for darwin
+      # and musl-gcc for static linux builds.
       - >-
         {{- if index .Env "CI" }}
+          {{- if eq .Os "darwin" }}
+            {{- if eq .Arch "amd64"}}CC=o64h-clang{{- end }}
+            {{- if eq .Arch "arm64"}}CC=oa64-clang{{- end }}
+          {{- end }}
           {{- if eq .Os "linux" }}
             {{- if eq .Arch "amd64"}}CC=x86_64-linux-musl-gcc{{- end }}
-              {{- if eq .Arch "arm64"}}CC=aarch64-linux-musl-gcc{{- end }}
+            {{- if eq .Arch "arm64"}}CC=aarch64-linux-musl-gcc{{- end }}
           {{- end }}
         {{- end }}
     ldflags:

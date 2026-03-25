@@ -397,12 +397,12 @@ jobs:
           - runner: macos-15
             goos: darwin
             goarch: amd64
-            cgo: 0
+            cgo: 1
             cc: ""
           - runner: macos-latest
             goos: darwin
             goarch: arm64
-            cgo: 0
+            cgo: 1
             cc: ""
           - runner: windows-latest
             goos: windows
