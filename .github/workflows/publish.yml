@@ -299,6 +299,19 @@ jobs:
       - name: Mark git directory as safe
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
+      # The tilt-releaser container ships Go 1.23.6, but go.work and go.mod
+      # require Go 1.26.0 (bumped in #2939). With GOTOOLCHAIN=local the
+      # bundled Go refuses to build, so we install the required version
+      # manually. We download from go.dev rather than using actions/setup-go
+      # because setup-go relies on the runner tool-cache which is not
+      # available inside container jobs.
+      - name: Install Go ${{ env.GO_VERSION }}
+        run: |
+          curl -fsSL "https://go.dev/dl/go${{ env.GO_VERSION }}.linux-amd64.tar.gz" -o /tmp/go.tar.gz
+          rm -rf /usr/local/go
+          tar -C /usr/local -xzf /tmp/go.tar.gz
+          echo "/usr/local/go/bin" >> "$GITHUB_PATH"
+
       - name: Install goreleaser
         run: |
           echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | tee /etc/apt/sources.list.d/goreleaser.list
