@@ -157,4 +157,4 @@ snapshot:
   name_template: "{{ .Env.VERSION }}"
 changelog:
   # We manage our own changelog
-  skip: true
+  disable: true
