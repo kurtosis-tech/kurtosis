@@ -14,11 +14,8 @@ builds:
     goarch:
       - amd64
       - arm64
-    ignore:
-      - goos: darwin
-        goarch: amd64
     env:
-      - CGO_ENABLED={{ if eq .Os "windows" }}0{{ else }}1{{ end }}
+      - CGO_ENABLED={{ if eq .Os "linux" }}1{{ else }}0{{ end }}
       # Only override CC if we are on CI, otherwise use the locally available C toolchain.
       # CXX is intentionally NOT overridden — system g++ is used for C++ files (e.g.
       # go-tree-sitter) since musl-gcc cannot find C++ standard library headers.
