@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.17.2](https://github.com/kurtosis-tech/kurtosis/compare/1.17.1...1.17.2) (2026-03-25)
+
+
+### Miscellaneous Chores
+
+* trigger 1.17.2 (again) ([#2972](https://github.com/kurtosis-tech/kurtosis/issues/2972)) ([fa8387c](https://github.com/kurtosis-tech/kurtosis/commit/fa8387c296cab0ec6f6a7550d7e2e05e336ae49d))
+
 ## [1.17.1](https://github.com/kurtosis-tech/kurtosis/compare/1.17.0...1.17.1) (2026-03-24)
 
 
