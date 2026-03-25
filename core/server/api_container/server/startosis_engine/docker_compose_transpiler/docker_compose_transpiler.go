@@ -160,6 +160,21 @@ func convertComposeBytesToComposeStruct(composeBytes []byte, envVars map[string]
 	if err != nil && !isEnvFileNotFoundErr(err) {
 		return nil, stacktrace.Propagate(err, "An error occurred parsing compose based on provided parsing config and set options function.")
 	}
+	if compose == nil {
+		// compose-go v1.20+ returns nil project when env_file is missing; retry skipping env resolution
+		compose, err = loader.Load(composeParseConfig, func(options *loader.Options) {
+			options.SetProjectName(composeProjectName, shouldOverrideComposeYamlKeyProjectName)
+			options.ResolvePaths = shouldResolvePaths
+			options.ConvertWindowsPaths = shouldConvertWindowsPathsToLinux
+			options.SkipResolveEnvironment = true
+		})
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred parsing compose on retry without env file resolution.")
+		}
+	}
+	if compose == nil {
+		return nil, stacktrace.NewError("Compose loader returned nil project for the given config.")
+	}
 	return compose, nil
 }
 

@@ -1,0 +1,68 @@
+# Reusable workflow for building and publishing CLI artifacts.
+# Called by publish.yml (on release) and publish-cli.yml (manual dispatch).
+name: Push CLI Artifacts
+
+on:
+  workflow_call:
+    inputs:
+      go-version:
+        description: 'Go version to install'
+        required: true
+        type: string
+      checkout-ref:
+        description: 'Git ref to check out (tag, branch, or SHA). Defaults to the triggering ref.'
+        required: false
+        type: string
+        default: ''
+    secrets:
+      KURTOSISBOT_GITHUB_TOKEN:
+        required: true
+
+jobs:
+  push-cli-artifacts:
+    runs-on: ubuntu-latest
+    container:
+      image: docker/tilt-releaser@sha256:304fa435c4b18d71d1aeae4578762625fc43ab69bc24656e20d150ee23dc2b2b
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.checkout-ref || github.ref }}
+
+      - name: Mark git directory as safe
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      # The tilt-releaser image ships Go 1.25.6 but go.work requires 1.26.0.
+      # Install the required version from go.dev directly since actions/setup-go
+      # is unreliable inside container jobs.
+      - name: Install Go ${{ inputs.go-version }}
+        run: |
+          curl -fsSL "https://go.dev/dl/go${{ inputs.go-version }}.linux-amd64.tar.gz" -o /tmp/go.tar.gz
+          rm -rf /usr/local/go
+          tar -C /usr/local -xzf /tmp/go.tar.gz
+          echo "/usr/local/go/bin" >> "$GITHUB_PATH"
+
+      - name: Install goreleaser
+        run: |
+          echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | tee /etc/apt/sources.list.d/goreleaser.list
+          apt update
+          apt install -y goreleaser
+
+      - name: Generate Kurtosis Version
+        run: |
+          version="$(cat version.txt)"
+          scripts/generate-kurtosis-version.sh $version
+
+      - name: Restore Go cache
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        with:
+          path: |
+            /go/pkg/mod
+            /root/.cache/go-build
+          key: cli-go-mod-v2-${{ hashFiles('cli/cli/go.sum') }}
+          restore-keys: |
+            cli-go-mod-v2-
+
+      - name: Build and publish CLI
+        env:
+          KURTOSISBOT_GITHUB_TOKEN: ${{ secrets.KURTOSISBOT_GITHUB_TOKEN }}
+        run: cli/cli/scripts/build.sh true true

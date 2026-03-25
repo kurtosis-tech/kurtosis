@@ -75,9 +75,8 @@ export const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserP
     useEffect(() => {
       const errorHandler = (e: any) => {
         if (
-          e.message.includes(
-            "ResizeObserver loop completed with undelivered notifications" || "ResizeObserver loop limit exceeded",
-          )
+          e.message.includes("ResizeObserver loop completed with undelivered notifications") ||
+          e.message.includes("ResizeObserver loop limit exceeded")
         ) {
           const resizeObserverErr = document.getElementById("webpack-dev-server-client-overlay");
           if (resizeObserverErr) {

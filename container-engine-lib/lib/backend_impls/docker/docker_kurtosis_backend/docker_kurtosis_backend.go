@@ -41,7 +41,6 @@ import (
 )
 
 const (
-	isResourceInformationComplete                     = true
 	defaultShouldEnablePersistentVolumeLogsCollection = true
 )
 
@@ -562,7 +561,7 @@ func (backend *DockerKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Conte
 	if err != nil {
 		return 0, 0, false, stacktrace.Propagate(err, "an error occurred fetching resource information from the docker backend")
 	}
-	return availableMemory, availableCpu, isResourceInformationComplete, nil
+	return availableMemory, availableCpu, true, nil
 }
 
 func (backend *DockerKurtosisBackend) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) (string, error) {

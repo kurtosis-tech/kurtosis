@@ -105,7 +105,7 @@ func GetUserServiceInfoMapFromAPIContainer(ctx context.Context, enclaveInfo *kur
 		apicHostMachineIp,
 		apicHostMachineGrpcPort,
 	)
-	conn, err := grpc.Dial(apiContainerHostGrpcUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(apiContainerHostGrpcUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,

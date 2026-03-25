@@ -1,0 +1,40 @@
+name: Verify NPM Token
+
+on:
+  workflow_call:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'version.txt'
+      - '.release-please-manifest.json'
+
+jobs:
+  verify-npm-token:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' || startsWith(github.head_ref, 'release-please--') }}
+    steps:
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: '22.16.0'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Verify NPM Access Token
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPMJS_AUTH_TOKEN }}
+        run: |
+          if ! npm whoami --registry https://registry.npmjs.org 2>/dev/null; then
+            echo "::error::NPM access token is invalid or expired. Please update the NPMJS_AUTH_TOKEN secret."
+            exit 1
+          fi
+          echo "NPM token is valid (authenticated as $(npm whoami --registry https://registry.npmjs.org))"
+
+          # Detect tokens that will require OTP during publish.
+          # Automation/granular tokens get 403 on profile endpoints (they bypass 2FA).
+          # Classic publish tokens can read the profile — if the account has 2FA for writes, publish will fail with EOTP.
+          if profile_json=$(npm profile get --json --registry https://registry.npmjs.org 2>/dev/null); then
+            tfa_mode=$(echo "$profile_json" | jq -r '.tfa.mode // "disabled"')
+            if [ "$tfa_mode" = "auth-and-writes" ]; then
+              echo "::error::NPM account requires 2FA for publish (auth-and-writes). CI cannot provide OTP. Please use an Automation or Granular Access Token."
+              exit 1
+            fi
+          fi

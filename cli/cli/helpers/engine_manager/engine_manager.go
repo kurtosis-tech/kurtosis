@@ -47,6 +47,7 @@ type EngineManager struct {
 	onBastionHost                             bool
 	enclaveEnvVars                            string
 	allowedCORSOrigins                        *[]string
+	skipConfiguredGrafloki                    bool
 	// Make engine IP, port, and protocol configurable in the future
 }
 
@@ -103,10 +104,11 @@ func NewEngineManager(ctx context.Context) (*EngineManager, error) {
 		kurtosisBackend:   kurtosisBackend,
 		shouldSendMetrics: kurtosisConfig.GetShouldSendMetrics(),
 		engineServerKurtosisBackendConfigSupplier: engineBackendConfigSupplier,
-		clusterConfig:      clusterConfig,
-		onBastionHost:      onBastionHost,
-		enclaveEnvVars:     enclaveEnvVars,
-		allowedCORSOrigins: nil,
+		clusterConfig:          clusterConfig,
+		onBastionHost:          onBastionHost,
+		enclaveEnvVars:         enclaveEnvVars,
+		allowedCORSOrigins:     nil,
+		skipConfiguredGrafloki: false,
 	}, nil
 }
 
@@ -116,6 +118,10 @@ func NewEngineManager(ctx context.Context) (*EngineManager, error) {
 //	commands only access the Kurtosis APIs, we can remove this.
 func (manager *EngineManager) GetKurtosisBackend() backend_interface.KurtosisBackend {
 	return manager.kurtosisBackend
+}
+
+func (manager *EngineManager) SetSkipConfiguredGrafloki(skip bool) {
+	manager.skipConfiguredGrafloki = skip
 }
 
 // GetEngineStatus Returns:
@@ -200,7 +206,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(
 
 	var lokiSink logs_aggregator.Sinks
 	var grafanaUrl string
-	if manager.clusterConfig.GetGraflokiConfig().ShouldStartBeforeEngine {
+	if !manager.skipConfiguredGrafloki && manager.clusterConfig.GetGraflokiConfig().ShouldStartBeforeEngine {
 		lokiSink, grafanaUrl, err = grafloki.StartGrafloki(ctx, clusterType, manager.clusterConfig.GetGraflokiConfig())
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred starting Grafana and Loki before engine.")
@@ -267,7 +273,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 
 	var lokiSink logs_aggregator.Sinks
 	var grafanaUrl string
-	if manager.clusterConfig.GetGraflokiConfig().ShouldStartBeforeEngine {
+	if !manager.skipConfiguredGrafloki && manager.clusterConfig.GetGraflokiConfig().ShouldStartBeforeEngine {
 		lokiSink, grafanaUrl, err = grafloki.StartGrafloki(ctx, clusterType, manager.clusterConfig.GetGraflokiConfig())
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred starting Grafana and Loki before engine.")
@@ -493,7 +499,7 @@ func (manager *EngineManager) startEngineWithGuarantor(ctx context.Context, curr
 
 func getEngineClientFromHostMachineIpAndPort(hostMachineIpAndPort *hostMachineIpAndPort) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
 	url := hostMachineIpAndPort.GetURL()
-	conn, err := grpc.Dial(url, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(url, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred dialling Kurtosis engine at URL '%v'", url)
 	}

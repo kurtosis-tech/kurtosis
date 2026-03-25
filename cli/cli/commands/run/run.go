@@ -116,6 +116,9 @@ const (
 	parallelFlagKey = "parallel"
 	parallelDefault = "false"
 
+	resourceCheckFlagKey = "resource-check"
+	resourceCheckDefault = "true"
+
 	packageArgsFileFlagKey      = "args-file"
 	packageArgsFileDefaultValue = ""
 
@@ -262,6 +265,12 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Default: parallelDefault,
 		},
 		{
+			Key:     resourceCheckFlagKey,
+			Usage:   "If true, checks available CPU and memory before execution. Disable with --resource-check=false to save ~2s",
+			Type:    flags.FlagType_Bool,
+			Default: resourceCheckDefault,
+		},
+		{
 			Key:     outputGraphFlagKey,
 			Usage:   "If true, outputs a graph image of instructions as nodes and edges specifying dependencies between them",
 			Type:    flags.FlagType_Bool,
@@ -404,6 +413,11 @@ func run(
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", parallelFlagKey)
 	}
 
+	resourceCheck, err := flags.GetBool(resourceCheckFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", resourceCheckFlagKey)
+	}
+
 	shouldOutputGraph, err := flags.GetBool(outputGraphFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", outputGraphFlagKey)
@@ -439,6 +453,7 @@ func run(
 		starlark_run_config.WithImageDownloadMode(*imageDownload),
 		starlark_run_config.WithNonBlockingMode(nonBlockingMode),
 		starlark_run_config.WithParallel(isParallel),
+		starlark_run_config.WithResourceCheck(resourceCheck),
 	)
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
@@ -773,7 +788,7 @@ func getOrCreateEnclaveContext(
 		enclaveContext, err = kurtosisContext.CreateEnclave(ctx, enclaveIdentifierOrName)
 	}
 	if err != nil {
-		return nil, false, stacktrace.Propagate(err, fmt.Sprintf("Unable to create new enclave with name '%s'", enclaveIdentifierOrName))
+		return nil, false, stacktrace.Propagate(err, "%s", fmt.Sprintf("Unable to create new enclave with name '%s'", enclaveIdentifierOrName))
 	}
 	logrus.Infof("Enclave '%v' created successfully", enclaveContext.GetEnclaveName())
 	return enclaveContext, isNewEnclaveFlagWhenCreated, nil
@@ -1047,7 +1062,9 @@ func pullPackagesLocally(packageDependencies []string) (map[string]string, error
 				Username: "",
 				Password: "",
 			},
-			Shared: false,
+			Shared:     false,
+			ClientCert: nil,
+			ClientKey:  nil,
 		})
 		if err != nil && !errors.Is(err, git.ErrRepositoryAlreadyExists) {
 			return nil, stacktrace.Propagate(err, "An error occurred cloning package '%s' to '%s'.", dependency, localPackagePath)

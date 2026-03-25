@@ -160,6 +160,7 @@ func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rp
 	nonBlockingMode := args.GetNonBlockingMode()
 	downloadMode := convertFromImageDownloadModeAPI(ApiDownloadMode)
 	shouldExecuteInParallel := args.GetParallel()
+	shouldCheckResources := args.ResourceCheck == nil || args.GetResourceCheck()
 
 	metricsErr := apicService.metricsClient.TrackKurtosisRun(startosis_constants.PackageIdPlaceholderForStandaloneScript, isNotRemote, dryRun, isScript, serializedParams)
 	if metricsErr != nil {
@@ -179,6 +180,7 @@ func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rp
 		downloadMode,
 		nonBlockingMode,
 		shouldExecuteInParallel,
+		shouldCheckResources,
 		experimentalFeatures,
 		stream,
 	)
@@ -321,6 +323,7 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 	downloadMode := convertFromImageDownloadModeAPI(ApiDownloadMode)
 	nonBlockingMode := args.GetNonBlockingMode()
 	shouldExecuteInParallel := args.GetParallel()
+	shouldCheckResources := args.ResourceCheck == nil || args.GetResourceCheck()
 
 	packageGitHubAuthToken := args.GetGithubAuthToken()
 	if packageGitHubAuthToken != "" {
@@ -377,6 +380,7 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 		downloadMode,
 		nonBlockingMode,
 		shouldExecuteInParallel,
+		shouldCheckResources,
 		args.ExperimentalFeatures,
 		stream)
 
@@ -719,7 +723,7 @@ func (apicService *ApiContainerService) GetStarlarkPackagePlanYaml(ctx context.C
 		image_download_mode.ImageDownloadMode_Always,
 		instructions_plan.NewInstructionsPlan())
 	if apiInterpretationError != nil {
-		interpretationError = startosis_errors.NewInterpretationError(apiInterpretationError.GetErrorMessage())
+		interpretationError = startosis_errors.NewInterpretationError("%s", apiInterpretationError.GetErrorMessage())
 		return nil, stacktrace.Propagate(interpretationError, "An interpretation error occurred interpreting package for retrieving plan yaml for package: %v", packageIdFromArgs)
 	}
 	planYamlStr, err := instructionsPlan.GenerateYamlWithInstructions(plan_yaml.CreateEmptyPlan(packageIdFromArgs))
@@ -755,7 +759,7 @@ func (apicService *ApiContainerService) GetStarlarkScriptPlanYaml(ctx context.Co
 		instructions_plan.NewInstructionsPlan(),
 	)
 	if apiInterpretationError != nil {
-		return nil, startosis_errors.NewInterpretationError(apiInterpretationError.GetErrorMessage())
+		return nil, startosis_errors.NewInterpretationError("%s", apiInterpretationError.GetErrorMessage())
 	}
 	planYamlStr, err := instructionsPlan.GenerateYamlWithInstructions(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript))
 	if err != nil {
@@ -1039,10 +1043,11 @@ func (apicService *ApiContainerService) runStarlark(
 	imageDownloadMode image_download_mode.ImageDownloadMode,
 	nonBlockingMode bool,
 	shouldExecuteInParallel bool,
+	shouldCheckResources bool,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 	stream grpc.ServerStream,
 ) {
-	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, packageReplaceOptions, mainFunctionName, relativePathToMainFile, serializedStarlark, serializedParams, imageDownloadMode, nonBlockingMode, shouldExecuteInParallel, experimentalFeatures)
+	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, packageReplaceOptions, mainFunctionName, relativePathToMainFile, serializedStarlark, serializedParams, imageDownloadMode, nonBlockingMode, shouldExecuteInParallel, shouldCheckResources, experimentalFeatures)
 	for {
 		select {
 		case <-stream.Context().Done():
@@ -1210,6 +1215,7 @@ func getServiceInfoFromServiceObj(serviceObj *service.Service, serviceConfig *se
 		serviceConfig.GetLabels(),
 		serviceConfig.GetTiniEnabled(),
 		serviceConfig.GetTtyEnabled(),
+		serviceConfig.GetCapabilities(),
 	)
 
 	return serviceInfoResponse, nil
@@ -1266,7 +1272,7 @@ func getTextRepresentation(reader io.Reader, lineCount int) (*string, error) {
 				return nil, stacktrace.NewError("File has no text representation because '%v' is not printable", char)
 			}
 		}
-		textRepresentation.WriteString(fmt.Sprintf("%s\n", line))
+		fmt.Fprintf(&textRepresentation, "%s\n", line)
 	}
 
 	if err := scanner.Err(); err != nil {

@@ -196,6 +196,9 @@ message ServiceInfo {
 
   // Wheter TTy is enabled
   optional bool tty_enabled = 20;
+
+  // Linux capabilities to add to the container (e.g., "NET_ADMIN", "SYS_PTRACE")
+  repeated string capabilities = 21;
 }
 
 // ==============================================================================================
@@ -242,6 +245,9 @@ message RunStarlarkScriptArgs {
 
   // If true, executes the package in parallel meaning each instruction runs as soon as its dependencies are finished
   optional bool parallel = 17;
+
+  // If true, performs resource availability check before execution. Defaults to true.
+  optional bool resource_check = 18;
 }
 
 message RunStarlarkPackageArgs {
@@ -298,6 +304,9 @@ message RunStarlarkPackageArgs {
 
   // If true, executes the package in parallel meaning each instruction runs as soon as its dependencies are finished
   optional bool parallel = 17;
+
+  // If true, performs resource availability check before execution. Defaults to true.
+  optional bool resource_check = 18;
 }
 
 enum KurtosisFeatureFlag {

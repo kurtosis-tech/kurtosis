@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/stacktrace"
 	bolt "go.etcd.io/bbolt"
+	bbolterrors "go.etcd.io/bbolt/errors"
 )
 
 type FileArtifactPersisted struct {
@@ -126,7 +127,7 @@ func getFileArtifactsDbFromEnclaveDb(db *enclave_db.EnclaveDB, data *fileArtifac
 	err := db.Update(func(tx *bolt.Tx) error {
 		bucket, bucketErr := tx.CreateBucket(fileArtifactBucketName)
 		// New bucket was created
-		if errors.Is(bucketErr, bolt.ErrBucketExists) {
+		if errors.Is(bucketErr, bbolterrors.ErrBucketExists) {
 			content := tx.Bucket(fileArtifactBucketName).Get(fileArtifactDataStructKey)
 			if err := json.Unmarshal(content, data); err != nil {
 				return stacktrace.Propagate(err, "An error occurred restoring previous file artifact db state from '%v'", content)

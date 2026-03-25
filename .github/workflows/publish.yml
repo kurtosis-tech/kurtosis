@@ -6,23 +6,31 @@ on:
       - '[0-9]+.[0-9]+.[0-9]+'
 
 env:
-  GO_VERSION: '1.23.7'
+  GO_VERSION: '1.26.0'
   RUST_VERSION: '1.88.0'
-  API_NODE_VERSION: '16.13.0'
-  UI_NODE_VERSION: '18.19.0'
-  TILT_RELEASER_SHA: '9d05f87976ccdf8a3434443fac2b867ca99a81c8423008437c767c04784969e4'
+  API_NODE_VERSION: '22.16.0'
+  UI_NODE_VERSION: '22.16.0'
+  TILT_RELEASER_SHA: '304fa435c4b18d71d1aeae4578762625fc43ab69bc24656e20d150ee23dc2b2b'
 
 jobs:
+  # ============================================================================
+  # Verify Secrets
+  # ============================================================================
+  verify-npm-token:
+    uses: ./.github/workflows/verify-npm-token.yml
+    secrets: inherit
+
   # ============================================================================
   # Publish SDK/API Packages
   # ============================================================================
   publish-kurtosis-sdk-rust:
+    needs: verify-npm-token
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@631a55b12751854ce901bb631d5902ceb48146f7 # stable
         with:
           toolchain: ${{ env.RUST_VERSION }}
 
@@ -34,11 +42,12 @@ jobs:
           cargo publish
 
   publish-kurtosis-api-typescript:
+    needs: verify-npm-token
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: ${{ env.API_NODE_VERSION }}
           registry-url: 'https://registry.npmjs.org'
@@ -53,11 +62,12 @@ jobs:
         run: npm publish
 
   publish-kurtosis-ui-libs:
+    needs: verify-npm-token
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: ${{ env.UI_NODE_VERSION }}
           registry-url: 'https://registry.npmjs.org'
@@ -81,21 +91,22 @@ jobs:
   # Publish Docker Images
   # ============================================================================
   publish-files-artifacts-expander-image:
+    needs: verify-npm-token
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
           cache-dependency-path: core/files_artifacts_expander/go.sum
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
@@ -128,11 +139,12 @@ jobs:
           scripts/docker-image-builder.sh "${push_to_dockerhub}" "${dockerfile_filepath}" "${podman_mode}" "${image_name_with_version}" "${image_name_to_publish_semver}" "${image_name_to_publish_latest}"
 
   publish-api-container-server-image:
+    needs: verify-npm-token
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
@@ -144,10 +156,10 @@ jobs:
           sudo apt-get install -y protobuf-compiler
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
@@ -180,14 +192,15 @@ jobs:
           scripts/docker-image-builder.sh "${push_to_dockerhub}" "${dockerfile_filepath}" "${podman_mode}" "${image_name_with_version}" "${image_name_to_publish_semver}" "${image_name_to_publish_latest}"
 
   build-enclave-manager-webapp:
+    needs: verify-npm-token
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
           fetch-tags: true
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: ${{ env.UI_NODE_VERSION }}
           cache: 'yarn'
@@ -201,7 +214,7 @@ jobs:
       - name: Build
         run: enclave-manager/scripts/build.sh
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: enclave-manager-webapp
           path: engine/server/webapp/
@@ -209,17 +222,19 @@ jobs:
 
   publish-engine-server-image:
     runs-on: ubuntu-latest
-    needs: build-enclave-manager-webapp
+    needs:
+      - verify-npm-token
+      - build-enclave-manager-webapp
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
           cache-dependency-path: engine/server/go.sum
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: enclave-manager-webapp
           path: engine/server/webapp
@@ -230,10 +245,10 @@ jobs:
           scripts/generate-kurtosis-version.sh $version
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
@@ -269,44 +284,14 @@ jobs:
   # Publish CLI Artifacts
   # ============================================================================
   push-cli-artifacts:
-    runs-on: ubuntu-latest
-    container:
-      image: docker/tilt-releaser@sha256:9d05f87976ccdf8a3434443fac2b867ca99a81c8423008437c767c04784969e4
     needs:
       - publish-kurtosis-api-typescript
       - publish-kurtosis-sdk-rust
       - publish-api-container-server-image
       - publish-engine-server-image
       - publish-files-artifacts-expander-image
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Mark git directory as safe
-        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
-
-      - name: Install goreleaser
-        run: |
-          echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | tee /etc/apt/sources.list.d/goreleaser.list
-          apt update
-          apt install -y goreleaser
-
-      - name: Generate Kurtosis Version
-        run: |
-          version="$(cat version.txt)"
-          scripts/generate-kurtosis-version.sh $version
-
-      - name: Restore Go cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            /go/pkg/mod
-            /root/.cache/go-build
-          key: cli-go-mod-v2-${{ hashFiles('cli/cli/go.sum') }}
-          restore-keys: |
-            cli-go-mod-v2-
-
-      - name: Build and publish CLI
-        env:
-          GEMFURY_PUBLISH_TOKEN: ${{ secrets.GEMFURY_PUBLISH_TOKEN }}
-          KURTOSISBOT_GITHUB_TOKEN: ${{ secrets.KURTOSISBOT_GITHUB_TOKEN }}
-        run: cli/cli/scripts/build.sh true true
+    uses: ./.github/workflows/push-cli-artifacts.yml
+    with:
+      go-version: '1.26.0'
+    secrets:
+      KURTOSISBOT_GITHUB_TOKEN: ${{ secrets.KURTOSISBOT_GITHUB_TOKEN }}

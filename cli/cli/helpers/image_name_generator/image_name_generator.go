@@ -7,7 +7,7 @@ package image_name_generator
 
 import (
 	"fmt"
-	"github.com/docker/distribution/reference"
+	"github.com/distribution/reference"
 	"github.com/sirupsen/logrus"
 	"time"
 )

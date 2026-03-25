@@ -13,15 +13,14 @@ jobs:
     outputs:
       change: ${{ steps.check.outputs.change }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          go-version: '1.20'
           fetch-depth: 0
       - run: |
           if git --no-pager diff --exit-code origin/main...HEAD -- . ':!docs' ':!*.md'; then
-            echo "::set-output name=change::false"
+            echo "change=false" >> "$GITHUB_OUTPUT"
           else
-            echo "::set-output name=change::true"
+            echo "change=true" >> "$GITHUB_OUTPUT"
           fi
         id: check
   check-proto-break:
@@ -29,13 +28,14 @@ jobs:
     if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/setup-go@v5
-      with:
-        go-version: '1.20'
-    - run: go install github.com/bufbuild/buf/cmd/buf@v1.26.1
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         fetch-depth: 0
+    - uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
+      with:
+        go-version: '1.20'
+        cache: false
+    - run: go install github.com/bufbuild/buf/cmd/buf@v1.26.1
     - name: Check if PR is breaking
       run: |
         if [[ "${{ github.event.pull_request.title }}" == *'!'* ]]; then

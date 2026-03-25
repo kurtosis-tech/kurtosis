@@ -1,5 +1,72 @@
 # Changelog
 
+## [1.17.4](https://github.com/kurtosis-tech/kurtosis/compare/1.17.3...1.17.4) (2026-03-25)
+
+
+### Bug Fixes
+
+* **ci:** detect npm tokens that require OTP before publish ([#2976](https://github.com/kurtosis-tech/kurtosis/issues/2976)) ([71f3938](https://github.com/kurtosis-tech/kurtosis/commit/71f393855ab2962dc57e65e2f271614ca1a3f4ed))
+
+## [1.17.3](https://github.com/kurtosis-tech/kurtosis/compare/1.17.2...1.17.3) (2026-03-25)
+
+
+### Bug Fixes
+
+* **ci:** fix verify-npm-token job being skipped during publish ([#2974](https://github.com/kurtosis-tech/kurtosis/issues/2974)) ([20410c9](https://github.com/kurtosis-tech/kurtosis/commit/20410c93e1d7777204ffce071052fb4ccafe9337))
+
+## [1.17.2](https://github.com/kurtosis-tech/kurtosis/compare/1.17.1...1.17.2) (2026-03-25)
+
+
+### Miscellaneous Chores
+
+* trigger 1.17.2 (again) ([#2972](https://github.com/kurtosis-tech/kurtosis/issues/2972)) ([fa8387c](https://github.com/kurtosis-tech/kurtosis/commit/fa8387c296cab0ec6f6a7550d7e2e05e336ae49d))
+
+## [1.17.1](https://github.com/kurtosis-tech/kurtosis/compare/1.17.0...1.17.1) (2026-03-24)
+
+
+### Bug Fixes
+
+* update publish workflow language versions to match build ([#2965](https://github.com/kurtosis-tech/kurtosis/issues/2965)) ([9fe7b87](https://github.com/kurtosis-tech/kurtosis/commit/9fe7b877a8272bed9766f2bdd219557ab5917ae9))
+
+## [1.17.0](https://github.com/kurtosis-tech/kurtosis/compare/1.16.6...1.17.0) (2026-03-24)
+
+
+### Features
+
+* add --resource-check CLI flag to skip resource validation ([#2928](https://github.com/kurtosis-tech/kurtosis/issues/2928)) ([672539b](https://github.com/kurtosis-tech/kurtosis/commit/672539bb34286d9c508292480f1f531d1b03a821))
+* Add a Loki-only CLI start command ([#2938](https://github.com/kurtosis-tech/kurtosis/issues/2938)) ([7c918ce](https://github.com/kurtosis-tech/kurtosis/commit/7c918cea156388416c52f7f02b217bddcdac45b8))
+* add skills ([#2916](https://github.com/kurtosis-tech/kurtosis/issues/2916)) ([01b33a2](https://github.com/kurtosis-tech/kurtosis/commit/01b33a2f964ac072a1a28963d3150bca98fc0245))
+* cache compressed archives for package uploads ([#2929](https://github.com/kurtosis-tech/kurtosis/issues/2929)) ([256736e](https://github.com/kurtosis-tech/kurtosis/commit/256736e28f52549cbc61a352f6033836b78570c8))
+* improve skill scores across 8 skills ([#2949](https://github.com/kurtosis-tech/kurtosis/issues/2949)) ([516411f](https://github.com/kurtosis-tech/kurtosis/commit/516411f7ad331b25a23781ae954e328712e44a18))
+* Migrate install instructions from Gemfury to GitHub Pages ([#2932](https://github.com/kurtosis-tech/kurtosis/issues/2932)) ([313c281](https://github.com/kurtosis-tech/kurtosis/commit/313c28166a7588e72fe522fc7556a674682802af))
+
+
+### Bug Fixes
+
+* add Release and Translation files to apt repository ([#2931](https://github.com/kurtosis-tech/kurtosis/issues/2931)) ([7b27b00](https://github.com/kurtosis-tech/kurtosis/commit/7b27b00d3e4e3f4452b056f51f6e1350438ac8c5))
+* **ci:** allow build workflow to run on fork PRs targeting main ([#2946](https://github.com/kurtosis-tech/kurtosis/issues/2946)) ([7cc1b2f](https://github.com/kurtosis-tech/kurtosis/commit/7cc1b2fc5c4924992501521a8ec731a07702165d))
+* **ci:** build golangci-lint from source for Go 1.26 ([#2955](https://github.com/kurtosis-tech/kurtosis/issues/2955)) ([8448b7a](https://github.com/kurtosis-tech/kurtosis/commit/8448b7aee7bb365c218a387fdc3385191cacebd6))
+* correct malformed markdown link in docs ([#2963](https://github.com/kurtosis-tech/kurtosis/issues/2963)) ([4247107](https://github.com/kurtosis-tech/kurtosis/commit/42471076a12f73f864a9d4a3b105105554debee4))
+* fallback to registry key without https:// prefix in docker auth lookup ([#2937](https://github.com/kurtosis-tech/kurtosis/issues/2937)) ([bad9f4d](https://github.com/kurtosis-tech/kurtosis/commit/bad9f4d29e44514f6652cf0c376884169a450578))
+* join replace local path only when it is relative ([#2950](https://github.com/kurtosis-tech/kurtosis/issues/2950)) ([84eafeb](https://github.com/kurtosis-tech/kurtosis/commit/84eafeb3db52aa1a77c5b18c0f2a838982eb2f84))
+* parallel execution dependency graph for exec, start_service, stop_service ([#2930](https://github.com/kurtosis-tech/kurtosis/issues/2930)) ([9c11a8a](https://github.com/kurtosis-tech/kurtosis/commit/9c11a8a6e601c2b36c774d8940c0a7a5f93044ab))
+* pass node selectors and tolerations to availability-check-pod ([#2962](https://github.com/kurtosis-tech/kurtosis/issues/2962)) ([d17156c](https://github.com/kurtosis-tech/kurtosis/commit/d17156c68740ab5b35e0fa4be033711f1906037b))
+* remove unused CloudAddCmdStr constant ([#2861](https://github.com/kurtosis-tech/kurtosis/issues/2861)) ([6dff626](https://github.com/kurtosis-tech/kurtosis/commit/6dff6266edfdb053269f6463e8a577622b6e7830))
+* replace deprecated mholt/archiver with mholt/archives (CVE-2025-3445) ([#2947](https://github.com/kurtosis-tech/kurtosis/issues/2947)) ([f247506](https://github.com/kurtosis-tech/kurtosis/commit/f24750654248127d8ead8c717a13bed415d24d92))
+* **tests:** guard against nil RunScript result in integration tests ([#2934](https://github.com/kurtosis-tech/kurtosis/issues/2934)) ([2b0d260](https://github.com/kurtosis-tech/kurtosis/commit/2b0d26035468e863d777ab37172f0edca2676acc))
+
+
+### Performance Improvements
+
+* **ci:** shard k8s golang testsuite into 4 parallel runners ([#2945](https://github.com/kurtosis-tech/kurtosis/issues/2945)) ([ccf5d35](https://github.com/kurtosis-tech/kurtosis/commit/ccf5d35641b2550481fcdd3eff8660b75e14c200))
+
+## [1.16.6](https://github.com/kurtosis-tech/kurtosis/compare/1.16.5...1.16.6) (2026-03-05)
+
+
+### Miscellaneous Chores
+
+* Release-As:1.16.6 ([#2925](https://github.com/kurtosis-tech/kurtosis/issues/2925)) ([5cb43c4](https://github.com/kurtosis-tech/kurtosis/commit/5cb43c47433acf482b22bbc21706f24c5ee2f222))
+
 ## [1.16.5](https://github.com/kurtosis-tech/kurtosis/compare/1.16.4...1.16.5) (2026-03-04)
 
 

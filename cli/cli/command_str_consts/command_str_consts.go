@@ -13,7 +13,6 @@ var KurtosisCmdStr = path.Base(os.Args[0])
 const (
 	Analytics               = "analytics"
 	CleanCmdStr             = "clean"
-	CloudAddCmdStr          = "add"
 	CloudCmdStr             = "cloud"
 	CloudLoadCmdStr         = "load"
 	ClusterCmdStr           = "cluster"
@@ -82,6 +81,8 @@ const (
 	GitHubLogoutCmdStr      = "logout"
 	GitHubTokenCmdStr       = "token"
 	GitHubStatusCmdStr      = "status"
+	LokiCmdStr              = "loki"
+	LokiStartCmdStr         = "start"
 	GraflokiCmdStr          = "grafloki"
 	GraflokiStartCmdStr     = "start"
 	GraflokiStopCmdStr      = "stop"

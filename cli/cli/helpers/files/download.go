@@ -3,11 +3,12 @@ package files
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
-	"github.com/kurtosis-tech/stacktrace"
-	"github.com/mholt/archiver"
 	"os"
 	"path"
+
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
+	path_compression "github.com/kurtosis-tech/kurtosis/path-compression"
+	"github.com/kurtosis-tech/stacktrace"
 )
 
 const (
@@ -57,7 +58,7 @@ func DownloadAndExtractFilesArtifact(ctx context.Context, enclaveCtx *enclaves.E
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while writing bytes to file '%v' with permission '%v'", tmpDirPath, filesArtifactPermission)
 	}
-	err = archiver.Unarchive(tmpFileToWriteTo, absoluteDestinationPath)
+	err = path_compression.Unarchive(tmpFileToWriteTo, absoluteDestinationPath)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while extracting '%v' to '%v'", tmpFileToWriteTo, absoluteDestinationPath)
 	}
