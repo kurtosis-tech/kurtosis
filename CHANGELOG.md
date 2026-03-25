@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.17.6](https://github.com/kurtosis-tech/kurtosis/compare/1.17.5...1.17.6) (2026-03-25)
+
+
+### Bug Fixes
+
+* **ci:** restore cross-compilation config and add release dry-run to CI ([#2984](https://github.com/kurtosis-tech/kurtosis/issues/2984)) ([9b36184](https://github.com/kurtosis-tech/kurtosis/commit/9b36184a49181c62c3e0c05c9a623dc932e3cd89))
+
 ## [1.17.5](https://github.com/kurtosis-tech/kurtosis/compare/1.17.4...1.17.5) (2026-03-25)
 
 
