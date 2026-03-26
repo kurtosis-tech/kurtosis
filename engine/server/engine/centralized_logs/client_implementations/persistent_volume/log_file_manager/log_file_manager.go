@@ -72,6 +72,15 @@ func (manager *LogFileManager) StartLogFileManagement(ctx context.Context) {
 		// The LogsAggregator is configured to write logs to three different log file paths, one for uuid, service name, and shortened uuid
 		// This is so that the logs are retrievable by each identifier even when enclaves are stopped. More context on this here: https://github.com/kurtosis-tech/kurtosis/pull/1213
 		// To prevent storing duplicate logs, the CreateLogFiles will ensure that the service name and short uuid log files are just symlinks to the uuid log file path
+
+		// Create log files immediately on startup so they exist before anyone queries for logs
+		logrus.Debug("Creating log file paths on startup...")
+		if err := manager.CreateLogFiles(ctx); err != nil {
+			logrus.Errorf("An error occurred creating log file paths on startup: %v", err)
+		} else {
+			logrus.Debug("Successfully created log file paths on startup.")
+		}
+
 		logFileCreatorTicker := time.NewTicker(volume_consts.CreateLogsWaitMinutes)
 
 		logrus.Debugf("Scheduling log file path creation every '%v' minutes...", volume_consts.CreateLogsWaitMinutes)

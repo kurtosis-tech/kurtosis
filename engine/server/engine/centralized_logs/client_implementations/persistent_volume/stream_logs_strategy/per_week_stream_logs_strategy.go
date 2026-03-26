@@ -60,11 +60,7 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 		return
 	}
 	if len(paths) == 0 {
-		streamErrChan <- stacktrace.NewError(
-			`No logs file paths for service '%v' in enclave '%v' were found. This means either:
-					1) No logs for this service were detected/stored.
-					2) Logs were manually removed.`,
-			serviceUuid, enclaveUuid)
+		logrus.Warnf("No log file paths found for service '%v' in enclave '%v'; logs may not have been flushed to disk yet.", serviceUuid, enclaveUuid)
 		return
 	}
 	if len(paths) > strategy.logRetentionPeriodInWeeks {
