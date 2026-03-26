@@ -34,5 +34,12 @@ runs:
       shell: bash
       run: |
         echo "Waiting for engine to be fully ready..."
-        sleep 5
+        for i in $(seq 1 30); do
+          if ${{ inputs.kurtosis-binpath }} engine status 2>/dev/null; then
+            echo "Engine is ready after ${i} attempts"
+            break
+          fi
+          echo "Attempt ${i}: engine not ready, retrying in 2s..."
+          sleep 2
+        done
         ${{ inputs.kurtosis-binpath }} engine status

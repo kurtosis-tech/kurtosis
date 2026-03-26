@@ -78,3 +78,17 @@ runs:
     - name: Run Kurtosis gateway (background)
       shell: bash
       run: ${{ inputs.kurtosis-binpath }} gateway &
+
+    - name: Wait for engine and gateway to be ready
+      shell: bash
+      run: |
+        echo "Waiting for engine and gateway to be fully ready..."
+        for i in $(seq 1 30); do
+          if ${{ inputs.kurtosis-binpath }} engine status 2>/dev/null; then
+            echo "Engine is ready after ${i} attempts"
+            break
+          fi
+          echo "Attempt ${i}: engine not ready, retrying in 2s..."
+          sleep 2
+        done
+        ${{ inputs.kurtosis-binpath }} engine status

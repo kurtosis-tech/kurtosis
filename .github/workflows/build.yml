@@ -1148,7 +1148,18 @@ jobs:
       - name: Test reverse proxy
         run: |
           ${KURTOSIS_BINPATH} enclave add --name test-enclave
-          ${KURTOSIS_BINPATH} service add test-enclave test1 httpd --ports http=http:80/tcp
+          for i in $(seq 1 10); do
+            if ${KURTOSIS_BINPATH} service add test-enclave test1 httpd --ports http=http:80/tcp 2>&1; then
+              echo "Service added successfully after ${i} attempts"
+              break
+            fi
+            echo "Attempt ${i}: service add failed, APIC may not be ready. Retrying in 5s..."
+            sleep 5
+            if [ "${i}" = "10" ]; then
+              echo "Failed to add service after 10 attempts"
+              exit 1
+            fi
+          done
           enclave_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | grep "^UUID:" | awk '{print $2}')
           service_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | tail -2 | awk '{print $1}')
           for i in $(seq 1 30); do
@@ -1157,7 +1168,7 @@ jobs:
               echo "Reverse proxy responded with 200 after ${i} attempts"
               break
             fi
-            echo "Attempt ${i}: got ${status_code}, retrying..."
+            echo "Attempt ${i}: got ${status_code}, retrying in 2s..."
             sleep 2
           done
           if [ "${status_code}" != "200" ]; then
