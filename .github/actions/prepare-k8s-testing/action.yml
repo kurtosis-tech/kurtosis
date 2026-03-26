@@ -41,9 +41,20 @@ runs:
       shell: bash
       run: |
         kurtosis_version="$(./scripts/get-docker-tag.sh)"
-        k3d image import "kurtosistech/core:$kurtosis_version" \
-                         "kurtosistech/engine:$kurtosis_version" \
-                         "kurtosistech/files-artifacts-expander:$kurtosis_version"
+        for i in $(seq 1 3); do
+          if k3d image import "kurtosistech/core:$kurtosis_version" \
+                              "kurtosistech/engine:$kurtosis_version" \
+                              "kurtosistech/files-artifacts-expander:$kurtosis_version" 2>&1; then
+            echo "Images imported successfully on attempt ${i}"
+            break
+          fi
+          echo "Attempt ${i}: k3d image import failed, retrying in 5s..."
+          sleep 5
+          if [ "${i}" = "3" ]; then
+            echo "Failed to import images after 3 attempts"
+            exit 1
+          fi
+        done
 
     - name: Configure Kurtosis for K8s
       shell: bash

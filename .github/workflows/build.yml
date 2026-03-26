@@ -579,8 +579,22 @@ jobs:
         run: ${KURTOSIS_BINPATH} run --enclave args-file-test internal_testsuites/starlark/ci_tests/simple_arg_test/main.star --args-file internal_testsuites/starlark/ci_tests/simple_arg_test/args.json
 
       # Execute Simple Starlark Script to test --args-file from URL
+      # Retry because raw.githubusercontent.com can return rate-limited/error responses
       - name: Test args-file from URL
-        run: ${KURTOSIS_BINPATH} run --enclave args-file-from-url-test internal_testsuites/starlark/ci_tests/simple_arg_test/main.star --args-file https://raw.githubusercontent.com/kurtosis-tech/sample-startosis-load/main/args.json
+        run: |
+          for i in $(seq 1 3); do
+            if ${KURTOSIS_BINPATH} run --enclave args-file-from-url-test internal_testsuites/starlark/ci_tests/simple_arg_test/main.star --args-file https://raw.githubusercontent.com/kurtosis-tech/sample-startosis-load/main/args.json 2>&1; then
+              echo "args-file from URL test passed on attempt ${i}"
+              break
+            fi
+            echo "Attempt ${i} failed, retrying in 5s..."
+            ${KURTOSIS_BINPATH} enclave rm -f args-file-from-url-test 2>/dev/null || true
+            sleep 5
+            if [ "${i}" = "3" ]; then
+              echo "args-file from URL test failed after 3 attempts"
+              exit 1
+            fi
+          done
 
       # Execute github starlark module
       - name: Test github starlark module
