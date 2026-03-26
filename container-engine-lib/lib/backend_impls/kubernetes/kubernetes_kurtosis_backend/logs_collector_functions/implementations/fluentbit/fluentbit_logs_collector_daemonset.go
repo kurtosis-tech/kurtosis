@@ -25,8 +25,8 @@ import (
 const (
 	httpProtocolStr       = "http"
 	emptyUrl              = ""
-	retryInterval         = 1 * time.Second
-	maxRetries            = 30
+	retryInterval         = 2 * time.Second
+	maxRetries            = 60
 	perNodeCleanupTimeout = 2 * time.Minute
 )
 

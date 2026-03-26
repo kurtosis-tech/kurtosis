@@ -29,6 +29,9 @@ const (
 
 	testTimeOut = 180 * time.Second
 
+	maxLogRetrievalRetries    = 10
+	logRetrievalRetryInterval = 10 * time.Second
+
 	logLine1 = "Starting feature 'centralized logs'"
 	logLine2 = "Starting feature 'enclave pool'"
 	logLine3 = "Starting feature 'enclave pool with size 2'"
@@ -140,18 +143,49 @@ func TestPersistedLogs(t *testing.T) {
 
 		shouldFollowLogsOption := shouldFollowLogsValueByRequest[requestIndex]
 
-		receivedLogLinesByService, receivedNotFoundServiceUuids, testEvaluationErr := test_helpers.GetLogsResponse(
-			t,
-			ctx,
-			testTimeOut,
-			kurtosisCtx,
-			string(enclaveUuid),
-			userServiceUuids,
-			expectedLogLinesByService,
-			shouldFollowLogsOption,
-			&filter,
-		)
+		var receivedLogLinesByService map[services.ServiceUUID][]string
+		var receivedNotFoundServiceUuids map[services.ServiceUUID]bool
+		var testEvaluationErr error
+		var logsRetrieved bool
 
+		for attempt := 0; attempt < maxLogRetrievalRetries; attempt++ {
+			receivedLogLinesByService, receivedNotFoundServiceUuids, testEvaluationErr = test_helpers.GetLogsResponse(
+				t,
+				ctx,
+				testTimeOut,
+				kurtosisCtx,
+				string(enclaveUuid),
+				userServiceUuids,
+				expectedLogLinesByService,
+				shouldFollowLogsOption,
+				&filter,
+			)
+
+			if testEvaluationErr != nil {
+				t.Logf("Attempt %d: error retrieving logs: %v", attempt+1, testEvaluationErr)
+				time.Sleep(logRetrievalRetryInterval)
+				continue
+			}
+
+			logsRetrieved = true
+			for serviceUuid := range userServiceUuids {
+				expectedLogLines := expectedLogLinesByRequest[requestIndex]
+				receivedLogLines := receivedLogLinesByService[serviceUuid]
+				if len(receivedLogLines) < len(expectedLogLines) {
+					logsRetrieved = false
+					t.Logf("Attempt %d: expected %d log lines for service %s, got %d. Retrying...",
+						attempt+1, len(expectedLogLines), serviceUuid, len(receivedLogLines))
+					break
+				}
+			}
+
+			if logsRetrieved {
+				break
+			}
+			time.Sleep(logRetrievalRetryInterval)
+		}
+
+		require.True(t, logsRetrieved, "Failed to retrieve expected logs after %d attempts", maxLogRetrievalRetries)
 		require.NoError(t, testEvaluationErr)
 		for serviceUuid := range userServiceUuids {
 			for logNum, expectedLogLine := range expectedLogLinesByRequest[requestIndex] {
