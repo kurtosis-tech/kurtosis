@@ -187,9 +187,9 @@
   integrity sha512-JJulVEQXmiY9Px5axXHeYGLSjhkZEnD+MDPDGbCbIAbMslkKwmygtZFy1X6s/075Yo94sf8GuSlFfPzysQrWZQ==
 
 "@types/path-browserify@^1.0.0":
-  version "1.0.0"
-  resolved "https://registry.npmjs.org/@types/path-browserify/-/path-browserify-1.0.0.tgz"
-  integrity sha512-XMCcyhSvxcch8b7rZAtFAaierBYdeHXVvg2iYnxOV0MCQHmPuRRmGZPFDRzPayxcGiiSL1Te9UIO+f3cuj0tfw==
+  version "1.0.3"
+  resolved "https://registry.npmjs.org/@types/path-browserify/-/path-browserify-1.0.3.tgz"
+  integrity sha512-ZmHivEbNCBtAfcrFeBCiTjdIc2dey0l7oCGNGpSuRTy8jP6UVND7oUowlvDujBy8r2Hoa8bfFUOCiPWfmtkfxw==
 
 "@types/semver@^7.3.9":
   version "7.3.12"
