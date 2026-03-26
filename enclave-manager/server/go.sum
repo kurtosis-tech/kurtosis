@@ -89,8 +89,8 @@ github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409 h1:YQTATi
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409/go.mod h1:y5weVs5d9wXXHcDA1awRxkIhhHC1xxYJN8a7aXnE6S8=
 github.com/mholt/archiver v3.1.1+incompatible h1:1dCVxuqs0dJseYEhi5pl7MYPH9zDa1wBi7mF09cbNkU=
 github.com/mholt/archiver v3.1.1+incompatible/go.mod h1:Dh2dOXnSdiLxRiPoVfIr/fI1TwETms9B8CTWfeh7ROU=
-github.com/moby/buildkit v0.28.0 h1:rKulfRRSduHJPNpLTk481fHElqN9tps0VUx8YV/5zsA=
-github.com/moby/buildkit v0.28.0/go.mod h1:RCuOcj/bVsCriBG8NeFzRxjiCFQKnKP7KOVlNTS18t4=
+github.com/moby/buildkit v0.28.1 h1:Tq6H6gOMU2JyEQ5rA0pa7Ey3VGNR3qpw90liSIpMQoo=
+github.com/moby/buildkit v0.28.1/go.mod h1:xO6wb9VBXszkIBxaGTLXc1rQORVQFIJRt3GSX7KzCFc=
 github.com/moby/docker-image-spec v1.3.1 h1:jMKff3w6PgbfSa69GfNg+zN/XLhfXJGnEx3Nl2EsFP0=
 github.com/moby/docker-image-spec v1.3.1/go.mod h1:eKmb5VW8vQEh/BAr2yvVNvuiJuY6UIocYsFu/DxxRpo=
 github.com/moby/sys/atomicwriter v0.1.0 h1:kw5D/EqkBwsBFi0ss9v1VG3wIkVhzGvLklJ+w3A14Sw=
