@@ -25,6 +25,7 @@ updates:
       interval: "weekly"
     groups:
       all-go-deps:
+        group-by: dependency-name
         patterns:
           - "*"
 
@@ -39,6 +40,7 @@ updates:
       interval: "weekly"
     groups:
       all-npm-deps:
+        group-by: dependency-name
         patterns:
           - "*"
 
@@ -48,5 +50,6 @@ updates:
       interval: "weekly"
     groups:
       all-actions:
+        group-by: dependency-name
         patterns:
           - "*"
