@@ -5,7 +5,7 @@ go 1.26.0
 require (
 	connectrpc.com/connect v1.19.1
 	github.com/google/go-github/v60 v60.0.0
-	github.com/kurtosis-tech/kurtosis/api/golang v1.17.5
+	github.com/kurtosis-tech/kurtosis/api/golang v1.17.7
 	github.com/kurtosis-tech/kurtosis/cloud/api/golang v0.0.0-20230828153722-32770ca96513
 	github.com/kurtosis-tech/kurtosis/connect-server v0.0.0-20230828153722-32770ca96513
 	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0-20240325164203-1197d5589b85
