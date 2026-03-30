@@ -33,15 +33,31 @@ brew update && brew upgrade kurtosis-tech/tap/kurtosis-cli
 </TabItem>
 <TabItem value="apt" label="apt (Ubuntu)">
 
+First, ensure your apt source points to the current repository:
 ```bash
-apt update && apt install --only-upgrade kurtosis-cli
+echo "deb [trusted=yes] https://sdk.kurtosis.com/kurtosis-cli-release-artifacts/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+```
+
+Then upgrade:
+```bash
+sudo apt update && sudo apt install --only-upgrade kurtosis-cli
 ```
 
 </TabItem>
 <TabItem value="yum" label="yum (RHEL)">
 
+First, ensure your yum repo points to the current repository:
 ```bash
-yum update && upgrade kurtosis-cli
+echo '[kurtosis]
+name=Kurtosis
+baseurl=https://sdk.kurtosis.com/kurtosis-cli-release-artifacts/rpm/
+enabled=1
+gpgcheck=0' | sudo tee /etc/yum.repos.d/kurtosis.repo
+```
+
+Then upgrade:
+```bash
+sudo yum makecache && sudo yum upgrade kurtosis-cli
 ```
 
 </TabItem>
