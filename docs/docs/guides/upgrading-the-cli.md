@@ -16,6 +16,20 @@ The instructions in this guide assume you already have Kurtosis installed, and w
 
 If you're looking to install Kurtosis, [see here][install-guide].
 
+:::warning Migrating from Gemfury?
+The old Gemfury-hosted apt/yum repositories (`apt.fury.io/kurtosis-tech` and `yum.fury.io/kurtosis-tech`) are **no longer supported**. If you previously installed Kurtosis via Gemfury, switch to the new repository before upgrading:
+
+**apt (Ubuntu/Debian):**
+```bash
+echo "deb [trusted=yes] https://sdk.kurtosis.com/kurtosis-cli-release-artifacts/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list && sudo apt update
+```
+
+**yum (RHEL/CentOS):**
+```bash
+sudo sed -i 's|https://yum.fury.io/kurtosis-tech/|https://sdk.kurtosis.com/kurtosis-cli-release-artifacts/rpm/|' /etc/yum.repos.d/kurtosis.repo && sudo yum makecache
+```
+:::
+
 I. Check breaking changes
 ---------------------------------
 You can check the version of the CLI you're running with `kurtosis version`. Before upgrading to the latest version, check [the changelog to see if there are any breaking changes][cli-changelog] before proceeding with the steps below to upgrade.
@@ -33,12 +47,6 @@ brew update && brew upgrade kurtosis-tech/tap/kurtosis-cli
 </TabItem>
 <TabItem value="apt" label="apt (Ubuntu)">
 
-First, ensure your apt source points to the current repository:
-```bash
-echo "deb [trusted=yes] https://sdk.kurtosis.com/kurtosis-cli-release-artifacts/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-```
-
-Then upgrade:
 ```bash
 sudo apt update && sudo apt install --only-upgrade kurtosis-cli
 ```
@@ -46,16 +54,6 @@ sudo apt update && sudo apt install --only-upgrade kurtosis-cli
 </TabItem>
 <TabItem value="yum" label="yum (RHEL)">
 
-First, ensure your yum repo points to the current repository:
-```bash
-echo '[kurtosis]
-name=Kurtosis
-baseurl=https://sdk.kurtosis.com/kurtosis-cli-release-artifacts/rpm/
-enabled=1
-gpgcheck=0' | sudo tee /etc/yum.repos.d/kurtosis.repo
-```
-
-Then upgrade:
 ```bash
 sudo yum makecache && sudo yum upgrade kurtosis-cli
 ```
