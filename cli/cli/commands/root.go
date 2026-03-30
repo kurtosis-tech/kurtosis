@@ -217,7 +217,15 @@ func checkCLIVersion(cmd *cobra.Command) {
 	}
 
 	if !isLatestVersion {
-		logrus.Warningf("You are running an old version of the Kurtosis CLI; we suggest you to update it to the latest version, '%v'. You can manually upgrade the CLI tool following these instructions: %v", latestVersion, user_support_constants.UpgradeCLIInstructionsPage)
+		upgradeMsg := fmt.Sprintf("You are running an old version of the Kurtosis CLI; we suggest you to update it to the latest version, '%v'. You can manually upgrade the CLI tool following these instructions: %v", latestVersion, user_support_constants.UpgradeCLIInstructionsPage)
+
+		gemfuryMaxVersion := semver.MustParse("1.15.6")
+		currentVersion, parseErr := semver.NewVersion(kurtosis_version.KurtosisVersion)
+		if parseErr == nil && !currentVersion.GreaterThan(gemfuryMaxVersion) {
+			upgradeMsg += " . If using apt/yum, ensure your repo points to sdk.kurtosis.com (the old Gemfury repo is no longer supported)."
+		}
+
+		logrus.Warning(upgradeMsg)
 	}
 }
 
