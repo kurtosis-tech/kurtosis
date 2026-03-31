@@ -32,7 +32,7 @@ require (
 
 require (
 	github.com/compose-spec/compose-go v1.20.2
-	github.com/go-git/go-git/v5 v5.17.1
+	github.com/go-git/go-git/v5 v5.17.2
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/hashicorp/go-envparse v0.1.0
 	github.com/itchyny/gojq v0.12.18
