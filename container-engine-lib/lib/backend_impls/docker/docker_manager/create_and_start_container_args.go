@@ -39,6 +39,7 @@ type CreateAndStartContainerArgs struct {
 	user                                     *service_user.ServiceUser
 	imageRegistrySpec                        *image_registry_spec.ImageRegistrySpec
 	devices                                  []string
+	shmSizeMegabytes                         uint64
 }
 
 // Builder for creating CreateAndStartContainerArgs object
@@ -70,6 +71,7 @@ type CreateAndStartContainerArgsBuilder struct {
 	user                                     *service_user.ServiceUser
 	imageRegistrySpec                        *image_registry_spec.ImageRegistrySpec
 	devices                                  []string
+	shmSizeMegabytes                         uint64
 }
 
 /*
@@ -108,11 +110,17 @@ func NewCreateAndStartContainerArgsBuilder(dockerImage string, name string, netw
 		user:                                     nil,
 		imageRegistrySpec:                        nil,
 		devices:                                  []string{},
+		shmSizeMegabytes:                         0,
 	}
 }
 
 func (builder *CreateAndStartContainerArgsBuilder) WithDevices(devices []string) *CreateAndStartContainerArgsBuilder {
 	builder.devices = devices
+	return builder
+}
+
+func (builder *CreateAndStartContainerArgsBuilder) WithShmSizeMegabytes(shmSizeMegabytes uint64) *CreateAndStartContainerArgsBuilder {
+	builder.shmSizeMegabytes = shmSizeMegabytes
 	return builder
 }
 
@@ -145,6 +153,7 @@ func (builder *CreateAndStartContainerArgsBuilder) Build() *CreateAndStartContai
 		user:                                     builder.user,
 		imageRegistrySpec:                        builder.imageRegistrySpec,
 		devices:                                  builder.devices,
+		shmSizeMegabytes:                         builder.shmSizeMegabytes,
 	}
 }
 

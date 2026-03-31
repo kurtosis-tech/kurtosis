@@ -559,6 +559,7 @@ func createStartServiceOperation(
 		devices := serviceConfig.GetDevices()
 		publishUdp := serviceConfig.GetPublishUdp()
 		capabilities := serviceConfig.GetCapabilities()
+		shmSizeMegabytes := serviceConfig.GetShmSizeMegabytes()
 
 		// We replace the placeholder value with the actual private IP address
 		privateIPAddrStr := privateIpAddr.String()
@@ -757,6 +758,10 @@ func createStartServiceOperation(
 				capabilitiesSet[docker_manager.ContainerCapability(cap)] = true
 			}
 			createAndStartArgsBuilder.WithAddedCapabilities(capabilitiesSet)
+		}
+
+		if shmSizeMegabytes > 0 {
+			createAndStartArgsBuilder.WithShmSizeMegabytes(shmSizeMegabytes)
 		}
 
 		createAndStartArgs := createAndStartArgsBuilder.Build()

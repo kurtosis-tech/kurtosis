@@ -328,7 +328,8 @@ func getServiceConfig(
 		tiniEnabled,
 		false,
 		[]string{},
-		false)
+		false,
+		0)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating service config")
 	}

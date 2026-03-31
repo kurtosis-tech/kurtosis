@@ -57,6 +57,7 @@ const (
 	DevicesAttr                     = "devices"
 	PublishUdpAttr                  = "publish_udp"
 	CapabilitiesAttr                = "capabilities"
+	ShmSizeMegabytesAttr            = "shm_size"
 
 	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
@@ -255,6 +256,14 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
 					Validator:         nil,
+				},
+				{
+					Name:              ShmSizeMegabytesAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Int],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return builtin_argument.Uint64InRange(value, ShmSizeMegabytesAttr, 0, math.MaxUint64)
+					},
 				},
 			},
 		},
@@ -611,6 +620,18 @@ func (config *ServiceConfig) ToKurtosisType(
 		}
 	}
 
+	var shmSizeMegabytes uint64
+	shmSizeMegabytesStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Int](config.KurtosisValueTypeDefault, ShmSizeMegabytesAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found {
+		shmSizeMegabytes, ok = shmSizeMegabytesStarlark.Uint64()
+		if !ok {
+			return nil, startosis_errors.NewInterpretationError("An error occurred parsing field '%v' with value '%v' to uint64", ShmSizeMegabytesAttr, shmSizeMegabytesStarlark)
+		}
+	}
+
 	serviceConfig, err := service.CreateServiceConfig(
 		imageName,
 		maybeImageBuildSpec,
@@ -637,6 +658,7 @@ func (config *ServiceConfig) ToKurtosisType(
 		ttyEnabled,
 		devices,
 		publishUdp,
+		shmSizeMegabytes,
 	)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating a service config")

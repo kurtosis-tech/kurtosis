@@ -316,6 +316,7 @@ func createStartServiceOperation(
 		imageDownloadMode := serviceConfig.GetImageDownloadMode()
 		devices := serviceConfig.GetDevices()
 		capabilities := serviceConfig.GetCapabilities()
+		shmSizeMegabytes := serviceConfig.GetShmSizeMegabytes()
 
 		matchingObjectAndResources, found := servicesObjectsAndResources[serviceUuid]
 		if !found {
@@ -433,6 +434,26 @@ func createStartServiceOperation(
 				}
 				userServiceContainerVolumeMounts = append(userServiceContainerVolumeMounts, deviceVolumeMount)
 			}
+		}
+
+		// Mount a memory-backed emptyDir at /dev/shm if shm_size is configured
+		if shmSizeMegabytes > 0 {
+			shmQuantity := resource.MustParse(fmt.Sprintf("%dMi", shmSizeMegabytes))
+			shmVolume := apiv1.Volume{
+				Name: "dshm",
+				VolumeSource: apiv1.VolumeSource{
+					EmptyDir: &apiv1.EmptyDirVolumeSource{
+						Medium:    apiv1.StorageMediumMemory,
+						SizeLimit: &shmQuantity,
+					},
+				},
+			}
+			podVolumes = append(podVolumes, shmVolume)
+			shmVolumeMount := apiv1.VolumeMount{
+				Name:      "dshm",
+				MountPath: "/dev/shm",
+			}
+			userServiceContainerVolumeMounts = append(userServiceContainerVolumeMounts, shmVolumeMount)
 		}
 
 		defer func() {

@@ -86,6 +86,9 @@ type privateServiceConfig struct {
 
 	// Linux capabilities to add to the container (e.g., "NET_ADMIN", "SYS_PTRACE")
 	Capabilities []string
+
+	// Size of /dev/shm in megabytes. 0 means use the runtime default (usually 64MB).
+	ShmSizeMegabytes uint64
 }
 
 func CreateServiceConfig(
@@ -113,7 +116,8 @@ func CreateServiceConfig(
 	tiniEnabled bool,
 	ttyEnabled bool,
 	devices []string,
-	publishUdp bool) (*ServiceConfig, error) {
+	publishUdp bool,
+	shmSizeMegabytes uint64) (*ServiceConfig, error) {
 	if err := ValidateServiceConfigLabels(labels); err != nil {
 		return nil, stacktrace.Propagate(err, "Invalid service config labels '%+v'", labels)
 	}
@@ -147,6 +151,7 @@ func CreateServiceConfig(
 		Devices:                      devices,
 		PublishUdp:                   publishUdp,
 		Capabilities:                 nil,
+		ShmSizeMegabytes:             shmSizeMegabytes,
 	}
 	return &ServiceConfig{internalServiceConfig}, nil
 }
@@ -352,6 +357,7 @@ func GetEmptyServiceConfig() *ServiceConfig {
 		false,
 		[]string{},
 		false,
+		0,
 	)
 	return emptyServiceConfig
 }
@@ -370,4 +376,8 @@ func (serviceConfig *ServiceConfig) GetCapabilities() []string {
 
 func (serviceConfig *ServiceConfig) SetCapabilities(capabilities []string) {
 	serviceConfig.privateServiceConfig.Capabilities = capabilities
+}
+
+func (serviceConfig *ServiceConfig) GetShmSizeMegabytes() uint64 {
+	return serviceConfig.privateServiceConfig.ShmSizeMegabytes
 }

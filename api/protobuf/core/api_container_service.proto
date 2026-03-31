@@ -199,6 +199,9 @@ message ServiceInfo {
 
   // Linux capabilities to add to the container (e.g., "NET_ADMIN", "SYS_PTRACE")
   repeated string capabilities = 21;
+
+  // Size of /dev/shm in megabytes. 0 means use the runtime default (usually 64MB).
+  uint64 shm_size_megabytes = 22;
 }
 
 // ==============================================================================================

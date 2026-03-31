@@ -685,7 +685,8 @@ func (manager *DockerManager) CreateAndStartContainer(
 		args.loggingDriverConfig,
 		args.containerInitEnabled,
 		args.restartPolicy,
-		args.devices)
+		args.devices,
+		args.shmSizeMegabytes)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
@@ -1828,6 +1829,7 @@ func (manager *DockerManager) getContainerHostConfig(
 	useInit bool,
 	restartPolicy RestartPolicy,
 	devices []string,
+	shmSizeMegabytes uint64,
 ) (hostConfig *container.HostConfig, err error) {
 
 	bindsList := make([]string, 0, len(bindMounts))
@@ -2007,7 +2009,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		Tmpfs:           nil,
 		UTSMode:         "",
 		UsernsMode:      "",
-		ShmSize:         0,
+		ShmSize:         int64(shmSizeMegabytes) * 1024 * 1024,
 		Sysctls:         nil,
 		Runtime:         "",
 		ConsoleSize:     [2]uint{},
