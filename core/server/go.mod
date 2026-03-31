@@ -16,7 +16,7 @@ replace (
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/kurtosis-tech/kurtosis/api/golang v1.17.5 // Local dependency
+	github.com/kurtosis-tech/kurtosis/api/golang v1.17.7 // Local dependency
 	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/core/launcher v0.0.0 // Local dependency
@@ -32,7 +32,7 @@ require (
 
 require (
 	github.com/compose-spec/compose-go v1.20.2
-	github.com/go-git/go-git/v5 v5.17.0
+	github.com/go-git/go-git/v5 v5.17.1
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/hashicorp/go-envparse v0.1.0
 	github.com/itchyny/gojq v0.12.18
