@@ -181,3 +181,23 @@ func TestBuildImage(t *testing.T) {
 	//_, err = dockerManager.BuildImage(ctx, "foobar", imageBuildSpec)
 	//require.NoError(t, err)
 }
+
+func TestShmSizeDefaultsToZeroInArgsBuilder(t *testing.T) {
+	args := NewCreateAndStartContainerArgsBuilder("my-image", "my-container", "network-id").Build()
+	assert.Equal(t, uint64(0), args.shmSizeMegabytes)
+}
+
+func TestShmSizeIsStoredInArgsBuilder(t *testing.T) {
+	const shmSizeMB = uint64(128)
+	args := NewCreateAndStartContainerArgsBuilder("my-image", "my-container", "network-id").
+		WithShmSizeMegabytes(shmSizeMB).
+		Build()
+	assert.Equal(t, shmSizeMB, args.shmSizeMegabytes)
+}
+
+func TestShmSizeMegabytesToBytesConversion(t *testing.T) {
+	// Docker HostConfig.ShmSize is in bytes; 128 MiB must equal 134217728 bytes.
+	const shmSizeMB = uint64(128)
+	expectedBytes := int64(134217728)
+	assert.Equal(t, expectedBytes, int64(shmSizeMB)*1024*1024)
+}
