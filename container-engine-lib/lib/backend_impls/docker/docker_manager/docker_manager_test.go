@@ -201,3 +201,62 @@ func TestShmSizeMegabytesToBytesConversion(t *testing.T) {
 	expectedBytes := int64(134217728)
 	assert.Equal(t, expectedBytes, int64(shmSizeMB)*1024*1024)
 }
+
+func TestUlimitsDefaultToNilInArgsBuilder(t *testing.T) {
+	args := NewCreateAndStartContainerArgsBuilder("my-image", "my-container", "network-id").Build()
+	assert.Nil(t, args.ulimits)
+}
+
+func TestUlimitsAreStoredInArgsBuilder(t *testing.T) {
+	ulimits := map[string]int64{"memlock": -1, "nofile": 65536}
+	args := NewCreateAndStartContainerArgsBuilder("my-image", "my-container", "network-id").
+		WithUlimits(ulimits).
+		Build()
+	assert.Equal(t, ulimits, args.ulimits)
+}
+
+func TestBuildUlimitsReturnsNilForEmptyMap(t *testing.T) {
+	result := buildUlimits(nil)
+	assert.Nil(t, result)
+	result = buildUlimits(map[string]int64{})
+	assert.Nil(t, result)
+}
+
+func TestBuildUlimitsSetsHardAndSoftToSameValue(t *testing.T) {
+	result := buildUlimits(map[string]int64{"memlock": -1})
+	require.Len(t, result, 1)
+	assert.Equal(t, "memlock", result[0].Name)
+	assert.Equal(t, int64(-1), result[0].Soft)
+	assert.Equal(t, int64(-1), result[0].Hard)
+}
+
+func TestGpuCountDefaultsToZeroInArgsBuilder(t *testing.T) {
+	args := NewCreateAndStartContainerArgsBuilder("my-image", "my-container", "network-id").Build()
+	assert.Equal(t, int64(0), args.gpuCount)
+}
+
+func TestGpuCountIsStoredInArgsBuilder(t *testing.T) {
+	args := NewCreateAndStartContainerArgsBuilder("my-image", "my-container", "network-id").
+		WithGpuCount(2).
+		Build()
+	assert.Equal(t, int64(2), args.gpuCount)
+}
+
+func TestBuildDeviceRequestsReturnsNilForZero(t *testing.T) {
+	result := buildDeviceRequests(0)
+	assert.Nil(t, result)
+}
+
+func TestBuildDeviceRequestsForPositiveCount(t *testing.T) {
+	result := buildDeviceRequests(2)
+	require.Len(t, result, 1)
+	assert.Equal(t, "nvidia", result[0].Driver)
+	assert.Equal(t, 2, result[0].Count)
+	assert.Equal(t, [][]string{{"gpu"}}, result[0].Capabilities)
+}
+
+func TestBuildDeviceRequestsForAllGpus(t *testing.T) {
+	result := buildDeviceRequests(-1)
+	require.Len(t, result, 1)
+	assert.Equal(t, -1, result[0].Count)
+}

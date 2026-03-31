@@ -40,6 +40,8 @@ type CreateAndStartContainerArgs struct {
 	imageRegistrySpec                        *image_registry_spec.ImageRegistrySpec
 	devices                                  []string
 	shmSizeMegabytes                         uint64
+	ulimits                                  map[string]int64
+	gpuCount                                 int64
 }
 
 // Builder for creating CreateAndStartContainerArgs object
@@ -72,6 +74,8 @@ type CreateAndStartContainerArgsBuilder struct {
 	imageRegistrySpec                        *image_registry_spec.ImageRegistrySpec
 	devices                                  []string
 	shmSizeMegabytes                         uint64
+	ulimits                                  map[string]int64
+	gpuCount                                 int64
 }
 
 /*
@@ -111,6 +115,8 @@ func NewCreateAndStartContainerArgsBuilder(dockerImage string, name string, netw
 		imageRegistrySpec:                        nil,
 		devices:                                  []string{},
 		shmSizeMegabytes:                         0,
+		ulimits:                                  nil,
+		gpuCount:                                 0,
 	}
 }
 
@@ -121,6 +127,16 @@ func (builder *CreateAndStartContainerArgsBuilder) WithDevices(devices []string)
 
 func (builder *CreateAndStartContainerArgsBuilder) WithShmSizeMegabytes(shmSizeMegabytes uint64) *CreateAndStartContainerArgsBuilder {
 	builder.shmSizeMegabytes = shmSizeMegabytes
+	return builder
+}
+
+func (builder *CreateAndStartContainerArgsBuilder) WithUlimits(ulimits map[string]int64) *CreateAndStartContainerArgsBuilder {
+	builder.ulimits = ulimits
+	return builder
+}
+
+func (builder *CreateAndStartContainerArgsBuilder) WithGpuCount(gpuCount int64) *CreateAndStartContainerArgsBuilder {
+	builder.gpuCount = gpuCount
 	return builder
 }
 
@@ -154,6 +170,8 @@ func (builder *CreateAndStartContainerArgsBuilder) Build() *CreateAndStartContai
 		imageRegistrySpec:                        builder.imageRegistrySpec,
 		devices:                                  builder.devices,
 		shmSizeMegabytes:                         builder.shmSizeMegabytes,
+		ulimits:                                  builder.ulimits,
+		gpuCount:                                 builder.gpuCount,
 	}
 }
 

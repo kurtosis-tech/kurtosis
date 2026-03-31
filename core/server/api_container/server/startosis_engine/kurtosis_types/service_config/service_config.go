@@ -58,6 +58,8 @@ const (
 	PublishUdpAttr                  = "publish_udp"
 	CapabilitiesAttr                = "capabilities"
 	ShmSizeMegabytesAttr            = "shm_size"
+	UlimitsAttr                     = "ulimits"
+	GpuCountAttr                    = "gpus"
 
 	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
@@ -264,6 +266,18 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.Uint64InRange(value, ShmSizeMegabytesAttr, 0, math.MaxUint64)
 					},
+				},
+				{
+					Name:              UlimitsAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
+					Validator:         nil,
+				},
+				{
+					Name:              GpuCountAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Int],
+					Validator:         nil,
 				},
 			},
 		},
@@ -632,6 +646,42 @@ func (config *ServiceConfig) ToKurtosisType(
 		}
 	}
 
+	var ulimits map[string]int64
+	ulimitsStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](config.KurtosisValueTypeDefault, UlimitsAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found && ulimitsStarlark.Len() > 0 {
+		ulimits = map[string]int64{}
+		for _, item := range ulimitsStarlark.Items() {
+			key, keyOk := item[0].(starlark.String)
+			if !keyOk {
+				return nil, startosis_errors.NewInterpretationError("Expected string key in '%v' dict, got '%T'", UlimitsAttr, item[0])
+			}
+			val, valOk := item[1].(starlark.Int)
+			if !valOk {
+				return nil, startosis_errors.NewInterpretationError("Expected int value in '%v' dict for key '%v', got '%T'", UlimitsAttr, key.GoString(), item[1])
+			}
+			valInt64, valInt64Ok := val.Int64()
+			if !valInt64Ok {
+				return nil, startosis_errors.NewInterpretationError("Could not convert value for '%v' key '%v' to int64", UlimitsAttr, key.GoString())
+			}
+			ulimits[key.GoString()] = valInt64
+		}
+	}
+
+	var gpuCount int64
+	gpuCountStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Int](config.KurtosisValueTypeDefault, GpuCountAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found {
+		gpuCount, ok = gpuCountStarlark.Int64()
+		if !ok {
+			return nil, startosis_errors.NewInterpretationError("An error occurred parsing field '%v' with value '%v' to int64", GpuCountAttr, gpuCountStarlark)
+		}
+	}
+
 	serviceConfig, err := service.CreateServiceConfig(
 		imageName,
 		maybeImageBuildSpec,
@@ -658,6 +708,8 @@ func (config *ServiceConfig) ToKurtosisType(
 		ttyEnabled,
 		devices,
 		publishUdp,
+		ulimits,
+		gpuCount,
 		shmSizeMegabytes,
 	)
 	if err != nil {
