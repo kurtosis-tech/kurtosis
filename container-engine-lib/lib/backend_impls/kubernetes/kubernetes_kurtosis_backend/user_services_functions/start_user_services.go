@@ -440,9 +440,9 @@ func createStartServiceOperation(
 		// Mount a memory-backed emptyDir at /dev/shm if shm_size is configured
 		if shmSizeMegabytes > 0 {
 			shmQuantity := resource.MustParse(fmt.Sprintf("%dMi", shmSizeMegabytes))
-			shmVolume := apiv1.Volume{
+			shmVolume := apiv1.Volume{ //nolint:exhaustruct
 				Name: "dshm",
-				VolumeSource: apiv1.VolumeSource{
+				VolumeSource: apiv1.VolumeSource{ //nolint:exhaustruct
 					EmptyDir: &apiv1.EmptyDirVolumeSource{
 						Medium:    apiv1.StorageMediumMemory,
 						SizeLimit: &shmQuantity,
@@ -450,7 +450,7 @@ func createStartServiceOperation(
 				},
 			}
 			podVolumes = append(podVolumes, shmVolume)
-			shmVolumeMount := apiv1.VolumeMount{
+			shmVolumeMount := apiv1.VolumeMount{ //nolint:exhaustruct
 				Name:      "dshm",
 				MountPath: "/dev/shm",
 			}

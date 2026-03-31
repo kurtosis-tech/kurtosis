@@ -124,6 +124,7 @@ const (
 
 	megabytesToBytesFactor    = 1_000_000
 	millicpusToNanoCPUsFactor = 1_000_000
+	shmMebibytesToBytesFactor = 1024 * 1024
 
 	minMemoryLimit = 6
 
@@ -2013,7 +2014,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		Tmpfs:           nil,
 		UTSMode:         "",
 		UsernsMode:      "",
-		ShmSize:         int64(shmSizeMegabytes) * 1024 * 1024,
+		ShmSize:         int64(shmSizeMegabytes) * shmMebibytesToBytesFactor,
 		Sysctls:         nil,
 		Runtime:         "",
 		ConsoleSize:     [2]uint{},

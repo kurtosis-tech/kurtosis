@@ -199,7 +199,7 @@ func TestShmSizeMegabytesToBytesConversion(t *testing.T) {
 	// Docker HostConfig.ShmSize is in bytes; 128 MiB must equal 134217728 bytes.
 	const shmSizeMB = uint64(128)
 	expectedBytes := int64(134217728)
-	assert.Equal(t, expectedBytes, int64(shmSizeMB)*1024*1024)
+	assert.Equal(t, expectedBytes, int64(shmSizeMB)*shmMebibytesToBytesFactor)
 }
 
 func TestUlimitsDefaultToNilInArgsBuilder(t *testing.T) {
