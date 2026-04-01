@@ -771,6 +771,9 @@ func createStartServiceOperation(
 		if gpuCount != 0 {
 			createAndStartArgsBuilder.WithGpuCount(gpuCount)
 		}
+		if gpuDeviceIDs := serviceConfig.GetGpuDeviceIDs(); len(gpuDeviceIDs) > 0 {
+			createAndStartArgsBuilder.WithGpuDeviceIDs(gpuDeviceIDs)
+		}
 
 		createAndStartArgs := createAndStartArgsBuilder.Build()
 

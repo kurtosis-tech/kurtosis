@@ -48,7 +48,7 @@ func (t *serviceConfigShmSizeTestCase) Assert(typeValue builtin_argument.Kurtosi
 		image_download_mode.ImageDownloadMode_Missing)
 	require.Nil(t, interpretationErr)
 
-	expectedServiceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, map[string]*port_spec.PortSpec{}, map[string]*port_spec.PortSpec{}, nil, nil, map[string]string{}, nil, nil, 0, 0, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false, []string{}, false, nil, 0, 128)
+	expectedServiceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, map[string]*port_spec.PortSpec{}, map[string]*port_spec.PortSpec{}, nil, nil, map[string]string{}, nil, nil, 0, 0, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false, []string{}, false, nil, 0, nil, 128)
 	require.NoError(t, err)
 	require.Equal(t, expectedServiceConfig, serviceConfigResult)
 	require.Equal(t, uint64(128), serviceConfigResult.GetShmSizeMegabytes())

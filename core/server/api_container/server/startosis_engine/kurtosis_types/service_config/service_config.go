@@ -60,6 +60,7 @@ const (
 	ShmSizeMegabytesAttr            = "shm_size"
 	UlimitsAttr                     = "ulimits"
 	GpuCountAttr                    = "gpus"
+	GpuDeviceIDsAttr                = "gpu_device_ids"
 
 	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
@@ -277,6 +278,12 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					Name:              GpuCountAttr,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Int],
+					Validator:         nil,
+				},
+				{
+					Name:              GpuDeviceIDsAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
 					Validator:         nil,
 				},
 			},
@@ -682,6 +689,21 @@ func (config *ServiceConfig) ToKurtosisType(
 		}
 	}
 
+	var gpuDeviceIDs []string
+	gpuDeviceIDsStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.List](config.KurtosisValueTypeDefault, GpuDeviceIDsAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found && gpuDeviceIDsStarlark != nil {
+		for i := 0; i < gpuDeviceIDsStarlark.Len(); i++ {
+			strVal, isStr := starlark.AsString(gpuDeviceIDsStarlark.Index(i))
+			if !isStr {
+				return nil, startosis_errors.NewInterpretationError("An error occurred parsing field '%v': all elements must be strings", GpuDeviceIDsAttr)
+			}
+			gpuDeviceIDs = append(gpuDeviceIDs, strVal)
+		}
+	}
+
 	serviceConfig, err := service.CreateServiceConfig(
 		imageName,
 		maybeImageBuildSpec,
@@ -710,6 +732,7 @@ func (config *ServiceConfig) ToKurtosisType(
 		publishUdp,
 		ulimits,
 		gpuCount,
+		gpuDeviceIDs,
 		shmSizeMegabytes,
 	)
 	if err != nil {

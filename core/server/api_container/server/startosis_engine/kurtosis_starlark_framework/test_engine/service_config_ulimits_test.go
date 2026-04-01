@@ -51,7 +51,7 @@ func (t *serviceConfigUlimitsTestCase) Assert(typeValue builtin_argument.Kurtosi
 	require.Nil(t, interpretationErr)
 
 	expectedUlimits := map[string]int64{"memlock": -1, "nofile": 65536}
-	expectedServiceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, map[string]*port_spec.PortSpec{}, map[string]*port_spec.PortSpec{}, nil, nil, map[string]string{}, nil, nil, 0, 0, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false, []string{}, false, expectedUlimits, 0, 0)
+	expectedServiceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, map[string]*port_spec.PortSpec{}, map[string]*port_spec.PortSpec{}, nil, nil, map[string]string{}, nil, nil, 0, 0, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false, []string{}, false, expectedUlimits, 0, nil, 0)
 	require.NoError(t, err)
 	require.Equal(t, expectedServiceConfig, serviceConfigResult)
 	require.Equal(t, expectedUlimits, serviceConfigResult.GetUlimits())

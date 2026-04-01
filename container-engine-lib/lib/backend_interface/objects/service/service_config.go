@@ -96,6 +96,10 @@ type privateServiceConfig struct {
 
 	// GpuCount is the number of NVIDIA GPUs to expose. 0 = none, -1 = all available, N = N GPUs.
 	GpuCount int64
+
+	// GpuDeviceIDs is a list of specific GPU device IDs to expose (e.g. ["0","1","2","3"]).
+	// When set, GpuCount is ignored for device selection and these exact devices are used.
+	GpuDeviceIDs []string
 }
 
 func CreateServiceConfig(
@@ -126,6 +130,7 @@ func CreateServiceConfig(
 	publishUdp bool,
 	ulimits map[string]int64,
 	gpuCount int64,
+	gpuDeviceIDs []string,
 	shmSizeMegabytes uint64) (*ServiceConfig, error) {
 	if err := ValidateServiceConfigLabels(labels); err != nil {
 		return nil, stacktrace.Propagate(err, "Invalid service config labels '%+v'", labels)
@@ -163,6 +168,7 @@ func CreateServiceConfig(
 		ShmSizeMegabytes:             shmSizeMegabytes,
 		Ulimits:                      ulimits,
 		GpuCount:                     gpuCount,
+		GpuDeviceIDs:                 gpuDeviceIDs,
 	}
 	return &ServiceConfig{internalServiceConfig}, nil
 }
@@ -370,6 +376,7 @@ func GetEmptyServiceConfig() *ServiceConfig {
 		false,
 		nil,
 		0,
+		nil,
 		0,
 	)
 	return emptyServiceConfig
@@ -401,4 +408,8 @@ func (serviceConfig *ServiceConfig) GetUlimits() map[string]int64 {
 
 func (serviceConfig *ServiceConfig) GetGpuCount() int64 {
 	return serviceConfig.privateServiceConfig.GpuCount
+}
+
+func (serviceConfig *ServiceConfig) GetGpuDeviceIDs() []string {
+	return serviceConfig.privateServiceConfig.GpuDeviceIDs
 }

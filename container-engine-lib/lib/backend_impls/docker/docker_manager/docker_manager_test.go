@@ -243,12 +243,12 @@ func TestGpuCountIsStoredInArgsBuilder(t *testing.T) {
 }
 
 func TestBuildDeviceRequestsReturnsNilForZero(t *testing.T) {
-	result := buildDeviceRequests(0)
+	result := buildDeviceRequests(0, nil)
 	assert.Nil(t, result)
 }
 
 func TestBuildDeviceRequestsForPositiveCount(t *testing.T) {
-	result := buildDeviceRequests(2)
+	result := buildDeviceRequests(2, nil)
 	require.Len(t, result, 1)
 	assert.Equal(t, "nvidia", result[0].Driver)
 	assert.Equal(t, 2, result[0].Count)
@@ -256,7 +256,7 @@ func TestBuildDeviceRequestsForPositiveCount(t *testing.T) {
 }
 
 func TestBuildDeviceRequestsForAllGpus(t *testing.T) {
-	result := buildDeviceRequests(-1)
+	result := buildDeviceRequests(-1, nil)
 	require.Len(t, result, 1)
 	assert.Equal(t, -1, result[0].Count)
 }

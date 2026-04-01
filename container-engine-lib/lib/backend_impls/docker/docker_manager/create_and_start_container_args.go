@@ -42,6 +42,7 @@ type CreateAndStartContainerArgs struct {
 	shmSizeMegabytes                         uint64
 	ulimits                                  map[string]int64
 	gpuCount                                 int64
+	gpuDeviceIDs                             []string
 }
 
 // Builder for creating CreateAndStartContainerArgs object
@@ -76,6 +77,7 @@ type CreateAndStartContainerArgsBuilder struct {
 	shmSizeMegabytes                         uint64
 	ulimits                                  map[string]int64
 	gpuCount                                 int64
+	gpuDeviceIDs                             []string
 }
 
 /*
@@ -117,6 +119,7 @@ func NewCreateAndStartContainerArgsBuilder(dockerImage string, name string, netw
 		shmSizeMegabytes:                         0,
 		ulimits:                                  nil,
 		gpuCount:                                 0,
+		gpuDeviceIDs:                             nil,
 	}
 }
 
@@ -137,6 +140,11 @@ func (builder *CreateAndStartContainerArgsBuilder) WithUlimits(ulimits map[strin
 
 func (builder *CreateAndStartContainerArgsBuilder) WithGpuCount(gpuCount int64) *CreateAndStartContainerArgsBuilder {
 	builder.gpuCount = gpuCount
+	return builder
+}
+
+func (builder *CreateAndStartContainerArgsBuilder) WithGpuDeviceIDs(gpuDeviceIDs []string) *CreateAndStartContainerArgsBuilder {
+	builder.gpuDeviceIDs = gpuDeviceIDs
 	return builder
 }
 
@@ -172,6 +180,7 @@ func (builder *CreateAndStartContainerArgsBuilder) Build() *CreateAndStartContai
 		shmSizeMegabytes:                         builder.shmSizeMegabytes,
 		ulimits:                                  builder.ulimits,
 		gpuCount:                                 builder.gpuCount,
+		gpuDeviceIDs:                             builder.gpuDeviceIDs,
 	}
 }
 
