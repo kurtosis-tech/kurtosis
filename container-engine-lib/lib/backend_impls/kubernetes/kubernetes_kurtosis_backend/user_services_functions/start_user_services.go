@@ -316,6 +316,8 @@ func createStartServiceOperation(
 		imageDownloadMode := serviceConfig.GetImageDownloadMode()
 		devices := serviceConfig.GetDevices()
 		capabilities := serviceConfig.GetCapabilities()
+		shmSizeMegabytes := serviceConfig.GetShmSizeMegabytes()
+		gpuCount := serviceConfig.GetGpuCount()
 
 		matchingObjectAndResources, found := servicesObjectsAndResources[serviceUuid]
 		if !found {
@@ -435,6 +437,26 @@ func createStartServiceOperation(
 			}
 		}
 
+		// Mount a memory-backed emptyDir at /dev/shm if shm_size is configured
+		if shmSizeMegabytes > 0 {
+			shmQuantity := resource.MustParse(fmt.Sprintf("%dMi", shmSizeMegabytes))
+			shmVolume := apiv1.Volume{ //nolint:exhaustruct
+				Name: "dshm",
+				VolumeSource: apiv1.VolumeSource{ //nolint:exhaustruct
+					EmptyDir: &apiv1.EmptyDirVolumeSource{
+						Medium:    apiv1.StorageMediumMemory,
+						SizeLimit: &shmQuantity,
+					},
+				},
+			}
+			podVolumes = append(podVolumes, shmVolume)
+			shmVolumeMount := apiv1.VolumeMount{ //nolint:exhaustruct
+				Name:      "dshm",
+				MountPath: "/dev/shm",
+			}
+			userServiceContainerVolumeMounts = append(userServiceContainerVolumeMounts, shmVolumeMount)
+		}
+
 		defer func() {
 			if !shouldDestroyPersistentVolumesAndClaims {
 				return
@@ -469,6 +491,7 @@ func createStartServiceOperation(
 			user,
 			imageDownloadMode,
 			capabilities,
+			gpuCount,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating the container specs for the user service pod with image '%v'", containerImageName)
@@ -708,6 +731,7 @@ func getUserServicePodContainerSpecs(
 	user *service_user.ServiceUser,
 	imageDownloadMode image_download_mode.ImageDownloadMode,
 	capabilities []string,
+	gpuCount int64,
 ) ([]apiv1.Container, error) {
 
 	var containerEnvVars []apiv1.EnvVar
@@ -761,6 +785,12 @@ func getUserServicePodContainerSpecs(
 	if minMemoryAllocationMegabytes != 0 {
 		minMemoryAllocationInBytes := convertMegabytesToBytes(minMemoryAllocationMegabytes)
 		resourceRequestsList[apiv1.ResourceMemory] = *resource.NewQuantity(int64(minMemoryAllocationInBytes), resource.DecimalSI)
+	}
+
+	if gpuCount > 0 {
+		gpuQuantity := resource.MustParse(fmt.Sprintf("%d", gpuCount))
+		resourceLimitsList["nvidia.com/gpu"] = gpuQuantity
+		resourceRequestsList["nvidia.com/gpu"] = gpuQuantity
 	}
 
 	resourceRequirements := apiv1.ResourceRequirements{ //nolint:exhaustruct

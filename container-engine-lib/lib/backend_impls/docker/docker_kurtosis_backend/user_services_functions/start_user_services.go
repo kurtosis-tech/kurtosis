@@ -559,6 +559,9 @@ func createStartServiceOperation(
 		devices := serviceConfig.GetDevices()
 		publishUdp := serviceConfig.GetPublishUdp()
 		capabilities := serviceConfig.GetCapabilities()
+		shmSizeMegabytes := serviceConfig.GetShmSizeMegabytes()
+		ulimits := serviceConfig.GetUlimits()
+		gpuCount := serviceConfig.GetGpuCount()
 
 		// We replace the placeholder value with the actual private IP address
 		privateIPAddrStr := privateIpAddr.String()
@@ -757,6 +760,19 @@ func createStartServiceOperation(
 				capabilitiesSet[docker_manager.ContainerCapability(cap)] = true
 			}
 			createAndStartArgsBuilder.WithAddedCapabilities(capabilitiesSet)
+		}
+
+		if shmSizeMegabytes > 0 {
+			createAndStartArgsBuilder.WithShmSizeMegabytes(shmSizeMegabytes)
+		}
+		if len(ulimits) > 0 {
+			createAndStartArgsBuilder.WithUlimits(ulimits)
+		}
+		if gpuCount != 0 {
+			createAndStartArgsBuilder.WithGpuCount(gpuCount)
+		}
+		if gpuDeviceIDs := serviceConfig.GetGpuDeviceIDs(); len(gpuDeviceIDs) > 0 {
+			createAndStartArgsBuilder.WithGpuDeviceIDs(gpuDeviceIDs)
 		}
 
 		createAndStartArgs := createAndStartArgsBuilder.Build()

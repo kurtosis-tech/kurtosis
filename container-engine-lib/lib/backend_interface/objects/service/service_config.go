@@ -86,6 +86,20 @@ type privateServiceConfig struct {
 
 	// Linux capabilities to add to the container (e.g., "NET_ADMIN", "SYS_PTRACE")
 	Capabilities []string
+
+	// Size of /dev/shm in megabytes. 0 means use the runtime default (usually 64MB).
+	ShmSizeMegabytes uint64
+
+	// Ulimits sets resource limits for the container. Maps limit name (e.g. "memlock") to value
+	// (sets both soft and hard to that value). nil or empty means no custom ulimits.
+	Ulimits map[string]int64
+
+	// GpuCount is the number of NVIDIA GPUs to expose. 0 = none, -1 = all available, N = N GPUs.
+	GpuCount int64
+
+	// GpuDeviceIDs is a list of specific GPU device IDs to expose (e.g. ["0","1","2","3"]).
+	// When set, GpuCount is ignored for device selection and these exact devices are used.
+	GpuDeviceIDs []string
 }
 
 func CreateServiceConfig(
@@ -113,7 +127,11 @@ func CreateServiceConfig(
 	tiniEnabled bool,
 	ttyEnabled bool,
 	devices []string,
-	publishUdp bool) (*ServiceConfig, error) {
+	publishUdp bool,
+	ulimits map[string]int64,
+	gpuCount int64,
+	gpuDeviceIDs []string,
+	shmSizeMegabytes uint64) (*ServiceConfig, error) {
 	if err := ValidateServiceConfigLabels(labels); err != nil {
 		return nil, stacktrace.Propagate(err, "Invalid service config labels '%+v'", labels)
 	}
@@ -147,6 +165,10 @@ func CreateServiceConfig(
 		Devices:                      devices,
 		PublishUdp:                   publishUdp,
 		Capabilities:                 nil,
+		ShmSizeMegabytes:             shmSizeMegabytes,
+		Ulimits:                      ulimits,
+		GpuCount:                     gpuCount,
+		GpuDeviceIDs:                 gpuDeviceIDs,
 	}
 	return &ServiceConfig{internalServiceConfig}, nil
 }
@@ -352,6 +374,10 @@ func GetEmptyServiceConfig() *ServiceConfig {
 		false,
 		[]string{},
 		false,
+		nil,
+		0,
+		nil,
+		0,
 	)
 	return emptyServiceConfig
 }
@@ -370,4 +396,20 @@ func (serviceConfig *ServiceConfig) GetCapabilities() []string {
 
 func (serviceConfig *ServiceConfig) SetCapabilities(capabilities []string) {
 	serviceConfig.privateServiceConfig.Capabilities = capabilities
+}
+
+func (serviceConfig *ServiceConfig) GetShmSizeMegabytes() uint64 {
+	return serviceConfig.privateServiceConfig.ShmSizeMegabytes
+}
+
+func (serviceConfig *ServiceConfig) GetUlimits() map[string]int64 {
+	return serviceConfig.privateServiceConfig.Ulimits
+}
+
+func (serviceConfig *ServiceConfig) GetGpuCount() int64 {
+	return serviceConfig.privateServiceConfig.GpuCount
+}
+
+func (serviceConfig *ServiceConfig) GetGpuDeviceIDs() []string {
+	return serviceConfig.privateServiceConfig.GpuDeviceIDs
 }

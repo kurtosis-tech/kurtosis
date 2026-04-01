@@ -39,6 +39,10 @@ type CreateAndStartContainerArgs struct {
 	user                                     *service_user.ServiceUser
 	imageRegistrySpec                        *image_registry_spec.ImageRegistrySpec
 	devices                                  []string
+	shmSizeMegabytes                         uint64
+	ulimits                                  map[string]int64
+	gpuCount                                 int64
+	gpuDeviceIDs                             []string
 }
 
 // Builder for creating CreateAndStartContainerArgs object
@@ -70,6 +74,10 @@ type CreateAndStartContainerArgsBuilder struct {
 	user                                     *service_user.ServiceUser
 	imageRegistrySpec                        *image_registry_spec.ImageRegistrySpec
 	devices                                  []string
+	shmSizeMegabytes                         uint64
+	ulimits                                  map[string]int64
+	gpuCount                                 int64
+	gpuDeviceIDs                             []string
 }
 
 /*
@@ -108,11 +116,35 @@ func NewCreateAndStartContainerArgsBuilder(dockerImage string, name string, netw
 		user:                                     nil,
 		imageRegistrySpec:                        nil,
 		devices:                                  []string{},
+		shmSizeMegabytes:                         0,
+		ulimits:                                  nil,
+		gpuCount:                                 0,
+		gpuDeviceIDs:                             nil,
 	}
 }
 
 func (builder *CreateAndStartContainerArgsBuilder) WithDevices(devices []string) *CreateAndStartContainerArgsBuilder {
 	builder.devices = devices
+	return builder
+}
+
+func (builder *CreateAndStartContainerArgsBuilder) WithShmSizeMegabytes(shmSizeMegabytes uint64) *CreateAndStartContainerArgsBuilder {
+	builder.shmSizeMegabytes = shmSizeMegabytes
+	return builder
+}
+
+func (builder *CreateAndStartContainerArgsBuilder) WithUlimits(ulimits map[string]int64) *CreateAndStartContainerArgsBuilder {
+	builder.ulimits = ulimits
+	return builder
+}
+
+func (builder *CreateAndStartContainerArgsBuilder) WithGpuCount(gpuCount int64) *CreateAndStartContainerArgsBuilder {
+	builder.gpuCount = gpuCount
+	return builder
+}
+
+func (builder *CreateAndStartContainerArgsBuilder) WithGpuDeviceIDs(gpuDeviceIDs []string) *CreateAndStartContainerArgsBuilder {
+	builder.gpuDeviceIDs = gpuDeviceIDs
 	return builder
 }
 
@@ -145,6 +177,10 @@ func (builder *CreateAndStartContainerArgsBuilder) Build() *CreateAndStartContai
 		user:                                     builder.user,
 		imageRegistrySpec:                        builder.imageRegistrySpec,
 		devices:                                  builder.devices,
+		shmSizeMegabytes:                         builder.shmSizeMegabytes,
+		ulimits:                                  builder.ulimits,
+		gpuCount:                                 builder.gpuCount,
+		gpuDeviceIDs:                             builder.gpuDeviceIDs,
 	}
 }
 

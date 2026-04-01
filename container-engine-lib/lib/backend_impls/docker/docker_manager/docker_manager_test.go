@@ -181,3 +181,82 @@ func TestBuildImage(t *testing.T) {
 	//_, err = dockerManager.BuildImage(ctx, "foobar", imageBuildSpec)
 	//require.NoError(t, err)
 }
+
+func TestShmSizeDefaultsToZeroInArgsBuilder(t *testing.T) {
+	args := NewCreateAndStartContainerArgsBuilder("my-image", "my-container", "network-id").Build()
+	assert.Equal(t, uint64(0), args.shmSizeMegabytes)
+}
+
+func TestShmSizeIsStoredInArgsBuilder(t *testing.T) {
+	const shmSizeMB = uint64(128)
+	args := NewCreateAndStartContainerArgsBuilder("my-image", "my-container", "network-id").
+		WithShmSizeMegabytes(shmSizeMB).
+		Build()
+	assert.Equal(t, shmSizeMB, args.shmSizeMegabytes)
+}
+
+func TestShmSizeMegabytesToBytesConversion(t *testing.T) {
+	// Docker HostConfig.ShmSize is in bytes; 128 MiB must equal 134217728 bytes.
+	const shmSizeMB = uint64(128)
+	expectedBytes := int64(134217728)
+	assert.Equal(t, expectedBytes, int64(shmSizeMB)*shmMebibytesToBytesFactor)
+}
+
+func TestUlimitsDefaultToNilInArgsBuilder(t *testing.T) {
+	args := NewCreateAndStartContainerArgsBuilder("my-image", "my-container", "network-id").Build()
+	assert.Nil(t, args.ulimits)
+}
+
+func TestUlimitsAreStoredInArgsBuilder(t *testing.T) {
+	ulimits := map[string]int64{"memlock": -1, "nofile": 65536}
+	args := NewCreateAndStartContainerArgsBuilder("my-image", "my-container", "network-id").
+		WithUlimits(ulimits).
+		Build()
+	assert.Equal(t, ulimits, args.ulimits)
+}
+
+func TestBuildUlimitsReturnsNilForEmptyMap(t *testing.T) {
+	result := buildUlimits(nil)
+	assert.Nil(t, result)
+	result = buildUlimits(map[string]int64{})
+	assert.Nil(t, result)
+}
+
+func TestBuildUlimitsSetsHardAndSoftToSameValue(t *testing.T) {
+	result := buildUlimits(map[string]int64{"memlock": -1})
+	require.Len(t, result, 1)
+	assert.Equal(t, "memlock", result[0].Name)
+	assert.Equal(t, int64(-1), result[0].Soft)
+	assert.Equal(t, int64(-1), result[0].Hard)
+}
+
+func TestGpuCountDefaultsToZeroInArgsBuilder(t *testing.T) {
+	args := NewCreateAndStartContainerArgsBuilder("my-image", "my-container", "network-id").Build()
+	assert.Equal(t, int64(0), args.gpuCount)
+}
+
+func TestGpuCountIsStoredInArgsBuilder(t *testing.T) {
+	args := NewCreateAndStartContainerArgsBuilder("my-image", "my-container", "network-id").
+		WithGpuCount(2).
+		Build()
+	assert.Equal(t, int64(2), args.gpuCount)
+}
+
+func TestBuildDeviceRequestsReturnsNilForZero(t *testing.T) {
+	result := buildDeviceRequests(0, nil)
+	assert.Nil(t, result)
+}
+
+func TestBuildDeviceRequestsForPositiveCount(t *testing.T) {
+	result := buildDeviceRequests(2, nil)
+	require.Len(t, result, 1)
+	assert.Equal(t, "nvidia", result[0].Driver)
+	assert.Equal(t, 2, result[0].Count)
+	assert.Equal(t, [][]string{{"gpu"}}, result[0].Capabilities)
+}
+
+func TestBuildDeviceRequestsForAllGpus(t *testing.T) {
+	result := buildDeviceRequests(-1, nil)
+	require.Len(t, result, 1)
+	assert.Equal(t, -1, result[0].Count)
+}
