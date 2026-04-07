@@ -35,7 +35,7 @@ require (
 	github.com/go-git/go-git/v5 v5.17.1
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/hashicorp/go-envparse v0.1.0
-	github.com/itchyny/gojq v0.12.18
+	github.com/itchyny/gojq v0.12.19
 	github.com/joho/godotenv v1.5.1
 	github.com/kurtosis-tech/kurtosis/path-compression v0.0.0-20260317111349-a92a4b107a1a
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20230710164206-90b674acb269
@@ -115,7 +115,7 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
-	github.com/itchyny/timefmt-go v0.1.7 // indirect
+	github.com/itchyny/timefmt-go v0.1.8 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
