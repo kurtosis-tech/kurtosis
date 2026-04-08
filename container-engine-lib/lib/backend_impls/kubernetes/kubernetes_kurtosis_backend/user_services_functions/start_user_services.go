@@ -319,6 +319,16 @@ func createStartServiceOperation(
 		shmSizeMegabytes := serviceConfig.GetShmSizeMegabytes()
 		gpuCount := serviceConfig.GetGpuCount()
 
+		if ulimits := serviceConfig.GetUlimits(); len(ulimits) > 0 {
+			logrus.Warnf("Service '%v' has ulimits configured but ulimits are not supported on Kubernetes; they will be ignored", serviceUuid)
+		}
+		if gpuDeviceIDs := serviceConfig.GetGpuDeviceIDs(); len(gpuDeviceIDs) > 0 {
+			logrus.Warnf("Service '%v' has gpu_device_ids configured but GPU device pinning is not supported on Kubernetes; use 'gpus' with a positive count instead", serviceUuid)
+		}
+		if gpuCount < 0 {
+			logrus.Warnf("Service '%v' has gpus=%d but Kubernetes only supports positive GPU counts; GPU request will be ignored", serviceUuid, gpuCount)
+		}
+
 		matchingObjectAndResources, found := servicesObjectsAndResources[serviceUuid]
 		if !found {
 			return nil, stacktrace.NewError("Even though we pulled back some Kubernetes resources, no Kubernetes resources were available for requested service UUID '%v'; this is a bug in Kurtosis", serviceUuid)

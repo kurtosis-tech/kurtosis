@@ -202,6 +202,15 @@ message ServiceInfo {
 
   // Size of /dev/shm in megabytes. 0 means use the runtime default (usually 64MB).
   uint64 shm_size_megabytes = 22;
+
+  // Resource limits (ulimits) for the container. Maps limit name to value (soft=hard).
+  map<string, int64> ulimits = 23;
+
+  // Number of GPUs to expose. 0 = none, -1 = all available, N = specific count.
+  int64 gpu_count = 24;
+
+  // Specific GPU device IDs to pin (e.g. ["0","1"] or ["GPU-abc123"]).
+  repeated string gpu_device_ids = 25;
 }
 
 // ==============================================================================================
