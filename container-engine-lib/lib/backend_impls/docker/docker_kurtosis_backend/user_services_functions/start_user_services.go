@@ -559,9 +559,10 @@ func createStartServiceOperation(
 		devices := serviceConfig.GetDevices()
 		publishUdp := serviceConfig.GetPublishUdp()
 		capabilities := serviceConfig.GetCapabilities()
-		shmSizeMegabytes := serviceConfig.GetShmSizeMegabytes()
-		ulimits := serviceConfig.GetUlimits()
-		gpuCount := serviceConfig.GetGpuCount()
+		gpuConfig := serviceConfig.GetGpuConfig()
+		shmSizeMegabytes := gpuConfig.GetShmSizeMegabytes()
+		ulimits := gpuConfig.GetUlimits()
+		gpuCount := gpuConfig.GetCount()
 
 		// We replace the placeholder value with the actual private IP address
 		privateIPAddrStr := privateIpAddr.String()
@@ -771,7 +772,7 @@ func createStartServiceOperation(
 		if gpuCount != 0 {
 			createAndStartArgsBuilder.WithGpuCount(gpuCount)
 		}
-		if gpuDeviceIDs := serviceConfig.GetGpuDeviceIDs(); len(gpuDeviceIDs) > 0 {
+		if gpuDeviceIDs := gpuConfig.GetDeviceIDs(); len(gpuDeviceIDs) > 0 {
 			createAndStartArgsBuilder.WithGpuDeviceIDs(gpuDeviceIDs)
 		}
 

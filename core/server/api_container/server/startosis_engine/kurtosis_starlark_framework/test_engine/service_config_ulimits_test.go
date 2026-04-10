@@ -29,10 +29,12 @@ func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigWithUlimits() {
 }
 
 func (t *serviceConfigUlimitsTestCase) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%q, %s={%q: %d, %q: %d})",
+	return fmt.Sprintf("%s(%s=%q, %s=%s(%s={%q: %d, %q: %d}))",
 		service_config.ServiceConfigTypeName,
 		service_config.ImageAttr, testContainerImageName,
-		service_config.UlimitsAttr,
+		service_config.GpuAttr,
+		service_config.GpuConfigTypeName,
+		service_config.GpuConfigUlimitsAttr,
 		"memlock", -1,
 		"nofile", 65536)
 }
@@ -51,8 +53,8 @@ func (t *serviceConfigUlimitsTestCase) Assert(typeValue builtin_argument.Kurtosi
 	require.Nil(t, interpretationErr)
 
 	expectedUlimits := map[string]int64{"memlock": -1, "nofile": 65536}
-	expectedServiceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, map[string]*port_spec.PortSpec{}, map[string]*port_spec.PortSpec{}, nil, nil, map[string]string{}, nil, nil, 0, 0, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false, []string{}, false, expectedUlimits, 0, nil, 0)
+	expectedServiceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, map[string]*port_spec.PortSpec{}, map[string]*port_spec.PortSpec{}, nil, nil, map[string]string{}, nil, nil, 0, 0, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false, []string{}, false, service.NewGpuConfig(0, nil, 0, expectedUlimits))
 	require.NoError(t, err)
 	require.Equal(t, expectedServiceConfig, serviceConfigResult)
-	require.Equal(t, expectedUlimits, serviceConfigResult.GetUlimits())
+	require.Equal(t, expectedUlimits, serviceConfigResult.GetGpuConfig().GetUlimits())
 }

@@ -133,5 +133,6 @@ func KurtosisTypeConstructors() []*starlark.Builtin {
 		starlark.NewBuiltin(service_config.ImageSpecTypeName, service_config.NewImageSpec().CreateBuiltin()),
 		starlark.NewBuiltin(service_config.UserTypeName, service_config.NewUserType().CreateBuiltin()),
 		starlark.NewBuiltin(service_config.TolerationTypeName, service_config.NewTolerationType().CreateBuiltin()),
+		starlark.NewBuiltin(service_config.GpuConfigTypeName, service_config.NewGpuConfigType().CreateBuiltin()),
 	}
 }

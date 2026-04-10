@@ -29,10 +29,12 @@ func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigWithGpus() {
 }
 
 func (t *serviceConfigGpusTestCase) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%q, %s=%d)",
+	return fmt.Sprintf("%s(%s=%q, %s=%s(%s=%d))",
 		service_config.ServiceConfigTypeName,
 		service_config.ImageAttr, testContainerImageName,
-		service_config.GpuCountAttr, 2)
+		service_config.GpuAttr,
+		service_config.GpuConfigTypeName,
+		service_config.GpuConfigCountAttr, 2)
 }
 
 func (t *serviceConfigGpusTestCase) Assert(typeValue builtin_argument.KurtosisValueType) {
@@ -48,8 +50,8 @@ func (t *serviceConfigGpusTestCase) Assert(typeValue builtin_argument.KurtosisVa
 		image_download_mode.ImageDownloadMode_Missing)
 	require.Nil(t, interpretationErr)
 
-	expectedServiceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, map[string]*port_spec.PortSpec{}, map[string]*port_spec.PortSpec{}, nil, nil, map[string]string{}, nil, nil, 0, 0, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false, []string{}, false, nil, 2, nil, 0)
+	expectedServiceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, map[string]*port_spec.PortSpec{}, map[string]*port_spec.PortSpec{}, nil, nil, map[string]string{}, nil, nil, 0, 0, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false, []string{}, false, service.NewGpuConfig(2, nil, 0, nil))
 	require.NoError(t, err)
 	require.Equal(t, expectedServiceConfig, serviceConfigResult)
-	require.Equal(t, int64(2), serviceConfigResult.GetGpuCount())
+	require.Equal(t, int64(2), serviceConfigResult.GetGpuConfig().GetCount())
 }

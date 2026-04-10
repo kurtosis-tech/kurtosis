@@ -329,10 +329,7 @@ func getServiceConfig(
 		false,
 		[]string{},
 		false,
-		nil,
-		0,
-		nil,
-		0)
+		service.GpuConfig{})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating service config")
 	}

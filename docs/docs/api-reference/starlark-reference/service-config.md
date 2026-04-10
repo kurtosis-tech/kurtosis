@@ -294,44 +294,45 @@ config = ServiceConfig(
         "SYS_ADMIN",
     ],
 
-    # The size of /dev/shm in megabytes.
-    # Useful for workloads that use POSIX shared memory heavily, such as GPU-accelerated processes or
-    # inter-process communication via shared memory buffers.
-    # On Docker, sets HostConfig.ShmSize (converted to bytes).
-    # On Kubernetes, mounts a memory-backed emptyDir volume at /dev/shm of the given size.
-    # OPTIONAL (Default: 0, which uses the runtime default — typically 64 MB)
-    shm_size = 128,
+    # GPU configuration: device selection, shared-memory size, and ulimits.
+    # All GPU-related settings are bundled in a GpuConfig object since they only apply to GPU workloads.
+    # OPTIONAL (Default: None — no GPU access)
+    gpu = GpuConfig(
+        # The number of NVIDIA GPUs to expose to the container.
+        # Use -1 to expose all available GPUs, 0 for none, or a positive integer for a specific count.
+        # On Docker, uses the NVIDIA container runtime DeviceRequests mechanism.
+        # On Kubernetes, sets an nvidia.com/gpu resource limit/request (requires the NVIDIA device plugin;
+        # only positive counts are supported on Kubernetes).
+        # Cannot be used together with device_ids.
+        # OPTIONAL (Default: 0)
+        count = 2,
 
-    # Resource limits (ulimits) to apply to the container.
-    # Keys are ulimit names (e.g. "memlock", "nofile", "stack") and values are the limit to set.
-    # Both the soft and hard limits are set to the same value; use -1 for unlimited.
-    # Common use cases: setting memlock=-1 to allow memory locking for GPU/RDMA workloads,
-    # or raising nofile to support services that open many file descriptors.
-    # On Docker, maps to HostConfig.Ulimits.
-    # NOTE: ulimits are not supported on Kubernetes.
-    # OPTIONAL (Default: {})
-    ulimits = {
-        "memlock": -1,
-        "nofile": 65536,
-    },
+        # A list of specific NVIDIA GPU device IDs to pin to the container.
+        # Use this when you need to assign particular GPUs by their device index or UUID
+        # (e.g. ["0", "1"] or ["GPU-abc123"]).
+        # On Docker, uses the NVIDIA container runtime DeviceRequests mechanism with explicit device IDs.
+        # NOTE: device_ids is not supported on Kubernetes — use count instead.
+        # Cannot be used together with count.
+        # OPTIONAL (Default: [])
+        device_ids = ["0", "1"],
 
-    # The number of NVIDIA GPUs to expose to the container.
-    # Use -1 to expose all available GPUs, 0 for none, or a positive integer for a specific count.
-    # On Docker, uses the NVIDIA container runtime DeviceRequests mechanism.
-    # On Kubernetes, sets an nvidia.com/gpu resource limit/request (requires the NVIDIA device plugin
-    # to be installed on the cluster; only positive counts are supported — use gpus >= 1).
-    # Cannot be used together with gpu_device_ids.
-    # OPTIONAL (Default: 0)
-    gpus = 2,
+        # The size of /dev/shm in megabytes.
+        # On Docker, sets HostConfig.ShmSize (converted to bytes).
+        # On Kubernetes, mounts a memory-backed emptyDir volume at /dev/shm of the given size.
+        # OPTIONAL (Default: 0, which uses the runtime default — typically 64 MB)
+        shm_size = 128,
 
-    # A list of specific NVIDIA GPU device IDs to pin to the container.
-    # Use this when you need to assign particular GPUs by their device index or UUID
-    # (e.g. ["0", "1"] or ["GPU-abc123"]).
-    # On Docker, uses the NVIDIA container runtime DeviceRequests mechanism with explicit device IDs.
-    # NOTE: gpu_device_ids is not supported on Kubernetes — use gpus instead.
-    # Cannot be used together with gpus.
-    # OPTIONAL (Default: [])
-    gpu_device_ids = ["0", "1"],
+        # Resource limits (ulimits) to apply to the container.
+        # Keys are ulimit names (e.g. "memlock", "nofile") and values are the limit (soft=hard).
+        # Use -1 for unlimited. Common: memlock=-1 for CUDA unified memory.
+        # On Docker, maps to HostConfig.Ulimits.
+        # NOTE: ulimits are not supported on Kubernetes.
+        # OPTIONAL (Default: {})
+        ulimits = {
+            "memlock": -1,
+            "nofile": 65536,
+        },
+    ),
 )
 ```
 Note that `ImageBuildSpec` can only be used in packages and not standalone scripts as it relies on build context in package. More info on [`ImageBuildSpec`](./image-build-spec.md) here.

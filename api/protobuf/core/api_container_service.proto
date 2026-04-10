@@ -200,17 +200,28 @@ message ServiceInfo {
   // Linux capabilities to add to the container (e.g., "NET_ADMIN", "SYS_PTRACE")
   repeated string capabilities = 21;
 
-  // Size of /dev/shm in megabytes. 0 means use the runtime default (usually 64MB).
-  uint64 shm_size_megabytes = 22;
+  // GPU configuration: device selection, shared-memory size, and ulimits.
+  // All GPU-related settings are bundled here since they only apply to GPU workloads.
+  GpuConfig gpu_config = 22;
 
-  // Resource limits (ulimits) for the container. Maps limit name to value (soft=hard).
-  map<string, int64> ulimits = 23;
+  reserved 23, 24, 25;
+  reserved "shm_size_megabytes", "ulimits", "gpu_count", "gpu_device_ids";
+}
 
-  // Number of GPUs to expose. 0 = none, -1 = all available, N = specific count.
-  int64 gpu_count = 24;
+// GpuConfig bundles all GPU-related container settings.
+message GpuConfig {
+  // Number of NVIDIA GPUs to expose. 0 = none, -1 = all available, N = N GPUs.
+  int64 count = 1;
 
   // Specific GPU device IDs to pin (e.g. ["0","1"] or ["GPU-abc123"]).
-  repeated string gpu_device_ids = 25;
+  // When set, count is ignored for device selection.
+  repeated string device_ids = 2;
+
+  // Size of /dev/shm in megabytes. 0 means use the runtime default (usually 64MB).
+  uint64 shm_size_megabytes = 3;
+
+  // Resource limits for the container. Maps limit name (e.g. "memlock") to value (soft=hard).
+  map<string, int64> ulimits = 4;
 }
 
 // ==============================================================================================

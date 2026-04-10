@@ -316,17 +316,18 @@ func createStartServiceOperation(
 		imageDownloadMode := serviceConfig.GetImageDownloadMode()
 		devices := serviceConfig.GetDevices()
 		capabilities := serviceConfig.GetCapabilities()
-		shmSizeMegabytes := serviceConfig.GetShmSizeMegabytes()
-		gpuCount := serviceConfig.GetGpuCount()
+		gpuConfig := serviceConfig.GetGpuConfig()
+		shmSizeMegabytes := gpuConfig.GetShmSizeMegabytes()
+		gpuCount := gpuConfig.GetCount()
 
-		if ulimits := serviceConfig.GetUlimits(); len(ulimits) > 0 {
+		if ulimits := gpuConfig.GetUlimits(); len(ulimits) > 0 {
 			logrus.Warnf("Service '%v' has ulimits configured but ulimits are not supported on Kubernetes; they will be ignored", serviceUuid)
 		}
-		if gpuDeviceIDs := serviceConfig.GetGpuDeviceIDs(); len(gpuDeviceIDs) > 0 {
-			logrus.Warnf("Service '%v' has gpu_device_ids configured but GPU device pinning is not supported on Kubernetes; use 'gpus' with a positive count instead", serviceUuid)
+		if gpuDeviceIDs := gpuConfig.GetDeviceIDs(); len(gpuDeviceIDs) > 0 {
+			logrus.Warnf("Service '%v' has gpu.device_ids configured but GPU device pinning is not supported on Kubernetes; use 'gpu.count' with a positive count instead", serviceUuid)
 		}
 		if gpuCount < 0 {
-			logrus.Warnf("Service '%v' has gpus=%d but Kubernetes only supports positive GPU counts; GPU request will be ignored", serviceUuid, gpuCount)
+			logrus.Warnf("Service '%v' has gpu.count=%d but Kubernetes only supports positive GPU counts; GPU request will be ignored", serviceUuid, gpuCount)
 		}
 
 		matchingObjectAndResources, found := servicesObjectsAndResources[serviceUuid]
