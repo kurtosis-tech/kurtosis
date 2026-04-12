@@ -50,7 +50,7 @@ func (t *serviceConfigGpusTestCase) Assert(typeValue builtin_argument.KurtosisVa
 		image_download_mode.ImageDownloadMode_Missing)
 	require.Nil(t, interpretationErr)
 
-	expectedServiceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, map[string]*port_spec.PortSpec{}, map[string]*port_spec.PortSpec{}, nil, nil, map[string]string{}, nil, nil, 0, 0, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false, []string{}, false, service.NewGpuConfig(2, nil, 0, nil))
+	expectedServiceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, nil, nil, map[string]*port_spec.PortSpec{}, map[string]*port_spec.PortSpec{}, nil, nil, map[string]string{}, nil, nil, 0, 0, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false, []string{}, false, service.NewGpuConfig(2, nil, 0, nil, "", ""))
 	require.NoError(t, err)
 	require.Equal(t, expectedServiceConfig, serviceConfigResult)
 	require.Equal(t, int64(2), serviceConfigResult.GetGpuConfig().GetCount())

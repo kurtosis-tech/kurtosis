@@ -690,7 +690,8 @@ func (manager *DockerManager) CreateAndStartContainer(
 		args.shmSizeMegabytes,
 		args.ulimits,
 		args.gpuCount,
-		args.gpuDeviceIDs)
+		args.gpuDeviceIDs,
+		args.gpuDriver)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
@@ -1837,6 +1838,7 @@ func (manager *DockerManager) getContainerHostConfig(
 	ulimits map[string]int64,
 	gpuCount int64,
 	gpuDeviceIDs []string,
+	gpuDriver string,
 ) (hostConfig *container.HostConfig, err error) {
 
 	bindsList := make([]string, 0, len(bindMounts))
@@ -1940,7 +1942,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		CpusetMems:           "",
 		Devices:              convertDevicesToDockerDeviceMapping(devices),
 		DeviceCgroupRules:    nil,
-		DeviceRequests:       buildDeviceRequests(gpuCount, gpuDeviceIDs),
+		DeviceRequests:       buildDeviceRequests(gpuCount, gpuDeviceIDs, gpuDriver),
 		KernelMemory:         0,
 		KernelMemoryTCP:      0,
 		MemoryReservation:    0,
@@ -2411,11 +2413,11 @@ func buildUlimits(ulimits map[string]int64) []*units.Ulimit {
 	return result
 }
 
-func buildDeviceRequests(gpuCount int64, gpuDeviceIDs []string) []container.DeviceRequest {
+func buildDeviceRequests(gpuCount int64, gpuDeviceIDs []string, gpuDriver string) []container.DeviceRequest {
 	if len(gpuDeviceIDs) > 0 {
 		return []container.DeviceRequest{
 			{
-				Driver:       "nvidia",
+				Driver:       gpuDriver,
 				Count:        0,
 				DeviceIDs:    gpuDeviceIDs,
 				Capabilities: [][]string{{"gpu"}},
@@ -2434,7 +2436,7 @@ func buildDeviceRequests(gpuCount int64, gpuDeviceIDs []string) []container.Devi
 	}
 	return []container.DeviceRequest{
 		{
-			Driver:       "nvidia",
+			Driver:       gpuDriver,
 			Count:        count,
 			DeviceIDs:    nil,
 			Capabilities: [][]string{{"gpu"}},

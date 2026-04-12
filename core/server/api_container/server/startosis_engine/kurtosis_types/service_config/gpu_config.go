@@ -12,10 +12,16 @@ import (
 const (
 	GpuConfigTypeName = "GpuConfig"
 
-	GpuConfigCountAttr    = "count"
+	GpuConfigCountAttr     = "count"
 	GpuConfigDeviceIDsAttr = "device_ids"
-	GpuConfigShmSizeAttr  = "shm_size"
-	GpuConfigUlimitsAttr  = "ulimits"
+	GpuConfigShmSizeAttr   = "shm_size"
+	GpuConfigUlimitsAttr   = "ulimits"
+	// GpuConfigDriverAttr accepts either a string shorthand (e.g. "nvidia") or a dict with
+	// "docker" and/or "kubernetes" keys for backend-specific overrides.
+	GpuConfigDriverAttr = "driver"
+
+	gpuConfigDriverDockerKey     = "docker"
+	gpuConfigDriverKubernetesKey = "kubernetes"
 )
 
 func NewGpuConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
@@ -45,6 +51,14 @@ func NewGpuConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					Name:              GpuConfigUlimitsAttr,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
+					Validator:         nil,
+				},
+				{
+					// ZeroValueProvider returns nil (interface zero value), which causes the
+					// framework to skip concrete-type validation and allows string | dict here.
+					Name:              GpuConfigDriverAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Value],
 					Validator:         nil,
 				},
 			},
@@ -144,5 +158,62 @@ func (g *GpuConfig) ToKurtosisType() (service.GpuConfig, *startosis_errors.Inter
 		}
 	}
 
-	return service.NewGpuConfig(count, deviceIDs, shmSizeMegabytes, ulimits), nil
+	dockerDriver, k8sResourceName, interpretationErr := parseDriverAttr(g.KurtosisValueTypeDefault)
+	if interpretationErr != nil {
+		return service.GpuConfig{}, interpretationErr
+	}
+
+	return service.NewGpuConfig(count, deviceIDs, shmSizeMegabytes, ulimits, dockerDriver, k8sResourceName), nil
+}
+
+// parseDriverAttr extracts the driver field, which can be:
+//   - absent → both default to nvidia
+//   - a string, e.g. "nvidia" → docker="nvidia", kubernetes="nvidia.com/gpu"
+//   - a dict, e.g. {"docker": "amd", "kubernetes": "amd.com/gpu"} → explicit per-backend values
+func parseDriverAttr(value *kurtosis_type_constructor.KurtosisValueTypeDefault) (dockerDriver string, k8sResourceName string, interpretationErr *startosis_errors.InterpretationError) {
+	driverVal, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Value](value, GpuConfigDriverAttr)
+	if interpretationErr != nil {
+		return "", "", interpretationErr
+	}
+	if !found || driverVal == nil {
+		return service.DefaultDockerGpuDriver, service.DefaultK8sGpuResourceName, nil
+	}
+
+	switch v := driverVal.(type) {
+	case starlark.String:
+		s := string(v)
+		if s == "" {
+			return "", "", startosis_errors.NewInterpretationError("Field '%v' string shorthand cannot be empty", GpuConfigDriverAttr)
+		}
+		return s, s + ".com/gpu", nil
+	case *starlark.Dict:
+		return parseDriverDict(v)
+	default:
+		return "", "", startosis_errors.NewInterpretationError(
+			"Field '%v' must be a string or a dict with '%v'/'%v' keys, got '%T'",
+			GpuConfigDriverAttr, gpuConfigDriverDockerKey, gpuConfigDriverKubernetesKey, driverVal)
+	}
+}
+
+func parseDriverDict(d *starlark.Dict) (dockerDriver string, k8sResourceName string, interpretationErr *startosis_errors.InterpretationError) {
+	dockerDriver = service.DefaultDockerGpuDriver
+	k8sResourceName = service.DefaultK8sGpuResourceName
+
+	if dockerVal, found, err := d.Get(starlark.String(gpuConfigDriverDockerKey)); err == nil && found {
+		s, ok := starlark.AsString(dockerVal)
+		if !ok || s == "" {
+			return "", "", startosis_errors.NewInterpretationError("Key '%v' in field '%v' must be a non-empty string", gpuConfigDriverDockerKey, GpuConfigDriverAttr)
+		}
+		dockerDriver = s
+	}
+
+	if k8sVal, found, err := d.Get(starlark.String(gpuConfigDriverKubernetesKey)); err == nil && found {
+		s, ok := starlark.AsString(k8sVal)
+		if !ok || s == "" {
+			return "", "", startosis_errors.NewInterpretationError("Key '%v' in field '%v' must be a non-empty string", gpuConfigDriverKubernetesKey, GpuConfigDriverAttr)
+		}
+		k8sResourceName = s
+	}
+
+	return dockerDriver, k8sResourceName, nil
 }

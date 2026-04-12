@@ -210,7 +210,7 @@ message ServiceInfo {
 
 // GpuConfig bundles all GPU-related container settings.
 message GpuConfig {
-  // Number of NVIDIA GPUs to expose. 0 = none, -1 = all available, N = N GPUs.
+  // Number of GPUs to expose. 0 = none, -1 = all available, N = N GPUs.
   int64 count = 1;
 
   // Specific GPU device IDs to pin (e.g. ["0","1"] or ["GPU-abc123"]).
@@ -222,6 +222,13 @@ message GpuConfig {
 
   // Resource limits for the container. Maps limit name (e.g. "memlock") to value (soft=hard).
   map<string, int64> ulimits = 4;
+
+  // Docker DeviceRequest driver name (e.g. "nvidia", "amd"). Defaults to "nvidia".
+  string docker_driver = 5;
+
+  // Kubernetes resource name for GPU requests (e.g. "nvidia.com/gpu", "amd.com/gpu").
+  // Defaults to "nvidia.com/gpu".
+  string k8s_resource_name = 6;
 }
 
 // ==============================================================================================

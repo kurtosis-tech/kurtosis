@@ -43,6 +43,7 @@ type CreateAndStartContainerArgs struct {
 	ulimits                                  map[string]int64
 	gpuCount                                 int64
 	gpuDeviceIDs                             []string
+	gpuDriver                                string
 }
 
 // Builder for creating CreateAndStartContainerArgs object
@@ -78,6 +79,7 @@ type CreateAndStartContainerArgsBuilder struct {
 	ulimits                                  map[string]int64
 	gpuCount                                 int64
 	gpuDeviceIDs                             []string
+	gpuDriver                                string
 }
 
 /*
@@ -120,6 +122,7 @@ func NewCreateAndStartContainerArgsBuilder(dockerImage string, name string, netw
 		ulimits:                                  nil,
 		gpuCount:                                 0,
 		gpuDeviceIDs:                             nil,
+		gpuDriver:                                "",
 	}
 }
 
@@ -145,6 +148,11 @@ func (builder *CreateAndStartContainerArgsBuilder) WithGpuCount(gpuCount int64) 
 
 func (builder *CreateAndStartContainerArgsBuilder) WithGpuDeviceIDs(gpuDeviceIDs []string) *CreateAndStartContainerArgsBuilder {
 	builder.gpuDeviceIDs = gpuDeviceIDs
+	return builder
+}
+
+func (builder *CreateAndStartContainerArgsBuilder) WithGpuDriver(gpuDriver string) *CreateAndStartContainerArgsBuilder {
+	builder.gpuDriver = gpuDriver
 	return builder
 }
 
@@ -181,6 +189,7 @@ func (builder *CreateAndStartContainerArgsBuilder) Build() *CreateAndStartContai
 		ulimits:                                  builder.ulimits,
 		gpuCount:                                 builder.gpuCount,
 		gpuDeviceIDs:                             builder.gpuDeviceIDs,
+		gpuDriver:                                builder.gpuDriver,
 	}
 }
 

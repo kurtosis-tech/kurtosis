@@ -563,6 +563,7 @@ func createStartServiceOperation(
 		shmSizeMegabytes := gpuConfig.GetShmSizeMegabytes()
 		ulimits := gpuConfig.GetUlimits()
 		gpuCount := gpuConfig.GetCount()
+		gpuDriver := gpuConfig.GetDockerDriver()
 
 		// We replace the placeholder value with the actual private IP address
 		privateIPAddrStr := privateIpAddr.String()
@@ -774,6 +775,9 @@ func createStartServiceOperation(
 		}
 		if gpuDeviceIDs := gpuConfig.GetDeviceIDs(); len(gpuDeviceIDs) > 0 {
 			createAndStartArgsBuilder.WithGpuDeviceIDs(gpuDeviceIDs)
+		}
+		if gpuCount != 0 || len(gpuConfig.GetDeviceIDs()) > 0 {
+			createAndStartArgsBuilder.WithGpuDriver(gpuDriver)
 		}
 
 		createAndStartArgs := createAndStartArgsBuilder.Build()

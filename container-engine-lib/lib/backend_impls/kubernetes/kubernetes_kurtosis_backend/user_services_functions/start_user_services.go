@@ -319,6 +319,7 @@ func createStartServiceOperation(
 		gpuConfig := serviceConfig.GetGpuConfig()
 		shmSizeMegabytes := gpuConfig.GetShmSizeMegabytes()
 		gpuCount := gpuConfig.GetCount()
+		k8sGpuResource := gpuConfig.GetK8sResourceName()
 
 		if ulimits := gpuConfig.GetUlimits(); len(ulimits) > 0 {
 			logrus.Warnf("Service '%v' has ulimits configured but ulimits are not supported on Kubernetes; they will be ignored", serviceUuid)
@@ -503,6 +504,7 @@ func createStartServiceOperation(
 			imageDownloadMode,
 			capabilities,
 			gpuCount,
+			k8sGpuResource,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating the container specs for the user service pod with image '%v'", containerImageName)
@@ -743,6 +745,7 @@ func getUserServicePodContainerSpecs(
 	imageDownloadMode image_download_mode.ImageDownloadMode,
 	capabilities []string,
 	gpuCount int64,
+	k8sGpuResource string,
 ) ([]apiv1.Container, error) {
 
 	var containerEnvVars []apiv1.EnvVar
@@ -800,8 +803,8 @@ func getUserServicePodContainerSpecs(
 
 	if gpuCount > 0 {
 		gpuQuantity := resource.MustParse(fmt.Sprintf("%d", gpuCount))
-		resourceLimitsList["nvidia.com/gpu"] = gpuQuantity
-		resourceRequestsList["nvidia.com/gpu"] = gpuQuantity
+		resourceLimitsList[apiv1.ResourceName(k8sGpuResource)] = gpuQuantity
+		resourceRequestsList[apiv1.ResourceName(k8sGpuResource)] = gpuQuantity
 	}
 
 	resourceRequirements := apiv1.ResourceRequirements{ //nolint:exhaustruct

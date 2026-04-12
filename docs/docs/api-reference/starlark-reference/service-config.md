@@ -294,23 +294,23 @@ config = ServiceConfig(
         "SYS_ADMIN",
     ],
 
-    # GPU configuration: device selection, shared-memory size, and ulimits.
+    # GPU configuration: device selection, shared-memory size, ulimits, and driver.
     # All GPU-related settings are bundled in a GpuConfig object since they only apply to GPU workloads.
     # OPTIONAL (Default: None — no GPU access)
     gpu = GpuConfig(
-        # The number of NVIDIA GPUs to expose to the container.
+        # The number of GPUs to expose to the container.
         # Use -1 to expose all available GPUs, 0 for none, or a positive integer for a specific count.
-        # On Docker, uses the NVIDIA container runtime DeviceRequests mechanism.
-        # On Kubernetes, sets an nvidia.com/gpu resource limit/request (requires the NVIDIA device plugin;
-        # only positive counts are supported on Kubernetes).
+        # On Docker, sets the DeviceRequests count for the configured driver.
+        # On Kubernetes, sets a resource limit/request using the configured k8s resource name
+        # (e.g. "nvidia.com/gpu"); only positive counts are supported on Kubernetes.
         # Cannot be used together with device_ids.
         # OPTIONAL (Default: 0)
         count = 2,
 
-        # A list of specific NVIDIA GPU device IDs to pin to the container.
+        # A list of specific GPU device IDs to pin to the container.
         # Use this when you need to assign particular GPUs by their device index or UUID
         # (e.g. ["0", "1"] or ["GPU-abc123"]).
-        # On Docker, uses the NVIDIA container runtime DeviceRequests mechanism with explicit device IDs.
+        # On Docker, sets the DeviceRequests device IDs for the configured driver.
         # NOTE: device_ids is not supported on Kubernetes — use count instead.
         # Cannot be used together with count.
         # OPTIONAL (Default: [])
@@ -332,6 +332,15 @@ config = ServiceConfig(
             "memlock": -1,
             "nofile": 65536,
         },
+
+        # The GPU driver to use. Accepts either:
+        #   - A string shorthand, e.g. "nvidia" or "amd". The Kubernetes resource name is
+        #     derived automatically as "<driver>.com/gpu" (e.g. "nvidia.com/gpu").
+        #   - A dict with "docker" and/or "kubernetes" keys for explicit per-backend control,
+        #     e.g. {"docker": "amd", "kubernetes": "amd.com/gpu"} or
+        #     {"kubernetes": "gpu.intel.com/i915"} (unset keys use their defaults).
+        # OPTIONAL (Default: "nvidia")
+        driver = "nvidia",
     ),
 )
 ```
