@@ -98,25 +98,25 @@ func (g *GpuConfig) ToKurtosisType() (service.GpuConfig, *startosis_errors.Inter
 	var count int64
 	countStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Int](g.KurtosisValueTypeDefault, GpuConfigCountAttr)
 	if interpretationErr != nil {
-		return service.GpuConfig{}, interpretationErr
+		return service.NewGpuConfig(0, nil, 0, nil, "", ""), interpretationErr
 	}
 	if found {
 		count, ok = countStarlark.Int64()
 		if !ok {
-			return service.GpuConfig{}, startosis_errors.NewInterpretationError("An error occurred parsing field '%v' with value '%v' to int64", GpuConfigCountAttr, countStarlark)
+			return service.NewGpuConfig(0, nil, 0, nil, "", ""), startosis_errors.NewInterpretationError("An error occurred parsing field '%v' with value '%v' to int64", GpuConfigCountAttr, countStarlark)
 		}
 	}
 
 	var deviceIDs []string
 	deviceIDsStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.List](g.KurtosisValueTypeDefault, GpuConfigDeviceIDsAttr)
 	if interpretationErr != nil {
-		return service.GpuConfig{}, interpretationErr
+		return service.NewGpuConfig(0, nil, 0, nil, "", ""), interpretationErr
 	}
 	if found && deviceIDsStarlark != nil {
 		for i := 0; i < deviceIDsStarlark.Len(); i++ {
 			strVal, isStr := starlark.AsString(deviceIDsStarlark.Index(i))
 			if !isStr {
-				return service.GpuConfig{}, startosis_errors.NewInterpretationError("An error occurred parsing field '%v': all elements must be strings", GpuConfigDeviceIDsAttr)
+				return service.NewGpuConfig(0, nil, 0, nil, "", ""), startosis_errors.NewInterpretationError("An error occurred parsing field '%v': all elements must be strings", GpuConfigDeviceIDsAttr)
 			}
 			deviceIDs = append(deviceIDs, strVal)
 		}
@@ -125,34 +125,34 @@ func (g *GpuConfig) ToKurtosisType() (service.GpuConfig, *startosis_errors.Inter
 	var shmSizeMegabytes uint64
 	shmSizeStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Int](g.KurtosisValueTypeDefault, GpuConfigShmSizeAttr)
 	if interpretationErr != nil {
-		return service.GpuConfig{}, interpretationErr
+		return service.NewGpuConfig(0, nil, 0, nil, "", ""), interpretationErr
 	}
 	if found {
 		shmSizeMegabytes, ok = shmSizeStarlark.Uint64()
 		if !ok {
-			return service.GpuConfig{}, startosis_errors.NewInterpretationError("An error occurred parsing field '%v' with value '%v' to uint64", GpuConfigShmSizeAttr, shmSizeStarlark)
+			return service.NewGpuConfig(0, nil, 0, nil, "", ""), startosis_errors.NewInterpretationError("An error occurred parsing field '%v' with value '%v' to uint64", GpuConfigShmSizeAttr, shmSizeStarlark)
 		}
 	}
 
 	var ulimits map[string]int64
 	ulimitsStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](g.KurtosisValueTypeDefault, GpuConfigUlimitsAttr)
 	if interpretationErr != nil {
-		return service.GpuConfig{}, interpretationErr
+		return service.NewGpuConfig(0, nil, 0, nil, "", ""), interpretationErr
 	}
 	if found && ulimitsStarlark.Len() > 0 {
 		ulimits = map[string]int64{}
 		for _, item := range ulimitsStarlark.Items() {
 			key, keyOk := item[0].(starlark.String)
 			if !keyOk {
-				return service.GpuConfig{}, startosis_errors.NewInterpretationError("Expected string key in '%v' dict, got '%T'", GpuConfigUlimitsAttr, item[0])
+				return service.NewGpuConfig(0, nil, 0, nil, "", ""), startosis_errors.NewInterpretationError("Expected string key in '%v' dict, got '%T'", GpuConfigUlimitsAttr, item[0])
 			}
 			val, valOk := item[1].(starlark.Int)
 			if !valOk {
-				return service.GpuConfig{}, startosis_errors.NewInterpretationError("Expected int value in '%v' dict for key '%v', got '%T'", GpuConfigUlimitsAttr, key.GoString(), item[1])
+				return service.NewGpuConfig(0, nil, 0, nil, "", ""), startosis_errors.NewInterpretationError("Expected int value in '%v' dict for key '%v', got '%T'", GpuConfigUlimitsAttr, key.GoString(), item[1])
 			}
 			valInt64, valInt64Ok := val.Int64()
 			if !valInt64Ok {
-				return service.GpuConfig{}, startosis_errors.NewInterpretationError("Could not convert value for '%v' key '%v' to int64", GpuConfigUlimitsAttr, key.GoString())
+				return service.NewGpuConfig(0, nil, 0, nil, "", ""), startosis_errors.NewInterpretationError("Could not convert value for '%v' key '%v' to int64", GpuConfigUlimitsAttr, key.GoString())
 			}
 			ulimits[key.GoString()] = valInt64
 		}
@@ -160,7 +160,7 @@ func (g *GpuConfig) ToKurtosisType() (service.GpuConfig, *startosis_errors.Inter
 
 	dockerDriver, k8sResourceName, interpretationErr := parseDriverAttr(g.KurtosisValueTypeDefault)
 	if interpretationErr != nil {
-		return service.GpuConfig{}, interpretationErr
+		return service.NewGpuConfig(0, nil, 0, nil, "", ""), interpretationErr
 	}
 
 	return service.NewGpuConfig(count, deviceIDs, shmSizeMegabytes, ulimits, dockerDriver, k8sResourceName), nil

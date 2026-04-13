@@ -151,8 +151,8 @@ func CreateServiceConfig(
 		TtyEnabled:                   ttyEnabled,
 		Devices:                      devices,
 		PublishUdp:                   publishUdp,
-		Capabilities: nil,
-		GpuConfig:    gpuConfig,
+		Capabilities:                 nil,
+		GpuConfig:                    gpuConfig,
 	}
 	return &ServiceConfig{internalServiceConfig}, nil
 }
@@ -358,7 +358,7 @@ func GetEmptyServiceConfig() *ServiceConfig {
 		false,
 		[]string{},
 		false,
-		GpuConfig{},
+		NewGpuConfig(0, nil, 0, nil, "", ""),
 	)
 	return emptyServiceConfig
 }

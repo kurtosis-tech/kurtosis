@@ -56,8 +56,8 @@ const (
 	TtyEnabledAttr                  = "tty_enabled"
 	DevicesAttr                     = "devices"
 	PublishUdpAttr                  = "publish_udp"
-	CapabilitiesAttr = "capabilities"
-	GpuAttr          = "gpu"
+	CapabilitiesAttr                = "capabilities"
+	GpuAttr                         = "gpu"
 
 	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
@@ -618,7 +618,7 @@ func (config *ServiceConfig) ToKurtosisType(
 		}
 	}
 
-	gpuConfig := service.GpuConfig{}
+	gpuConfig := service.NewGpuConfig(0, nil, 0, nil, "", "")
 	gpuConfigStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*GpuConfig](config.KurtosisValueTypeDefault, GpuAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
