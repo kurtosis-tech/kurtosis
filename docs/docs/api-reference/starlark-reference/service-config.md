@@ -405,6 +405,8 @@ The `user` field expects a [`User`][user] object being passed.
 
 The `tolerations` field expects a list of [`Toleration`][toleration] objects being passed.
 
+The `gpu` field expects a [`GpuConfig`][gpu-config] object being passed. See the [GpuConfig reference][gpu-config] for full details on GPU device selection, shared memory, ulimits, driver configuration, and Kubernetes limitations.
+
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [add-service-reference]: ./plan.md#add_service
 [directory]: ./directory.md
@@ -415,4 +417,5 @@ The `tolerations` field expects a list of [`Toleration`][toleration] objects bei
 [user]: ./user.md
 [toleration]: ./toleration.md
 [nix-build-spec]: ./nix-build-spec.md
+[gpu-config]: ./gpu-config.md
 [port-ip-doc]: ../../advanced-concepts/public-and-private-ips-and-ports.md#gotchas
