@@ -19,21 +19,13 @@ type GpuConfig struct {
 }
 
 func NewGpuConfig(count int64, deviceIDs []string, shmSizeMegabytes uint64, ulimits map[string]int64, dockerDriver string, k8sResourceName string) GpuConfig {
-	dd := dockerDriver
-	if dd == "" {
-		dd = DefaultDockerGpuDriver
-	}
-	k8s := k8sResourceName
-	if k8s == "" {
-		k8s = DefaultK8sGpuResourceName
-	}
 	return GpuConfig{
 		count:            count,
 		deviceIDs:        deviceIDs,
 		shmSizeMegabytes: shmSizeMegabytes,
 		ulimits:          ulimits,
-		dockerDriver:     dd,
-		k8sResourceName:  k8s,
+		dockerDriver:     dockerDriver,
+		k8sResourceName:  k8sResourceName,
 	}
 }
 
