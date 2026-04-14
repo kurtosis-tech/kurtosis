@@ -5,18 +5,17 @@ on:
   workflow_dispatch:
   pull_request:
     branches: [main]
-    paths:
-      - 'version.txt'
-      - '.release-please-manifest.json'
 
 permissions:
   contents: read
 
+# Fork PRs don't have access to secrets. Skip the secret-dependent jobs there;
+# GitHub will still show them as "skipped" rather than failing contributor PRs.
 jobs:
   verify-kurtosisbot-github-token:
     name: KURTOSISBOT_GITHUB_TOKEN
     runs-on: ubuntu-latest
-    if: ${{ github.event_name != 'pull_request' || startsWith(github.head_ref, 'release-please--') }}
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     env:
       TOKEN: ${{ secrets.KURTOSISBOT_GITHUB_TOKEN }}
     steps:
@@ -73,7 +72,7 @@ jobs:
   verify-releaser-token:
     name: RELEASER_TOKEN
     runs-on: ubuntu-latest
-    if: ${{ github.event_name != 'pull_request' || startsWith(github.head_ref, 'release-please--') }}
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     env:
       TOKEN: ${{ secrets.RELEASER_TOKEN }}
     steps:
@@ -112,7 +111,7 @@ jobs:
   verify-crates-token:
     name: CRATES_PUBLISHER_TOKEN
     runs-on: ubuntu-latest
-    if: ${{ github.event_name != 'pull_request' || startsWith(github.head_ref, 'release-please--') }}
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     env:
       TOKEN: ${{ secrets.CRATES_PUBLISHER_TOKEN }}
     steps:
@@ -139,7 +138,7 @@ jobs:
   verify-dockerhub-credentials:
     name: DOCKERHUB_USERNAME / DOCKERHUB_PASSWORD
     runs-on: ubuntu-latest
-    if: ${{ github.event_name != 'pull_request' || startsWith(github.head_ref, 'release-please--') }}
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     env:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
@@ -162,5 +161,6 @@ jobs:
 
   verify-npm-token:
     name: NPMJS_AUTH_TOKEN
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     uses: ./.github/workflows/verify-npm-token.yml
     secrets: inherit
