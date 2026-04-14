@@ -69,7 +69,7 @@ func getServiceConfigForTest(t *testing.T, imageName string) *ServiceConfig {
 	serviceConfig, err := CreateServiceConfig(imageName, testImageBuildSpec(), testImageRegistrySpec(), testNixBuildSpec(), testPrivatePorts(t), testPublicPorts(t), []string{"bin", "bash", "ls"}, []string{"-l", "-a"}, testEnvVars(), testFilesArtifactExpansion(), testPersistentDirectory(), 500, 1024, "IP-ADDRESS", 100, 512, map[string]string{
 		"test-label-key":        "test-label-value",
 		"test-second-label-key": "test-second-label-value",
-	}, testServiceUser(), testToleration(), testNodeSelectors(), testImageDownloadMode(), true, false, []string{}, false)
+	}, testServiceUser(), testToleration(), testNodeSelectors(), testImageDownloadMode(), true, false, []string{}, false, NewGpuConfig(0, nil, 0, nil, "", ""))
 	require.NoError(t, err)
 	return serviceConfig
 }
@@ -206,7 +206,7 @@ func testImageDownloadMode() image_download_mode.ImageDownloadMode {
 
 func TestServiceConfigCapabilitiesField(t *testing.T) {
 	// Test capabilities with NET_ADMIN
-	config, err := CreateServiceConfig("test-image", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 0, 0, "", 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false, []string{}, false)
+	config, err := CreateServiceConfig("test-image", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 0, 0, "", 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false, []string{}, false, NewGpuConfig(0, nil, 0, nil, "", ""))
 	require.NoError(t, err)
 	require.Nil(t, config.GetCapabilities())
 
@@ -219,7 +219,7 @@ func TestServiceConfigCapabilitiesField(t *testing.T) {
 }
 
 func TestServiceConfigCapabilitiesMarshalling(t *testing.T) {
-	config, err := CreateServiceConfig("test-image", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 0, 0, "", 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false, []string{}, false)
+	config, err := CreateServiceConfig("test-image", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 0, 0, "", 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false, []string{}, false, NewGpuConfig(0, nil, 0, nil, "", ""))
 	require.NoError(t, err)
 	config.SetCapabilities([]string{"NET_ADMIN", "SYS_PTRACE"})
 
@@ -236,12 +236,12 @@ func TestServiceConfigCapabilitiesMarshalling(t *testing.T) {
 
 func TestServiceConfigTtyField(t *testing.T) {
 	// Test TTY enabled
-	ttyEnabledConfig, err := CreateServiceConfig("test-image", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 0, 0, "", 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, true, []string{}, false)
+	ttyEnabledConfig, err := CreateServiceConfig("test-image", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 0, 0, "", 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, true, []string{}, false, NewGpuConfig(0, nil, 0, nil, "", ""))
 	require.NoError(t, err)
 	require.True(t, ttyEnabledConfig.GetTtyEnabled())
 
 	// Test TTY disabled
-	ttyDisabledConfig, err := CreateServiceConfig("test-image", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 0, 0, "", 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false, []string{}, false)
+	ttyDisabledConfig, err := CreateServiceConfig("test-image", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 0, 0, "", 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true, false, []string{}, false, NewGpuConfig(0, nil, 0, nil, "", ""))
 	require.NoError(t, err)
 	require.False(t, ttyDisabledConfig.GetTtyEnabled())
 }

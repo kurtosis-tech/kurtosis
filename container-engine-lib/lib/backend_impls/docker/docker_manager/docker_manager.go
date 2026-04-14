@@ -124,6 +124,7 @@ const (
 
 	megabytesToBytesFactor    = 1_000_000
 	millicpusToNanoCPUsFactor = 1_000_000
+	shmMebibytesToBytesFactor = 1024 * 1024
 
 	minMemoryLimit = 6
 
@@ -685,7 +686,12 @@ func (manager *DockerManager) CreateAndStartContainer(
 		args.loggingDriverConfig,
 		args.containerInitEnabled,
 		args.restartPolicy,
-		args.devices)
+		args.devices,
+		args.shmSizeMegabytes,
+		args.ulimits,
+		args.gpuCount,
+		args.gpuDeviceIDs,
+		args.gpuDriver)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
@@ -1828,6 +1834,11 @@ func (manager *DockerManager) getContainerHostConfig(
 	useInit bool,
 	restartPolicy RestartPolicy,
 	devices []string,
+	shmSizeMegabytes uint64,
+	ulimits map[string]int64,
+	gpuCount int64,
+	gpuDeviceIDs []string,
+	gpuDriver string,
 ) (hostConfig *container.HostConfig, err error) {
 
 	bindsList := make([]string, 0, len(bindMounts))
@@ -1931,7 +1942,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		CpusetMems:           "",
 		Devices:              convertDevicesToDockerDeviceMapping(devices),
 		DeviceCgroupRules:    nil,
-		DeviceRequests:       nil,
+		DeviceRequests:       buildDeviceRequests(gpuCount, gpuDeviceIDs, gpuDriver),
 		KernelMemory:         0,
 		KernelMemoryTCP:      0,
 		MemoryReservation:    0,
@@ -1939,7 +1950,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		MemorySwappiness:     nil,
 		OomKillDisable:       nil,
 		PidsLimit:            nil,
-		Ulimits:              nil,
+		Ulimits:              buildUlimits(ulimits),
 		CPUCount:             0,
 		CPUPercent:           0,
 		IOMaximumIOps:        0,
@@ -2007,7 +2018,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		Tmpfs:           nil,
 		UTSMode:         "",
 		UsernsMode:      "",
-		ShmSize:         0,
+		ShmSize:         int64(shmSizeMegabytes) * shmMebibytesToBytesFactor,
 		Sysctls:         nil,
 		Runtime:         "",
 		ConsoleSize:     [2]uint{},
@@ -2385,6 +2396,53 @@ func convertDevicesToDockerDeviceMapping(devices []string) []container.DeviceMap
 		})
 	}
 	return deviceMappings
+}
+
+func buildUlimits(ulimits map[string]int64) []*units.Ulimit {
+	if len(ulimits) == 0 {
+		return nil
+	}
+	result := make([]*units.Ulimit, 0, len(ulimits))
+	for name, value := range ulimits {
+		result = append(result, &units.Ulimit{
+			Name: name,
+			Soft: value,
+			Hard: value,
+		})
+	}
+	return result
+}
+
+func buildDeviceRequests(gpuCount int64, gpuDeviceIDs []string, gpuDriver string) []container.DeviceRequest {
+	if len(gpuDeviceIDs) > 0 {
+		return []container.DeviceRequest{
+			{
+				Driver:       gpuDriver,
+				Count:        0,
+				DeviceIDs:    gpuDeviceIDs,
+				Capabilities: [][]string{{"gpu"}},
+				Options:      map[string]string{},
+			},
+		}
+	}
+	if gpuCount == 0 {
+		return nil
+	}
+	var count int
+	if gpuCount < 0 {
+		count = -1 // all GPUs
+	} else {
+		count = int(gpuCount)
+	}
+	return []container.DeviceRequest{
+		{
+			Driver:       gpuDriver,
+			Count:        count,
+			DeviceIDs:    nil,
+			Capabilities: [][]string{{"gpu"}},
+			Options:      map[string]string{},
+		},
+	}
 }
 
 func getEndpointSettingsForIpAddress(ipAddress string, alias string) *network.EndpointSettings {

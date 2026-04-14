@@ -86,6 +86,10 @@ type privateServiceConfig struct {
 
 	// Linux capabilities to add to the container (e.g., "NET_ADMIN", "SYS_PTRACE")
 	Capabilities []string
+
+	// GpuConfig bundles GPU device selection, shared-memory size, and ulimits.
+	// All three only apply to GPU workloads; use NewGpuConfig to construct.
+	GpuConfig GpuConfig
 }
 
 func CreateServiceConfig(
@@ -113,7 +117,8 @@ func CreateServiceConfig(
 	tiniEnabled bool,
 	ttyEnabled bool,
 	devices []string,
-	publishUdp bool) (*ServiceConfig, error) {
+	publishUdp bool,
+	gpuConfig GpuConfig) (*ServiceConfig, error) {
 	if err := ValidateServiceConfigLabels(labels); err != nil {
 		return nil, stacktrace.Propagate(err, "Invalid service config labels '%+v'", labels)
 	}
@@ -147,6 +152,7 @@ func CreateServiceConfig(
 		Devices:                      devices,
 		PublishUdp:                   publishUdp,
 		Capabilities:                 nil,
+		GpuConfig:                    gpuConfig,
 	}
 	return &ServiceConfig{internalServiceConfig}, nil
 }
@@ -352,6 +358,7 @@ func GetEmptyServiceConfig() *ServiceConfig {
 		false,
 		[]string{},
 		false,
+		NewGpuConfig(0, nil, 0, nil, "", ""),
 	)
 	return emptyServiceConfig
 }
@@ -370,4 +377,8 @@ func (serviceConfig *ServiceConfig) GetCapabilities() []string {
 
 func (serviceConfig *ServiceConfig) SetCapabilities(capabilities []string) {
 	serviceConfig.privateServiceConfig.Capabilities = capabilities
+}
+
+func (serviceConfig *ServiceConfig) GetGpuConfig() GpuConfig {
+	return serviceConfig.privateServiceConfig.GpuConfig
 }

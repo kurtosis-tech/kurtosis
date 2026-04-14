@@ -57,6 +57,7 @@ const (
 	DevicesAttr                     = "devices"
 	PublishUdpAttr                  = "publish_udp"
 	CapabilitiesAttr                = "capabilities"
+	GpuAttr                         = "gpu"
 
 	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
@@ -254,6 +255,12 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					Name:              CapabilitiesAttr,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
+					Validator:         nil,
+				},
+				{
+					Name:              GpuAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*GpuConfig],
 					Validator:         nil,
 				},
 			},
@@ -611,6 +618,18 @@ func (config *ServiceConfig) ToKurtosisType(
 		}
 	}
 
+	gpuConfig := service.NewGpuConfig(0, nil, 0, nil, "", "")
+	gpuConfigStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*GpuConfig](config.KurtosisValueTypeDefault, GpuAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found && gpuConfigStarlark != nil {
+		gpuConfig, interpretationErr = gpuConfigStarlark.ToKurtosisType()
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
+	}
+
 	serviceConfig, err := service.CreateServiceConfig(
 		imageName,
 		maybeImageBuildSpec,
@@ -637,6 +656,7 @@ func (config *ServiceConfig) ToKurtosisType(
 		ttyEnabled,
 		devices,
 		publishUdp,
+		gpuConfig,
 	)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating a service config")

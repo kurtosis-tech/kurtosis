@@ -316,6 +316,20 @@ func createStartServiceOperation(
 		imageDownloadMode := serviceConfig.GetImageDownloadMode()
 		devices := serviceConfig.GetDevices()
 		capabilities := serviceConfig.GetCapabilities()
+		gpuConfig := serviceConfig.GetGpuConfig()
+		shmSizeMegabytes := gpuConfig.GetShmSizeMegabytes()
+		gpuCount := gpuConfig.GetCount()
+		k8sGpuResource := gpuConfig.GetK8sResourceName()
+
+		if ulimits := gpuConfig.GetUlimits(); len(ulimits) > 0 {
+			logrus.Warnf("Service '%v' has ulimits configured but ulimits are not supported on Kubernetes; they will be ignored", serviceUuid)
+		}
+		if gpuDeviceIDs := gpuConfig.GetDeviceIDs(); len(gpuDeviceIDs) > 0 {
+			logrus.Warnf("Service '%v' has gpu.device_ids configured but GPU device pinning is not supported on Kubernetes; use 'gpu.count' with a positive count instead", serviceUuid)
+		}
+		if gpuCount < 0 {
+			logrus.Warnf("Service '%v' has gpu.count=%d but Kubernetes only supports positive GPU counts; GPU request will be ignored", serviceUuid, gpuCount)
+		}
 
 		matchingObjectAndResources, found := servicesObjectsAndResources[serviceUuid]
 		if !found {
@@ -435,6 +449,26 @@ func createStartServiceOperation(
 			}
 		}
 
+		// Mount a memory-backed emptyDir at /dev/shm if shm_size is configured
+		if shmSizeMegabytes > 0 {
+			shmQuantity := resource.MustParse(fmt.Sprintf("%dMi", shmSizeMegabytes))
+			shmVolume := apiv1.Volume{ //nolint:exhaustruct
+				Name: "dshm",
+				VolumeSource: apiv1.VolumeSource{ //nolint:exhaustruct
+					EmptyDir: &apiv1.EmptyDirVolumeSource{
+						Medium:    apiv1.StorageMediumMemory,
+						SizeLimit: &shmQuantity,
+					},
+				},
+			}
+			podVolumes = append(podVolumes, shmVolume)
+			shmVolumeMount := apiv1.VolumeMount{ //nolint:exhaustruct
+				Name:      "dshm",
+				MountPath: "/dev/shm",
+			}
+			userServiceContainerVolumeMounts = append(userServiceContainerVolumeMounts, shmVolumeMount)
+		}
+
 		defer func() {
 			if !shouldDestroyPersistentVolumesAndClaims {
 				return
@@ -469,6 +503,8 @@ func createStartServiceOperation(
 			user,
 			imageDownloadMode,
 			capabilities,
+			gpuCount,
+			k8sGpuResource,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating the container specs for the user service pod with image '%v'", containerImageName)
@@ -708,6 +744,8 @@ func getUserServicePodContainerSpecs(
 	user *service_user.ServiceUser,
 	imageDownloadMode image_download_mode.ImageDownloadMode,
 	capabilities []string,
+	gpuCount int64,
+	k8sGpuResource string,
 ) ([]apiv1.Container, error) {
 
 	var containerEnvVars []apiv1.EnvVar
@@ -761,6 +799,12 @@ func getUserServicePodContainerSpecs(
 	if minMemoryAllocationMegabytes != 0 {
 		minMemoryAllocationInBytes := convertMegabytesToBytes(minMemoryAllocationMegabytes)
 		resourceRequestsList[apiv1.ResourceMemory] = *resource.NewQuantity(int64(minMemoryAllocationInBytes), resource.DecimalSI)
+	}
+
+	if gpuCount > 0 {
+		gpuQuantity := resource.MustParse(fmt.Sprintf("%d", gpuCount))
+		resourceLimitsList[apiv1.ResourceName(k8sGpuResource)] = gpuQuantity
+		resourceRequestsList[apiv1.ResourceName(k8sGpuResource)] = gpuQuantity
 	}
 
 	resourceRequirements := apiv1.ResourceRequirements{ //nolint:exhaustruct

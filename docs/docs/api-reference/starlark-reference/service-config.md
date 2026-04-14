@@ -293,6 +293,55 @@ config = ServiceConfig(
         "SYS_PTRACE",
         "SYS_ADMIN",
     ],
+
+    # GPU configuration: device selection, shared-memory size, ulimits, and driver.
+    # All GPU-related settings are bundled in a GpuConfig object since they only apply to GPU workloads.
+    # OPTIONAL (Default: None — no GPU access)
+    gpu = GpuConfig(
+        # The number of GPUs to expose to the container.
+        # Use -1 to expose all available GPUs, 0 for none, or a positive integer for a specific count.
+        # On Docker, sets the DeviceRequests count for the configured driver.
+        # On Kubernetes, sets a resource limit/request using the configured k8s resource name
+        # (e.g. "nvidia.com/gpu"); only positive counts are supported on Kubernetes.
+        # Cannot be used together with device_ids.
+        # OPTIONAL (Default: 0)
+        count = 2,
+
+        # A list of specific GPU device IDs to pin to the container.
+        # Use this when you need to assign particular GPUs by their device index or UUID
+        # (e.g. ["0", "1"] or ["GPU-abc123"]).
+        # On Docker, sets the DeviceRequests device IDs for the configured driver.
+        # NOTE: device_ids is not supported on Kubernetes — use count instead.
+        # Cannot be used together with count.
+        # OPTIONAL (Default: [])
+        device_ids = ["0", "1"],
+
+        # The size of /dev/shm in megabytes.
+        # On Docker, sets HostConfig.ShmSize (converted to bytes).
+        # On Kubernetes, mounts a memory-backed emptyDir volume at /dev/shm of the given size.
+        # OPTIONAL (Default: 0, which uses the runtime default — typically 64 MB)
+        shm_size = 128,
+
+        # Resource limits (ulimits) to apply to the container.
+        # Keys are ulimit names (e.g. "memlock", "nofile") and values are the limit (soft=hard).
+        # Use -1 for unlimited. Common: memlock=-1 for CUDA unified memory.
+        # On Docker, maps to HostConfig.Ulimits.
+        # NOTE: ulimits are not supported on Kubernetes.
+        # OPTIONAL (Default: {})
+        ulimits = {
+            "memlock": -1,
+            "nofile": 65536,
+        },
+
+        # The GPU driver to use. Accepts either:
+        #   - A string shorthand, e.g. "nvidia" or "amd". The Kubernetes resource name is
+        #     derived automatically as "<driver>.com/gpu" (e.g. "nvidia.com/gpu").
+        #   - A dict with "docker" and/or "kubernetes" keys for explicit per-backend control,
+        #     e.g. {"docker": "amd", "kubernetes": "amd.com/gpu"} or
+        #     {"kubernetes": "gpu.intel.com/i915"} (unset keys use their defaults).
+        # OPTIONAL (Default: "nvidia")
+        driver = "nvidia",
+    ),
 )
 ```
 Note that `ImageBuildSpec` can only be used in packages and not standalone scripts as it relies on build context in package. More info on [`ImageBuildSpec`](./image-build-spec.md) here.
@@ -356,6 +405,8 @@ The `user` field expects a [`User`][user] object being passed.
 
 The `tolerations` field expects a list of [`Toleration`][toleration] objects being passed.
 
+The `gpu` field expects a [`GpuConfig`][gpu-config] object being passed. See the [GpuConfig reference][gpu-config] for full details on GPU device selection, shared memory, ulimits, driver configuration, and Kubernetes limitations.
+
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [add-service-reference]: ./plan.md#add_service
 [directory]: ./directory.md
@@ -366,4 +417,5 @@ The `tolerations` field expects a list of [`Toleration`][toleration] objects bei
 [user]: ./user.md
 [toleration]: ./toleration.md
 [nix-build-spec]: ./nix-build-spec.md
+[gpu-config]: ./gpu-config.md
 [port-ip-doc]: ../../advanced-concepts/public-and-private-ips-and-ports.md#gotchas

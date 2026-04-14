@@ -199,6 +199,36 @@ message ServiceInfo {
 
   // Linux capabilities to add to the container (e.g., "NET_ADMIN", "SYS_PTRACE")
   repeated string capabilities = 21;
+
+  // GPU configuration: device selection, shared-memory size, and ulimits.
+  // All GPU-related settings are bundled here since they only apply to GPU workloads.
+  GpuConfig gpu_config = 22;
+
+  reserved 23, 24, 25;
+  reserved "shm_size_megabytes", "ulimits", "gpu_count", "gpu_device_ids";
+}
+
+// GpuConfig bundles all GPU-related container settings.
+message GpuConfig {
+  // Number of GPUs to expose. 0 = none, -1 = all available, N = N GPUs.
+  int64 count = 1;
+
+  // Specific GPU device IDs to pin (e.g. ["0","1"] or ["GPU-abc123"]).
+  // When set, count is ignored for device selection.
+  repeated string device_ids = 2;
+
+  // Size of /dev/shm in megabytes. 0 means use the runtime default (usually 64MB).
+  uint64 shm_size_megabytes = 3;
+
+  // Resource limits for the container. Maps limit name (e.g. "memlock") to value (soft=hard).
+  map<string, int64> ulimits = 4;
+
+  // Docker DeviceRequest driver name (e.g. "nvidia", "amd"). Defaults to "nvidia".
+  string docker_driver = 5;
+
+  // Kubernetes resource name for GPU requests (e.g. "nvidia.com/gpu", "amd.com/gpu").
+  // Defaults to "nvidia.com/gpu".
+  string k8s_resource_name = 6;
 }
 
 // ==============================================================================================
