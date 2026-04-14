@@ -3,9 +3,6 @@ name: Verify Release Tokens
 on:
   workflow_call:
   workflow_dispatch:
-  schedule:
-    # Weekly on Mondays at 09:00 UTC — catches expiry before a release PR is cut.
-    - cron: '0 9 * * 1'
   pull_request:
     branches: [main]
     paths:
