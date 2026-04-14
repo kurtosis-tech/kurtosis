@@ -1,0 +1,169 @@
+name: Verify Release Tokens
+
+on:
+  workflow_call:
+  workflow_dispatch:
+  schedule:
+    # Weekly on Mondays at 09:00 UTC — catches expiry before a release PR is cut.
+    - cron: '0 9 * * 1'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'version.txt'
+      - '.release-please-manifest.json'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-kurtosisbot-github-token:
+    name: KURTOSISBOT_GITHUB_TOKEN
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' || startsWith(github.head_ref, 'release-please--') }}
+    env:
+      TOKEN: ${{ secrets.KURTOSISBOT_GITHUB_TOKEN }}
+    steps:
+      - name: Ensure secret is set
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::error::KURTOSISBOT_GITHUB_TOKEN secret is empty or missing."
+            exit 1
+          fi
+
+      - name: Verify authentication
+        run: |
+          if ! user=$(curl -fsS -H "Authorization: Bearer $TOKEN" \
+                              -H "Accept: application/vnd.github+json" \
+                              https://api.github.com/user 2>/dev/null); then
+            echo "::error::KURTOSISBOT_GITHUB_TOKEN failed to authenticate against the GitHub API (401). Rotate the PAT."
+            exit 1
+          fi
+          login=$(echo "$user" | jq -r '.login')
+          echo "Authenticated as $login"
+
+      - name: Verify push access to kurtosis-cli-release-artifacts
+        run: |
+          repo="kurtosis-tech/kurtosis-cli-release-artifacts"
+          resp=$(curl -fsS -H "Authorization: Bearer $TOKEN" \
+                              -H "Accept: application/vnd.github+json" \
+                              "https://api.github.com/repos/$repo" 2>/dev/null) || {
+            echo "::error::KURTOSISBOT_GITHUB_TOKEN cannot read $repo (likely missing repo scope or SSO authorization)."
+            exit 1
+          }
+          push=$(echo "$resp" | jq -r '.permissions.push // false')
+          if [ "$push" != "true" ]; then
+            echo "::error::KURTOSISBOT_GITHUB_TOKEN lacks push permission on $repo — goreleaser will 401 when publishing CLI artifacts."
+            exit 1
+          fi
+          echo "Push access to $repo confirmed"
+
+      - name: Verify push access to homebrew-tap
+        run: |
+          repo="kurtosis-tech/homebrew-tap"
+          resp=$(curl -fsS -H "Authorization: Bearer $TOKEN" \
+                              -H "Accept: application/vnd.github+json" \
+                              "https://api.github.com/repos/$repo" 2>/dev/null) || {
+            echo "::error::KURTOSISBOT_GITHUB_TOKEN cannot read $repo — goreleaser Homebrew formula bump will fail."
+            exit 1
+          }
+          push=$(echo "$resp" | jq -r '.permissions.push // false')
+          if [ "$push" != "true" ]; then
+            echo "::error::KURTOSISBOT_GITHUB_TOKEN lacks push permission on $repo."
+            exit 1
+          fi
+          echo "Push access to $repo confirmed"
+
+  verify-releaser-token:
+    name: RELEASER_TOKEN
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' || startsWith(github.head_ref, 'release-please--') }}
+    env:
+      TOKEN: ${{ secrets.RELEASER_TOKEN }}
+    steps:
+      - name: Ensure secret is set
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::error::RELEASER_TOKEN secret is empty or missing."
+            exit 1
+          fi
+
+      - name: Verify authentication
+        run: |
+          if ! curl -fsS -H "Authorization: Bearer $TOKEN" \
+                         -H "Accept: application/vnd.github+json" \
+                         https://api.github.com/user > /dev/null 2>&1; then
+            echo "::error::RELEASER_TOKEN failed to authenticate (401). release-please will not be able to open release PRs."
+            exit 1
+          fi
+
+      - name: Verify push access to kurtosis-tech/kurtosis
+        run: |
+          repo="${{ github.repository }}"
+          resp=$(curl -fsS -H "Authorization: Bearer $TOKEN" \
+                              -H "Accept: application/vnd.github+json" \
+                              "https://api.github.com/repos/$repo" 2>/dev/null) || {
+            echo "::error::RELEASER_TOKEN cannot read $repo."
+            exit 1
+          }
+          push=$(echo "$resp" | jq -r '.permissions.push // false')
+          if [ "$push" != "true" ]; then
+            echo "::error::RELEASER_TOKEN lacks push permission on $repo — release-please cannot open/merge release PRs."
+            exit 1
+          fi
+          echo "Push access to $repo confirmed"
+
+  verify-crates-token:
+    name: CRATES_PUBLISHER_TOKEN
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' || startsWith(github.head_ref, 'release-please--') }}
+    env:
+      TOKEN: ${{ secrets.CRATES_PUBLISHER_TOKEN }}
+    steps:
+      - name: Ensure secret is set
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::error::CRATES_PUBLISHER_TOKEN secret is empty or missing."
+            exit 1
+          fi
+
+      - name: Verify authentication against crates.io
+        run: |
+          status=$(curl -sS -o /tmp/crates_me.json -w '%{http_code}' \
+                        -H "Authorization: $TOKEN" \
+                        https://crates.io/api/v1/me)
+          if [ "$status" != "200" ]; then
+            echo "::error::CRATES_PUBLISHER_TOKEN failed to authenticate against crates.io (HTTP $status). Rotate the token at https://crates.io/settings/tokens."
+            cat /tmp/crates_me.json || true
+            exit 1
+          fi
+          user=$(jq -r '.user.login // "unknown"' < /tmp/crates_me.json)
+          echo "Authenticated to crates.io as $user"
+
+  verify-dockerhub-credentials:
+    name: DOCKERHUB_USERNAME / DOCKERHUB_PASSWORD
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' || startsWith(github.head_ref, 'release-please--') }}
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
+    steps:
+      - name: Ensure secrets are set
+        run: |
+          if [ -z "$DOCKERHUB_USERNAME" ] || [ -z "$DOCKERHUB_PASSWORD" ]; then
+            echo "::error::DOCKERHUB_USERNAME and/or DOCKERHUB_PASSWORD secret is empty or missing."
+            exit 1
+          fi
+
+      - name: Verify Docker Hub login
+        run: |
+          if ! echo "$DOCKERHUB_PASSWORD" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin > /dev/null 2>&1; then
+            echo "::error::Docker Hub login failed. Rotate DOCKERHUB_PASSWORD (recommend an access token scoped to Read/Write/Delete)."
+            exit 1
+          fi
+          echo "Docker Hub login succeeded for $DOCKERHUB_USERNAME"
+          docker logout > /dev/null 2>&1 || true
+
+  verify-npm-token:
+    name: NPMJS_AUTH_TOKEN
+    uses: ./.github/workflows/verify-npm-token.yml
+    secrets: inherit
