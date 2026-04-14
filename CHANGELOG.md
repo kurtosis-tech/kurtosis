@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.18.0](https://github.com/kurtosis-tech/kurtosis/compare/1.17.7...1.18.0) (2026-04-14)
+
+
+### Features
+
+* shm size ulimits gpus ([#3018](https://github.com/kurtosis-tech/kurtosis/issues/3018)) ([8420323](https://github.com/kurtosis-tech/kurtosis/commit/8420323d75044a905480752cb78aaeb21985ff55))
+
+
+### Bug Fixes
+
+* group dependabot updates by dependency name across directories ([#2998](https://github.com/kurtosis-tech/kurtosis/issues/2998)) ([d8bf5a7](https://github.com/kurtosis-tech/kurtosis/commit/d8bf5a7c6ae1a5ff009dd093612eb350e504c6f9))
+* reduce CI flakiness across log tests, K8s setup, and CLI tests ([#3007](https://github.com/kurtosis-tech/kurtosis/issues/3007)) ([817243a](https://github.com/kurtosis-tech/kurtosis/commit/817243ad742026537558b2703086b1552d880dac))
+* **security:** bump vulnerable dependencies ([#3008](https://github.com/kurtosis-tech/kurtosis/issues/3008)) ([5a2d4b2](https://github.com/kurtosis-tech/kurtosis/commit/5a2d4b28b78fbdddaf09b743baa0dbf6a4d294d6))
+* **security:** patch CVE-2026-33186 grpc-go authz bypass in cli and enclave-manager ([#2985](https://github.com/kurtosis-tech/kurtosis/issues/2985)) ([e393aa2](https://github.com/kurtosis-tech/kurtosis/commit/e393aa27bb0d991c352c93fbfc2d98d26f84d2f8))
+* use pull_request_target for dependabot auto-merge ([#2993](https://github.com/kurtosis-tech/kurtosis/issues/2993)) ([3da8e12](https://github.com/kurtosis-tech/kurtosis/commit/3da8e128b4521f3a11b0c7a4047629198c97f359))
+
 ## [1.17.7](https://github.com/kurtosis-tech/kurtosis/compare/1.17.6...1.17.7) (2026-03-25)
 
 
