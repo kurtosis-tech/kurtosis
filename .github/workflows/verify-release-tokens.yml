@@ -108,32 +108,31 @@ jobs:
           fi
           echo "Push access to $repo confirmed"
 
-  verify-crates-token:
-    name: CRATES_PUBLISHER_TOKEN
+  verify-cargo-registry-token:
+    name: CARGO_REGISTRY_TOKEN
     runs-on: ubuntu-latest
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     env:
-      TOKEN: ${{ secrets.CRATES_PUBLISHER_TOKEN }}
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
     steps:
-      - name: Ensure secret is set
+      # crates.io has locked down all /api/v1/me* endpoints to browser sessions
+      # only. The sole remaining token-authenticated endpoints are write actions
+      # (publish, yank, owners) which we cannot exercise without side effects.
+      # So this job only performs shape validation — it catches "secret empty"
+      # or "wrong value pasted" mistakes but cannot prove the token is still
+      # live with crates.io. Fortunately crates.io tokens do not expire by
+      # default, so format validation catches the common rotation mistakes.
+      - name: Verify token is set and has a plausible shape
         run: |
-          if [ -z "$TOKEN" ]; then
-            echo "::error::CRATES_PUBLISHER_TOKEN secret is empty or missing."
+          if [ -z "$CARGO_REGISTRY_TOKEN" ]; then
+            echo "::error::CARGO_REGISTRY_TOKEN secret is empty or missing."
             exit 1
           fi
-
-      - name: Verify authentication against crates.io
-        run: |
-          status=$(curl -sS -o /tmp/crates_me.json -w '%{http_code}' \
-                        -H "Authorization: $TOKEN" \
-                        https://crates.io/api/v1/me)
-          if [ "$status" != "200" ]; then
-            echo "::error::CRATES_PUBLISHER_TOKEN failed to authenticate against crates.io (HTTP $status). Rotate the token at https://crates.io/settings/tokens."
-            cat /tmp/crates_me.json || true
+          if [ "${#CARGO_REGISTRY_TOKEN}" -lt 20 ]; then
+            echo "::error::CARGO_REGISTRY_TOKEN looks too short to be a valid crates.io token."
             exit 1
           fi
-          user=$(jq -r '.user.login // "unknown"' < /tmp/crates_me.json)
-          echo "Authenticated to crates.io as $user"
+          echo "CARGO_REGISTRY_TOKEN is set (live validation is not possible — crates.io has no token-auth readable endpoint)."
 
   verify-dockerhub-credentials:
     name: DOCKERHUB_USERNAME / DOCKERHUB_PASSWORD
