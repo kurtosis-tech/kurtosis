@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.18.1](https://github.com/kurtosis-tech/kurtosis/compare/1.18.0...1.18.1) (2026-04-14)
+
+
+### Miscellaneous Chores
+
+* release 1.18.1
+
 ## [1.18.0](https://github.com/kurtosis-tech/kurtosis/compare/1.17.7...1.18.0) (2026-04-14)
 
 
