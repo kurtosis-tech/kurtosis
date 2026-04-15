@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.18.1](https://github.com/kurtosis-tech/kurtosis/compare/1.18.0...1.18.1) (2026-04-15)
+
+
+### Features
+
+* verify release tokens before release PR merges ([#3040](https://github.com/kurtosis-tech/kurtosis/issues/3040)) ([2850515](https://github.com/kurtosis-tech/kurtosis/commit/2850515f8498ea36264fe442453ae23936a29557))
+
+
+### Miscellaneous Chores
+
+* release 1.18.1 ([#3050](https://github.com/kurtosis-tech/kurtosis/issues/3050)) ([5f3fcec](https://github.com/kurtosis-tech/kurtosis/commit/5f3fcec14a114e0c5c8f5026635a0bdd7d64a61d))
+
 ## [1.18.0](https://github.com/kurtosis-tech/kurtosis/compare/1.17.7...1.18.0) (2026-04-14)
 
 
