@@ -16,7 +16,7 @@ replace (
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/kurtosis-tech/kurtosis/api/golang v1.17.7 // Local dependency
+	github.com/kurtosis-tech/kurtosis/api/golang v1.18.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/core/launcher v0.0.0 // Local dependency
@@ -131,7 +131,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/moby/buildkit v0.29.0 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
-	github.com/moby/spdystream v0.5.0 // indirect
+	github.com/moby/spdystream v0.5.1 // indirect
 	github.com/moby/term v0.0.0-20220808134915-39b0c02b01ae // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
