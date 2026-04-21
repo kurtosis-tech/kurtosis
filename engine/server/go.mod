@@ -66,7 +66,7 @@ require (
 	github.com/rs/cors v1.11.1
 	github.com/spf13/afero v1.15.0
 	golang.org/x/exp v0.0.0-20250911091902-df9299821621
-	k8s.io/apimachinery v0.35.3
+	k8s.io/apimachinery v0.35.4
 )
 
 require (
