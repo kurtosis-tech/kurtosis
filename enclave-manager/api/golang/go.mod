@@ -8,7 +8,7 @@ replace (
 )
 
 require (
-	connectrpc.com/connect v1.19.1
+	connectrpc.com/connect v1.19.2
 	github.com/kurtosis-tech/kurtosis/api/golang v0.81.9
 	github.com/kurtosis-tech/kurtosis/cloud/api/golang v0.88.12
 	google.golang.org/grpc v1.80.0
