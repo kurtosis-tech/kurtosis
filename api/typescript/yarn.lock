@@ -7,6 +7,31 @@
   resolved "https://registry.npmjs.org/@bufbuild/buf-darwin-arm64/-/buf-darwin-arm64-1.26.1.tgz"
   integrity sha512-nmyWiT/59RFja0ZuXFxjNGoAMDPTApU66CZUUevkFVWbNB9nzeQDjx2vsJyACY64k5fTgZiaelSiyppwObQknw==
 
+"@bufbuild/buf-darwin-x64@1.26.1":
+  version "1.26.1"
+  resolved "https://registry.yarnpkg.com/@bufbuild/buf-darwin-x64/-/buf-darwin-x64-1.26.1.tgz#76d0cfd468dd2b2c462b7b5ad0de062e475d755e"
+  integrity sha512-jl5WmUv30OW8JiRLid9+mVx1XVH0XttpUfkQfmqDFdUHGfdy4XWYK8kr84YyWu0SiMTIt1mPXkqG5UM3x+tdIQ==
+
+"@bufbuild/buf-linux-aarch64@1.26.1":
+  version "1.26.1"
+  resolved "https://registry.yarnpkg.com/@bufbuild/buf-linux-aarch64/-/buf-linux-aarch64-1.26.1.tgz#45cc1f69ce64beb6aa1dce0eefd7d04db2ed7790"
+  integrity sha512-EedR2KDW/yDIxQKWuq1Y/g7IuwTgvelqylGVO7muMxt2JWShobyUaU6GIU8JB4yhIbqRQYCL2KqBsvDJbJtCUw==
+
+"@bufbuild/buf-linux-x64@1.26.1":
+  version "1.26.1"
+  resolved "https://registry.yarnpkg.com/@bufbuild/buf-linux-x64/-/buf-linux-x64-1.26.1.tgz#32c1395497d9a877671b74191d2d199d078b1e34"
+  integrity sha512-5iFL+MmWqR4cBLVNpgsjRecdHgcTxFaIkVYlQV9q8acbaJn5rgOIjUr1tzcBao9YsL3rdBhHvKkgnQ9gi1IiTw==
+
+"@bufbuild/buf-win32-arm64@1.26.1":
+  version "1.26.1"
+  resolved "https://registry.yarnpkg.com/@bufbuild/buf-win32-arm64/-/buf-win32-arm64-1.26.1.tgz#839001f409c111ddf5745a1278128b4c49e9c8d0"
+  integrity sha512-/ayymSD12gBetN98ErkH0CBGRLTmtYAp4fmbPuvq8zuJcL0eiAnK6d7ZFjTc+vDMuKY/aelQN7dj9WhzdYAQSQ==
+
+"@bufbuild/buf-win32-x64@1.26.1":
+  version "1.26.1"
+  resolved "https://registry.yarnpkg.com/@bufbuild/buf-win32-x64/-/buf-win32-x64-1.26.1.tgz#483ebcdc31944cef6e78c0a4e01208252baf7ab2"
+  integrity sha512-k9Dy3Z9P96wYR43lUhUo0jbjMSo001+MRBlsadEYiw85POqx6RWVaGyHLrxC2Ly7g+aGMisey050OjqfCWtKTA==
+
 "@bufbuild/buf@^1.26.1":
   version "1.26.1"
   resolved "https://registry.npmjs.org/@bufbuild/buf/-/buf-1.26.1.tgz"
@@ -26,12 +51,12 @@
   dependencies:
     "@bufbuild/connect" "0.13.0"
 
-"@bufbuild/connect@^0.13.0", "@bufbuild/connect@0.13.0":
+"@bufbuild/connect@0.13.0", "@bufbuild/connect@^0.13.0":
   version "0.13.0"
   resolved "https://registry.npmjs.org/@bufbuild/connect/-/connect-0.13.0.tgz"
   integrity sha512-eZSMbVLyUFtXiZNORgCEvv580xKZeYQdMOWj2i/nxOcpXQcrEzTMTA7SZzWv4k4gveWCOSRoWmYDeOhfWXJv0g==
 
-"@bufbuild/protobuf@^1.2.1", "@bufbuild/protobuf@^1.3.0", "@bufbuild/protobuf@1.3.0":
+"@bufbuild/protobuf@1.3.0", "@bufbuild/protobuf@^1.2.1", "@bufbuild/protobuf@^1.3.0":
   version "1.3.0"
   resolved "https://registry.npmjs.org/@bufbuild/protobuf/-/protobuf-1.3.0.tgz"
   integrity sha512-G372ods0pLt46yxVRsnP/e2btVPuuzArcMPFpIDeIwiGPuuglEs9y75iG0HMvZgncsj5TvbYRWqbVyOe3PLCWQ==
@@ -51,7 +76,7 @@
   dependencies:
     "@bufbuild/protoplugin" "1.3.0"
 
-"@bufbuild/protoplugin@^1.2.1", "@bufbuild/protoplugin@1.3.0":
+"@bufbuild/protoplugin@1.3.0", "@bufbuild/protoplugin@^1.2.1":
   version "1.3.0"
   resolved "https://registry.npmjs.org/@bufbuild/protoplugin/-/protoplugin-1.3.0.tgz"
   integrity sha512-zye8CfJb9VWzaHR/f1qcEkddaRh9De+u6fORsj92Ten8EJUcyhiY5BivET+RMTissAKXKrp/f2zSBCV0dlFxPw==
@@ -675,9 +700,9 @@ picocolors@^1.1.1:
   integrity sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==
 
 protobufjs@^7.5.3:
-  version "7.5.4"
-  resolved "https://registry.npmjs.org/protobufjs/-/protobufjs-7.5.4.tgz"
-  integrity sha512-CvexbZtbov6jW2eXAvLukXjXUW1TzFaivC46BpWc/3BpcCysb5Vffu+B3XHMm8lVEuy2Mm4XGex8hBSg1yapPg==
+  version "7.5.5"
+  resolved "https://registry.yarnpkg.com/protobufjs/-/protobufjs-7.5.5.tgz#b7089ca4410374c75150baf277353ef76db69f96"
+  integrity sha512-3wY1AxV+VBNW8Yypfd1yQY9pXnqTAN+KwQxL8iYm3/BjKYMNg4i0owhEe26PWDOMaIrzeeF98Lqd5NGz4omiIg==
   dependencies:
     "@protobufjs/aspromise" "^1.1.2"
     "@protobufjs/base64" "^1.1.2"
@@ -833,15 +858,15 @@ type-detect@^4.0.0, type-detect@^4.0.5:
   resolved "https://registry.npmjs.org/type-detect/-/type-detect-4.0.8.tgz"
   integrity sha512-0fr/mIH1dlO+x7TlcMy+bIDqKPsw/70tVyeHW787goQjhmqaZe10uwLujubK9q9Lg6Fiho1KUKDYz0Z7k7g5/g==
 
-typescript@^5.7.0:
-  version "5.9.3"
-  resolved "https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz"
-  integrity sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==
-
 typescript@4.5.2:
   version "4.5.2"
   resolved "https://registry.npmjs.org/typescript/-/typescript-4.5.2.tgz"
   integrity sha512-5BlMof9H1yGt0P8/WF+wPNw6GfctgGjXp5hkblpyT+8rkASSmkUKMXrxR0Xg8ThVCi/JnHQiKXeBaEwCeQwMFw==
+
+typescript@^5.7.0:
+  version "5.9.3"
+  resolved "https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz"
+  integrity sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==
 
 which@^2.0.1:
   version "2.0.2"
