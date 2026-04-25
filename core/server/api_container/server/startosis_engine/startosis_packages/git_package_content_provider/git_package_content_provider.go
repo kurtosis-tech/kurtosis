@@ -437,7 +437,7 @@ func (provider *GitPackageContentProvider) cloneWithRetries(parsedURL *shared_ut
 			SingleBranch:      false,
 			NoCheckout:        false,
 			Depth:             depth,
-			RecurseSubmodules: 0,
+			RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
 			Progress:          io.Discard,
 			Tags:              0,
 			InsecureSkipTLS:   false,
