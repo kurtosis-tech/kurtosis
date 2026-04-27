@@ -34,6 +34,13 @@ const (
 	unlimitedReplacements                = -1
 	skipAddingUserServiceToBridgeNetwork = true
 	emptyImageName                       = ""
+
+	// When Docker rejects a container create because the auto-picked host port
+	// is already bound by another process, we re-probe the conflicting ports
+	// and retry. The substring is matched against the error returned by
+	// dockerd; it is stable across the supported Docker / Moby versions.
+	hostPortBindFailureSubstr = "address already in use"
+	maxHostPortBindRetries    = 5
 )
 
 func RegisterUserServices(
@@ -673,6 +680,12 @@ func createStartServiceOperation(
 		}
 
 		dockerUsedPorts := map[nat.Port]docker_manager.PortPublishSpec{}
+		// Tracks ports that we pre-allocated by probing the kernel. Letting Docker
+		// auto-pick the host port at container-create time creates a TOCTOU race
+		// when many services start in parallel: the port Docker chose can be
+		// claimed by another process before bind(2) runs. Probing here lets us
+		// re-pick on bind failure (see retry loop below).
+		preAllocatedPortTransports := map[nat.Port]port_spec.TransportProtocol{}
 		for portId, privatePortSpec := range privatePorts {
 			dockerPort, err := shared_helpers.TransformPortSpecToDockerPort(privatePortSpec)
 			if err != nil {
@@ -690,7 +703,13 @@ func createStartServiceOperation(
 				// This avoids Docker Desktop 4.41.2+ UDP port publishing issues
 				dockerUsedPorts[dockerPort] = docker_manager.NewNoPublishingSpec()
 			} else {
-				dockerUsedPorts[dockerPort] = docker_manager.NewAutomaticPublishingSpec()
+				transport := privatePortSpec.GetTransportProtocol()
+				probedHostPort, probeErr := probeFreeHostPortForTransport(transport)
+				if probeErr != nil {
+					return nil, stacktrace.Propagate(probeErr, "An error occurred probing a free host port for private port '%v'", portId)
+				}
+				dockerUsedPorts[dockerPort] = docker_manager.NewManualPublishingSpec(probedHostPort)
+				preAllocatedPortTransports[dockerPort] = transport
 			}
 		}
 
@@ -782,7 +801,14 @@ func createStartServiceOperation(
 
 		createAndStartArgs := createAndStartArgsBuilder.Build()
 
-		containerId, hostMachinePortBindings, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
+		containerId, hostMachinePortBindings, err := createAndStartContainerWithHostPortRetry(
+			ctx,
+			dockerManager,
+			createAndStartArgs,
+			dockerUsedPorts,
+			preAllocatedPortTransports,
+			serviceUUID,
+		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred starting the user service container for user service with UUID '%v'", serviceUUID)
 		}
@@ -976,4 +1002,72 @@ func portShouldBeManuallyPublished(key string, publicPorts map[string]*port_spec
 	}
 	_, found := publicPorts[key]
 	return found
+}
+
+// probeFreeHostPortForTransport asks the kernel for a free host port matching
+// the given transport protocol. TCP and UDP have independent port namespaces,
+// so the probe must use the same transport that Docker will later bind.
+func probeFreeHostPortForTransport(transport port_spec.TransportProtocol) (uint16, error) {
+	if transport == port_spec.TransportProtocol_UDP {
+		return docker_manager.GetFreeUdpHostPort()
+	}
+	return docker_manager.GetFreeTcpHostPort()
+}
+
+// createAndStartContainerWithHostPortRetry calls dockerManager.CreateAndStartContainer
+// and, on host-port bind failures for ports we pre-allocated, re-probes those
+// ports and retries up to maxHostPortBindRetries times. Pre-allocation narrows
+// the TOCTOU window between probe-close and Docker's bind, but cannot close it
+// completely — another process can still claim the port in the gap. This retry
+// is the safety net that makes the overall flow robust under contention (e.g.
+// the Ethereum-package CI workflow that starts dozens of services in parallel).
+//
+// Errors that don't look like a port-bind collision are returned immediately.
+// Manually-specified host ports (the NEAR static-port path) are never re-probed.
+func createAndStartContainerWithHostPortRetry(
+	ctx context.Context,
+	dockerManager *docker_manager.DockerManager,
+	args *docker_manager.CreateAndStartContainerArgs,
+	dockerUsedPorts map[nat.Port]docker_manager.PortPublishSpec,
+	preAllocatedPortTransports map[nat.Port]port_spec.TransportProtocol,
+	serviceUUID service.ServiceUUID,
+) (string, map[nat.Port]*nat.PortBinding, error) {
+	var lastErr error
+	for attempt := 0; attempt < maxHostPortBindRetries; attempt++ {
+		containerId, hostMachinePortBindings, err := dockerManager.CreateAndStartContainer(ctx, args)
+		if err == nil {
+			return containerId, hostMachinePortBindings, nil
+		}
+		lastErr = err
+
+		// Only retry collisions on ports we own. If the user pinned a host port
+		// and it's taken, no amount of re-probing helps.
+		if !strings.Contains(err.Error(), hostPortBindFailureSubstr) || len(preAllocatedPortTransports) == 0 {
+			return "", nil, err
+		}
+
+		logrus.Warnf(
+			"Host port collision starting user service '%v' on attempt %d/%d (%v); re-probing pre-allocated ports and retrying",
+			serviceUUID,
+			attempt+1,
+			maxHostPortBindRetries,
+			err,
+		)
+
+		// Re-probe and overwrite the entries in the (shared) port map. The args
+		// struct holds a reference to the same map, so the next attempt picks
+		// up the new ports without rebuilding the args.
+		for dockerPort, transport := range preAllocatedPortTransports {
+			newHostPort, probeErr := probeFreeHostPortForTransport(transport)
+			if probeErr != nil {
+				return "", nil, stacktrace.Propagate(probeErr, "An error occurred re-probing a free host port for '%v' during retry", dockerPort)
+			}
+			dockerUsedPorts[dockerPort] = docker_manager.NewManualPublishingSpec(newHostPort)
+		}
+	}
+	return "", nil, stacktrace.Propagate(
+		lastErr,
+		"Failed to start user service container after %d host-port bind retries",
+		maxHostPortBindRetries,
+	)
 }
