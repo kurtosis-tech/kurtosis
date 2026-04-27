@@ -23,6 +23,8 @@ const config = {
 		locales: ['en'],
 	},
 
+	plugins: ['docusaurus-plugin-copy-page-button'],
+
 	presets: [
 		[
 			'classic',
