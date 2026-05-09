@@ -471,5 +471,15 @@ func replaceMagicStringsInEnvVars(runtimeValueStore *runtime_value_store.Runtime
 		return nil, stacktrace.Propagate(err, "An error occurred creating a service config with env var magric strings replaced.")
 	}
 
+	if len(serviceConfig.GetCapabilities()) > 0 {
+		renderedServiceConfig.SetCapabilities(serviceConfig.GetCapabilities())
+	}
+	if serviceConfig.GetPrivileged() {
+		renderedServiceConfig.SetPrivileged(true)
+	}
+	if len(serviceConfig.GetBindMounts()) > 0 {
+		renderedServiceConfig.SetBindMounts(serviceConfig.GetBindMounts())
+	}
+
 	return renderedServiceConfig, nil
 }

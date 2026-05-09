@@ -294,6 +294,26 @@ config = ServiceConfig(
         "SYS_ADMIN",
     ],
 
+    # Start the container with the Docker --privileged flag.
+    # DANGEROUS: a privileged container has near-total access to the host kernel and can trivially
+    # escape the container boundary. Only enable this for trusted images that genuinely require it
+    # (for example, ethpandaops/disruptoor, which manipulates host networking).
+    # Docker only — using this on the Kubernetes backend will fail at service-start time.
+    # The engine operator can disable this feature fleet-wide; see the operator note below.
+    # OPTIONAL (Default: False)
+    privileged = False,
+
+    # Bind-mount specific host paths into the container, mapping host_path -> container_path.
+    # Today the only allowlisted host path is /var/run/docker.sock — any other host path is
+    # rejected at interpretation time. This is intentionally narrow; the use case it exists for
+    # is letting a container talk to the host's Docker daemon (for example, ethpandaops/disruptoor).
+    # Docker only — using this on the Kubernetes backend will fail at service-start time.
+    # The engine operator can disable this feature fleet-wide; see the operator note below.
+    # OPTIONAL (Default: {})
+    bind_mounts = {
+        "/var/run/docker.sock": "/var/run/docker.sock",
+    },
+
     # GPU configuration: device selection, shared-memory size, ulimits, and driver.
     # All GPU-related settings are bundled in a GpuConfig object since they only apply to GPU workloads.
     # OPTIONAL (Default: None — no GPU access)
@@ -344,6 +364,13 @@ config = ServiceConfig(
     ),
 )
 ```
+### Operator note: disabling `privileged` and `bind_mounts`
+
+Both `privileged` and `bind_mounts` give the resulting container elevated host access. To disable
+them fleet-wide on a shared or CI Kurtosis instance, set `KURTOSIS_ALLOW_PRIVILEGED_CONTAINERS=false`
+on the engine before starting it. The default is `true`. Any package using these features against a
+locked-down engine will fail at service-start time with a clear error pointing at this env var.
+
 Note that `ImageBuildSpec` can only be used in packages and not standalone scripts as it relies on build context in package. More info on [`ImageBuildSpec`](./image-build-spec.md) here.
 More info can be found on [locators referring to local resources here][locators] and how to turn your script into a Kurtosis [package][package] here.
 

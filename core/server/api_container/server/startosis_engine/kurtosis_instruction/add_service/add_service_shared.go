@@ -224,6 +224,14 @@ func replaceMagicStrings(
 		renderedServiceConfig.SetCapabilities(serviceConfig.GetCapabilities())
 	}
 
+	if serviceConfig.GetPrivileged() {
+		renderedServiceConfig.SetPrivileged(true)
+	}
+
+	if len(serviceConfig.GetBindMounts()) > 0 {
+		renderedServiceConfig.SetBindMounts(serviceConfig.GetBindMounts())
+	}
+
 	return service.ServiceName(serviceNameStr), renderedServiceConfig, nil
 }
 

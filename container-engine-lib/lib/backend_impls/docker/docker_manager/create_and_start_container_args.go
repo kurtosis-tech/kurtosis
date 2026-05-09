@@ -44,6 +44,7 @@ type CreateAndStartContainerArgs struct {
 	gpuCount                                 int64
 	gpuDeviceIDs                             []string
 	gpuDriver                                string
+	privileged                               bool
 }
 
 // Builder for creating CreateAndStartContainerArgs object
@@ -80,6 +81,7 @@ type CreateAndStartContainerArgsBuilder struct {
 	gpuCount                                 int64
 	gpuDeviceIDs                             []string
 	gpuDriver                                string
+	privileged                               bool
 }
 
 /*
@@ -123,6 +125,7 @@ func NewCreateAndStartContainerArgsBuilder(dockerImage string, name string, netw
 		gpuCount:                                 0,
 		gpuDeviceIDs:                             nil,
 		gpuDriver:                                "",
+		privileged:                               false,
 	}
 }
 
@@ -190,6 +193,7 @@ func (builder *CreateAndStartContainerArgsBuilder) Build() *CreateAndStartContai
 		gpuCount:                                 builder.gpuCount,
 		gpuDeviceIDs:                             builder.gpuDeviceIDs,
 		gpuDriver:                                builder.gpuDriver,
+		privileged:                               builder.privileged,
 	}
 }
 
@@ -349,5 +353,13 @@ func (builder *CreateAndStartContainerArgsBuilder) WithUser(user *service_user.S
 
 func (builder *CreateAndStartContainerArgsBuilder) WithImageRegistrySpec(imageRegistrySpec *image_registry_spec.ImageRegistrySpec) *CreateAndStartContainerArgsBuilder {
 	builder.imageRegistrySpec = imageRegistrySpec
+	return builder
+}
+
+// WithPrivileged starts the container with the Docker --privileged flag. Use with extreme care:
+// privileged containers can escape isolation. The Kurtosis Starlark layer gates this behind an
+// allowlist and an engine-level kill switch (KURTOSIS_ALLOW_PRIVILEGED_CONTAINERS).
+func (builder *CreateAndStartContainerArgsBuilder) WithPrivileged(privileged bool) *CreateAndStartContainerArgsBuilder {
+	builder.privileged = privileged
 	return builder
 }

@@ -691,7 +691,8 @@ func (manager *DockerManager) CreateAndStartContainer(
 		args.ulimits,
 		args.gpuCount,
 		args.gpuDeviceIDs,
-		args.gpuDriver)
+		args.gpuDriver,
+		args.privileged)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
@@ -1839,6 +1840,7 @@ func (manager *DockerManager) getContainerHostConfig(
 	gpuCount int64,
 	gpuDeviceIDs []string,
 	gpuDriver string,
+	privileged bool,
 ) (hostConfig *container.HostConfig, err error) {
 
 	bindsList := make([]string, 0, len(bindMounts))
@@ -2010,7 +2012,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		Links:           nil,
 		OomScoreAdj:     0,
 		PidMode:         "",
-		Privileged:      false,
+		Privileged:      privileged,
 		PublishAllPorts: false,
 		ReadonlyRootfs:  false,
 		SecurityOpt:     securityOptsSlice,
