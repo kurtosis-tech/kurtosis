@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.18.2](https://github.com/kurtosis-tech/kurtosis/compare/1.18.1...1.18.2) (2026-04-28)
+
+
+### Bug Fixes
+
+* bump path-compression pin so api/golang builds for external consumers ([#3074](https://github.com/kurtosis-tech/kurtosis/issues/3074)) ([454dfde](https://github.com/kurtosis-tech/kurtosis/commit/454dfdee6a4edea85f8d9413f555dd6239582254))
+
 ## [1.18.1](https://github.com/kurtosis-tech/kurtosis/compare/1.18.0...1.18.1) (2026-04-15)
 
 
