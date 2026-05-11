@@ -371,6 +371,9 @@ them fleet-wide on a shared or CI Kurtosis instance, set `KURTOSIS_ALLOW_PRIVILE
 on the engine before starting it. The default is `true`. Any package using these features against a
 locked-down engine will fail at service-start time with a clear error pointing at this env var.
 
+For a usage walkthrough, the allowlist details, and the full set of operator controls, see the
+[Privileged containers & Docker socket guide](../../guides/running-privileged-containers.md).
+
 Note that `ImageBuildSpec` can only be used in packages and not standalone scripts as it relies on build context in package. More info on [`ImageBuildSpec`](./image-build-spec.md) here.
 More info can be found on [locators referring to local resources here][locators] and how to turn your script into a Kurtosis [package][package] here.
 
