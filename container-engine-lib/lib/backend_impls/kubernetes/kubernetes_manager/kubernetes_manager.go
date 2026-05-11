@@ -1137,7 +1137,6 @@ func (manager *KubernetesManager) CreatePod(
 		ResourceClaims:            nil,
 		Resources:                 nil,
 		HostnameOverride:          nil,
-		WorkloadRef:               nil,
 	}
 
 	podToCreate := &apiv1.Pod{
@@ -1356,7 +1355,6 @@ func (manager *KubernetesManager) CreateDaemonSet(
 				ResourceClaims:                nil,
 				Resources:                     nil,
 				HostnameOverride:              nil,
-				WorkloadRef:                   nil,
 			},
 		},
 		UpdateStrategy: v1.DaemonSetUpdateStrategy{
@@ -1595,7 +1593,6 @@ func (manager *KubernetesManager) CreateDeployment(
 				ResourceClaims:                nil,
 				Resources:                     nil,
 				HostnameOverride:              nil,
-				WorkloadRef:                   nil,
 			},
 		},
 		MinReadySeconds:      0,
@@ -2714,7 +2711,6 @@ func (manager *KubernetesManager) CreateJob(
 		ShareProcessNamespace:         nil,
 		Resources:                     nil,
 		HostnameOverride:              nil,
-		WorkloadRef:                   nil,
 	}
 
 	manualSelectors := jobLabels != nil
