@@ -3,7 +3,7 @@ module github.com/kurtosis-tech/kurtosis/cloud/api/golang
 go 1.26.0
 
 require (
-	connectrpc.com/connect v1.19.1
+	connectrpc.com/connect v1.19.2
 	google.golang.org/grpc v1.80.0
 	google.golang.org/protobuf v1.36.11
 )
