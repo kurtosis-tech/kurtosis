@@ -138,6 +138,7 @@ var (
 		Limit:                0,
 		Continue:             "",
 		SendInitialEvents:    nil,
+		ShardSelector:        "",
 	}
 )
 
@@ -1137,6 +1138,7 @@ func (manager *KubernetesManager) CreatePod(
 		ResourceClaims:            nil,
 		Resources:                 nil,
 		HostnameOverride:          nil,
+		SchedulingGroup:           nil,
 	}
 
 	podToCreate := &apiv1.Pod{
@@ -1147,26 +1149,27 @@ func (manager *KubernetesManager) CreatePod(
 		ObjectMeta: podMeta,
 		Spec:       podSpec,
 		Status: apiv1.PodStatus{
-			Phase:                       "",
-			Conditions:                  nil,
-			Message:                     "",
-			Reason:                      "",
-			NominatedNodeName:           "",
-			HostIP:                      "",
-			HostIPs:                     nil,
-			PodIP:                       "",
-			PodIPs:                      nil,
-			StartTime:                   nil,
-			InitContainerStatuses:       nil,
-			ContainerStatuses:           nil,
-			QOSClass:                    "",
-			EphemeralContainerStatuses:  nil,
-			Resize:                      "",
-			ObservedGeneration:          0,
-			ResourceClaimStatuses:       nil,
-			ExtendedResourceClaimStatus: nil,
-			AllocatedResources:          nil,
-			Resources:                   nil,
+			Phase:                                "",
+			Conditions:                           nil,
+			Message:                              "",
+			Reason:                               "",
+			NominatedNodeName:                    "",
+			HostIP:                               "",
+			HostIPs:                              nil,
+			PodIP:                                "",
+			PodIPs:                               nil,
+			StartTime:                            nil,
+			InitContainerStatuses:                nil,
+			ContainerStatuses:                    nil,
+			QOSClass:                             "",
+			EphemeralContainerStatuses:           nil,
+			Resize:                               "",
+			ObservedGeneration:                   0,
+			ResourceClaimStatuses:                nil,
+			ExtendedResourceClaimStatus:          nil,
+			AllocatedResources:                   nil,
+			Resources:                            nil,
+			NodeAllocatableResourceClaimStatuses: nil,
 		},
 	}
 
@@ -1355,6 +1358,7 @@ func (manager *KubernetesManager) CreateDaemonSet(
 				ResourceClaims:                nil,
 				Resources:                     nil,
 				HostnameOverride:              nil,
+				SchedulingGroup:               nil,
 			},
 		},
 		UpdateStrategy: v1.DaemonSetUpdateStrategy{
@@ -1418,6 +1422,7 @@ func (manager *KubernetesManager) GetPodsManagedByDaemonSet(ctx context.Context,
 		Limit:                0,
 		Continue:             "",
 		SendInitialEvents:    nil,
+		ShardSelector:        "",
 	})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred retrieving list of pods in namespace '%v' with label selectors: %v.", daemonSet.Namespace, selector)
@@ -1593,6 +1598,7 @@ func (manager *KubernetesManager) CreateDeployment(
 				ResourceClaims:                nil,
 				Resources:                     nil,
 				HostnameOverride:              nil,
+				SchedulingGroup:               nil,
 			},
 		},
 		MinReadySeconds:      0,
@@ -1711,6 +1717,7 @@ func (manager *KubernetesManager) GetPodsManagedByDeployment(ctx context.Context
 		Limit:                0,
 		Continue:             "",
 		SendInitialEvents:    nil,
+		ShardSelector:        "",
 	})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred retrieving list of pods in namespace '%v' with label selectors: %v.", deployment.Namespace, selector)
@@ -2711,6 +2718,7 @@ func (manager *KubernetesManager) CreateJob(
 		ShareProcessNamespace:         nil,
 		Resources:                     nil,
 		HostnameOverride:              nil,
+		SchedulingGroup:               nil,
 	}
 
 	manualSelectors := jobLabels != nil
@@ -2811,6 +2819,7 @@ func (manager *KubernetesManager) GetPodsManagedByJob(ctx context.Context, job *
 		Limit:                0,
 		Continue:             "",
 		SendInitialEvents:    nil,
+		ShardSelector:        "",
 	})
 
 	if err != nil {
@@ -3175,5 +3184,6 @@ func buildListOptionsFromLabels(labelsMap map[string]string) metav1.ListOptions 
 		Limit:                0,
 		Continue:             "",
 		SendInitialEvents:    nil,
+		ShardSelector:        "",
 	}
 }
