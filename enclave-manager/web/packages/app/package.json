@@ -15,7 +15,7 @@
     "react-hook-form": "^7.47.0",
     "react-mentions": "^4.4.10",
     "reactflow": "^11.10.2",
-    "uuid": "^9.0.1",
+    "uuid": "^14.0.0",
     "yaml": "^2.3.4"
   },
   "devDependencies": {
