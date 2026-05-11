@@ -2,10 +2,11 @@ package startosis_add_service_test
 
 import (
 	"context"
+	"slices"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
-	"k8s.io/utils/strings/slices"
 )
 
 const (
