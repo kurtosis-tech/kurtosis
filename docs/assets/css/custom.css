@@ -6,3 +6,12 @@
 .dark .hextra-code-block pre.chroma .go {
   color: #f5f5f5;
 }
+
+/* Wrap long lines inside code blocks instead of forcing horizontal scroll.
+   Long URLs / arg strings stay readable on narrow screens. */
+.hextra-code-block pre.chroma,
+.hextra-code-block pre.chroma code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
