@@ -1,0 +1,8 @@
+/* Custom CSS picked up by Hextra at theme.layouts._partials.head.html. */
+
+/* `console`-language code blocks use Chroma's Generic.Output class (`.go`)
+   which renders as dim gray. Brighten it so the text is readable against the
+   dark code-block background. */
+.dark .hextra-code-block pre.chroma .go {
+  color: #f5f5f5;
+}
