@@ -1,7 +1,6 @@
 ---
 title: service shell
-sidebar_label: service shell
-slug: /service-shell
+url: /service-shell/
 ---
 
 To get access to a shell on a given service container, run:

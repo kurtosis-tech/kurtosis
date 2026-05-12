@@ -1,7 +1,6 @@
 ---
 title: enclave rm
-sidebar_label: enclave rm
-slug: /enclave-rm
+url: /enclave-rm/
 ---
 
 To remove an enclave and all resources associated with that particular enclave, use:

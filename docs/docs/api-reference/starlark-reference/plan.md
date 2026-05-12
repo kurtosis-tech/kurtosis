@@ -1,6 +1,5 @@
 ---
 title: Plan
-sidebar_label: Plan
 ---
 
 The `Plan` object is an object representing the steps that Kurtosis will take inside the enclave during [the Execution phase][multi-phase-runs-reference]. 
@@ -110,12 +109,12 @@ For detailed information about the `ServiceConfig` object, see [here][starlark-t
 For detailed information about the `Service` objects that `add_services`, see [Service][service-starlark-reference].
 
 
-:::caution
+{{< hint warning >}}
 
 `add_services` will succeed if and only if all services are successfully added. If any one fails (perhaps due to timeouts a ready condition failing), the entire batch of
 services will be rolled back and the instruction will return an execution error.
 
-:::
+{{< /hint >}}
 
 get_service
 -----------
@@ -255,7 +254,7 @@ plan.verify(
 )
 ```
 
-:::caution
+{{< hint warning >}}
 
 Verifications are typed, so running
 
@@ -268,7 +267,7 @@ plan.verify(
 ```
 
 Will fail. If needed, you can use the `extract` feature to parse the types of your outputs.
-:::
+{{< /hint >}}
 
 exec
 ----

@@ -1,6 +1,5 @@
 ---
 title: Glossary
-sidebar_label: Glossary
 ---
 
 <!-- NOTE TO KURTOSIS DEVS: KEEP THIS ALPHABETICALLY SORTED -->

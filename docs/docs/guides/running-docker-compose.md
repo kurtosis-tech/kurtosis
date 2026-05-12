@@ -1,16 +1,16 @@
 ---
 title: Running Docker Compose setup  with Kurtosis
-sidebar_label: Running Docker Compose
-slug: /docker-compose
-sidebar_position: 13
+url: /docker-compose/
 ---
 
 This guide assumes that you have [Kurtosis installed](../get-started/installing-the-cli.md) and a project with a `docker-compose.yml`, `compose.yml`, `docker_compose.yml` or `.yaml` equivalents.
 
-:::info Experimental Feature
+**Experimental Feature**
+
+{{< hint info >}}
 This is an experimental feature still under development and some Docker Compose setups are not yet supported. 
 See below for list of features not yet supported in Kurtosis. If you'd like support for your Docker Compose setup, let us know on [Github](https://github.com/kurtosis-tech/kurtosis/issues)!
-:::
+{{< /hint >}}
 
 ### 1. Setup Docker Compose project
 

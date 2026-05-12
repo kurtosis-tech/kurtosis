@@ -1,6 +1,5 @@
 ---
 title: User
-sidebar_label: User
 ---
 
 The `User` constructor creates a `User` object that represents a `uid` and `gid` that the service starts with(see `ServiceConfig`[service-config] object)

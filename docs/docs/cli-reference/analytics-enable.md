@@ -1,7 +1,6 @@
 ---
 title: analytics enable
-sidebar_label: analytics enable
-slug: /analytics-enable
+url: /analytics-enable/
 ---
 
 Kurtosis has functionality to collect product analytics metrics so we can make data-driven product decisions. These metrics are [anonymized, obfuscated, and never given to third parties](../advanced-concepts/metrics-philosophy.md)).

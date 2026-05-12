@@ -1,7 +1,6 @@
 ---
 title: cluster get
-sidebar_label: cluster get
-slug: /cluster-get
+url: /cluster-get/
 ---
 
 Kurtosis will work locally or over remote infrastructure. To determine the type of infrastructure your instance of Kurtosis is running on, simply run:
@@ -33,7 +32,9 @@ kurtosis-clusters:
       enclave-size-in-megabytes: 10
 ```
 
-:::tip Storage Class
+**Storage Class**
+
+{{< hint info >}}
 The Storage Class specified in the configuration above will be used for spinning up persistent volumes. Make sure you have the right
 value in case you are using persistent directories.
-:::
+{{< /hint >}}

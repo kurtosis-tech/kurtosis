@@ -1,17 +1,15 @@
 ---
 title: How to launch a private Ethereum testnet with Flashbot's MEV Boost implementation of Proposer Builder Separation (PBS)
-sidebar_label: Launch a testnet with MEV infra
-slug: /how-to-full-mev-with-ethereum-package
 toc_max_heading_level: 2
-sidebar_position: 12
+url: /how-to-full-mev-with-ethereum-package/
 ---
 
-:::tip
+{{< hint info >}}
 Here are some quick short-cuts for folks who would prefer:
 * To get going right away: install Kurtosis & Docker and then run: `kurtosis run github.com/ethpandaops/ethereum-package '{"mev_type": "full"}'`
 * To dive into the code example: visit the repository [here](https://github.com/ethpandaops/ethereum-package).
 * Not to run this package on their local machine: try it out on the [Kurtosis playground](https://gitpod.io/?autoStart=true&editor=code#https://github.com/ethpandaops/ethereum-package)
-:::
+{{< /hint >}}
 
 We're elated to share that the [`ethereum-package`](https://github.com/ethpandaops/ethereum-package) now supports the Flashbot's implementation of [Proposer-Builder Separation (PBS)](https://ethereum.org/en/roadmap/pbs/) using [MEV-Boost](https://boost.flashbots.net) protocol.
 
@@ -43,10 +41,10 @@ Everything you see below in the architecture diagram gets configured, initialize
 * Validators will then start to receive validated execution payload headers from the `mev-relay` service (via `mev-boost`) after the 4th epoch. The validator selects the most valuable header, signs the payload, and returns the signed header to the relay - effectively proposing the payload of transactions to be included in the soon-to-be-proposed block. Once the relay verifies the block proposer's signature, the relay will respond with the full execution payload body (incl. the transaction contents) for the validator to use when proposing a `SignedBeaconBlock` to the network.
 * You may notice in the `mev-flood` logs that there may be transactions that fail to get processed by the node(s) in your devnet with the following errors: `Error: replacement fee too low [ See: https://links.ethers.org/v5-errors-REPLACEMENT_UNDERPRICED ]`. Don't be alarmed: this can happen when transactions are sent too quickly to the network, resulting in the node receiving transactions with the same nonce. When this happens, the node rejects the transactions becauase the node assumes you're trying to replace the old pending transaction with a new one. You can change the frequency using `mev-flood`'s `--secondsPerBundle (-p )` flag in the [`spam` command](https://github.com/flashbots/mev-flood#send-swaps).
 
-:::note
+{{< hint info >}}
 Quick aside on what `mev-flood` does:
 Once the network is online, `mev-flood` will deploy UniV2 smart contracts, provision liquidity on UniV2 pairs, & begin to send a constant stream of UniV2 swap transactions to the network's public mempool. Depending on the mode you're running, either the `mock-builder` or Flashbot's `mev-builder`, the transactions will be bundled into payloads for downstream use by the relayer or by validators themselves. It is important to note that `mev-flood` will only be initialized with the `full-mev` set up and will send transactions with a non-zero block value. Read more about [`mev-flood` here](https://github.com/flashbots/mev-flood).
-:::
+{{< /hint >}}
 
 ## Quickstart
 Leveraging the [`ethereum-package`](https://github.com/ethpandaops/ethereum-package) is simple. In this short quickstart, you will:

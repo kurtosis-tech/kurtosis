@@ -1,8 +1,6 @@
 ---
 title: Package Catalog
-sidebar_label: Basic Concepts
-slug: '/package-catalog'
-sidebar_position: 6
+url: /package-catalog/
 ---
 
 Package catalog

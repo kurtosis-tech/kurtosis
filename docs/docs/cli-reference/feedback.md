@@ -1,7 +1,6 @@
 ---
 title: feedback
-sidebar_label: feedback
-slug: /feedback
+url: /feedback/
 ---
 
 To quickly get in touch with us, simply run:
@@ -28,6 +27,6 @@ Additionally, the flags below can be used alone (will set the feedback type for 
 - The `--feature` flag can be used when you wish to submit a feature request to us. When this `--feature` flag without any destination flag, the CLI will take you directly to the [feature request issue creation page](https://github.com/kurtosis-tech/kurtosis/issues/new?assignees=&labels=feature+request&template=feature-request.yml) in our GitHub. When this `--feature` flag is set alongside the `--email` flag, the CLI will open an email draft with the subject pre-filled with: `[FEATURE_REQUEST]`, which will help our team triage and prioritize your request.
 - The `--docs` flag can be used when you wish to flag an issue with our documentation. When this `--docs` flag without any destination flag, the CLI will take you directly to the [docs issue creation page](https://github.com/kurtosis-tech/kurtosis/issues/new?assignees=leeederek&labels=docs&template=docs-issue.yml) in our GitHub. When this `--docs` flag is set alongside the `--email` flag, the CLI will open an email draft with the subject pre-filled with: `[DOCS]`, which will help our team triage and prioritize the issue.
 
-:::tip
+{{< hint info >}}
 To join our Discord community, use the [`kurtosis discord`](./discord.md) CLI command.
-:::
+{{< /hint >}}

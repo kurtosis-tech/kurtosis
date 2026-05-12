@@ -1,7 +1,6 @@
 ---
 title: service exec
-sidebar_label: service exec
-slug: /service-exec
+url: /service-exec/
 ---
 
 To run a specific shell command inside a service container, run:

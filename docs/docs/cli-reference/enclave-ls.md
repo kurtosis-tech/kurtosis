@@ -1,7 +1,6 @@
 ---
 title: enclave ls
-sidebar_label: enclave ls
-slug: /enclave-ls
+url: /enclave-ls/
 ---
 
 To print all enclaves (both stopped and running) inside of your Kurtosis engine, use:

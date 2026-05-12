@@ -1,6 +1,5 @@
 ---
 title: Why Kurtosis Starlark?
-sidebar_label: Why Kurtosis Starlark?
 ---
 
 Background

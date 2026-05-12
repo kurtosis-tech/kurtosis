@@ -1,7 +1,6 @@
 ---
 title: files rendertemplate
-sidebar_label: files rendertemplate
-slug: /files-rendertemplate
+url: /files-rendertemplate/
 ---
 To render a [Golang template](https://pkg.go.dev/text/template) for customizing the output of a service within an enclave, use the following command:
 

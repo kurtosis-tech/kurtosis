@@ -1,6 +1,5 @@
 ---
 title: Starlark
-sidebar_label: Starlark
 ---
 
 [Starlark](https://github.com/bazelbuild/starlark) is a minimal programming language, halfway between a configuration language and a general-purpose programming language. It was developed by Google to do configurations for the [Bazel build tool](https://bazel.build/rules/language), and has since [been adopted by Facebook for the Buck build system as well](https://github.com/facebookexperimental/starlark-rust). Starlark's syntax is a minimal subset of Python, with a focus on readability. [This page](https://bazel.build/rules/language#differences_with_python) lists the differences between Starlark and Python.
@@ -22,9 +21,11 @@ We extended basic Starlark with [our own DSL](../api-reference/starlark-referenc
 
 Additionally, we built a [multi-phase engine][multi-phase-runs-reference] around the Starlark interpreter, to provide [users with benefits not normally available in a scripting language][multi-phase-runs-explanation].
 
-:::tip Visual Studio Code (VS Code) Extension
+**Visual Studio Code (VS Code) Extension**
+
+{{< hint info >}}
 We've released an [official Kurtosis Starlark VS Code extension][vscode-plugin] to enrich the developer experience when writing packages with Starlark. Features include: syntax highlighting, method signature suggestions, hover preview for functions, and auto-completion for Kurtosis custom types.
-:::
+{{< /hint >}}
 
 <!--------------- ONLY LINKS BELOW HERE --------------------------->
 [enclaves-reference]: ./enclaves.md

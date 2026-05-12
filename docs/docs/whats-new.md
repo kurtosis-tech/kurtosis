@@ -1,8 +1,8 @@
 ---
 title: What's New In Kurtosis
-sidebar_label: What's New
-slug: '/whats-new'
 toc_max_heading_level: 2
+weight: 100
+url: /whats-new/
 ---
 
 # What's New In Kurtosis

@@ -1,6 +1,5 @@
 ---
 title: How Private & Public IPs & Ports Work
-sidebar_label: How Private & Public IPs & Ports Work
 ---
 
 The IP addresses and ports that come out of Kurtosis can be confusing at times. This document will explain how Kurtosis handles public and private IPs and ports.

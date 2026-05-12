@@ -1,8 +1,6 @@
 ---
 title: Exporting logs to external service
-sidebar_label: Exporting logs to external service
-slug: /exporting-logs
-sidebar_position: 15
+url: /exporting-logs/
 ---
 
 This guide assumes that you have [Kurtosis installed](../get-started/installing-the-cli.md).
@@ -103,13 +101,13 @@ kurtosis-clusters:
           endpoints:
             - "https://<ELASTICSEARCH_IP_ADDRESS>:9200"
 ```
-:::info
+{{< hint info >}}
 `config-version` must be set to the minimum version of 3 for logs aggregator configurations to apply for Docker
-:::
+{{< /hint >}}
 
-:::danger
+{{< hint danger >}}
 `tls.verify_certificate` should not be disabled outside of testing!
-:::
+{{< /hint >}}
 
 Finally, restart Kurtosis engine to apply the changes:
 
@@ -305,9 +303,9 @@ Switch to the `kube` cluster, which automatically starts a new engine, with the 
 kurtosis cluster set kube
 ```
 
-:::info
+{{< hint info >}}
 `config-version` must be set to the minimum version of 4 for logs aggregator configurations to apply for Kubernetes
-:::
+{{< /hint >}}
 
 ## Verify logs delivery
 
@@ -495,13 +493,13 @@ This configuration:
 2. Uses the parser filter to apply the JSON parser to all logs
 3. Filters out logs with DEBUG level
 
-:::info
+{{< hint info >}}
 The [`match`][fluentbit-match] pattern uses Fluentbit's pattern matching syntax. `"*"` matches all logs, while more specific patterns can be used to target particular services or log types.
-:::
+{{< /hint >}}
 
-:::tip
+{{< hint info >}}
 For more information about available filters and their parameters, refer to the [Fluentbit documentation][fluentbit-filters].
-:::
+{{< /hint >}}
 
 ### Local Loki and Grafloki
 

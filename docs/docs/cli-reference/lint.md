@@ -1,7 +1,6 @@
 ---
 title: lint
-sidebar_label: lint
-slug: /lint
+url: /lint/
 ---
 
 The following command can be used to lint Starlark files in the given package

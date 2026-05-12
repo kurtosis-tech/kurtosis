@@ -1,7 +1,6 @@
 ---
 title: run
-sidebar_label: run
-slug: /run
+url: /run/
 ---
 
 Kurtosis can be used to run a Starlark script or a [runnable package](../advanced-concepts/packages.md) in an enclave.
@@ -26,10 +25,10 @@ A [Kurtosis package](../advanced-concepts/packages.md) published to GitHub can b
 kurtosis run github.com/package-author/package-repo
 ```
 
-:::tip
+{{< hint info >}}
 If you want to run a non-main branch, tag or commit use the following syntax
 `kurtosis run github.com/package-author/package-repo@tag-branch-commit`
-:::
+{{< /hint >}}
 
 ### Arguments
 
@@ -55,7 +54,7 @@ This is the equivalent to the following Starlark:
 run(plan, some_parameter = 5, some_other_parameter = "New value")
 ```
 
-:::info
+{{< hint info >}}
 By default, Kurtosis deserializes JSON objects (anything in `{}`) as dictionaries in Starlark. However, sometimes you need to pass a `struct` as a parameter instead.
 
 To have Kurtosis deserialize a JSON object as a `struct` instead of a dictionary, simply add `"_kurtosis_parser": "struct"` to the object.
@@ -71,7 +70,7 @@ kurtosis run github.com/USERNAME/REPO '{"some_parameter": {"_kurtosis_parser": "
 ```python
 run(plan, some_parameter = struct(some_property = "Property value"))
 ```
-:::
+{{< /hint >}}
 
 ### Extra Configuration
 

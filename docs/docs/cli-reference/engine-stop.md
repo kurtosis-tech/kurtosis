@@ -1,7 +1,6 @@
 ---
 title: engine stop
-sidebar_label: engine stop
-slug: /engine-stop
+url: /engine-stop/
 ---
 
 To stop the engine, run:

@@ -1,10 +1,7 @@
 ---
 title: Write Your First Package
-sidebar_label: Write Your First Package
-id: write-your-first-package
-slug: /quickstart-write-a-package
 toc_max_heading_level: 2
-sidebar_position: 5
+url: /quickstart-write-a-package/
 ---
 
 Introduction
@@ -12,13 +9,15 @@ Introduction
 
 This guide takes ~15 minutes and will walk you through writing your first Kurtosis package. You'll set up a Postgres database and an API server which connects to the database.
 
-:::tip What You'll Do
+**What You'll Do**
+
+{{< hint info >}}
 - Start a containerized Postgres database
 - Seed your database with test data
 - Connect an API server to your database
 - Configure your package to take in parameters, so users can easily change the data in their database
 - Publish your package
-:::
+{{< /hint >}}
 
 <details>
 <summary>TL;DR Version</summary>
@@ -39,9 +38,9 @@ Before you proceed, please make sure you have:
 - [Installed and started the Docker engine][installing-docker-guide]
 - [Installed the Kurtosis CLI][installing-kurtosis-guide] (or [upgraded to latest][upgrading-kurtosis-guide] if you already have it)
 
-:::tip
+{{< hint info >}}
 This guide will have you writing Kurtosis Starlark. You can optionally install [the VSCode plugin](https://marketplace.visualstudio.com/items?itemName=Kurtosis.kurtosis-extension) to get syntax highlighting, autocomplete, and documentation.
-:::
+{{< /hint >}}
 
 Hello, World
 ------------
@@ -380,9 +379,9 @@ data_package_module_result = data_package_module.run(plan, {})
 
 This external Kurtosis package, named ["data-package"][data-package-example] contains the seed data for your Postgres instance that we [referenced earlier](#add-some-data) as a `.tar` file.
 
-:::info
+{{< hint info >}}
 Special note here that we used a locator to import an external package from the [`awesome-kurtosis` repository][awesome-kurtosis-repo] and _not_ a regular URL. Learn more about how they differ [here][locators-reference].
-:::
+{{< /hint >}}
 
 #### You imported seed data into your Kurtosis package
 The [`main.star` file][data-package-example-main.star] in that external "data-package" contained Starlark instructions to store the `.tar` data as a [files artifact][files-artifacts-reference] using the [`upload_files` Starlark instruction][kurtosis-upload-files-reference]:
@@ -694,9 +693,9 @@ Notice how Kurtosis automatically exposed the PostgREST container's `http` port 
 28a923400e50   api         http: 3000/tcp -> http://127.0.0.1:59992             RUNNING
 ```
 
-:::info
+{{< hint info >}}
 In this output the `http` port is exposed as URL `http://127.0.0.1:59992`, but your port number will be different.
-:::
+{{< /hint >}}
 
 You can paste the URL from your output into your browser (or Cmd+click if you're using [iTerm][iterm]) to verify that you are indeed talking to the PostgREST inside your `kurtosis-postgres` enclave:
 

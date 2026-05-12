@@ -1,7 +1,6 @@
 ---
 title: grafloki start
-sidebar_label: grafloki start
-slug: /grafloki-start
+url: /grafloki-start/
 ---
 
 To start a Grafana/Loki instance in Docker or K8s cluster, run:

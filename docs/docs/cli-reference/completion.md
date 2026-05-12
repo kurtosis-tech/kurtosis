@@ -1,7 +1,6 @@
 ---
 title: completion
-sidebar_label: completion
-slug: /completion
+url: /completion/
 ---
 
 Scripts used to create command-line completion for `bash`, `fish`, `powershell`, and `zsh` can be printed using:

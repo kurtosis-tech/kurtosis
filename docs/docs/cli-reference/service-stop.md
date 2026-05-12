@@ -1,7 +1,6 @@
 ---
 title: service stop
-sidebar_label: service stop
-slug: /service-stop
+url: /service-stop/
 ---
 
 Services can be temporarily stopped in an enclave like so:

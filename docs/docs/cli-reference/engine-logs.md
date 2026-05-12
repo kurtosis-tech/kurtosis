@@ -1,7 +1,6 @@
 ---
 title: engine logs
-sidebar_label: engine logs
-slug: /engine-logs
+url: /engine-logs/
 ---
 
 To get logs for all existing (stopped or running) engines, use:

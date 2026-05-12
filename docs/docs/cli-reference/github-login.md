@@ -1,7 +1,6 @@
 ---
 title: github login
-sidebar_label: github login
-slug: /github-login
+url: /github-login/
 ---
 
 To authorize Kurtosis CLI to GitHub, use: 

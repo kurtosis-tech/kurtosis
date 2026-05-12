@@ -1,7 +1,6 @@
 ---
 title: engine start
-sidebar_label: engine start
-slug: /engine-start
+url: /engine-start/
 ---
 
 The Kurtosis engine starts automatically when you run any command that interacts with the engine, such as [`kurtosis enclave add`](./enclave-add.md), but there may be times where the engine has been stopped and you may need to start it again (e.g. starting the engine on a specific version). To do so, run:

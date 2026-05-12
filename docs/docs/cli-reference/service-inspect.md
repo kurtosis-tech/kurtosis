@@ -1,7 +1,6 @@
 ---
 title: service inspect
-sidebar_label: service inspect
-slug: /service-inspect
+url: /service-inspect/
 ---
 
 To view detailed information about a given service, including its status and attributes, run:

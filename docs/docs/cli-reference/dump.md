@@ -1,7 +1,6 @@
 ---
 title: dump
-sidebar_label: dump
-slug: /dump
+url: /dump/
 ---
 
 You might need to store the entire state of Kurtosis to disk at some point. You may want to have a log package if your CI fails, or you want to send debugging information to [the author of a Kurtosis package][packages-reference]. Whatever the case may be, you can run:

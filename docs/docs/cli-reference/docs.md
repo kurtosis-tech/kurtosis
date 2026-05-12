@@ -1,7 +1,6 @@
 ---
 title: docs
-sidebar_label: docs
-slug: /docs
+url: /docs/
 ---
 
 To open our documentation in the browser from the CLI, run:

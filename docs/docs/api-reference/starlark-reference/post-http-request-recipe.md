@@ -1,6 +1,5 @@
 ---
 title: PostHttpRequestRecipe
-sidebar_label: PostHttpRequestRecipe
 ---
 
 The `PostHttpRequestRecipe` can be used to make `POST` requests to an endpoint.
@@ -42,10 +41,10 @@ post_request_recipe = PostHttpRequestRecipe(
 )
 ```
 
-:::caution
+{{< hint warning >}}
 
 Make sure that the endpoint returns valid JSON response for both POST and GET requests.
 
-:::
+{{< /hint >}}
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->

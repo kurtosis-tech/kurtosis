@@ -1,6 +1,5 @@
 ---
 title: Files Artifacts
-sidebar_label: Files Artifacts
 ---
 
 Kurtosis enclaves can store files for later use. Files stored in a Kurtosis enclave are stored as compressed TGZ files. These TGZs are called "files artifacts".
@@ -11,9 +10,9 @@ For example, a user can upload files on their machine to an enclave like so:
 kurtosis files upload $SOME_PATH
 ```
 
-:::info
+{{< hint info >}}
 If `$SOME_PATH` is a file, that single file will be packaged inside the files artifact. If `$SOME_PATH` is a directory, all of the directory's contents will be packaged inside the files artifact.
-:::
+{{< /hint >}}
 
 Doing so will return a randomly-generated ID and name that can be used to reference the files artifact for later use.
 

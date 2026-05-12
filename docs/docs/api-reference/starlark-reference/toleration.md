@@ -1,6 +1,5 @@
 ---
 title: Toleration
-sidebar_label: Toleration
 ---
 
 The `Toleration` constructor creates a `Toleration` object that represents a Kubernetes [Toleration](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) that

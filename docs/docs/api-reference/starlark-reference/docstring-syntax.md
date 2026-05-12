@@ -1,6 +1,5 @@
 ---
 title: Docstring Syntax
-sidebar_label: Docstring Syntax
 ---
 
 If you add a docstring in a specific format to the `run` function inside your package's `main.star` file, you will be able to run your package in [Kurtosis Cloud](https://cloud.kurtosis.com) using a user-friendly form interface.

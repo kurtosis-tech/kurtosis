@@ -1,7 +1,6 @@
 ---
 title: enclave inspect
-sidebar_label: enclave inspect
-slug: /enclave-inspect
+url: /enclave-inspect/
 ---
 
 To view detailed information about a given enclave, including its status and contents, run:

@@ -1,8 +1,6 @@
 ---
 title: Running Kurtosis in Kurtosis Cloud
-sidebar_label: Running in Kurtosis Cloud
-slug: /cloud
-sidebar_position: 7
+url: /cloud/
 ---
 
 Kurtosis Cloud is a fully managed cloud offering and accompanying self-service workflows for a stress-free, easy way to deploy test and dev environments, that live as long as you need them to, directly onto remote infrastructure. By logging into our [cloud portal](https://cloud.kurtosis.com), a cloud instance will be provisioned to run your test and dev enclaves.
@@ -22,10 +20,12 @@ When provisioning a cloud instance, Kurtosis will create a specific AWS user acc
 
 Services running inside a Kurtosis enclave in Kurtosis Cloud can freely read and write objects from/to this S3 storage.
 
-:::warning S3 storage is publicly accessible
+**S3 storage is publicly accessible**
+
+{{< hint warning >}}
 While only the owner of the S3 storage is permitted to write to the S3 storage, the data is publicly accessible to 
 anyone that knows the object key. For this reason, we don't recommend storing sensitive data in the S3 storage.
-:::
+{{< /hint >}}
 
 The AWS user key as well as the information on the user S3 space is provided to all Starlark packages running in the 
 cloud via the global `kurtosis` module. The following variables are available inside Starlark and can be passed as 
@@ -35,7 +35,9 @@ AWS
 - `kurtosis.aws_bucket_region`, `kurtosis.aws_bucket_name` and `kurtosis.aws_bucket_user_folder`: The bucket region and 
 name, as well as the specific user folder the AWS user is authorized to access.
 
-:::tip AWS user permissions
+**AWS user permissions**
+
+{{< hint info >}}
 The AWS user created has a very restricted set of permissions by default. It can only read and write to its user folder
 inside the S3 bucket. But it is possible to request more access, reach out to us via [Discord](https://discord.gg/6Jjp9c89z9).
-:::
+{{< /hint >}}

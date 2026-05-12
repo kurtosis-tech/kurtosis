@@ -1,8 +1,6 @@
 ---
 title: Running Kurtosis in Podman
-sidebar_label: Running in Podman
-slug: /podman
-sidebar_position: 7
+url: /podman/
 ---
 
 This guide assumes that you have [Kurtosis installed](../get-started/installing-the-cli.md).
@@ -25,14 +23,16 @@ podman machine start
 export DOCKER_HOST="unix://$HOME/.local/share/containers/podman/machine/podman.sock"
 ```
 
-:::tip Docker Compatibility
+**Docker Compatibility**
+
+{{< hint info >}}
 Podman provides a Docker-compatible CLI and API. This means you can use Docker commands with Podman by either:
 - Setting the `DOCKER_HOST` environment variable as shown above
 - Using the `podman` command directly (it accepts the same commands as `docker`)
 - Using the `podman-docker` package which creates a symlink from `docker` to `podman`
 
 For more information on Docker compatibility, see the [Podman documentation](https://podman-desktop.io/docs/migrating-from-docker).
-:::
+{{< /hint >}}
 
 II. Add Podman Cluster to `kurtosis-config.yml`
 --------------------------------
@@ -60,6 +60,8 @@ Run `kurtosis cluster set podman`. This will start the engine using Podman as th
 
 Done! Now you can run any Kurtosis command or package just like if you were doing it locally with Docker.
 
-:::tip Switching Back
+**Switching Back**
+
+{{< hint info >}}
 To switch back to using Kurtosis with Docker, simply use: `kurtosis cluster set docker`
-:::
+{{< /hint >}}

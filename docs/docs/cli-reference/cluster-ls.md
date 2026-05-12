@@ -1,7 +1,6 @@
 ---
 title: cluster ls
-sidebar_label: cluster ls
-slug: /cluster-ls
+url: /cluster-ls/
 ---
 
 To list all valid clusters that Kurtosis can connect to (as defined in your `kurtosis-config.yml`), simply run:
@@ -33,7 +32,9 @@ kurtosis-clusters:
       enclave-size-in-megabytes: 10
 ```
 
-:::tip Storage Class
+**Storage Class**
+
+{{< hint info >}}
 The Storage Class specified in the configuration above will be used for spinning up persistent volumes. Make sure you have the right
 value in case you are using persistent directories.
-:::
+{{< /hint >}}

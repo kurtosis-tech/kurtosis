@@ -1,7 +1,6 @@
 ---
 title: files storeweb
-sidebar_label: files storeweb
-slug: /files-storeweb
+url: /files-storeweb/
 ---
 
 To download an archive file from the given URL and store it in the enclave for later use (e.g. with [`service add`](./service-add.md)), use:

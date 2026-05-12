@@ -1,6 +1,5 @@
 ---
 title: Metrics Philosophy
-sidebar_label: Metrics Philosophy
 ---
 
 Kurtosis is a small startup, which means that understanding how users are using the product is vital to our success. To this end, we've built the capability for Kurtosis to send product analytics metrics.

@@ -1,8 +1,6 @@
 ---
 title: Installing Old Versions
-sidebar_label: Installing Old Versions
-slug: /install-historical
-sidebar_position: 4
+url: /install-historical/
 ---
 
 <!---------- START IMPORTS ------------>
@@ -35,7 +33,7 @@ If you're looking to install the latest version of Kurtosis, [see here][install-
 </TabItem>
 <TabItem value="apt" label="apt (Ubuntu)">
 
-:::caution
+{{< hint warning >}}
 
 If you already have `kurtosis-cli` package installed, we recommend uninstalling it first using:
 
@@ -43,7 +41,7 @@ If you already have `kurtosis-cli` package installed, we recommend uninstalling 
 sudo apt remove kurtosis-cli
 ```
 
-:::
+{{< /hint >}}
 
 ```bash
 echo "deb [trusted=yes] https://sdk.kurtosis.com/kurtosis-cli-release-artifacts/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
@@ -55,7 +53,7 @@ sudo apt install kurtosis-cli=<version> -V
 </TabItem>
 <TabItem value="yum" label="yum (RHEL)">
 
-:::caution
+{{< hint warning >}}
 
 If you already have `kurtosis-cli` package installed, we recommend uninstalling it first using:
 
@@ -63,7 +61,7 @@ If you already have `kurtosis-cli` package installed, we recommend uninstalling 
 sudo yum remove kurtosis-cli
 ```
 
-:::
+{{< /hint >}}
 
 ```bash
 echo '[kurtosis]
@@ -90,12 +88,12 @@ The Kurtosis CLI cannot be installed directly on Windows. Windows users are enco
 
 </Tabs>
 
-:::tip
+{{< hint info >}}
 In order to upgrade Kurtosis to another version *after you've performed a downgrade (i.e. installed a historical version)*, you must first uninstall the version of Kurtosis you've installed and re-install Kurtosis. When using Homebrew, the workflow will be (replacing `HISTORICAL-VERSION` with the historical version you have installed):
 1. `brew uninstall brew uninstall kurtosis-tech/tap/kurtosis-cli@HISTORICAL-VERSION`
 2. `brew install kurtosis-tech/tap/kurtosis-cli` for upgrading to the latest version or `brew install kurtosis-tech/tap/kurtosis-cli@TARGET-VERSION` for upgrading to a specific version
 3. `kurtosis engine restart`
-:::
+{{< /hint >}}
 
 <!-------------------------- ONLY LINKS BELOW HERE ---------------------------->
 [install-kurtosis]: ../get-started/installing-the-cli.md

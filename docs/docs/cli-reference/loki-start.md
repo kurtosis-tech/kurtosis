@@ -1,7 +1,6 @@
 ---
 title: loki start
-sidebar_label: loki start
-slug: /loki-start
+url: /loki-start/
 ---
 
 To start a Loki instance in Docker or a Kubernetes cluster, run:

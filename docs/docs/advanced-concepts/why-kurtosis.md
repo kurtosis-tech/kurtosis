@@ -1,7 +1,5 @@
 ---
 title: Why Kurtosis?
-sidebar_label: Why Kurtosis?
-sidebar_position: 1
 ---
 
 Kurtosis is a distributed application development platform. Its goal is to make building a distributed application as easy as developing a single-server app.

@@ -1,7 +1,5 @@
 ---
 title: Kurtosis Architecture
-sidebar_label: Architecture
-sidebar_position: 2
 ---
 
 ![Kurtosis Architecture](/img/advanced-concepts/kurtosis-architecture.png)

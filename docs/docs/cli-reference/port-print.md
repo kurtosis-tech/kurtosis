@@ -1,7 +1,6 @@
 ---
 title: port print
-sidebar_label: port print
-slug: /port-print
+url: /port-print/
 ---
 
 To print information about the PortSpec for Service, run:

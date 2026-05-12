@@ -1,7 +1,7 @@
 ---
 title: Best Practices
-sidebar_label: Best Practices
-slug: /best-practices
+weight: 80
+url: /best-practices/
 ---
 
 Passing package arguments to the CLI

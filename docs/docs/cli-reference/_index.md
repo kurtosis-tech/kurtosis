@@ -1,18 +1,15 @@
 ---
-id: index
-title: CLI Introduction
-sidebar_label: Introduction
-slug: /cli
-sidebar_position: 1
-pagination_next: cli-reference/analytics-disable
+title: CLI Reference
+weight: 30
+bookCollapseSection: true
 ---
 
 The Kurtosis CLI is a Go CLI wrapped around the Kurtosis Go [SDK][sdk-reference]. This section will go through the most common Kurtosis CLI commands and some useful tips on getting started. If you have not already done so, the CLI can be installed by following the instructions [here][installing-the-cli].
 
 
-:::tip
+{{< hint info >}}
 Kurtosis supports command-line completion; we recommend [installing it][adding-command-line-completion] for the best experience.
-:::
+{{< /hint >}}
 
 ### Configuration file path
 To locate where the Kurtosis configuration file is on your machine, simply use:
@@ -113,7 +110,7 @@ UUID   Name   Ports   Status
 </details>
 
 
-:::info
+{{< hint info >}}
 Users can use the `debug` `--cli-log-level` flag, , as shown above, to display the entire stack trace to the CLI. By default the entire stack trace is saved to the `kurtosis-cli.log` file. 
 
 The sample error stack-trace that can be seen on the cli after `debug` level is shown below:
@@ -129,7 +126,7 @@ Caused by: Error reading filepath_or_dirpath ''
  --- at /root/project/cli/cli/command_framework/highlevel/file_system_path_arg/file_system_path_arg.go:109 (getValidationFunc.func1) ---
 Caused by: stat ../../../per/other/submodul/: no such file or directory
 ```
-:::
+{{< /hint >}}
 
 <!-------------------- ONLY LINKS BELOW THIS POINT ----------------------->
 [adding-command-line-completion]: ../guides/adding-command-line-completion.md

@@ -1,7 +1,7 @@
 ---
 title: Code Examples
-sidebar_label: Code Examples
-slug: /code-examples
+weight: 60
+url: /code-examples/
 ---
 
 This page lists where you can find many different types of Kurtosis [packages][packages-concepts]:

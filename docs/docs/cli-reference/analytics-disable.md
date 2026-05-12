@@ -1,7 +1,6 @@
 ---
 title: analytics disable
-sidebar_label: analytics disable
-slug: /analytics-disable
+url: /analytics-disable/
 ---
 
 Kurtosis has functionality to collect product analytics metrics so we can make data-driven product decisions. These metrics are [anonymized, obfuscated, and never given to third parties](../advanced-concepts/metrics-philosophy.md)).

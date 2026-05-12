@@ -1,6 +1,5 @@
 ---
 title: Enclaves
-sidebar_label: Enclaves
 ---
 
 An enclave is a Kurtosis primitive representing an isolated, ephemeral environment - like the Kurtosis version of a Kubernetes namespace. They are managed by the `enclave` family of CLI commands (e.g. [`kurtosis enclave add`][enclave-add-reference], [`kurtosis enclave ls`][enclave-ls-reference], [`kurtosis enclave inspect`][enclave-inspect-reference], etc.).

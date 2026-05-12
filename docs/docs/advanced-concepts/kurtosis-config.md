@@ -1,6 +1,5 @@
 ---
 title: Kurtosis Config
-sidebar_label: Kurtosis Config
 ---
 
 # Kurtosis Config

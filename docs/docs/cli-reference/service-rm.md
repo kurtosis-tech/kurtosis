@@ -1,7 +1,6 @@
 ---
 title: service rm
-sidebar_label: service rm
-slug: /service-rm
+url: /service-rm/
 ---
 
 Services can be deleted from an enclave like so:

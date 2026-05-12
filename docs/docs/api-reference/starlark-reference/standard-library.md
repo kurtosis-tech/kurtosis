@@ -1,7 +1,5 @@
 ---
 title: Standard Library
-sidebar_label: Standard Library
-sidebar_position: 2
 ---
 
 The following Starlark libraries are available in Kurtosis by default:

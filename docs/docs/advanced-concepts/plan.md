@@ -1,6 +1,5 @@
 ---
 title: Plan
-sidebar_label: Plan
 ---
 
 The plan is a representation of what Kurtosis will do inside an enclave. It is central to the [multi-phase run design of Kurtosis][multi-phase-runs]. Plans are built via [Starlark][starlark-reference] by calling [functions on the `Plan` object][plan-starlark-reference] like `add_service`, `remove_service`, or `upload_files`.
@@ -19,11 +18,11 @@ def run(plan):
     some_library.do_something(plan)
 ```
 
-:::caution
+{{< hint warning >}}
 Any value returned by a `Plan` function (e.g. `Plan.add_service`, `Plan.upload_files`) is a [future-reference][future-reference] to the actual value that will only exist at execution time. This means that you cannot run conditionals or manipulations on it in Starlark, at interpretation time! 
 
 Instead, do the manipulation you need at execution time, using something like [`Plan.run_sh`][plan-run-sh] or [`Plan.run_python`][plan-run-python].
-:::
+{{< /hint >}}
 
 <!------------------ ONLY LINKS BELOW HERE -------------------->
 [future-reference]: ./future-references.md

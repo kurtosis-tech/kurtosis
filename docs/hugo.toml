@@ -1,0 +1,59 @@
+baseURL = 'https://docs.kurtosis.com/'
+title = 'Kurtosis Docs'
+theme = 'book'
+
+contentDir = 'docs'
+publishDir = 'build'
+
+# Match Docusaurus behavior: serve docs at root, not under /docs/
+disablePathToLower = true
+enableGitInfo = true
+enableRobotsTXT = true
+
+[params]
+  BookTheme = 'dark'
+  BookToC = true
+  BookSection = '*'
+  BookRepo = 'https://github.com/kurtosis-tech/kurtosis'
+  BookEditPath = 'edit/main/docs/docs'
+  BookSearch = true
+  BookComments = false
+  BookPortableLinks = true
+  BookServiceWorker = true
+  BookLogo = 'img/brand/kurtosis-logo-white-text.png'
+  BookAnnouncement = 'Support Kurtosis with a star on our <a target="_blank" rel="noopener noreferrer" href="https://github.com/kurtosis-tech/kurtosis">GitHub repo</a>!'
+  # Algolia DocSearch (matches previous Docusaurus theme integration)
+  AlgoliaAppId = 'NTSX40VZB8'
+  AlgoliaApiKey = '4269c726c2fea4e6cddfeb9a21cd3d4e'
+  AlgoliaIndexName = 'kurtosis'
+
+[markup]
+  [markup.goldmark.renderer]
+    unsafe = true
+  [markup.tableOfContents]
+    startLevel = 2
+    endLevel = 4
+  [markup.highlight]
+    style = 'github-dark'
+    lineNos = false
+    codeFences = true
+    guessSyntax = true
+    tabWidth = 4
+
+[outputs]
+  home = ['HTML', 'RSS']
+  section = ['HTML', 'RSS']
+
+[menu]
+  [[menu.after]]
+    name = 'GitHub'
+    url = 'https://github.com/kurtosis-tech/kurtosis'
+    weight = 10
+  [[menu.after]]
+    name = 'Discord'
+    url = 'https://discord.gg/HUapYX9RvV'
+    weight = 20
+  [[menu.after]]
+    name = 'Twitter'
+    url = 'https://twitter.com/KurtosisTech'
+    weight = 30

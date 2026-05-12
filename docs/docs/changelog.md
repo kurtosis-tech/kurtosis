@@ -1,5 +1,5 @@
 ---
 title: Changelog
-sidebar_label: Changelog
-slug: /changelog
+weight: 110
+url: /changelog/
 ---

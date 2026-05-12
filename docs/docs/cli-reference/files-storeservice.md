@@ -1,7 +1,6 @@
 ---
 title: files storeservice
-sidebar_label: files storeservice
-slug: /files-storeservice
+url: /files-storeservice/
 ---
 
 To instruct Kurtosis to copy a file or folder from a given absolute filepath in a given service and store it in the enclave for later use (e.g. with [`service add`](./service-add.md)), use:

@@ -1,6 +1,5 @@
 ---
 title: PortSpec
-sidebar_label: PortSpec
 ---
 
 The `PortSpec` constructor creates a `PortSpec` object that encapsulates information pertaining to a port.

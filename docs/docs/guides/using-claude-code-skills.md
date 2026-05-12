@@ -1,8 +1,6 @@
 ---
 title: Using Claude Code Skills
-sidebar_label: Claude Code Skills
-slug: /claude-code-skills
-sidebar_position: 16
+url: /claude-code-skills/
 ---
 
 This repository ships with a set of [Claude Code](https://claude.ai/download) skills — structured prompts that teach Claude how to build, debug, deploy, and manage Kurtosis. When loaded, Claude gains operational knowledge about the Kurtosis CLI, Docker and Kubernetes backends, Starlark development, and more.

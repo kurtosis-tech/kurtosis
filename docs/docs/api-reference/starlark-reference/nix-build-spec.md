@@ -1,6 +1,5 @@
 ---
 title: NixBuildSpec
-sidebar_label: NixBuildSpec
 ---
 
 The `NixBuildSpec` object constructor allows for providing detailed information about how to build a container image using Nix Flake in the [`ServiceConfig.image`](./service-config.md) property. 

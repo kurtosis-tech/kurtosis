@@ -1,8 +1,6 @@
 ---
 title: Running Kurtosis in Kubernetes
-sidebar_label: Running in Kubernetes
-slug: /k8s
-sidebar_position: 6
+url: /k8s/
 ---
 
 This guide assumes that you have [Kurtosis installed](../get-started/installing-the-cli.md).
@@ -23,9 +21,11 @@ There are many different ways to get a Kubernetes cluster (roughly ordered easie
 - Deploy it on the cloud, managing the Kubernetes nodes on cloud instances yourself (e.g. EC2, AVM, GCE, etc)
 - Deploy it on a managed Kuberenetes cluster, managing scaling and configurations yourself (e.g. EKS, AKS, GKE)
 
-:::tip Kurtosis Kloud Early Access
+**Kurtosis Kloud Early Access**
+
+{{< hint info >}}
 If you're looking to run a stress-free "Kurtosis on Kubernetes in the cloud", look no further! Check out [Kurtosis Cloud](https://cloud.kurtosis.com/).
-:::
+{{< /hint >}}
 
 
 II. Add you Kubernetes Cluster credentials to your `kubeconfig`
@@ -62,10 +62,12 @@ kurtosis-clusters:
       enclave-size-in-megabytes: 10
 ```
 
-:::tip Storage Class
+**Storage Class**
+
+{{< hint info >}}
 The Storage Class specified in the configuration above will be used for spinning up persistent volumes. Make sure you have the right
 value in case you are using persistent directories.
-:::
+{{< /hint >}}
 
 We support storage classes that support dynamic provisioning; here are some of them:
 
@@ -85,9 +87,11 @@ IV. Configure Kurtosis
 
 Done! Now you can run any Kurtosis command or package just like if you were doing it locally.
 
-:::tip Kurtosis Kloud Early Access
+**Kurtosis Kloud Early Access**
+
+{{< hint info >}}
 To switch back to using Kurtosis locally, simply use: `kurtosis cluster set docker`
-:::
+{{< /hint >}}
 
 
 V. \[Optional] Activate the enclave pool to accelerate the enclave creation time

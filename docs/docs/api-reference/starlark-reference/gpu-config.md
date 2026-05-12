@@ -1,6 +1,5 @@
 ---
 title: GpuConfig
-sidebar_label: GpuConfig
 ---
 
 The `GpuConfig` constructor creates a `GpuConfig` object that encapsulates GPU-related configuration for a service, including device selection, shared memory size, ulimits, and driver settings. It is used with a [ServiceConfig][service-config] object.
@@ -55,11 +54,13 @@ gpu_config = GpuConfig(
 
 The above constructor returns a `GpuConfig` object that defines GPU configuration for use in [`ServiceConfig`][service-config] via the `gpu` field.
 
-:::note Kubernetes limitations
+**Kubernetes limitations**
+
+{{< hint info >}}
 - `device_ids` is not supported on Kubernetes — a warning is logged and the field is ignored. Use `count` instead.
 - `count = -1` (all GPUs) is not supported on Kubernetes — only positive counts are accepted.
 - `ulimits` are not supported on Kubernetes — a warning is logged and the field is ignored.
-:::
+{{< /hint >}}
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [service-config]: ./service-config.md

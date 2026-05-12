@@ -1,6 +1,5 @@
 ---
 title: ReadyCondition
-sidebar_label: ReadyCondition
 ---
 
 The `ReadyCondition` can be used to execute a readiness check after a service is started to confirm that it is ready to receive connections and traffic.

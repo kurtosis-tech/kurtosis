@@ -1,7 +1,6 @@
 ---
 title: clean
-sidebar_label: clean
-slug: /clean
+url: /clean/
 ---
 
 The `clean` command serves the purpose of freeing up resources from your local machine by removing unused Kurtosis images and any stopped enclaves (along with their contents). 

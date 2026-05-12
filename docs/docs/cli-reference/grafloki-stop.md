@@ -1,7 +1,6 @@
 ---
 title: grafloki stop
-sidebar_label: grafloki stop
-slug: /grafloki-stop
+url: /grafloki-stop/
 ---
 
 To stop a Grafana/Loki instance that was started by [grafloki start][grafloki-start] in Docker or K8s cluster, run:

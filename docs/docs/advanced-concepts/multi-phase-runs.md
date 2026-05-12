@@ -1,6 +1,5 @@
 ---
 title: Multi-Phase Runs
-sidebar_label: Multi-Phase Runs
 ---
 
 <!-- TODO Refactor this a bit when we have a 'plan' object -->

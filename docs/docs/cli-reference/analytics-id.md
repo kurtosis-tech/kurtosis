@@ -1,7 +1,6 @@
 ---
 title: analytics id
-sidebar_label: analytics id
-slug: /analytics-id
+url: /analytics-id/
 ---
 
 In addition to log outputs and screenshots, [product analytics metrics](../advanced-concepts/metrics-philosophy.md) may be useful for our team when debugging issues and shipping fixes for bugs. 

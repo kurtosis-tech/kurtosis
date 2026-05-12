@@ -1,7 +1,6 @@
 ---
 title: files download
-sidebar_label: files download
-slug: /files-download
+url: /files-download/
 ---
 
 To download a [files artifact](../advanced-concepts/files-artifacts.md) using a resource identifier (e.g. name, UUID, shortened UUID) from an enclave to the host machine, use:
@@ -11,6 +10,6 @@ kurtosis files download $THE_ENCLAVE_IDENTIFIER $THE_ARTIFACT_IDENTIFIER $FILE_D
 ```
 where `$THE_ENCLAVE_IDENTIFIER` and the `$THE_ARTIFACT_IDENTIFIER` are [resource identifiers](../advanced-concepts/resource-identifier.md) for the enclave and file artifact, respectively. 
 
-:::tip
+{{< hint info >}}
 The file downloaded will be extracted by default. If you would prefer the file not to be extracted upon download, pass in the `--no-extract` flag.
-:::
+{{< /hint >}}

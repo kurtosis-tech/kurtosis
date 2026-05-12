@@ -1,6 +1,5 @@
 ---
 title: import_module
-sidebar_label: import_module
 ---
 
 The `import_module` function imports the symbols from a Starlark script specified by the given [locator][locators-reference], and requires that the calling Starlark script is part of a [package][packages-reference].

@@ -1,8 +1,6 @@
 ---
 title: Basic Concepts
-sidebar_label: Basic Concepts
-slug: '/basic-concepts'
-sidebar_position: 4
+url: /basic-concepts/
 ---
 
 Package

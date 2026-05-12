@@ -1,7 +1,7 @@
 ---
 title: FAQ
-sidebar_label: FAQ
-slug: /faq
+weight: 70
+url: /faq/
 ---
 
 ### Looking for our Frequently Asked Questions (FAQ) section?

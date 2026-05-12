@@ -1,8 +1,6 @@
 ---
 title: Running Kurtosis in your own Cloud
-sidebar_label: Running in your own Cloud
-slug: /self-hosting
-sidebar_position: 14
+url: /self-hosting/
 ---
 
 This guide will help you set up Kurtosis in your own cloud and exposing it using one of your subdomains e.g. `kurtosis.<your domain>.com`

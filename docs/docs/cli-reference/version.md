@@ -1,7 +1,6 @@
 ---
 title: version
-sidebar_label: version
-slug: /version
+url: /version/
 ---
 
 The `kurtosis version` command displays version information about the [CLI](./index.md). 

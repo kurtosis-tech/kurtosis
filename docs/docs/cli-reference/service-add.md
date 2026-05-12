@@ -1,7 +1,6 @@
 ---
 title: service add
-sidebar_label: service add
-slug: /service-add
+url: /service-add/
 ---
 
 To add a service to an enclave, run:
@@ -39,7 +38,9 @@ To read the JSON config from stdin, use:
 kurtosis service add my-enclave test-service --json-service-config - < ./my-service-config.json
 ```
 
-:::note Override
+**Override**
+
+{{< hint info >}}
 When using `--json-service-config`, the standard flags and args like `--image`, `--cmd`, `--entrypoint`, `--env`, and `$CONTAINER_IMAGE` will be ignored in favor of the provided config.
-:::
+{{< /hint >}}
 

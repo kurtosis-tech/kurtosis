@@ -1,9 +1,7 @@
 ---
-id: get-started
 title: Kurtosis Documentation
-slug: '/'
-sidebar_position: 1
 hide_table_of_contents: true
+url: /
 ---
 
 [Kurtosis](https://github.com/kurtosis-tech/kurtosis) is a tool for packaging and launching environments of containerized services where you want them, the way you want them, with one liners.

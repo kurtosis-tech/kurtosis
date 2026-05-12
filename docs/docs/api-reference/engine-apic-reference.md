@@ -1,9 +1,8 @@
 ---
 title: Engine & APIC Reference
-sidebar_label: Engine & APIC Reference
-slug: /engine-apic-reference
 toc_min_heading_level: 2
 toc_max_heading_level: 2
+url: /engine-apic-reference/
 ---
 
 Interactions with Kurtosis happen via API. To facilitate interaction with Kurtosis, we provide [client libraries][kurtosis-client-libs] in Go and Typescript for interacting with the Kurtosis API. These can be used to, for example, write Kurtosis-based tests using your test framework of choice.
@@ -14,9 +13,9 @@ For language-specific guides and examples, see the READMEs for each of our clien
 
 This page documents the objects and functions that are available in all client libraries.
 
-:::tip
+{{< hint info >}}
 The sidebar on the right can be used to quickly navigate classes.
-:::
+{{< /hint >}}
 
 KurtosisContext
 ---------------

@@ -1,13 +1,12 @@
 ---
 title: How do enclave edits work?
-sidebar_label: How do enclave edits work?
 ---
 
 Background
 ----------
-:::tip
+{{< hint info >}}
 To learn about what enclave edits are in Kurtosis and the motivation behind this feature, go [here][enclave-edits-concept-reference].
-:::
+{{< /hint >}}
 
 When running the `kurtosis run` command, you may notice the following message get printed:
 ```console
@@ -19,10 +18,10 @@ run in a given enclave, thus reducing execution time and resources.
 This means when you try to run the exact same package twice in a row, Kurtosis will skip all the instructions for the 
 second run because they were already executed in the first run.
 
-:::info
+{{< hint info >}}
 This feature is still experimental and can be deactivated by adding `--experimental NO_INSTRUCTIONS_CACHING` parameter 
 to the `kurtosis run` command.
-:::
+{{< /hint >}}
 
 How it works
 ------------

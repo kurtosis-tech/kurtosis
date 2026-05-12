@@ -1,7 +1,6 @@
 ---
 title: service start
-sidebar_label: service start
-slug: /service-start
+url: /service-start/
 ---
 
 Temporarily stopped services in an enclave can be restarted like so:

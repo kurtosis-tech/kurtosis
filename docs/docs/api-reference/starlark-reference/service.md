@@ -1,6 +1,5 @@
 ---
 title: Service
-sidebar_label: Service
 ---
 
 The `Service` object encapsulates service information returned by the [`Plan.add_service`][add-service-starlark-reference] and [`Plan.add_services`][add-services-starlark-reference] functions.
