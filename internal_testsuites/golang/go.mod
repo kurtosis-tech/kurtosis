@@ -21,13 +21,12 @@ require (
 
 require (
 	github.com/kurtosis-tech/kurtosis/api/golang v0.0.0-00010101000000-000000000000
-	github.com/kurtosis-tech/kurtosis/path-compression v0.0.0-20240307154559-64d2929cd265
+	github.com/kurtosis-tech/kurtosis/path-compression v0.0.0-20260325155815-f36ae687d73d
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
-	k8s.io/utils v0.0.0-20230711102312-30195339c3c7
 )
 
 require (
-	github.com/Masterminds/semver/v3 v3.4.0 // indirect
+	github.com/Masterminds/semver/v3 v3.5.0 // indirect
 	github.com/STARRY-S/zip v0.2.3 // indirect
 	github.com/adrg/xdg v0.5.3 // indirect
 	github.com/andybalholm/brotli v1.2.0 // indirect

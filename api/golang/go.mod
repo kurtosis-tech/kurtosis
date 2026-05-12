@@ -9,7 +9,7 @@ replace (
 
 require (
 	connectrpc.com/connect v1.19.2
-	github.com/Masterminds/semver/v3 v3.4.0
+	github.com/Masterminds/semver/v3 v3.5.0
 	github.com/getkin/kin-openapi v0.137.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-yaml/yaml v2.1.0+incompatible
