@@ -11,6 +11,6 @@ kurtosis enclave stop $THE_ENCLAVE_IDENTIFIER
 ```
 where `$THE_ENCLAVE_IDENTIFIER` is the enclave [identifier](../advanced-concepts/resource-identifier.md).
 
-{{< alert context="warning" >}}
+{{< callout type="warning" >}}
 Enclaves that have been stopped cannot currently be restarted. The Kurtosis team is actively working on enabling this functionality.
-{{< /alert >}}
+{{< /callout >}}

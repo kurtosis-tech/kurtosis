@@ -110,12 +110,12 @@ For detailed information about the `ServiceConfig` object, see [here][starlark-t
 For detailed information about the `Service` objects that `add_services`, see [Service][service-starlark-reference].
 
 
-{{< alert context="warning" >}}
+{{< callout type="warning" >}}
 
 `add_services` will succeed if and only if all services are successfully added. If any one fails (perhaps due to timeouts a ready condition failing), the entire batch of
 services will be rolled back and the instruction will return an execution error.
 
-{{< /alert >}}
+{{< /callout >}}
 
 get_service
 -----------
@@ -255,7 +255,7 @@ plan.verify(
 )
 ```
 
-{{< alert context="warning" >}}
+{{< callout type="warning" >}}
 
 Verifications are typed, so running
 
@@ -268,7 +268,7 @@ plan.verify(
 ```
 
 Will fail. If needed, you can use the `extract` feature to parse the types of your outputs.
-{{< /alert >}}
+{{< /callout >}}
 
 exec
 ----

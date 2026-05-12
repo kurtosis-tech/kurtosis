@@ -19,87 +19,113 @@ defaultContentLanguage = 'en'
 [module]
   [module.hugoVersion]
     extended = true
-    min = '0.140.0'
+    min = '0.146.0'
   [[module.imports]]
-    path = 'github.com/colinwilson/lotusdocs'
-    disable = false
-  [[module.imports]]
-    path = 'github.com/gohugoio/hugo-mod-bootstrap-scss/v5'
-    disable = false
+    path = 'github.com/imfing/hextra'
 
 [markup]
-  defaultMarkdownHandler = 'goldmark'
   [markup.goldmark.renderer]
     unsafe = true
+  [markup.highlight]
+    noClasses = false
   [markup.tableOfContents]
     startLevel = 2
     endLevel = 4
 
+# Output formats: HTML for pages, plus Hextra's built-in llms.txt + raw markdown
+# passthrough (replaces the custom Docusaurus raw-markdown plugin from #3096).
 [outputs]
-  home = ['HTML', 'RSS']
-  section = ['HTML', 'RSS']
+  home = ['HTML', 'RSS', 'llms']
+  page = ['HTML', 'markdown']
+  section = ['HTML', 'RSS', 'llms']
+
+[outputFormats]
+  [outputFormats.llms]
+    name = 'llms'
+    baseName = 'llms'
+    mediaType = 'text/plain'
+    isPlainText = true
+  [outputFormats.markdown]
+    name = 'markdown'
+    baseName = 'index'
+    mediaType = 'text/markdown'
+    isPlainText = true
+    ugly = true
+
+[mediaTypes]
+  [mediaTypes."text/markdown"]
+    suffixes = ['md']
 
 [params]
-  google_fonts = [
-    ['Inter', '300, 400, 600, 700'],
-    ['Fira Code', '500, 700'],
-  ]
-  sans_serif_font = 'Inter'
-  secondary_font  = 'Inter'
-  mono_font       = 'Fira Code'
+  description = 'Kurtosis is a tool for packaging and launching environments of containerized services where you want them, the way you want them, with one liners.'
+
+  [params.navbar]
+    displayTitle = true
+    displayLogo = true
+    [params.navbar.logo]
+      path = 'img/brand/kurtosis-logo-white-text.png'
+      dark = 'img/brand/kurtosis-logo-white-text.png'
+      link = '/'
+      width = 140
+
+  [params.theme]
+    default = 'dark'
+    displayToggle = true
 
   [params.footer]
-    copyright = '© :YEAR: Kurtosis Technologies. Documentation built with [**Hugo**](https://gohugo.io) + [Lotus Docs](https://github.com/colinwilson/lotusdocs).'
+    enable = true
+    displayCopyright = true
+    displayPoweredBy = false
+    copyright = '© 2026 Kurtosis Technologies'
 
-  [params.social]
-    github  = 'https://github.com/kurtosis-tech/kurtosis'
-    twitter = 'KurtosisTech'
+  [params.editURL]
+    enable = true
+    base = 'https://github.com/kurtosis-tech/kurtosis/edit/main/docs/content'
 
-  [params.docs]
-    title           = 'Kurtosis Docs'
-    pathName        = 'docs'
-    themeColor      = 'cyan'
-    darkMode        = true
-    prism           = true
-    prismTheme      = 'lotusdocs'
-    repoURL         = 'https://github.com/kurtosis-tech/kurtosis'
-    repoBranch      = 'main'
-    editPage        = true
-    lastMod         = true
-    lastModRelative = true
-    sidebarIcons    = true
-    breadcrumbs     = true
-    backToTop       = true
-    toc             = true
-    tocMobile       = true
-    scrollSpy       = true
-    descriptions    = true
-    titleIcon       = false
-    navDesc         = true
-    navDescTrunc    = 30
-    listDescTrunc   = 100
-    intLinkTooltip  = true
+  [params.toc]
+    displayTags = true
+    displayTitle = true
 
-  # Algolia DocSearch (matches the existing crawler config — same appId/apiKey/index as Docusaurus).
-  [params.docsearch]
-    appID     = 'NTSX40VZB8'
-    apiKey    = '4269c726c2fea4e6cddfeb9a21cd3d4e'
-    indexName = 'kurtosis'
+  [params.page]
+    width = 'normal'
 
-  # FlexSearch is included as a free fallback if Algolia ever goes away.
-  [params.flexsearch]
-    enabled = false
+  # Hextra ships a fast client-side FlexSearch index. The previous Algolia
+  # DocSearch widget can be added back as a follow-up via a custom head partial;
+  # see `Follow-ups` in the PR description.
+  [params.search]
+    enable = true
+    type = 'flexsearch'
+    [params.search.flexsearch]
+      index = 'content'
+      tokenize = 'forward'
 
 [menu]
-  [[menu.primary]]
+  [[menu.main]]
     name = 'Docs'
-    url  = '/'
-    weight = 10
-  [[menu.primary]]
+    pageRef = '/docs'
+    weight = 1
+  [[menu.main]]
+    name = "What's New"
+    pageRef = '/docs/whats-new'
+    weight = 2
+  [[menu.main]]
+    name = 'Search'
+    weight = 8
+    [menu.main.params]
+      type = 'search'
+  [[menu.main]]
     name = 'GitHub'
-    url  = 'https://github.com/kurtosis-tech/kurtosis'
-    weight = 90
-  [[menu.primary]]
+    url = 'https://github.com/kurtosis-tech/kurtosis'
+    weight = 9
+    [menu.main.params]
+      icon = 'github'
+  [[menu.main]]
     name = 'Discord'
-    url  = 'https://discord.gg/HUapYX9RvV'
-    weight = 91
+    url = 'https://discord.gg/HUapYX9RvV'
+    weight = 10
+  [[menu.main]]
+    name = 'Twitter'
+    url = 'https://twitter.com/KurtosisTech'
+    weight = 11
+    [menu.main.params]
+      icon = 'x-twitter'

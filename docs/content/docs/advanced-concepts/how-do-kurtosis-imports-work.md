@@ -13,7 +13,7 @@ In both cases, the Kurtosis engine needs to know where to find the external file
 
 Therefore, Kurtosis needs to handle both of these.
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 This external files problem is not unique to Kurtosis. Every programming language faces the same challenge, and each programming language solves it differently. 
 
 <details>
@@ -53,7 +53,7 @@ This external files problem is not unique to Kurtosis. Every programming languag
   and the Java classpath is searched for each import to see if any JAR contains a matching file. It is the responsibility of the user to build the correct classpath, and various tools and dependency managers help developers download JARs and construct the classpath correctly.
 
 </details>
-{{< /alert >}}
+{{< /callout >}}
 
 ### Kurtosis Packages
 Remote file imports in any language are always handled through a packaging system. This is because any language that allows remote external files must have a solution for identifying the remote files, downloading them locally, and making them available on the import path (`PYTHONPATH`, `node_modules`, classpath, etc.). Furthermore, authors must be able to bundle files together into a package, publish them, and share them. Thus, For Kurtosis to allow Starlark scripts to depend on remote external files, we needed a packaging system of our own.
@@ -74,9 +74,9 @@ Each package will be named with the `name` key inside the `kurtosis.yml` file. P
 
 - If the package name is not a prefix of the [locator][locators-reference] used in `read_file`/`import_module`, then the file is assumed to be remote. Kurtosis will look at the `github.com/package-author/package-repo` prefix of the locator, clone the repository from GitHub, and use the file inside the package i.e a directory that contains kurtosis.yml. 
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 Since `kurtosis.yml` can live in any directory, users have the ability to create multiple packages per repo (sibling packages). We do not currently support a package importing a sibling package (i.e. if `foo` and `bar` packages are subdirectories of `repo`, then `bar` cannot import files from `foo`). Please let us know if you need this functionality.
-{{< /alert >}}
+{{< /callout >}}
 
 Kurtosis does not allow referencing local files outside the package (i.e. in a directory above the package root with the `kurtosis.yml` file). This is to ensure that all files used in the package get pushed to GitHub when the package is published.
 
@@ -101,9 +101,9 @@ kurtosis run /path/to/package/root/kurtosis.yml
 
 In both cases, Kurtosis will run the `main.star` in the package root and resolve any file imports using the package name specified in the `kurtosis.yml`. All local imports (imports that have the package name as a prefix to the locator) will be resolved within the directory on your filesystem; this is very useful for local development.
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 Not all packages have a `main.star` file, meaning not all packages are runnable; some packages are simply libraries intended to be imported in other packages.
-{{< /alert >}}
+{{< /callout >}}
 
 The third way is to run a runnable package by its package name (can be found in the kurtosis.yml from the directory):
 
@@ -119,21 +119,21 @@ kurtosis run github.com/package-author/package-repo/path/to/directory-with-kurto
 
 Kurtosis will clone the package from GitHub, run the `main.star`, and use the `kurtosis.yml` to resolve any imports. This method always uses the version on GitHub.
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 If you want to run a non-main branch, tag or commit use the following syntax
 `kurtosis run github.com/package-author/package-repo@tag-branch-commit`
-{{< /alert >}}
+{{< /callout >}}
 
 <!-- 
   It seems to me that we are suggesting users to use arbitrary name, only to change later; my worry is that it
   could lead to import errors! With introduction of sub-packages, this could lead to even more confusion. If the users'
   want to do this for quick testing, they can but we should not suggest it.
 -->
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 When you're developing locally, before your package has been pushed to GitHub, the package `name` can be anything you like - e.g. `github.com/test/test`. The only thing that is important for correctly resolving local file imports is that your `read_file`/`import_module` locators also are prefixed with `github.com/test/test`.
 
 Once you push to GitHub, however, your package `name` will need to match the author and repo. If they don't, your package will be broken when another user depends on your package because Kurtosis will go looking for a `github.com/test/test` package that likely doesn't exist.
-{{< /alert >}}
+{{< /callout >}}
 
 <!---------------------- ONLY LINKS BELOW HERE ---------------------------->
 [starlark-reference]: ../advanced-concepts/starlark.md

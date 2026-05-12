@@ -42,10 +42,10 @@ post_request_recipe = PostHttpRequestRecipe(
 )
 ```
 
-{{< alert context="warning" >}}
+{{< callout type="warning" >}}
 
 Make sure that the endpoint returns valid JSON response for both POST and GET requests.
 
-{{< /alert >}}
+{{< /callout >}}
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->

@@ -11,9 +11,9 @@ For example, a user can upload files on their machine to an enclave like so:
 kurtosis files upload $SOME_PATH
 ```
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 If `$SOME_PATH` is a file, that single file will be packaged inside the files artifact. If `$SOME_PATH` is a directory, all of the directory's contents will be packaged inside the files artifact.
-{{< /alert >}}
+{{< /callout >}}
 
 Doing so will return a randomly-generated ID and name that can be used to reference the files artifact for later use.
 

@@ -29,12 +29,12 @@ exec_recipe = ExecRecipe(
 )
 ```
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 If you are trying to run a complex `command` with `|`, you should prefix the command with `/bin/sh -c` and wrap the actual command in a string; for example: `command = ["echo", "a", "|", "grep a"]` should
 be rewritten as `command = ["/bin/sh", "-c", "echo a | grep a"]`. Not doing so makes everything after the `echo` as args of that command, instead of following the behavior you would expect from a shell.
-{{< /alert >}}
+{{< /callout >}}
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 If the executed command returns a proper `JSON` formatted data structure, it's necessary to pass the output through `jq`'s `fromjson` function to enable `jq` to parse the input.
 For more information on `jq`'s built-in methods, plese refer to `jq`'s documentation. The following is an example of how to parse the json formatted output using `jq` syntax:
 
@@ -72,7 +72,7 @@ will output:
 value
 ```
 
-{{< /alert >}}
+{{< /callout >}}
 
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->

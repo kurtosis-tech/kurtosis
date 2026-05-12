@@ -41,7 +41,7 @@ kurtosis service add my-enclave test-service --json-service-config - < ./my-serv
 
 **Override**
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 When using `--json-service-config`, the standard flags and args like `--image`, `--cmd`, `--entrypoint`, `--env`, and `$CONTAINER_IMAGE` will be ignored in favor of the provided config.
-{{< /alert >}}
+{{< /callout >}}
 

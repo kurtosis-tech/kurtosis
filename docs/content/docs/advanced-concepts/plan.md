@@ -19,11 +19,11 @@ def run(plan):
     some_library.do_something(plan)
 ```
 
-{{< alert context="warning" >}}
+{{< callout type="warning" >}}
 Any value returned by a `Plan` function (e.g. `Plan.add_service`, `Plan.upload_files`) is a [future-reference][future-reference] to the actual value that will only exist at execution time. This means that you cannot run conditionals or manipulations on it in Starlark, at interpretation time! 
 
 Instead, do the manipulation you need at execution time, using something like [`Plan.run_sh`][plan-run-sh] or [`Plan.run_python`][plan-run-python].
-{{< /alert >}}
+{{< /callout >}}
 
 <!------------------ ONLY LINKS BELOW HERE -------------------->
 [future-reference]: ./future-references.md

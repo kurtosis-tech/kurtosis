@@ -6,9 +6,9 @@ linkTitle: Running Private Packages
 
 Kurtosis CLI supports the ability to run private packages hosted on GitHub via `kurtosis github login`. This guide assumes that you have [Kurtosis installed](../get-started/installing-the-cli.md) and a package hosted on GitHub that is private.
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 GitHub Login is not yet supported over Kubernetes backend. Please create an [issue](https://github.com/kurtosis-tech/kurtosis/issues) to request this feature!
-{{< /alert >}}
+{{< /callout >}}
 
 ### 1. Authorize Kurtosis CLI OAuth Application
 
@@ -29,15 +29,15 @@ After entering the code, GitHub will prompt you to authorize Kurtosis CLI. Kurto
 
 **OAuth Token Scopes**
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 While `repo` gives Kurtosis read and write access to private repositories, Kurtosis only performs read operations. GitHub does not support a [`repo:read`](https://github.com/jollygoodcode/jollygoodcode.github.io/issues/6) OAuth scope, but an alternative is to use a [fine-grained personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#fine-grained-personal-access-tokens) to restrict Kurtosis CLI read/write and repository permissions. This token can be passed to Kurtosis CLI via the [`kurtosis engine start --github-auth-token=<>`](../cli-reference/engine-start.md) flag.
-{{< /alert >}}
+{{< /callout >}}
 
 **Private Packages within GitHub Orgs**
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 If the private package you'd like to develop on lives in a GitHub org, the organization must also authorize Kurtosis CLI. To have an organization you are a part of authorize Kurtosis CLI, click the `Request` button next to the organization name on the authorization page, then notify your org admins to accept the request via email.
-{{< /alert >}}
+{{< /callout >}}
 
 
 Once you have authorized Kurtosis CLI, you'll be redirected to a success page.
@@ -51,9 +51,9 @@ Now, navigate back to your terminal. Your Kurtosis engine will automatically res
 
 **OAuth Token storage**
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 Behind the scenes, authorizing Kurtosis CLI means GitHub will generate an OAuth token that Kurtosis CLI can use to perform GitHub operations on your behalf. Following GitHub CLI, we attempt to securely store this token in system credential storage. If system credential store is unavailable, we store it in a plain text file in your Kurtosis config directory at `kurtosis config path`.
-{{< /alert >}}
+{{< /callout >}}
 
 ### Run a Private Package
 

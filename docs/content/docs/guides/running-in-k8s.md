@@ -24,9 +24,9 @@ There are many different ways to get a Kubernetes cluster (roughly ordered easie
 
 **Kurtosis Kloud Early Access**
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 If you're looking to run a stress-free "Kurtosis on Kubernetes in the cloud", look no further! Check out [Kurtosis Cloud](https://cloud.kurtosis.com/).
-{{< /alert >}}
+{{< /callout >}}
 
 
 II. Add you Kubernetes Cluster credentials to your `kubeconfig`
@@ -65,10 +65,10 @@ kurtosis-clusters:
 
 **Storage Class**
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 The Storage Class specified in the configuration above will be used for spinning up persistent volumes. Make sure you have the right
 value in case you are using persistent directories.
-{{< /alert >}}
+{{< /callout >}}
 
 We support storage classes that support dynamic provisioning; here are some of them:
 
@@ -90,9 +90,9 @@ Done! Now you can run any Kurtosis command or package just like if you were doin
 
 **Kurtosis Kloud Early Access**
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 To switch back to using Kurtosis locally, simply use: `kurtosis cluster set docker`
-{{< /alert >}}
+{{< /callout >}}
 
 
 V. \[Optional] Activate the enclave pool to accelerate the enclave creation time

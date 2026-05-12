@@ -15,7 +15,7 @@ The instructions in this guide will walk you through installing the latest versi
 
 **Migrating from Gemfury?**
 
-{{< alert context="warning" >}}
+{{< callout type="warning" >}}
 The old Gemfury-hosted apt/yum repositories (`apt.fury.io/kurtosis-tech` and `yum.fury.io/kurtosis-tech`) are **no longer supported**. If you previously installed Kurtosis via Gemfury, switch to the new repository with a single command:
 
 **apt (Ubuntu/Debian):**
@@ -51,7 +51,7 @@ sudo yum install kurtosis-cli-<version>
 ```
 
 </details>
-{{< /alert >}}
+{{< /callout >}}
 
 I. Install & Start Docker
 -----------------
@@ -73,7 +73,7 @@ II. Install the CLI
 brew install kurtosis-tech/tap/kurtosis-cli
 ```
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 Homebrew might warn you that your Xcode is outdated or missing entirely. [This is a Homebrew requirement](https://docs.brew.sh/Installation), and has nothing to do with Kurtosis (which ships as prebuilt binaries). 
 
 To install or update your Xcode, run:
@@ -81,7 +81,7 @@ To install or update your Xcode, run:
 ```bash
 xcode-select --install
 ```
-{{< /alert >}}
+{{< /callout >}}
 
 </TabItem>
 <TabItem value="apt" label="apt (Ubuntu)">

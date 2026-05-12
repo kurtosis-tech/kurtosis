@@ -29,9 +29,9 @@ Before you proceed, make sure you have:
 
 **Use the Starlark VS Code Extension**
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 Feel free to use the [official Kurtosis Starlark VS Code extension][vscode-plugin] when writing Starlark with VSCode for features like syntax highlighting, method signature suggestions, hover preview for functions, and auto-completion for Kurtosis custom types.
-{{< /alert >}}
+{{< /callout >}}
 
 Instantiate a 3-node Cassandra cluster
 --------------------------------------
@@ -121,9 +121,9 @@ Finally, save your newly created file and, from the working directory you create
 kurtosis run --enclave cassandra-cluster main.star
 ```
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 Kurtosis will run validation checks against your code to ensure that it will work before spinning up the containers for our 3-node Cassandra cluster. We won’t dive into the details of how validation checks are used by Kurtosis in this guide, but you can read more about them [here][multi-phase-runs].
-{{< /alert >}}
+{{< /callout >}}
 
 Your output will look something like:
 
@@ -290,9 +290,9 @@ daff154657ce   cassandra-node-3   client: 9042/tcp -> 127.0.0.1:54768    RUNNING
 
 Congratulations! You’ve just parameterized your Cassandra cluster environment definition and used it to instantiate a 5-node Cassandra cluster. You can run the same command with 2 nodes, or 4 nodes, and it will just work. **Kurtosis environment definitions are completely reproducible and fully parametrizable.**
 
-{{< alert context="warning" >}}
+{{< callout type="warning" >}}
 Depending on how many nodes you wish to spin up, the max heap size of each node may cumulatively consume more memory on your local machine than you have available, causing the Starlark script to time-out. Modifying the `MAX_HEAP_SIZE` property in the `ServiceConfig` for the Cassandra nodes may help, depending on your needs.
-{{< /alert >}}
+{{< /callout >}}
 
 ### Review
 How did that work?
@@ -316,12 +316,12 @@ In our case, you passed in:
 
 which told Kurtosis to run your `main.star` file with 5 nodes instead of the default of 3 that we began with. 
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 Note that to pass parameters to the run(plan,args) function, a JSON object needs to be passed in as the 2nd position argument after the script or package path:
 ```bash
 kurtosis run my_package.star '{"arg": "my_name"}'
 ```
-{{< /alert >}}
+{{< /callout >}}
 
 In this section, we showed how to use Kurtosis to parameterize an environment definition. Next, we’ll walk through another property of Kurtosis environments: composability.
 

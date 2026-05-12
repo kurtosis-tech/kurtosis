@@ -14,19 +14,19 @@ where `$THE_ENCLAVE_IDENTIFIER` and the `$THE_SERVICE_IDENTIFIER` are [resource 
 
 **Number of log lines**
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 By default, logs printed in the terminal from this command are truncated at the most recent 200 log lines. For a stream of logs, we recommend the `-f` flag. For all the logs use the `-a` flag and for a snapshot of the logs at a given point in time (e.g. after a change), we recommend the [`kurtosis dump`](./dump.md).
-{{< /alert >}}
+{{< /callout >}}
 
 **Log Retention**
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 Kurtosis will keep logs for up to 1 week before removing them to prevent logs from taking up to much storage. If you'd like to remove logs before the retention period, `kurtosis enclave rm` will remove any logs associated for service in the enclave and `kurtosis clean` will remove logs for all services in stopped enclaves.
-{{< /alert >}}
+{{< /callout >}}
 
 **Kubernetes Logging**
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 Kurtosis logging on the Kubernetes backend requires using kurtosis config v4. Kurtosis config v4 introduces a required field in the Kubernetes cluster configuration: `engine-node-name`. This field instructs Kurtosis to schedule the engine and logs aggregator pods on the requested node. The logs aggregator will output logs to the filesystem of `engine-node-name`, where the engine reads them for `service logs`. Kurtosis will always attempt to schedule these pods on the `engine-node-name` and will fail if it is unable to do so.
 ```
 config-version: 4 # set config version to v4
@@ -41,7 +41,7 @@ kurtosis-clusters:
         engine-node-name: "minikube-m02" # additional required config in v4
 ...
 ```
-{{< /alert >}}
+{{< /callout >}}
 
 The following optional arguments can be used:
 1. `-a`, `--all` can be used to retrieve all logs.

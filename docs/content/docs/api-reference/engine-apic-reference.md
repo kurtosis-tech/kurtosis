@@ -14,9 +14,9 @@ For language-specific guides and examples, see the READMEs for each of our clien
 
 This page documents the objects and functions that are available in all client libraries.
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 The sidebar on the right can be used to quickly navigate classes.
-{{< /alert >}}
+{{< /callout >}}
 
 KurtosisContext
 ---------------

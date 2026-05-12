@@ -6,9 +6,9 @@ linkTitle: Packages
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 Packages are a part of the Kurtosis package system. To read about the package system in detail, [see here][how-do-kurtosis-imports-work-explanation].
-{{< /alert >}}
+{{< /callout >}}
 
 <!-- TODO Add more information here when dependencies are specified in the kurtosis.yml -->
 
@@ -65,9 +65,9 @@ def run(plan):
     plan.print("Hello, world.")
 ```
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 More on the `plan` parameter [here][plan].
-{{< /alert >}}
+{{< /callout >}}
 
 Runnable packages can be called through the `kurtosis run` function of the CLI:
 
@@ -86,10 +86,10 @@ kurtosis run /path/to/runnable/package/root/kurtosis.yml
 kurtosis run github.com/package-author/package-repo/path/to/directory-with-kurtosis.yml
 ```
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 If you want to run a non-main branch, tag or commit use the following syntax
 `kurtosis run github.com/package-author/package-repo@tag-branch-commit`
-{{< /alert >}}
+{{< /callout >}}
 
 All these will call the `run(plan)` function of the package's `main.star`.
 
@@ -111,7 +111,7 @@ def run(plan):
 def run(plan, some_parameter, some_other_parameter = "Default value"):
 ```
 
-{{< alert context="warning" >}}
+{{< callout type="warning" >}}
 You may come across an old style of package parameterization where the `run` function takes a single `args` variable containing all the package's parameters, like so:
 
 ```python
@@ -120,7 +120,7 @@ def run(plan, args):
 ```
 
 This method is now deprecated, and will be removed in the future.
-{{< /alert >}}
+{{< /callout >}}
 
 Consumers of your package can then pass in these parameters to configure your package:
 

@@ -33,9 +33,9 @@ To spin up a local Ethereum testnet, run:
 ```bash
 kurtosis --enclave local-eth-testnet run github.com/ethpandaops/ethereum-package
 ```
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 This command names your network: "local-eth-testnet” using the `--enclave` flag.
-{{< /alert >}}
+{{< /callout >}}
 
 Kurtosis will print the steps its taking under the hood as it works to interpret, validate, and then execute the instructions. At the end, you should see an output that resembles the following:
 ```bash
@@ -246,9 +246,9 @@ Save your edited params file in any directory you wish (in the example below, it
 ```bash
 kurtosis clean -a && kurtosis run --enclave local-eth-testnet github.com/ethpandaops/ethereum-package --args-file ~/eth-network-params.yaml
 ```
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 Note that the `kurtosis clean -a` command is used here to instruct Kurtosis to destroy the old testnet and its contents before starting a new one up.
-{{< /alert >}}
+{{< /callout >}}
 Again, Kurtosis will work for a bit and print out the individual steps that are taking place. Eventually, the output should look something like:
 ```bash
 Starlark code successfully run. No output was returned.

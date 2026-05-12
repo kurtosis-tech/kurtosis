@@ -32,9 +32,9 @@ Anywhere this future reference string is used, Kurtosis will slot in the actual 
 172.19.10.3
 ```
 
-{{< alert context="warning" >}}
+{{< callout type="warning" >}}
 The format of these future reference strings is undefined and subject to change; users should not construct them manually!
-{{< /alert >}}
+{{< /callout >}}
 
 All values that are available exclusively during the Execution Phase will be handled in Starlark as future reference strings. This includes:
 

@@ -24,9 +24,9 @@ Additionally, we built a [multi-phase engine][multi-phase-runs-reference] around
 
 **Visual Studio Code (VS Code) Extension**
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 We've released an [official Kurtosis Starlark VS Code extension][vscode-plugin] to enrich the developer experience when writing packages with Starlark. Features include: syntax highlighting, method signature suggestions, hover preview for functions, and auto-completion for Kurtosis custom types.
-{{< /alert >}}
+{{< /callout >}}
 
 <!--------------- ONLY LINKS BELOW HERE --------------------------->
 [enclaves-reference]: ./enclaves.md

@@ -23,10 +23,10 @@ Services running inside a Kurtosis enclave in Kurtosis Cloud can freely read and
 
 **S3 storage is publicly accessible**
 
-{{< alert context="warning" >}}
+{{< callout type="warning" >}}
 While only the owner of the S3 storage is permitted to write to the S3 storage, the data is publicly accessible to 
 anyone that knows the object key. For this reason, we don't recommend storing sensitive data in the S3 storage.
-{{< /alert >}}
+{{< /callout >}}
 
 The AWS user key as well as the information on the user S3 space is provided to all Starlark packages running in the 
 cloud via the global `kurtosis` module. The following variables are available inside Starlark and can be passed as 
@@ -38,7 +38,7 @@ name, as well as the specific user folder the AWS user is authorized to access.
 
 **AWS user permissions**
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 The AWS user created has a very restricted set of permissions by default. It can only read and write to its user folder
 inside the S3 bucket. But it is possible to request more access, reach out to us via [Discord](https://discord.gg/6Jjp9c89z9).
-{{< /alert >}}
+{{< /callout >}}

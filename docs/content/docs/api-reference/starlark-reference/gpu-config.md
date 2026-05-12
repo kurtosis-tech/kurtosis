@@ -57,11 +57,11 @@ The above constructor returns a `GpuConfig` object that defines GPU configuratio
 
 **Kubernetes limitations**
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 - `device_ids` is not supported on Kubernetes — a warning is logged and the field is ignored. Use `count` instead.
 - `count = -1` (all GPUs) is not supported on Kubernetes — only positive counts are accepted.
 - `ulimits` are not supported on Kubernetes — a warning is logged and the field is ignored.
-{{< /alert >}}
+{{< /callout >}}
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [service-config]: ./service-config.md

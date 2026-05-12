@@ -3,9 +3,9 @@ title: Locators
 linkTitle: Locators
 ---
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 Locators are a part of the [Kurtosis packaging system][packages]. To read about the package system in detail, [see here][how-do-kurtosis-imports-work-explanation].
-{{< /alert >}}
+{{< /callout >}}
 
 A locator is how resources are identified when being imported in a Starlark script - namely by [`import_module`](../api-reference/starlark-reference/import-module.md) and [`read_file`](../api-reference/starlark-reference/read-file.md). There are two types of locators: absolute and relative.
 
@@ -18,7 +18,7 @@ github.com/package-author/package-repo/path/to/directory-with-kurtosis.yml/some-
 
 references a file inside a GitHub repo called `package-repo`, owned by `package-author`, that lives at the path `/path/to/directory-with-kurtosis.yml/some-file.star` relative to the root of the repo.
 
-{{< alert context="warning" >}}
+{{< callout type="warning" >}}
 A GitHub URL is **not** a valid locator, because GitHub adds extra `/blob/main` paths to the URL that don't reflect the file's path in the repo. For example, a GitHub URL of:
 
 ```
@@ -30,11 +30,11 @@ would be the following as a Kurtosis locator (dropping the `https://` and `/blob
 ```
 github.com/kurtosis-tech/kurtosis/starlark/test.star
 ```
-{{< /alert >}}
+{{< /callout >}}
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 Locators can point to public or private GitHub repositories. Read the [Running Private Packages][running-private-packages] guide to learn how to enable private locators.
-{{< /alert >}}
+{{< /callout >}}
 
 ### Important Package Restriction
 If your Starlark script relies on local resources, such as files or packages available on your filesystem, then those resources *must* be part of a [Kurtosis package][packages]. 

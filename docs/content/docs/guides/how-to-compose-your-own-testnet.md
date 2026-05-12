@@ -5,9 +5,9 @@ url: /how-to-compose-your-own-testnet/
 linkTitle: Build your own testnet from scratch
 ---
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 If you prefer to dive into code examples, visit the repository [here](https://github.com/ethpandaops/ethereum-package/tree/main/examples).
-{{< /alert >}}
+{{< /callout >}}
 
 ## Introduction 
 A testnet is an incredibly valuable tool for any web3 developer, no matter if you’re building a dApp or working on protocol-level changes. It comes as no surprise then that Ethereum has multiple public testnets in addition to a plethora of tools for local development networks (e.g. Ganache, Hardhat, Foundry Anvil).
@@ -16,9 +16,9 @@ However, there are cases where an engineer  may need to develop or test function
 
 The most robust and up-to-date way to build a customizable Ethereum testnet is by using the official [ethereum-package](https://github.com/ethpandaops/ethereum-package).
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 We will review the details on when and how a full, private testnet can be useful in another article.
-{{< /alert >}}
+{{< /callout >}}
 
 **What you will do:**
 

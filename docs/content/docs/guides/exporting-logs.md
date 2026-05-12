@@ -102,13 +102,13 @@ kurtosis-clusters:
           endpoints:
             - "https://<ELASTICSEARCH_IP_ADDRESS>:9200"
 ```
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 `config-version` must be set to the minimum version of 3 for logs aggregator configurations to apply for Docker
-{{< /alert >}}
+{{< /callout >}}
 
-{{< alert context="danger" >}}
+{{< callout type="error" >}}
 `tls.verify_certificate` should not be disabled outside of testing!
-{{< /alert >}}
+{{< /callout >}}
 
 Finally, restart Kurtosis engine to apply the changes:
 
@@ -304,9 +304,9 @@ Switch to the `kube` cluster, which automatically starts a new engine, with the 
 kurtosis cluster set kube
 ```
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 `config-version` must be set to the minimum version of 4 for logs aggregator configurations to apply for Kubernetes
-{{< /alert >}}
+{{< /callout >}}
 
 ## Verify logs delivery
 
@@ -494,13 +494,13 @@ This configuration:
 2. Uses the parser filter to apply the JSON parser to all logs
 3. Filters out logs with DEBUG level
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 The [`match`][fluentbit-match] pattern uses Fluentbit's pattern matching syntax. `"*"` matches all logs, while more specific patterns can be used to target particular services or log types.
-{{< /alert >}}
+{{< /callout >}}
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 For more information about available filters and their parameters, refer to the [Fluentbit documentation][fluentbit-filters].
-{{< /alert >}}
+{{< /callout >}}
 
 ### Local Loki and Grafloki
 

@@ -17,7 +17,7 @@ If you're looking to install Kurtosis, [see here][install-guide].
 
 **Migrating from Gemfury?**
 
-{{< alert context="warning" >}}
+{{< callout type="warning" >}}
 The old Gemfury-hosted apt/yum repositories (`apt.fury.io/kurtosis-tech` and `yum.fury.io/kurtosis-tech`) are **no longer supported**. If you previously installed Kurtosis via Gemfury, switch to the new repository before upgrading:
 
 **apt (Ubuntu/Debian):**
@@ -29,7 +29,7 @@ echo "deb [trusted=yes] https://sdk.kurtosis.com/kurtosis-cli-release-artifacts/
 ```bash
 sudo sed -i 's|https://yum.fury.io/kurtosis-tech/|https://sdk.kurtosis.com/kurtosis-cli-release-artifacts/rpm/|' /etc/yum.repos.d/kurtosis.repo && sudo yum makecache
 ```
-{{< /alert >}}
+{{< /callout >}}
 
 I. Check breaking changes
 ---------------------------------
@@ -90,12 +90,12 @@ The fix is to [restart the engine][kurtosis-engine-restart] like so:
 kurtosis engine restart
 ```
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 In order to upgrade Kurtosis to another version *after you've performed a downgrade (i.e. installed a historical version)*, you must first uninstall the version of Kurtosis you've installed and re-install Kurtosis. When using Homebrew, the workflow will be (replacing `HISTORICAL-VERSION` with the historical version you have installed):
 1. `brew uninstall kurtosis-tech/tap/kurtosis-cli@HISTORICAL-VERSION`
 2. `brew install kurtosis-tech/tap/kurtosis-cli` for upgrading to the latest version or `brew install kurtosis-tech/tap/kurtosis-cli@TARGET-VERSION` for upgrading to a specific version
 3. `kurtosis engine restart`
-{{< /alert >}}
+{{< /callout >}}
 
 <!-------------------------- ONLY LINKS BELOW HERE ---------------------------->
 [install-guide]: ../get-started/installing-the-cli.md

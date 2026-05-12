@@ -35,6 +35,6 @@ Kurtosis starts services based on a provided image definition in the `image` arg
         }
     )
 ```
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 Note that `ImageBuildSpec` can only be used in packages and not standalone scripts as it relies on the build context being in the package.
-{{< /alert >}}
+{{< /callout >}}

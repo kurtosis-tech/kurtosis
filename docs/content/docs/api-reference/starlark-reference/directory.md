@@ -23,9 +23,9 @@ the above examples, `files_artifact_1` and `files_artifact_2` are files artifact
 [render_templates][render-templates-reference] and [store_service_files][store-service-reference] to learn more about 
 on how to create file artifacts). 
 
-{{< alert context="warning" >}}
+{{< callout type="warning" >}}
 Take into account when using multiple file artifacts, like the example, if both files artifact contains a file or folder with the same name this will end up overwritten.
-{{< /alert >}}
+{{< /callout >}}
 
 A persistent directory, as its name indicates, persists over service updates and restarts. It is uniquely identified 
 by its `persistent_key` (a persistent directory cannot be shared across

@@ -3,9 +3,9 @@ title: kurtosis.yml
 linkTitle: kurtosis.yml
 ---
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 The `kurtosis.yml` is part of the Kurtosis package system. To read about the package system in detail, [see here][how-do-kurtosis-imports-work-explanation].
-{{< /alert >}}
+{{< /callout >}}
 
 The `kurtosis.yml` file is a manifest file necessary to turn a directory into [a Kurtosis package][package]. This is the spec for the `kurtosis.yml`:
 
@@ -34,9 +34,9 @@ if kurtosis.yml is in a directory other than repository root:
 name: github.com/author/package-repo/path/to/directory-with-kurtosis.yml
 ```
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 The key take away is that `/path/to/directory-with-kurtosis.yml` only needs to be provided if `kurtosis.yml` is not present in the repository's root.
-{{< /alert >}}
+{{< /callout >}}
 
 Replace
 -------
@@ -55,9 +55,9 @@ replace:
 
 This behaves just as if you’d manually updated each Starlark dependency-referencing command that consumes `github.com/kurtosis-tech/postgres-package` and replaced it with `github.com/my-github-user/postgres-package`. This replace includes transitive dependencies: a dependency package that itself uses `github.com/kurtosis-tech/postgres-package` will _also_ instead now use `github.com/my-github-user/postgres-package`!
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 A `replace` entry does nothing if replaced package isn't actually depended upon.
-{{< /alert >}}
+{{< /callout >}}
 
 You may optionally append an `@` and version after the replacement package locator to specify which version of the replacement package ought to be used.
 
@@ -72,9 +72,9 @@ replace:
 
 Like `import_module` and all other dependency-referencing commands, the version can be a tag, branch, or a full commit hash.
 
-{{< alert context="info" >}}
+{{< callout type="info" >}}
 Go programmers will identify the similarities with the `replace` directive in the `go.mod` file. This is not accidental; the Kurtosis packaging system draws heavy inspiration from the Go module system.
-{{< /alert >}}
+{{< /callout >}}
 
 ### Replace In kurtosis.yml Of Dependencies
 `replace` instructions are only evaluated in the `kurtosis.yml` of the root package being called, and are ignored in the `kurtosis.yml`s of package dependencies.
