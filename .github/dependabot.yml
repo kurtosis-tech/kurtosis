@@ -35,7 +35,6 @@ updates:
       - "/docs"
       - "/enclave-manager/web"
       - "/engine/frontend"
-      - "/internal_testsuites/typescript"
     schedule:
       interval: "weekly"
     groups:
