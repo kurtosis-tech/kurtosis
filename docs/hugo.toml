@@ -1,59 +1,105 @@
 baseURL = 'https://docs.kurtosis.com/'
 title = 'Kurtosis Docs'
-theme = 'book'
 
-contentDir = 'docs'
+contentDir = 'content'
 publishDir = 'build'
 
-# Match Docusaurus behavior: serve docs at root, not under /docs/
-disablePathToLower = true
+enableEmoji = true
 enableGitInfo = true
 enableRobotsTXT = true
 
-[params]
-  BookTheme = 'dark'
-  BookToC = true
-  BookSection = '*'
-  BookRepo = 'https://github.com/kurtosis-tech/kurtosis'
-  BookEditPath = 'edit/main/docs/docs'
-  BookSearch = true
-  BookComments = false
-  BookPortableLinks = true
-  BookServiceWorker = true
-  BookLogo = 'img/brand/kurtosis-logo-white-text.png'
-  BookAnnouncement = 'Support Kurtosis with a star on our <a target="_blank" rel="noopener noreferrer" href="https://github.com/kurtosis-tech/kurtosis">GitHub repo</a>!'
-  # Algolia DocSearch (matches previous Docusaurus theme integration)
-  AlgoliaAppId = 'NTSX40VZB8'
-  AlgoliaApiKey = '4269c726c2fea4e6cddfeb9a21cd3d4e'
-  AlgoliaIndexName = 'kurtosis'
+defaultContentLanguage = 'en'
+[languages]
+  [languages.en]
+    title = 'Kurtosis Docs'
+    label = 'English'
+    locale = 'en-US'
+    weight = 10
+
+[module]
+  [module.hugoVersion]
+    extended = true
+    min = '0.140.0'
+  [[module.imports]]
+    path = 'github.com/colinwilson/lotusdocs'
+    disable = false
+  [[module.imports]]
+    path = 'github.com/gohugoio/hugo-mod-bootstrap-scss/v5'
+    disable = false
 
 [markup]
+  defaultMarkdownHandler = 'goldmark'
   [markup.goldmark.renderer]
     unsafe = true
   [markup.tableOfContents]
     startLevel = 2
     endLevel = 4
-  [markup.highlight]
-    style = 'github-dark'
-    lineNos = false
-    codeFences = true
-    guessSyntax = true
-    tabWidth = 4
 
 [outputs]
   home = ['HTML', 'RSS']
   section = ['HTML', 'RSS']
 
+[params]
+  google_fonts = [
+    ['Inter', '300, 400, 600, 700'],
+    ['Fira Code', '500, 700'],
+  ]
+  sans_serif_font = 'Inter'
+  secondary_font  = 'Inter'
+  mono_font       = 'Fira Code'
+
+  [params.footer]
+    copyright = '© :YEAR: Kurtosis Technologies. Documentation built with [**Hugo**](https://gohugo.io) + [Lotus Docs](https://github.com/colinwilson/lotusdocs).'
+
+  [params.social]
+    github  = 'https://github.com/kurtosis-tech/kurtosis'
+    twitter = 'KurtosisTech'
+
+  [params.docs]
+    title           = 'Kurtosis Docs'
+    pathName        = 'docs'
+    themeColor      = 'cyan'
+    darkMode        = true
+    prism           = true
+    prismTheme      = 'lotusdocs'
+    repoURL         = 'https://github.com/kurtosis-tech/kurtosis'
+    repoBranch      = 'main'
+    editPage        = true
+    lastMod         = true
+    lastModRelative = true
+    sidebarIcons    = true
+    breadcrumbs     = true
+    backToTop       = true
+    toc             = true
+    tocMobile       = true
+    scrollSpy       = true
+    descriptions    = true
+    titleIcon       = false
+    navDesc         = true
+    navDescTrunc    = 30
+    listDescTrunc   = 100
+    intLinkTooltip  = true
+
+  # Algolia DocSearch (matches the existing crawler config — same appId/apiKey/index as Docusaurus).
+  [params.docsearch]
+    appID     = 'NTSX40VZB8'
+    apiKey    = '4269c726c2fea4e6cddfeb9a21cd3d4e'
+    indexName = 'kurtosis'
+
+  # FlexSearch is included as a free fallback if Algolia ever goes away.
+  [params.flexsearch]
+    enabled = false
+
 [menu]
-  [[menu.after]]
-    name = 'GitHub'
-    url = 'https://github.com/kurtosis-tech/kurtosis'
+  [[menu.primary]]
+    name = 'Docs'
+    url  = '/'
     weight = 10
-  [[menu.after]]
+  [[menu.primary]]
+    name = 'GitHub'
+    url  = 'https://github.com/kurtosis-tech/kurtosis'
+    weight = 90
+  [[menu.primary]]
     name = 'Discord'
-    url = 'https://discord.gg/HUapYX9RvV'
-    weight = 20
-  [[menu.after]]
-    name = 'Twitter'
-    url = 'https://twitter.com/KurtosisTech'
-    weight = 30
+    url  = 'https://discord.gg/HUapYX9RvV'
+    weight = 91

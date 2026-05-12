@@ -11,6 +11,7 @@ updates:
       - "/core/files_artifacts_expander"
       - "/core/launcher"
       - "/core/server"
+      - "/docs"
       - "/enclave-manager/api/golang"
       - "/enclave-manager/server"
       - "/engine/launcher"
@@ -53,7 +54,3 @@ updates:
         patterns:
           - "*"
 
-  - package-ecosystem: "gitsubmodule"
-    directory: "/"
-    schedule:
-      interval: "weekly"
