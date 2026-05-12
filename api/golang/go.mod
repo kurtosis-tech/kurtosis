@@ -10,7 +10,7 @@ replace (
 require (
 	connectrpc.com/connect v1.19.2
 	github.com/Masterminds/semver/v3 v3.4.0
-	github.com/getkin/kin-openapi v0.137.0
+	github.com/getkin/kin-openapi v0.138.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230818182330-1a86869414d2
