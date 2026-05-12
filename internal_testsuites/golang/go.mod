@@ -15,15 +15,14 @@ require (
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.9.4
 	github.com/stretchr/testify v1.11.1
-	google.golang.org/grpc v1.80.0
+	google.golang.org/grpc v1.81.0
 	google.golang.org/protobuf v1.36.11
 )
 
 require (
 	github.com/kurtosis-tech/kurtosis/api/golang v0.0.0-00010101000000-000000000000
-	github.com/kurtosis-tech/kurtosis/path-compression v0.0.0-20240307154559-64d2929cd265
+	github.com/kurtosis-tech/kurtosis/path-compression v0.0.0-20260325155815-f36ae687d73d
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
-	k8s.io/utils v0.0.0-20230711102312-30195339c3c7
 )
 
 require (
@@ -60,8 +59,8 @@ require (
 	golang.org/x/net v0.53.0 // indirect
 	golang.org/x/sys v0.43.0 // indirect
 	golang.org/x/text v0.36.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20260120221211-b8f7ae30c516 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260120221211-b8f7ae30c516 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20260226221140-a57be14db171 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260226221140-a57be14db171 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
