@@ -10,10 +10,12 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/store_spec"
+	"github.com/kurtosis-tech/kurtosis/core/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/privileged_mode"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -45,7 +47,9 @@ func NewRunShService(
 	nonBlockingMode bool,
 	packageId string,
 	packageContentProvider startosis_packages.PackageContentProvider,
-	packageReplaceOptions map[string]string) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+	packageReplaceOptions map[string]string,
+	allowPrivilegedMode bool,
+	kurtosisBackendType args.KurtosisBackendType) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: RunShBuiltinName,
@@ -144,6 +148,8 @@ func NewRunShService(
 				runOutputValue:         "",  // populated at interpretation time
 				skipCodeCheck:          false,
 				acceptableCodes:        nil, // populated at interpretation time
+				allowPrivilegedMode:    allowPrivilegedMode,
+				kurtosisBackendType:    kurtosisBackendType,
 			}
 		},
 
@@ -174,15 +180,17 @@ type RunShCapabilities struct {
 	packageContentProvider startosis_packages.PackageContentProvider
 	packageReplaceOptions  map[string]string
 
-	serviceConfig   *service.ServiceConfig
-	storeSpecList   []*store_spec.StoreSpec
-	returnValue     *starlarkstruct.Struct
-	runCodeValue    string
-	runOutputValue  string
-	wait            string
-	description     string
-	acceptableCodes []int64
-	skipCodeCheck   bool
+	serviceConfig       *service.ServiceConfig
+	storeSpecList       []*store_spec.StoreSpec
+	returnValue         *starlarkstruct.Struct
+	runCodeValue        string
+	runOutputValue      string
+	wait                string
+	description         string
+	acceptableCodes     []int64
+	skipCodeCheck       bool
+	allowPrivilegedMode bool
+	kurtosisBackendType args.KurtosisBackendType
 }
 
 func (builtin *RunShCapabilities) Interpret(locatorOfModuleInWhichThisBuiltinIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -263,6 +271,9 @@ func (builtin *RunShCapabilities) Interpret(locatorOfModuleInWhichThisBuiltinIsB
 	builtin.serviceConfig, err = getServiceConfig(maybeImageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, filesArtifactExpansion, envVars, nodeSelectors, tolerations)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating service config using for run sh task.")
+	}
+	if interpretationErr := privileged_mode.ValidateServiceConfig(builtin.serviceConfig, builtin.allowPrivilegedMode, builtin.kurtosisBackendType); interpretationErr != nil {
+		return nil, interpretationErr
 	}
 
 	if arguments.IsSet(StoreFilesArgName) {
@@ -476,6 +487,9 @@ func replaceMagicStringsInEnvVars(runtimeValueStore *runtime_value_store.Runtime
 	}
 	if serviceConfig.GetPrivileged() {
 		renderedServiceConfig.SetPrivileged(true)
+	}
+	if serviceConfig.GetHostPIDNamespace() {
+		renderedServiceConfig.SetHostPIDNamespace(true)
 	}
 	if len(serviceConfig.GetBindMounts()) > 0 {
 		renderedServiceConfig.SetBindMounts(serviceConfig.GetBindMounts())

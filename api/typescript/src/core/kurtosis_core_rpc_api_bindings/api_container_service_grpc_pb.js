@@ -521,4 +521,4 @@ getStarlarkPackagePlanYaml: {
   },
 };
 
-exports.ApiContainerServiceClient = grpc.makeGenericClientConstructor(ApiContainerServiceService);
+exports.ApiContainerServiceClient = grpc.makeGenericClientConstructor(ApiContainerServiceService, 'ApiContainerService');

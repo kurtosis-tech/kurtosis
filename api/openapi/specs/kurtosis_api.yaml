@@ -1074,6 +1074,17 @@ components:
           $ref: "#/components/schemas/ServiceStatus"
         container:
           $ref: "#/components/schemas/Container"
+        privileged:
+          type: boolean
+          description: Whether the service was started with Docker privileged mode.
+        bind_mounts:
+          type: object
+          additionalProperties:
+            type: string
+          description: Host-path to container-path bind mounts configured on the service.
+        host_pid_namespace:
+          type: boolean
+          description: Whether the service was started in the Docker host PID namespace.
       required:
         - service_uuid
         - private_ip_addr
@@ -1130,6 +1141,9 @@ components:
         parallel:
           type: boolean
           description: Defaults to false
+        allow_privileged_mode:
+          type: boolean
+          description: Allows Docker-only privileged containers, host bind mounts, and host PID namespace for this run. Defaults to false
       required:
         - serialized_script
 
@@ -1182,6 +1196,9 @@ components:
         parallel:
           type: boolean
           description: Defaults to false
+        allow_privileged_mode:
+          type: boolean
+          description: Allows Docker-only privileged containers, host bind mounts, and host PID namespace for this run. Defaults to false
 
     KurtosisFeatureFlag:
       type: string

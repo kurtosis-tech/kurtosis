@@ -25,3 +25,15 @@ func TestCreateAndStartContainerArgs_BindMountsRoundTrip(t *testing.T) {
 		Build()
 	require.Equal(t, bindMounts, args.bindMounts)
 }
+
+func TestCreateAndStartContainerArgs_WithHostPIDNamespace(t *testing.T) {
+	args := NewCreateAndStartContainerArgsBuilder("img", "name", "net").
+		WithHostPIDNamespace(true).
+		Build()
+	require.True(t, args.hostPIDNamespace)
+}
+
+func TestCreateAndStartContainerArgs_HostPIDNamespaceDefaultsToFalse(t *testing.T) {
+	args := NewCreateAndStartContainerArgsBuilder("img", "name", "net").Build()
+	require.False(t, args.hostPIDNamespace)
+}

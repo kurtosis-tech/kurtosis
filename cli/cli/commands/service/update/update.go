@@ -7,6 +7,7 @@ import (
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
@@ -16,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/service_helpers"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/kurtosis_config_getter"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_client_factory"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
@@ -35,6 +37,9 @@ const (
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
+
+	privilegedFlagKey = "privileged"
+	defaultPrivileged = "false"
 )
 
 var (
@@ -131,6 +136,12 @@ var ServiceUpdateCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosi
 			Type:    flags.FlagType_String,
 			Default: "",
 		},
+		{
+			Key:     privilegedFlagKey,
+			Usage:   "Allows Docker-only privileged containers, host bind mounts, and host PID namespace for this service update",
+			Type:    flags.FlagType_Bool,
+			Default: defaultPrivileged,
+		},
 	},
 	Args: []*args.ArgConfig{
 		enclave_id_arg.NewEnclaveIdentifierArg(
@@ -222,6 +233,16 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the files artifact mounts string using key '%v'", service_helpers.FilesFlagKey)
 	}
 
+	privilegedFlag, err := flags.GetBool(privilegedFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", privilegedFlagKey)
+	}
+	clusterConfig, err := kurtosis_config_getter.GetKurtosisClusterConfig()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while getting Kurtosis cluster config")
+	}
+	allowPrivilegedMode := privilegedFlag || clusterConfig.GetAllowPrivilegedMode()
+
 	overridesServiceConfig, err := parseOverridesServiceConfigFromFlags(
 		imageStr,
 		entrypointStr,
@@ -267,13 +288,23 @@ func run(
 		updatedServiceConfig.TiniEnabled,
 		updatedServiceConfig.TtyEnabled,
 		updatedServiceConfig.PrivateIPAddressPlaceholder,
+		updatedServiceConfig.Privileged,
+		updatedServiceConfig.BindMounts,
+		updatedServiceConfig.HostPIDNamespace,
 	)
 
 	addServiceStarlarkStr := service_helpers.GetAddServiceStarlarkScript(serviceName, serviceConfigStr)
 	logrus.Debugf("Update service starlark:\n%v", addServiceStarlarkStr)
 
 	logrus.Infof("Running update service starlark for service '%v' in enclave '%v'...", serviceName, enclaveIdentifier)
-	starlarkRunResult, err := service_helpers.RunAddServiceStarlarkScript(ctx, serviceName, enclaveIdentifier, addServiceStarlarkStr, enclaveCtx)
+	starlarkRunResult, err := service_helpers.RunAddServiceStarlarkScriptWithConfig(
+		ctx,
+		serviceName,
+		enclaveIdentifier,
+		addServiceStarlarkStr,
+		enclaveCtx,
+		starlark_run_config.NewRunStarlarkConfig(starlark_run_config.WithAllowPrivilegedMode(allowPrivilegedMode)),
+	)
 	if err != nil {
 		return err //already wrapped
 	}
@@ -415,6 +446,17 @@ func createUpdatedServiceConfigFromOverrides(overridesServiceConfig, currService
 		updatedFilesArtifactsMountpoint[key] = val
 	}
 
+	updatedPrivileged := currServiceConfig.Privileged || overridesServiceConfig.Privileged
+	updatedHostPIDNamespace := currServiceConfig.HostPIDNamespace || overridesServiceConfig.HostPIDNamespace
+
+	updatedBindMounts := map[string]string{}
+	for hostPath, containerPath := range currServiceConfig.BindMounts {
+		updatedBindMounts[hostPath] = containerPath
+	}
+	for hostPath, containerPath := range overridesServiceConfig.BindMounts {
+		updatedBindMounts[hostPath] = containerPath
+	}
+
 	return &services.ServiceConfig{
 		Image:                       updatedImage,
 		PrivatePorts:                updatedPorts,
@@ -434,5 +476,8 @@ func createUpdatedServiceConfigFromOverrides(overridesServiceConfig, currService
 		NodeSelectors:               nil,
 		TiniEnabled:                 nil,
 		TtyEnabled:                  nil,
+		Privileged:                  updatedPrivileged,
+		BindMounts:                  updatedBindMounts,
+		HostPIDNamespace:            updatedHostPIDNamespace,
 	}
 }

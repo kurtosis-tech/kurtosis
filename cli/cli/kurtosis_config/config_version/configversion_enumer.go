@@ -7,11 +7,11 @@ import (
 	"strings"
 )
 
-const _ConfigVersionName = "ConfigVersion_v0ConfigVersion_v1ConfigVersion_v2ConfigVersion_v3ConfigVersion_v4ConfigVersion_v5ConfigVersion_v6ConfigVersion_v7"
+const _ConfigVersionName = "ConfigVersion_v0ConfigVersion_v1ConfigVersion_v2ConfigVersion_v3ConfigVersion_v4ConfigVersion_v5ConfigVersion_v6ConfigVersion_v7ConfigVersion_v8"
 
-var _ConfigVersionIndex = [...]uint8{0, 16, 32, 48, 64, 80, 96, 112, 128}
+var _ConfigVersionIndex = [...]uint8{0, 16, 32, 48, 64, 80, 96, 112, 128, 144}
 
-const _ConfigVersionLowerName = "configversion_v0configversion_v1configversion_v2configversion_v3configversion_v4configversion_v5configversion_v6configversion_v7"
+const _ConfigVersionLowerName = "configversion_v0configversion_v1configversion_v2configversion_v3configversion_v4configversion_v5configversion_v6configversion_v7configversion_v8"
 
 func (i ConfigVersion) String() string {
 	if i >= ConfigVersion(len(_ConfigVersionIndex)-1) {
@@ -32,9 +32,10 @@ func _ConfigVersionNoOp() {
 	_ = x[ConfigVersion_v5-(5)]
 	_ = x[ConfigVersion_v6-(6)]
 	_ = x[ConfigVersion_v7-(7)]
+	_ = x[ConfigVersion_v8-(8)]
 }
 
-var _ConfigVersionValues = []ConfigVersion{ConfigVersion_v0, ConfigVersion_v1, ConfigVersion_v2, ConfigVersion_v3, ConfigVersion_v4, ConfigVersion_v5, ConfigVersion_v6, ConfigVersion_v7}
+var _ConfigVersionValues = []ConfigVersion{ConfigVersion_v0, ConfigVersion_v1, ConfigVersion_v2, ConfigVersion_v3, ConfigVersion_v4, ConfigVersion_v5, ConfigVersion_v6, ConfigVersion_v7, ConfigVersion_v8}
 
 var _ConfigVersionNameToValueMap = map[string]ConfigVersion{
 	_ConfigVersionName[0:16]:         ConfigVersion_v0,
@@ -53,6 +54,8 @@ var _ConfigVersionNameToValueMap = map[string]ConfigVersion{
 	_ConfigVersionLowerName[96:112]:  ConfigVersion_v6,
 	_ConfigVersionName[112:128]:      ConfigVersion_v7,
 	_ConfigVersionLowerName[112:128]: ConfigVersion_v7,
+	_ConfigVersionName[128:144]:      ConfigVersion_v8,
+	_ConfigVersionLowerName[128:144]: ConfigVersion_v8,
 }
 
 var _ConfigVersionNames = []string{
@@ -64,6 +67,7 @@ var _ConfigVersionNames = []string{
 	_ConfigVersionName[80:96],
 	_ConfigVersionName[96:112],
 	_ConfigVersionName[112:128],
+	_ConfigVersionName[128:144],
 }
 
 // ConfigVersionString retrieves an enum value from the enum constants string name.

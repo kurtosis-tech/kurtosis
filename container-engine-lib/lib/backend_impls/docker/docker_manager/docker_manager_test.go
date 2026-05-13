@@ -202,6 +202,35 @@ func TestShmSizeMegabytesToBytesConversion(t *testing.T) {
 	assert.Equal(t, expectedBytes, int64(shmSizeMB)*shmMebibytesToBytesFactor)
 }
 
+func TestGetContainerHostConfigWithHostPIDNamespace(t *testing.T) {
+	manager := &DockerManager{}
+	hostConfig, err := manager.getContainerHostConfig(
+		map[ContainerCapability]bool{},
+		map[ContainerSecurityOpt]bool{},
+		DefaultNetworkMode,
+		map[string]string{},
+		map[string]string{},
+		map[nat.Port]PortPublishSpec{},
+		false,
+		0,
+		0,
+		nil,
+		false,
+		NoRestart,
+		[]string{},
+		0,
+		nil,
+		0,
+		nil,
+		"",
+		false,
+		true,
+	)
+
+	require.NoError(t, err)
+	require.Equal(t, container.PidMode(hostPIDMode), hostConfig.PidMode)
+}
+
 func TestUlimitsDefaultToNilInArgsBuilder(t *testing.T) {
 	args := NewCreateAndStartContainerArgsBuilder("my-image", "my-container", "network-id").Build()
 	assert.Nil(t, args.ulimits)

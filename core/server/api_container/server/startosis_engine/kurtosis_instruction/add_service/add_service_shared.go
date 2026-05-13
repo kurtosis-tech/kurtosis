@@ -228,6 +228,10 @@ func replaceMagicStrings(
 		renderedServiceConfig.SetPrivileged(true)
 	}
 
+	if serviceConfig.GetHostPIDNamespace() {
+		renderedServiceConfig.SetHostPIDNamespace(true)
+	}
+
 	if len(serviceConfig.GetBindMounts()) > 0 {
 		renderedServiceConfig.SetBindMounts(serviceConfig.GetBindMounts())
 	}

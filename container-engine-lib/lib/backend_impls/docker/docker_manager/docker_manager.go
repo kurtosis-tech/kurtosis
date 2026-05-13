@@ -76,6 +76,8 @@ const (
 	// If no tag is specified for an image, this is the tag Docker will use for the image
 	dockerDefaultTag = "latest"
 
+	hostPIDMode = "host"
+
 	// This is the magic domain name inside a container that Docker will give the host machine running Docker itself
 	// This is available by default on Docker for Mac & Windows because they run in VMs, but needs to be specifically
 	//  bound in Docker for Linux
@@ -692,7 +694,8 @@ func (manager *DockerManager) CreateAndStartContainer(
 		args.gpuCount,
 		args.gpuDeviceIDs,
 		args.gpuDriver,
-		args.privileged)
+		args.privileged,
+		args.hostPIDNamespace)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
@@ -1841,6 +1844,7 @@ func (manager *DockerManager) getContainerHostConfig(
 	gpuDeviceIDs []string,
 	gpuDriver string,
 	privileged bool,
+	hostPIDNamespace bool,
 ) (hostConfig *container.HostConfig, err error) {
 
 	bindsList := make([]string, 0, len(bindMounts))
@@ -1981,6 +1985,10 @@ func (manager *DockerManager) getContainerHostConfig(
 	if loggingDriverConfig != nil {
 		logConfig = loggingDriverConfig.GetLogConfig()
 	}
+	pidMode := container.PidMode("")
+	if hostPIDNamespace {
+		pidMode = container.PidMode(hostPIDMode)
+	}
 
 	// NOTE: Do NOT use PublishAllPorts here!!!! This will work if a Dockerfile doesn't have an EXPOSE directive, but
 	//  if the Dockerfile *does* have and EXPOSE directive then _only_ the ports with EXPOSE will be published
@@ -2011,7 +2019,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		Cgroup:          "",
 		Links:           nil,
 		OomScoreAdj:     0,
-		PidMode:         "",
+		PidMode:         pidMode,
 		Privileged:      privileged,
 		PublishAllPorts: false,
 		ReadonlyRootfs:  false,

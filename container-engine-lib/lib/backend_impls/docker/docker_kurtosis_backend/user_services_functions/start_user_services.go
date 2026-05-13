@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -35,21 +34,7 @@ const (
 	unlimitedReplacements                = -1
 	skipAddingUserServiceToBridgeNetwork = true
 	emptyImageName                       = ""
-	// allowPrivilegedContainersEnvVar is the engine-wide kill switch for privileged containers and
-	// host bind mounts. When set to "false" any service config requesting these features fails at
-	// service-start time. Defaults to allowed when unset.
-	allowPrivilegedContainersEnvVar = "KURTOSIS_ALLOW_PRIVILEGED_CONTAINERS"
 )
-
-// arePrivilegedContainersAllowed returns true unless KURTOSIS_ALLOW_PRIVILEGED_CONTAINERS is
-// explicitly set to "false" (case-insensitive).
-func arePrivilegedContainersAllowed() bool {
-	v, ok := os.LookupEnv(allowPrivilegedContainersEnvVar)
-	if !ok {
-		return true
-	}
-	return !strings.EqualFold(strings.TrimSpace(v), "false")
-}
 
 func RegisterUserServices(
 	enclaveUuid enclave.EnclaveUUID,
@@ -576,14 +561,9 @@ func createStartServiceOperation(
 		capabilities := serviceConfig.GetCapabilities()
 		privileged := serviceConfig.GetPrivileged()
 		bindMounts := serviceConfig.GetBindMounts()
-		if (privileged || len(bindMounts) > 0) && !arePrivilegedContainersAllowed() {
-			return nil, stacktrace.NewError(
-				"service '%v' requested privileged=true or bind_mounts but the engine has %s=false; "+
-					"restart the engine without that environment variable (or set it to true) to enable privileged containers",
-				id, allowPrivilegedContainersEnvVar)
-		}
-		if privileged || len(bindMounts) > 0 {
-			logrus.Warnf("service '%v' is starting with privileged=%v and bind_mounts=%v; this grants the container elevated host access", id, privileged, bindMounts)
+		hostPIDNamespace := serviceConfig.GetHostPIDNamespace()
+		if privileged || len(bindMounts) > 0 || hostPIDNamespace {
+			logrus.Warnf("service '%v' is starting with privileged=%v, bind_mounts=%v, host_pid_namespace=%v; this grants the container elevated host access", id, privileged, bindMounts, hostPIDNamespace)
 		}
 		gpuConfig := serviceConfig.GetGpuConfig()
 		shmSizeMegabytes := gpuConfig.GetShmSizeMegabytes()
@@ -792,6 +772,10 @@ func createStartServiceOperation(
 
 		if privileged {
 			createAndStartArgsBuilder.WithPrivileged(true)
+		}
+
+		if hostPIDNamespace {
+			createAndStartArgsBuilder.WithHostPIDNamespace(true)
 		}
 
 		if len(bindMounts) > 0 {

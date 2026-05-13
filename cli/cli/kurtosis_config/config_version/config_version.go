@@ -13,4 +13,5 @@ const (
 	ConfigVersion_v5 // adds GrafanaLokiConfig to KurtosisClusterConfig
 	ConfigVersion_v6 // adds logs collector config
 	ConfigVersion_v7 // adds node-selectors and tolerations to KubernetesClusterConfig
+	ConfigVersion_v8 // adds allow-privileged-mode to KurtosisClusterConfig
 )

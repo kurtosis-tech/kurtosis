@@ -45,6 +45,7 @@ type CreateAndStartContainerArgs struct {
 	gpuDeviceIDs                             []string
 	gpuDriver                                string
 	privileged                               bool
+	hostPIDNamespace                         bool
 }
 
 // Builder for creating CreateAndStartContainerArgs object
@@ -82,6 +83,7 @@ type CreateAndStartContainerArgsBuilder struct {
 	gpuDeviceIDs                             []string
 	gpuDriver                                string
 	privileged                               bool
+	hostPIDNamespace                         bool
 }
 
 /*
@@ -126,6 +128,7 @@ func NewCreateAndStartContainerArgsBuilder(dockerImage string, name string, netw
 		gpuDeviceIDs:                             nil,
 		gpuDriver:                                "",
 		privileged:                               false,
+		hostPIDNamespace:                         false,
 	}
 }
 
@@ -194,6 +197,7 @@ func (builder *CreateAndStartContainerArgsBuilder) Build() *CreateAndStartContai
 		gpuDeviceIDs:                             builder.gpuDeviceIDs,
 		gpuDriver:                                builder.gpuDriver,
 		privileged:                               builder.privileged,
+		hostPIDNamespace:                         builder.hostPIDNamespace,
 	}
 }
 
@@ -356,10 +360,14 @@ func (builder *CreateAndStartContainerArgsBuilder) WithImageRegistrySpec(imageRe
 	return builder
 }
 
-// WithPrivileged starts the container with the Docker --privileged flag. Use with extreme care:
-// privileged containers can escape isolation. The Kurtosis Starlark layer gates this behind an
-// allowlist and an engine-level kill switch (KURTOSIS_ALLOW_PRIVILEGED_CONTAINERS).
+// WithPrivileged starts the container with the Docker --privileged flag.
 func (builder *CreateAndStartContainerArgsBuilder) WithPrivileged(privileged bool) *CreateAndStartContainerArgsBuilder {
 	builder.privileged = privileged
+	return builder
+}
+
+// WithHostPIDNamespace starts the container in the host PID namespace.
+func (builder *CreateAndStartContainerArgsBuilder) WithHostPIDNamespace(hostPIDNamespace bool) *CreateAndStartContainerArgsBuilder {
+	builder.hostPIDNamespace = hostPIDNamespace
 	return builder
 }

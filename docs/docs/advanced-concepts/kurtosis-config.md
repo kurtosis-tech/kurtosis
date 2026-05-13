@@ -14,8 +14,8 @@ Below is a fully annotated example of a `kurtosis-config.yml` with explanations 
 
 # Required. The version of the Kurtosis config schema.
 # This ensures compatibility with the CLI. 
-# Latest supported version is 7, supported by Kurtosis engine version 1.15.3.
-config-version: 7
+# Latest supported version is 8.
+config-version: 8
 
 # Optional. Whether Kurtosis should send anonymous telemetry (usage) data.
 # Default: true
@@ -34,6 +34,12 @@ kurtosis-clusters:
     # Default: true
     # Set to false if you're using an external logging system like Loki or Elasticsearch to save storage.
     should-enable-default-logs-sink: true
+
+    # Optional. Allows Docker-only ServiceConfig.privileged, ServiceConfig.bind_mounts,
+    # and ServiceConfig.host_pid_namespace fields for CLI runs against this cluster. Default: false.
+    # This is a CLI/request opt-in, not an engine-side operator policy. Direct API
+    # clients can also opt in by setting allow_privileged_mode on the run request.
+    allow-privileged-mode: false
 
     # Optional. Configures external sinks to export service logs from enclaves.
     # This uses Vector under the hood and supports all Vector sink types.

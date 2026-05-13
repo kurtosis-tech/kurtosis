@@ -476,6 +476,42 @@ export declare class ServiceInfo extends Message<ServiceInfo> {
    */
   ttyEnabled?: boolean;
 
+  /**
+   * Linux capabilities to add to the container (e.g., "NET_ADMIN", "SYS_PTRACE")
+   *
+   * @generated from field: repeated string capabilities = 21;
+   */
+  capabilities: string[];
+
+  /**
+   * GPU configuration: device selection, shared-memory size, and ulimits.
+   * All GPU-related settings are bundled here since they only apply to GPU workloads.
+   *
+   * @generated from field: api_container_api.GpuConfig gpu_config = 22;
+   */
+  gpuConfig?: GpuConfig;
+
+  /**
+   * Whether the service was started with Docker privileged mode.
+   *
+   * @generated from field: bool privileged = 26;
+   */
+  privileged: boolean;
+
+  /**
+   * Host-path -> container-path bind mounts configured on the service.
+   *
+   * @generated from field: map<string, string> bind_mounts = 27;
+   */
+  bindMounts: { [key: string]: string };
+
+  /**
+   * Whether the service was started in the Docker host PID namespace.
+   *
+   * @generated from field: bool host_pid_namespace = 28;
+   */
+  hostPidNamespace: boolean;
+
   constructor(data?: PartialMessage<ServiceInfo>);
 
   static readonly runtime: typeof proto3;
@@ -489,6 +525,71 @@ export declare class ServiceInfo extends Message<ServiceInfo> {
   static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ServiceInfo;
 
   static equals(a: ServiceInfo | PlainMessage<ServiceInfo> | undefined, b: ServiceInfo | PlainMessage<ServiceInfo> | undefined): boolean;
+}
+
+/**
+ * GpuConfig bundles all GPU-related container settings.
+ *
+ * @generated from message api_container_api.GpuConfig
+ */
+export declare class GpuConfig extends Message<GpuConfig> {
+  /**
+   * Number of GPUs to expose. 0 = none, -1 = all available, N = N GPUs.
+   *
+   * @generated from field: int64 count = 1;
+   */
+  count: bigint;
+
+  /**
+   * Specific GPU device IDs to pin (e.g. ["0","1"] or ["GPU-abc123"]).
+   * When set, count is ignored for device selection.
+   *
+   * @generated from field: repeated string device_ids = 2;
+   */
+  deviceIds: string[];
+
+  /**
+   * Size of /dev/shm in megabytes. 0 means use the runtime default (usually 64MB).
+   *
+   * @generated from field: uint64 shm_size_megabytes = 3;
+   */
+  shmSizeMegabytes: bigint;
+
+  /**
+   * Resource limits for the container. Maps limit name (e.g. "memlock") to value (soft=hard).
+   *
+   * @generated from field: map<string, int64> ulimits = 4;
+   */
+  ulimits: { [key: string]: bigint };
+
+  /**
+   * Docker DeviceRequest driver name (e.g. "nvidia", "amd"). Defaults to "nvidia".
+   *
+   * @generated from field: string docker_driver = 5;
+   */
+  dockerDriver: string;
+
+  /**
+   * Kubernetes resource name for GPU requests (e.g. "nvidia.com/gpu", "amd.com/gpu").
+   * Defaults to "nvidia.com/gpu".
+   *
+   * @generated from field: string k8s_resource_name = 6;
+   */
+  k8sResourceName: string;
+
+  constructor(data?: PartialMessage<GpuConfig>);
+
+  static readonly runtime: typeof proto3;
+  static readonly typeName = "api_container_api.GpuConfig";
+  static readonly fields: FieldList;
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GpuConfig;
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GpuConfig;
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GpuConfig;
+
+  static equals(a: GpuConfig | PlainMessage<GpuConfig> | undefined, b: GpuConfig | PlainMessage<GpuConfig> | undefined): boolean;
 }
 
 /**
@@ -565,6 +666,20 @@ export declare class RunStarlarkScriptArgs extends Message<RunStarlarkScriptArgs
    * @generated from field: optional bool parallel = 17;
    */
   parallel?: boolean;
+
+  /**
+   * If true, performs resource availability check before execution. Defaults to true.
+   *
+   * @generated from field: optional bool resource_check = 18;
+   */
+  resourceCheck?: boolean;
+
+  /**
+   * If true, permits Docker-only privileged containers, host bind mounts, and host PID namespace for this run.
+   *
+   * @generated from field: optional bool allow_privileged_mode = 19;
+   */
+  allowPrivilegedMode?: boolean;
 
   constructor(data?: PartialMessage<RunStarlarkScriptArgs>);
 
@@ -709,6 +824,20 @@ export declare class RunStarlarkPackageArgs extends Message<RunStarlarkPackageAr
    * @generated from field: optional bool parallel = 17;
    */
   parallel?: boolean;
+
+  /**
+   * If true, performs resource availability check before execution. Defaults to true.
+   *
+   * @generated from field: optional bool resource_check = 18;
+   */
+  resourceCheck?: boolean;
+
+  /**
+   * If true, permits Docker-only privileged containers, host bind mounts, and host PID namespace for this run.
+   *
+   * @generated from field: optional bool allow_privileged_mode = 19;
+   */
+  allowPrivilegedMode?: boolean;
 
   constructor(data?: PartialMessage<RunStarlarkPackageArgs>);
 
@@ -2091,6 +2220,13 @@ export declare class StarlarkScriptPlanYamlArgs extends Message<StarlarkScriptPl
    */
   mainFunctionName?: string;
 
+  /**
+   * If true, permits Docker-only privileged containers, host bind mounts, and host PID namespace while interpreting the plan.
+   *
+   * @generated from field: optional bool allow_privileged_mode = 6;
+   */
+  allowPrivilegedMode?: boolean;
+
   constructor(data?: PartialMessage<StarlarkScriptPlanYamlArgs>);
 
   static readonly runtime: typeof proto3;
@@ -2143,6 +2279,13 @@ export declare class StarlarkPackagePlanYamlArgs extends Message<StarlarkPackage
    * @generated from field: optional string main_function_name = 5;
    */
   mainFunctionName?: string;
+
+  /**
+   * If true, permits Docker-only privileged containers, host bind mounts, and host PID namespace while interpreting the plan.
+   *
+   * @generated from field: optional bool allow_privileged_mode = 6;
+   */
+  allowPrivilegedMode?: boolean;
 
   constructor(data?: PartialMessage<StarlarkPackagePlanYamlArgs>);
 

@@ -64,6 +64,7 @@ func (runner *StartosisRunner) Run(
 	shouldExecuteInParallel bool,
 	resourceCheck bool,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
+	allowPrivilegedMode bool,
 ) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	runner.mutex.Lock()
 	starlark_warning.Clear()
@@ -122,6 +123,7 @@ func (runner *StartosisRunner) Run(
 				resolver.NewInstructionsPlanMask(0),
 				imageDownloadMode,
 				instructions_plan.NewInstructionsPlan(),
+				allowPrivilegedMode,
 			)
 		} else {
 			serializedScriptOutput, instructionsPlan, interpretationError = runner.startosisInterpreter.InterpretAndOptimizePlan(
@@ -135,6 +137,7 @@ func (runner *StartosisRunner) Run(
 				nonBlockingMode,
 				runner.startosisExecutor.enclavePlan,
 				imageDownloadMode,
+				allowPrivilegedMode,
 			)
 		}
 

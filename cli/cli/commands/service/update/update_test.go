@@ -277,3 +277,26 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 		})
 	}
 }
+
+func TestCreateUpdatedServiceConfigFromOverridesPreservesPrivilegedFields(t *testing.T) {
+	currConfig := &services.ServiceConfig{
+		Image:            "base-image",
+		Privileged:       true,
+		HostPIDNamespace: true,
+		BindMounts: map[string]string{
+			"/var/run/docker.sock": "/var/run/docker.sock",
+		},
+	}
+	overrideConfig := &services.ServiceConfig{
+		Image: "new-image",
+		BindMounts: map[string]string{
+			"/var/run/docker.sock": "/docker.sock",
+		},
+	}
+
+	updated := createUpdatedServiceConfigFromOverrides(overrideConfig, currConfig)
+
+	require.True(t, updated.Privileged)
+	require.Equal(t, map[string]string{"/var/run/docker.sock": "/docker.sock"}, updated.BindMounts)
+	require.True(t, updated.HostPIDNamespace)
+}

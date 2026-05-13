@@ -179,6 +179,7 @@ func (enclaveCtx *EnclaveContext) RunStarlarkScript(
 		runConfig.NonBlockingMode,
 		runConfig.Parallel,
 		runConfig.ResourceCheck)
+	executeStartosisScriptArgs.AllowPrivilegedMode = &runConfig.AllowPrivilegedMode
 	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 
 	stream, err := enclaveCtx.client.RunStarlarkScript(ctxWithCancel, executeStartosisScriptArgs)
@@ -242,7 +243,8 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackage(
 		runConfig.NonBlockingMode,
 		runConfig.GitHubAuthToken,
 		runConfig.Parallel,
-		runConfig.ResourceCheck)
+		runConfig.ResourceCheck,
+		runConfig.AllowPrivilegedMode)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Error preparing package '%s' for execution", packageRootPath)
 	}
@@ -369,6 +371,7 @@ func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(
 
 	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 	executeStartosisScriptArgs := binding_constructors.NewRunStarlarkRemotePackageArgs(packageId, runConfig.RelativePathToMainFile, runConfig.MainFunctionName, serializedParams, runConfig.DryRun, runConfig.Parallelism, runConfig.ExperimentalFeatureFlags, runConfig.CloudInstanceId, runConfig.CloudUserId, runConfig.ImageDownload, runConfig.NonBlockingMode, runConfig.Parallel, runConfig.ResourceCheck, runConfig.GitHubAuthToken)
+	executeStartosisScriptArgs.AllowPrivilegedMode = &runConfig.AllowPrivilegedMode
 
 	stream, err := enclaveCtx.client.RunStarlarkPackage(ctxWithCancel, executeStartosisScriptArgs)
 	if err != nil {
@@ -579,7 +582,11 @@ func (enclaveCtx *EnclaveContext) GetStarlarkRun(ctx context.Context) (*kurtosis
 	return response, nil
 }
 
-func (enclaveCtx *EnclaveContext) GetStarlarkRemotePackagePlanYaml(ctx context.Context, packageId string, serializedParams string) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
+func (enclaveCtx *EnclaveContext) GetStarlarkRemotePackagePlanYaml(ctx context.Context, packageId string, serializedParams string, allowPrivilegedModeOpt ...bool) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
+	allowPrivilegedMode := false
+	if len(allowPrivilegedModeOpt) > 0 {
+		allowPrivilegedMode = allowPrivilegedModeOpt[0]
+	}
 	serializedParams, err := maybeParseYaml(serializedParams)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred when parsing YAML args for package '%s':\n%s", packageId, serializedParams)
@@ -590,6 +597,7 @@ func (enclaveCtx *EnclaveContext) GetStarlarkRemotePackagePlanYaml(ctx context.C
 		IsRemote:               true,
 		RelativePathToMainFile: nil,
 		MainFunctionName:       nil,
+		AllowPrivilegedMode:    &allowPrivilegedMode,
 	})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while getting the Starlark package plan yaml.")
@@ -597,7 +605,11 @@ func (enclaveCtx *EnclaveContext) GetStarlarkRemotePackagePlanYaml(ctx context.C
 	return response, nil
 }
 
-func (enclaveCtx *EnclaveContext) GetStarlarkPackagePlanYaml(ctx context.Context, packageRootPath string, serializedParams string) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
+func (enclaveCtx *EnclaveContext) GetStarlarkPackagePlanYaml(ctx context.Context, packageRootPath string, serializedParams string, allowPrivilegedModeOpt ...bool) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
+	allowPrivilegedMode := false
+	if len(allowPrivilegedModeOpt) > 0 {
+		allowPrivilegedMode = allowPrivilegedModeOpt[0]
+	}
 	packageName, packageReplaceOptions, err := getPackageNameAndReplaceOptions(packageRootPath)
 	if err != nil {
 		return nil, err
@@ -625,6 +637,7 @@ func (enclaveCtx *EnclaveContext) GetStarlarkPackagePlanYaml(ctx context.Context
 		IsRemote:               false,
 		RelativePathToMainFile: nil,
 		MainFunctionName:       nil,
+		AllowPrivilegedMode:    &allowPrivilegedMode,
 	})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while getting the Starlark package plan yaml.")
@@ -632,15 +645,20 @@ func (enclaveCtx *EnclaveContext) GetStarlarkPackagePlanYaml(ctx context.Context
 	return response, nil
 }
 
-func (enclaveCtx *EnclaveContext) GetStarlarkScriptPlanYaml(ctx context.Context, serializedScript string, serializedParams string) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
+func (enclaveCtx *EnclaveContext) GetStarlarkScriptPlanYaml(ctx context.Context, serializedScript string, serializedParams string, allowPrivilegedModeOpt ...bool) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
+	allowPrivilegedMode := false
+	if len(allowPrivilegedModeOpt) > 0 {
+		allowPrivilegedMode = allowPrivilegedModeOpt[0]
+	}
 	serializedParams, err := maybeParseYaml(serializedParams)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred when parsing YAML args for package '%v'", serializedParams)
 	}
 	response, err := enclaveCtx.client.GetStarlarkScriptPlanYaml(ctx, &kurtosis_core_rpc_api_bindings.StarlarkScriptPlanYamlArgs{
-		SerializedScript: serializedScript,
-		SerializedParams: &serializedParams,
-		MainFunctionName: nil,
+		SerializedScript:    serializedScript,
+		SerializedParams:    &serializedParams,
+		MainFunctionName:    nil,
+		AllowPrivilegedMode: &allowPrivilegedMode,
 	})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while getting the starlark script plan yaml.")
@@ -738,9 +756,10 @@ func (enclaveCtx *EnclaveContext) assembleRunStartosisPackageArg(
 	githubAuthToken string,
 	parallel bool,
 	resourceCheck bool,
+	allowPrivilegedMode bool,
 ) (*kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, error) {
 
-	return binding_constructors.NewRunStarlarkPackageArgs(
+	args := binding_constructors.NewRunStarlarkPackageArgs(
 		packageName,
 		relativePathToMainFile,
 		mainFunctionName,
@@ -754,7 +773,9 @@ func (enclaveCtx *EnclaveContext) assembleRunStartosisPackageArg(
 		nonBlockingMode,
 		parallel,
 		resourceCheck,
-		githubAuthToken), nil
+		githubAuthToken)
+	args.AllowPrivilegedMode = &allowPrivilegedMode
+	return args, nil
 }
 
 func (enclaveCtx *EnclaveContext) uploadStarlarkPackage(packageId string, packageRootPath string) error {
@@ -847,6 +868,9 @@ func (enclaveCtx *EnclaveContext) convertServiceInfoToServiceContext(serviceInfo
 		serviceInfo.GetMaybePublicIpAddr(),
 		serviceCtxPublicPorts,
 		serviceInfo.Labels,
+		serviceInfo.GetPrivileged(),
+		serviceInfo.GetBindMounts(),
+		serviceInfo.GetHostPidNamespace(),
 	)
 
 	return serviceContext, nil

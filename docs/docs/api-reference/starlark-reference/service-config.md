@@ -298,8 +298,11 @@ config = ServiceConfig(
     # DANGEROUS: a privileged container has near-total access to the host kernel and can trivially
     # escape the container boundary. Only enable this for trusted images that genuinely require it
     # (for example, ethpandaops/disruptoor, which manipulates host networking).
-    # Docker only — using this on the Kubernetes backend will fail at service-start time.
-    # The engine operator can disable this feature fleet-wide; see the operator note below.
+    # Docker only — using this on the Kubernetes backend fails at interpretation time.
+    # This field also requires an explicit run opt-in: pass --privileged on the CLI,
+    # set allow-privileged-mode: true for the current cluster in kurtosis-config.yml,
+    # or set allow_privileged_mode in the API request. The CLI flag/config/API field only
+    # permits this ServiceConfig field; it does not make a service privileged by itself.
     # OPTIONAL (Default: False)
     privileged = False,
 
@@ -307,12 +310,20 @@ config = ServiceConfig(
     # Today the only allowlisted host path is /var/run/docker.sock — any other host path is
     # rejected at interpretation time. This is intentionally narrow; the use case it exists for
     # is letting a container talk to the host's Docker daemon (for example, ethpandaops/disruptoor).
-    # Docker only — using this on the Kubernetes backend will fail at service-start time.
-    # The engine operator can disable this feature fleet-wide; see the operator note below.
+    # Docker only — using this on the Kubernetes backend fails at interpretation time.
+    # This field also requires the same explicit run opt-in as privileged=True.
     # OPTIONAL (Default: {})
     bind_mounts = {
         "/var/run/docker.sock": "/var/run/docker.sock",
     },
+
+    # Start the container in Docker's host PID namespace, equivalent to docker run --pid=host.
+    # This lets the container see host/container PIDs under /proc. It is needed by tools that use
+    # nsenter against sibling containers, such as ethpandaops/disruptoor.
+    # Docker only — using this on the Kubernetes backend fails at interpretation time.
+    # This field also requires the same explicit run opt-in as privileged=True.
+    # OPTIONAL (Default: False)
+    host_pid_namespace = False,
 
     # GPU configuration: device selection, shared-memory size, ulimits, and driver.
     # All GPU-related settings are bundled in a GpuConfig object since they only apply to GPU workloads.
@@ -364,14 +375,22 @@ config = ServiceConfig(
     ),
 )
 ```
-### Operator note: disabling `privileged` and `bind_mounts`
+### Opt-in and update limitations
 
-Both `privileged` and `bind_mounts` give the resulting container elevated host access. To disable
-them fleet-wide on a shared or CI Kurtosis instance, set `KURTOSIS_ALLOW_PRIVILEGED_CONTAINERS=false`
-on the engine before starting it. The default is `true`. Any package using these features against a
-locked-down engine will fail at service-start time with a clear error pointing at this env var.
+`privileged`, `bind_mounts`, and `host_pid_namespace` give the resulting container elevated host access. They are denied
+by default and require an explicit run opt-in through `kurtosis run --privileged`,
+`kurtosis service add --privileged`, `kurtosis service update --privileged`, the per-cluster
+`allow-privileged-mode: true` config value, or the `allow_privileged_mode` API field.
 
-For a usage walkthrough, the allowlist details, and the full set of operator controls, see the
+`--privileged` is an allow flag. It permits packages or JSON service configs that explicitly set
+`ServiceConfig(privileged=True)`, `bind_mounts={...}`, or `host_pid_namespace=True`; it does not set
+those fields automatically.
+
+`plan.set_service` and `kurtosis service update` currently preserve and can enable these fields, but
+cannot clear an existing `privileged=True`, remove existing bind mounts, or unset
+`host_pid_namespace=True`. To remove privileged access today, recreate the service without those fields.
+
+For a usage walkthrough and allowlist details, see the
 [Privileged containers & Docker socket guide](../../guides/running-privileged-containers.md).
 
 Note that `ImageBuildSpec` can only be used in packages and not standalone scripts as it relies on build context in package. More info on [`ImageBuildSpec`](./image-build-spec.md) here.

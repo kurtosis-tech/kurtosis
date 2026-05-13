@@ -200,8 +200,10 @@ def run(plan, args):
       ) 
     )
 ```
-Note: currently, setting the ServiceConfig image, user, labels, tolerations, and resource allocation values are supported.
+Note: currently, setting the ServiceConfig image, user, labels, tolerations, resource allocation values, `privileged`, and `bind_mounts` are supported.
 Overriding the ports, env vars, cmd/entrypoint args, and files are not supported. If this is something you'd like support for please let us know on [GitHub](https://github.com/kurtosis-tech/kurtosis/issues)!
+
+`privileged` and `bind_mounts` require the same explicit opt-in as `add_service`: pass `--privileged`, set `allow-privileged-mode: true` for the current cluster in `kurtosis-config.yml`, or set `allow_privileged_mode` in the API request. `set_service` can currently enable or preserve these fields, but it cannot clear an existing `privileged=True` or remove existing bind mounts.
 
 get_files_artifact
 -----------

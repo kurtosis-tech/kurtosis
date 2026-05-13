@@ -9,11 +9,13 @@ import (
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/core/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/privileged_mode"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -46,7 +48,9 @@ func NewAddServices(
 	packageContentProvider startosis_packages.PackageContentProvider,
 	packageReplaceOptions map[string]string,
 	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore,
-	imageDownloadMode image_download_mode.ImageDownloadMode) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+	imageDownloadMode image_download_mode.ImageDownloadMode,
+	allowPrivilegedMode bool,
+	kurtosisBackendType args.KurtosisBackendType) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: AddServicesBuiltinName,
@@ -84,12 +88,14 @@ func NewAddServices(
 				serviceConfigs:               nil, // populated at interpretation time
 				interpretationTimeValueStore: interpretationTimeValueStore,
 
-				resultUuids:       map[service.ServiceName]string{}, // populated at interpretation time
-				readyConditions:   nil,                              // populated at interpretation time
-				returnValue:       nil,                              // populated at interpretation time
-				description:       "",                               // populated at interpretation time
-				imageDownloadMode: imageDownloadMode,
-				forceUpdate:       defaultForceUpdate, // populated at interpretation time
+				resultUuids:         map[service.ServiceName]string{}, // populated at interpretation time
+				readyConditions:     nil,                              // populated at interpretation time
+				returnValue:         nil,                              // populated at interpretation time
+				description:         "",                               // populated at interpretation time
+				imageDownloadMode:   imageDownloadMode,
+				forceUpdate:         defaultForceUpdate, // populated at interpretation time
+				allowPrivilegedMode: allowPrivilegedMode,
+				kurtosisBackendType: kurtosisBackendType,
 			}
 		},
 
@@ -117,8 +123,10 @@ type AddServicesCapabilities struct {
 	returnValue *starlark.Dict
 	description string
 
-	imageDownloadMode image_download_mode.ImageDownloadMode
-	forceUpdate       bool
+	imageDownloadMode   image_download_mode.ImageDownloadMode
+	forceUpdate         bool
+	allowPrivilegedMode bool
+	kurtosisBackendType args.KurtosisBackendType
 }
 
 func (builtin *AddServicesCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -137,6 +145,11 @@ func (builtin *AddServicesCapabilities) Interpret(locatorOfModuleInWhichThisBuil
 	)
 	if interpretationErr != nil {
 		return nil, interpretationErr
+	}
+	for _, serviceConfig := range serviceConfigs {
+		if interpretationErr := privileged_mode.ValidateServiceConfig(serviceConfig, builtin.allowPrivilegedMode, builtin.kurtosisBackendType); interpretationErr != nil {
+			return nil, interpretationErr
+		}
 	}
 	builtin.serviceConfigs = serviceConfigs
 	builtin.readyConditions = readyConditions

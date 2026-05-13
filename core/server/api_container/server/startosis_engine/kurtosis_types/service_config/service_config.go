@@ -60,6 +60,7 @@ const (
 	GpuAttr                         = "gpu"
 	PrivilegedAttr                  = "privileged"
 	BindMountsAttr                  = "bind_mounts"
+	HostPIDNamespaceAttr            = "host_pid_namespace"
 
 	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
@@ -275,6 +276,12 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 				},
 				{
 					Name:              PrivilegedAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Bool],
+					Validator:         nil,
+				},
+				{
+					Name:              HostPIDNamespaceAttr,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Bool],
 					Validator:         nil,
@@ -679,6 +686,15 @@ func (config *ServiceConfig) ToKurtosisType(
 		privileged = bool(privilegedStarlark)
 	}
 
+	hostPIDNamespace := false
+	hostPIDNamespaceStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Bool](config.KurtosisValueTypeDefault, HostPIDNamespaceAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found {
+		hostPIDNamespace = bool(hostPIDNamespaceStarlark)
+	}
+
 	bindMounts := map[string]string{}
 	bindMountsStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](config.KurtosisValueTypeDefault, BindMountsAttr)
 	if interpretationErr != nil {
@@ -756,6 +772,9 @@ func (config *ServiceConfig) ToKurtosisType(
 	}
 	if privileged {
 		serviceConfig.SetPrivileged(true)
+	}
+	if hostPIDNamespace {
+		serviceConfig.SetHostPIDNamespace(true)
 	}
 	if len(bindMounts) > 0 {
 		serviceConfig.SetBindMounts(bindMounts)

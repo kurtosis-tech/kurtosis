@@ -273,6 +273,7 @@ export abstract class KurtosisClient {
     packageId: string,
     args: Record<string, any>,
     dryRun: boolean = false,
+    allowPrivilegedMode: boolean = false,
   ) {
     // Not currently using asyncResult as the return type here is an asyncIterable
     const request = new RunStarlarkPackageRequest({
@@ -282,6 +283,7 @@ export abstract class KurtosisClient {
         dryRun,
         packageId: packageId,
         serializedParams: JSON.stringify(args),
+        allowPrivilegedMode,
       }),
     });
     return this.client.runStarlarkPackage(request, this.getHeaderOptions());
@@ -292,6 +294,7 @@ export abstract class KurtosisClient {
     serializedScript: string,
     args: Record<string, any> = {},
     dryRun: boolean = false,
+    allowPrivilegedMode: boolean = false,
   ) {
     // Not currently using asyncResult as the return type here is an asyncIterable
     const request = new RunStarlarkScriptRequest({
@@ -301,6 +304,7 @@ export abstract class KurtosisClient {
         dryRun,
         serializedScript,
         serializedParams: JSON.stringify(args),
+        allowPrivilegedMode,
       }),
     });
     return this.client.runStarlarkScript(request, this.getHeaderOptions());
@@ -310,6 +314,7 @@ export abstract class KurtosisClient {
     apicInfo: RemoveFunctions<EnclaveAPIContainerInfo>,
     packageId: string,
     args: Record<string, any>,
+    allowPrivilegedMode: boolean = false,
   ) {
     return asyncResult(() => {
       const request = new StarlarkPackagePlanYamlArgsRequest({
@@ -318,6 +323,7 @@ export abstract class KurtosisClient {
         starlarkPackagePlanYamlArgs: new StarlarkPackagePlanYamlArgs({
           packageId: packageId,
           serializedParams: JSON.stringify(args),
+          allowPrivilegedMode,
         }),
       });
       return this.client.getStarlarkPackagePlanYaml(request, this.getHeaderOptions());
