@@ -23,6 +23,10 @@ const config = {
 		locales: ['en'],
 	},
 
+	plugins: [
+		require.resolve('./src/plugins/raw-markdown'),
+	],
+
 	presets: [
 		[
 			'classic',

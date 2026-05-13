@@ -21,7 +21,11 @@ const (
 
 	shBinaryFilepath = "/bin/sh"
 	shCmdFlag        = "-c"
-	printfCmdName    = "printf"
+
+	// Delimiter for the heredoc that writes the config.json. The content
+	// (a JSON document) cannot contain this delimiter on a line by itself,
+	// so this is safe against arbitrary JSON payloads.
+	heredocDelimiter = "KURTOSIS_DOCKER_CONFIG_EOF"
 
 	creationSuccessExitCode = 0
 
@@ -132,12 +136,28 @@ func storeConfigInVolume(
 		return stacktrace.NewError("An error occurred marshalling the Docker config into JSON: %v", err)
 	}
 
-	// Write the config.json to the volume
+	// Write the config.json to the volume using a heredoc with a
+	// single-quoted delimiter so the JSON content is copied verbatim and
+	// never interpreted by the shell.
+	//
+	// Historically this used `printf '<JSON>' > <path>`, which broke when
+	// the host's Docker config contained URL-encoded characters — most
+	// notably a GCP Artifact Registry service-account login, whose
+	// _json_key password embeds a `client_x509_cert_url` field containing
+	// `%40` (URL-encoded `@`). busybox printf inside the alpine:3.17 helper
+	// parses `%40m` as a format directive with conversion character `m`
+	// (invalid) and exits non-zero, failing engine startup with a confusing
+	// "Docker config storage creation didn't return success" error.
+	//
+	// Using `cat` with a single-quoted heredoc delimiter avoids any format
+	// string or parameter expansion over the payload.
+	configFileFullPath := fmt.Sprintf("%s/%s", storageDirPath, configFilePath)
 	commandStr := fmt.Sprintf(
-		"%v '%v' > %v",
-		printfCmdName,
+		"cat > %s <<'%s'\n%s\n%s",
+		configFileFullPath,
+		heredocDelimiter,
 		string(cfgJsonStr),
-		fmt.Sprintf("%s/%s", storageDirPath, configFilePath),
+		heredocDelimiter,
 	)
 
 	execCmd := []string{

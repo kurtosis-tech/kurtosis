@@ -9,13 +9,14 @@ on:
 permissions:
   contents: read
 
-# Fork PRs don't have access to secrets. Skip the secret-dependent jobs there;
-# GitHub will still show them as "skipped" rather than failing contributor PRs.
+# Fork PRs and dependabot PRs don't have access to release secrets. Skip the
+# secret-dependent jobs there; GitHub will show them as "skipped" rather than
+# failing contributor / dependabot PRs.
 jobs:
   verify-kurtosisbot-github-token:
     name: KURTOSISBOT_GITHUB_TOKEN
     runs-on: ubuntu-latest
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    if: ${{ github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]') }}
     env:
       TOKEN: ${{ secrets.KURTOSISBOT_GITHUB_TOKEN }}
     steps:
@@ -72,7 +73,7 @@ jobs:
   verify-releaser-token:
     name: RELEASER_TOKEN
     runs-on: ubuntu-latest
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    if: ${{ github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]') }}
     env:
       TOKEN: ${{ secrets.RELEASER_TOKEN }}
     steps:
@@ -111,7 +112,7 @@ jobs:
   verify-dockerhub-credentials:
     name: DOCKERHUB_USERNAME / DOCKERHUB_PASSWORD
     runs-on: ubuntu-latest
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    if: ${{ github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]') }}
     env:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
@@ -134,6 +135,6 @@ jobs:
 
   verify-npm-token:
     name: NPMJS_AUTH_TOKEN
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    if: ${{ github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]') }}
     uses: ./.github/workflows/verify-npm-token.yml
     secrets: inherit
