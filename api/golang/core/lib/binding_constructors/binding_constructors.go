@@ -74,6 +74,7 @@ func NewRunStarlarkScriptArgs(
 		NonBlockingMode:      &nonBlockingMode,
 		Parallel:             parallelCopy,
 		ResourceCheck:        &resourceCheck,
+		AllowPrivilegedMode:  nil,
 	}
 }
 
@@ -123,6 +124,7 @@ func NewRunStarlarkPackageArgs(
 		GithubAuthToken:        githubAuthTokenCopy,
 		Parallel:               parallelCopy,
 		ResourceCheck:          &resourceCheck,
+		AllowPrivilegedMode:    nil,
 	}
 }
 
@@ -172,6 +174,7 @@ func NewRunStarlarkRemotePackageArgs(
 		Parallel:               parallelCopy,
 		ResourceCheck:          &resourceCheck,
 		GithubAuthToken:        githubAuthTokenCopy,
+		AllowPrivilegedMode:    nil,
 	}
 }
 
@@ -492,6 +495,10 @@ func NewServiceInfo(
 		TiniEnabled:                         &tiniEnabled,
 		TtyEnabled:                          &ttyEnabled,
 		Capabilities:                        capabilities,
+		GpuConfig:                           nil,
+		Privileged:                          false,
+		BindMounts:                          nil,
+		HostPidNamespace:                    false,
 	}
 }
 
