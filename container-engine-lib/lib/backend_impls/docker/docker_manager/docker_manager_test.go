@@ -203,7 +203,11 @@ func TestShmSizeMegabytesToBytesConversion(t *testing.T) {
 }
 
 func TestGetContainerHostConfigWithHostPIDNamespace(t *testing.T) {
-	manager := &DockerManager{}
+	manager := &DockerManager{
+		dockerClient:          nil,
+		dockerClientNoTimeout: nil,
+		podmanMode:            false,
+	}
 	hostConfig, err := manager.getContainerHostConfig(
 		map[ContainerCapability]bool{},
 		map[ContainerSecurityOpt]bool{},

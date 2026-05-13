@@ -391,6 +391,9 @@ func parseOverridesServiceConfigFromFlags(
 		NodeSelectors:               nil,
 		TiniEnabled:                 nil,
 		TtyEnabled:                  nil,
+		Privileged:                  false,
+		BindMounts:                  nil,
+		HostPIDNamespace:            false,
 	}, nil
 }
 
