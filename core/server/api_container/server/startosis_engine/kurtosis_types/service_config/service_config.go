@@ -291,7 +291,7 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return validateBindMounts(value)
+						return ValidateBindMounts(value)
 					},
 				},
 			},
@@ -301,8 +301,8 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 	}
 }
 
-// validateBindMounts ensures bind_mounts is a string→string dict and every host path is allowlisted.
-func validateBindMounts(value starlark.Value) *startosis_errors.InterpretationError {
+// ValidateBindMounts ensures bind_mounts is a string→string dict and every host path is allowlisted.
+func ValidateBindMounts(value starlark.Value) *startosis_errors.InterpretationError {
 	if err := builtin_argument.StringMappingToString(value, BindMountsAttr); err != nil {
 		return err
 	}
@@ -701,16 +701,14 @@ func (config *ServiceConfig) ToKurtosisType(
 		return nil, interpretationErr
 	}
 	if found && bindMountsStarlark.Len() > 0 {
+		// Host-path allowlist is enforced by ValidateBindMounts at builtin-argument
+		// validation time; here we just materialize the dict.
 		for _, key := range bindMountsStarlark.Keys() {
 			hostPathStr, ok := key.(starlark.String)
 			if !ok {
 				return nil, startosis_errors.NewInterpretationError("'%s' keys must be strings", BindMountsAttr)
 			}
 			hostPath := hostPathStr.GoString()
-			if !allowedBindMountHostPaths[hostPath] {
-				return nil, startosis_errors.NewInterpretationError(
-					"'%s' host path %q is not permitted", BindMountsAttr, hostPath)
-			}
 			rawValue, _, valueErr := bindMountsStarlark.Get(key)
 			if valueErr != nil {
 				return nil, startosis_errors.NewInterpretationError("Could not read '%s' value for host path %q: %v", BindMountsAttr, hostPath, valueErr)
