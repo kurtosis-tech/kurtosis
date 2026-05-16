@@ -20,6 +20,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/types"
 	path_compression "github.com/kurtosis-tech/kurtosis/path-compression"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 )
 
@@ -117,27 +118,63 @@ func (builtin *UploadFilesCapabilities) Interpret(locatorOfModuleInWhichThisBuil
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", SrcArgName)
 	}
+	srcStr := src.GoString()
 
-	absoluteLocator, interpretationErr := builtin.packageContentProvider.GetAbsoluteLocator(builtin.packageId, locatorOfModuleInWhichThisBuiltInIsBeingCalled, src.GoString(), builtin.packageReplaceOptions)
-	if interpretationErr != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "Tried to convert locator '%v' into absolute locator but failed", src.GoString())
-	}
-
-	pathOnDisk, interpretationErr := builtin.packageContentProvider.GetOnDiskAbsolutePath(absoluteLocator)
+	pathOnDisk, descriptionSrc, cleanup, interpretationErr := builtin.resolveSourcePathOnDisk(srcStr, locatorOfModuleInWhichThisBuiltInIsBeingCalled)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
+	defer cleanup()
 
 	compressedDataPath, _, compressedDataMd5, err := path_compression.CompressPathToFile(pathOnDisk, enforceMaxFileSizeLimit)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while compressing the files at '%s'", pathOnDisk)
 	}
 
-	builtin.src = src.GoString()
+	builtin.src = srcStr
 	builtin.archivePathOnDisk = compressedDataPath
 	builtin.filesArtifactMd5 = compressedDataMd5
-	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, fmt.Sprintf(descriptionFormatStr, builtin.src, builtin.artifactName))
+	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, fmt.Sprintf(descriptionFormatStr, descriptionSrc, builtin.artifactName))
 	return starlark.String(builtin.artifactName), nil
+}
+
+// resolveSourcePathOnDisk returns the local filesystem path that should be
+// compressed into the files artifact. When src is an absolute http(s) URL the
+// file is downloaded into a temporary directory and that path is returned;
+// otherwise the source is treated as a Kurtosis package locator and resolved
+// through the package content provider as before.
+//
+// The returned descriptionSrc is a sanitised representation of the source used
+// in user-facing messages; for URLs the query string and fragment are stripped
+// so descriptions stay readable and stable. The returned cleanup function must
+// be invoked once the caller has finished consuming the path (e.g. after
+// compression) and is safe to call even when no temp directory was created.
+func (builtin *UploadFilesCapabilities) resolveSourcePathOnDisk(src string, locatorOfModuleInWhichThisBuiltInIsBeingCalled string) (string, string, func(), *startosis_errors.InterpretationError) {
+	noopCleanup := func() {}
+
+	if isHTTPURL(src) {
+		downloadedFilePath, tempDir, err := downloadFileFromURL(context.Background(), src)
+		if err != nil {
+			return "", "", noopCleanup, startosis_errors.WrapWithInterpretationError(err, "An error occurred downloading file from URL '%s'", src)
+		}
+		cleanup := func() {
+			if removeErr := os.RemoveAll(tempDir); removeErr != nil {
+				logrus.Warnf("Failed to remove temporary directory '%s' used for URL download '%s': %v", tempDir, src, removeErr)
+			}
+		}
+		return downloadedFilePath, describeURLSource(src), cleanup, nil
+	}
+
+	absoluteLocator, interpretationErr := builtin.packageContentProvider.GetAbsoluteLocator(builtin.packageId, locatorOfModuleInWhichThisBuiltInIsBeingCalled, src, builtin.packageReplaceOptions)
+	if interpretationErr != nil {
+		return "", "", noopCleanup, startosis_errors.WrapWithInterpretationError(interpretationErr, "Tried to convert locator '%v' into absolute locator but failed", src)
+	}
+
+	pathOnDisk, interpretationErr := builtin.packageContentProvider.GetOnDiskAbsolutePath(absoluteLocator)
+	if interpretationErr != nil {
+		return "", "", noopCleanup, interpretationErr
+	}
+	return pathOnDisk, src, noopCleanup, nil
 }
 
 func (builtin *UploadFilesCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
