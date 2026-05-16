@@ -26,7 +26,7 @@ require (
 	go.etcd.io/bbolt v1.4.3
 	golang.org/x/term v0.42.0
 	k8s.io/api v0.36.0
-	k8s.io/apimachinery v0.36.0
+	k8s.io/apimachinery v0.36.1
 	k8s.io/client-go v0.36.0
 )
 
