@@ -854,12 +854,17 @@ The return value is a [future reference][future-references-reference] to the nam
 upload_files
 ------------
 
-The `upload_files` instruction packages the files specified by the [locator][locators-reference] into a [files artifact][files-artifacts-reference] that gets stored inside the enclave. This is particularly useful when a static file needs to be loaded to a service container. 
+The `upload_files` instruction packages the files specified by `src` into a [files artifact][files-artifacts-reference] that gets stored inside the enclave. This is particularly useful when a static file needs to be loaded to a service container.
+
+`src` accepts either:
+
+- a Kurtosis [locator][locators-reference] (a path within the current package, or a `github.com/...` path — without the `/blob/main` part), or
+- an absolute `http://` or `https://` URL pointing to a single file (for example a gist raw URL, an S3 object, or a Grafana dashboard JSON hosted on a CDN). The file is fetched at interpretation time and packaged as the files artifact.
 
 ```python
 artifact_name = plan.upload_files(
-    # The file to upload into a files artifact
-    # Must be any GitHub URL without the '/blob/main' part.
+    # The file to upload into a files artifact. Accepts a GitHub locator,
+    # a path within the current package, or an absolute http(s) URL.
     # MANDATORY
     src = "github.com/foo/bar/static/example.txt",
 
@@ -871,6 +876,12 @@ artifact_name = plan.upload_files(
     # A human friendly description for the end user of the package
     # OPTIONAL (Default: Uploading file 'PATH' to files artifact 'ARTIFACT_NAME')
     description = "uploading file"
+)
+
+# Example: upload a single file from an arbitrary URL
+dashboard = plan.upload_files(
+    src = "https://gist.githubusercontent.com/fjl/abc/raw/def/dashboard.json",
+    name = "grafana-dashboard",
 )
 ```
 
