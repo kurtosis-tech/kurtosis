@@ -1,0 +1,8 @@
+# Hugo build output
+/build/
+/public/
+/resources/
+/.hugo_build.lock
+
+# Legacy npm artifacts (kept in gitignore in case of stragglers)
+/node_modules/

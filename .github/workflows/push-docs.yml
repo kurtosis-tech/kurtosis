@@ -10,6 +10,9 @@ on:
       - opened
       - labeled
 
+env:
+  HUGO_VERSION: '0.161.1'
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -34,34 +37,39 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
-      - name: Enforce to use yarn
-        run: |
-          # We had a bug where we were using both Yarn and NPM to maintain Docusaurus, which
-          # meant separate and conflicting lockfiles
-          # Only Yarn should be used
-          if [ -f docs/package-lock.json ]; then
-            exit 1
-          fi
       - name: Docs have changed
         run: |
           echo "DOCS_CHANGED=$(git --no-pager diff --exit-code origin/main...HEAD -- ':docs' > /dev/null; echo $?)" >> $GITHUB_OUTPUT
         id: docs-diff
       - name: Append changelog
-        run: cat CHANGELOG.md >> docs/docs/changelog.md
+        run: cat CHANGELOG.md >> docs/content/docs/changelog.md
         if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED != 0
-      - name: Yarn Install
-        run: yarn --cwd ./docs --frozen-lockfile install
+      - name: Setup Go
         if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED != 0
-      - name: Yarn Build
-        run: yarn --cwd ./docs build
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version: '1.26.0'
+          cache: true
+          cache-dependency-path: docs/go.sum
+      - name: Setup Hugo
         if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED != 0
+        uses: peaceiris/actions-hugo@16361eb4acea8698b220b76c0d4e84e1fd22c61d # v3.0.0
+        with:
+          hugo-version: ${{ env.HUGO_VERSION }}
+          extended: true
+      - name: Hugo Build
+        if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED != 0
+        working-directory: docs
+        run: hugo --gc --minify
       - name: Publish to Cloudflare Pages
         if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED != 0
+        uses: cloudflare/wrangler-action@da0e0dfe58b7a431659754fdf3f186c529afbe65 # v3.14.1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy docs/build/ --project-name=${{ secrets.CLOUDFLARE_PROJECT_NAME }} --branch=${GITHUB_REF##*/} --commit-message="${DEPLOY_COMMIT_MSG%%$'\n'*}" --commit-dirty=true
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           DEPLOY_COMMIT_MSG: ${{ github.event.head_commit.message || github.sha }}
-        run: npx --yes wrangler pages deploy docs/build/ --project-name=${{ secrets.CLOUDFLARE_PROJECT_NAME }} --branch=${GITHUB_REF##*/} --commit-message="${DEPLOY_COMMIT_MSG%%$'\n'*}" --commit-dirty=true
   reindex-website-main:
     runs-on: ubuntu-latest
     name: Update website search index via Algolia Crawler

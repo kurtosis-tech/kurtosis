@@ -11,6 +11,7 @@ updates:
       - "/core/files_artifacts_expander"
       - "/core/launcher"
       - "/core/server"
+      - "/docs"
       - "/enclave-manager/api/golang"
       - "/enclave-manager/server"
       - "/engine/launcher"
@@ -32,7 +33,6 @@ updates:
   - package-ecosystem: "npm"
     directories:
       - "/api/typescript"
-      - "/docs"
       - "/enclave-manager/web"
       - "/engine/frontend"
       - "/internal_testsuites/typescript"
@@ -53,3 +53,4 @@ updates:
         group-by: dependency-name
         patterns:
           - "*"
+

@@ -1,0 +1,131 @@
+baseURL = 'https://docs.kurtosis.com/'
+title = 'Kurtosis Docs'
+
+contentDir = 'content'
+publishDir = 'build'
+
+enableEmoji = true
+enableGitInfo = true
+enableRobotsTXT = true
+
+defaultContentLanguage = 'en'
+[languages]
+  [languages.en]
+    title = 'Kurtosis Docs'
+    label = 'English'
+    locale = 'en-US'
+    weight = 10
+
+[module]
+  [module.hugoVersion]
+    extended = true
+    min = '0.146.0'
+  [[module.imports]]
+    path = 'github.com/imfing/hextra'
+
+[markup]
+  [markup.goldmark.renderer]
+    unsafe = true
+  [markup.highlight]
+    noClasses = false
+  [markup.tableOfContents]
+    startLevel = 2
+    endLevel = 4
+
+# Output formats: HTML for pages, plus Hextra's built-in llms.txt + raw markdown
+# passthrough (replaces the custom Docusaurus raw-markdown plugin from #3096).
+[outputs]
+  home = ['HTML', 'RSS', 'llms']
+  page = ['HTML', 'markdown']
+  section = ['HTML', 'RSS', 'llms']
+
+[outputFormats]
+  [outputFormats.llms]
+    name = 'llms'
+    baseName = 'llms'
+    mediaType = 'text/plain'
+    isPlainText = true
+  [outputFormats.markdown]
+    name = 'markdown'
+    baseName = 'index'
+    mediaType = 'text/markdown'
+    isPlainText = true
+    ugly = true
+
+[mediaTypes]
+  [mediaTypes."text/markdown"]
+    suffixes = ['md']
+
+[params]
+  description = 'Kurtosis is a tool for packaging and launching environments of containerized services where you want them, the way you want them, with one liners.'
+
+  [params.navbar]
+    displayTitle = true
+    displayLogo = true
+    [params.navbar.logo]
+      path = 'img/brand/kurtosis-logo-white-text.png'
+      dark = 'img/brand/kurtosis-logo-white-text.png'
+      link = '/'
+      width = 140
+
+  [params.theme]
+    default = 'dark'
+    displayToggle = true
+
+  [params.footer]
+    enable = true
+    displayCopyright = true
+    displayPoweredBy = false
+    copyright = '© 2026 Kurtosis Technologies'
+
+  [params.editURL]
+    enable = true
+    base = 'https://github.com/kurtosis-tech/kurtosis/edit/main/docs/content'
+
+  [params.toc]
+    displayTags = true
+    displayTitle = true
+
+  [params.page]
+    width = 'normal'
+
+  # Hextra ships a fast client-side FlexSearch index. The previous Algolia
+  # DocSearch widget can be added back as a follow-up via a custom head partial;
+  # see `Follow-ups` in the PR description.
+  [params.search]
+    enable = true
+    type = 'flexsearch'
+    [params.search.flexsearch]
+      index = 'content'
+      tokenize = 'forward'
+
+[menu]
+  [[menu.main]]
+    name = 'Docs'
+    pageRef = '/docs'
+    weight = 1
+  [[menu.main]]
+    name = "What's New"
+    pageRef = '/docs/whats-new'
+    weight = 2
+  [[menu.main]]
+    name = 'Search'
+    weight = 8
+    [menu.main.params]
+      type = 'search'
+  [[menu.main]]
+    name = 'GitHub'
+    url = 'https://github.com/kurtosis-tech/kurtosis'
+    weight = 9
+    [menu.main.params]
+      icon = 'github'
+  [[menu.main]]
+    name = 'Discord'
+    url = 'https://discord.gg/HUapYX9RvV'
+    weight = 10
+  [[menu.main]]
+    name = 'Twitter'
+    url = 'https://twitter.com/KurtosisTech'
+    weight = 11
+    [menu.main.params]
+      icon = 'x-twitter'

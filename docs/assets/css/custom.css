@@ -1,0 +1,20 @@
+/* Custom CSS picked up by Hextra at theme.layouts._partials.head.html. */
+
+/* `console`-language code blocks use Chroma's Generic.Output class (`.go`)
+   which renders as dim gray by default in both light and dark mode. Override
+   to near-black on light backgrounds and near-white on dark. */
+.hextra-code-block pre.chroma .go {
+  color: #111827;
+}
+.dark .hextra-code-block pre.chroma .go {
+  color: #f5f5f5;
+}
+
+/* Wrap long lines inside code blocks instead of forcing horizontal scroll.
+   Long URLs / arg strings stay readable on narrow screens. */
+.hextra-code-block pre.chroma,
+.hextra-code-block pre.chroma code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
