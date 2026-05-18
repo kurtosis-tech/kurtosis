@@ -121,6 +121,9 @@ func GetServiceInfo(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisC
 		Labels:                      service.GetLabels(),
 		TiniEnabled:                 &isTiniEnabled,
 		TtyEnabled:                  &isTtyEnabled,
+		Privileged:                  service.GetPrivileged(),
+		BindMounts:                  service.GetBindMounts(),
+		HostPIDNamespace:            service.GetHostPidNamespace(),
 	}
 
 	return service, serviceConfig, nil
@@ -133,8 +136,12 @@ func GetAddServiceStarlarkScript(serviceName string, serviceConfigStarlark strin
 }
 
 func RunAddServiceStarlarkScript(ctx context.Context, serviceName, enclaveIdentifier, starlarkScript string, enclaveCtx *enclaves.EnclaveContext) (*enclaves.StarlarkRunResult, error) {
+	return RunAddServiceStarlarkScriptWithConfig(ctx, serviceName, enclaveIdentifier, starlarkScript, enclaveCtx, starlark_run_config.NewRunStarlarkConfig())
+}
+
+func RunAddServiceStarlarkScriptWithConfig(ctx context.Context, serviceName, enclaveIdentifier, starlarkScript string, enclaveCtx *enclaves.EnclaveContext, runConfig *starlark_run_config.StarlarkRunConfig) (*enclaves.StarlarkRunResult, error) {
 	logrus.Debugf("Add service starlark:\n%v", starlarkScript)
-	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, starlark_run_config.NewRunStarlarkConfig())
+	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, runConfig)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
 	}

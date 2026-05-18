@@ -20,6 +20,7 @@ Much like `docker run`, this command has multiple options available to customize
 1. The `--entrypoint` flag can be passed in to override the binary the service runs
 1. The `--env` flag can be used to specify a set of environment variables that should be set when running the service
 1. The `--ports` flag can be used to set the ports that the service will listen on
+1. The `--privileged` flag allows Docker-only `privileged`, `bind_mounts`, and `host_pid_namespace` fields when using `--json-service-config`. This is an allow flag: it does not make the service privileged by itself. The JSON service config must explicitly include `privileged: true`, `bind_mounts`, or `host_pid_namespace: true`.
 
 To override the service's CMD, add a `--` after the image name and then pass in your CMD args like so:
 
@@ -43,3 +44,6 @@ kurtosis service add my-enclave test-service --json-service-config - < ./my-serv
 When using `--json-service-config`, the standard flags and args like `--image`, `--cmd`, `--entrypoint`, `--env`, and `$CONTAINER_IMAGE` will be ignored in favor of the provided config.
 :::
 
+:::note Privileged services
+Services that use `privileged: true`, `bind_mounts`, or `host_pid_namespace: true` require `--privileged` or `allow-privileged-mode: true` in the current cluster's `kurtosis-config.yml`. These fields are Docker-only and are rejected on Kubernetes.
+:::

@@ -87,6 +87,16 @@ type privateServiceConfig struct {
 	// Linux capabilities to add to the container (e.g., "NET_ADMIN", "SYS_PTRACE")
 	Capabilities []string
 
+	// Whether to start the container with the Docker --privileged flag. Docker backend only.
+	Privileged bool
+
+	// Host-path -> container-path bind mounts. Docker backend only. Host paths are restricted
+	// to an allowlist enforced at the Starlark layer (currently /var/run/docker.sock).
+	BindMounts map[string]string
+
+	// Whether to start the container in the host PID namespace. Docker backend only.
+	HostPIDNamespace bool
+
 	// GpuConfig bundles GPU device selection, shared-memory size, and ulimits.
 	// All three only apply to GPU workloads; use NewGpuConfig to construct.
 	GpuConfig GpuConfig
@@ -152,6 +162,9 @@ func CreateServiceConfig(
 		Devices:                      devices,
 		PublishUdp:                   publishUdp,
 		Capabilities:                 nil,
+		Privileged:                   false,
+		BindMounts:                   nil,
+		HostPIDNamespace:             false,
 		GpuConfig:                    gpuConfig,
 	}
 	return &ServiceConfig{internalServiceConfig}, nil
@@ -381,4 +394,28 @@ func (serviceConfig *ServiceConfig) SetCapabilities(capabilities []string) {
 
 func (serviceConfig *ServiceConfig) GetGpuConfig() GpuConfig {
 	return serviceConfig.privateServiceConfig.GpuConfig
+}
+
+func (serviceConfig *ServiceConfig) GetPrivileged() bool {
+	return serviceConfig.privateServiceConfig.Privileged
+}
+
+func (serviceConfig *ServiceConfig) SetPrivileged(privileged bool) {
+	serviceConfig.privateServiceConfig.Privileged = privileged
+}
+
+func (serviceConfig *ServiceConfig) GetBindMounts() map[string]string {
+	return serviceConfig.privateServiceConfig.BindMounts
+}
+
+func (serviceConfig *ServiceConfig) SetBindMounts(bindMounts map[string]string) {
+	serviceConfig.privateServiceConfig.BindMounts = bindMounts
+}
+
+func (serviceConfig *ServiceConfig) GetHostPIDNamespace() bool {
+	return serviceConfig.privateServiceConfig.HostPIDNamespace
+}
+
+func (serviceConfig *ServiceConfig) SetHostPIDNamespace(hostPIDNamespace bool) {
+	serviceConfig.privateServiceConfig.HostPIDNamespace = hostPIDNamespace
 }

@@ -3,7 +3,7 @@ package resolved_config
 import (
 	"testing"
 
-	v7 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v7"
+	v8 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v8"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
@@ -11,13 +11,14 @@ import (
 )
 
 func TestNewKurtosisClusterConfigEmptyOverrides(t *testing.T) {
-	kurtosisClusterConfigOverrides := v7.KurtosisClusterConfigV7{
+	kurtosisClusterConfigOverrides := v8.KurtosisClusterConfigV8{
 		Type:                        nil,
 		Config:                      nil,
 		LogsAggregator:              nil,
 		LogsCollector:               nil,
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
+		AllowPrivilegedMode:         nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.Error(t, err)
@@ -25,27 +26,46 @@ func TestNewKurtosisClusterConfigEmptyOverrides(t *testing.T) {
 
 func TestNewKurtosisClusterConfigDockerType(t *testing.T) {
 	dockerType := KurtosisClusterType_Docker.String()
-	kurtosisClusterConfigOverrides := v7.KurtosisClusterConfigV7{
+	kurtosisClusterConfigOverrides := v8.KurtosisClusterConfigV8{
 		Type:                        &dockerType,
 		Config:                      nil,
 		LogsAggregator:              nil,
 		LogsCollector:               nil,
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
+		AllowPrivilegedMode:         nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)
 }
 
+func TestNewKurtosisClusterConfigAllowPrivilegedMode(t *testing.T) {
+	dockerType := KurtosisClusterType_Docker.String()
+	allowPrivilegedMode := true
+	kurtosisClusterConfigOverrides := v8.KurtosisClusterConfigV8{
+		Type:                        &dockerType,
+		Config:                      nil,
+		LogsAggregator:              nil,
+		LogsCollector:               nil,
+		GrafanaLokiConfig:           nil,
+		ShouldEnableDefaultLogsSink: nil,
+		AllowPrivilegedMode:         &allowPrivilegedMode,
+	}
+	clusterConfig, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
+	require.NoError(t, err)
+	require.True(t, clusterConfig.GetAllowPrivilegedMode())
+}
+
 func TestNewKurtosisClusterConfigKubernetesNoConfig(t *testing.T) {
 	kubernetesType := KurtosisClusterType_Kubernetes.String()
-	kurtosisClusterConfigOverrides := v7.KurtosisClusterConfigV7{
+	kurtosisClusterConfigOverrides := v8.KurtosisClusterConfigV8{
 		Type:                        &kubernetesType,
 		Config:                      nil,
 		LogsAggregator:              nil,
 		LogsCollector:               nil,
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
+		AllowPrivilegedMode:         nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.Error(t, err)
@@ -53,13 +73,14 @@ func TestNewKurtosisClusterConfigKubernetesNoConfig(t *testing.T) {
 
 func TestNewKurtosisClusterConfigNonsenseType(t *testing.T) {
 	clusterType := "gdsfgsdfvsf"
-	kurtosisClusterConfigOverrides := v7.KurtosisClusterConfigV7{
+	kurtosisClusterConfigOverrides := v8.KurtosisClusterConfigV8{
 		Type:                        &clusterType,
 		Config:                      nil,
 		LogsAggregator:              nil,
 		LogsCollector:               nil,
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
+		AllowPrivilegedMode:         nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.Error(t, err)
@@ -68,7 +89,7 @@ func TestNewKurtosisClusterConfigNonsenseType(t *testing.T) {
 func TestNewKurtosisClusterConfigKubernetesPartialConfig(t *testing.T) {
 	kubernetesType := KurtosisClusterType_Kubernetes.String()
 	kubernetesClusterName := "some-name"
-	kubernetesPartialConfig := v7.KubernetesClusterConfigV7{
+	kubernetesPartialConfig := v8.KubernetesClusterConfigV8{
 		KubernetesClusterName:  &kubernetesClusterName,
 		StorageClass:           nil,
 		EnclaveSizeInMegabytes: nil,
@@ -76,13 +97,14 @@ func TestNewKurtosisClusterConfigKubernetesPartialConfig(t *testing.T) {
 		NodeSelectors:          nil,
 		Tolerations:            nil,
 	}
-	kurtosisClusterConfigOverrides := v7.KurtosisClusterConfigV7{
+	kurtosisClusterConfigOverrides := v8.KurtosisClusterConfigV8{
 		Type:                        &kubernetesType,
 		Config:                      &kubernetesPartialConfig,
 		LogsAggregator:              nil,
 		LogsCollector:               nil,
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
+		AllowPrivilegedMode:         nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.Error(t, err)
@@ -94,7 +116,7 @@ func TestNewKurtosisClusterConfigKubernetesFullConfig(t *testing.T) {
 	kubernetesStorageClass := "some-storage-class"
 	kubernetesEnclaveSizeInMB := uint(5)
 	kubernetesEngineNodeName := "some-node-name"
-	kubernetesFullConfig := v7.KubernetesClusterConfigV7{
+	kubernetesFullConfig := v8.KubernetesClusterConfigV8{
 		KubernetesClusterName:  &kubernetesClusterName,
 		StorageClass:           &kubernetesStorageClass,
 		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
@@ -102,13 +124,14 @@ func TestNewKurtosisClusterConfigKubernetesFullConfig(t *testing.T) {
 		NodeSelectors:          nil,
 		Tolerations:            nil,
 	}
-	kurtosisClusterConfigOverrides := v7.KurtosisClusterConfigV7{
+	kurtosisClusterConfigOverrides := v8.KurtosisClusterConfigV8{
 		Type:                        &kubernetesType,
 		Config:                      &kubernetesFullConfig,
 		LogsAggregator:              nil,
 		LogsCollector:               nil,
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
+		AllowPrivilegedMode:         nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)
@@ -120,7 +143,7 @@ func TestNewKurtosisClusterConfigLogsAggregatorNoConfig(t *testing.T) {
 	kubernetesStorageClass := "some-storage-class"
 	kubernetesEnclaveSizeInMB := uint(5)
 	kubernetesEngineNodeName := "some-node-name"
-	kubernetesFullConfig := v7.KubernetesClusterConfigV7{
+	kubernetesFullConfig := v8.KubernetesClusterConfigV8{
 		KubernetesClusterName:  &kubernetesClusterName,
 		StorageClass:           &kubernetesStorageClass,
 		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
@@ -128,13 +151,14 @@ func TestNewKurtosisClusterConfigLogsAggregatorNoConfig(t *testing.T) {
 		NodeSelectors:          nil,
 		Tolerations:            nil,
 	}
-	kurtosisClusterConfigOverrides := v7.KurtosisClusterConfigV7{
+	kurtosisClusterConfigOverrides := v8.KurtosisClusterConfigV8{
 		Type:                        &kubernetesType,
 		Config:                      &kubernetesFullConfig,
 		LogsAggregator:              nil,
 		LogsCollector:               nil,
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
+		AllowPrivilegedMode:         nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)
@@ -146,7 +170,7 @@ func TestNewKurtosisClusterConfigLogsAggregatorReservedSinkId(t *testing.T) {
 	kubernetesStorageClass := "some-storage-class"
 	kubernetesEnclaveSizeInMB := uint(5)
 	kubernetesEngineNodeName := "some-node-name"
-	kubernetesFullConfig := v7.KubernetesClusterConfigV7{
+	kubernetesFullConfig := v8.KubernetesClusterConfigV8{
 		KubernetesClusterName:  &kubernetesClusterName,
 		StorageClass:           &kubernetesStorageClass,
 		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
@@ -154,10 +178,10 @@ func TestNewKurtosisClusterConfigLogsAggregatorReservedSinkId(t *testing.T) {
 		NodeSelectors:          nil,
 		Tolerations:            nil,
 	}
-	kurtosisClusterConfigOverrides := v7.KurtosisClusterConfigV7{
+	kurtosisClusterConfigOverrides := v8.KurtosisClusterConfigV8{
 		Type:   &kubernetesType,
 		Config: &kubernetesFullConfig,
-		LogsAggregator: &v7.LogsAggregatorConfigV7{
+		LogsAggregator: &v8.LogsAggregatorConfigV8{
 			Sinks: map[string]map[string]interface{}{
 				logs_aggregator.DefaultSinkId: {
 					"type": "elasticsearch",
@@ -167,6 +191,7 @@ func TestNewKurtosisClusterConfigLogsAggregatorReservedSinkId(t *testing.T) {
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
 		LogsCollector:               nil,
+		AllowPrivilegedMode:         nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.Error(t, err)
@@ -178,7 +203,7 @@ func TestNewKurtosisClusterConfigLogsAggregatorFullConfig(t *testing.T) {
 	kubernetesStorageClass := "some-storage-class"
 	kubernetesEnclaveSizeInMB := uint(5)
 	kubernetesEngineNodeName := "some-node-name"
-	kubernetesFullConfig := v7.KubernetesClusterConfigV7{
+	kubernetesFullConfig := v8.KubernetesClusterConfigV8{
 		KubernetesClusterName:  &kubernetesClusterName,
 		StorageClass:           &kubernetesStorageClass,
 		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
@@ -186,10 +211,10 @@ func TestNewKurtosisClusterConfigLogsAggregatorFullConfig(t *testing.T) {
 		NodeSelectors:          nil,
 		Tolerations:            nil,
 	}
-	kurtosisClusterConfigOverrides := v7.KurtosisClusterConfigV7{
+	kurtosisClusterConfigOverrides := v8.KurtosisClusterConfigV8{
 		Type:   &kubernetesType,
 		Config: &kubernetesFullConfig,
-		LogsAggregator: &v7.LogsAggregatorConfigV7{
+		LogsAggregator: &v8.LogsAggregatorConfigV8{
 			Sinks: map[string]map[string]interface{}{
 				"elasticsearch": {
 					"type": "elasticsearch",
@@ -199,6 +224,7 @@ func TestNewKurtosisClusterConfigLogsAggregatorFullConfig(t *testing.T) {
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
 		LogsCollector:               nil,
+		AllowPrivilegedMode:         nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)
@@ -210,7 +236,7 @@ func TestNewKurtosisClusterConfigGraflokiNoConfig(t *testing.T) {
 	kubernetesStorageClass := "some-storage-class"
 	kubernetesEnclaveSizeInMB := uint(5)
 	kubernetesEngineNodeName := "some-node-name"
-	kubernetesFullConfig := v7.KubernetesClusterConfigV7{
+	kubernetesFullConfig := v8.KubernetesClusterConfigV8{
 		KubernetesClusterName:  &kubernetesClusterName,
 		StorageClass:           &kubernetesStorageClass,
 		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
@@ -218,10 +244,10 @@ func TestNewKurtosisClusterConfigGraflokiNoConfig(t *testing.T) {
 		NodeSelectors:          nil,
 		Tolerations:            nil,
 	}
-	kurtosisClusterConfigOverrides := v7.KurtosisClusterConfigV7{
+	kurtosisClusterConfigOverrides := v8.KurtosisClusterConfigV8{
 		Type:   &kubernetesType,
 		Config: &kubernetesFullConfig,
-		LogsAggregator: &v7.LogsAggregatorConfigV7{
+		LogsAggregator: &v8.LogsAggregatorConfigV8{
 			Sinks: map[string]map[string]interface{}{
 				"elasticsearch": {
 					"type": "elasticsearch",
@@ -231,6 +257,7 @@ func TestNewKurtosisClusterConfigGraflokiNoConfig(t *testing.T) {
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
 		LogsCollector:               nil,
+		AllowPrivilegedMode:         nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)
@@ -244,7 +271,7 @@ func TestNewKurtosisClusterConfigGraflokiFullConfig(t *testing.T) {
 	kubernetesEngineNodeName := "some-node-name"
 	grafanaImage := "grafana:1.32"
 	lokiImage := "loki:1.32"
-	kubernetesFullConfig := v7.KubernetesClusterConfigV7{
+	kubernetesFullConfig := v8.KubernetesClusterConfigV8{
 		KubernetesClusterName:  &kubernetesClusterName,
 		StorageClass:           &kubernetesStorageClass,
 		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
@@ -252,17 +279,18 @@ func TestNewKurtosisClusterConfigGraflokiFullConfig(t *testing.T) {
 		NodeSelectors:          nil,
 		Tolerations:            nil,
 	}
-	kurtosisClusterConfigOverrides := v7.KurtosisClusterConfigV7{
+	kurtosisClusterConfigOverrides := v8.KurtosisClusterConfigV8{
 		Type:           &kubernetesType,
 		Config:         &kubernetesFullConfig,
 		LogsAggregator: nil,
-		GrafanaLokiConfig: &v7.GrafanaLokiConfigV7{
+		GrafanaLokiConfig: &v8.GrafanaLokiConfigV8{
 			ShouldStartBeforeEngine: false,
 			GrafanaImage:            grafanaImage,
 			LokiImage:               lokiImage,
 		},
 		ShouldEnableDefaultLogsSink: nil,
 		LogsCollector:               nil,
+		AllowPrivilegedMode:         nil,
 	}
 	actualKurtosisClusterConfig, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NotNil(t, actualKurtosisClusterConfig.graflokiConfig)
@@ -279,7 +307,7 @@ func TestNewKurtosisClusterConfigShouldEnableDefaultLogsSink(t *testing.T) {
 	kubernetesEnclaveSizeInMB := uint(5)
 	kubernetesEngineNodeName := "some-node-name"
 	ShouldEnableDefaultLogsSink := true
-	kubernetesFullConfig := v7.KubernetesClusterConfigV7{
+	kubernetesFullConfig := v8.KubernetesClusterConfigV8{
 		KubernetesClusterName:  &kubernetesClusterName,
 		StorageClass:           &kubernetesStorageClass,
 		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
@@ -287,13 +315,14 @@ func TestNewKurtosisClusterConfigShouldEnableDefaultLogsSink(t *testing.T) {
 		NodeSelectors:          nil,
 		Tolerations:            nil,
 	}
-	kurtosisClusterConfigOverrides := v7.KurtosisClusterConfigV7{
+	kurtosisClusterConfigOverrides := v8.KurtosisClusterConfigV8{
 		Type:                        &kubernetesType,
 		Config:                      &kubernetesFullConfig,
 		LogsAggregator:              nil,
 		LogsCollector:               nil,
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: &ShouldEnableDefaultLogsSink,
+		AllowPrivilegedMode:         nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)
@@ -305,7 +334,7 @@ func TestNewKurtosisClusterConfigLogsCollectorNoConfig(t *testing.T) {
 	kubernetesStorageClass := "some-storage-class"
 	kubernetesEnclaveSizeInMB := uint(5)
 	kubernetesEngineNodeName := "some-node-name"
-	kubernetesFullConfig := v7.KubernetesClusterConfigV7{
+	kubernetesFullConfig := v8.KubernetesClusterConfigV8{
 		KubernetesClusterName:  &kubernetesClusterName,
 		StorageClass:           &kubernetesStorageClass,
 		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
@@ -313,13 +342,14 @@ func TestNewKurtosisClusterConfigLogsCollectorNoConfig(t *testing.T) {
 		NodeSelectors:          nil,
 		Tolerations:            nil,
 	}
-	kurtosisClusterConfigOverrides := v7.KurtosisClusterConfigV7{
+	kurtosisClusterConfigOverrides := v8.KurtosisClusterConfigV8{
 		Type:                        &kubernetesType,
 		Config:                      &kubernetesFullConfig,
 		LogsAggregator:              nil,
 		LogsCollector:               nil,
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
+		AllowPrivilegedMode:         nil,
 	}
 	actualKurtosisClusterConfig, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)
@@ -333,7 +363,7 @@ func TestNewKurtosisClusterConfigLogsCollectorFullConfig(t *testing.T) {
 	kubernetesStorageClass := "some-storage-class"
 	kubernetesEnclaveSizeInMB := uint(5)
 	kubernetesEngineNodeName := "some-node-name"
-	kubernetesFullConfig := v7.KubernetesClusterConfigV7{
+	kubernetesFullConfig := v8.KubernetesClusterConfigV8{
 		KubernetesClusterName:  &kubernetesClusterName,
 		StorageClass:           &kubernetesStorageClass,
 		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
@@ -341,17 +371,17 @@ func TestNewKurtosisClusterConfigLogsCollectorFullConfig(t *testing.T) {
 		NodeSelectors:          nil,
 		Tolerations:            nil,
 	}
-	kurtosisClusterConfigOverrides := v7.KurtosisClusterConfigV7{
+	kurtosisClusterConfigOverrides := v8.KurtosisClusterConfigV8{
 		Type:   &kubernetesType,
 		Config: &kubernetesFullConfig,
-		LogsAggregator: &v7.LogsAggregatorConfigV7{
+		LogsAggregator: &v8.LogsAggregatorConfigV8{
 			Sinks: map[string]map[string]interface{}{
 				"elasticsearch": {
 					"type": "elasticsearch",
 				},
 			},
 		},
-		LogsCollector: &v7.LogsCollectorConfigV7{
+		LogsCollector: &v8.LogsCollectorConfigV8{
 			Filters: []logs_collector.Filter{
 				{
 					Name:  "grep",
@@ -386,6 +416,7 @@ func TestNewKurtosisClusterConfigLogsCollectorFullConfig(t *testing.T) {
 		},
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
+		AllowPrivilegedMode:         nil,
 	}
 	actualKurtosisClusterConfig, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)

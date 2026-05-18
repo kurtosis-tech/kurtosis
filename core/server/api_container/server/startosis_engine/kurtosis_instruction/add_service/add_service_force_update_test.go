@@ -5,6 +5,7 @@ import (
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/core/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/stretchr/testify/require"
@@ -29,6 +30,8 @@ func TestTryResolveWith_ForceUpdateTrue_ReturnsInstructionIsUpdate(t *testing.T)
 		description:                  "",
 		imageDownloadMode:            image_download_mode.ImageDownloadMode_Missing,
 		forceUpdate:                  true,
+		allowPrivilegedMode:          false,
+		kurtosisBackendType:          args.KurtosisBackendType_Docker,
 	}
 
 	enclaveComponents := enclave_structure.NewEnclaveComponents()
@@ -67,6 +70,8 @@ func TestTryResolveWith_ForceUpdateTrue_InstructionsNotEqual_ReturnsInstructionI
 		description:                  "",
 		imageDownloadMode:            image_download_mode.ImageDownloadMode_Missing,
 		forceUpdate:                  true,
+		allowPrivilegedMode:          false,
+		kurtosisBackendType:          args.KurtosisBackendType_Docker,
 	}
 
 	enclaveComponents := enclave_structure.NewEnclaveComponents()

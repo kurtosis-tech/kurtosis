@@ -136,6 +136,7 @@ export class EnclaveContext {
         args.setExperimentalFeaturesList(runConfig.experimentalFeatureFlags)
         args.setCloudInstanceId(runConfig.cloudInstanceId)
         args.setCloudUserId(runConfig.cloudUserId)
+        args.setAllowPrivilegedMode(runConfig.allowPrivilegedMode)
         const scriptRunResult : Result<Readable, Error> = await this.backend.runStarlarkScript(args)
         if (scriptRunResult.isErr()) {
             return err(new Error(`Unexpected error happened executing Starlark script \n${scriptRunResult.error}`))
@@ -174,7 +175,8 @@ export class EnclaveContext {
             runConfig.serializedParams,
             runConfig.dryRun,
             runConfig.cloudInstanceId,
-            runConfig.cloudUserId)
+            runConfig.cloudUserId,
+            runConfig.allowPrivilegedMode)
         if (args.isErr()) {
             return err(new Error(`Unexpected error while assembling arguments to pass to the Starlark executor \n${args.error}`))
         }
@@ -230,6 +232,7 @@ export class EnclaveContext {
         args.setMainFunctionName(runConfig.mainFunctionName)
         args.setCloudInstanceId(runConfig.cloudInstanceId)
         args.setCloudUserId(runConfig.cloudUserId)
+        args.setAllowPrivilegedMode(runConfig.allowPrivilegedMode)
         const remotePackageRunResult : Result<Readable, Error> = await this.backend.runStarlarkPackage(args)
         if (remotePackageRunResult.isErr()) {
             return err(new Error(`Unexpected error happened executing Starlark package \n${remotePackageRunResult.error}`))
@@ -299,6 +302,9 @@ export class EnclaveContext {
             serviceCtxPublicPorts,
             serviceInfo.getServiceStatus(),
             serviceInfo.getContainer(),
+            serviceInfo.getPrivileged(),
+            new Map(serviceInfo.getBindMountsMap().entries()),
+            serviceInfo.getHostPidNamespace(),
         );
 
         return ok(serviceContext);
@@ -478,6 +484,7 @@ export class EnclaveContext {
         dryRun: boolean,
         cloudInstanceId: string,
         cloudUserId: string,
+        allowPrivilegedMode: boolean,
         ): Promise<Result<RunStarlarkPackageArgs, Error>> {
 
         const args = new RunStarlarkPackageArgs;
@@ -488,6 +495,7 @@ export class EnclaveContext {
         args.setMainFunctionName(mainFunctionName)
         args.setCloudInstanceId(cloudInstanceId)
         args.setCloudUserId(cloudUserId)
+        args.setAllowPrivilegedMode(allowPrivilegedMode)
         return ok(args)
     }
 

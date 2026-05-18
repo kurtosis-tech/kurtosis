@@ -10,10 +10,12 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/store_spec"
+	"github.com/kurtosis-tech/kurtosis/core/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/privileged_mode"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -45,7 +47,9 @@ func NewRunShService(
 	nonBlockingMode bool,
 	packageId string,
 	packageContentProvider startosis_packages.PackageContentProvider,
-	packageReplaceOptions map[string]string) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+	packageReplaceOptions map[string]string,
+	allowPrivilegedMode bool,
+	kurtosisBackendType args.KurtosisBackendType) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: RunShBuiltinName,
@@ -121,6 +125,26 @@ func NewRunShService(
 						return nil
 					},
 				},
+				{
+					Name:              service_config.PrivilegedAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Bool],
+					Validator:         nil,
+				},
+				{
+					Name:              service_config.HostPIDNamespaceAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Bool],
+					Validator:         nil,
+				},
+				{
+					Name:              service_config.BindMountsAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return service_config.ValidateBindMounts(value)
+					},
+				},
 			},
 		},
 
@@ -144,6 +168,8 @@ func NewRunShService(
 				runOutputValue:         "",  // populated at interpretation time
 				skipCodeCheck:          false,
 				acceptableCodes:        nil, // populated at interpretation time
+				allowPrivilegedMode:    allowPrivilegedMode,
+				kurtosisBackendType:    kurtosisBackendType,
 			}
 		},
 
@@ -174,15 +200,17 @@ type RunShCapabilities struct {
 	packageContentProvider startosis_packages.PackageContentProvider
 	packageReplaceOptions  map[string]string
 
-	serviceConfig   *service.ServiceConfig
-	storeSpecList   []*store_spec.StoreSpec
-	returnValue     *starlarkstruct.Struct
-	runCodeValue    string
-	runOutputValue  string
-	wait            string
-	description     string
-	acceptableCodes []int64
-	skipCodeCheck   bool
+	serviceConfig       *service.ServiceConfig
+	storeSpecList       []*store_spec.StoreSpec
+	returnValue         *starlarkstruct.Struct
+	runCodeValue        string
+	runOutputValue      string
+	wait                string
+	description         string
+	acceptableCodes     []int64
+	skipCodeCheck       bool
+	allowPrivilegedMode bool
+	kurtosisBackendType args.KurtosisBackendType
 }
 
 func (builtin *RunShCapabilities) Interpret(locatorOfModuleInWhichThisBuiltinIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -263,6 +291,12 @@ func (builtin *RunShCapabilities) Interpret(locatorOfModuleInWhichThisBuiltinIsB
 	builtin.serviceConfig, err = getServiceConfig(maybeImageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, filesArtifactExpansion, envVars, nodeSelectors, tolerations)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating service config using for run sh task.")
+	}
+	if interpretationErr := applyPrivilegedArgs(builtin.serviceConfig, arguments); interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if interpretationErr := privileged_mode.ValidateServiceConfig(builtin.serviceConfig, builtin.allowPrivilegedMode, builtin.kurtosisBackendType); interpretationErr != nil {
+		return nil, interpretationErr
 	}
 
 	if arguments.IsSet(StoreFilesArgName) {
@@ -441,6 +475,57 @@ func (builtin *RunShCapabilities) Description() string {
 	return builtin.description
 }
 
+// applyPrivilegedArgs reads optional privileged/host_pid_namespace/bind_mounts arguments
+// off a run_sh invocation and sets them on the underlying service config. The bind_mounts
+// host-path allowlist is enforced by the argument validator (service_config.ValidateBindMounts).
+func applyPrivilegedArgs(serviceConfig *service.ServiceConfig, arguments *builtin_argument.ArgumentValuesSet) *startosis_errors.InterpretationError {
+	if arguments.IsSet(service_config.PrivilegedAttr) {
+		privilegedVal, err := builtin_argument.ExtractArgumentValue[starlark.Bool](arguments, service_config.PrivilegedAttr)
+		if err != nil {
+			return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", service_config.PrivilegedAttr)
+		}
+		if bool(privilegedVal) {
+			serviceConfig.SetPrivileged(true)
+		}
+	}
+	if arguments.IsSet(service_config.HostPIDNamespaceAttr) {
+		hostPIDVal, err := builtin_argument.ExtractArgumentValue[starlark.Bool](arguments, service_config.HostPIDNamespaceAttr)
+		if err != nil {
+			return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", service_config.HostPIDNamespaceAttr)
+		}
+		if bool(hostPIDVal) {
+			serviceConfig.SetHostPIDNamespace(true)
+		}
+	}
+	if arguments.IsSet(service_config.BindMountsAttr) {
+		bindMountsDict, err := builtin_argument.ExtractArgumentValue[*starlark.Dict](arguments, service_config.BindMountsAttr)
+		if err != nil {
+			return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", service_config.BindMountsAttr)
+		}
+		if bindMountsDict != nil && bindMountsDict.Len() > 0 {
+			bindMounts := make(map[string]string, bindMountsDict.Len())
+			for _, key := range bindMountsDict.Keys() {
+				hostPathStr, ok := key.(starlark.String)
+				if !ok {
+					return startosis_errors.NewInterpretationError("'%s' keys must be strings", service_config.BindMountsAttr)
+				}
+				hostPath := hostPathStr.GoString()
+				rawValue, _, valueErr := bindMountsDict.Get(key)
+				if valueErr != nil {
+					return startosis_errors.NewInterpretationError("Could not read '%s' value for host path %q: %v", service_config.BindMountsAttr, hostPath, valueErr)
+				}
+				containerPathStr, ok := rawValue.(starlark.String)
+				if !ok {
+					return startosis_errors.NewInterpretationError("'%s' values must be strings", service_config.BindMountsAttr)
+				}
+				bindMounts[hostPath] = containerPathStr.GoString()
+			}
+			serviceConfig.SetBindMounts(bindMounts)
+		}
+	}
+	return nil
+}
+
 func getCommandToRun(builtin *RunShCapabilities) (string, error) {
 	// replace future references to actual strings
 	maybeSubCommandWithRuntimeValues, err := magic_string_helper.ReplaceRuntimeValueInString(builtin.run, builtin.runtimeValueStore)
@@ -469,6 +554,19 @@ func replaceMagicStringsInEnvVars(runtimeValueStore *runtime_value_store.Runtime
 	renderedServiceConfig, err := service.CreateServiceConfig(serviceConfig.GetContainerImageName(), serviceConfig.GetImageBuildSpec(), serviceConfig.GetImageRegistrySpec(), serviceConfig.GetNixBuildSpec(), serviceConfig.GetPrivatePorts(), serviceConfig.GetPublicPorts(), serviceConfig.GetEntrypointArgs(), serviceConfig.GetCmdArgs(), envVars, serviceConfig.GetFilesArtifactsExpansion(), serviceConfig.GetPersistentDirectories(), serviceConfig.GetCPUAllocationMillicpus(), serviceConfig.GetMemoryAllocationMegabytes(), serviceConfig.GetPrivateIPAddrPlaceholder(), serviceConfig.GetMinCPUAllocationMillicpus(), serviceConfig.GetMinMemoryAllocationMegabytes(), serviceConfig.GetLabels(), serviceConfig.GetUser(), serviceConfig.GetTolerations(), serviceConfig.GetNodeSelectors(), serviceConfig.GetImageDownloadMode(), tiniEnabled, serviceConfig.GetTtyEnabled(), serviceConfig.GetDevices(), serviceConfig.GetPublishUdp(), serviceConfig.GetGpuConfig())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a service config with env var magric strings replaced.")
+	}
+
+	if len(serviceConfig.GetCapabilities()) > 0 {
+		renderedServiceConfig.SetCapabilities(serviceConfig.GetCapabilities())
+	}
+	if serviceConfig.GetPrivileged() {
+		renderedServiceConfig.SetPrivileged(true)
+	}
+	if serviceConfig.GetHostPIDNamespace() {
+		renderedServiceConfig.SetHostPIDNamespace(true)
+	}
+	if len(serviceConfig.GetBindMounts()) > 0 {
+		renderedServiceConfig.SetBindMounts(serviceConfig.GetBindMounts())
 	}
 
 	return renderedServiceConfig, nil

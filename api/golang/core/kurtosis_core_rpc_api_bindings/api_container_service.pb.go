@@ -742,9 +742,18 @@ type ServiceInfo struct {
 	// Wheter TTy is enabled
 	TtyEnabled *bool `protobuf:"varint,20,opt,name=tty_enabled,json=ttyEnabled,proto3,oneof" json:"tty_enabled,omitempty"`
 	// Linux capabilities to add to the container (e.g., "NET_ADMIN", "SYS_PTRACE")
-	Capabilities  []string `protobuf:"bytes,21,rep,name=capabilities,proto3" json:"capabilities,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Capabilities []string `protobuf:"bytes,21,rep,name=capabilities,proto3" json:"capabilities,omitempty"`
+	// GPU configuration: device selection, shared-memory size, and ulimits.
+	// All GPU-related settings are bundled here since they only apply to GPU workloads.
+	GpuConfig *GpuConfig `protobuf:"bytes,22,opt,name=gpu_config,json=gpuConfig,proto3" json:"gpu_config,omitempty"`
+	// Whether the service was started with Docker privileged mode.
+	Privileged bool `protobuf:"varint,26,opt,name=privileged,proto3" json:"privileged,omitempty"`
+	// Host-path -> container-path bind mounts configured on the service.
+	BindMounts map[string]string `protobuf:"bytes,27,rep,name=bind_mounts,json=bindMounts,proto3" json:"bind_mounts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Whether the service was started in the Docker host PID namespace.
+	HostPidNamespace bool `protobuf:"varint,28,opt,name=host_pid_namespace,json=hostPidNamespace,proto3" json:"host_pid_namespace,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *ServiceInfo) Reset() {
@@ -924,6 +933,127 @@ func (x *ServiceInfo) GetCapabilities() []string {
 	return nil
 }
 
+func (x *ServiceInfo) GetGpuConfig() *GpuConfig {
+	if x != nil {
+		return x.GpuConfig
+	}
+	return nil
+}
+
+func (x *ServiceInfo) GetPrivileged() bool {
+	if x != nil {
+		return x.Privileged
+	}
+	return false
+}
+
+func (x *ServiceInfo) GetBindMounts() map[string]string {
+	if x != nil {
+		return x.BindMounts
+	}
+	return nil
+}
+
+func (x *ServiceInfo) GetHostPidNamespace() bool {
+	if x != nil {
+		return x.HostPidNamespace
+	}
+	return false
+}
+
+// GpuConfig bundles all GPU-related container settings.
+type GpuConfig struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Number of GPUs to expose. 0 = none, -1 = all available, N = N GPUs.
+	Count int64 `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+	// Specific GPU device IDs to pin (e.g. ["0","1"] or ["GPU-abc123"]).
+	// When set, count is ignored for device selection.
+	DeviceIds []string `protobuf:"bytes,2,rep,name=device_ids,json=deviceIds,proto3" json:"device_ids,omitempty"`
+	// Size of /dev/shm in megabytes. 0 means use the runtime default (usually 64MB).
+	ShmSizeMegabytes uint64 `protobuf:"varint,3,opt,name=shm_size_megabytes,json=shmSizeMegabytes,proto3" json:"shm_size_megabytes,omitempty"`
+	// Resource limits for the container. Maps limit name (e.g. "memlock") to value (soft=hard).
+	Ulimits map[string]int64 `protobuf:"bytes,4,rep,name=ulimits,proto3" json:"ulimits,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	// Docker DeviceRequest driver name (e.g. "nvidia", "amd"). Defaults to "nvidia".
+	DockerDriver string `protobuf:"bytes,5,opt,name=docker_driver,json=dockerDriver,proto3" json:"docker_driver,omitempty"`
+	// Kubernetes resource name for GPU requests (e.g. "nvidia.com/gpu", "amd.com/gpu").
+	// Defaults to "nvidia.com/gpu".
+	K8SResourceName string `protobuf:"bytes,6,opt,name=k8s_resource_name,json=k8sResourceName,proto3" json:"k8s_resource_name,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *GpuConfig) Reset() {
+	*x = GpuConfig{}
+	mi := &file_api_container_service_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GpuConfig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GpuConfig) ProtoMessage() {}
+
+func (x *GpuConfig) ProtoReflect() protoreflect.Message {
+	mi := &file_api_container_service_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GpuConfig.ProtoReflect.Descriptor instead.
+func (*GpuConfig) Descriptor() ([]byte, []int) {
+	return file_api_container_service_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *GpuConfig) GetCount() int64 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+func (x *GpuConfig) GetDeviceIds() []string {
+	if x != nil {
+		return x.DeviceIds
+	}
+	return nil
+}
+
+func (x *GpuConfig) GetShmSizeMegabytes() uint64 {
+	if x != nil {
+		return x.ShmSizeMegabytes
+	}
+	return 0
+}
+
+func (x *GpuConfig) GetUlimits() map[string]int64 {
+	if x != nil {
+		return x.Ulimits
+	}
+	return nil
+}
+
+func (x *GpuConfig) GetDockerDriver() string {
+	if x != nil {
+		return x.DockerDriver
+	}
+	return ""
+}
+
+func (x *GpuConfig) GetK8SResourceName() string {
+	if x != nil {
+		return x.K8SResourceName
+	}
+	return ""
+}
+
 type RunStarlarkScriptArgs struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	SerializedScript string                 `protobuf:"bytes,1,opt,name=serialized_script,json=serializedScript,proto3" json:"serialized_script,omitempty"`
@@ -947,13 +1077,15 @@ type RunStarlarkScriptArgs struct {
 	Parallel *bool `protobuf:"varint,17,opt,name=parallel,proto3,oneof" json:"parallel,omitempty"`
 	// If true, performs resource availability check before execution. Defaults to true.
 	ResourceCheck *bool `protobuf:"varint,18,opt,name=resource_check,json=resourceCheck,proto3,oneof" json:"resource_check,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// If true, permits Docker-only privileged containers, host bind mounts, and host PID namespace for this run.
+	AllowPrivilegedMode *bool `protobuf:"varint,19,opt,name=allow_privileged_mode,json=allowPrivilegedMode,proto3,oneof" json:"allow_privileged_mode,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *RunStarlarkScriptArgs) Reset() {
 	*x = RunStarlarkScriptArgs{}
-	mi := &file_api_container_service_proto_msgTypes[6]
+	mi := &file_api_container_service_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -965,7 +1097,7 @@ func (x *RunStarlarkScriptArgs) String() string {
 func (*RunStarlarkScriptArgs) ProtoMessage() {}
 
 func (x *RunStarlarkScriptArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[6]
+	mi := &file_api_container_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -978,7 +1110,7 @@ func (x *RunStarlarkScriptArgs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RunStarlarkScriptArgs.ProtoReflect.Descriptor instead.
 func (*RunStarlarkScriptArgs) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{6}
+	return file_api_container_service_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *RunStarlarkScriptArgs) GetSerializedScript() string {
@@ -1065,6 +1197,13 @@ func (x *RunStarlarkScriptArgs) GetResourceCheck() bool {
 	return false
 }
 
+func (x *RunStarlarkScriptArgs) GetAllowPrivilegedMode() bool {
+	if x != nil && x.AllowPrivilegedMode != nil {
+		return *x.AllowPrivilegedMode
+	}
+	return false
+}
+
 type RunStarlarkPackageArgs struct {
 	state     protoimpl.MessageState `protogen:"open.v1"`
 	PackageId string                 `protobuf:"bytes,1,opt,name=package_id,json=packageId,proto3" json:"package_id,omitempty"`
@@ -1110,13 +1249,15 @@ type RunStarlarkPackageArgs struct {
 	Parallel *bool `protobuf:"varint,17,opt,name=parallel,proto3,oneof" json:"parallel,omitempty"`
 	// If true, performs resource availability check before execution. Defaults to true.
 	ResourceCheck *bool `protobuf:"varint,18,opt,name=resource_check,json=resourceCheck,proto3,oneof" json:"resource_check,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// If true, permits Docker-only privileged containers, host bind mounts, and host PID namespace for this run.
+	AllowPrivilegedMode *bool `protobuf:"varint,19,opt,name=allow_privileged_mode,json=allowPrivilegedMode,proto3,oneof" json:"allow_privileged_mode,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *RunStarlarkPackageArgs) Reset() {
 	*x = RunStarlarkPackageArgs{}
-	mi := &file_api_container_service_proto_msgTypes[7]
+	mi := &file_api_container_service_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1128,7 +1269,7 @@ func (x *RunStarlarkPackageArgs) String() string {
 func (*RunStarlarkPackageArgs) ProtoMessage() {}
 
 func (x *RunStarlarkPackageArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[7]
+	mi := &file_api_container_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1141,7 +1282,7 @@ func (x *RunStarlarkPackageArgs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RunStarlarkPackageArgs.ProtoReflect.Descriptor instead.
 func (*RunStarlarkPackageArgs) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{7}
+	return file_api_container_service_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *RunStarlarkPackageArgs) GetPackageId() string {
@@ -1274,6 +1415,13 @@ func (x *RunStarlarkPackageArgs) GetResourceCheck() bool {
 	return false
 }
 
+func (x *RunStarlarkPackageArgs) GetAllowPrivilegedMode() bool {
+	if x != nil && x.AllowPrivilegedMode != nil {
+		return *x.AllowPrivilegedMode
+	}
+	return false
+}
+
 type isRunStarlarkPackageArgs_StarlarkPackageContent interface {
 	isRunStarlarkPackageArgs_StarlarkPackageContent()
 }
@@ -1313,7 +1461,7 @@ type StarlarkRunResponseLine struct {
 
 func (x *StarlarkRunResponseLine) Reset() {
 	*x = StarlarkRunResponseLine{}
-	mi := &file_api_container_service_proto_msgTypes[8]
+	mi := &file_api_container_service_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1325,7 +1473,7 @@ func (x *StarlarkRunResponseLine) String() string {
 func (*StarlarkRunResponseLine) ProtoMessage() {}
 
 func (x *StarlarkRunResponseLine) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[8]
+	mi := &file_api_container_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1338,7 +1486,7 @@ func (x *StarlarkRunResponseLine) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StarlarkRunResponseLine.ProtoReflect.Descriptor instead.
 func (*StarlarkRunResponseLine) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{8}
+	return file_api_container_service_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *StarlarkRunResponseLine) GetRunResponseLine() isStarlarkRunResponseLine_RunResponseLine {
@@ -1466,7 +1614,7 @@ type StarlarkInfo struct {
 
 func (x *StarlarkInfo) Reset() {
 	*x = StarlarkInfo{}
-	mi := &file_api_container_service_proto_msgTypes[9]
+	mi := &file_api_container_service_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1478,7 +1626,7 @@ func (x *StarlarkInfo) String() string {
 func (*StarlarkInfo) ProtoMessage() {}
 
 func (x *StarlarkInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[9]
+	mi := &file_api_container_service_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1491,7 +1639,7 @@ func (x *StarlarkInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StarlarkInfo.ProtoReflect.Descriptor instead.
 func (*StarlarkInfo) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{9}
+	return file_api_container_service_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *StarlarkInfo) GetInfoMessage() string {
@@ -1510,7 +1658,7 @@ type StarlarkWarning struct {
 
 func (x *StarlarkWarning) Reset() {
 	*x = StarlarkWarning{}
-	mi := &file_api_container_service_proto_msgTypes[10]
+	mi := &file_api_container_service_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1522,7 +1670,7 @@ func (x *StarlarkWarning) String() string {
 func (*StarlarkWarning) ProtoMessage() {}
 
 func (x *StarlarkWarning) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[10]
+	mi := &file_api_container_service_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1535,7 +1683,7 @@ func (x *StarlarkWarning) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StarlarkWarning.ProtoReflect.Descriptor instead.
 func (*StarlarkWarning) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{10}
+	return file_api_container_service_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *StarlarkWarning) GetWarningMessage() string {
@@ -1560,7 +1708,7 @@ type StarlarkInstruction struct {
 
 func (x *StarlarkInstruction) Reset() {
 	*x = StarlarkInstruction{}
-	mi := &file_api_container_service_proto_msgTypes[11]
+	mi := &file_api_container_service_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1572,7 +1720,7 @@ func (x *StarlarkInstruction) String() string {
 func (*StarlarkInstruction) ProtoMessage() {}
 
 func (x *StarlarkInstruction) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[11]
+	mi := &file_api_container_service_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1585,7 +1733,7 @@ func (x *StarlarkInstruction) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StarlarkInstruction.ProtoReflect.Descriptor instead.
 func (*StarlarkInstruction) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{11}
+	return file_api_container_service_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *StarlarkInstruction) GetPosition() *StarlarkInstructionPosition {
@@ -1648,7 +1796,7 @@ type StarlarkInstructionResult struct {
 
 func (x *StarlarkInstructionResult) Reset() {
 	*x = StarlarkInstructionResult{}
-	mi := &file_api_container_service_proto_msgTypes[12]
+	mi := &file_api_container_service_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1660,7 +1808,7 @@ func (x *StarlarkInstructionResult) String() string {
 func (*StarlarkInstructionResult) ProtoMessage() {}
 
 func (x *StarlarkInstructionResult) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[12]
+	mi := &file_api_container_service_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1673,7 +1821,7 @@ func (x *StarlarkInstructionResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StarlarkInstructionResult.ProtoReflect.Descriptor instead.
 func (*StarlarkInstructionResult) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{12}
+	return file_api_container_service_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *StarlarkInstructionResult) GetSerializedInstructionResult() string {
@@ -1708,7 +1856,7 @@ type StarlarkInstructionArg struct {
 
 func (x *StarlarkInstructionArg) Reset() {
 	*x = StarlarkInstructionArg{}
-	mi := &file_api_container_service_proto_msgTypes[13]
+	mi := &file_api_container_service_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1720,7 +1868,7 @@ func (x *StarlarkInstructionArg) String() string {
 func (*StarlarkInstructionArg) ProtoMessage() {}
 
 func (x *StarlarkInstructionArg) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[13]
+	mi := &file_api_container_service_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1733,7 +1881,7 @@ func (x *StarlarkInstructionArg) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StarlarkInstructionArg.ProtoReflect.Descriptor instead.
 func (*StarlarkInstructionArg) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{13}
+	return file_api_container_service_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *StarlarkInstructionArg) GetSerializedArgValue() string {
@@ -1768,7 +1916,7 @@ type StarlarkInstructionPosition struct {
 
 func (x *StarlarkInstructionPosition) Reset() {
 	*x = StarlarkInstructionPosition{}
-	mi := &file_api_container_service_proto_msgTypes[14]
+	mi := &file_api_container_service_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1780,7 +1928,7 @@ func (x *StarlarkInstructionPosition) String() string {
 func (*StarlarkInstructionPosition) ProtoMessage() {}
 
 func (x *StarlarkInstructionPosition) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[14]
+	mi := &file_api_container_service_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1793,7 +1941,7 @@ func (x *StarlarkInstructionPosition) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StarlarkInstructionPosition.ProtoReflect.Descriptor instead.
 func (*StarlarkInstructionPosition) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{14}
+	return file_api_container_service_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *StarlarkInstructionPosition) GetFilename() string {
@@ -1831,7 +1979,7 @@ type StarlarkError struct {
 
 func (x *StarlarkError) Reset() {
 	*x = StarlarkError{}
-	mi := &file_api_container_service_proto_msgTypes[15]
+	mi := &file_api_container_service_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1843,7 +1991,7 @@ func (x *StarlarkError) String() string {
 func (*StarlarkError) ProtoMessage() {}
 
 func (x *StarlarkError) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[15]
+	mi := &file_api_container_service_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1856,7 +2004,7 @@ func (x *StarlarkError) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StarlarkError.ProtoReflect.Descriptor instead.
 func (*StarlarkError) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{15}
+	return file_api_container_service_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *StarlarkError) GetError() isStarlarkError_Error {
@@ -1924,7 +2072,7 @@ type StarlarkInterpretationError struct {
 
 func (x *StarlarkInterpretationError) Reset() {
 	*x = StarlarkInterpretationError{}
-	mi := &file_api_container_service_proto_msgTypes[16]
+	mi := &file_api_container_service_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1936,7 +2084,7 @@ func (x *StarlarkInterpretationError) String() string {
 func (*StarlarkInterpretationError) ProtoMessage() {}
 
 func (x *StarlarkInterpretationError) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[16]
+	mi := &file_api_container_service_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1949,7 +2097,7 @@ func (x *StarlarkInterpretationError) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StarlarkInterpretationError.ProtoReflect.Descriptor instead.
 func (*StarlarkInterpretationError) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{16}
+	return file_api_container_service_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *StarlarkInterpretationError) GetErrorMessage() string {
@@ -1968,7 +2116,7 @@ type StarlarkValidationError struct {
 
 func (x *StarlarkValidationError) Reset() {
 	*x = StarlarkValidationError{}
-	mi := &file_api_container_service_proto_msgTypes[17]
+	mi := &file_api_container_service_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1980,7 +2128,7 @@ func (x *StarlarkValidationError) String() string {
 func (*StarlarkValidationError) ProtoMessage() {}
 
 func (x *StarlarkValidationError) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[17]
+	mi := &file_api_container_service_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1993,7 +2141,7 @@ func (x *StarlarkValidationError) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StarlarkValidationError.ProtoReflect.Descriptor instead.
 func (*StarlarkValidationError) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{17}
+	return file_api_container_service_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *StarlarkValidationError) GetErrorMessage() string {
@@ -2012,7 +2160,7 @@ type StarlarkExecutionError struct {
 
 func (x *StarlarkExecutionError) Reset() {
 	*x = StarlarkExecutionError{}
-	mi := &file_api_container_service_proto_msgTypes[18]
+	mi := &file_api_container_service_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2024,7 +2172,7 @@ func (x *StarlarkExecutionError) String() string {
 func (*StarlarkExecutionError) ProtoMessage() {}
 
 func (x *StarlarkExecutionError) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[18]
+	mi := &file_api_container_service_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2037,7 +2185,7 @@ func (x *StarlarkExecutionError) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StarlarkExecutionError.ProtoReflect.Descriptor instead.
 func (*StarlarkExecutionError) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{18}
+	return file_api_container_service_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *StarlarkExecutionError) GetErrorMessage() string {
@@ -2059,7 +2207,7 @@ type StarlarkRunProgress struct {
 
 func (x *StarlarkRunProgress) Reset() {
 	*x = StarlarkRunProgress{}
-	mi := &file_api_container_service_proto_msgTypes[19]
+	mi := &file_api_container_service_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2071,7 +2219,7 @@ func (x *StarlarkRunProgress) String() string {
 func (*StarlarkRunProgress) ProtoMessage() {}
 
 func (x *StarlarkRunProgress) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[19]
+	mi := &file_api_container_service_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2084,7 +2232,7 @@ func (x *StarlarkRunProgress) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StarlarkRunProgress.ProtoReflect.Descriptor instead.
 func (*StarlarkRunProgress) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{19}
+	return file_api_container_service_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *StarlarkRunProgress) GetCurrentStepInfo() []string {
@@ -2126,7 +2274,7 @@ type StarlarkRunFinishedEvent struct {
 
 func (x *StarlarkRunFinishedEvent) Reset() {
 	*x = StarlarkRunFinishedEvent{}
-	mi := &file_api_container_service_proto_msgTypes[20]
+	mi := &file_api_container_service_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2138,7 +2286,7 @@ func (x *StarlarkRunFinishedEvent) String() string {
 func (*StarlarkRunFinishedEvent) ProtoMessage() {}
 
 func (x *StarlarkRunFinishedEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[20]
+	mi := &file_api_container_service_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2151,7 +2299,7 @@ func (x *StarlarkRunFinishedEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StarlarkRunFinishedEvent.ProtoReflect.Descriptor instead.
 func (*StarlarkRunFinishedEvent) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{20}
+	return file_api_container_service_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *StarlarkRunFinishedEvent) GetIsRunSuccessful() bool {
@@ -2191,7 +2339,7 @@ type GetServicesArgs struct {
 
 func (x *GetServicesArgs) Reset() {
 	*x = GetServicesArgs{}
-	mi := &file_api_container_service_proto_msgTypes[21]
+	mi := &file_api_container_service_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2203,7 +2351,7 @@ func (x *GetServicesArgs) String() string {
 func (*GetServicesArgs) ProtoMessage() {}
 
 func (x *GetServicesArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[21]
+	mi := &file_api_container_service_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2216,7 +2364,7 @@ func (x *GetServicesArgs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetServicesArgs.ProtoReflect.Descriptor instead.
 func (*GetServicesArgs) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{21}
+	return file_api_container_service_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *GetServicesArgs) GetServiceIdentifiers() map[string]bool {
@@ -2236,7 +2384,7 @@ type GetServicesResponse struct {
 
 func (x *GetServicesResponse) Reset() {
 	*x = GetServicesResponse{}
-	mi := &file_api_container_service_proto_msgTypes[22]
+	mi := &file_api_container_service_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2248,7 +2396,7 @@ func (x *GetServicesResponse) String() string {
 func (*GetServicesResponse) ProtoMessage() {}
 
 func (x *GetServicesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[22]
+	mi := &file_api_container_service_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2261,7 +2409,7 @@ func (x *GetServicesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetServicesResponse.ProtoReflect.Descriptor instead.
 func (*GetServicesResponse) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{22}
+	return file_api_container_service_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *GetServicesResponse) GetServiceInfo() map[string]*ServiceInfo {
@@ -2286,7 +2434,7 @@ type ServiceIdentifiers struct {
 
 func (x *ServiceIdentifiers) Reset() {
 	*x = ServiceIdentifiers{}
-	mi := &file_api_container_service_proto_msgTypes[23]
+	mi := &file_api_container_service_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2298,7 +2446,7 @@ func (x *ServiceIdentifiers) String() string {
 func (*ServiceIdentifiers) ProtoMessage() {}
 
 func (x *ServiceIdentifiers) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[23]
+	mi := &file_api_container_service_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2311,7 +2459,7 @@ func (x *ServiceIdentifiers) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ServiceIdentifiers.ProtoReflect.Descriptor instead.
 func (*ServiceIdentifiers) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{23}
+	return file_api_container_service_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *ServiceIdentifiers) GetServiceUuid() string {
@@ -2344,7 +2492,7 @@ type GetExistingAndHistoricalServiceIdentifiersResponse struct {
 
 func (x *GetExistingAndHistoricalServiceIdentifiersResponse) Reset() {
 	*x = GetExistingAndHistoricalServiceIdentifiersResponse{}
-	mi := &file_api_container_service_proto_msgTypes[24]
+	mi := &file_api_container_service_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2356,7 +2504,7 @@ func (x *GetExistingAndHistoricalServiceIdentifiersResponse) String() string {
 func (*GetExistingAndHistoricalServiceIdentifiersResponse) ProtoMessage() {}
 
 func (x *GetExistingAndHistoricalServiceIdentifiersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[24]
+	mi := &file_api_container_service_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2369,7 +2517,7 @@ func (x *GetExistingAndHistoricalServiceIdentifiersResponse) ProtoReflect() prot
 
 // Deprecated: Use GetExistingAndHistoricalServiceIdentifiersResponse.ProtoReflect.Descriptor instead.
 func (*GetExistingAndHistoricalServiceIdentifiersResponse) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{24}
+	return file_api_container_service_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *GetExistingAndHistoricalServiceIdentifiersResponse) GetAllIdentifiers() []*ServiceIdentifiers {
@@ -2395,7 +2543,7 @@ type ExecCommandArgs struct {
 
 func (x *ExecCommandArgs) Reset() {
 	*x = ExecCommandArgs{}
-	mi := &file_api_container_service_proto_msgTypes[25]
+	mi := &file_api_container_service_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2407,7 +2555,7 @@ func (x *ExecCommandArgs) String() string {
 func (*ExecCommandArgs) ProtoMessage() {}
 
 func (x *ExecCommandArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[25]
+	mi := &file_api_container_service_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2420,7 +2568,7 @@ func (x *ExecCommandArgs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecCommandArgs.ProtoReflect.Descriptor instead.
 func (*ExecCommandArgs) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{25}
+	return file_api_container_service_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *ExecCommandArgs) GetServiceIdentifier() string {
@@ -2448,7 +2596,7 @@ type ExecCommandResponse struct {
 
 func (x *ExecCommandResponse) Reset() {
 	*x = ExecCommandResponse{}
-	mi := &file_api_container_service_proto_msgTypes[26]
+	mi := &file_api_container_service_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2460,7 +2608,7 @@ func (x *ExecCommandResponse) String() string {
 func (*ExecCommandResponse) ProtoMessage() {}
 
 func (x *ExecCommandResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[26]
+	mi := &file_api_container_service_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2473,7 +2621,7 @@ func (x *ExecCommandResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecCommandResponse.ProtoReflect.Descriptor instead.
 func (*ExecCommandResponse) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{26}
+	return file_api_container_service_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *ExecCommandResponse) GetExitCode() int32 {
@@ -2517,7 +2665,7 @@ type WaitForHttpGetEndpointAvailabilityArgs struct {
 
 func (x *WaitForHttpGetEndpointAvailabilityArgs) Reset() {
 	*x = WaitForHttpGetEndpointAvailabilityArgs{}
-	mi := &file_api_container_service_proto_msgTypes[27]
+	mi := &file_api_container_service_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2529,7 +2677,7 @@ func (x *WaitForHttpGetEndpointAvailabilityArgs) String() string {
 func (*WaitForHttpGetEndpointAvailabilityArgs) ProtoMessage() {}
 
 func (x *WaitForHttpGetEndpointAvailabilityArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[27]
+	mi := &file_api_container_service_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2542,7 +2690,7 @@ func (x *WaitForHttpGetEndpointAvailabilityArgs) ProtoReflect() protoreflect.Mes
 
 // Deprecated: Use WaitForHttpGetEndpointAvailabilityArgs.ProtoReflect.Descriptor instead.
 func (*WaitForHttpGetEndpointAvailabilityArgs) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{27}
+	return file_api_container_service_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *WaitForHttpGetEndpointAvailabilityArgs) GetServiceIdentifier() string {
@@ -2623,7 +2771,7 @@ type WaitForHttpPostEndpointAvailabilityArgs struct {
 
 func (x *WaitForHttpPostEndpointAvailabilityArgs) Reset() {
 	*x = WaitForHttpPostEndpointAvailabilityArgs{}
-	mi := &file_api_container_service_proto_msgTypes[28]
+	mi := &file_api_container_service_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2635,7 +2783,7 @@ func (x *WaitForHttpPostEndpointAvailabilityArgs) String() string {
 func (*WaitForHttpPostEndpointAvailabilityArgs) ProtoMessage() {}
 
 func (x *WaitForHttpPostEndpointAvailabilityArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[28]
+	mi := &file_api_container_service_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2648,7 +2796,7 @@ func (x *WaitForHttpPostEndpointAvailabilityArgs) ProtoReflect() protoreflect.Me
 
 // Deprecated: Use WaitForHttpPostEndpointAvailabilityArgs.ProtoReflect.Descriptor instead.
 func (*WaitForHttpPostEndpointAvailabilityArgs) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{28}
+	return file_api_container_service_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *WaitForHttpPostEndpointAvailabilityArgs) GetServiceIdentifier() string {
@@ -2728,7 +2876,7 @@ type StreamedDataChunk struct {
 
 func (x *StreamedDataChunk) Reset() {
 	*x = StreamedDataChunk{}
-	mi := &file_api_container_service_proto_msgTypes[29]
+	mi := &file_api_container_service_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2740,7 +2888,7 @@ func (x *StreamedDataChunk) String() string {
 func (*StreamedDataChunk) ProtoMessage() {}
 
 func (x *StreamedDataChunk) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[29]
+	mi := &file_api_container_service_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2753,7 +2901,7 @@ func (x *StreamedDataChunk) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StreamedDataChunk.ProtoReflect.Descriptor instead.
 func (*StreamedDataChunk) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{29}
+	return file_api_container_service_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *StreamedDataChunk) GetData() []byte {
@@ -2786,7 +2934,7 @@ type DataChunkMetadata struct {
 
 func (x *DataChunkMetadata) Reset() {
 	*x = DataChunkMetadata{}
-	mi := &file_api_container_service_proto_msgTypes[30]
+	mi := &file_api_container_service_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2798,7 +2946,7 @@ func (x *DataChunkMetadata) String() string {
 func (*DataChunkMetadata) ProtoMessage() {}
 
 func (x *DataChunkMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[30]
+	mi := &file_api_container_service_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2811,7 +2959,7 @@ func (x *DataChunkMetadata) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DataChunkMetadata.ProtoReflect.Descriptor instead.
 func (*DataChunkMetadata) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{30}
+	return file_api_container_service_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *DataChunkMetadata) GetName() string {
@@ -2838,7 +2986,7 @@ type UploadFilesArtifactResponse struct {
 
 func (x *UploadFilesArtifactResponse) Reset() {
 	*x = UploadFilesArtifactResponse{}
-	mi := &file_api_container_service_proto_msgTypes[31]
+	mi := &file_api_container_service_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2850,7 +2998,7 @@ func (x *UploadFilesArtifactResponse) String() string {
 func (*UploadFilesArtifactResponse) ProtoMessage() {}
 
 func (x *UploadFilesArtifactResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[31]
+	mi := &file_api_container_service_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2863,7 +3011,7 @@ func (x *UploadFilesArtifactResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UploadFilesArtifactResponse.ProtoReflect.Descriptor instead.
 func (*UploadFilesArtifactResponse) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{31}
+	return file_api_container_service_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *UploadFilesArtifactResponse) GetUuid() string {
@@ -2895,7 +3043,7 @@ type DownloadFilesArtifactArgs struct {
 
 func (x *DownloadFilesArtifactArgs) Reset() {
 	*x = DownloadFilesArtifactArgs{}
-	mi := &file_api_container_service_proto_msgTypes[32]
+	mi := &file_api_container_service_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2907,7 +3055,7 @@ func (x *DownloadFilesArtifactArgs) String() string {
 func (*DownloadFilesArtifactArgs) ProtoMessage() {}
 
 func (x *DownloadFilesArtifactArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[32]
+	mi := &file_api_container_service_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2920,7 +3068,7 @@ func (x *DownloadFilesArtifactArgs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DownloadFilesArtifactArgs.ProtoReflect.Descriptor instead.
 func (*DownloadFilesArtifactArgs) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{32}
+	return file_api_container_service_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *DownloadFilesArtifactArgs) GetIdentifier() string {
@@ -2947,7 +3095,7 @@ type StoreWebFilesArtifactArgs struct {
 
 func (x *StoreWebFilesArtifactArgs) Reset() {
 	*x = StoreWebFilesArtifactArgs{}
-	mi := &file_api_container_service_proto_msgTypes[33]
+	mi := &file_api_container_service_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2959,7 +3107,7 @@ func (x *StoreWebFilesArtifactArgs) String() string {
 func (*StoreWebFilesArtifactArgs) ProtoMessage() {}
 
 func (x *StoreWebFilesArtifactArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[33]
+	mi := &file_api_container_service_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2972,7 +3120,7 @@ func (x *StoreWebFilesArtifactArgs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StoreWebFilesArtifactArgs.ProtoReflect.Descriptor instead.
 func (*StoreWebFilesArtifactArgs) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{33}
+	return file_api_container_service_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *StoreWebFilesArtifactArgs) GetUrl() string {
@@ -2999,7 +3147,7 @@ type StoreWebFilesArtifactResponse struct {
 
 func (x *StoreWebFilesArtifactResponse) Reset() {
 	*x = StoreWebFilesArtifactResponse{}
-	mi := &file_api_container_service_proto_msgTypes[34]
+	mi := &file_api_container_service_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3011,7 +3159,7 @@ func (x *StoreWebFilesArtifactResponse) String() string {
 func (*StoreWebFilesArtifactResponse) ProtoMessage() {}
 
 func (x *StoreWebFilesArtifactResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[34]
+	mi := &file_api_container_service_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3024,7 +3172,7 @@ func (x *StoreWebFilesArtifactResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StoreWebFilesArtifactResponse.ProtoReflect.Descriptor instead.
 func (*StoreWebFilesArtifactResponse) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{34}
+	return file_api_container_service_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *StoreWebFilesArtifactResponse) GetUuid() string {
@@ -3048,7 +3196,7 @@ type StoreFilesArtifactFromServiceArgs struct {
 
 func (x *StoreFilesArtifactFromServiceArgs) Reset() {
 	*x = StoreFilesArtifactFromServiceArgs{}
-	mi := &file_api_container_service_proto_msgTypes[35]
+	mi := &file_api_container_service_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3060,7 +3208,7 @@ func (x *StoreFilesArtifactFromServiceArgs) String() string {
 func (*StoreFilesArtifactFromServiceArgs) ProtoMessage() {}
 
 func (x *StoreFilesArtifactFromServiceArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[35]
+	mi := &file_api_container_service_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3073,7 +3221,7 @@ func (x *StoreFilesArtifactFromServiceArgs) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use StoreFilesArtifactFromServiceArgs.ProtoReflect.Descriptor instead.
 func (*StoreFilesArtifactFromServiceArgs) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{35}
+	return file_api_container_service_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *StoreFilesArtifactFromServiceArgs) GetServiceIdentifier() string {
@@ -3107,7 +3255,7 @@ type StoreFilesArtifactFromServiceResponse struct {
 
 func (x *StoreFilesArtifactFromServiceResponse) Reset() {
 	*x = StoreFilesArtifactFromServiceResponse{}
-	mi := &file_api_container_service_proto_msgTypes[36]
+	mi := &file_api_container_service_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3119,7 +3267,7 @@ func (x *StoreFilesArtifactFromServiceResponse) String() string {
 func (*StoreFilesArtifactFromServiceResponse) ProtoMessage() {}
 
 func (x *StoreFilesArtifactFromServiceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[36]
+	mi := &file_api_container_service_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3132,7 +3280,7 @@ func (x *StoreFilesArtifactFromServiceResponse) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use StoreFilesArtifactFromServiceResponse.ProtoReflect.Descriptor instead.
 func (*StoreFilesArtifactFromServiceResponse) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{36}
+	return file_api_container_service_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *StoreFilesArtifactFromServiceResponse) GetUuid() string {
@@ -3154,7 +3302,7 @@ type FilesArtifactNameAndUuid struct {
 
 func (x *FilesArtifactNameAndUuid) Reset() {
 	*x = FilesArtifactNameAndUuid{}
-	mi := &file_api_container_service_proto_msgTypes[37]
+	mi := &file_api_container_service_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3166,7 +3314,7 @@ func (x *FilesArtifactNameAndUuid) String() string {
 func (*FilesArtifactNameAndUuid) ProtoMessage() {}
 
 func (x *FilesArtifactNameAndUuid) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[37]
+	mi := &file_api_container_service_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3179,7 +3327,7 @@ func (x *FilesArtifactNameAndUuid) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FilesArtifactNameAndUuid.ProtoReflect.Descriptor instead.
 func (*FilesArtifactNameAndUuid) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{37}
+	return file_api_container_service_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *FilesArtifactNameAndUuid) GetFileName() string {
@@ -3205,7 +3353,7 @@ type ListFilesArtifactNamesAndUuidsResponse struct {
 
 func (x *ListFilesArtifactNamesAndUuidsResponse) Reset() {
 	*x = ListFilesArtifactNamesAndUuidsResponse{}
-	mi := &file_api_container_service_proto_msgTypes[38]
+	mi := &file_api_container_service_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3217,7 +3365,7 @@ func (x *ListFilesArtifactNamesAndUuidsResponse) String() string {
 func (*ListFilesArtifactNamesAndUuidsResponse) ProtoMessage() {}
 
 func (x *ListFilesArtifactNamesAndUuidsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[38]
+	mi := &file_api_container_service_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3230,7 +3378,7 @@ func (x *ListFilesArtifactNamesAndUuidsResponse) ProtoReflect() protoreflect.Mes
 
 // Deprecated: Use ListFilesArtifactNamesAndUuidsResponse.ProtoReflect.Descriptor instead.
 func (*ListFilesArtifactNamesAndUuidsResponse) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{38}
+	return file_api_container_service_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *ListFilesArtifactNamesAndUuidsResponse) GetFileNamesAndUuids() []*FilesArtifactNameAndUuid {
@@ -3249,7 +3397,7 @@ type InspectFilesArtifactContentsRequest struct {
 
 func (x *InspectFilesArtifactContentsRequest) Reset() {
 	*x = InspectFilesArtifactContentsRequest{}
-	mi := &file_api_container_service_proto_msgTypes[39]
+	mi := &file_api_container_service_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3261,7 +3409,7 @@ func (x *InspectFilesArtifactContentsRequest) String() string {
 func (*InspectFilesArtifactContentsRequest) ProtoMessage() {}
 
 func (x *InspectFilesArtifactContentsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[39]
+	mi := &file_api_container_service_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3274,7 +3422,7 @@ func (x *InspectFilesArtifactContentsRequest) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use InspectFilesArtifactContentsRequest.ProtoReflect.Descriptor instead.
 func (*InspectFilesArtifactContentsRequest) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{39}
+	return file_api_container_service_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *InspectFilesArtifactContentsRequest) GetFileNamesAndUuid() *FilesArtifactNameAndUuid {
@@ -3293,7 +3441,7 @@ type InspectFilesArtifactContentsResponse struct {
 
 func (x *InspectFilesArtifactContentsResponse) Reset() {
 	*x = InspectFilesArtifactContentsResponse{}
-	mi := &file_api_container_service_proto_msgTypes[40]
+	mi := &file_api_container_service_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3305,7 +3453,7 @@ func (x *InspectFilesArtifactContentsResponse) String() string {
 func (*InspectFilesArtifactContentsResponse) ProtoMessage() {}
 
 func (x *InspectFilesArtifactContentsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[40]
+	mi := &file_api_container_service_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3318,7 +3466,7 @@ func (x *InspectFilesArtifactContentsResponse) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use InspectFilesArtifactContentsResponse.ProtoReflect.Descriptor instead.
 func (*InspectFilesArtifactContentsResponse) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{40}
+	return file_api_container_service_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *InspectFilesArtifactContentsResponse) GetFileDescriptions() []*FileArtifactContentsFileDescription {
@@ -3342,7 +3490,7 @@ type FileArtifactContentsFileDescription struct {
 
 func (x *FileArtifactContentsFileDescription) Reset() {
 	*x = FileArtifactContentsFileDescription{}
-	mi := &file_api_container_service_proto_msgTypes[41]
+	mi := &file_api_container_service_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3354,7 +3502,7 @@ func (x *FileArtifactContentsFileDescription) String() string {
 func (*FileArtifactContentsFileDescription) ProtoMessage() {}
 
 func (x *FileArtifactContentsFileDescription) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[41]
+	mi := &file_api_container_service_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3367,7 +3515,7 @@ func (x *FileArtifactContentsFileDescription) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use FileArtifactContentsFileDescription.ProtoReflect.Descriptor instead.
 func (*FileArtifactContentsFileDescription) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{41}
+	return file_api_container_service_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *FileArtifactContentsFileDescription) GetPath() string {
@@ -3400,7 +3548,7 @@ type ConnectServicesArgs struct {
 
 func (x *ConnectServicesArgs) Reset() {
 	*x = ConnectServicesArgs{}
-	mi := &file_api_container_service_proto_msgTypes[42]
+	mi := &file_api_container_service_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3412,7 +3560,7 @@ func (x *ConnectServicesArgs) String() string {
 func (*ConnectServicesArgs) ProtoMessage() {}
 
 func (x *ConnectServicesArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[42]
+	mi := &file_api_container_service_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3425,7 +3573,7 @@ func (x *ConnectServicesArgs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConnectServicesArgs.ProtoReflect.Descriptor instead.
 func (*ConnectServicesArgs) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{42}
+	return file_api_container_service_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *ConnectServicesArgs) GetConnect() Connect {
@@ -3443,7 +3591,7 @@ type ConnectServicesResponse struct {
 
 func (x *ConnectServicesResponse) Reset() {
 	*x = ConnectServicesResponse{}
-	mi := &file_api_container_service_proto_msgTypes[43]
+	mi := &file_api_container_service_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3455,7 +3603,7 @@ func (x *ConnectServicesResponse) String() string {
 func (*ConnectServicesResponse) ProtoMessage() {}
 
 func (x *ConnectServicesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[43]
+	mi := &file_api_container_service_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3468,7 +3616,7 @@ func (x *ConnectServicesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConnectServicesResponse.ProtoReflect.Descriptor instead.
 func (*ConnectServicesResponse) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{43}
+	return file_api_container_service_proto_rawDescGZIP(), []int{44}
 }
 
 type GetStarlarkRunResponse struct {
@@ -3489,7 +3637,7 @@ type GetStarlarkRunResponse struct {
 
 func (x *GetStarlarkRunResponse) Reset() {
 	*x = GetStarlarkRunResponse{}
-	mi := &file_api_container_service_proto_msgTypes[44]
+	mi := &file_api_container_service_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3501,7 +3649,7 @@ func (x *GetStarlarkRunResponse) String() string {
 func (*GetStarlarkRunResponse) ProtoMessage() {}
 
 func (x *GetStarlarkRunResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[44]
+	mi := &file_api_container_service_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3514,7 +3662,7 @@ func (x *GetStarlarkRunResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetStarlarkRunResponse.ProtoReflect.Descriptor instead.
 func (*GetStarlarkRunResponse) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{44}
+	return file_api_container_service_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *GetStarlarkRunResponse) GetPackageId() string {
@@ -3589,7 +3737,7 @@ type PlanYaml struct {
 
 func (x *PlanYaml) Reset() {
 	*x = PlanYaml{}
-	mi := &file_api_container_service_proto_msgTypes[45]
+	mi := &file_api_container_service_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3601,7 +3749,7 @@ func (x *PlanYaml) String() string {
 func (*PlanYaml) ProtoMessage() {}
 
 func (x *PlanYaml) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[45]
+	mi := &file_api_container_service_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3614,7 +3762,7 @@ func (x *PlanYaml) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlanYaml.ProtoReflect.Descriptor instead.
 func (*PlanYaml) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{45}
+	return file_api_container_service_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *PlanYaml) GetPlanYaml() string {
@@ -3630,13 +3778,15 @@ type StarlarkScriptPlanYamlArgs struct {
 	SerializedParams *string                `protobuf:"bytes,2,opt,name=serialized_params,json=serializedParams,proto3,oneof" json:"serialized_params,omitempty"`
 	// The name of the main function, the default value is "run"
 	MainFunctionName *string `protobuf:"bytes,5,opt,name=main_function_name,json=mainFunctionName,proto3,oneof" json:"main_function_name,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// If true, permits Docker-only privileged containers, host bind mounts, and host PID namespace while interpreting the plan.
+	AllowPrivilegedMode *bool `protobuf:"varint,6,opt,name=allow_privileged_mode,json=allowPrivilegedMode,proto3,oneof" json:"allow_privileged_mode,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *StarlarkScriptPlanYamlArgs) Reset() {
 	*x = StarlarkScriptPlanYamlArgs{}
-	mi := &file_api_container_service_proto_msgTypes[46]
+	mi := &file_api_container_service_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3648,7 +3798,7 @@ func (x *StarlarkScriptPlanYamlArgs) String() string {
 func (*StarlarkScriptPlanYamlArgs) ProtoMessage() {}
 
 func (x *StarlarkScriptPlanYamlArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[46]
+	mi := &file_api_container_service_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3661,7 +3811,7 @@ func (x *StarlarkScriptPlanYamlArgs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StarlarkScriptPlanYamlArgs.ProtoReflect.Descriptor instead.
 func (*StarlarkScriptPlanYamlArgs) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{46}
+	return file_api_container_service_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *StarlarkScriptPlanYamlArgs) GetSerializedScript() string {
@@ -3685,6 +3835,13 @@ func (x *StarlarkScriptPlanYamlArgs) GetMainFunctionName() string {
 	return ""
 }
 
+func (x *StarlarkScriptPlanYamlArgs) GetAllowPrivilegedMode() bool {
+	if x != nil && x.AllowPrivilegedMode != nil {
+		return *x.AllowPrivilegedMode
+	}
+	return false
+}
+
 type StarlarkPackagePlanYamlArgs struct {
 	state     protoimpl.MessageState `protogen:"open.v1"`
 	PackageId string                 `protobuf:"bytes,1,opt,name=package_id,json=packageId,proto3" json:"package_id,omitempty"`
@@ -3697,13 +3854,15 @@ type StarlarkPackagePlanYamlArgs struct {
 	RelativePathToMainFile *string `protobuf:"bytes,4,opt,name=relative_path_to_main_file,json=relativePathToMainFile,proto3,oneof" json:"relative_path_to_main_file,omitempty"`
 	// The name of the main function, the default value is "run"
 	MainFunctionName *string `protobuf:"bytes,5,opt,name=main_function_name,json=mainFunctionName,proto3,oneof" json:"main_function_name,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// If true, permits Docker-only privileged containers, host bind mounts, and host PID namespace while interpreting the plan.
+	AllowPrivilegedMode *bool `protobuf:"varint,6,opt,name=allow_privileged_mode,json=allowPrivilegedMode,proto3,oneof" json:"allow_privileged_mode,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *StarlarkPackagePlanYamlArgs) Reset() {
 	*x = StarlarkPackagePlanYamlArgs{}
-	mi := &file_api_container_service_proto_msgTypes[47]
+	mi := &file_api_container_service_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3715,7 +3874,7 @@ func (x *StarlarkPackagePlanYamlArgs) String() string {
 func (*StarlarkPackagePlanYamlArgs) ProtoMessage() {}
 
 func (x *StarlarkPackagePlanYamlArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_api_container_service_proto_msgTypes[47]
+	mi := &file_api_container_service_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3728,7 +3887,7 @@ func (x *StarlarkPackagePlanYamlArgs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StarlarkPackagePlanYamlArgs.ProtoReflect.Descriptor instead.
 func (*StarlarkPackagePlanYamlArgs) Descriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{47}
+	return file_api_container_service_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *StarlarkPackagePlanYamlArgs) GetPackageId() string {
@@ -3764,6 +3923,13 @@ func (x *StarlarkPackagePlanYamlArgs) GetMainFunctionName() string {
 		return *x.MainFunctionName
 	}
 	return ""
+}
+
+func (x *StarlarkPackagePlanYamlArgs) GetAllowPrivilegedMode() bool {
+	if x != nil && x.AllowPrivilegedMode != nil {
+		return *x.AllowPrivilegedMode
+	}
+	return false
 }
 
 var File_api_container_service_proto protoreflect.FileDescriptor
@@ -3809,7 +3975,7 @@ const file_api_container_service_proto_rawDesc = "" +
 	"\boperator\x18\x02 \x01(\tR\boperator\x12\x14\n" +
 	"\x05value\x18\x03 \x01(\tR\x05value\x12\x16\n" +
 	"\x06effect\x18\x04 \x01(\tR\x06effect\x12-\n" +
-	"\x12toleration_seconds\x18\x05 \x01(\x03R\x11tolerationSeconds\"\xb5\r\n" +
+	"\x12toleration_seconds\x18\x05 \x01(\x03R\x11tolerationSeconds\"\x9a\x10\n" +
 	"\vServiceInfo\x12!\n" +
 	"\fservice_uuid\x18\x01 \x01(\tR\vserviceUuid\x12&\n" +
 	"\x0fprivate_ip_addr\x18\x02 \x01(\tR\rprivateIpAddr\x12U\n" +
@@ -3833,7 +3999,15 @@ const file_api_container_service_proto_rawDesc = "" +
 	"\ftini_enabled\x18\x13 \x01(\bH\x01R\vtiniEnabled\x88\x01\x01\x12$\n" +
 	"\vtty_enabled\x18\x14 \x01(\bH\x02R\n" +
 	"ttyEnabled\x88\x01\x01\x12\"\n" +
-	"\fcapabilities\x18\x15 \x03(\tR\fcapabilities\x1aX\n" +
+	"\fcapabilities\x18\x15 \x03(\tR\fcapabilities\x12;\n" +
+	"\n" +
+	"gpu_config\x18\x16 \x01(\v2\x1c.api_container_api.GpuConfigR\tgpuConfig\x12\x1e\n" +
+	"\n" +
+	"privileged\x18\x1a \x01(\bR\n" +
+	"privileged\x12O\n" +
+	"\vbind_mounts\x18\x1b \x03(\v2..api_container_api.ServiceInfo.BindMountsEntryR\n" +
+	"bindMounts\x12,\n" +
+	"\x12host_pid_namespace\x18\x1c \x01(\bR\x10hostPidNamespace\x1aX\n" +
 	"\x11PrivatePortsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12-\n" +
 	"\x05value\x18\x02 \x01(\v2\x17.api_container_api.PortR\x05value:\x028\x01\x1a\\\n" +
@@ -3848,10 +4022,24 @@ const file_api_container_service_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a=\n" +
+	"\x0fBindMountsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\a\n" +
 	"\x05_userB\x0f\n" +
 	"\r_tini_enabledB\x0e\n" +
-	"\f_tty_enabled\"\xbd\x06\n" +
+	"\f_tty_enabledJ\x04\b\x17\x10\x18J\x04\b\x18\x10\x19J\x04\b\x19\x10\x1aR\x12shm_size_megabytesR\aulimitsR\tgpu_countR\x0egpu_device_ids\"\xc0\x02\n" +
+	"\tGpuConfig\x12\x14\n" +
+	"\x05count\x18\x01 \x01(\x03R\x05count\x12\x1d\n" +
+	"\n" +
+	"device_ids\x18\x02 \x03(\tR\tdeviceIds\x12,\n" +
+	"\x12shm_size_megabytes\x18\x03 \x01(\x04R\x10shmSizeMegabytes\x12C\n" +
+	"\aulimits\x18\x04 \x03(\v2).api_container_api.GpuConfig.UlimitsEntryR\aulimits\x12#\n" +
+	"\rdocker_driver\x18\x05 \x01(\tR\fdockerDriver\x12*\n" +
+	"\x11k8s_resource_name\x18\x06 \x01(\tR\x0fk8sResourceName\x1a:\n" +
+	"\fUlimitsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\x03R\x05value:\x028\x01\"\x90\a\n" +
 	"\x15RunStarlarkScriptArgs\x12+\n" +
 	"\x11serialized_script\x18\x01 \x01(\tR\x10serializedScript\x120\n" +
 	"\x11serialized_params\x18\x02 \x01(\tH\x00R\x10serializedParams\x88\x01\x01\x12\x1c\n" +
@@ -3865,7 +4053,9 @@ const file_api_container_service_proto_rawDesc = "" +
 	"\x11non_blocking_mode\x18\n" +
 	" \x01(\bH\aR\x0fnonBlockingMode\x88\x01\x01\x12\x1f\n" +
 	"\bparallel\x18\x11 \x01(\bH\bR\bparallel\x88\x01\x01\x12*\n" +
-	"\x0eresource_check\x18\x12 \x01(\bH\tR\rresourceCheck\x88\x01\x01B\x14\n" +
+	"\x0eresource_check\x18\x12 \x01(\bH\tR\rresourceCheck\x88\x01\x01\x127\n" +
+	"\x15allow_privileged_mode\x18\x13 \x01(\bH\n" +
+	"R\x13allowPrivilegedMode\x88\x01\x01B\x14\n" +
 	"\x12_serialized_paramsB\n" +
 	"\n" +
 	"\b_dry_runB\x0e\n" +
@@ -3876,7 +4066,8 @@ const file_api_container_service_proto_rawDesc = "" +
 	"\x14_image_download_modeB\x14\n" +
 	"\x12_non_blocking_modeB\v\n" +
 	"\t_parallelB\x11\n" +
-	"\x0f_resource_check\"\xe1\b\n" +
+	"\x0f_resource_checkB\x18\n" +
+	"\x16_allow_privileged_mode\"\xb4\t\n" +
 	"\x16RunStarlarkPackageArgs\x12\x1d\n" +
 	"\n" +
 	"package_id\x18\x01 \x01(\tR\tpackageId\x12\x16\n" +
@@ -3897,7 +4088,8 @@ const file_api_container_service_proto_rawDesc = "" +
 	"R\x0fnonBlockingMode\x88\x01\x01\x12/\n" +
 	"\x11github_auth_token\x18\x10 \x01(\tH\vR\x0fgithubAuthToken\x88\x01\x01\x12\x1f\n" +
 	"\bparallel\x18\x11 \x01(\bH\fR\bparallel\x88\x01\x01\x12*\n" +
-	"\x0eresource_check\x18\x12 \x01(\bH\rR\rresourceCheck\x88\x01\x01B\x1a\n" +
+	"\x0eresource_check\x18\x12 \x01(\bH\rR\rresourceCheck\x88\x01\x01\x127\n" +
+	"\x15allow_privileged_mode\x18\x13 \x01(\bH\x0eR\x13allowPrivilegedMode\x88\x01\x01B\x1a\n" +
 	"\x18starlark_package_contentB\x14\n" +
 	"\x12_serialized_paramsB\n" +
 	"\n" +
@@ -3912,7 +4104,8 @@ const file_api_container_service_proto_rawDesc = "" +
 	"\x12_non_blocking_modeB\x14\n" +
 	"\x12_github_auth_tokenB\v\n" +
 	"\t_parallelB\x11\n" +
-	"\x0f_resource_check\"\xb6\x04\n" +
+	"\x0f_resource_checkB\x18\n" +
+	"\x16_allow_privileged_mode\"\xb6\x04\n" +
 	"\x17StarlarkRunResponseLine\x12J\n" +
 	"\vinstruction\x18\x01 \x01(\v2&.api_container_api.StarlarkInstructionH\x00R\vinstruction\x128\n" +
 	"\x05error\x18\x02 \x01(\v2 .api_container_api.StarlarkErrorH\x00R\x05error\x12M\n" +
@@ -4085,23 +4278,27 @@ const file_api_container_service_proto_rawDesc = "" +
 	"\x19initial_serialized_params\x18\t \x01(\tH\x00R\x17initialSerializedParams\x88\x01\x01B\x1c\n" +
 	"\x1a_initial_serialized_params\"'\n" +
 	"\bPlanYaml\x12\x1b\n" +
-	"\tplan_yaml\x18\x01 \x01(\tR\bplanYaml\"\xdb\x01\n" +
+	"\tplan_yaml\x18\x01 \x01(\tR\bplanYaml\"\xae\x02\n" +
 	"\x1aStarlarkScriptPlanYamlArgs\x12+\n" +
 	"\x11serialized_script\x18\x01 \x01(\tR\x10serializedScript\x120\n" +
 	"\x11serialized_params\x18\x02 \x01(\tH\x00R\x10serializedParams\x88\x01\x01\x121\n" +
-	"\x12main_function_name\x18\x05 \x01(\tH\x01R\x10mainFunctionName\x88\x01\x01B\x14\n" +
+	"\x12main_function_name\x18\x05 \x01(\tH\x01R\x10mainFunctionName\x88\x01\x01\x127\n" +
+	"\x15allow_privileged_mode\x18\x06 \x01(\bH\x02R\x13allowPrivilegedMode\x88\x01\x01B\x14\n" +
 	"\x12_serialized_paramsB\x15\n" +
-	"\x13_main_function_name\"\xcb\x02\n" +
+	"\x13_main_function_nameB\x18\n" +
+	"\x16_allow_privileged_mode\"\x9e\x03\n" +
 	"\x1bStarlarkPackagePlanYamlArgs\x12\x1d\n" +
 	"\n" +
 	"package_id\x18\x01 \x01(\tR\tpackageId\x120\n" +
 	"\x11serialized_params\x18\x02 \x01(\tH\x00R\x10serializedParams\x88\x01\x01\x12\x1b\n" +
 	"\tis_remote\x18\x03 \x01(\bR\bisRemote\x12?\n" +
 	"\x1arelative_path_to_main_file\x18\x04 \x01(\tH\x01R\x16relativePathToMainFile\x88\x01\x01\x121\n" +
-	"\x12main_function_name\x18\x05 \x01(\tH\x02R\x10mainFunctionName\x88\x01\x01B\x14\n" +
+	"\x12main_function_name\x18\x05 \x01(\tH\x02R\x10mainFunctionName\x88\x01\x01\x127\n" +
+	"\x15allow_privileged_mode\x18\x06 \x01(\bH\x03R\x13allowPrivilegedMode\x88\x01\x01B\x14\n" +
 	"\x12_serialized_paramsB\x1d\n" +
 	"\x1b_relative_path_to_main_fileB\x15\n" +
-	"\x13_main_function_name*6\n" +
+	"\x13_main_function_nameB\x18\n" +
+	"\x16_allow_privileged_mode*6\n" +
 	"\rServiceStatus\x12\v\n" +
 	"\aSTOPPED\x10\x00\x12\v\n" +
 	"\aRUNNING\x10\x01\x12\v\n" +
@@ -4153,160 +4350,166 @@ func file_api_container_service_proto_rawDescGZIP() []byte {
 }
 
 var file_api_container_service_proto_enumTypes = make([]protoimpl.EnumInfo, 7)
-var file_api_container_service_proto_msgTypes = make([]protoimpl.MessageInfo, 56)
+var file_api_container_service_proto_msgTypes = make([]protoimpl.MessageInfo, 59)
 var file_api_container_service_proto_goTypes = []any{
-	(ServiceStatus)(0),                                         // 0: api_container_api.ServiceStatus
-	(ImageDownloadMode)(0),                                     // 1: api_container_api.ImageDownloadMode
-	(Connect)(0),                                               // 2: api_container_api.Connect
-	(KurtosisFeatureFlag)(0),                                   // 3: api_container_api.KurtosisFeatureFlag
-	(RestartPolicy)(0),                                         // 4: api_container_api.RestartPolicy
-	(Port_TransportProtocol)(0),                                // 5: api_container_api.Port.TransportProtocol
-	(Container_Status)(0),                                      // 6: api_container_api.Container.Status
-	(*Port)(nil),                                               // 7: api_container_api.Port
-	(*Container)(nil),                                          // 8: api_container_api.Container
-	(*FilesArtifactsList)(nil),                                 // 9: api_container_api.FilesArtifactsList
-	(*User)(nil),                                               // 10: api_container_api.User
-	(*Toleration)(nil),                                         // 11: api_container_api.Toleration
-	(*ServiceInfo)(nil),                                        // 12: api_container_api.ServiceInfo
-	(*RunStarlarkScriptArgs)(nil),                              // 13: api_container_api.RunStarlarkScriptArgs
-	(*RunStarlarkPackageArgs)(nil),                             // 14: api_container_api.RunStarlarkPackageArgs
-	(*StarlarkRunResponseLine)(nil),                            // 15: api_container_api.StarlarkRunResponseLine
-	(*StarlarkInfo)(nil),                                       // 16: api_container_api.StarlarkInfo
-	(*StarlarkWarning)(nil),                                    // 17: api_container_api.StarlarkWarning
-	(*StarlarkInstruction)(nil),                                // 18: api_container_api.StarlarkInstruction
-	(*StarlarkInstructionResult)(nil),                          // 19: api_container_api.StarlarkInstructionResult
-	(*StarlarkInstructionArg)(nil),                             // 20: api_container_api.StarlarkInstructionArg
-	(*StarlarkInstructionPosition)(nil),                        // 21: api_container_api.StarlarkInstructionPosition
-	(*StarlarkError)(nil),                                      // 22: api_container_api.StarlarkError
-	(*StarlarkInterpretationError)(nil),                        // 23: api_container_api.StarlarkInterpretationError
-	(*StarlarkValidationError)(nil),                            // 24: api_container_api.StarlarkValidationError
-	(*StarlarkExecutionError)(nil),                             // 25: api_container_api.StarlarkExecutionError
-	(*StarlarkRunProgress)(nil),                                // 26: api_container_api.StarlarkRunProgress
-	(*StarlarkRunFinishedEvent)(nil),                           // 27: api_container_api.StarlarkRunFinishedEvent
-	(*GetServicesArgs)(nil),                                    // 28: api_container_api.GetServicesArgs
-	(*GetServicesResponse)(nil),                                // 29: api_container_api.GetServicesResponse
-	(*ServiceIdentifiers)(nil),                                 // 30: api_container_api.ServiceIdentifiers
-	(*GetExistingAndHistoricalServiceIdentifiersResponse)(nil), // 31: api_container_api.GetExistingAndHistoricalServiceIdentifiersResponse
-	(*ExecCommandArgs)(nil),                                    // 32: api_container_api.ExecCommandArgs
-	(*ExecCommandResponse)(nil),                                // 33: api_container_api.ExecCommandResponse
-	(*WaitForHttpGetEndpointAvailabilityArgs)(nil),             // 34: api_container_api.WaitForHttpGetEndpointAvailabilityArgs
-	(*WaitForHttpPostEndpointAvailabilityArgs)(nil),            // 35: api_container_api.WaitForHttpPostEndpointAvailabilityArgs
-	(*StreamedDataChunk)(nil),                                  // 36: api_container_api.StreamedDataChunk
-	(*DataChunkMetadata)(nil),                                  // 37: api_container_api.DataChunkMetadata
-	(*UploadFilesArtifactResponse)(nil),                        // 38: api_container_api.UploadFilesArtifactResponse
-	(*DownloadFilesArtifactArgs)(nil),                          // 39: api_container_api.DownloadFilesArtifactArgs
-	(*StoreWebFilesArtifactArgs)(nil),                          // 40: api_container_api.StoreWebFilesArtifactArgs
-	(*StoreWebFilesArtifactResponse)(nil),                      // 41: api_container_api.StoreWebFilesArtifactResponse
-	(*StoreFilesArtifactFromServiceArgs)(nil),                  // 42: api_container_api.StoreFilesArtifactFromServiceArgs
-	(*StoreFilesArtifactFromServiceResponse)(nil),              // 43: api_container_api.StoreFilesArtifactFromServiceResponse
-	(*FilesArtifactNameAndUuid)(nil),                           // 44: api_container_api.FilesArtifactNameAndUuid
-	(*ListFilesArtifactNamesAndUuidsResponse)(nil),             // 45: api_container_api.ListFilesArtifactNamesAndUuidsResponse
-	(*InspectFilesArtifactContentsRequest)(nil),                // 46: api_container_api.InspectFilesArtifactContentsRequest
-	(*InspectFilesArtifactContentsResponse)(nil),               // 47: api_container_api.InspectFilesArtifactContentsResponse
-	(*FileArtifactContentsFileDescription)(nil),                // 48: api_container_api.FileArtifactContentsFileDescription
-	(*ConnectServicesArgs)(nil),                                // 49: api_container_api.ConnectServicesArgs
-	(*ConnectServicesResponse)(nil),                            // 50: api_container_api.ConnectServicesResponse
-	(*GetStarlarkRunResponse)(nil),                             // 51: api_container_api.GetStarlarkRunResponse
-	(*PlanYaml)(nil),                                           // 52: api_container_api.PlanYaml
-	(*StarlarkScriptPlanYamlArgs)(nil),                         // 53: api_container_api.StarlarkScriptPlanYamlArgs
-	(*StarlarkPackagePlanYamlArgs)(nil),                        // 54: api_container_api.StarlarkPackagePlanYamlArgs
-	nil,                                                        // 55: api_container_api.Container.EnvVarsEntry
-	nil,                                                        // 56: api_container_api.ServiceInfo.PrivatePortsEntry
-	nil,                                                        // 57: api_container_api.ServiceInfo.MaybePublicPortsEntry
-	nil,                                                        // 58: api_container_api.ServiceInfo.ServiceDirPathsToFilesArtifactsListEntry
-	nil,                                                        // 59: api_container_api.ServiceInfo.NodeSelectorsEntry
-	nil,                                                        // 60: api_container_api.ServiceInfo.LabelsEntry
-	nil,                                                        // 61: api_container_api.GetServicesArgs.ServiceIdentifiersEntry
-	nil,                                                        // 62: api_container_api.GetServicesResponse.ServiceInfoEntry
-	(*durationpb.Duration)(nil),                                // 63: google.protobuf.Duration
-	(*emptypb.Empty)(nil),                                      // 64: google.protobuf.Empty
+	(ServiceStatus)(0),                  // 0: api_container_api.ServiceStatus
+	(ImageDownloadMode)(0),              // 1: api_container_api.ImageDownloadMode
+	(Connect)(0),                        // 2: api_container_api.Connect
+	(KurtosisFeatureFlag)(0),            // 3: api_container_api.KurtosisFeatureFlag
+	(RestartPolicy)(0),                  // 4: api_container_api.RestartPolicy
+	(Port_TransportProtocol)(0),         // 5: api_container_api.Port.TransportProtocol
+	(Container_Status)(0),               // 6: api_container_api.Container.Status
+	(*Port)(nil),                        // 7: api_container_api.Port
+	(*Container)(nil),                   // 8: api_container_api.Container
+	(*FilesArtifactsList)(nil),          // 9: api_container_api.FilesArtifactsList
+	(*User)(nil),                        // 10: api_container_api.User
+	(*Toleration)(nil),                  // 11: api_container_api.Toleration
+	(*ServiceInfo)(nil),                 // 12: api_container_api.ServiceInfo
+	(*GpuConfig)(nil),                   // 13: api_container_api.GpuConfig
+	(*RunStarlarkScriptArgs)(nil),       // 14: api_container_api.RunStarlarkScriptArgs
+	(*RunStarlarkPackageArgs)(nil),      // 15: api_container_api.RunStarlarkPackageArgs
+	(*StarlarkRunResponseLine)(nil),     // 16: api_container_api.StarlarkRunResponseLine
+	(*StarlarkInfo)(nil),                // 17: api_container_api.StarlarkInfo
+	(*StarlarkWarning)(nil),             // 18: api_container_api.StarlarkWarning
+	(*StarlarkInstruction)(nil),         // 19: api_container_api.StarlarkInstruction
+	(*StarlarkInstructionResult)(nil),   // 20: api_container_api.StarlarkInstructionResult
+	(*StarlarkInstructionArg)(nil),      // 21: api_container_api.StarlarkInstructionArg
+	(*StarlarkInstructionPosition)(nil), // 22: api_container_api.StarlarkInstructionPosition
+	(*StarlarkError)(nil),               // 23: api_container_api.StarlarkError
+	(*StarlarkInterpretationError)(nil), // 24: api_container_api.StarlarkInterpretationError
+	(*StarlarkValidationError)(nil),     // 25: api_container_api.StarlarkValidationError
+	(*StarlarkExecutionError)(nil),      // 26: api_container_api.StarlarkExecutionError
+	(*StarlarkRunProgress)(nil),         // 27: api_container_api.StarlarkRunProgress
+	(*StarlarkRunFinishedEvent)(nil),    // 28: api_container_api.StarlarkRunFinishedEvent
+	(*GetServicesArgs)(nil),             // 29: api_container_api.GetServicesArgs
+	(*GetServicesResponse)(nil),         // 30: api_container_api.GetServicesResponse
+	(*ServiceIdentifiers)(nil),          // 31: api_container_api.ServiceIdentifiers
+	(*GetExistingAndHistoricalServiceIdentifiersResponse)(nil), // 32: api_container_api.GetExistingAndHistoricalServiceIdentifiersResponse
+	(*ExecCommandArgs)(nil),                         // 33: api_container_api.ExecCommandArgs
+	(*ExecCommandResponse)(nil),                     // 34: api_container_api.ExecCommandResponse
+	(*WaitForHttpGetEndpointAvailabilityArgs)(nil),  // 35: api_container_api.WaitForHttpGetEndpointAvailabilityArgs
+	(*WaitForHttpPostEndpointAvailabilityArgs)(nil), // 36: api_container_api.WaitForHttpPostEndpointAvailabilityArgs
+	(*StreamedDataChunk)(nil),                       // 37: api_container_api.StreamedDataChunk
+	(*DataChunkMetadata)(nil),                       // 38: api_container_api.DataChunkMetadata
+	(*UploadFilesArtifactResponse)(nil),             // 39: api_container_api.UploadFilesArtifactResponse
+	(*DownloadFilesArtifactArgs)(nil),               // 40: api_container_api.DownloadFilesArtifactArgs
+	(*StoreWebFilesArtifactArgs)(nil),               // 41: api_container_api.StoreWebFilesArtifactArgs
+	(*StoreWebFilesArtifactResponse)(nil),           // 42: api_container_api.StoreWebFilesArtifactResponse
+	(*StoreFilesArtifactFromServiceArgs)(nil),       // 43: api_container_api.StoreFilesArtifactFromServiceArgs
+	(*StoreFilesArtifactFromServiceResponse)(nil),   // 44: api_container_api.StoreFilesArtifactFromServiceResponse
+	(*FilesArtifactNameAndUuid)(nil),                // 45: api_container_api.FilesArtifactNameAndUuid
+	(*ListFilesArtifactNamesAndUuidsResponse)(nil),  // 46: api_container_api.ListFilesArtifactNamesAndUuidsResponse
+	(*InspectFilesArtifactContentsRequest)(nil),     // 47: api_container_api.InspectFilesArtifactContentsRequest
+	(*InspectFilesArtifactContentsResponse)(nil),    // 48: api_container_api.InspectFilesArtifactContentsResponse
+	(*FileArtifactContentsFileDescription)(nil),     // 49: api_container_api.FileArtifactContentsFileDescription
+	(*ConnectServicesArgs)(nil),                     // 50: api_container_api.ConnectServicesArgs
+	(*ConnectServicesResponse)(nil),                 // 51: api_container_api.ConnectServicesResponse
+	(*GetStarlarkRunResponse)(nil),                  // 52: api_container_api.GetStarlarkRunResponse
+	(*PlanYaml)(nil),                                // 53: api_container_api.PlanYaml
+	(*StarlarkScriptPlanYamlArgs)(nil),              // 54: api_container_api.StarlarkScriptPlanYamlArgs
+	(*StarlarkPackagePlanYamlArgs)(nil),             // 55: api_container_api.StarlarkPackagePlanYamlArgs
+	nil,                                             // 56: api_container_api.Container.EnvVarsEntry
+	nil,                                             // 57: api_container_api.ServiceInfo.PrivatePortsEntry
+	nil,                                             // 58: api_container_api.ServiceInfo.MaybePublicPortsEntry
+	nil,                                             // 59: api_container_api.ServiceInfo.ServiceDirPathsToFilesArtifactsListEntry
+	nil,                                             // 60: api_container_api.ServiceInfo.NodeSelectorsEntry
+	nil,                                             // 61: api_container_api.ServiceInfo.LabelsEntry
+	nil,                                             // 62: api_container_api.ServiceInfo.BindMountsEntry
+	nil,                                             // 63: api_container_api.GpuConfig.UlimitsEntry
+	nil,                                             // 64: api_container_api.GetServicesArgs.ServiceIdentifiersEntry
+	nil,                                             // 65: api_container_api.GetServicesResponse.ServiceInfoEntry
+	(*durationpb.Duration)(nil),                     // 66: google.protobuf.Duration
+	(*emptypb.Empty)(nil),                           // 67: google.protobuf.Empty
 }
 var file_api_container_service_proto_depIdxs = []int32{
 	5,  // 0: api_container_api.Port.transport_protocol:type_name -> api_container_api.Port.TransportProtocol
 	6,  // 1: api_container_api.Container.status:type_name -> api_container_api.Container.Status
-	55, // 2: api_container_api.Container.env_vars:type_name -> api_container_api.Container.EnvVarsEntry
-	56, // 3: api_container_api.ServiceInfo.private_ports:type_name -> api_container_api.ServiceInfo.PrivatePortsEntry
-	57, // 4: api_container_api.ServiceInfo.maybe_public_ports:type_name -> api_container_api.ServiceInfo.MaybePublicPortsEntry
+	56, // 2: api_container_api.Container.env_vars:type_name -> api_container_api.Container.EnvVarsEntry
+	57, // 3: api_container_api.ServiceInfo.private_ports:type_name -> api_container_api.ServiceInfo.PrivatePortsEntry
+	58, // 4: api_container_api.ServiceInfo.maybe_public_ports:type_name -> api_container_api.ServiceInfo.MaybePublicPortsEntry
 	0,  // 5: api_container_api.ServiceInfo.service_status:type_name -> api_container_api.ServiceStatus
 	8,  // 6: api_container_api.ServiceInfo.container:type_name -> api_container_api.Container
-	58, // 7: api_container_api.ServiceInfo.service_dir_paths_to_files_artifacts_list:type_name -> api_container_api.ServiceInfo.ServiceDirPathsToFilesArtifactsListEntry
+	59, // 7: api_container_api.ServiceInfo.service_dir_paths_to_files_artifacts_list:type_name -> api_container_api.ServiceInfo.ServiceDirPathsToFilesArtifactsListEntry
 	10, // 8: api_container_api.ServiceInfo.user:type_name -> api_container_api.User
 	11, // 9: api_container_api.ServiceInfo.tolerations:type_name -> api_container_api.Toleration
-	59, // 10: api_container_api.ServiceInfo.node_selectors:type_name -> api_container_api.ServiceInfo.NodeSelectorsEntry
-	60, // 11: api_container_api.ServiceInfo.labels:type_name -> api_container_api.ServiceInfo.LabelsEntry
-	3,  // 12: api_container_api.RunStarlarkScriptArgs.experimental_features:type_name -> api_container_api.KurtosisFeatureFlag
-	1,  // 13: api_container_api.RunStarlarkScriptArgs.image_download_mode:type_name -> api_container_api.ImageDownloadMode
-	3,  // 14: api_container_api.RunStarlarkPackageArgs.experimental_features:type_name -> api_container_api.KurtosisFeatureFlag
-	1,  // 15: api_container_api.RunStarlarkPackageArgs.image_download_mode:type_name -> api_container_api.ImageDownloadMode
-	18, // 16: api_container_api.StarlarkRunResponseLine.instruction:type_name -> api_container_api.StarlarkInstruction
-	22, // 17: api_container_api.StarlarkRunResponseLine.error:type_name -> api_container_api.StarlarkError
-	26, // 18: api_container_api.StarlarkRunResponseLine.progress_info:type_name -> api_container_api.StarlarkRunProgress
-	19, // 19: api_container_api.StarlarkRunResponseLine.instruction_result:type_name -> api_container_api.StarlarkInstructionResult
-	27, // 20: api_container_api.StarlarkRunResponseLine.run_finished_event:type_name -> api_container_api.StarlarkRunFinishedEvent
-	17, // 21: api_container_api.StarlarkRunResponseLine.warning:type_name -> api_container_api.StarlarkWarning
-	16, // 22: api_container_api.StarlarkRunResponseLine.info:type_name -> api_container_api.StarlarkInfo
-	21, // 23: api_container_api.StarlarkInstruction.position:type_name -> api_container_api.StarlarkInstructionPosition
-	20, // 24: api_container_api.StarlarkInstruction.arguments:type_name -> api_container_api.StarlarkInstructionArg
-	63, // 25: api_container_api.StarlarkInstructionResult.execution_duration:type_name -> google.protobuf.Duration
-	23, // 26: api_container_api.StarlarkError.interpretation_error:type_name -> api_container_api.StarlarkInterpretationError
-	24, // 27: api_container_api.StarlarkError.validation_error:type_name -> api_container_api.StarlarkValidationError
-	25, // 28: api_container_api.StarlarkError.execution_error:type_name -> api_container_api.StarlarkExecutionError
-	63, // 29: api_container_api.StarlarkRunFinishedEvent.total_execution_duration:type_name -> google.protobuf.Duration
-	61, // 30: api_container_api.GetServicesArgs.service_identifiers:type_name -> api_container_api.GetServicesArgs.ServiceIdentifiersEntry
-	62, // 31: api_container_api.GetServicesResponse.service_info:type_name -> api_container_api.GetServicesResponse.ServiceInfoEntry
-	30, // 32: api_container_api.GetExistingAndHistoricalServiceIdentifiersResponse.allIdentifiers:type_name -> api_container_api.ServiceIdentifiers
-	37, // 33: api_container_api.StreamedDataChunk.metadata:type_name -> api_container_api.DataChunkMetadata
-	44, // 34: api_container_api.ListFilesArtifactNamesAndUuidsResponse.file_names_and_uuids:type_name -> api_container_api.FilesArtifactNameAndUuid
-	44, // 35: api_container_api.InspectFilesArtifactContentsRequest.file_names_and_uuid:type_name -> api_container_api.FilesArtifactNameAndUuid
-	48, // 36: api_container_api.InspectFilesArtifactContentsResponse.file_descriptions:type_name -> api_container_api.FileArtifactContentsFileDescription
-	2,  // 37: api_container_api.ConnectServicesArgs.connect:type_name -> api_container_api.Connect
-	3,  // 38: api_container_api.GetStarlarkRunResponse.experimental_features:type_name -> api_container_api.KurtosisFeatureFlag
-	4,  // 39: api_container_api.GetStarlarkRunResponse.restart_policy:type_name -> api_container_api.RestartPolicy
-	7,  // 40: api_container_api.ServiceInfo.PrivatePortsEntry.value:type_name -> api_container_api.Port
-	7,  // 41: api_container_api.ServiceInfo.MaybePublicPortsEntry.value:type_name -> api_container_api.Port
-	9,  // 42: api_container_api.ServiceInfo.ServiceDirPathsToFilesArtifactsListEntry.value:type_name -> api_container_api.FilesArtifactsList
-	12, // 43: api_container_api.GetServicesResponse.ServiceInfoEntry.value:type_name -> api_container_api.ServiceInfo
-	13, // 44: api_container_api.ApiContainerService.RunStarlarkScript:input_type -> api_container_api.RunStarlarkScriptArgs
-	36, // 45: api_container_api.ApiContainerService.UploadStarlarkPackage:input_type -> api_container_api.StreamedDataChunk
-	14, // 46: api_container_api.ApiContainerService.RunStarlarkPackage:input_type -> api_container_api.RunStarlarkPackageArgs
-	28, // 47: api_container_api.ApiContainerService.GetServices:input_type -> api_container_api.GetServicesArgs
-	64, // 48: api_container_api.ApiContainerService.GetExistingAndHistoricalServiceIdentifiers:input_type -> google.protobuf.Empty
-	32, // 49: api_container_api.ApiContainerService.ExecCommand:input_type -> api_container_api.ExecCommandArgs
-	34, // 50: api_container_api.ApiContainerService.WaitForHttpGetEndpointAvailability:input_type -> api_container_api.WaitForHttpGetEndpointAvailabilityArgs
-	35, // 51: api_container_api.ApiContainerService.WaitForHttpPostEndpointAvailability:input_type -> api_container_api.WaitForHttpPostEndpointAvailabilityArgs
-	36, // 52: api_container_api.ApiContainerService.UploadFilesArtifact:input_type -> api_container_api.StreamedDataChunk
-	39, // 53: api_container_api.ApiContainerService.DownloadFilesArtifact:input_type -> api_container_api.DownloadFilesArtifactArgs
-	40, // 54: api_container_api.ApiContainerService.StoreWebFilesArtifact:input_type -> api_container_api.StoreWebFilesArtifactArgs
-	42, // 55: api_container_api.ApiContainerService.StoreFilesArtifactFromService:input_type -> api_container_api.StoreFilesArtifactFromServiceArgs
-	64, // 56: api_container_api.ApiContainerService.ListFilesArtifactNamesAndUuids:input_type -> google.protobuf.Empty
-	46, // 57: api_container_api.ApiContainerService.InspectFilesArtifactContents:input_type -> api_container_api.InspectFilesArtifactContentsRequest
-	49, // 58: api_container_api.ApiContainerService.ConnectServices:input_type -> api_container_api.ConnectServicesArgs
-	64, // 59: api_container_api.ApiContainerService.GetStarlarkRun:input_type -> google.protobuf.Empty
-	53, // 60: api_container_api.ApiContainerService.GetStarlarkScriptPlanYaml:input_type -> api_container_api.StarlarkScriptPlanYamlArgs
-	54, // 61: api_container_api.ApiContainerService.GetStarlarkPackagePlanYaml:input_type -> api_container_api.StarlarkPackagePlanYamlArgs
-	15, // 62: api_container_api.ApiContainerService.RunStarlarkScript:output_type -> api_container_api.StarlarkRunResponseLine
-	64, // 63: api_container_api.ApiContainerService.UploadStarlarkPackage:output_type -> google.protobuf.Empty
-	15, // 64: api_container_api.ApiContainerService.RunStarlarkPackage:output_type -> api_container_api.StarlarkRunResponseLine
-	29, // 65: api_container_api.ApiContainerService.GetServices:output_type -> api_container_api.GetServicesResponse
-	31, // 66: api_container_api.ApiContainerService.GetExistingAndHistoricalServiceIdentifiers:output_type -> api_container_api.GetExistingAndHistoricalServiceIdentifiersResponse
-	33, // 67: api_container_api.ApiContainerService.ExecCommand:output_type -> api_container_api.ExecCommandResponse
-	64, // 68: api_container_api.ApiContainerService.WaitForHttpGetEndpointAvailability:output_type -> google.protobuf.Empty
-	64, // 69: api_container_api.ApiContainerService.WaitForHttpPostEndpointAvailability:output_type -> google.protobuf.Empty
-	38, // 70: api_container_api.ApiContainerService.UploadFilesArtifact:output_type -> api_container_api.UploadFilesArtifactResponse
-	36, // 71: api_container_api.ApiContainerService.DownloadFilesArtifact:output_type -> api_container_api.StreamedDataChunk
-	41, // 72: api_container_api.ApiContainerService.StoreWebFilesArtifact:output_type -> api_container_api.StoreWebFilesArtifactResponse
-	43, // 73: api_container_api.ApiContainerService.StoreFilesArtifactFromService:output_type -> api_container_api.StoreFilesArtifactFromServiceResponse
-	45, // 74: api_container_api.ApiContainerService.ListFilesArtifactNamesAndUuids:output_type -> api_container_api.ListFilesArtifactNamesAndUuidsResponse
-	47, // 75: api_container_api.ApiContainerService.InspectFilesArtifactContents:output_type -> api_container_api.InspectFilesArtifactContentsResponse
-	50, // 76: api_container_api.ApiContainerService.ConnectServices:output_type -> api_container_api.ConnectServicesResponse
-	51, // 77: api_container_api.ApiContainerService.GetStarlarkRun:output_type -> api_container_api.GetStarlarkRunResponse
-	52, // 78: api_container_api.ApiContainerService.GetStarlarkScriptPlanYaml:output_type -> api_container_api.PlanYaml
-	52, // 79: api_container_api.ApiContainerService.GetStarlarkPackagePlanYaml:output_type -> api_container_api.PlanYaml
-	62, // [62:80] is the sub-list for method output_type
-	44, // [44:62] is the sub-list for method input_type
-	44, // [44:44] is the sub-list for extension type_name
-	44, // [44:44] is the sub-list for extension extendee
-	0,  // [0:44] is the sub-list for field type_name
+	60, // 10: api_container_api.ServiceInfo.node_selectors:type_name -> api_container_api.ServiceInfo.NodeSelectorsEntry
+	61, // 11: api_container_api.ServiceInfo.labels:type_name -> api_container_api.ServiceInfo.LabelsEntry
+	13, // 12: api_container_api.ServiceInfo.gpu_config:type_name -> api_container_api.GpuConfig
+	62, // 13: api_container_api.ServiceInfo.bind_mounts:type_name -> api_container_api.ServiceInfo.BindMountsEntry
+	63, // 14: api_container_api.GpuConfig.ulimits:type_name -> api_container_api.GpuConfig.UlimitsEntry
+	3,  // 15: api_container_api.RunStarlarkScriptArgs.experimental_features:type_name -> api_container_api.KurtosisFeatureFlag
+	1,  // 16: api_container_api.RunStarlarkScriptArgs.image_download_mode:type_name -> api_container_api.ImageDownloadMode
+	3,  // 17: api_container_api.RunStarlarkPackageArgs.experimental_features:type_name -> api_container_api.KurtosisFeatureFlag
+	1,  // 18: api_container_api.RunStarlarkPackageArgs.image_download_mode:type_name -> api_container_api.ImageDownloadMode
+	19, // 19: api_container_api.StarlarkRunResponseLine.instruction:type_name -> api_container_api.StarlarkInstruction
+	23, // 20: api_container_api.StarlarkRunResponseLine.error:type_name -> api_container_api.StarlarkError
+	27, // 21: api_container_api.StarlarkRunResponseLine.progress_info:type_name -> api_container_api.StarlarkRunProgress
+	20, // 22: api_container_api.StarlarkRunResponseLine.instruction_result:type_name -> api_container_api.StarlarkInstructionResult
+	28, // 23: api_container_api.StarlarkRunResponseLine.run_finished_event:type_name -> api_container_api.StarlarkRunFinishedEvent
+	18, // 24: api_container_api.StarlarkRunResponseLine.warning:type_name -> api_container_api.StarlarkWarning
+	17, // 25: api_container_api.StarlarkRunResponseLine.info:type_name -> api_container_api.StarlarkInfo
+	22, // 26: api_container_api.StarlarkInstruction.position:type_name -> api_container_api.StarlarkInstructionPosition
+	21, // 27: api_container_api.StarlarkInstruction.arguments:type_name -> api_container_api.StarlarkInstructionArg
+	66, // 28: api_container_api.StarlarkInstructionResult.execution_duration:type_name -> google.protobuf.Duration
+	24, // 29: api_container_api.StarlarkError.interpretation_error:type_name -> api_container_api.StarlarkInterpretationError
+	25, // 30: api_container_api.StarlarkError.validation_error:type_name -> api_container_api.StarlarkValidationError
+	26, // 31: api_container_api.StarlarkError.execution_error:type_name -> api_container_api.StarlarkExecutionError
+	66, // 32: api_container_api.StarlarkRunFinishedEvent.total_execution_duration:type_name -> google.protobuf.Duration
+	64, // 33: api_container_api.GetServicesArgs.service_identifiers:type_name -> api_container_api.GetServicesArgs.ServiceIdentifiersEntry
+	65, // 34: api_container_api.GetServicesResponse.service_info:type_name -> api_container_api.GetServicesResponse.ServiceInfoEntry
+	31, // 35: api_container_api.GetExistingAndHistoricalServiceIdentifiersResponse.allIdentifiers:type_name -> api_container_api.ServiceIdentifiers
+	38, // 36: api_container_api.StreamedDataChunk.metadata:type_name -> api_container_api.DataChunkMetadata
+	45, // 37: api_container_api.ListFilesArtifactNamesAndUuidsResponse.file_names_and_uuids:type_name -> api_container_api.FilesArtifactNameAndUuid
+	45, // 38: api_container_api.InspectFilesArtifactContentsRequest.file_names_and_uuid:type_name -> api_container_api.FilesArtifactNameAndUuid
+	49, // 39: api_container_api.InspectFilesArtifactContentsResponse.file_descriptions:type_name -> api_container_api.FileArtifactContentsFileDescription
+	2,  // 40: api_container_api.ConnectServicesArgs.connect:type_name -> api_container_api.Connect
+	3,  // 41: api_container_api.GetStarlarkRunResponse.experimental_features:type_name -> api_container_api.KurtosisFeatureFlag
+	4,  // 42: api_container_api.GetStarlarkRunResponse.restart_policy:type_name -> api_container_api.RestartPolicy
+	7,  // 43: api_container_api.ServiceInfo.PrivatePortsEntry.value:type_name -> api_container_api.Port
+	7,  // 44: api_container_api.ServiceInfo.MaybePublicPortsEntry.value:type_name -> api_container_api.Port
+	9,  // 45: api_container_api.ServiceInfo.ServiceDirPathsToFilesArtifactsListEntry.value:type_name -> api_container_api.FilesArtifactsList
+	12, // 46: api_container_api.GetServicesResponse.ServiceInfoEntry.value:type_name -> api_container_api.ServiceInfo
+	14, // 47: api_container_api.ApiContainerService.RunStarlarkScript:input_type -> api_container_api.RunStarlarkScriptArgs
+	37, // 48: api_container_api.ApiContainerService.UploadStarlarkPackage:input_type -> api_container_api.StreamedDataChunk
+	15, // 49: api_container_api.ApiContainerService.RunStarlarkPackage:input_type -> api_container_api.RunStarlarkPackageArgs
+	29, // 50: api_container_api.ApiContainerService.GetServices:input_type -> api_container_api.GetServicesArgs
+	67, // 51: api_container_api.ApiContainerService.GetExistingAndHistoricalServiceIdentifiers:input_type -> google.protobuf.Empty
+	33, // 52: api_container_api.ApiContainerService.ExecCommand:input_type -> api_container_api.ExecCommandArgs
+	35, // 53: api_container_api.ApiContainerService.WaitForHttpGetEndpointAvailability:input_type -> api_container_api.WaitForHttpGetEndpointAvailabilityArgs
+	36, // 54: api_container_api.ApiContainerService.WaitForHttpPostEndpointAvailability:input_type -> api_container_api.WaitForHttpPostEndpointAvailabilityArgs
+	37, // 55: api_container_api.ApiContainerService.UploadFilesArtifact:input_type -> api_container_api.StreamedDataChunk
+	40, // 56: api_container_api.ApiContainerService.DownloadFilesArtifact:input_type -> api_container_api.DownloadFilesArtifactArgs
+	41, // 57: api_container_api.ApiContainerService.StoreWebFilesArtifact:input_type -> api_container_api.StoreWebFilesArtifactArgs
+	43, // 58: api_container_api.ApiContainerService.StoreFilesArtifactFromService:input_type -> api_container_api.StoreFilesArtifactFromServiceArgs
+	67, // 59: api_container_api.ApiContainerService.ListFilesArtifactNamesAndUuids:input_type -> google.protobuf.Empty
+	47, // 60: api_container_api.ApiContainerService.InspectFilesArtifactContents:input_type -> api_container_api.InspectFilesArtifactContentsRequest
+	50, // 61: api_container_api.ApiContainerService.ConnectServices:input_type -> api_container_api.ConnectServicesArgs
+	67, // 62: api_container_api.ApiContainerService.GetStarlarkRun:input_type -> google.protobuf.Empty
+	54, // 63: api_container_api.ApiContainerService.GetStarlarkScriptPlanYaml:input_type -> api_container_api.StarlarkScriptPlanYamlArgs
+	55, // 64: api_container_api.ApiContainerService.GetStarlarkPackagePlanYaml:input_type -> api_container_api.StarlarkPackagePlanYamlArgs
+	16, // 65: api_container_api.ApiContainerService.RunStarlarkScript:output_type -> api_container_api.StarlarkRunResponseLine
+	67, // 66: api_container_api.ApiContainerService.UploadStarlarkPackage:output_type -> google.protobuf.Empty
+	16, // 67: api_container_api.ApiContainerService.RunStarlarkPackage:output_type -> api_container_api.StarlarkRunResponseLine
+	30, // 68: api_container_api.ApiContainerService.GetServices:output_type -> api_container_api.GetServicesResponse
+	32, // 69: api_container_api.ApiContainerService.GetExistingAndHistoricalServiceIdentifiers:output_type -> api_container_api.GetExistingAndHistoricalServiceIdentifiersResponse
+	34, // 70: api_container_api.ApiContainerService.ExecCommand:output_type -> api_container_api.ExecCommandResponse
+	67, // 71: api_container_api.ApiContainerService.WaitForHttpGetEndpointAvailability:output_type -> google.protobuf.Empty
+	67, // 72: api_container_api.ApiContainerService.WaitForHttpPostEndpointAvailability:output_type -> google.protobuf.Empty
+	39, // 73: api_container_api.ApiContainerService.UploadFilesArtifact:output_type -> api_container_api.UploadFilesArtifactResponse
+	37, // 74: api_container_api.ApiContainerService.DownloadFilesArtifact:output_type -> api_container_api.StreamedDataChunk
+	42, // 75: api_container_api.ApiContainerService.StoreWebFilesArtifact:output_type -> api_container_api.StoreWebFilesArtifactResponse
+	44, // 76: api_container_api.ApiContainerService.StoreFilesArtifactFromService:output_type -> api_container_api.StoreFilesArtifactFromServiceResponse
+	46, // 77: api_container_api.ApiContainerService.ListFilesArtifactNamesAndUuids:output_type -> api_container_api.ListFilesArtifactNamesAndUuidsResponse
+	48, // 78: api_container_api.ApiContainerService.InspectFilesArtifactContents:output_type -> api_container_api.InspectFilesArtifactContentsResponse
+	51, // 79: api_container_api.ApiContainerService.ConnectServices:output_type -> api_container_api.ConnectServicesResponse
+	52, // 80: api_container_api.ApiContainerService.GetStarlarkRun:output_type -> api_container_api.GetStarlarkRunResponse
+	53, // 81: api_container_api.ApiContainerService.GetStarlarkScriptPlanYaml:output_type -> api_container_api.PlanYaml
+	53, // 82: api_container_api.ApiContainerService.GetStarlarkPackagePlanYaml:output_type -> api_container_api.PlanYaml
+	65, // [65:83] is the sub-list for method output_type
+	47, // [47:65] is the sub-list for method input_type
+	47, // [47:47] is the sub-list for extension type_name
+	47, // [47:47] is the sub-list for extension extendee
+	0,  // [0:47] is the sub-list for field type_name
 }
 
 func init() { file_api_container_service_proto_init() }
@@ -4316,12 +4519,12 @@ func file_api_container_service_proto_init() {
 	}
 	file_api_container_service_proto_msgTypes[0].OneofWrappers = []any{}
 	file_api_container_service_proto_msgTypes[5].OneofWrappers = []any{}
-	file_api_container_service_proto_msgTypes[6].OneofWrappers = []any{}
-	file_api_container_service_proto_msgTypes[7].OneofWrappers = []any{
+	file_api_container_service_proto_msgTypes[7].OneofWrappers = []any{}
+	file_api_container_service_proto_msgTypes[8].OneofWrappers = []any{
 		(*RunStarlarkPackageArgs_Local)(nil),
 		(*RunStarlarkPackageArgs_Remote)(nil),
 	}
-	file_api_container_service_proto_msgTypes[8].OneofWrappers = []any{
+	file_api_container_service_proto_msgTypes[9].OneofWrappers = []any{
 		(*StarlarkRunResponseLine_Instruction)(nil),
 		(*StarlarkRunResponseLine_Error)(nil),
 		(*StarlarkRunResponseLine_ProgressInfo)(nil),
@@ -4330,29 +4533,29 @@ func file_api_container_service_proto_init() {
 		(*StarlarkRunResponseLine_Warning)(nil),
 		(*StarlarkRunResponseLine_Info)(nil),
 	}
-	file_api_container_service_proto_msgTypes[11].OneofWrappers = []any{}
 	file_api_container_service_proto_msgTypes[12].OneofWrappers = []any{}
 	file_api_container_service_proto_msgTypes[13].OneofWrappers = []any{}
-	file_api_container_service_proto_msgTypes[15].OneofWrappers = []any{
+	file_api_container_service_proto_msgTypes[14].OneofWrappers = []any{}
+	file_api_container_service_proto_msgTypes[16].OneofWrappers = []any{
 		(*StarlarkError_InterpretationError)(nil),
 		(*StarlarkError_ValidationError)(nil),
 		(*StarlarkError_ExecutionError)(nil),
 	}
-	file_api_container_service_proto_msgTypes[19].OneofWrappers = []any{}
 	file_api_container_service_proto_msgTypes[20].OneofWrappers = []any{}
-	file_api_container_service_proto_msgTypes[27].OneofWrappers = []any{}
+	file_api_container_service_proto_msgTypes[21].OneofWrappers = []any{}
 	file_api_container_service_proto_msgTypes[28].OneofWrappers = []any{}
-	file_api_container_service_proto_msgTypes[41].OneofWrappers = []any{}
-	file_api_container_service_proto_msgTypes[44].OneofWrappers = []any{}
-	file_api_container_service_proto_msgTypes[46].OneofWrappers = []any{}
+	file_api_container_service_proto_msgTypes[29].OneofWrappers = []any{}
+	file_api_container_service_proto_msgTypes[42].OneofWrappers = []any{}
+	file_api_container_service_proto_msgTypes[45].OneofWrappers = []any{}
 	file_api_container_service_proto_msgTypes[47].OneofWrappers = []any{}
+	file_api_container_service_proto_msgTypes[48].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_container_service_proto_rawDesc), len(file_api_container_service_proto_rawDesc)),
 			NumEnums:      7,
-			NumMessages:   56,
+			NumMessages:   59,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

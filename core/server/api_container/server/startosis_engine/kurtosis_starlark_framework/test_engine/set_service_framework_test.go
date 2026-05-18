@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/core/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/set_service"
@@ -48,7 +49,9 @@ func (t *setServiceTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtosi
 		testModulePackageId,
 		t.packageContentProvider,
 		testNoPackageReplaceOptions,
-		image_download_mode.ImageDownloadMode_Missing)
+		image_download_mode.ImageDownloadMode_Missing,
+		false,
+		args.KurtosisBackendType_Docker)
 }
 
 func (t *setServiceTestCase) GetStarlarkCode() string {

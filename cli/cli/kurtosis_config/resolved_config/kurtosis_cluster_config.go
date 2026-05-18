@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	v7 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v7"
+	v8 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v8"
 	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
@@ -34,6 +34,7 @@ type KurtosisClusterConfig struct {
 	logsCollector               LogsCollectorConfig
 	graflokiConfig              GrafanaLokiConfig
 	shouldEnableDefaultLogsSink bool
+	allowPrivilegedMode         bool
 }
 
 type LogsAggregatorConfig struct {
@@ -51,7 +52,7 @@ type GrafanaLokiConfig struct {
 	LokiImage               string
 }
 
-func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v7.KurtosisClusterConfigV7) (*KurtosisClusterConfig, error) {
+func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v8.KurtosisClusterConfigV8) (*KurtosisClusterConfig, error) {
 	if overrides.Type == nil {
 		return nil, stacktrace.NewError("Kurtosis cluster must have a defined type")
 	}
@@ -114,6 +115,11 @@ func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v7.Kurto
 		shouldEnableDefaultLogsSink = *overrides.ShouldEnableDefaultLogsSink
 	}
 
+	allowPrivilegedMode := false
+	if overrides.AllowPrivilegedMode != nil {
+		allowPrivilegedMode = *overrides.AllowPrivilegedMode
+	}
+
 	return &KurtosisClusterConfig{
 		kurtosisBackendSupplier:     backendSupplier,
 		engineBackendConfigSupplier: engineBackendConfigSupplier,
@@ -122,6 +128,7 @@ func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v7.Kurto
 		logsCollector:               logsCollector,
 		graflokiConfig:              grafloki,
 		shouldEnableDefaultLogsSink: shouldEnableDefaultLogsSink,
+		allowPrivilegedMode:         allowPrivilegedMode,
 	}, nil
 }
 
@@ -157,12 +164,16 @@ func (clusterConfig *KurtosisClusterConfig) ShouldEnableDefaultLogsSink() bool {
 	return clusterConfig.shouldEnableDefaultLogsSink
 }
 
+func (clusterConfig *KurtosisClusterConfig) GetAllowPrivilegedMode() bool {
+	return clusterConfig.allowPrivilegedMode
+}
+
 // ====================================================================================================
 //
 //	Private Helpers
 //
 // ====================================================================================================
-func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesConfig *v7.KubernetesClusterConfigV7) (
+func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesConfig *v8.KubernetesClusterConfigV8) (
 	kurtosisBackendSupplier,
 	engine_server_launcher.KurtosisBackendConfigSupplier,
 	error,
@@ -293,7 +304,7 @@ func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesC
 	return backendSupplier, engineConfigSupplier, nil
 }
 
-func convertTolerations(configTolerations []*v7.KubernetesTolerationV7) []apiv1.Toleration {
+func convertTolerations(configTolerations []*v8.KubernetesTolerationV8) []apiv1.Toleration {
 	if len(configTolerations) == 0 {
 		return nil
 	}

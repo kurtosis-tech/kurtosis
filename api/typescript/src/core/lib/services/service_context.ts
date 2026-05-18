@@ -17,6 +17,9 @@ export class ServiceContext {
         private readonly publicPorts: Map<string, PortSpec>,
         private readonly serviceStatus: ServiceStatus,
         private readonly container: Container | undefined,
+        private readonly privileged: boolean,
+        private readonly bindMounts: Map<string, string>,
+        private readonly hostPIDNamespace: boolean,
     ) {}
 
     // Docs available at https://docs.kurtosis.com/sdk/#getservicename---servicename
@@ -57,6 +60,21 @@ export class ServiceContext {
     // Docs available at https://docs.kurtosis.com/sdk/#getcontainer---container
     public getContainer(): Container | undefined {
         return this.container
+    }
+
+    // Docs available at https://docs.kurtosis.com/sdk/#getprivileged---boolean
+    public getPrivileged(): boolean {
+        return this.privileged
+    }
+
+    // Docs available at https://docs.kurtosis.com/sdk/#getbindmounts---mapstring-string
+    public getBindMounts(): Map<string, string> {
+        return this.bindMounts
+    }
+
+    // Docs available at https://docs.kurtosis.com/sdk/#gethostpidnamespace---boolean
+    public getHostPIDNamespace(): boolean {
+        return this.hostPIDNamespace
     }
 
     // Docs available at https://docs.kurtosis.com/sdk/#execcommandliststring-command---int-exitcode-string-logs

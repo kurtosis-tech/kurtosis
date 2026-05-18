@@ -49,6 +49,9 @@ type ServiceConfig struct {
 	NodeSelectors               map[string]string   `json:"node_selectors,omitempty" yaml:"node_selectors,omitempty"`
 	TiniEnabled                 *bool               `json:"tini_enabled,omitempty" yaml:"tini_enabled,omitempty"`
 	TtyEnabled                  *bool               `json:"tty_enabled,omitempty" yaml:"tty_enabled,omitempty"`
+	Privileged                  bool                `json:"privileged,omitempty" yaml:"privileged,omitempty"`
+	BindMounts                  map[string]string   `json:"bind_mounts,omitempty" yaml:"bind_mounts,omitempty"`
+	HostPIDNamespace            bool                `json:"host_pid_namespace,omitempty" yaml:"host_pid_namespace,omitempty"`
 }
 
 func portToStarlark(port *kurtosis_core_rpc_api_bindings.Port) string {
@@ -160,6 +163,9 @@ func GetFullServiceConfigStarlark(
 	tiniEnabled *bool,
 	ttyEnabled *bool,
 	privateIpAddrPlaceholder string,
+	privileged bool,
+	bindMounts map[string]string,
+	hostPIDNamespace bool,
 ) string {
 	starlarkFields := []string{}
 	starlarkFields = append(starlarkFields, fmt.Sprintf(`image=%q`, containerImageName))
@@ -279,6 +285,22 @@ func GetFullServiceConfigStarlark(
 	// TTY
 	if ttyEnabled != nil && *ttyEnabled {
 		starlarkFields = append(starlarkFields, `tty_enabled=True`)
+	}
+
+	if privileged {
+		starlarkFields = append(starlarkFields, `privileged=True`)
+	}
+
+	if hostPIDNamespace {
+		starlarkFields = append(starlarkFields, `host_pid_namespace=True`)
+	}
+
+	if len(bindMounts) > 0 {
+		bindMountStrings := []string{}
+		for hostPath, containerPath := range bindMounts {
+			bindMountStrings = append(bindMountStrings, fmt.Sprintf(`%q: %q`, hostPath, containerPath))
+		}
+		starlarkFields = append(starlarkFields, fmt.Sprintf(`bind_mounts={%s}`, strings.Join(bindMountStrings, ", ")))
 	}
 
 	return fmt.Sprintf("ServiceConfig(%s)", strings.Join(starlarkFields, ", "))

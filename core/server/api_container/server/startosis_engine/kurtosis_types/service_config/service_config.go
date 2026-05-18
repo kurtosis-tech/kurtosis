@@ -58,6 +58,9 @@ const (
 	PublishUdpAttr                  = "publish_udp"
 	CapabilitiesAttr                = "capabilities"
 	GpuAttr                         = "gpu"
+	PrivilegedAttr                  = "privileged"
+	BindMountsAttr                  = "bind_mounts"
+	HostPIDNamespaceAttr            = "host_pid_namespace"
 
 	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
@@ -67,6 +70,14 @@ const (
 
 	minimumMemoryAllocationMegabytes = 6
 )
+
+// allowedBindMountHostPaths restricts what host paths bind_mounts may target. This is intentionally
+// narrow: the only supported use case today is mounting the Docker socket so that a container (e.g.
+// ethpandaops/disruptoor) can talk to the host's Docker daemon. Adding new paths here is a deliberate
+// expansion of trust and should be reviewed carefully.
+var allowedBindMountHostPaths = map[string]bool{
+	"/var/run/docker.sock": true,
+}
 
 func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 	return &kurtosis_type_constructor.KurtosisTypeConstructor{
@@ -263,11 +274,59 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*GpuConfig],
 					Validator:         nil,
 				},
+				{
+					Name:              PrivilegedAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Bool],
+					Validator:         nil,
+				},
+				{
+					Name:              HostPIDNamespaceAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Bool],
+					Validator:         nil,
+				},
+				{
+					Name:              BindMountsAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return ValidateBindMounts(value)
+					},
+				},
 			},
 		},
 
 		Instantiate: instantiateServiceConfig,
 	}
+}
+
+// ValidateBindMounts ensures bind_mounts is a string→string dict and every host path is allowlisted.
+func ValidateBindMounts(value starlark.Value) *startosis_errors.InterpretationError {
+	if err := builtin_argument.StringMappingToString(value, BindMountsAttr); err != nil {
+		return err
+	}
+	dict, ok := value.(*starlark.Dict)
+	if !ok {
+		return startosis_errors.NewInterpretationError("'%s' must be a dict[str, str]", BindMountsAttr)
+	}
+	for _, key := range dict.Keys() {
+		hostPathStr, ok := key.(starlark.String)
+		if !ok {
+			return startosis_errors.NewInterpretationError("'%s' keys must be strings", BindMountsAttr)
+		}
+		hostPath := hostPathStr.GoString()
+		if !allowedBindMountHostPaths[hostPath] {
+			allowed := make([]string, 0, len(allowedBindMountHostPaths))
+			for p := range allowedBindMountHostPaths {
+				allowed = append(allowed, p)
+			}
+			return startosis_errors.NewInterpretationError(
+				"'%s' host path %q is not permitted; only the following host paths are allowed: %v",
+				BindMountsAttr, hostPath, allowed)
+		}
+	}
+	return nil
 }
 
 func instantiateServiceConfig(arguments *builtin_argument.ArgumentValuesSet) (builtin_argument.KurtosisValueType, *startosis_errors.InterpretationError) {
@@ -618,6 +677,50 @@ func (config *ServiceConfig) ToKurtosisType(
 		}
 	}
 
+	privileged := false
+	privilegedStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Bool](config.KurtosisValueTypeDefault, PrivilegedAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found {
+		privileged = bool(privilegedStarlark)
+	}
+
+	hostPIDNamespace := false
+	hostPIDNamespaceStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Bool](config.KurtosisValueTypeDefault, HostPIDNamespaceAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found {
+		hostPIDNamespace = bool(hostPIDNamespaceStarlark)
+	}
+
+	bindMounts := map[string]string{}
+	bindMountsStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](config.KurtosisValueTypeDefault, BindMountsAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found && bindMountsStarlark.Len() > 0 {
+		// Host-path allowlist is enforced by ValidateBindMounts at builtin-argument
+		// validation time; here we just materialize the dict.
+		for _, key := range bindMountsStarlark.Keys() {
+			hostPathStr, ok := key.(starlark.String)
+			if !ok {
+				return nil, startosis_errors.NewInterpretationError("'%s' keys must be strings", BindMountsAttr)
+			}
+			hostPath := hostPathStr.GoString()
+			rawValue, _, valueErr := bindMountsStarlark.Get(key)
+			if valueErr != nil {
+				return nil, startosis_errors.NewInterpretationError("Could not read '%s' value for host path %q: %v", BindMountsAttr, hostPath, valueErr)
+			}
+			containerPathStr, ok := rawValue.(starlark.String)
+			if !ok {
+				return nil, startosis_errors.NewInterpretationError("'%s' values must be strings", BindMountsAttr)
+			}
+			bindMounts[hostPath] = containerPathStr.GoString()
+		}
+	}
+
 	gpuConfig := service.NewGpuConfig(0, nil, 0, nil, "", "")
 	gpuConfigStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*GpuConfig](config.KurtosisValueTypeDefault, GpuAttr)
 	if interpretationErr != nil {
@@ -664,6 +767,15 @@ func (config *ServiceConfig) ToKurtosisType(
 	serviceConfig.SetFilesToBeMoved(filesToBeMoved)
 	if len(capabilities) > 0 {
 		serviceConfig.SetCapabilities(capabilities)
+	}
+	if privileged {
+		serviceConfig.SetPrivileged(true)
+	}
+	if hostPIDNamespace {
+		serviceConfig.SetHostPIDNamespace(true)
+	}
+	if len(bindMounts) > 0 {
+		serviceConfig.SetBindMounts(bindMounts)
 	}
 	return serviceConfig, nil
 }

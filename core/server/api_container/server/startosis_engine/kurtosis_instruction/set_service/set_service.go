@@ -7,11 +7,13 @@ import (
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/core/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/dependency_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/privileged_mode"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -41,6 +43,8 @@ func NewSetService(
 	packageContentProvider startosis_packages.PackageContentProvider,
 	packageReplaceOptions map[string]string,
 	imageDownloadMode image_download_mode.ImageDownloadMode,
+	allowPrivilegedMode bool,
+	kurtosisBackendType args.KurtosisBackendType,
 ) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
@@ -82,6 +86,8 @@ func NewSetService(
 				packageReplaceOptions:   packageReplaceOptions,
 				description:             "", // populated at interpretation time
 				imageDownloadMode:       imageDownloadMode,
+				allowPrivilegedMode:     allowPrivilegedMode,
+				kurtosisBackendType:     kurtosisBackendType,
 			}
 		},
 		DefaultDisplayArguments: map[string]bool{
@@ -103,8 +109,10 @@ type SetServiceCapabilities struct {
 	packageReplaceOptions  map[string]string
 	imageVal               starlark.Value
 
-	imageDownloadMode image_download_mode.ImageDownloadMode
-	description       string
+	imageDownloadMode   image_download_mode.ImageDownloadMode
+	description         string
+	allowPrivilegedMode bool
+	kurtosisBackendType args.KurtosisBackendType
 }
 
 func (builtin *SetServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -138,6 +146,9 @@ func (builtin *SetServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuilt
 		builtin.imageDownloadMode,
 	)
 	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if interpretationErr := privileged_mode.ValidateServiceConfig(apiServiceConfigOverride, builtin.allowPrivilegedMode, builtin.kurtosisBackendType); interpretationErr != nil {
 		return nil, interpretationErr
 	}
 
@@ -237,6 +248,15 @@ func upsertServiceConfigs(currServiceConfig, serviceConfigOverride *service.Serv
 	}
 	if tolerationsOverride := serviceConfigOverride.GetTolerations(); len(tolerationsOverride) > 0 {
 		currServiceConfig.SetTolerations(tolerationsOverride)
+	}
+	if serviceConfigOverride.GetPrivileged() {
+		currServiceConfig.SetPrivileged(true)
+	}
+	if serviceConfigOverride.GetHostPIDNamespace() {
+		currServiceConfig.SetHostPIDNamespace(true)
+	}
+	if bindMountsOverride := serviceConfigOverride.GetBindMounts(); len(bindMountsOverride) > 0 {
+		currServiceConfig.SetBindMounts(bindMountsOverride)
 	}
 
 	// TODO: impl logic for overriding entrypoint, cmd, env vars, and ports

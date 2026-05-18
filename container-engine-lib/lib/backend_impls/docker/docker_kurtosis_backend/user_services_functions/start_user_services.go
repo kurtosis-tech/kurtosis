@@ -559,6 +559,12 @@ func createStartServiceOperation(
 		devices := serviceConfig.GetDevices()
 		publishUdp := serviceConfig.GetPublishUdp()
 		capabilities := serviceConfig.GetCapabilities()
+		privileged := serviceConfig.GetPrivileged()
+		bindMounts := serviceConfig.GetBindMounts()
+		hostPIDNamespace := serviceConfig.GetHostPIDNamespace()
+		if privileged || len(bindMounts) > 0 || hostPIDNamespace {
+			logrus.Warnf("service '%v' is starting with privileged=%v, bind_mounts=%v, host_pid_namespace=%v; this grants the container elevated host access", id, privileged, bindMounts, hostPIDNamespace)
+		}
 		gpuConfig := serviceConfig.GetGpuConfig()
 		shmSizeMegabytes := gpuConfig.GetShmSizeMegabytes()
 		ulimits := gpuConfig.GetUlimits()
@@ -762,6 +768,18 @@ func createStartServiceOperation(
 				capabilitiesSet[docker_manager.ContainerCapability(cap)] = true
 			}
 			createAndStartArgsBuilder.WithAddedCapabilities(capabilitiesSet)
+		}
+
+		if privileged {
+			createAndStartArgsBuilder.WithPrivileged(true)
+		}
+
+		if hostPIDNamespace {
+			createAndStartArgsBuilder.WithHostPIDNamespace(true)
+		}
+
+		if len(bindMounts) > 0 {
+			createAndStartArgsBuilder.WithBindMounts(bindMounts)
 		}
 
 		if shmSizeMegabytes > 0 {

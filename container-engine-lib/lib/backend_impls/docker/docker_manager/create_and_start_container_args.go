@@ -44,6 +44,8 @@ type CreateAndStartContainerArgs struct {
 	gpuCount                                 int64
 	gpuDeviceIDs                             []string
 	gpuDriver                                string
+	privileged                               bool
+	hostPIDNamespace                         bool
 }
 
 // Builder for creating CreateAndStartContainerArgs object
@@ -80,6 +82,8 @@ type CreateAndStartContainerArgsBuilder struct {
 	gpuCount                                 int64
 	gpuDeviceIDs                             []string
 	gpuDriver                                string
+	privileged                               bool
+	hostPIDNamespace                         bool
 }
 
 /*
@@ -123,6 +127,8 @@ func NewCreateAndStartContainerArgsBuilder(dockerImage string, name string, netw
 		gpuCount:                                 0,
 		gpuDeviceIDs:                             nil,
 		gpuDriver:                                "",
+		privileged:                               false,
+		hostPIDNamespace:                         false,
 	}
 }
 
@@ -190,6 +196,8 @@ func (builder *CreateAndStartContainerArgsBuilder) Build() *CreateAndStartContai
 		gpuCount:                                 builder.gpuCount,
 		gpuDeviceIDs:                             builder.gpuDeviceIDs,
 		gpuDriver:                                builder.gpuDriver,
+		privileged:                               builder.privileged,
+		hostPIDNamespace:                         builder.hostPIDNamespace,
 	}
 }
 
@@ -349,5 +357,17 @@ func (builder *CreateAndStartContainerArgsBuilder) WithUser(user *service_user.S
 
 func (builder *CreateAndStartContainerArgsBuilder) WithImageRegistrySpec(imageRegistrySpec *image_registry_spec.ImageRegistrySpec) *CreateAndStartContainerArgsBuilder {
 	builder.imageRegistrySpec = imageRegistrySpec
+	return builder
+}
+
+// WithPrivileged starts the container with the Docker --privileged flag.
+func (builder *CreateAndStartContainerArgsBuilder) WithPrivileged(privileged bool) *CreateAndStartContainerArgsBuilder {
+	builder.privileged = privileged
+	return builder
+}
+
+// WithHostPIDNamespace starts the container in the host PID namespace.
+func (builder *CreateAndStartContainerArgsBuilder) WithHostPIDNamespace(hostPIDNamespace bool) *CreateAndStartContainerArgsBuilder {
+	builder.hostPIDNamespace = hostPIDNamespace
 	return builder
 }

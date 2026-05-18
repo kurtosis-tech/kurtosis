@@ -311,6 +311,9 @@ type RestartPolicy string
 
 // RunStarlarkPackage defines model for RunStarlarkPackage.
 type RunStarlarkPackage struct {
+	// AllowPrivilegedMode Allows Docker-only privileged containers, host bind mounts, and host PID namespace for this run. Defaults to false
+	AllowPrivilegedMode *bool `json:"allow_privileged_mode,omitempty"`
+
 	// ClonePackage Whether the package should be cloned or not.
 	// If false, then the package will be pulled from the APIC local package store. If it's a local package then is must
 	// have been uploaded using UploadStarlarkPackage prior to calling RunStarlarkPackage.
@@ -355,6 +358,9 @@ type RunStarlarkPackage struct {
 
 // RunStarlarkScript defines model for RunStarlarkScript.
 type RunStarlarkScript struct {
+	// AllowPrivilegedMode Allows Docker-only privileged containers, host bind mounts, and host PID namespace for this run. Defaults to false
+	AllowPrivilegedMode *bool `json:"allow_privileged_mode,omitempty"`
+
 	// CloudInstanceId Defaults to empty
 	CloudInstanceId *string `json:"cloud_instance_id,omitempty"`
 
@@ -400,7 +406,12 @@ type ServiceIdentifiers struct {
 
 // ServiceInfo defines model for ServiceInfo.
 type ServiceInfo struct {
-	Container Container `json:"container"`
+	// BindMounts Host-path to container-path bind mounts configured on the service.
+	BindMounts *map[string]string `json:"bind_mounts,omitempty"`
+	Container  Container          `json:"container"`
+
+	// HostPidNamespace Whether the service was started in the Docker host PID namespace.
+	HostPidNamespace *bool `json:"host_pid_namespace,omitempty"`
 
 	// Name Name of the service
 	Name string `json:"name"`
@@ -408,6 +419,9 @@ type ServiceInfo struct {
 	// PrivateIpAddr The IP address of the service inside the enclave
 	PrivateIpAddr string          `json:"private_ip_addr"`
 	PrivatePorts  map[string]Port `json:"private_ports"`
+
+	// Privileged Whether the service was started with Docker privileged mode.
+	Privileged *bool `json:"privileged,omitempty"`
 
 	// PublicIpAddr Public IP address *outside* the enclave where the service is reachable
 	// NOTE: Will be empty if the service isn't running, the service didn't define any ports, or the backend doesn't support reporting public service info
