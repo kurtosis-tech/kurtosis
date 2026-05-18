@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.18.3](https://github.com/kurtosis-tech/kurtosis/compare/1.18.2...1.18.3) (2026-05-18)
+
+
+### Bug Fixes
+
+* **engine:** use heredoc instead of printf to write Docker config storage ([#3059](https://github.com/kurtosis-tech/kurtosis/issues/3059)) ([2bc992d](https://github.com/kurtosis-tech/kurtosis/commit/2bc992d8c1e4038603ebad281f37c418a476c902))
+
 ## [1.18.2](https://github.com/kurtosis-tech/kurtosis/compare/1.18.1...1.18.2) (2026-04-28)
 
 
