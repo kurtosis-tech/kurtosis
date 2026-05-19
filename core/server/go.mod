@@ -45,7 +45,7 @@ require (
 	go.starlark.net v0.0.0-20230224151120-c52844e64a10
 	golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f
 	golang.org/x/sync v0.20.0
-	k8s.io/api v0.36.0
+	k8s.io/api v0.36.1
 )
 
 require (
@@ -189,7 +189,7 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/apimachinery v0.36.1 // indirect
-	k8s.io/client-go v0.36.0 // indirect
+	k8s.io/client-go v0.36.1 // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20260317180543-43fb72c5454a // indirect
 	k8s.io/streaming v0.36.1 // indirect
