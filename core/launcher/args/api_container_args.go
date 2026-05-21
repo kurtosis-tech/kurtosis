@@ -29,6 +29,8 @@ type APIContainerArgs struct {
 
 	EnclaveUUID string `json:"enclaveUuid"`
 
+	EnclaveName string `json:"enclaveName"`
+
 	// The directory on the API container where the enclave data directory will have been mounted
 	EnclaveDataVolumeDirpath string `json:"enclaveDataVolume"`
 
@@ -58,6 +60,7 @@ type APIContainerArgs struct {
 }
 
 var skipValidation = map[string]bool{
+	"enclaveName":       true,
 	"cloud_instance_id": true,
 	"cloud_user_id":     true,
 }
@@ -108,6 +111,7 @@ func NewAPIContainerArgs(
 	logLevel string,
 	grpcListenPortNum uint16,
 	enclaveUuid string,
+	enclaveName string,
 	enclaveDataVolumeDirpath string,
 	kurtosisBackendType KurtosisBackendType,
 	kurtosisBackendConfig interface{},
@@ -124,6 +128,7 @@ func NewAPIContainerArgs(
 		LogLevel:                    logLevel,
 		GrpcListenPortNum:           grpcListenPortNum,
 		EnclaveUUID:                 enclaveUuid,
+		EnclaveName:                 enclaveName,
 		EnclaveDataVolumeDirpath:    enclaveDataVolumeDirpath,
 		KurtosisBackendType:         kurtosisBackendType,
 		KurtosisBackendConfig:       kurtosisBackendConfig,

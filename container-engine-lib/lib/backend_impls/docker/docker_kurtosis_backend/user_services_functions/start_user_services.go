@@ -120,6 +120,7 @@ func UnregisterUserServices(
 func StartRegisteredUserServices(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
+	enclaveName string,
 	services map[service.ServiceUUID]*service.ServiceConfig,
 	serviceRegistrationRepository *service_registration.ServiceRegistrationRepository,
 	logsCollector *logs_collector.LogsCollector,
@@ -202,7 +203,7 @@ func StartRegisteredUserServices(
 	}
 	enclaveNetworkID := enclaveNetwork.GetId()
 
-	enclaveObjAttrsProvider, err := objAttrsProvider.ForEnclave(enclaveUuid)
+	enclaveObjAttrsProvider, err := objAttrsProvider.ForEnclaveWithName(enclaveUuid, enclaveName)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveUuid)
 	}
