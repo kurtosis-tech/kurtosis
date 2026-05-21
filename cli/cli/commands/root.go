@@ -36,6 +36,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/lint"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/loki"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/lsp"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/otel"
 	_package "github.com/kurtosis-tech/kurtosis/cli/cli/commands/package"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/port"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/portal"
@@ -145,6 +146,7 @@ func init() {
 	RootCmd.AddCommand(_package.PackageCmd)
 	RootCmd.AddCommand(github.GitHubCmd)
 	RootCmd.AddCommand(grafloki.GraflokiCmd)
+	RootCmd.AddCommand(otel.OtelCmd)
 }
 
 // ====================================================================================================

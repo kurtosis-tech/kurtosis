@@ -86,6 +86,9 @@ const (
 	GraflokiCmdStr          = "grafloki"
 	GraflokiStartCmdStr     = "start"
 	GraflokiStopCmdStr      = "stop"
+	OtelCmdStr              = "otel"
+	OtelStartCmdStr         = "start"
+	OtelStopCmdStr          = "stop"
 )
 
 // TODO: added constant error message here, can we move to another file later.
