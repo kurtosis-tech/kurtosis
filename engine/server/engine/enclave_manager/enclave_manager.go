@@ -441,18 +441,6 @@ func (manager *EnclaveManager) RestartAllEnclaveAPIContainers(ctx context.Contex
 		apiContainersToDestroyEnclaveUuids[enclaveUuid] = true
 	}
 
-	enclaveNamesByUuid := map[enclave.EnclaveUUID]string{}
-	enclavesByUuid, err := manager.kurtosisBackend.GetEnclaves(ctx, &enclave.EnclaveFilters{
-		UUIDs:    apiContainersToDestroyEnclaveUuids,
-		Statuses: nil,
-	})
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting enclave names before restarting API containers")
-	}
-	for enclaveUuid, enclaveObj := range enclavesByUuid {
-		enclaveNamesByUuid[enclaveUuid] = enclaveObj.GetName()
-	}
-
 	if err := manager.destroyApiContainers(ctx, apiContainersToDestroyEnclaveUuids); err != nil {
 		return stacktrace.Propagate(err, "An error occurred destroying API containers on enclave with UUIDs '%+v'", apiContainersToDestroyEnclaveUuids)
 	}
@@ -472,7 +460,6 @@ func (manager *EnclaveManager) RestartAllEnclaveAPIContainers(ctx context.Contex
 			useDefaultApiContainerVersionTag,
 			restartAPIContainerDefaultLogLevel,
 			enclaveUuid,
-			enclaveNamesByUuid[enclaveUuid],
 			apiContainerListenGrpcPortNumInsideNetwork,
 			manager.enclaveEnvVars,
 			currentAPIContainer.IsProductionEnclave(),

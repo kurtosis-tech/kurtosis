@@ -3,7 +3,6 @@ package docker_kurtosis_backend
 import (
 	"context"
 	"io"
-	"strings"
 	"sync"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
@@ -62,8 +61,6 @@ type DockerKurtosisBackend struct {
 	// This map is set exactly once, upon creation of the DockerKubernetesBackend, and never modified afterwards. Therefore, it doesn't need to be protected with a mutex (because the FreeIPProviders are themselves threadsafe)
 	enclaveFreeIpProviders map[enclave.EnclaveUUID]*free_ip_addr_tracker.FreeIpAddrTracker
 
-	enclaveNames map[enclave.EnclaveUUID]string
-
 	serviceRegistrationRepository *service_registration.ServiceRegistrationRepository
 
 	productionMode bool
@@ -75,20 +72,15 @@ type DockerKurtosisBackend struct {
 func NewDockerKurtosisBackend(
 	dockerManager *docker_manager.DockerManager,
 	enclaveFreeIpProviders map[enclave.EnclaveUUID]*free_ip_addr_tracker.FreeIpAddrTracker,
-	enclaveNames map[enclave.EnclaveUUID]string,
 	serviceRegistrationRepository *service_registration.ServiceRegistrationRepository,
 	productionMode bool,
 ) *DockerKurtosisBackend {
 	dockerNetworkAllocator := docker_network_allocator.NewDockerNetworkAllocator(dockerManager)
-	if enclaveNames == nil {
-		enclaveNames = map[enclave.EnclaveUUID]string{}
-	}
 	return &DockerKurtosisBackend{
 		dockerManager:                 dockerManager,
 		dockerNetworkAllocator:        dockerNetworkAllocator,
 		objAttrsProvider:              object_attributes_provider.GetDockerObjectAttributesProvider(),
 		enclaveFreeIpProviders:        enclaveFreeIpProviders,
-		enclaveNames:                  enclaveNames,
 		serviceRegistrationRepository: serviceRegistrationRepository,
 		productionMode:                productionMode,
 		serviceRegistrationMutex:      &sync.Mutex{},
@@ -246,9 +238,9 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 		return nil, nil, stacktrace.NewError("Expected the logs collector to have an ip address in the enclave network but it does not.")
 	}
 
-	enclaveName, err := backend.getEnclaveName(ctx, enclaveUuid)
+	enclaveNetwork, err := backend.getEnclaveNetworkByEnclaveUuid(ctx, enclaveUuid)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the enclave name for enclave '%v'", enclaveUuid)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the enclave network for enclave '%v'", enclaveUuid)
 	}
 
 	var restartPolicy docker_manager.RestartPolicy = docker_manager.NoRestart
@@ -262,7 +254,7 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 	successfullyStartedService, failedService, err := user_service_functions.StartRegisteredUserServices(
 		ctx,
 		enclaveUuid,
-		enclaveName,
+		enclaveNetwork,
 		services,
 		backend.serviceRegistrationRepository,
 		logsCollector,
@@ -278,22 +270,6 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 		return nil, nil, stacktrace.Propagate(err, "Unexpected error while starting user service")
 	}
 	return successfullyStartedService, failedService, nil
-}
-
-func (backend *DockerKurtosisBackend) getEnclaveName(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (string, error) {
-	if enclaveName, found := backend.enclaveNames[enclaveUuid]; found && strings.TrimSpace(enclaveName) != "" {
-		return enclaveName, nil
-	}
-
-	enclaveNetwork, err := backend.getEnclaveNetworkByEnclaveUuid(ctx, enclaveUuid)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting the enclave network for enclave '%v'", enclaveUuid)
-	}
-	enclaveName, found := enclaveNetwork.GetLabels()[docker_label_key.EnclaveNameDockerLabelKey.GetString()]
-	if !found || strings.TrimSpace(enclaveName) == "" {
-		return "", stacktrace.NewError("Expected to find Docker network label '%v' for enclave '%v', but none was found", docker_label_key.EnclaveNameDockerLabelKey.GetString(), enclaveUuid)
-	}
-	return enclaveName, nil
 }
 
 func (backend *DockerKurtosisBackend) RemoveRegisteredUserServiceProcesses(ctx context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceUUID]bool) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error) {

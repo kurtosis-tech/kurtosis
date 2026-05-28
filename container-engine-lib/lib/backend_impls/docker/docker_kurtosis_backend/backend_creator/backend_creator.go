@@ -6,7 +6,6 @@ import (
 	"net"
 	"os"
 	"path"
-	"strings"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 
@@ -46,7 +45,6 @@ type APIContainerModeArgs struct {
 	// Normally storing a context in a struct is bad, but we only do this to package it together as part of "optional" args
 	Context        context.Context
 	EnclaveID      enclave.EnclaveUUID
-	EnclaveName    string
 	APIContainerIP net.IP
 	IsProduction   bool
 }
@@ -238,7 +236,6 @@ func getDockerKurtosisBackend(
 	// If running within the API container context, detect the network that the API container is running inside
 	// so, we can create the free IP address trackers
 	enclaveFreeIpAddrTrackers := map[enclave.EnclaveUUID]*free_ip_addr_tracker.FreeIpAddrTracker{}
-	enclaveNames := map[enclave.EnclaveUUID]string{}
 	productionMode := false
 	// It's only used by API container so can be nil for other contexts
 	var serviceRegistrationRepository *service_registration.ServiceRegistrationRepository
@@ -273,13 +270,6 @@ func getDockerKurtosisBackend(
 			return nil, stacktrace.NewError("Found more than one Docker network matching enclave '%v'; this is a bug in Kurtosis", enclaveUuid)
 		}
 		network := matchingNetworks[0]
-		enclaveName := optionalApiContainerModeArgs.EnclaveName
-		if strings.TrimSpace(enclaveName) == "" {
-			enclaveName = network.GetLabels()[docker_label_key.EnclaveNameDockerLabelKey.GetString()]
-		}
-		if strings.TrimSpace(enclaveName) != "" {
-			enclaveNames[enclaveUuid] = enclaveName
-		}
 		networkIp := network.GetIpAndMask().IP
 		apiContainerIp := optionalApiContainerModeArgs.APIContainerIP
 
@@ -326,7 +316,7 @@ func getDockerKurtosisBackend(
 		}
 	}
 
-	dockerKurtosisBackend := docker_kurtosis_backend.NewDockerKurtosisBackend(dockerManager, enclaveFreeIpAddrTrackers, enclaveNames, serviceRegistrationRepository, productionMode)
+	dockerKurtosisBackend := docker_kurtosis_backend.NewDockerKurtosisBackend(dockerManager, enclaveFreeIpAddrTrackers, serviceRegistrationRepository, productionMode)
 
 	wrappedBackend := metrics_reporting.NewMetricsReportingKurtosisBackend(dockerKurtosisBackend)
 

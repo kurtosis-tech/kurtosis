@@ -141,7 +141,6 @@ func runMain() error {
 	dockerApiContainerModeArgs := &backend_creator.APIContainerModeArgs{
 		Context:        ctx,
 		EnclaveID:      enclave.EnclaveUUID(serverArgs.EnclaveUUID),
-		EnclaveName:    serverArgs.EnclaveName,
 		APIContainerIP: ownIpAddress,
 		IsProduction:   serverArgs.IsProductionEnclave,
 	}
