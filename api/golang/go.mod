@@ -8,7 +8,7 @@ replace (
 )
 
 require (
-	connectrpc.com/connect v1.19.2
+	connectrpc.com/connect v1.20.0
 	github.com/Masterminds/semver/v3 v3.5.0
 	github.com/getkin/kin-openapi v0.138.0
 	github.com/ghodss/yaml v1.0.0
