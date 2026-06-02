@@ -55,6 +55,9 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
 	}
 	engineManager.SetSkipConfiguredGrafloki(true)
+	// `otel start` already started the side containers above; suppress the config-driven auto-start
+	// path so RestartEngineIdempotently below doesn't try to start them a second time.
+	engineManager.SetSkipConfiguredOtel(true)
 	_, engineClientCloseFunc, err := engineManager.RestartEngineIdempotently(
 		ctx,
 		defaults.DefaultEngineLogLevel,
