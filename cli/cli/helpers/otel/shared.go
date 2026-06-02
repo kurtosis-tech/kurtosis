@@ -15,6 +15,7 @@ const (
 	defaultClickHouseImage = "clickhouse/clickhouse-server:26.3-alpine"
 	defaultCollectorImage  = "otel/opentelemetry-collector-contrib:0.117.0"
 
+	// Container-internal listen ports (what each service binds to inside its container).
 	clickHouseHTTPPort   = uint16(8123)
 	clickHouseNativePort = uint16(9000)
 
@@ -22,6 +23,14 @@ const (
 	collectorOTLPHTTPPort = uint16(4318)
 	collectorLokiPort     = uint16(3500)
 	collectorHealthPort   = uint16(13133)
+
+	// Host-published ports. Deliberately non-default so the side containers do not
+	// collide with a developer's own ClickHouse (8123) or OTLP collector (4317/4318)
+	// already bound on the Docker host. Must match the ethereum-package's
+	// ENGINE_OTEL_* constants in main.star.
+	clickHouseHTTPHostPort    = uint16(18123)
+	collectorOTLPGRPCHostPort = uint16(14317)
+	collectorOTLPHTTPHostPort = uint16(14318)
 
 	unsupportedClusterTypeErrorMsg = "kurtosis otel is Docker-only; current cluster backend is '%v'."
 )

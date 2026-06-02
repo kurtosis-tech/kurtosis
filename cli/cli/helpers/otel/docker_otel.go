@@ -152,7 +152,7 @@ func createClickHouseContainer(ctx context.Context, dockerManager *docker_manage
 	clickHouseContainerName := fmt.Sprintf("%v%v", ClickHouseContainerNamePrefix, clickHouseUuid)
 	clickHouseArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(defaultClickHouseImage, clickHouseContainerName, bridgeNetworkId).
 		WithUsedPorts(map[nat.Port]docker_manager.PortPublishSpec{
-			nat.Port(strconv.Itoa(int(clickHouseHTTPPort)) + "/tcp"):   docker_manager.NewManualPublishingSpec(clickHouseHTTPPort),
+			nat.Port(strconv.Itoa(int(clickHouseHTTPPort)) + "/tcp"):   docker_manager.NewManualPublishingSpec(clickHouseHTTPHostPort),
 			nat.Port(strconv.Itoa(int(clickHouseNativePort)) + "/tcp"): docker_manager.NewNoPublishingSpec(),
 		}).
 		WithEnvironmentVariables(map[string]string{
@@ -219,8 +219,8 @@ func createCollectorContainer(ctx context.Context, dockerManager *docker_manager
 	collectorArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(defaultCollectorImage, collectorContainerName, bridgeNetworkId).
 		WithCmdArgs([]string{fmt.Sprintf("--config=%v", collectorConfigMountPath)}).
 		WithUsedPorts(map[nat.Port]docker_manager.PortPublishSpec{
-			nat.Port(strconv.Itoa(int(collectorOTLPGRPCPort)) + "/tcp"): docker_manager.NewManualPublishingSpec(collectorOTLPGRPCPort),
-			nat.Port(strconv.Itoa(int(collectorOTLPHTTPPort)) + "/tcp"): docker_manager.NewManualPublishingSpec(collectorOTLPHTTPPort),
+			nat.Port(strconv.Itoa(int(collectorOTLPGRPCPort)) + "/tcp"): docker_manager.NewManualPublishingSpec(collectorOTLPGRPCHostPort),
+			nat.Port(strconv.Itoa(int(collectorOTLPHTTPPort)) + "/tcp"): docker_manager.NewManualPublishingSpec(collectorOTLPHTTPHostPort),
 			nat.Port(strconv.Itoa(int(collectorLokiPort)) + "/tcp"):     docker_manager.NewNoPublishingSpec(),
 			nat.Port(strconv.Itoa(int(collectorHealthPort)) + "/tcp"):   docker_manager.NewNoPublishingSpec(),
 		}).
@@ -289,7 +289,7 @@ func clickHouseContainerNeedsRecreation(clickHouseContainer *types.Container) bo
 	if clickHouseContainer == nil {
 		return false
 	}
-	return !hasExpectedHostPortBinding(clickHouseContainer.GetHostPortBindings(), clickHouseHTTPPort)
+	return !hasExpectedHostPortBinding(clickHouseContainer.GetHostPortBindings(), clickHouseHTTPPort, clickHouseHTTPHostPort)
 }
 
 func collectorContainerNeedsRecreation(collectorContainer *types.Container, clickHouseWasCreated bool) bool {
@@ -300,13 +300,12 @@ func collectorContainerNeedsRecreation(collectorContainer *types.Container, clic
 		return true
 	}
 	hostPortBindings := collectorContainer.GetHostPortBindings()
-	return !hasExpectedHostPortBinding(hostPortBindings, collectorOTLPGRPCPort) || !hasExpectedHostPortBinding(hostPortBindings, collectorOTLPHTTPPort)
+	return !hasExpectedHostPortBinding(hostPortBindings, collectorOTLPGRPCPort, collectorOTLPGRPCHostPort) || !hasExpectedHostPortBinding(hostPortBindings, collectorOTLPHTTPPort, collectorOTLPHTTPHostPort)
 }
 
-func hasExpectedHostPortBinding(hostPortBindings map[nat.Port]*nat.PortBinding, port uint16) bool {
-	portStr := strconv.Itoa(int(port))
-	binding, found := hostPortBindings[nat.Port(portStr+"/tcp")]
-	return found && binding != nil && binding.HostPort == portStr
+func hasExpectedHostPortBinding(hostPortBindings map[nat.Port]*nat.PortBinding, containerPort uint16, hostPort uint16) bool {
+	binding, found := hostPortBindings[nat.Port(strconv.Itoa(int(containerPort))+"/tcp")]
+	return found && binding != nil && binding.HostPort == strconv.Itoa(int(hostPort))
 }
 
 func waitForClickHouseAvailability(ctx context.Context, dockerManager *docker_manager.DockerManager, clickHouseContainerId string) error {
