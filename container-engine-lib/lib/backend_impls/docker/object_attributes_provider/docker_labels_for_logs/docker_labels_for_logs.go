@@ -8,6 +8,7 @@ import (
 // These are necessary for propagating information for log filtering and retrieval through the logging pipeline
 var DockerLabelsForLogsStream = []*docker_label_key.DockerLabelKey{
 	docker_label_key.ContainerTypeDockerLabelKey,
+	docker_label_key.LogsEnclaveNameDockerLabelKey,
 	docker_label_key.LogsEnclaveUUIDDockerLabelKey,
 	docker_label_key.LogsServiceUUIDDockerLabelKey,
 	docker_label_key.LogsServiceNameDockerLabelKey,

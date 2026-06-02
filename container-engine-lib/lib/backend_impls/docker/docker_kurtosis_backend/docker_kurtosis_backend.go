@@ -238,6 +238,11 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 		return nil, nil, stacktrace.NewError("Expected the logs collector to have an ip address in the enclave network but it does not.")
 	}
 
+	enclaveNetwork, err := backend.getEnclaveNetworkByEnclaveUuid(ctx, enclaveUuid)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the enclave network for enclave '%v'", enclaveUuid)
+	}
+
 	var restartPolicy docker_manager.RestartPolicy = docker_manager.NoRestart
 	if backend.productionMode {
 		restartPolicy = docker_manager.RestartAlways
@@ -249,6 +254,7 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 	successfullyStartedService, failedService, err := user_service_functions.StartRegisteredUserServices(
 		ctx,
 		enclaveUuid,
+		enclaveNetwork,
 		services,
 		backend.serviceRegistrationRepository,
 		logsCollector,

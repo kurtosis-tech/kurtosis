@@ -18,8 +18,10 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -120,6 +122,7 @@ func UnregisterUserServices(
 func StartRegisteredUserServices(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
+	enclaveNetwork *types.Network,
 	services map[service.ServiceUUID]*service.ServiceConfig,
 	serviceRegistrationRepository *service_registration.ServiceRegistrationRepository,
 	logsCollector *logs_collector.LogsCollector,
@@ -196,13 +199,13 @@ func StartRegisteredUserServices(
 	}
 	//TODO END huge hack to temporarily enable static ports for NEAR
 
-	enclaveNetwork, err := shared_helpers.GetEnclaveNetworkByEnclaveUuid(ctx, enclaveUuid, dockerManager)
+	enclaveName, err := getEnclaveNameFromNetwork(enclaveNetwork, enclaveUuid)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveUuid)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclave name from the enclave network for enclave '%v'", enclaveUuid)
 	}
 	enclaveNetworkID := enclaveNetwork.GetId()
 
-	enclaveObjAttrsProvider, err := objAttrsProvider.ForEnclave(enclaveUuid)
+	enclaveObjAttrsProvider, err := objAttrsProvider.ForEnclaveWithName(enclaveUuid, enclaveName)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveUuid)
 	}
@@ -978,6 +981,18 @@ func registerUserServices(
 	}
 
 	return successfulRegistrations, failedRegistrations, nil
+}
+
+func getEnclaveNameFromNetwork(enclaveNetwork *types.Network, enclaveUuid enclave.EnclaveUUID) (string, error) {
+	if enclaveNetwork == nil {
+		return "", stacktrace.NewError("Expected to receive Docker network for enclave '%v', but received nil", enclaveUuid)
+	}
+
+	enclaveName, found := enclaveNetwork.GetLabels()[docker_label_key.EnclaveNameDockerLabelKey.GetString()]
+	if !found || strings.TrimSpace(enclaveName) == "" {
+		return "", stacktrace.NewError("Expected to find Docker network label '%v' for enclave '%v', but none was found", docker_label_key.EnclaveNameDockerLabelKey.GetString(), enclaveUuid)
+	}
+	return enclaveName, nil
 }
 
 func quoteAndJoinArgs(args []string) string {

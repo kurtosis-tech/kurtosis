@@ -1,0 +1,51 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+  loki:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:3500
+    use_incoming_timestamp: true
+
+processors:
+  transform/kurtosis_loki:
+    error_mode: ignore
+    log_statements:
+      - context: log
+        statements:
+          - merge_maps(attributes, ParseJSON(body), "upsert") where IsString(body) and IsMatch(body, "^\\{")
+          - set(resource.attributes["kurtosis.enclave.uuid"], attributes["kurtosis_enclave_uuid"]) where attributes["kurtosis_enclave_uuid"] != nil
+          - set(resource.attributes["kurtosis.enclave.name"], attributes["kurtosis_enclave_name"]) where attributes["kurtosis_enclave_name"] != nil
+          - set(resource.attributes["kurtosis.enclave.name"], attributes["com.kurtosistech.enclave-name"]) where attributes["com.kurtosistech.enclave-name"] != nil
+          - set(resource.attributes["kurtosis.enclave.name"], attributes["kurtosistech.com/enclave-name"]) where attributes["kurtosistech.com/enclave-name"] != nil
+          - set(resource.attributes["service.name"], attributes["kurtosis_service_name"]) where attributes["kurtosis_service_name"] != nil
+          - set(body, attributes["log"]) where attributes["log"] != nil
+  batch:
+
+exporters:
+  clickhouse:
+    endpoint: tcp://{{CLICKHOUSE_NATIVE_ADDRESS}}?dial_timeout=10s
+    database: otel
+    create_schema: false
+    logs_table_name: otel_logs
+    traces_table_name: otel_traces
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+service:
+  extensions: [health_check]
+  pipelines:
+    logs:
+      receivers: [loki]
+      processors: [transform/kurtosis_loki, batch]
+      exporters: [clickhouse]
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [clickhouse]
