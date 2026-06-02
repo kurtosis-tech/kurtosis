@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.19.0](https://github.com/kurtosis-tech/kurtosis/compare/1.18.3...1.19.0) (2026-06-02)
+
+
+### Features
+
+* **cli:** add `kurtosis otel` command + stamp enclave name on logs ([#3122](https://github.com/kurtosis-tech/kurtosis/issues/3122)) ([c157220](https://github.com/kurtosis-tech/kurtosis/commit/c157220817553287719d82e497f56721b6d8cf41))
+
 ## [1.18.3](https://github.com/kurtosis-tech/kurtosis/compare/1.18.2...1.18.3) (2026-05-18)
 
 
