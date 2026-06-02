@@ -14,6 +14,7 @@ import (
 
 const (
 	enclaveUuid = "65d2fb6d673249b8b4a91a2f4ae616de"
+	enclaveName = "test-enclave"
 )
 
 var (
@@ -22,7 +23,7 @@ var (
 
 func TestForUserServiceContainer(t *testing.T) {
 	objAttrsProvider := GetDockerObjectAttributesProvider()
-	enclaveObjAttrsProvider, err := objAttrsProvider.ForEnclave(enclaveUuid)
+	enclaveObjAttrsProvider, err := objAttrsProvider.ForEnclaveWithName(enclaveUuid, enclaveName)
 	require.NoError(t, err, "An unexpected error occurred getting the enclave object attributes provider")
 
 	serviceName := service.ServiceName("nginx")
@@ -63,6 +64,10 @@ func TestForUserServiceContainer(t *testing.T) {
 			require.Equal(t, labelValue.GetString(), "user-service")
 		case docker_label_key.EnclaveUUIDDockerLabelKey.GetString():
 			require.Equal(t, labelValue.GetString(), "65d2fb6d673249b8b4a91a2f4ae616de")
+		case docker_label_key.EnclaveNameDockerLabelKey.GetString():
+			require.Equal(t, labelValue.GetString(), "test-enclave")
+		case docker_label_key.LogsEnclaveNameDockerLabelKey.GetString():
+			require.Equal(t, labelValue.GetString(), "test-enclave")
 		case "traefik.enable":
 			require.Equal(t, labelValue.GetString(), "true")
 		case "traefik.http.routers.65d2fb6d6732-3771c85af16a-23.rule":
@@ -77,4 +82,8 @@ func TestForUserServiceContainer(t *testing.T) {
 			break
 		}
 	}
+	require.Contains(t, objLabels, docker_label_key.EnclaveNameDockerLabelKey)
+	require.Equal(t, enclaveName, objLabels[docker_label_key.EnclaveNameDockerLabelKey].GetString())
+	require.Contains(t, objLabels, docker_label_key.LogsEnclaveNameDockerLabelKey)
+	require.Equal(t, enclaveName, objLabels[docker_label_key.LogsEnclaveNameDockerLabelKey].GetString())
 }

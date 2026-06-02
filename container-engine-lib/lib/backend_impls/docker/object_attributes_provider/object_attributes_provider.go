@@ -37,6 +37,7 @@ type DockerObjectAttributesProvider interface {
 		restAPIPortSpec *port_spec.PortSpec,
 	) (DockerObjectAttributes, error)
 	ForEnclave(enclaveUuid enclave.EnclaveUUID) (DockerEnclaveObjectAttributesProvider, error)
+	ForEnclaveWithName(enclaveUuid enclave.EnclaveUUID, enclaveName string) (DockerEnclaveObjectAttributesProvider, error)
 	ForLogsAggregator(httpPortId string, httpPortSpec *port_spec.PortSpec) (DockerObjectAttributes, error)
 	ForLogsAggregatorConfigVolume() (DockerObjectAttributes, error)
 	ForLogsAggregatorDataVolume() (DockerObjectAttributes, error)
@@ -118,13 +119,29 @@ func (provider *dockerObjectAttributesProviderImpl) ForEngineServer(
 }
 
 func (provider *dockerObjectAttributesProviderImpl) ForEnclave(enclaveUuid enclave.EnclaveUUID) (DockerEnclaveObjectAttributesProvider, error) {
+	return provider.forEnclave(enclaveUuid, "")
+}
+
+func (provider *dockerObjectAttributesProviderImpl) ForEnclaveWithName(enclaveUuid enclave.EnclaveUUID, enclaveName string) (DockerEnclaveObjectAttributesProvider, error) {
+	return provider.forEnclave(enclaveUuid, enclaveName)
+}
+
+func (provider *dockerObjectAttributesProviderImpl) forEnclave(enclaveUuid enclave.EnclaveUUID, enclaveName string) (DockerEnclaveObjectAttributesProvider, error) {
 	enclaveUuidStr := string(enclaveUuid)
 	enclaveUuidLabelValue, err := docker_label_value.CreateNewDockerLabelValue(enclaveUuidStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value out of enclave ID string '%v'", enclaveUuidStr)
 	}
 
-	return newDockerEnclaveObjectAttributesProviderImpl(enclaveUuidLabelValue), nil
+	var enclaveNameLabelValue *docker_label_value.DockerLabelValue
+	if strings.TrimSpace(enclaveName) != "" {
+		enclaveNameLabelValue, err = docker_label_value.CreateNewDockerLabelValue(enclaveName)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value out of enclave name string '%v'", enclaveName)
+		}
+	}
+
+	return newDockerEnclaveObjectAttributesProviderImpl(enclaveUuidLabelValue, enclaveNameLabelValue), nil
 }
 
 func (provider *dockerObjectAttributesProviderImpl) ForLogsAggregator(httpPortId string, httpPortSpec *port_spec.PortSpec) (DockerObjectAttributes, error) {

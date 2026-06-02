@@ -64,14 +64,17 @@ type DockerEnclaveObjectAttributesProvider interface {
 
 // Private so it can't be instantiated
 type dockerEnclaveObjectAttributesProviderImpl struct {
-	enclaveId *docker_label_value.DockerLabelValue
+	enclaveId   *docker_label_value.DockerLabelValue
+	enclaveName *docker_label_value.DockerLabelValue
 }
 
 func newDockerEnclaveObjectAttributesProviderImpl(
 	enclaveId *docker_label_value.DockerLabelValue,
+	enclaveName *docker_label_value.DockerLabelValue,
 ) *dockerEnclaveObjectAttributesProviderImpl {
 	return &dockerEnclaveObjectAttributesProviderImpl{
-		enclaveId: enclaveId,
+		enclaveId:   enclaveId,
+		enclaveName: enclaveName,
 	}
 }
 
@@ -237,6 +240,11 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContain
 	}
 	labels[docker_label_key.ContainerTypeDockerLabelKey] = label_value_consts.UserServiceContainerTypeDockerLabelValue
 	labels[docker_label_key.PortSpecsDockerLabelKey] = serializedPortsSpec
+
+	if provider.enclaveName != nil {
+		labels[docker_label_key.EnclaveNameDockerLabelKey] = provider.enclaveName
+		labels[docker_label_key.LogsEnclaveNameDockerLabelKey] = provider.enclaveName
+	}
 
 	labels[docker_label_key.PrivateIPDockerLabelKey] = privateIpLabelValue
 	serviceUuidLabel, err := docker_label_value.CreateNewDockerLabelValue(serviceUuidStr)
