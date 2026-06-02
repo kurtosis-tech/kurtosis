@@ -19,6 +19,7 @@ func TestNewKurtosisClusterConfigEmptyOverrides(t *testing.T) {
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
 		AllowPrivilegedMode:         nil,
+		BackendLogCollector:         nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.Error(t, err)
@@ -34,6 +35,7 @@ func TestNewKurtosisClusterConfigDockerType(t *testing.T) {
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
 		AllowPrivilegedMode:         nil,
+		BackendLogCollector:         nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)
@@ -50,6 +52,7 @@ func TestNewKurtosisClusterConfigAllowPrivilegedMode(t *testing.T) {
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
 		AllowPrivilegedMode:         &allowPrivilegedMode,
+		BackendLogCollector:         nil,
 	}
 	clusterConfig, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)
@@ -66,6 +69,7 @@ func TestNewKurtosisClusterConfigKubernetesNoConfig(t *testing.T) {
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
 		AllowPrivilegedMode:         nil,
+		BackendLogCollector:         nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.Error(t, err)
@@ -81,6 +85,7 @@ func TestNewKurtosisClusterConfigNonsenseType(t *testing.T) {
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
 		AllowPrivilegedMode:         nil,
+		BackendLogCollector:         nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.Error(t, err)
@@ -105,6 +110,7 @@ func TestNewKurtosisClusterConfigKubernetesPartialConfig(t *testing.T) {
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
 		AllowPrivilegedMode:         nil,
+		BackendLogCollector:         nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.Error(t, err)
@@ -132,6 +138,7 @@ func TestNewKurtosisClusterConfigKubernetesFullConfig(t *testing.T) {
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
 		AllowPrivilegedMode:         nil,
+		BackendLogCollector:         nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)
@@ -159,6 +166,7 @@ func TestNewKurtosisClusterConfigLogsAggregatorNoConfig(t *testing.T) {
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
 		AllowPrivilegedMode:         nil,
+		BackendLogCollector:         nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)
@@ -192,6 +200,7 @@ func TestNewKurtosisClusterConfigLogsAggregatorReservedSinkId(t *testing.T) {
 		ShouldEnableDefaultLogsSink: nil,
 		LogsCollector:               nil,
 		AllowPrivilegedMode:         nil,
+		BackendLogCollector:         nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.Error(t, err)
@@ -225,6 +234,7 @@ func TestNewKurtosisClusterConfigLogsAggregatorFullConfig(t *testing.T) {
 		ShouldEnableDefaultLogsSink: nil,
 		LogsCollector:               nil,
 		AllowPrivilegedMode:         nil,
+		BackendLogCollector:         nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)
@@ -258,6 +268,7 @@ func TestNewKurtosisClusterConfigGraflokiNoConfig(t *testing.T) {
 		ShouldEnableDefaultLogsSink: nil,
 		LogsCollector:               nil,
 		AllowPrivilegedMode:         nil,
+		BackendLogCollector:         nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)
@@ -291,6 +302,7 @@ func TestNewKurtosisClusterConfigGraflokiFullConfig(t *testing.T) {
 		ShouldEnableDefaultLogsSink: nil,
 		LogsCollector:               nil,
 		AllowPrivilegedMode:         nil,
+		BackendLogCollector:         nil,
 	}
 	actualKurtosisClusterConfig, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NotNil(t, actualKurtosisClusterConfig.graflokiConfig)
@@ -323,6 +335,7 @@ func TestNewKurtosisClusterConfigShouldEnableDefaultLogsSink(t *testing.T) {
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: &ShouldEnableDefaultLogsSink,
 		AllowPrivilegedMode:         nil,
+		BackendLogCollector:         nil,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)
@@ -350,6 +363,7 @@ func TestNewKurtosisClusterConfigLogsCollectorNoConfig(t *testing.T) {
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
 		AllowPrivilegedMode:         nil,
+		BackendLogCollector:         nil,
 	}
 	actualKurtosisClusterConfig, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)
@@ -417,6 +431,7 @@ func TestNewKurtosisClusterConfigLogsCollectorFullConfig(t *testing.T) {
 		GrafanaLokiConfig:           nil,
 		ShouldEnableDefaultLogsSink: nil,
 		AllowPrivilegedMode:         nil,
+		BackendLogCollector:         nil,
 	}
 	actualKurtosisClusterConfig, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)
