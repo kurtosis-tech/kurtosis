@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	v8 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v8"
+	v9 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v9"
 	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
@@ -24,6 +24,28 @@ const (
 	defaultEngineNodeName = ""
 )
 
+// BackendLogCollector selects the log-collector stack the engine wires up at start.
+type BackendLogCollector string
+
+const (
+	// BackendLogCollectorVector is the existing Vector-only behaviour and the default when the field is unset.
+	BackendLogCollectorVector BackendLogCollector = "vector"
+	// BackendLogCollectorOtel auto-starts the OpenTelemetry collector + ClickHouse side containers (Docker-only) when the
+	// engine starts and configures Vector to ship logs to the collector via Loki HTTP.
+	BackendLogCollectorOtel BackendLogCollector = "otel"
+
+	DefaultBackendLogCollector = BackendLogCollectorVector
+)
+
+// IsValid reports whether s is a recognised BackendLogCollector value.
+func (b BackendLogCollector) IsValid() bool {
+	switch b {
+	case BackendLogCollectorVector, BackendLogCollectorOtel:
+		return true
+	}
+	return false
+}
+
 type kurtosisBackendSupplier func(ctx context.Context) (backend_interface.KurtosisBackend, error)
 
 type KurtosisClusterConfig struct {
@@ -35,6 +57,7 @@ type KurtosisClusterConfig struct {
 	graflokiConfig              GrafanaLokiConfig
 	shouldEnableDefaultLogsSink bool
 	allowPrivilegedMode         bool
+	backendLogCollector         BackendLogCollector
 }
 
 type LogsAggregatorConfig struct {
@@ -52,7 +75,7 @@ type GrafanaLokiConfig struct {
 	LokiImage               string
 }
 
-func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v8.KurtosisClusterConfigV8) (*KurtosisClusterConfig, error) {
+func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v9.KurtosisClusterConfigV9) (*KurtosisClusterConfig, error) {
 	if overrides.Type == nil {
 		return nil, stacktrace.NewError("Kurtosis cluster must have a defined type")
 	}
@@ -120,6 +143,36 @@ func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v8.Kurto
 		allowPrivilegedMode = *overrides.AllowPrivilegedMode
 	}
 
+	backendLogCollector := DefaultBackendLogCollector
+	if overrides.BackendLogCollector != nil {
+		candidate := BackendLogCollector(*overrides.BackendLogCollector)
+		if !candidate.IsValid() {
+			return nil, stacktrace.NewError(
+				"Cluster '%v' has unrecognized backend-log-collector '%v'; valid values are: '%v', '%v'",
+				clusterId,
+				*overrides.BackendLogCollector,
+				BackendLogCollectorVector,
+				BackendLogCollectorOtel,
+			)
+		}
+		if candidate == BackendLogCollectorOtel && clusterType != KurtosisClusterType_Docker {
+			return nil, stacktrace.NewError(
+				"Cluster '%v' sets backend-log-collector='%v' but its type is '%v'; the OpenTelemetry backend is Docker-only",
+				clusterId,
+				candidate,
+				clusterType.String(),
+			)
+		}
+		if candidate == BackendLogCollectorOtel && grafloki.ShouldStartBeforeEngine {
+			return nil, stacktrace.NewError(
+				"Cluster '%v' sets backend-log-collector='%v' and grafana-loki.should-start-before-engine=true; pick one log backend at engine start",
+				clusterId,
+				candidate,
+			)
+		}
+		backendLogCollector = candidate
+	}
+
 	return &KurtosisClusterConfig{
 		kurtosisBackendSupplier:     backendSupplier,
 		engineBackendConfigSupplier: engineBackendConfigSupplier,
@@ -129,6 +182,7 @@ func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v8.Kurto
 		graflokiConfig:              grafloki,
 		shouldEnableDefaultLogsSink: shouldEnableDefaultLogsSink,
 		allowPrivilegedMode:         allowPrivilegedMode,
+		backendLogCollector:         backendLogCollector,
 	}, nil
 }
 
@@ -168,12 +222,16 @@ func (clusterConfig *KurtosisClusterConfig) GetAllowPrivilegedMode() bool {
 	return clusterConfig.allowPrivilegedMode
 }
 
+func (clusterConfig *KurtosisClusterConfig) GetBackendLogCollector() BackendLogCollector {
+	return clusterConfig.backendLogCollector
+}
+
 // ====================================================================================================
 //
 //	Private Helpers
 //
 // ====================================================================================================
-func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesConfig *v8.KubernetesClusterConfigV8) (
+func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesConfig *v9.KubernetesClusterConfigV9) (
 	kurtosisBackendSupplier,
 	engine_server_launcher.KurtosisBackendConfigSupplier,
 	error,
@@ -304,7 +362,7 @@ func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesC
 	return backendSupplier, engineConfigSupplier, nil
 }
 
-func convertTolerations(configTolerations []*v8.KubernetesTolerationV8) []apiv1.Toleration {
+func convertTolerations(configTolerations []*v9.KubernetesTolerationV9) []apiv1.Toleration {
 	if len(configTolerations) == 0 {
 		return nil
 	}

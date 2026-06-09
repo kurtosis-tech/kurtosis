@@ -14,8 +14,8 @@ Below is a fully annotated example of a `kurtosis-config.yml` with explanations 
 
 # Required. The version of the Kurtosis config schema.
 # This ensures compatibility with the CLI. 
-# Latest supported version is 8.
-config-version: 8
+# Latest supported version is 9.
+config-version: 9
 
 # Optional. Whether Kurtosis should send anonymous telemetry (usage) data.
 # Default: true
@@ -40,6 +40,15 @@ kurtosis-clusters:
     # This is a CLI/request opt-in, not an engine-side operator policy. Direct API
     # clients can also opt in by setting allow_privileged_mode on the run request.
     allow-privileged-mode: false
+
+    # Optional. Selects which log-collector stack the engine wires up at start.
+    # Valid values: "vector" (default), "otel".
+    # When set to "otel" (Docker only), `kurtosis engine start`/`restart` auto-starts the
+    # OpenTelemetry collector and ClickHouse side containers and configures the engine's
+    # Vector aggregator to ship logs to the collector via Loki HTTP. Equivalent to running
+    # `kurtosis otel start` before `kurtosis engine start`.
+    # Mutually exclusive with `grafana-loki.should-start-before-engine: true` below.
+    backend-log-collector: vector
 
     # Optional. Configures external sinks to export service logs from enclaves.
     # This uses Vector under the hood and supports all Vector sink types.
