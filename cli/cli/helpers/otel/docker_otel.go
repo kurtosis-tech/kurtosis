@@ -26,6 +26,7 @@ const (
 	bridgeNetworkName = "bridge"
 
 	clickHouseInitSQLMountPath = "/docker-entrypoint-initdb.d/init.sql"
+	clickHouseConfigMountPath  = "/etc/clickhouse-server/config.d/kurtosis-otel.xml"
 	collectorConfigMountPath   = "/etc/otelcol/config.yaml"
 
 	clickHouseMaxAvailabilityRetries    = 60
@@ -46,6 +47,9 @@ var collectorContainerLabels = map[string]string{
 
 //go:embed files/init.sql
 var clickHouseInitSQL string
+
+//go:embed files/clickhouse-config.xml
+var clickHouseConfigXML string
 
 //go:embed files/collector-bootstrap-config.yaml
 var collectorBootstrapConfig string
@@ -145,6 +149,11 @@ func createClickHouseContainer(ctx context.Context, dockerManager *docker_manage
 		return "", "", nil, stacktrace.Propagate(err, "An error occurred writing ClickHouse init SQL.")
 	}
 
+	configFilepath, err := writeTempFile("otel-clickhouse-config-*.xml", clickHouseConfigXML)
+	if err != nil {
+		return "", "", nil, stacktrace.Propagate(err, "An error occurred writing ClickHouse config.")
+	}
+
 	clickHouseUuid, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
 		return "", "", nil, stacktrace.Propagate(err, "An error occurred generating a uuid for otel ClickHouse.")
@@ -153,7 +162,7 @@ func createClickHouseContainer(ctx context.Context, dockerManager *docker_manage
 	clickHouseArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(defaultClickHouseImage, clickHouseContainerName, bridgeNetworkId).
 		WithUsedPorts(map[nat.Port]docker_manager.PortPublishSpec{
 			nat.Port(strconv.Itoa(int(clickHouseHTTPPort)) + "/tcp"):   docker_manager.NewManualPublishingSpec(clickHouseHTTPHostPort),
-			nat.Port(strconv.Itoa(int(clickHouseNativePort)) + "/tcp"): docker_manager.NewNoPublishingSpec(),
+			nat.Port(strconv.Itoa(int(clickHouseNativePort)) + "/tcp"): docker_manager.NewManualPublishingSpec(clickHouseNativeHostPort),
 		}).
 		WithEnvironmentVariables(map[string]string{
 			"CLICKHOUSE_DB":                        "otel",
@@ -161,6 +170,7 @@ func createClickHouseContainer(ctx context.Context, dockerManager *docker_manage
 		}).
 		WithBindMounts(map[string]string{
 			initSQLFilepath: clickHouseInitSQLMountPath,
+			configFilepath:  clickHouseConfigMountPath,
 		}).
 		WithFetchingLatestImageIfMissing().
 		WithRestartPolicy(docker_manager.RestartOnFailure).
@@ -289,7 +299,9 @@ func clickHouseContainerNeedsRecreation(clickHouseContainer *types.Container) bo
 	if clickHouseContainer == nil {
 		return false
 	}
-	return !hasExpectedHostPortBinding(clickHouseContainer.GetHostPortBindings(), clickHouseHTTPPort, clickHouseHTTPHostPort)
+	hostPortBindings := clickHouseContainer.GetHostPortBindings()
+	return !hasExpectedHostPortBinding(hostPortBindings, clickHouseHTTPPort, clickHouseHTTPHostPort) ||
+		!hasExpectedHostPortBinding(hostPortBindings, clickHouseNativePort, clickHouseNativeHostPort)
 }
 
 func collectorContainerNeedsRecreation(collectorContainer *types.Container, clickHouseWasCreated bool) bool {
