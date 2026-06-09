@@ -2,7 +2,7 @@ package resolved_config
 
 import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/config_version"
-	v8 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v8"
+	v9 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v9"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
@@ -42,7 +42,7 @@ the overrides on top of the default config.
 */
 type KurtosisConfig struct {
 	// Only necessary to store for when we serialize overrides
-	overrides *v8.KurtosisConfigV8
+	overrides *v9.KurtosisConfigV9
 
 	shouldSendMetrics bool
 	clusters          map[string]*KurtosisClusterConfig
@@ -140,7 +140,7 @@ func NewKurtosisConfigFromOverrides(uncastedOverrides interface{}) (*KurtosisCon
 
 // NOTE: We probably want to remove this function entirely
 func NewKurtosisConfigFromRequiredFields(shouldSendMetrics bool) (*KurtosisConfig, error) {
-	overrides := &v8.KurtosisConfigV8{
+	overrides := &v9.KurtosisConfigV9{
 		ConfigVersion:     0,
 		ShouldSendMetrics: &shouldSendMetrics,
 		KurtosisClusters:  nil,
@@ -172,7 +172,7 @@ func (kurtosisConfig *KurtosisConfig) GetKurtosisClusters() map[string]*Kurtosis
 	return kurtosisConfig.clusters
 }
 
-func (kurtosisConfig *KurtosisConfig) GetOverrides() *v8.KurtosisConfigV8 {
+func (kurtosisConfig *KurtosisConfig) GetOverrides() *v9.KurtosisConfigV9 {
 	return kurtosisConfig.overrides
 }
 
@@ -186,15 +186,15 @@ func (kurtosisConfig *KurtosisConfig) GetCloudConfig() *KurtosisCloudConfig {
 //
 // ====================================================================================================
 // This is a separate helper function so that we can use it to ensure that the
-func castUncastedOverrides(uncastedOverrides interface{}) (*v8.KurtosisConfigV8, error) {
-	castedOverrides, ok := uncastedOverrides.(*v8.KurtosisConfigV8)
+func castUncastedOverrides(uncastedOverrides interface{}) (*v9.KurtosisConfigV9, error) {
+	castedOverrides, ok := uncastedOverrides.(*v9.KurtosisConfigV9)
 	if !ok {
 		return nil, stacktrace.NewError("An error occurred casting the uncasted config overrides to the right version")
 	}
 	return castedOverrides, nil
 }
 
-func getDefaultKurtosisClusterConfigOverrides() map[string]*v8.KurtosisClusterConfigV8 {
+func getDefaultKurtosisClusterConfigOverrides() map[string]*v9.KurtosisClusterConfigV9 {
 	dockerClusterType := KurtosisClusterType_Docker.String()
 	minikubeClusterType := KurtosisClusterType_Kubernetes.String()
 	minikubeKubernetesClusterName := defaultMinikubeClusterKubernetesClusterNameStr
@@ -203,7 +203,7 @@ func getDefaultKurtosisClusterConfigOverrides() map[string]*v8.KurtosisClusterCo
 	minikubeEngineNodeName := defaultMinikubeEngineNodeName
 	shouldEnableDefaultLogsSink := DefaultShouldEnableDefaultLogsSink
 
-	result := map[string]*v8.KurtosisClusterConfigV8{
+	result := map[string]*v9.KurtosisClusterConfigV9{
 		DefaultDockerClusterName: {
 			Type:              &dockerClusterType,
 			Config:            nil, // Must be nil for Docker
@@ -213,7 +213,7 @@ func getDefaultKurtosisClusterConfigOverrides() map[string]*v8.KurtosisClusterCo
 		},
 		defaultMinikubeClusterName: {
 			Type: &minikubeClusterType,
-			Config: &v8.KubernetesClusterConfigV8{
+			Config: &v9.KubernetesClusterConfigV9{
 				KubernetesClusterName:  &minikubeKubernetesClusterName,
 				StorageClass:           &minikubeStorageClass,
 				EnclaveSizeInMegabytes: &minikubeEnclaveDataVolSizeMB,

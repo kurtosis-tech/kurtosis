@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/grafloki"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/kurtosis_config_getter"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/otel"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/portal_manager"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cluster_setting"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config"
@@ -48,6 +49,7 @@ type EngineManager struct {
 	enclaveEnvVars                            string
 	allowedCORSOrigins                        *[]string
 	skipConfiguredGrafloki                    bool
+	skipConfiguredOtel                        bool
 	// Make engine IP, port, and protocol configurable in the future
 }
 
@@ -109,6 +111,7 @@ func NewEngineManager(ctx context.Context) (*EngineManager, error) {
 		enclaveEnvVars:         enclaveEnvVars,
 		allowedCORSOrigins:     nil,
 		skipConfiguredGrafloki: false,
+		skipConfiguredOtel:     false,
 	}, nil
 }
 
@@ -122,6 +125,10 @@ func (manager *EngineManager) GetKurtosisBackend() backend_interface.KurtosisBac
 
 func (manager *EngineManager) SetSkipConfiguredGrafloki(skip bool) {
 	manager.skipConfiguredGrafloki = skip
+}
+
+func (manager *EngineManager) SetSkipConfiguredOtel(skip bool) {
+	manager.skipConfiguredOtel = skip
 }
 
 // GetEngineStatus Returns:
@@ -217,6 +224,16 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(
 	}
 	additionalSinks = combineSinks(additionalSinks, lokiSink)
 
+	if !manager.skipConfiguredOtel && manager.clusterConfig.GetBackendLogCollector() == resolved_config.BackendLogCollectorOtel {
+		otelEndpoints, otelStartErr := otel.StartOtel(ctx, clusterType)
+		if otelStartErr != nil {
+			return nil, nil, stacktrace.Propagate(otelStartErr, "An error occurred starting the OpenTelemetry side containers before the engine; backend-log-collector is set to '%v'.", resolved_config.BackendLogCollectorOtel)
+		}
+		logrus.Infof("otel ClickHouse running at %v (native: %v)", otelEndpoints.ClickHouseHTTPURL, otelEndpoints.ClickHouseNativeAddress)
+		logrus.Infof("otel collector running at %v (http: %v)", otelEndpoints.CollectorOTLPGRPCURL, otelEndpoints.CollectorOTLPHTTPURL)
+		additionalSinks = combineSinks(additionalSinks, otel.NewLokiSink(otelEndpoints.CollectorLokiURL))
+	}
+
 	engineGuarantor := newEngineExistenceGuarantorWithDefaultVersion(
 		ctx,
 		maybeHostMachinePortBinding,
@@ -283,6 +300,16 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 		logrus.Infof("Grafana running at %v", grafanaUrl)
 	}
 	additionalSinks = combineSinks(additionalSinks, lokiSink)
+
+	if !manager.skipConfiguredOtel && manager.clusterConfig.GetBackendLogCollector() == resolved_config.BackendLogCollectorOtel {
+		otelEndpoints, otelStartErr := otel.StartOtel(ctx, clusterType)
+		if otelStartErr != nil {
+			return nil, nil, stacktrace.Propagate(otelStartErr, "An error occurred starting the OpenTelemetry side containers before the engine; backend-log-collector is set to '%v'.", resolved_config.BackendLogCollectorOtel)
+		}
+		logrus.Infof("otel ClickHouse running at %v (native: %v)", otelEndpoints.ClickHouseHTTPURL, otelEndpoints.ClickHouseNativeAddress)
+		logrus.Infof("otel collector running at %v (http: %v)", otelEndpoints.CollectorOTLPGRPCURL, otelEndpoints.CollectorOTLPHTTPURL)
+		additionalSinks = combineSinks(additionalSinks, otel.NewLokiSink(otelEndpoints.CollectorLokiURL))
+	}
 
 	engineGuarantor := newEngineExistenceGuarantorWithCustomVersion(
 		ctx,
