@@ -10,6 +10,7 @@ const DEFAULT_PARALLELISM = 4
 const DEFAULT_EXPERIMENTAL_FEATURE_FLAGS = Array<KurtosisFeatureFlag>()
 const DEFAULT_CLOUD_INSTANCE_ID = ""
 const DEFAULT_CLOUD_USER_ID = ""
+const DEFAULT_ALLOW_PRIVILEGED_MODE = false
 
 export class StarlarkRunConfig {
     public relativePathToMainFile: string
@@ -20,6 +21,7 @@ export class StarlarkRunConfig {
     public experimentalFeatureFlags: Array<KurtosisFeatureFlag>
     public cloudInstanceId: string
     public cloudUserId: string
+    public allowPrivilegedMode: boolean
 
     constructor(...options: StarlarkRunConfigOption[]) {
         this.relativePathToMainFile = DEFAULT_RELATIVE_PATH_TO_MAIN_FILE
@@ -30,6 +32,7 @@ export class StarlarkRunConfig {
         this.experimentalFeatureFlags = DEFAULT_EXPERIMENTAL_FEATURE_FLAGS
         this.cloudInstanceId = DEFAULT_CLOUD_INSTANCE_ID
         this.cloudUserId = DEFAULT_CLOUD_USER_ID
+        this.allowPrivilegedMode = DEFAULT_ALLOW_PRIVILEGED_MODE
 
         for (const option of options) {
             option(this)
@@ -81,6 +84,12 @@ export class StarlarkRunConfig {
     public static WithCloudUserID(cloudUserId: string): StarlarkRunConfigOption {
         return (config: StarlarkRunConfig): void => {
             config.cloudUserId = cloudUserId
+        }
+    }
+
+    public static WithAllowPrivilegedMode(allowPrivilegedMode: boolean): StarlarkRunConfigOption {
+        return (config: StarlarkRunConfig): void => {
+            config.allowPrivilegedMode = allowPrivilegedMode
         }
     }
 }

@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.19.0](https://github.com/kurtosis-tech/kurtosis/compare/1.18.3...1.19.0) (2026-06-02)
+
+
+### Features
+
+* **cli:** add `kurtosis otel` command + stamp enclave name on logs ([#3122](https://github.com/kurtosis-tech/kurtosis/issues/3122)) ([c157220](https://github.com/kurtosis-tech/kurtosis/commit/c157220817553287719d82e497f56721b6d8cf41))
+
+## [1.18.3](https://github.com/kurtosis-tech/kurtosis/compare/1.18.2...1.18.3) (2026-05-18)
+
+
+### Features
+
+* add privileged opt-in and host PID namespace support ([#3091](https://github.com/kurtosis-tech/kurtosis/issues/3091)) ([92d373e](https://github.com/kurtosis-tech/kurtosis/commit/92d373e48e77781b4b8bb5f0c4bc93d073bc1525))
+* allow http(s) URLs in upload_files src ([#3111](https://github.com/kurtosis-tech/kurtosis/issues/3111)) ([fb82cdd](https://github.com/kurtosis-tech/kurtosis/commit/fb82cdd1149c51fc5142fe3703c3da367423847a))
+
+
+### Bug Fixes
+
+* **engine:** use heredoc instead of printf to write Docker config storage ([#3059](https://github.com/kurtosis-tech/kurtosis/issues/3059)) ([2bc992d](https://github.com/kurtosis-tech/kurtosis/commit/2bc992d8c1e4038603ebad281f37c418a476c902))
+
 ## [1.18.2](https://github.com/kurtosis-tech/kurtosis/compare/1.18.1...1.18.2) (2026-04-28)
 
 

@@ -40,6 +40,11 @@ type ServiceContext struct {
 
 	// Service labels
 	labels map[string]string
+
+	// Docker-only elevated access settings
+	privileged       bool
+	bindMounts       map[string]string
+	hostPIDNamespace bool
 }
 
 func NewServiceContext(
@@ -51,16 +56,22 @@ func NewServiceContext(
 	publicIpAddr string,
 	publicPorts map[string]*PortSpec,
 	labels map[string]string,
+	privileged bool,
+	bindMounts map[string]string,
+	hostPIDNamespace bool,
 ) *ServiceContext {
 	return &ServiceContext{
-		client:        client,
-		serviceName:   serviceName,
-		serviceUuid:   serviceUuid,
-		privateIpAddr: privateIpAddr,
-		privatePorts:  privatePorts,
-		publicIpAddr:  publicIpAddr,
-		publicPorts:   publicPorts,
-		labels:        labels,
+		client:           client,
+		serviceName:      serviceName,
+		serviceUuid:      serviceUuid,
+		privateIpAddr:    privateIpAddr,
+		privatePorts:     privatePorts,
+		publicIpAddr:     publicIpAddr,
+		publicPorts:      publicPorts,
+		labels:           labels,
+		privileged:       privileged,
+		bindMounts:       bindMounts,
+		hostPIDNamespace: hostPIDNamespace,
 	}
 }
 
@@ -90,6 +101,18 @@ func (service *ServiceContext) GetPublicPorts() map[string]*PortSpec {
 
 func (service *ServiceContext) GetLabels() map[string]string {
 	return service.labels
+}
+
+func (service *ServiceContext) GetPrivileged() bool {
+	return service.privileged
+}
+
+func (service *ServiceContext) GetBindMounts() map[string]string {
+	return service.bindMounts
+}
+
+func (service *ServiceContext) GetHostPIDNamespace() bool {
+	return service.hostPIDNamespace
 }
 
 func (service *ServiceContext) ExecCommand(command []string) (int32, string, error) {

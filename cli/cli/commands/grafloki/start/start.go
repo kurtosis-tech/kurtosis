@@ -62,6 +62,9 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
 	}
+	// User explicitly chose grafloki for this engine; suppress the config-driven OpenTelemetry auto-start
+	// so the engine restart below doesn't also bring up the otel side containers.
+	engineManager.SetSkipConfiguredOtel(true)
 	_, engineClientCloseFunc, err := engineManager.RestartEngineIdempotently(
 		ctx,
 		defaults.DefaultEngineLogLevel,

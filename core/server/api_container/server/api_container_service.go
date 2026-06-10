@@ -161,6 +161,7 @@ func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rp
 	downloadMode := convertFromImageDownloadModeAPI(ApiDownloadMode)
 	shouldExecuteInParallel := args.GetParallel()
 	shouldCheckResources := args.ResourceCheck == nil || args.GetResourceCheck()
+	allowPrivilegedMode := args.GetAllowPrivilegedMode()
 
 	metricsErr := apicService.metricsClient.TrackKurtosisRun(startosis_constants.PackageIdPlaceholderForStandaloneScript, isNotRemote, dryRun, isScript, serializedParams)
 	if metricsErr != nil {
@@ -182,6 +183,7 @@ func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rp
 		shouldExecuteInParallel,
 		shouldCheckResources,
 		experimentalFeatures,
+		allowPrivilegedMode,
 		stream,
 	)
 
@@ -319,6 +321,7 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 	serializedParams := args.GetSerializedParams()
 	requestedRelativePathToMainFile := args.GetRelativePathToMainFile()
 	mainFuncName := args.GetMainFunctionName()
+	allowPrivilegedMode := args.GetAllowPrivilegedMode()
 	ApiDownloadMode := shared_utils.GetOrDefault(args.ImageDownloadMode, defaultImageDownloadMode)
 	downloadMode := convertFromImageDownloadModeAPI(ApiDownloadMode)
 	nonBlockingMode := args.GetNonBlockingMode()
@@ -382,6 +385,7 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 		shouldExecuteInParallel,
 		shouldCheckResources,
 		args.ExperimentalFeatures,
+		allowPrivilegedMode,
 		stream)
 
 	return nil
@@ -697,6 +701,7 @@ func (apicService *ApiContainerService) GetStarlarkPackagePlanYaml(ctx context.C
 	serializedParams := args.GetSerializedParams()
 	requestedRelativePathToMainFile := args.GetRelativePathToMainFile()
 	mainFuncName := args.GetMainFunctionName()
+	allowPrivilegedMode := args.GetAllowPrivilegedMode()
 
 	var scriptWithRunFunction string
 	var interpretationError *startosis_errors.InterpretationError
@@ -721,7 +726,8 @@ func (apicService *ApiContainerService) GetStarlarkPackagePlanYaml(ctx context.C
 		enclave_structure.NewEnclaveComponents(),
 		resolver.NewInstructionsPlanMask(0),
 		image_download_mode.ImageDownloadMode_Always,
-		instructions_plan.NewInstructionsPlan())
+		instructions_plan.NewInstructionsPlan(),
+		allowPrivilegedMode)
 	if apiInterpretationError != nil {
 		interpretationError = startosis_errors.NewInterpretationError("%s", apiInterpretationError.GetErrorMessage())
 		return nil, stacktrace.Propagate(interpretationError, "An interpretation error occurred interpreting package for retrieving plan yaml for package: %v", packageIdFromArgs)
@@ -742,6 +748,7 @@ func (apicService *ApiContainerService) GetStarlarkScriptPlanYaml(ctx context.Co
 	serializedStarlarkScript := args.GetSerializedScript()
 	serializedParams := args.GetSerializedParams()
 	mainFuncName := args.GetMainFunctionName()
+	allowPrivilegedMode := args.GetAllowPrivilegedMode()
 	noPackageReplaceOptions := map[string]string{}
 
 	_, instructionsPlan, apiInterpretationError := apicService.startosisInterpreter.Interpret(
@@ -757,6 +764,7 @@ func (apicService *ApiContainerService) GetStarlarkScriptPlanYaml(ctx context.Co
 		resolver.NewInstructionsPlanMask(0),
 		image_download_mode.ImageDownloadMode_Always,
 		instructions_plan.NewInstructionsPlan(),
+		allowPrivilegedMode,
 	)
 	if apiInterpretationError != nil {
 		return nil, startosis_errors.NewInterpretationError("%s", apiInterpretationError.GetErrorMessage())
@@ -1045,9 +1053,10 @@ func (apicService *ApiContainerService) runStarlark(
 	shouldExecuteInParallel bool,
 	shouldCheckResources bool,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
+	allowPrivilegedMode bool,
 	stream grpc.ServerStream,
 ) {
-	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, packageReplaceOptions, mainFunctionName, relativePathToMainFile, serializedStarlark, serializedParams, imageDownloadMode, nonBlockingMode, shouldExecuteInParallel, shouldCheckResources, experimentalFeatures)
+	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, packageReplaceOptions, mainFunctionName, relativePathToMainFile, serializedStarlark, serializedParams, imageDownloadMode, nonBlockingMode, shouldExecuteInParallel, shouldCheckResources, experimentalFeatures, allowPrivilegedMode)
 	for {
 		select {
 		case <-stream.Context().Done():
@@ -1217,6 +1226,9 @@ func getServiceInfoFromServiceObj(serviceObj *service.Service, serviceConfig *se
 		serviceConfig.GetTtyEnabled(),
 		serviceConfig.GetCapabilities(),
 	)
+	serviceInfoResponse.Privileged = serviceConfig.GetPrivileged()
+	serviceInfoResponse.BindMounts = serviceConfig.GetBindMounts()
+	serviceInfoResponse.HostPidNamespace = serviceConfig.GetHostPIDNamespace()
 
 	return serviceInfoResponse, nil
 }

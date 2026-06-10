@@ -184,6 +184,28 @@ export const ServiceInfo = proto3.makeMessageType(
     { no: 18, name: "labels", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "scalar", T: 9 /* ScalarType.STRING */} },
     { no: 19, name: "tini_enabled", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
     { no: 20, name: "tty_enabled", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
+    { no: 21, name: "capabilities", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 22, name: "gpu_config", kind: "message", T: GpuConfig },
+    { no: 26, name: "privileged", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+    { no: 27, name: "bind_mounts", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "scalar", T: 9 /* ScalarType.STRING */} },
+    { no: 28, name: "host_pid_namespace", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+  ],
+);
+
+/**
+ * GpuConfig bundles all GPU-related container settings.
+ *
+ * @generated from message api_container_api.GpuConfig
+ */
+export const GpuConfig = proto3.makeMessageType(
+  "api_container_api.GpuConfig",
+  () => [
+    { no: 1, name: "count", kind: "scalar", T: 3 /* ScalarType.INT64 */ },
+    { no: 2, name: "device_ids", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 3, name: "shm_size_megabytes", kind: "scalar", T: 4 /* ScalarType.UINT64 */ },
+    { no: 4, name: "ulimits", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "scalar", T: 3 /* ScalarType.INT64 */} },
+    { no: 5, name: "docker_driver", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 6, name: "k8s_resource_name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ],
 );
 
@@ -204,6 +226,8 @@ export const RunStarlarkScriptArgs = proto3.makeMessageType(
     { no: 9, name: "image_download_mode", kind: "enum", T: proto3.getEnumType(ImageDownloadMode), opt: true },
     { no: 10, name: "non_blocking_mode", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
     { no: 17, name: "parallel", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
+    { no: 18, name: "resource_check", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
+    { no: 19, name: "allow_privileged_mode", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
   ],
 );
 
@@ -229,6 +253,8 @@ export const RunStarlarkPackageArgs = proto3.makeMessageType(
     { no: 15, name: "non_blocking_mode", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
     { no: 16, name: "github_auth_token", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 17, name: "parallel", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
+    { no: 18, name: "resource_check", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
+    { no: 19, name: "allow_privileged_mode", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
   ],
 );
 
@@ -716,6 +742,7 @@ export const StarlarkScriptPlanYamlArgs = proto3.makeMessageType(
     { no: 1, name: "serialized_script", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "serialized_params", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 5, name: "main_function_name", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 6, name: "allow_privileged_mode", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
   ],
 );
 
@@ -730,6 +757,7 @@ export const StarlarkPackagePlanYamlArgs = proto3.makeMessageType(
     { no: 3, name: "is_remote", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
     { no: 4, name: "relative_path_to_main_file", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 5, name: "main_function_name", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 6, name: "allow_privileged_mode", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
   ],
 );
 

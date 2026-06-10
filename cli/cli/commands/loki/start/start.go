@@ -53,6 +53,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
 	}
 	engineManager.SetSkipConfiguredGrafloki(true)
+	engineManager.SetSkipConfiguredOtel(true)
 	_, engineClientCloseFunc, err := engineManager.RestartEngineIdempotently(
 		ctx,
 		defaults.DefaultEngineLogLevel,

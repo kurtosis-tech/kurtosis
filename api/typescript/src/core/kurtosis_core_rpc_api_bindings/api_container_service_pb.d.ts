@@ -1,7 +1,7 @@
 import * as jspb from 'google-protobuf'
 
-import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb';
-import * as google_protobuf_duration_pb from 'google-protobuf/google/protobuf/duration_pb';
+import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb'; // proto import: "google/protobuf/empty.proto"
+import * as google_protobuf_duration_pb from 'google-protobuf/google/protobuf/duration_pb'; // proto import: "google/protobuf/duration.proto"
 
 
 export class Port extends jspb.Message {
@@ -37,26 +37,26 @@ export class Port extends jspb.Message {
 
 export namespace Port {
   export type AsObject = {
-    number: number,
-    transportProtocol: Port.TransportProtocol,
-    maybeApplicationProtocol: string,
-    maybeWaitTimeout: string,
-    locked?: boolean,
-    alias?: string,
-  }
+    number: number;
+    transportProtocol: Port.TransportProtocol;
+    maybeApplicationProtocol: string;
+    maybeWaitTimeout: string;
+    locked?: boolean;
+    alias?: string;
+  };
 
-  export enum TransportProtocol { 
+  export enum TransportProtocol {
     TCP = 0,
     SCTP = 1,
     UDP = 2,
   }
 
-  export enum LockedCase { 
+  export enum LockedCase {
     _LOCKED_NOT_SET = 0,
     LOCKED = 5,
   }
 
-  export enum AliasCase { 
+  export enum AliasCase {
     _ALIAS_NOT_SET = 0,
     ALIAS = 6,
   }
@@ -92,14 +92,14 @@ export class Container extends jspb.Message {
 
 export namespace Container {
   export type AsObject = {
-    status: Container.Status,
-    imageName: string,
-    entrypointArgsList: Array<string>,
-    cmdArgsList: Array<string>,
-    envVarsMap: Array<[string, string]>,
-  }
+    status: Container.Status;
+    imageName: string;
+    entrypointArgsList: Array<string>;
+    cmdArgsList: Array<string>;
+    envVarsMap: Array<[string, string]>;
+  };
 
-  export enum Status { 
+  export enum Status {
     STOPPED = 0,
     RUNNING = 1,
     UNKNOWN = 2,
@@ -122,8 +122,8 @@ export class FilesArtifactsList extends jspb.Message {
 
 export namespace FilesArtifactsList {
   export type AsObject = {
-    filesArtifactsIdentifiersList: Array<string>,
-  }
+    filesArtifactsIdentifiersList: Array<string>;
+  };
 }
 
 export class User extends jspb.Message {
@@ -143,9 +143,9 @@ export class User extends jspb.Message {
 
 export namespace User {
   export type AsObject = {
-    uid: number,
-    gid: number,
-  }
+    uid: number;
+    gid: number;
+  };
 }
 
 export class Toleration extends jspb.Message {
@@ -174,12 +174,12 @@ export class Toleration extends jspb.Message {
 
 export namespace Toleration {
   export type AsObject = {
-    key: string,
-    operator: string,
-    value: string,
-    effect: string,
-    tolerationSeconds: number,
-  }
+    key: string;
+    operator: string;
+    value: string;
+    effect: string;
+    tolerationSeconds: number;
+  };
 }
 
 export class ServiceInfo extends jspb.Message {
@@ -253,6 +253,25 @@ export class ServiceInfo extends jspb.Message {
   hasTtyEnabled(): boolean;
   clearTtyEnabled(): ServiceInfo;
 
+  getCapabilitiesList(): Array<string>;
+  setCapabilitiesList(value: Array<string>): ServiceInfo;
+  clearCapabilitiesList(): ServiceInfo;
+  addCapabilities(value: string, index?: number): ServiceInfo;
+
+  getGpuConfig(): GpuConfig | undefined;
+  setGpuConfig(value?: GpuConfig): ServiceInfo;
+  hasGpuConfig(): boolean;
+  clearGpuConfig(): ServiceInfo;
+
+  getPrivileged(): boolean;
+  setPrivileged(value: boolean): ServiceInfo;
+
+  getBindMountsMap(): jspb.Map<string, string>;
+  clearBindMountsMap(): ServiceInfo;
+
+  getHostPidNamespace(): boolean;
+  setHostPidNamespace(value: boolean): ServiceInfo;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServiceInfo.AsObject;
   static toObject(includeInstance: boolean, msg: ServiceInfo): ServiceInfo.AsObject;
@@ -263,42 +282,87 @@ export class ServiceInfo extends jspb.Message {
 
 export namespace ServiceInfo {
   export type AsObject = {
-    serviceUuid: string,
-    privateIpAddr: string,
-    privatePortsMap: Array<[string, Port.AsObject]>,
-    maybePublicIpAddr: string,
-    maybePublicPortsMap: Array<[string, Port.AsObject]>,
-    name: string,
-    shortenedUuid: string,
-    serviceStatus: ServiceStatus,
-    container?: Container.AsObject,
-    serviceDirPathsToFilesArtifactsListMap: Array<[string, FilesArtifactsList.AsObject]>,
-    maxMillicpus: number,
-    minMillicpus: number,
-    maxMemoryMegabytes: number,
-    minMemoryMegabytes: number,
-    user?: User.AsObject,
-    tolerationsList: Array<Toleration.AsObject>,
-    nodeSelectorsMap: Array<[string, string]>,
-    labelsMap: Array<[string, string]>,
-    tiniEnabled?: boolean,
-    ttyEnabled?: boolean,
-  }
+    serviceUuid: string;
+    privateIpAddr: string;
+    privatePortsMap: Array<[string, Port.AsObject]>;
+    maybePublicIpAddr: string;
+    maybePublicPortsMap: Array<[string, Port.AsObject]>;
+    name: string;
+    shortenedUuid: string;
+    serviceStatus: ServiceStatus;
+    container?: Container.AsObject;
+    serviceDirPathsToFilesArtifactsListMap: Array<[string, FilesArtifactsList.AsObject]>;
+    maxMillicpus: number;
+    minMillicpus: number;
+    maxMemoryMegabytes: number;
+    minMemoryMegabytes: number;
+    user?: User.AsObject;
+    tolerationsList: Array<Toleration.AsObject>;
+    nodeSelectorsMap: Array<[string, string]>;
+    labelsMap: Array<[string, string]>;
+    tiniEnabled?: boolean;
+    ttyEnabled?: boolean;
+    capabilitiesList: Array<string>;
+    gpuConfig?: GpuConfig.AsObject;
+    privileged: boolean;
+    bindMountsMap: Array<[string, string]>;
+    hostPidNamespace: boolean;
+  };
 
-  export enum UserCase { 
+  export enum UserCase {
     _USER_NOT_SET = 0,
     USER = 15,
   }
 
-  export enum TiniEnabledCase { 
+  export enum TiniEnabledCase {
     _TINI_ENABLED_NOT_SET = 0,
     TINI_ENABLED = 19,
   }
 
-  export enum TtyEnabledCase { 
+  export enum TtyEnabledCase {
     _TTY_ENABLED_NOT_SET = 0,
     TTY_ENABLED = 20,
   }
+}
+
+export class GpuConfig extends jspb.Message {
+  getCount(): number;
+  setCount(value: number): GpuConfig;
+
+  getDeviceIdsList(): Array<string>;
+  setDeviceIdsList(value: Array<string>): GpuConfig;
+  clearDeviceIdsList(): GpuConfig;
+  addDeviceIds(value: string, index?: number): GpuConfig;
+
+  getShmSizeMegabytes(): number;
+  setShmSizeMegabytes(value: number): GpuConfig;
+
+  getUlimitsMap(): jspb.Map<string, number>;
+  clearUlimitsMap(): GpuConfig;
+
+  getDockerDriver(): string;
+  setDockerDriver(value: string): GpuConfig;
+
+  getK8sResourceName(): string;
+  setK8sResourceName(value: string): GpuConfig;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GpuConfig.AsObject;
+  static toObject(includeInstance: boolean, msg: GpuConfig): GpuConfig.AsObject;
+  static serializeBinaryToWriter(message: GpuConfig, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GpuConfig;
+  static deserializeBinaryFromReader(message: GpuConfig, reader: jspb.BinaryReader): GpuConfig;
+}
+
+export namespace GpuConfig {
+  export type AsObject = {
+    count: number;
+    deviceIdsList: Array<string>;
+    shmSizeMegabytes: number;
+    ulimitsMap: Array<[string, number]>;
+    dockerDriver: string;
+    k8sResourceName: string;
+  };
 }
 
 export class RunStarlarkScriptArgs extends jspb.Message {
@@ -355,6 +419,16 @@ export class RunStarlarkScriptArgs extends jspb.Message {
   hasParallel(): boolean;
   clearParallel(): RunStarlarkScriptArgs;
 
+  getResourceCheck(): boolean;
+  setResourceCheck(value: boolean): RunStarlarkScriptArgs;
+  hasResourceCheck(): boolean;
+  clearResourceCheck(): RunStarlarkScriptArgs;
+
+  getAllowPrivilegedMode(): boolean;
+  setAllowPrivilegedMode(value: boolean): RunStarlarkScriptArgs;
+  hasAllowPrivilegedMode(): boolean;
+  clearAllowPrivilegedMode(): RunStarlarkScriptArgs;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RunStarlarkScriptArgs.AsObject;
   static toObject(includeInstance: boolean, msg: RunStarlarkScriptArgs): RunStarlarkScriptArgs.AsObject;
@@ -365,62 +439,74 @@ export class RunStarlarkScriptArgs extends jspb.Message {
 
 export namespace RunStarlarkScriptArgs {
   export type AsObject = {
-    serializedScript: string,
-    serializedParams?: string,
-    dryRun?: boolean,
-    parallelism?: number,
-    mainFunctionName?: string,
-    experimentalFeaturesList: Array<KurtosisFeatureFlag>,
-    cloudInstanceId?: string,
-    cloudUserId?: string,
-    imageDownloadMode?: ImageDownloadMode,
-    nonBlockingMode?: boolean,
-    parallel?: boolean,
-  }
+    serializedScript: string;
+    serializedParams?: string;
+    dryRun?: boolean;
+    parallelism?: number;
+    mainFunctionName?: string;
+    experimentalFeaturesList: Array<KurtosisFeatureFlag>;
+    cloudInstanceId?: string;
+    cloudUserId?: string;
+    imageDownloadMode?: ImageDownloadMode;
+    nonBlockingMode?: boolean;
+    parallel?: boolean;
+    resourceCheck?: boolean;
+    allowPrivilegedMode?: boolean;
+  };
 
-  export enum SerializedParamsCase { 
+  export enum SerializedParamsCase {
     _SERIALIZED_PARAMS_NOT_SET = 0,
     SERIALIZED_PARAMS = 2,
   }
 
-  export enum DryRunCase { 
+  export enum DryRunCase {
     _DRY_RUN_NOT_SET = 0,
     DRY_RUN = 3,
   }
 
-  export enum ParallelismCase { 
+  export enum ParallelismCase {
     _PARALLELISM_NOT_SET = 0,
     PARALLELISM = 4,
   }
 
-  export enum MainFunctionNameCase { 
+  export enum MainFunctionNameCase {
     _MAIN_FUNCTION_NAME_NOT_SET = 0,
     MAIN_FUNCTION_NAME = 5,
   }
 
-  export enum CloudInstanceIdCase { 
+  export enum CloudInstanceIdCase {
     _CLOUD_INSTANCE_ID_NOT_SET = 0,
     CLOUD_INSTANCE_ID = 7,
   }
 
-  export enum CloudUserIdCase { 
+  export enum CloudUserIdCase {
     _CLOUD_USER_ID_NOT_SET = 0,
     CLOUD_USER_ID = 8,
   }
 
-  export enum ImageDownloadModeCase { 
+  export enum ImageDownloadModeCase {
     _IMAGE_DOWNLOAD_MODE_NOT_SET = 0,
     IMAGE_DOWNLOAD_MODE = 9,
   }
 
-  export enum NonBlockingModeCase { 
+  export enum NonBlockingModeCase {
     _NON_BLOCKING_MODE_NOT_SET = 0,
     NON_BLOCKING_MODE = 10,
   }
 
-  export enum ParallelCase { 
+  export enum ParallelCase {
     _PARALLEL_NOT_SET = 0,
     PARALLEL = 17,
+  }
+
+  export enum ResourceCheckCase {
+    _RESOURCE_CHECK_NOT_SET = 0,
+    RESOURCE_CHECK = 18,
+  }
+
+  export enum AllowPrivilegedModeCase {
+    _ALLOW_PRIVILEGED_MODE_NOT_SET = 0,
+    ALLOW_PRIVILEGED_MODE = 19,
   }
 }
 
@@ -432,9 +518,13 @@ export class RunStarlarkPackageArgs extends jspb.Message {
   getLocal_asU8(): Uint8Array;
   getLocal_asB64(): string;
   setLocal(value: Uint8Array | string): RunStarlarkPackageArgs;
+  hasLocal(): boolean;
+  clearLocal(): RunStarlarkPackageArgs;
 
   getRemote(): boolean;
   setRemote(value: boolean): RunStarlarkPackageArgs;
+  hasRemote(): boolean;
+  clearRemote(): RunStarlarkPackageArgs;
 
   getSerializedParams(): string;
   setSerializedParams(value: string): RunStarlarkPackageArgs;
@@ -501,6 +591,16 @@ export class RunStarlarkPackageArgs extends jspb.Message {
   hasParallel(): boolean;
   clearParallel(): RunStarlarkPackageArgs;
 
+  getResourceCheck(): boolean;
+  setResourceCheck(value: boolean): RunStarlarkPackageArgs;
+  hasResourceCheck(): boolean;
+  clearResourceCheck(): RunStarlarkPackageArgs;
+
+  getAllowPrivilegedMode(): boolean;
+  setAllowPrivilegedMode(value: boolean): RunStarlarkPackageArgs;
+  hasAllowPrivilegedMode(): boolean;
+  clearAllowPrivilegedMode(): RunStarlarkPackageArgs;
+
   getStarlarkPackageContentCase(): RunStarlarkPackageArgs.StarlarkPackageContentCase;
 
   serializeBinary(): Uint8Array;
@@ -513,88 +613,100 @@ export class RunStarlarkPackageArgs extends jspb.Message {
 
 export namespace RunStarlarkPackageArgs {
   export type AsObject = {
-    packageId: string,
-    local: Uint8Array | string,
-    remote: boolean,
-    serializedParams?: string,
-    dryRun?: boolean,
-    parallelism?: number,
-    clonePackage?: boolean,
-    relativePathToMainFile?: string,
-    mainFunctionName?: string,
-    experimentalFeaturesList: Array<KurtosisFeatureFlag>,
-    cloudInstanceId?: string,
-    cloudUserId?: string,
-    imageDownloadMode?: ImageDownloadMode,
-    nonBlockingMode?: boolean,
-    githubAuthToken?: string,
-    parallel?: boolean,
-  }
+    packageId: string;
+    local?: Uint8Array | string;
+    remote?: boolean;
+    serializedParams?: string;
+    dryRun?: boolean;
+    parallelism?: number;
+    clonePackage?: boolean;
+    relativePathToMainFile?: string;
+    mainFunctionName?: string;
+    experimentalFeaturesList: Array<KurtosisFeatureFlag>;
+    cloudInstanceId?: string;
+    cloudUserId?: string;
+    imageDownloadMode?: ImageDownloadMode;
+    nonBlockingMode?: boolean;
+    githubAuthToken?: string;
+    parallel?: boolean;
+    resourceCheck?: boolean;
+    allowPrivilegedMode?: boolean;
+  };
 
-  export enum StarlarkPackageContentCase { 
+  export enum StarlarkPackageContentCase {
     STARLARK_PACKAGE_CONTENT_NOT_SET = 0,
     LOCAL = 3,
     REMOTE = 4,
   }
 
-  export enum SerializedParamsCase { 
+  export enum SerializedParamsCase {
     _SERIALIZED_PARAMS_NOT_SET = 0,
     SERIALIZED_PARAMS = 5,
   }
 
-  export enum DryRunCase { 
+  export enum DryRunCase {
     _DRY_RUN_NOT_SET = 0,
     DRY_RUN = 6,
   }
 
-  export enum ParallelismCase { 
+  export enum ParallelismCase {
     _PARALLELISM_NOT_SET = 0,
     PARALLELISM = 7,
   }
 
-  export enum ClonePackageCase { 
+  export enum ClonePackageCase {
     _CLONE_PACKAGE_NOT_SET = 0,
     CLONE_PACKAGE = 8,
   }
 
-  export enum RelativePathToMainFileCase { 
+  export enum RelativePathToMainFileCase {
     _RELATIVE_PATH_TO_MAIN_FILE_NOT_SET = 0,
     RELATIVE_PATH_TO_MAIN_FILE = 9,
   }
 
-  export enum MainFunctionNameCase { 
+  export enum MainFunctionNameCase {
     _MAIN_FUNCTION_NAME_NOT_SET = 0,
     MAIN_FUNCTION_NAME = 10,
   }
 
-  export enum CloudInstanceIdCase { 
+  export enum CloudInstanceIdCase {
     _CLOUD_INSTANCE_ID_NOT_SET = 0,
     CLOUD_INSTANCE_ID = 12,
   }
 
-  export enum CloudUserIdCase { 
+  export enum CloudUserIdCase {
     _CLOUD_USER_ID_NOT_SET = 0,
     CLOUD_USER_ID = 13,
   }
 
-  export enum ImageDownloadModeCase { 
+  export enum ImageDownloadModeCase {
     _IMAGE_DOWNLOAD_MODE_NOT_SET = 0,
     IMAGE_DOWNLOAD_MODE = 14,
   }
 
-  export enum NonBlockingModeCase { 
+  export enum NonBlockingModeCase {
     _NON_BLOCKING_MODE_NOT_SET = 0,
     NON_BLOCKING_MODE = 15,
   }
 
-  export enum GithubAuthTokenCase { 
+  export enum GithubAuthTokenCase {
     _GITHUB_AUTH_TOKEN_NOT_SET = 0,
     GITHUB_AUTH_TOKEN = 16,
   }
 
-  export enum ParallelCase { 
+  export enum ParallelCase {
     _PARALLEL_NOT_SET = 0,
     PARALLEL = 17,
+  }
+
+  export enum ResourceCheckCase {
+    _RESOURCE_CHECK_NOT_SET = 0,
+    RESOURCE_CHECK = 18,
+  }
+
+  export enum AllowPrivilegedModeCase {
+    _ALLOW_PRIVILEGED_MODE_NOT_SET = 0,
+    ALLOW_PRIVILEGED_MODE = 19,
   }
 }
 
@@ -646,16 +758,16 @@ export class StarlarkRunResponseLine extends jspb.Message {
 
 export namespace StarlarkRunResponseLine {
   export type AsObject = {
-    instruction?: StarlarkInstruction.AsObject,
-    error?: StarlarkError.AsObject,
-    progressInfo?: StarlarkRunProgress.AsObject,
-    instructionResult?: StarlarkInstructionResult.AsObject,
-    runFinishedEvent?: StarlarkRunFinishedEvent.AsObject,
-    warning?: StarlarkWarning.AsObject,
-    info?: StarlarkInfo.AsObject,
-  }
+    instruction?: StarlarkInstruction.AsObject;
+    error?: StarlarkError.AsObject;
+    progressInfo?: StarlarkRunProgress.AsObject;
+    instructionResult?: StarlarkInstructionResult.AsObject;
+    runFinishedEvent?: StarlarkRunFinishedEvent.AsObject;
+    warning?: StarlarkWarning.AsObject;
+    info?: StarlarkInfo.AsObject;
+  };
 
-  export enum RunResponseLineCase { 
+  export enum RunResponseLineCase {
     RUN_RESPONSE_LINE_NOT_SET = 0,
     INSTRUCTION = 1,
     ERROR = 2,
@@ -681,8 +793,8 @@ export class StarlarkInfo extends jspb.Message {
 
 export namespace StarlarkInfo {
   export type AsObject = {
-    infoMessage: string,
-  }
+    infoMessage: string;
+  };
 }
 
 export class StarlarkWarning extends jspb.Message {
@@ -699,8 +811,8 @@ export class StarlarkWarning extends jspb.Message {
 
 export namespace StarlarkWarning {
   export type AsObject = {
-    warningMessage: string,
-  }
+    warningMessage: string;
+  };
 }
 
 export class StarlarkInstruction extends jspb.Message {
@@ -741,16 +853,16 @@ export class StarlarkInstruction extends jspb.Message {
 
 export namespace StarlarkInstruction {
   export type AsObject = {
-    position?: StarlarkInstructionPosition.AsObject,
-    instructionName: string,
-    argumentsList: Array<StarlarkInstructionArg.AsObject>,
-    executableInstruction: string,
-    isSkipped: boolean,
-    description: string,
-    instructionId?: string,
-  }
+    position?: StarlarkInstructionPosition.AsObject;
+    instructionName: string;
+    argumentsList: Array<StarlarkInstructionArg.AsObject>;
+    executableInstruction: string;
+    isSkipped: boolean;
+    description: string;
+    instructionId?: string;
+  };
 
-  export enum InstructionIdCase { 
+  export enum InstructionIdCase {
     _INSTRUCTION_ID_NOT_SET = 0,
     INSTRUCTION_ID = 7,
   }
@@ -780,17 +892,17 @@ export class StarlarkInstructionResult extends jspb.Message {
 
 export namespace StarlarkInstructionResult {
   export type AsObject = {
-    serializedInstructionResult: string,
-    executionDuration?: google_protobuf_duration_pb.Duration.AsObject,
-    instructionId?: string,
-  }
+    serializedInstructionResult: string;
+    executionDuration?: google_protobuf_duration_pb.Duration.AsObject;
+    instructionId?: string;
+  };
 
-  export enum ExecutionDurationCase { 
+  export enum ExecutionDurationCase {
     _EXECUTION_DURATION_NOT_SET = 0,
     EXECUTION_DURATION = 2,
   }
 
-  export enum InstructionIdCase { 
+  export enum InstructionIdCase {
     _INSTRUCTION_ID_NOT_SET = 0,
     INSTRUCTION_ID = 3,
   }
@@ -818,12 +930,12 @@ export class StarlarkInstructionArg extends jspb.Message {
 
 export namespace StarlarkInstructionArg {
   export type AsObject = {
-    serializedArgValue: string,
-    argName?: string,
-    isRepresentative: boolean,
-  }
+    serializedArgValue: string;
+    argName?: string;
+    isRepresentative: boolean;
+  };
 
-  export enum ArgNameCase { 
+  export enum ArgNameCase {
     _ARG_NAME_NOT_SET = 0,
     ARG_NAME = 2,
   }
@@ -849,10 +961,10 @@ export class StarlarkInstructionPosition extends jspb.Message {
 
 export namespace StarlarkInstructionPosition {
   export type AsObject = {
-    filename: string,
-    line: number,
-    column: number,
-  }
+    filename: string;
+    line: number;
+    column: number;
+  };
 }
 
 export class StarlarkError extends jspb.Message {
@@ -883,12 +995,12 @@ export class StarlarkError extends jspb.Message {
 
 export namespace StarlarkError {
   export type AsObject = {
-    interpretationError?: StarlarkInterpretationError.AsObject,
-    validationError?: StarlarkValidationError.AsObject,
-    executionError?: StarlarkExecutionError.AsObject,
-  }
+    interpretationError?: StarlarkInterpretationError.AsObject;
+    validationError?: StarlarkValidationError.AsObject;
+    executionError?: StarlarkExecutionError.AsObject;
+  };
 
-  export enum ErrorCase { 
+  export enum ErrorCase {
     ERROR_NOT_SET = 0,
     INTERPRETATION_ERROR = 1,
     VALIDATION_ERROR = 2,
@@ -910,8 +1022,8 @@ export class StarlarkInterpretationError extends jspb.Message {
 
 export namespace StarlarkInterpretationError {
   export type AsObject = {
-    errorMessage: string,
-  }
+    errorMessage: string;
+  };
 }
 
 export class StarlarkValidationError extends jspb.Message {
@@ -928,8 +1040,8 @@ export class StarlarkValidationError extends jspb.Message {
 
 export namespace StarlarkValidationError {
   export type AsObject = {
-    errorMessage: string,
-  }
+    errorMessage: string;
+  };
 }
 
 export class StarlarkExecutionError extends jspb.Message {
@@ -946,8 +1058,8 @@ export class StarlarkExecutionError extends jspb.Message {
 
 export namespace StarlarkExecutionError {
   export type AsObject = {
-    errorMessage: string,
-  }
+    errorMessage: string;
+  };
 }
 
 export class StarlarkRunProgress extends jspb.Message {
@@ -977,13 +1089,13 @@ export class StarlarkRunProgress extends jspb.Message {
 
 export namespace StarlarkRunProgress {
   export type AsObject = {
-    currentStepInfoList: Array<string>,
-    totalSteps: number,
-    currentStepNumber: number,
-    instructionId?: string,
-  }
+    currentStepInfoList: Array<string>;
+    totalSteps: number;
+    currentStepNumber: number;
+    instructionId?: string;
+  };
 
-  export enum InstructionIdCase { 
+  export enum InstructionIdCase {
     _INSTRUCTION_ID_NOT_SET = 0,
     INSTRUCTION_ID = 4,
   }
@@ -1013,17 +1125,17 @@ export class StarlarkRunFinishedEvent extends jspb.Message {
 
 export namespace StarlarkRunFinishedEvent {
   export type AsObject = {
-    isRunSuccessful: boolean,
-    serializedOutput?: string,
-    totalExecutionDuration?: google_protobuf_duration_pb.Duration.AsObject,
-  }
+    isRunSuccessful: boolean;
+    serializedOutput?: string;
+    totalExecutionDuration?: google_protobuf_duration_pb.Duration.AsObject;
+  };
 
-  export enum SerializedOutputCase { 
+  export enum SerializedOutputCase {
     _SERIALIZED_OUTPUT_NOT_SET = 0,
     SERIALIZED_OUTPUT = 2,
   }
 
-  export enum TotalExecutionDurationCase { 
+  export enum TotalExecutionDurationCase {
     _TOTAL_EXECUTION_DURATION_NOT_SET = 0,
     TOTAL_EXECUTION_DURATION = 3,
   }
@@ -1043,8 +1155,8 @@ export class GetServicesArgs extends jspb.Message {
 
 export namespace GetServicesArgs {
   export type AsObject = {
-    serviceIdentifiersMap: Array<[string, boolean]>,
-  }
+    serviceIdentifiersMap: Array<[string, boolean]>;
+  };
 }
 
 export class GetServicesResponse extends jspb.Message {
@@ -1061,8 +1173,8 @@ export class GetServicesResponse extends jspb.Message {
 
 export namespace GetServicesResponse {
   export type AsObject = {
-    serviceInfoMap: Array<[string, ServiceInfo.AsObject]>,
-  }
+    serviceInfoMap: Array<[string, ServiceInfo.AsObject]>;
+  };
 }
 
 export class ServiceIdentifiers extends jspb.Message {
@@ -1085,10 +1197,10 @@ export class ServiceIdentifiers extends jspb.Message {
 
 export namespace ServiceIdentifiers {
   export type AsObject = {
-    serviceUuid: string,
-    name: string,
-    shortenedUuid: string,
-  }
+    serviceUuid: string;
+    name: string;
+    shortenedUuid: string;
+  };
 }
 
 export class GetExistingAndHistoricalServiceIdentifiersResponse extends jspb.Message {
@@ -1107,8 +1219,8 @@ export class GetExistingAndHistoricalServiceIdentifiersResponse extends jspb.Mes
 
 export namespace GetExistingAndHistoricalServiceIdentifiersResponse {
   export type AsObject = {
-    allidentifiersList: Array<ServiceIdentifiers.AsObject>,
-  }
+    allidentifiersList: Array<ServiceIdentifiers.AsObject>;
+  };
 }
 
 export class ExecCommandArgs extends jspb.Message {
@@ -1130,9 +1242,9 @@ export class ExecCommandArgs extends jspb.Message {
 
 export namespace ExecCommandArgs {
   export type AsObject = {
-    serviceIdentifier: string,
-    commandArgsList: Array<string>,
-  }
+    serviceIdentifier: string;
+    commandArgsList: Array<string>;
+  };
 }
 
 export class ExecCommandResponse extends jspb.Message {
@@ -1152,9 +1264,9 @@ export class ExecCommandResponse extends jspb.Message {
 
 export namespace ExecCommandResponse {
   export type AsObject = {
-    exitCode: number,
-    logOutput: string,
-  }
+    exitCode: number;
+    logOutput: string;
+  };
 }
 
 export class WaitForHttpGetEndpointAvailabilityArgs extends jspb.Message {
@@ -1199,36 +1311,36 @@ export class WaitForHttpGetEndpointAvailabilityArgs extends jspb.Message {
 
 export namespace WaitForHttpGetEndpointAvailabilityArgs {
   export type AsObject = {
-    serviceIdentifier: string,
-    port: number,
-    path?: string,
-    initialDelayMilliseconds?: number,
-    retries?: number,
-    retriesDelayMilliseconds?: number,
-    bodyText?: string,
-  }
+    serviceIdentifier: string;
+    port: number;
+    path?: string;
+    initialDelayMilliseconds?: number;
+    retries?: number;
+    retriesDelayMilliseconds?: number;
+    bodyText?: string;
+  };
 
-  export enum PathCase { 
+  export enum PathCase {
     _PATH_NOT_SET = 0,
     PATH = 3,
   }
 
-  export enum InitialDelayMillisecondsCase { 
+  export enum InitialDelayMillisecondsCase {
     _INITIAL_DELAY_MILLISECONDS_NOT_SET = 0,
     INITIAL_DELAY_MILLISECONDS = 4,
   }
 
-  export enum RetriesCase { 
+  export enum RetriesCase {
     _RETRIES_NOT_SET = 0,
     RETRIES = 5,
   }
 
-  export enum RetriesDelayMillisecondsCase { 
+  export enum RetriesDelayMillisecondsCase {
     _RETRIES_DELAY_MILLISECONDS_NOT_SET = 0,
     RETRIES_DELAY_MILLISECONDS = 6,
   }
 
-  export enum BodyTextCase { 
+  export enum BodyTextCase {
     _BODY_TEXT_NOT_SET = 0,
     BODY_TEXT = 7,
   }
@@ -1281,42 +1393,42 @@ export class WaitForHttpPostEndpointAvailabilityArgs extends jspb.Message {
 
 export namespace WaitForHttpPostEndpointAvailabilityArgs {
   export type AsObject = {
-    serviceIdentifier: string,
-    port: number,
-    path?: string,
-    requestBody?: string,
-    initialDelayMilliseconds?: number,
-    retries?: number,
-    retriesDelayMilliseconds?: number,
-    bodyText?: string,
-  }
+    serviceIdentifier: string;
+    port: number;
+    path?: string;
+    requestBody?: string;
+    initialDelayMilliseconds?: number;
+    retries?: number;
+    retriesDelayMilliseconds?: number;
+    bodyText?: string;
+  };
 
-  export enum PathCase { 
+  export enum PathCase {
     _PATH_NOT_SET = 0,
     PATH = 3,
   }
 
-  export enum RequestBodyCase { 
+  export enum RequestBodyCase {
     _REQUEST_BODY_NOT_SET = 0,
     REQUEST_BODY = 4,
   }
 
-  export enum InitialDelayMillisecondsCase { 
+  export enum InitialDelayMillisecondsCase {
     _INITIAL_DELAY_MILLISECONDS_NOT_SET = 0,
     INITIAL_DELAY_MILLISECONDS = 5,
   }
 
-  export enum RetriesCase { 
+  export enum RetriesCase {
     _RETRIES_NOT_SET = 0,
     RETRIES = 6,
   }
 
-  export enum RetriesDelayMillisecondsCase { 
+  export enum RetriesDelayMillisecondsCase {
     _RETRIES_DELAY_MILLISECONDS_NOT_SET = 0,
     RETRIES_DELAY_MILLISECONDS = 7,
   }
 
-  export enum BodyTextCase { 
+  export enum BodyTextCase {
     _BODY_TEXT_NOT_SET = 0,
     BODY_TEXT = 8,
   }
@@ -1346,10 +1458,10 @@ export class StreamedDataChunk extends jspb.Message {
 
 export namespace StreamedDataChunk {
   export type AsObject = {
-    data: Uint8Array | string,
-    previousChunkHash: string,
-    metadata?: DataChunkMetadata.AsObject,
-  }
+    data: Uint8Array | string;
+    previousChunkHash: string;
+    metadata?: DataChunkMetadata.AsObject;
+  };
 }
 
 export class DataChunkMetadata extends jspb.Message {
@@ -1366,8 +1478,8 @@ export class DataChunkMetadata extends jspb.Message {
 
 export namespace DataChunkMetadata {
   export type AsObject = {
-    name: string,
-  }
+    name: string;
+  };
 }
 
 export class UploadFilesArtifactResponse extends jspb.Message {
@@ -1387,9 +1499,9 @@ export class UploadFilesArtifactResponse extends jspb.Message {
 
 export namespace UploadFilesArtifactResponse {
   export type AsObject = {
-    uuid: string,
-    name: string,
-  }
+    uuid: string;
+    name: string;
+  };
 }
 
 export class DownloadFilesArtifactArgs extends jspb.Message {
@@ -1406,8 +1518,8 @@ export class DownloadFilesArtifactArgs extends jspb.Message {
 
 export namespace DownloadFilesArtifactArgs {
   export type AsObject = {
-    identifier: string,
-  }
+    identifier: string;
+  };
 }
 
 export class StoreWebFilesArtifactArgs extends jspb.Message {
@@ -1427,9 +1539,9 @@ export class StoreWebFilesArtifactArgs extends jspb.Message {
 
 export namespace StoreWebFilesArtifactArgs {
   export type AsObject = {
-    url: string,
-    name: string,
-  }
+    url: string;
+    name: string;
+  };
 }
 
 export class StoreWebFilesArtifactResponse extends jspb.Message {
@@ -1446,8 +1558,8 @@ export class StoreWebFilesArtifactResponse extends jspb.Message {
 
 export namespace StoreWebFilesArtifactResponse {
   export type AsObject = {
-    uuid: string,
-  }
+    uuid: string;
+  };
 }
 
 export class StoreFilesArtifactFromServiceArgs extends jspb.Message {
@@ -1470,10 +1582,10 @@ export class StoreFilesArtifactFromServiceArgs extends jspb.Message {
 
 export namespace StoreFilesArtifactFromServiceArgs {
   export type AsObject = {
-    serviceIdentifier: string,
-    sourcePath: string,
-    name: string,
-  }
+    serviceIdentifier: string;
+    sourcePath: string;
+    name: string;
+  };
 }
 
 export class StoreFilesArtifactFromServiceResponse extends jspb.Message {
@@ -1490,8 +1602,8 @@ export class StoreFilesArtifactFromServiceResponse extends jspb.Message {
 
 export namespace StoreFilesArtifactFromServiceResponse {
   export type AsObject = {
-    uuid: string,
-  }
+    uuid: string;
+  };
 }
 
 export class FilesArtifactNameAndUuid extends jspb.Message {
@@ -1511,9 +1623,9 @@ export class FilesArtifactNameAndUuid extends jspb.Message {
 
 export namespace FilesArtifactNameAndUuid {
   export type AsObject = {
-    filename: string,
-    fileuuid: string,
-  }
+    filename: string;
+    fileuuid: string;
+  };
 }
 
 export class ListFilesArtifactNamesAndUuidsResponse extends jspb.Message {
@@ -1532,8 +1644,8 @@ export class ListFilesArtifactNamesAndUuidsResponse extends jspb.Message {
 
 export namespace ListFilesArtifactNamesAndUuidsResponse {
   export type AsObject = {
-    fileNamesAndUuidsList: Array<FilesArtifactNameAndUuid.AsObject>,
-  }
+    fileNamesAndUuidsList: Array<FilesArtifactNameAndUuid.AsObject>;
+  };
 }
 
 export class InspectFilesArtifactContentsRequest extends jspb.Message {
@@ -1552,8 +1664,8 @@ export class InspectFilesArtifactContentsRequest extends jspb.Message {
 
 export namespace InspectFilesArtifactContentsRequest {
   export type AsObject = {
-    fileNamesAndUuid?: FilesArtifactNameAndUuid.AsObject,
-  }
+    fileNamesAndUuid?: FilesArtifactNameAndUuid.AsObject;
+  };
 }
 
 export class InspectFilesArtifactContentsResponse extends jspb.Message {
@@ -1572,8 +1684,8 @@ export class InspectFilesArtifactContentsResponse extends jspb.Message {
 
 export namespace InspectFilesArtifactContentsResponse {
   export type AsObject = {
-    fileDescriptionsList: Array<FileArtifactContentsFileDescription.AsObject>,
-  }
+    fileDescriptionsList: Array<FileArtifactContentsFileDescription.AsObject>;
+  };
 }
 
 export class FileArtifactContentsFileDescription extends jspb.Message {
@@ -1598,12 +1710,12 @@ export class FileArtifactContentsFileDescription extends jspb.Message {
 
 export namespace FileArtifactContentsFileDescription {
   export type AsObject = {
-    path: string,
-    size: number,
-    textPreview?: string,
-  }
+    path: string;
+    size: number;
+    textPreview?: string;
+  };
 
-  export enum TextPreviewCase { 
+  export enum TextPreviewCase {
     _TEXT_PREVIEW_NOT_SET = 0,
     TEXT_PREVIEW = 3,
   }
@@ -1623,8 +1735,8 @@ export class ConnectServicesArgs extends jspb.Message {
 
 export namespace ConnectServicesArgs {
   export type AsObject = {
-    connect: Connect,
-  }
+    connect: Connect;
+  };
 }
 
 export class ConnectServicesResponse extends jspb.Message {
@@ -1638,7 +1750,7 @@ export class ConnectServicesResponse extends jspb.Message {
 
 export namespace ConnectServicesResponse {
   export type AsObject = {
-  }
+  };
 }
 
 export class GetStarlarkRunResponse extends jspb.Message {
@@ -1683,18 +1795,18 @@ export class GetStarlarkRunResponse extends jspb.Message {
 
 export namespace GetStarlarkRunResponse {
   export type AsObject = {
-    packageId: string,
-    serializedScript: string,
-    serializedParams: string,
-    parallelism: number,
-    relativePathToMainFile: string,
-    mainFunctionName: string,
-    experimentalFeaturesList: Array<KurtosisFeatureFlag>,
-    restartPolicy: RestartPolicy,
-    initialSerializedParams?: string,
-  }
+    packageId: string;
+    serializedScript: string;
+    serializedParams: string;
+    parallelism: number;
+    relativePathToMainFile: string;
+    mainFunctionName: string;
+    experimentalFeaturesList: Array<KurtosisFeatureFlag>;
+    restartPolicy: RestartPolicy;
+    initialSerializedParams?: string;
+  };
 
-  export enum InitialSerializedParamsCase { 
+  export enum InitialSerializedParamsCase {
     _INITIAL_SERIALIZED_PARAMS_NOT_SET = 0,
     INITIAL_SERIALIZED_PARAMS = 9,
   }
@@ -1714,8 +1826,8 @@ export class PlanYaml extends jspb.Message {
 
 export namespace PlanYaml {
   export type AsObject = {
-    planYaml: string,
-  }
+    planYaml: string;
+  };
 }
 
 export class StarlarkScriptPlanYamlArgs extends jspb.Message {
@@ -1732,6 +1844,11 @@ export class StarlarkScriptPlanYamlArgs extends jspb.Message {
   hasMainFunctionName(): boolean;
   clearMainFunctionName(): StarlarkScriptPlanYamlArgs;
 
+  getAllowPrivilegedMode(): boolean;
+  setAllowPrivilegedMode(value: boolean): StarlarkScriptPlanYamlArgs;
+  hasAllowPrivilegedMode(): boolean;
+  clearAllowPrivilegedMode(): StarlarkScriptPlanYamlArgs;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StarlarkScriptPlanYamlArgs.AsObject;
   static toObject(includeInstance: boolean, msg: StarlarkScriptPlanYamlArgs): StarlarkScriptPlanYamlArgs.AsObject;
@@ -1742,19 +1859,25 @@ export class StarlarkScriptPlanYamlArgs extends jspb.Message {
 
 export namespace StarlarkScriptPlanYamlArgs {
   export type AsObject = {
-    serializedScript: string,
-    serializedParams?: string,
-    mainFunctionName?: string,
-  }
+    serializedScript: string;
+    serializedParams?: string;
+    mainFunctionName?: string;
+    allowPrivilegedMode?: boolean;
+  };
 
-  export enum SerializedParamsCase { 
+  export enum SerializedParamsCase {
     _SERIALIZED_PARAMS_NOT_SET = 0,
     SERIALIZED_PARAMS = 2,
   }
 
-  export enum MainFunctionNameCase { 
+  export enum MainFunctionNameCase {
     _MAIN_FUNCTION_NAME_NOT_SET = 0,
     MAIN_FUNCTION_NAME = 5,
+  }
+
+  export enum AllowPrivilegedModeCase {
+    _ALLOW_PRIVILEGED_MODE_NOT_SET = 0,
+    ALLOW_PRIVILEGED_MODE = 6,
   }
 }
 
@@ -1780,6 +1903,11 @@ export class StarlarkPackagePlanYamlArgs extends jspb.Message {
   hasMainFunctionName(): boolean;
   clearMainFunctionName(): StarlarkPackagePlanYamlArgs;
 
+  getAllowPrivilegedMode(): boolean;
+  setAllowPrivilegedMode(value: boolean): StarlarkPackagePlanYamlArgs;
+  hasAllowPrivilegedMode(): boolean;
+  clearAllowPrivilegedMode(): StarlarkPackagePlanYamlArgs;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StarlarkPackagePlanYamlArgs.AsObject;
   static toObject(includeInstance: boolean, msg: StarlarkPackagePlanYamlArgs): StarlarkPackagePlanYamlArgs.AsObject;
@@ -1790,46 +1918,52 @@ export class StarlarkPackagePlanYamlArgs extends jspb.Message {
 
 export namespace StarlarkPackagePlanYamlArgs {
   export type AsObject = {
-    packageId: string,
-    serializedParams?: string,
-    isRemote: boolean,
-    relativePathToMainFile?: string,
-    mainFunctionName?: string,
-  }
+    packageId: string;
+    serializedParams?: string;
+    isRemote: boolean;
+    relativePathToMainFile?: string;
+    mainFunctionName?: string;
+    allowPrivilegedMode?: boolean;
+  };
 
-  export enum SerializedParamsCase { 
+  export enum SerializedParamsCase {
     _SERIALIZED_PARAMS_NOT_SET = 0,
     SERIALIZED_PARAMS = 2,
   }
 
-  export enum RelativePathToMainFileCase { 
+  export enum RelativePathToMainFileCase {
     _RELATIVE_PATH_TO_MAIN_FILE_NOT_SET = 0,
     RELATIVE_PATH_TO_MAIN_FILE = 4,
   }
 
-  export enum MainFunctionNameCase { 
+  export enum MainFunctionNameCase {
     _MAIN_FUNCTION_NAME_NOT_SET = 0,
     MAIN_FUNCTION_NAME = 5,
   }
+
+  export enum AllowPrivilegedModeCase {
+    _ALLOW_PRIVILEGED_MODE_NOT_SET = 0,
+    ALLOW_PRIVILEGED_MODE = 6,
+  }
 }
 
-export enum ServiceStatus { 
+export enum ServiceStatus {
   STOPPED = 0,
   RUNNING = 1,
   UNKNOWN = 2,
 }
-export enum ImageDownloadMode { 
+export enum ImageDownloadMode {
   ALWAYS = 0,
   MISSING = 1,
 }
-export enum Connect { 
+export enum Connect {
   CONNECT = 0,
   NO_CONNECT = 1,
 }
-export enum KurtosisFeatureFlag { 
+export enum KurtosisFeatureFlag {
   NO_INSTRUCTIONS_CACHING = 0,
 }
-export enum RestartPolicy { 
+export enum RestartPolicy {
   NEVER = 0,
   ALWAYS = 1,
 }

@@ -41,6 +41,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/enclave/inspect"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/graph_viz"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/kurtosis_config_getter"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/portal_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
@@ -118,6 +119,9 @@ const (
 
 	resourceCheckFlagKey = "resource-check"
 	resourceCheckDefault = "true"
+
+	privilegedFlagKey = "privileged"
+	defaultPrivileged = "false"
 
 	packageArgsFileFlagKey      = "args-file"
 	packageArgsFileDefaultValue = ""
@@ -271,6 +275,12 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Default: resourceCheckDefault,
 		},
 		{
+			Key:     privilegedFlagKey,
+			Usage:   "Allows Docker-only privileged containers, host bind mounts, and host PID namespace for this run",
+			Type:    flags.FlagType_Bool,
+			Default: defaultPrivileged,
+		},
+		{
 			Key:     outputGraphFlagKey,
 			Usage:   "If true, outputs a graph image of instructions as nodes and edges specifying dependencies between them",
 			Type:    flags.FlagType_Bool,
@@ -418,6 +428,16 @@ func run(
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", resourceCheckFlagKey)
 	}
 
+	privilegedFlag, err := flags.GetBool(privilegedFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", privilegedFlagKey)
+	}
+	clusterConfig, err := kurtosis_config_getter.GetKurtosisClusterConfig()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while getting Kurtosis cluster config")
+	}
+	allowPrivilegedMode := privilegedFlag || clusterConfig.GetAllowPrivilegedMode()
+
 	shouldOutputGraph, err := flags.GetBool(outputGraphFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", outputGraphFlagKey)
@@ -454,6 +474,7 @@ func run(
 		starlark_run_config.WithNonBlockingMode(nonBlockingMode),
 		starlark_run_config.WithParallel(isParallel),
 		starlark_run_config.WithResourceCheck(resourceCheck),
+		starlark_run_config.WithAllowPrivilegedMode(allowPrivilegedMode),
 	)
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
@@ -481,7 +502,7 @@ func run(
 	isRemotePackage := strings.HasPrefix(starlarkScriptOrPackagePath, githubDomainPrefix)
 
 	if isDependenciesOnly {
-		dependencyYaml, err := getPlanYaml(ctx, enclaveCtx, starlarkScriptOrPackagePath, isRemotePackage, packageArgs)
+		dependencyYaml, err := getPlanYaml(ctx, enclaveCtx, starlarkScriptOrPackagePath, isRemotePackage, packageArgs, allowPrivilegedMode)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting package dependencies.")
 		}
@@ -525,7 +546,7 @@ func run(
 	}
 
 	if shouldOutputGraph {
-		planYaml, err := getPlanYaml(ctx, enclaveCtx, starlarkScriptOrPackagePath, isRemotePackage, packageArgs)
+		planYaml, err := getPlanYaml(ctx, enclaveCtx, starlarkScriptOrPackagePath, isRemotePackage, packageArgs, allowPrivilegedMode)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting package dependencies.")
 		}
@@ -800,11 +821,12 @@ func getPlanYaml(
 	starlarkScriptOrPackageId string,
 	isRemote bool,
 	packageArgs string,
+	allowPrivilegedMode bool,
 ) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
 	var packageYaml *kurtosis_core_rpc_api_bindings.PlanYaml
 	var err error
 	if isRemote {
-		packageYaml, err = enclaveCtx.GetStarlarkRemotePackagePlanYaml(ctx, starlarkScriptOrPackageId, packageArgs)
+		packageYaml, err = enclaveCtx.GetStarlarkRemotePackagePlanYaml(ctx, starlarkScriptOrPackageId, packageArgs, allowPrivilegedMode)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred retrieving plan yaml for provided package.")
 		}
@@ -819,7 +841,7 @@ func getPlanYaml(
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "Unable to read content of Starlark script file '%s'", starlarkScriptOrPackageId)
 			}
-			packageYaml, err = enclaveCtx.GetStarlarkScriptPlanYaml(ctx, string(scriptContentBytes), packageArgs)
+			packageYaml, err = enclaveCtx.GetStarlarkScriptPlanYaml(ctx, string(scriptContentBytes), packageArgs, allowPrivilegedMode)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "An error occurred retrieving plan yaml for provided package.")
 			}
@@ -833,7 +855,7 @@ func getPlanYaml(
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "Tried parsing Kurtosis YML at '%v' to get package name but failed", starlarkScriptOrPackageId)
 			}
-			packageYaml, err = enclaveCtx.GetStarlarkPackagePlanYaml(ctx, starlarkScriptOrPackageId, packageArgs)
+			packageYaml, err = enclaveCtx.GetStarlarkPackagePlanYaml(ctx, starlarkScriptOrPackageId, packageArgs, allowPrivilegedMode)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "An error occurred retrieving plan yaml for provided package.")
 			}

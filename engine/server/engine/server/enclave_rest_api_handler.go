@@ -605,6 +605,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPack
 		GithubAuthToken:        request.Body.GithubAuthToken,
 		Parallel:               request.Body.Parallel,
 		ResourceCheck:          nil,
+		AllowPrivilegedMode:    request.Body.AllowPrivilegedMode,
 	}
 
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(context.Background())
@@ -680,6 +681,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkScripts(ctx 
 		NonBlockingMode:      request.Body.NonBlockingMode,
 		Parallel:             request.Body.Parallel,
 		ResourceCheck:        nil,
+		AllowPrivilegedMode:  request.Body.AllowPrivilegedMode,
 	}
 
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(context.Background())

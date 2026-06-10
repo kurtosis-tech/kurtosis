@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/core/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -66,7 +67,9 @@ func (t *addServiceForceUpdateTestCase) GetInstruction() *kurtosis_plan_instruct
 		t.packageContentProvider,
 		testNoPackageReplaceOptions,
 		t.interpretationTimeValueStore,
-		image_download_mode.ImageDownloadMode_Missing)
+		image_download_mode.ImageDownloadMode_Missing,
+		false,
+		args.KurtosisBackendType_Docker)
 }
 
 func (t *addServiceForceUpdateTestCase) GetStarlarkCode() string {

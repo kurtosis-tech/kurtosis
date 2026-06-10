@@ -316,6 +316,15 @@ func createStartServiceOperation(
 		imageDownloadMode := serviceConfig.GetImageDownloadMode()
 		devices := serviceConfig.GetDevices()
 		capabilities := serviceConfig.GetCapabilities()
+		if serviceConfig.GetPrivileged() {
+			return nil, stacktrace.NewError("Service '%v' has privileged=true but privileged containers are not supported on the Kubernetes backend; this feature is Docker-only", serviceUuid)
+		}
+		if len(serviceConfig.GetBindMounts()) > 0 {
+			return nil, stacktrace.NewError("Service '%v' has bind_mounts configured but host bind mounts are not supported on the Kubernetes backend; this feature is Docker-only", serviceUuid)
+		}
+		if serviceConfig.GetHostPIDNamespace() {
+			return nil, stacktrace.NewError("Service '%v' has host_pid_namespace=true but host PID namespace is not supported on the Kubernetes backend; this feature is Docker-only", serviceUuid)
+		}
 		gpuConfig := serviceConfig.GetGpuConfig()
 		shmSizeMegabytes := gpuConfig.GetShmSizeMegabytes()
 		gpuCount := gpuConfig.GetCount()

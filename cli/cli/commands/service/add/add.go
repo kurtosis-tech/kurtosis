@@ -13,6 +13,7 @@ import (
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
@@ -20,6 +21,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/kurtosis_config_getter"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/portal_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
@@ -56,6 +58,9 @@ const (
 	JsonConfigFlagKey            = "json-service-config"
 	JsonConfigFlagKeyDefault     = ""
 	readJsonConfigFromStdinInput = "-"
+
+	privilegedFlagKey = "privileged"
+	defaultPrivileged = "false"
 
 	portMappingSeparatorForLogs = ", "
 )
@@ -191,6 +196,12 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Type:    flags.FlagType_String,
 			Default: JsonConfigFlagKeyDefault,
 		},
+		{
+			Key:     privilegedFlagKey,
+			Usage:   "Allows Docker-only privileged containers, host bind mounts, and host PID namespace for this service add",
+			Type:    flags.FlagType_Bool,
+			Default: defaultPrivileged,
+		},
 	},
 	RunFunc: run,
 }
@@ -262,6 +273,16 @@ func run(
 		return err // already wrapped
 	}
 
+	privilegedFlag, err := flags.GetBool(privilegedFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", privilegedFlagKey)
+	}
+	clusterConfig, err := kurtosis_config_getter.GetKurtosisClusterConfig()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while getting Kurtosis cluster config")
+	}
+	allowPrivilegedMode := privilegedFlag || clusterConfig.GetAllowPrivilegedMode()
+
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
@@ -296,6 +317,9 @@ func run(
 			serviceConfigJson.TiniEnabled,
 			serviceConfigJson.TtyEnabled,
 			serviceConfigJson.PrivateIPAddressPlaceholder,
+			serviceConfigJson.Privileged,
+			serviceConfigJson.BindMounts,
+			serviceConfigJson.HostPIDNamespace,
 		)
 	} else {
 		entrypoint := []string{}
@@ -321,7 +345,14 @@ func run(
 	}
 
 	addServiceStarlark := service_helpers.GetAddServiceStarlarkScript(serviceName, serviceConfigStarlarkStr)
-	_, err = service_helpers.RunAddServiceStarlarkScript(ctx, serviceName, enclaveIdentifier, addServiceStarlark, enclaveCtx)
+	_, err = service_helpers.RunAddServiceStarlarkScriptWithConfig(
+		ctx,
+		serviceName,
+		enclaveIdentifier,
+		addServiceStarlark,
+		enclaveCtx,
+		starlark_run_config.NewRunStarlarkConfig(starlark_run_config.WithAllowPrivilegedMode(allowPrivilegedMode)),
+	)
 	if err != nil {
 		return err // already wrapped
 	}
@@ -463,7 +494,10 @@ func GetServiceConfigStarlark(
 		emptyLabels,
 		&tiniEnabled,
 		nil, // tty defaults to false
-		privateIPAddressPlaceholder), nil
+		privateIPAddressPlaceholder,
+		false,
+		nil,
+		false), nil
 }
 
 func generateExampleForPortFlag() string {

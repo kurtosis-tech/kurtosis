@@ -41,6 +41,9 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				NodeSelectors:               nil,
 				TiniEnabled:                 nil,
 				TtyEnabled:                  nil,
+				Privileged:                  false,
+				BindMounts:                  nil,
+				HostPIDNamespace:            false,
 			},
 			overrideConfig: &services.ServiceConfig{
 				Image:      "new-image",
@@ -68,6 +71,9 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				NodeSelectors:               nil,
 				TiniEnabled:                 nil,
 				TtyEnabled:                  nil,
+				Privileged:                  false,
+				BindMounts:                  nil,
+				HostPIDNamespace:            false,
 			},
 			expectedUpdatedConfig: &services.ServiceConfig{
 				Image:      "new-image",
@@ -101,6 +107,9 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				NodeSelectors:               nil,
 				TiniEnabled:                 nil,
 				TtyEnabled:                  nil,
+				Privileged:                  false,
+				BindMounts:                  nil,
+				HostPIDNamespace:            false,
 			},
 		},
 		{
@@ -131,6 +140,9 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				NodeSelectors:               nil,
 				TiniEnabled:                 nil,
 				TtyEnabled:                  nil,
+				Privileged:                  false,
+				BindMounts:                  nil,
+				HostPIDNamespace:            false,
 			},
 			overrideConfig: &services.ServiceConfig{
 				Image:                       "",
@@ -151,6 +163,9 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				NodeSelectors:               nil,
 				TiniEnabled:                 nil,
 				TtyEnabled:                  nil,
+				Privileged:                  false,
+				BindMounts:                  nil,
+				HostPIDNamespace:            false,
 			},
 			expectedUpdatedConfig: &services.ServiceConfig{
 				Image:      "base-image",
@@ -177,6 +192,9 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				NodeSelectors:               nil,
 				TiniEnabled:                 nil,
 				TtyEnabled:                  nil,
+				Privileged:                  false,
+				BindMounts:                  nil,
+				HostPIDNamespace:            false,
 			},
 		},
 		{
@@ -207,6 +225,9 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				NodeSelectors:               nil,
 				TiniEnabled:                 nil,
 				TtyEnabled:                  nil,
+				Privileged:                  false,
+				BindMounts:                  nil,
+				HostPIDNamespace:            false,
 			},
 			overrideConfig: &services.ServiceConfig{
 				Image: "",
@@ -234,6 +255,9 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				NodeSelectors:               nil,
 				TiniEnabled:                 nil,
 				TtyEnabled:                  nil,
+				Privileged:                  false,
+				BindMounts:                  nil,
+				HostPIDNamespace:            false,
 			},
 			expectedUpdatedConfig: &services.ServiceConfig{
 				Image: "original",
@@ -261,6 +285,9 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				NodeSelectors:               nil,
 				TiniEnabled:                 nil,
 				TtyEnabled:                  nil,
+				Privileged:                  false,
+				BindMounts:                  nil,
+				HostPIDNamespace:            false,
 			},
 		},
 	}
@@ -276,4 +303,63 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 			require.Equal(t, tc.expectedUpdatedConfig.Files, updated.Files)
 		})
 	}
+}
+
+func TestCreateUpdatedServiceConfigFromOverridesPreservesPrivilegedFields(t *testing.T) {
+	currConfig := &services.ServiceConfig{
+		Image:                       "base-image",
+		PrivatePorts:                nil,
+		PublicPorts:                 nil,
+		Files:                       nil,
+		Entrypoint:                  nil,
+		Cmd:                         nil,
+		EnvVars:                     nil,
+		PrivateIPAddressPlaceholder: "",
+		MaxMillicpus:                0,
+		MinMillicpus:                0,
+		MaxMemory:                   0,
+		MinMemory:                   0,
+		User:                        nil,
+		Tolerations:                 nil,
+		Labels:                      nil,
+		NodeSelectors:               nil,
+		TiniEnabled:                 nil,
+		TtyEnabled:                  nil,
+		Privileged:                  true,
+		BindMounts: map[string]string{
+			"/var/run/docker.sock": "/var/run/docker.sock",
+		},
+		HostPIDNamespace: true,
+	}
+	overrideConfig := &services.ServiceConfig{
+		Image:                       "new-image",
+		PrivatePorts:                nil,
+		PublicPorts:                 nil,
+		Files:                       nil,
+		Entrypoint:                  nil,
+		Cmd:                         nil,
+		EnvVars:                     nil,
+		PrivateIPAddressPlaceholder: "",
+		MaxMillicpus:                0,
+		MinMillicpus:                0,
+		MaxMemory:                   0,
+		MinMemory:                   0,
+		User:                        nil,
+		Tolerations:                 nil,
+		Labels:                      nil,
+		NodeSelectors:               nil,
+		TiniEnabled:                 nil,
+		TtyEnabled:                  nil,
+		Privileged:                  false,
+		BindMounts: map[string]string{
+			"/var/run/docker.sock": "/docker.sock",
+		},
+		HostPIDNamespace: false,
+	}
+
+	updated := createUpdatedServiceConfigFromOverrides(overrideConfig, currConfig)
+
+	require.True(t, updated.Privileged)
+	require.Equal(t, map[string]string{"/var/run/docker.sock": "/docker.sock"}, updated.BindMounts)
+	require.True(t, updated.HostPIDNamespace)
 }
