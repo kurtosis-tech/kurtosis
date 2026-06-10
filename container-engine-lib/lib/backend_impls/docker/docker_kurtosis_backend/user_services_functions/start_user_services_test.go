@@ -14,7 +14,7 @@ const testServiceUuid = "test-service-uuid"
 
 var (
 	errAddressInUse  = errors.New("failed to bind host port for 0.0.0.0:46006:172.16.0.28:9090/tcp: address already in use")
-	errPortAllocated = errors.New("Bind for 0.0.0.0:46006 failed: port is already allocated")
+	errPortAllocated = errors.New("driver failed: Bind for 0.0.0.0:46006 failed: port is already allocated")
 	errUnrelated     = errors.New("no such image: some-image")
 )
 
