@@ -739,6 +739,16 @@ func (manager *DockerManager) CreateAndStartContainer(
 
 	err = manager.StartContainer(ctx, containerId)
 	if err != nil {
+		// The container never ran, so there are no logs worth keeping; remove it so its
+		// name is freed for callers that retry (e.g. on host-port bind collisions).
+		if removeErr := manager.RemoveContainer(ctx, containerId); removeErr != nil {
+			logrus.Warnf(
+				"Failed to start container '%v' and then failed to remove it; container ID '%v' may need manual removal. Removal error:\n%v",
+				args.name,
+				containerId,
+				removeErr,
+			)
+		}
 		return "", nil, stacktrace.Propagate(err, "Could not start Docker container from image '%v'.", dockerImage)
 	}
 
