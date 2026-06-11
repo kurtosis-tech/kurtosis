@@ -79,6 +79,16 @@ const (
 	listOptionsTimeoutSeconds      int64 = 10
 	contextDeadlineExceeded              = "context deadline exceeded"
 	expectedStatusMessageSliceSize       = 6
+
+	// kubelet refuses exec streams with "unable to upgrade connection: container
+	// not found ..." while a pod's container is still being created — pod phase
+	// Running only guarantees the containers are created and at least one is
+	// running *or starting*. The refusal happens before the stream is upgraded,
+	// so nothing has been written to the output writers and the attempt is safe
+	// to retry until the container becomes exec-ready.
+	execConnectionUpgradeFailureSubstr = "unable to upgrade connection"
+	execNotReadyRetryTimeout           = 30 * time.Second
+	execNotReadyRetryInterval          = 500 * time.Millisecond
 )
 
 // We'll try to use the nicer-to-use shells first before we drop down to the lower shells
@@ -1988,13 +1998,32 @@ func (manager *KubernetesManager) RunExecCommandWithContext(
 		)
 	}
 
-	if err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
-		Stdin:             nil,
-		Stdout:            stdOutOutput,
-		Stderr:            stdErrOutput,
-		Tty:               false,
-		TerminalSizeQueue: nil,
-	}); err != nil {
+	var streamErr error
+	retryDeadline := time.Now().Add(execNotReadyRetryTimeout)
+	for {
+		streamErr = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
+			Stdin:             nil,
+			Stdout:            stdOutOutput,
+			Stderr:            stdErrOutput,
+			Tty:               false,
+			TerminalSizeQueue: nil,
+		})
+		if streamErr == nil || !strings.Contains(streamErr.Error(), execConnectionUpgradeFailureSubstr) || time.Now().After(retryDeadline) {
+			break
+		}
+		logrus.Debugf(
+			"Exec into pod '%v' container '%v' was refused before the stream was upgraded (%v); the container is likely still starting, retrying",
+			podName,
+			containerName,
+			streamErr,
+		)
+		select {
+		case <-ctx.Done():
+			return 1, stacktrace.Propagate(ctx.Err(), "Context cancelled while waiting to retry exec into pod '%v' container '%v'", podName, containerName)
+		case <-time.After(execNotReadyRetryInterval):
+		}
+	}
+	if err = streamErr; err != nil {
 		// Kubernetes returns the exit code of the command via a string in the error message, so we have to extract it
 		statusError := err.Error()
 
