@@ -29,8 +29,10 @@ runs:
     - name: Create K3D/K3S cluster
       shell: bash
       run: |
+        # Per-attempt timeout: k3d's --wait has no deadline of its own, so a wedged
+        # node container would otherwise hang the job forever and defeat the retry.
         for i in $(seq 1 3); do
-          if k3d cluster create -p "${{ inputs.reverse-proxy-port }}:80@loadbalancer" --servers 1 --wait --verbose; then
+          if timeout 300 k3d cluster create -p "${{ inputs.reverse-proxy-port }}:80@loadbalancer" --servers 1 --wait --verbose; then
             echo "Cluster created on attempt ${i}"
             break
           fi
@@ -119,7 +121,7 @@ runs:
       shell: bash
       run: |
         for i in $(seq 1 3); do
-          if ${{ inputs.kurtosis-binpath }} engine start --cli-log-level=debug --enclave-pool-size 2; then
+          if timeout 300 ${{ inputs.kurtosis-binpath }} engine start --cli-log-level=debug --enclave-pool-size 2; then
             echo "Engine started on attempt ${i}"
             break
           fi
