@@ -25,6 +25,8 @@ env:
   ENGINE_IMAGE_FILENAME: engine-server-image.tgz
   FILES_ARTIFACTS_EXPANDER_IMAGE_FILENAME: files-artifacts-expander-image.tgz
   REVERSE_PROXY_PORT: '9730'
+  # Exposed as env because the secrets context is not available in step-level `if` conditions
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
 
 jobs:
   # ============================================================================
@@ -183,7 +185,7 @@ jobs:
       # Authenticated pulls avoid Docker Hub anonymous rate limits on shared runner IPs.
       # Skipped when secrets are unavailable (fork PRs, Dependabot) - pulls fall back to anonymous.
       - name: Login to Docker Hub
-        if: ${{ secrets.DOCKERHUB_USERNAME != '' }}
+        if: ${{ env.DOCKERHUB_USERNAME != '' }}
         uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -250,7 +252,7 @@ jobs:
       # Authenticated pulls avoid Docker Hub anonymous rate limits on shared runner IPs.
       # Skipped when secrets are unavailable (fork PRs, Dependabot) - pulls fall back to anonymous.
       - name: Login to Docker Hub
-        if: ${{ secrets.DOCKERHUB_USERNAME != '' }}
+        if: ${{ env.DOCKERHUB_USERNAME != '' }}
         uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -349,7 +351,7 @@ jobs:
       # Authenticated pulls avoid Docker Hub anonymous rate limits on shared runner IPs.
       # Skipped when secrets are unavailable (fork PRs, Dependabot) - pulls fall back to anonymous.
       - name: Login to Docker Hub
-        if: ${{ secrets.DOCKERHUB_USERNAME != '' }}
+        if: ${{ env.DOCKERHUB_USERNAME != '' }}
         uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -543,7 +545,7 @@ jobs:
       # Authenticated pulls avoid Docker Hub anonymous rate limits on shared runner IPs.
       # Skipped when secrets are unavailable (fork PRs, Dependabot) - pulls fall back to anonymous.
       - name: Login to Docker Hub
-        if: ${{ secrets.DOCKERHUB_USERNAME != '' }}
+        if: ${{ env.DOCKERHUB_USERNAME != '' }}
         uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -761,7 +763,7 @@ jobs:
       # Authenticated pulls avoid Docker Hub anonymous rate limits on shared runner IPs.
       # Skipped when secrets are unavailable (fork PRs, Dependabot) - pulls fall back to anonymous.
       - name: Login to Docker Hub
-        if: ${{ secrets.DOCKERHUB_USERNAME != '' }}
+        if: ${{ env.DOCKERHUB_USERNAME != '' }}
         uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -817,7 +819,7 @@ jobs:
       # Authenticated pulls avoid Docker Hub anonymous rate limits on shared runner IPs.
       # Skipped when secrets are unavailable (fork PRs, Dependabot) - pulls fall back to anonymous.
       - name: Login to Docker Hub
-        if: ${{ secrets.DOCKERHUB_USERNAME != '' }}
+        if: ${{ env.DOCKERHUB_USERNAME != '' }}
         uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -879,7 +881,7 @@ jobs:
       # k3d node images (rancher/k3s, k3d-io tools/proxy) are pulled via the Docker daemon, so this covers them too.
       # Skipped when secrets are unavailable (fork PRs, Dependabot) - pulls fall back to anonymous.
       - name: Login to Docker Hub
-        if: ${{ secrets.DOCKERHUB_USERNAME != '' }}
+        if: ${{ env.DOCKERHUB_USERNAME != '' }}
         uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -942,7 +944,7 @@ jobs:
       # Authenticated pulls avoid Docker Hub anonymous rate limits on shared runner IPs.
       # Skipped when secrets are unavailable (fork PRs, Dependabot) - pulls fall back to anonymous.
       - name: Login to Docker Hub
-        if: ${{ secrets.DOCKERHUB_USERNAME != '' }}
+        if: ${{ env.DOCKERHUB_USERNAME != '' }}
         uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -1017,7 +1019,7 @@ jobs:
       # k3d node images (rancher/k3s, k3d-io tools/proxy) are pulled via the Docker daemon, so this covers them too.
       # Skipped when secrets are unavailable (fork PRs, Dependabot) - pulls fall back to anonymous.
       - name: Login to Docker Hub
-        if: ${{ secrets.DOCKERHUB_USERNAME != '' }}
+        if: ${{ env.DOCKERHUB_USERNAME != '' }}
         uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -1063,7 +1065,7 @@ jobs:
       # Authenticated pulls avoid Docker Hub anonymous rate limits on shared runner IPs.
       # Skipped when secrets are unavailable (fork PRs, Dependabot) - pulls fall back to anonymous.
       - name: Login to Docker Hub
-        if: ${{ secrets.DOCKERHUB_USERNAME != '' }}
+        if: ${{ env.DOCKERHUB_USERNAME != '' }}
         uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -1173,7 +1175,7 @@ jobs:
       # Authenticated pulls avoid Docker Hub anonymous rate limits on shared runner IPs.
       # Skipped when secrets are unavailable (fork PRs, Dependabot) - pulls fall back to anonymous.
       - name: Login to Docker Hub
-        if: ${{ secrets.DOCKERHUB_USERNAME != '' }}
+        if: ${{ env.DOCKERHUB_USERNAME != '' }}
         uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -1258,7 +1260,7 @@ jobs:
       # k3d node images (rancher/k3s, k3d-io tools/proxy) are pulled via the Docker daemon, so this covers them too.
       # Skipped when secrets are unavailable (fork PRs, Dependabot) - pulls fall back to anonymous.
       - name: Login to Docker Hub
-        if: ${{ secrets.DOCKERHUB_USERNAME != '' }}
+        if: ${{ env.DOCKERHUB_USERNAME != '' }}
         uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
