@@ -87,8 +87,8 @@ const (
 	// so nothing has been written to the output writers and the attempt is safe
 	// to retry until the container becomes exec-ready.
 	execConnectionUpgradeFailureSubstr = "unable to upgrade connection"
-	execNotReadyRetryTimeout           = 30 * time.Second
-	execNotReadyRetryInterval          = 500 * time.Millisecond
+	execNotReadyRetryTimeout           = 90 * time.Second
+	execNotReadyRetryInterval          = 1 * time.Second
 )
 
 // We'll try to use the nicer-to-use shells first before we drop down to the lower shells
@@ -2929,7 +2929,20 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 		case apiv1.PodUnknown:
 			// not impl - skipping
 		case apiv1.PodRunning:
-			return nil
+			// Phase Running only guarantees the containers have been created and at
+			// least one is running *or still starting/restarting*. The kubelet refuses
+			// execs against a container that isn't actually running ("unable to upgrade
+			// connection: container not found"), so wait until every container is.
+			allContainersRunning := len(pod.Status.ContainerStatuses) > 0
+			for _, containerStatus := range pod.Status.ContainerStatuses {
+				if containerStatus.State.Running == nil {
+					allContainersRunning = false
+					break
+				}
+			}
+			if allContainersRunning {
+				return nil
+			}
 		case apiv1.PodPending:
 			// check if pod is unschedulable (e.g. targeting a node with taints it doesn't tolerate)
 			for _, condition := range pod.Status.Conditions {
