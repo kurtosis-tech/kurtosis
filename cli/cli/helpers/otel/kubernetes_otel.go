@@ -103,6 +103,13 @@ func ensureClickHouse(ctx context.Context, k8sManager *kubernetes_manager.Kubern
 		[]apiv1.Container{{
 			Name:  "clickhouse",
 			Image: defaultClickHouseImage,
+			// Mirrors docker_otel.go: CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT lets the
+			// collector connect as the default user from another pod (without it,
+			// remote exports fail with code 516 "Authentication failed").
+			Env: []apiv1.EnvVar{
+				{Name: "CLICKHOUSE_DB", Value: "otel"},
+				{Name: "CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT", Value: "1"},
+			},
 			Ports: []apiv1.ContainerPort{
 				{Name: "http", ContainerPort: int32(clickHouseHTTPPort), Protocol: apiv1.ProtocolTCP},
 				{Name: "native", ContainerPort: int32(clickHouseNativePort), Protocol: apiv1.ProtocolTCP},
