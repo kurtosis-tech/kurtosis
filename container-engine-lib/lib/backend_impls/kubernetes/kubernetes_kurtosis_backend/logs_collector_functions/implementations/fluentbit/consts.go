@@ -63,7 +63,7 @@ const (
     Name lua
     Match *
     call flatten_kubernetes_labels
-    code function flatten_kubernetes_labels(tag, timestamp, record) record["{{ .LogsEnclaveUUIDLabel }}"] = record["kubernetes"]["labels"]["{{ .LogsEnclaveUUIDLabel }}"] record["{{ .LogsServiceUUIDLabel }}"] = record["kubernetes"]["labels"]["{{ .LogsServiceUUIDLabel }}"] return 1, timestamp, record end
+    code function flatten_kubernetes_labels(tag, timestamp, record) record["{{ .LogsEnclaveUUIDLabel }}"] = record["kubernetes"]["labels"]["{{ .LogsEnclaveUUIDLabel }}"] record["{{ .LogsServiceUUIDLabel }}"] = record["kubernetes"]["labels"]["{{ .LogsServiceUUIDLabel }}"] record["kurtosis_service_name"] = record["kubernetes"]["labels"]["{{ .LogsServiceNameLabel }}"] record["kurtosis_enclave_name"] = record["kubernetes"]["labels"]["{{ .EnclaveNameLabel }}"] return 1, timestamp, record end
     
 [FILTER]
     Name record_modifier
