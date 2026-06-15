@@ -28,7 +28,42 @@ runs:
 
     - name: Create K3D/K3S cluster
       shell: bash
-      run: k3d cluster create -p "${{ inputs.reverse-proxy-port }}:80@loadbalancer" --servers 1 --wait --verbose
+      run: |
+        # Per-attempt timeout: k3d's --wait has no deadline of its own, so a wedged
+        # node container would otherwise hang the job forever and defeat the retry.
+        for i in $(seq 1 3); do
+          if timeout 300 k3d cluster create -p "${{ inputs.reverse-proxy-port }}:80@loadbalancer" --servers 1 --wait --verbose; then
+            echo "Cluster created on attempt ${i}"
+            break
+          fi
+          echo "Attempt ${i}: k3d cluster create failed, retrying in 10s..."
+          k3d cluster delete 2>/dev/null || true
+          sleep 10
+          if [ "${i}" = "3" ]; then
+            echo "Failed to create cluster after 3 attempts"
+            exit 1
+          fi
+        done
+
+    # k3d's --wait only waits for the node containers; the apiserver can still refuse
+    # requests ('apiserver not ready') for a while after. Wait until it serves reads.
+    - name: Wait for Kubernetes API server to be ready
+      shell: bash
+      run: |
+        for i in $(seq 1 60); do
+          if kubectl get --raw='/readyz' >/dev/null 2>&1 && kubectl get namespaces >/dev/null 2>&1; then
+            echo "API server is ready after ${i} attempts"
+            break
+          fi
+          echo "Attempt ${i}: API server not ready, retrying in 2s..."
+          sleep 2
+          if [ "${i}" = "60" ]; then
+            echo "API server did not become ready in time"
+            kubectl get --raw='/readyz?verbose' || true
+            exit 1
+          fi
+        done
+        kubectl wait --for=condition=Ready node --all --timeout=120s
 
     - name: Load Docker images
       shell: bash
@@ -84,7 +119,20 @@ runs:
 
     - name: Start Kurtosis engine in K8s backend
       shell: bash
-      run: ${{ inputs.kurtosis-binpath }} engine start --cli-log-level=debug --enclave-pool-size 2
+      run: |
+        for i in $(seq 1 3); do
+          if timeout 300 ${{ inputs.kurtosis-binpath }} engine start --cli-log-level=debug --enclave-pool-size 2; then
+            echo "Engine started on attempt ${i}"
+            break
+          fi
+          echo "Attempt ${i}: engine start failed, retrying in 10s..."
+          ${{ inputs.kurtosis-binpath }} engine stop 2>/dev/null || true
+          sleep 10
+          if [ "${i}" = "3" ]; then
+            echo "Failed to start engine after 3 attempts"
+            exit 1
+          fi
+        done
 
     - name: Run Kurtosis gateway (background)
       shell: bash

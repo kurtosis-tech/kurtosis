@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/availability_checker"
 
@@ -36,7 +37,21 @@ const (
 	unlimitedReplacements                = -1
 	skipAddingUserServiceToBridgeNetwork = true
 	emptyImageName                       = ""
+
+	// dockerd binds auto-published host ports at container start. The chosen port
+	// can collide with a host process ("address already in use") or, in rare
+	// daemon races, with another container's mapping ("port is already allocated").
+	// Both are transient: dockerd's allocator picks a fresh port on the next
+	// attempt, so we retry. The substrings are matched against the error returned
+	// by dockerd and are stable across the supported Docker / Moby versions.
+	maxHostPortBindRetries     = 5
+	hostPortBindRetryBaseDelay = 50 * time.Millisecond
 )
+
+var hostPortBindFailureSubstrs = []string{
+	"address already in use",
+	"port is already allocated",
+}
 
 func RegisterUserServices(
 	enclaveUuid enclave.EnclaveUUID,
@@ -683,6 +698,10 @@ func createStartServiceOperation(
 		}
 
 		dockerUsedPorts := map[nat.Port]docker_manager.PortPublishSpec{}
+		// True when at least one port lets dockerd auto-pick the host port. Those
+		// picks can collide under parallel service starts, and a retry (with dockerd
+		// choosing a fresh port) is the recovery (see createAndStartContainerWithHostPortRetry).
+		hasAutoPublishedPorts := false
 		for portId, privatePortSpec := range privatePorts {
 			dockerPort, err := shared_helpers.TransformPortSpecToDockerPort(privatePortSpec)
 			if err != nil {
@@ -701,6 +720,7 @@ func createStartServiceOperation(
 				dockerUsedPorts[dockerPort] = docker_manager.NewNoPublishingSpec()
 			} else {
 				dockerUsedPorts[dockerPort] = docker_manager.NewAutomaticPublishingSpec()
+				hasAutoPublishedPorts = true
 			}
 		}
 
@@ -808,7 +828,13 @@ func createStartServiceOperation(
 
 		createAndStartArgs := createAndStartArgsBuilder.Build()
 
-		containerId, hostMachinePortBindings, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
+		containerId, hostMachinePortBindings, err := createAndStartContainerWithHostPortRetry(
+			ctx,
+			dockerManager.CreateAndStartContainer,
+			createAndStartArgs,
+			hasAutoPublishedPorts,
+			serviceUUID,
+		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred starting the user service container for user service with UUID '%v'", serviceUUID)
 		}
@@ -1014,4 +1040,72 @@ func portShouldBeManuallyPublished(key string, publicPorts map[string]*port_spec
 	}
 	_, found := publicPorts[key]
 	return found
+}
+
+// createAndStartContainerFunc matches DockerManager.CreateAndStartContainer; the
+// retry helper takes it as a parameter so the retry policy is unit-testable.
+type createAndStartContainerFunc func(
+	ctx context.Context,
+	args *docker_manager.CreateAndStartContainerArgs,
+) (string, map[nat.Port]*nat.PortBinding, error)
+
+// createAndStartContainerWithHostPortRetry calls createAndStart and retries, up
+// to maxHostPortBindRetries times, when the failure looks like a host-port bind
+// collision on an auto-published port. dockerd binds auto-published ports at
+// container start and its pick can race with host processes (or, rarely, other
+// containers) when many services start in parallel — e.g. the Ethereum-package
+// CI workflow. Each retry lets dockerd's allocator pick a fresh port, so no
+// state needs to change between attempts. (CreateAndStartContainer removes the
+// failed container before returning, so the container name is free again.)
+//
+// Errors that don't look like a port-bind collision are returned immediately,
+// as are collisions when every host port was pinned by the user (the NEAR
+// static-port path) — retrying a pinned port can never succeed.
+func createAndStartContainerWithHostPortRetry(
+	ctx context.Context,
+	createAndStart createAndStartContainerFunc,
+	args *docker_manager.CreateAndStartContainerArgs,
+	hasAutoPublishedPorts bool,
+	serviceUUID service.ServiceUUID,
+) (string, map[nat.Port]*nat.PortBinding, error) {
+	var lastErr error
+	for attempt := 0; attempt < maxHostPortBindRetries; attempt++ {
+		if attempt > 0 {
+			// Brief linear backoff so parallel starts that collided don't all
+			// hammer the daemon in lockstep.
+			time.Sleep(time.Duration(attempt) * hostPortBindRetryBaseDelay)
+		}
+		containerId, hostMachinePortBindings, err := createAndStart(ctx, args)
+		if err == nil {
+			return containerId, hostMachinePortBindings, nil
+		}
+		lastErr = err
+
+		if !isHostPortBindCollision(err) || !hasAutoPublishedPorts {
+			return "", nil, err
+		}
+
+		logrus.Warnf(
+			"Host port collision starting user service '%v' on attempt %d/%d (%v); retrying so dockerd picks a fresh port",
+			serviceUUID,
+			attempt+1,
+			maxHostPortBindRetries,
+			err,
+		)
+	}
+	return "", nil, stacktrace.Propagate(
+		lastErr,
+		"Failed to start user service container after %d host-port bind retries",
+		maxHostPortBindRetries,
+	)
+}
+
+func isHostPortBindCollision(err error) bool {
+	errStr := err.Error()
+	for _, substr := range hostPortBindFailureSubstrs {
+		if strings.Contains(errStr, substr) {
+			return true
+		}
+	}
+	return false
 }
