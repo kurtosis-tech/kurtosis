@@ -25,6 +25,11 @@ const (
 	createTestEnclave = false
 
 	defaultApicDebugModeForEnclavesInThePool = false
+
+	// On a failed fill, re-queue after this backoff (up to maxFillRetries) so the
+	// pool self-heals instead of draining to empty.
+	fillRetryBackoff = 5 * time.Second
+	maxFillRetries   = 5
 )
 
 type EnclavePool struct {
@@ -239,18 +244,31 @@ func (pool *EnclavePool) init(poolSize uint8) {
 // 1- for creating and add a new idle enclave in the pool
 // 2- for closing the subroutine
 func (pool *EnclavePool) run(ctx context.Context) {
+	fillRetries := 0
 	for {
 		// wait until receive the re-fill signal or the ctx has done signal
 		select {
 		case <-pool.fillChan:
 			if err := pool.createAndAddOneIdleEnclaveIfNeeded(ctx); err != nil {
-				if err == context.Canceled {
+				switch {
+				case err == context.Canceled:
 					logrus.Debug("The subroutine context has been canceled")
-				} else {
-					logrus.Errorf("An error occurred filling the enclave pool. Error\n%v", err)
+				case fillRetries < maxFillRetries:
+					// Re-queue (non-blocking) so the pool self-heals once the transient cause clears.
+					fillRetries++
+					logrus.Errorf("An error occurred filling the enclave pool; re-queuing the fill (%d/%d) in %v. Error\n%v", fillRetries, maxFillRetries, fillRetryBackoff, err)
+					time.AfterFunc(fillRetryBackoff, func() {
+						select {
+						case pool.fillChan <- fill:
+						default:
+						}
+					})
+				default:
+					logrus.Errorf("An error occurred filling the enclave pool and the retry limit (%d) was reached; giving up until the next fill signal. Error\n%v", maxFillRetries, err)
 				}
 				break
 			}
+			fillRetries = 0 // a successful fill clears the retry budget
 		case <-ctx.Done():
 			logrus.Debug("The subroutine context has done")
 			logrus.Debug("Enclave pool sub-routine stopped")
