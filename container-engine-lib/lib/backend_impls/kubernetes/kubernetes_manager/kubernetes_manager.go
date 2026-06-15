@@ -79,6 +79,19 @@ const (
 	listOptionsTimeoutSeconds      int64 = 10
 	contextDeadlineExceeded              = "context deadline exceeded"
 	expectedStatusMessageSliceSize       = 6
+
+	// kubelet refuses exec streams with "unable to upgrade connection: container
+	// not found ..." while a pod's container is still being created — pod phase
+	// Running only guarantees the containers are created and at least one is
+	// running *or starting*. The refusal happens before the stream is upgraded,
+	// so nothing has been written to the output writers and the attempt is safe
+	// to retry until the container becomes exec-ready.
+	execConnectionUpgradeFailureSubstr = "unable to upgrade connection"
+	execNotReadyRetryTimeout           = 90 * time.Second
+	execNotReadyRetryInterval          = 1 * time.Second
+	// Exit code returned when the exec command could not be run at all (as opposed to a command
+	// that ran and exited non-zero).
+	execFailureExitCode = 1
 )
 
 // We'll try to use the nicer-to-use shells first before we drop down to the lower shells
@@ -1988,13 +2001,47 @@ func (manager *KubernetesManager) RunExecCommandWithContext(
 		)
 	}
 
-	if err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
-		Stdin:             nil,
-		Stdout:            stdOutOutput,
-		Stderr:            stdErrOutput,
-		Tty:               false,
-		TerminalSizeQueue: nil,
-	}); err != nil {
+	var streamErr error
+	retryDeadline := time.Now().Add(execNotReadyRetryTimeout)
+	for {
+		streamErr = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
+			Stdin:             nil,
+			Stdout:            stdOutOutput,
+			Stderr:            stdErrOutput,
+			Tty:               false,
+			TerminalSizeQueue: nil,
+		})
+		// The only retryable failure is the kubelet refusing the stream upgrade because it
+		// can't find a running container; anything else is a real exec result/error.
+		if streamErr == nil || !strings.Contains(streamErr.Error(), execConnectionUpgradeFailureSubstr) {
+			break
+		}
+		// The kubelet refused because it has no running container by that name. That can mean
+		// the container is still starting (worth retrying) OR that it has already terminated -
+		// e.g. OOMKilled or evicted under node resource pressure. User-service pods use
+		// RestartPolicy=Never, so a terminated container never comes back and retrying for the
+		// full timeout just wastes time and buries the real cause behind an opaque "container
+		// not found". Inspect the container's actual state and fail fast with the reason if it
+		// is terminal.
+		if terminalErr := manager.getExecTargetTerminalStateError(ctx, namespaceName, podName, containerName, streamErr); terminalErr != nil {
+			return execFailureExitCode, terminalErr
+		}
+		if time.Now().After(retryDeadline) {
+			break
+		}
+		logrus.Debugf(
+			"Exec into pod '%v' container '%v' was refused before the stream was upgraded (%v); the container is likely still starting, retrying",
+			podName,
+			containerName,
+			streamErr,
+		)
+		select {
+		case <-ctx.Done():
+			return execFailureExitCode, stacktrace.Propagate(ctx.Err(), "Context cancelled while waiting to retry exec into pod '%v' container '%v'", podName, containerName)
+		case <-time.After(execNotReadyRetryInterval):
+		}
+	}
+	if err = streamErr; err != nil {
 		// Kubernetes returns the exit code of the command via a string in the error message, so we have to extract it
 		statusError := err.Error()
 
@@ -2016,6 +2063,63 @@ func (manager *KubernetesManager) RunExecCommandWithContext(
 	}
 
 	return successExecCommandExitCode, nil
+}
+
+// getExecTargetTerminalStateError turns the kubelet's opaque "unable to upgrade connection:
+// container not found" exec refusal into the real root cause when the target container is in a
+// terminal state. It returns a descriptive error if the container has terminated (e.g. OOMKilled
+// or evicted under node resource pressure) - which, given user-service pods use RestartPolicy=Never,
+// means it will never come back and retrying is futile. It returns nil if the container is simply
+// still starting up (and the exec is therefore worth retrying) or if the state can't be determined.
+func (manager *KubernetesManager) getExecTargetTerminalStateError(
+	ctx context.Context,
+	namespaceName string,
+	podName string,
+	containerName string,
+	streamErr error,
+) error {
+	pod, err := manager.GetPod(ctx, namespaceName, podName)
+	if err != nil {
+		// We couldn't diagnose the container state; let the caller keep retrying rather than
+		// masking the original (retryable) error with a lookup failure.
+		logrus.Debugf("Couldn't fetch pod '%v' to diagnose exec refusal for container '%v': %v", podName, containerName, err)
+		return nil
+	}
+	for _, containerStatus := range pod.Status.ContainerStatuses {
+		if containerStatus.Name != containerName {
+			continue
+		}
+		if terminated := containerStatus.State.Terminated; terminated != nil {
+			return stacktrace.Propagate(
+				streamErr,
+				"Cannot exec into container '%v' in pod '%v': the container has terminated (reason: '%v', exit code: '%v', message: '%v'). "+
+					"Service pods are created with RestartPolicy=Never, so the container will not be restarted. This typically means the container "+
+					"was killed (e.g. OOMKilled, or evicted because the node ran low on memory/disk) rather than the exec racing container startup.",
+				containerName,
+				podName,
+				terminated.Reason,
+				terminated.ExitCode,
+				terminated.Message,
+			)
+		}
+		// Not currently running, and it has terminated at least once before: under RestartPolicy=Never
+		// there is nothing running to exec into, so surface why it last died instead of retrying.
+		if lastTerminated := containerStatus.LastTerminationState.Terminated; containerStatus.State.Running == nil && lastTerminated != nil {
+			return stacktrace.Propagate(
+				streamErr,
+				"Cannot exec into container '%v' in pod '%v': the container is not running; it previously terminated (reason: '%v', exit code: '%v').",
+				containerName,
+				podName,
+				lastTerminated.Reason,
+				lastTerminated.ExitCode,
+			)
+		}
+		// State is Waiting (e.g. ContainerCreating) or Running but the kubelet briefly can't resolve
+		// it - both are genuinely transient, so let the caller retry.
+		return nil
+	}
+	// No status for the target container yet (pod just created) - transient, keep retrying.
+	return nil
 }
 
 func (manager *KubernetesManager) RunExecCommand(
@@ -2900,7 +3004,20 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 		case apiv1.PodUnknown:
 			// not impl - skipping
 		case apiv1.PodRunning:
-			return nil
+			// Phase Running only guarantees the containers have been created and at
+			// least one is running *or still starting/restarting*. The kubelet refuses
+			// execs against a container that isn't actually running ("unable to upgrade
+			// connection: container not found"), so wait until every container is.
+			allContainersRunning := len(pod.Status.ContainerStatuses) > 0
+			for _, containerStatus := range pod.Status.ContainerStatuses {
+				if containerStatus.State.Running == nil {
+					allContainersRunning = false
+					break
+				}
+			}
+			if allContainersRunning {
+				return nil
+			}
 		case apiv1.PodPending:
 			// check if pod is unschedulable (e.g. targeting a node with taints it doesn't tolerate)
 			for _, condition := range pod.Status.Conditions {

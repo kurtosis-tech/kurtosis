@@ -13,8 +13,15 @@ const (
 	noOverrideServiceName   = "no-override"
 	userOverrideServiceName = "user-override"
 
+	// We deliberately use a small image that (a) defaults to a non-root user so the
+	// "no override" case can be distinguished from the root override, and (b) is already
+	// pulled by the rest of the suite so it adds no node disk pressure. besu:24.3 was a
+	// huge image whose only role here was "has a non-root default user", and pulling it
+	// on a loaded kind node risked DiskPressure evictions; combined with
+	// RestartPolicy=Never that killed the container and made exec fail with a confusing
+	// "container not found". mendhak/http-https-echo defaults to the non-root 'node' user.
 	starlarkScriptWithUserIdPassed = `
-IMAGE = "hyperledger/besu:24.3"
+IMAGE = "mendhak/http-https-echo:26"
 def run(plan, args):
 	no_override = plan.add_service(
 		name = "` + noOverrideServiceName + `",
@@ -59,7 +66,7 @@ func TestUserIDOverridesWork(t *testing.T) {
 	expectedOutput := `Service '` + noOverrideServiceName + `' added with service UUID '[a-z0-9]{32}'
 Command returned with exit code '0' and the following output:
 --------------------
-besu
+node
 
 --------------------
 Service '` + userOverrideServiceName + `' added with service UUID '[a-z0-9]{32}'
