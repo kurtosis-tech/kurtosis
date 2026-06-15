@@ -17,7 +17,7 @@ def run(plan):
 `
 	runshStarlarkFileArtifact = `
 def run(plan):
-  result = plan.run_sh(run="mkdir -p /src && echo kurtosis > /src/tech.txt && echo example > /src/example.txt", store=["/src/tech.txt", StoreSpec(src="/src", name="src"), StoreSpec(src="/src/*")], image="ethpandaops/ethereum-genesis-generator:1.0.14")
+  result = plan.run_sh(run="mkdir -p /src && echo kurtosis > /src/tech.txt && echo example > /src/example.txt", store=["/src/tech.txt", StoreSpec(src="/src", name="src"), StoreSpec(src="/src/*")], image="alpine:3.17")
   file_artifacts = result.files_artifacts
   result2 = plan.run_sh(run="cat /temp/tech.txt", files={"/temp": file_artifacts[0]})
   plan.verify(result2.output, "==", "kurtosis\n")
