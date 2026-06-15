@@ -16,11 +16,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-// kubernetes_otel.go is the Kubernetes analog of docker_otel.go: it deploys the
-// same OTel collector + ClickHouse stack (reusing the embedded init.sql and
-// collector-bootstrap-config.yaml) as in-cluster Deployments/Services so that
-// enclave services and the engine's logs aggregator can ship to it over cluster
-// DNS instead of host ports. Wired into StartOtel/StopOtel's Kubernetes case.
+// kubernetes_otel.go is the Kubernetes analog of docker_otel.go: it deploys the same
+// OTel collector + ClickHouse stack as in-cluster Deployments/Services (StartOtel/StopOtel).
 
 const (
 	otelNamespace = "kurtosis-otel"
@@ -36,9 +33,14 @@ const (
 	collectorConfigDirMountPath = "/etc/otelcol"
 	collectorConfigFileName     = "config.yaml"
 
-	otelDeploymentMaxRetries     = 90
-	otelDeploymentRetryInterval  = 1 * time.Second
-	emptyOtelStorageClassName    = ""
+	otelDeploymentMaxRetries    = 90
+	otelDeploymentRetryInterval = 1 * time.Second
+	emptyOtelStorageClassName   = ""
+
+	// Readiness-probe timings (seconds) for the ClickHouse + collector deployments.
+	probeInitialDelaySeconds = 3
+	probePeriodSeconds       = 2
+	probeTimeoutSeconds      = 3
 )
 
 var otelNamespaceLabels = map[string]string{"kurtosistech.com/app-id": "kurtosis", "kurtosistech.com/resource-type": "otel"}
@@ -84,7 +86,8 @@ func StopOtelInK8s(ctx context.Context) error {
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting a Kubernetes manager for otel.")
 	}
-	if err := k8sManager.RemoveNamespace(ctx, &apiv1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: otelNamespace}}); err != nil {
+	otelNs := &apiv1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: otelNamespace}} //nolint:exhaustruct
+	if err := k8sManager.RemoveNamespace(ctx, otelNs); err != nil {
 		return stacktrace.Propagate(err, "An error occurred removing the otel namespace '%v'.", otelNamespace)
 	}
 	return nil
@@ -98,32 +101,42 @@ func ensureClickHouse(ctx context.Context, k8sManager *kubernetes_manager.Kubern
 	if _, err := k8sManager.CreateConfigMap(ctx, otelNamespace, clickHouseInitConfigMapName, clickHouseLabels, map[string]string{}, map[string]string{"init.sql": clickHouseInitSQL}); err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the ClickHouse init.sql ConfigMap.")
 	}
+	container := apiv1.Container{ //nolint:exhaustruct
+		Name:  "clickhouse",
+		Image: defaultClickHouseImage,
+		// CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT lets the collector connect as the
+		// default user from another pod (mirrors docker_otel.go).
+		Env: []apiv1.EnvVar{
+			{Name: "CLICKHOUSE_DB", Value: "otel"},                     //nolint:exhaustruct
+			{Name: "CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT", Value: "1"}, //nolint:exhaustruct
+		},
+		Ports: []apiv1.ContainerPort{
+			{Name: "http", ContainerPort: int32(clickHouseHTTPPort), Protocol: apiv1.ProtocolTCP},     //nolint:exhaustruct
+			{Name: "native", ContainerPort: int32(clickHouseNativePort), Protocol: apiv1.ProtocolTCP}, //nolint:exhaustruct
+		},
+		VolumeMounts: []apiv1.VolumeMount{
+			{Name: "init", MountPath: clickHouseInitDirMountPath}, //nolint:exhaustruct
+		},
+		ReadinessProbe: &apiv1.Probe{ //nolint:exhaustruct
+			ProbeHandler:        apiv1.ProbeHandler{HTTPGet: &apiv1.HTTPGetAction{Path: "/ping", Port: intstr.FromInt(int(clickHouseHTTPPort))}}, //nolint:exhaustruct
+			InitialDelaySeconds: probeInitialDelaySeconds, PeriodSeconds: probePeriodSeconds, TimeoutSeconds: probeTimeoutSeconds,
+		},
+	}
+	volumes := []apiv1.Volume{
+		{
+			Name:         "init",
+			VolumeSource: apiv1.VolumeSource{ConfigMap: &apiv1.ConfigMapVolumeSource{LocalObjectReference: apiv1.LocalObjectReference{Name: clickHouseInitConfigMapName}}}, //nolint:exhaustruct
+		},
+	}
+	servicePorts := []apiv1.ServicePort{
+		{Name: "http", Port: int32(clickHouseHTTPPort), TargetPort: intstr.FromInt(int(clickHouseHTTPPort)), Protocol: apiv1.ProtocolTCP},       //nolint:exhaustruct
+		{Name: "native", Port: int32(clickHouseNativePort), TargetPort: intstr.FromInt(int(clickHouseNativePort)), Protocol: apiv1.ProtocolTCP}, //nolint:exhaustruct
+	}
+
 	deployment, err := k8sManager.CreateDeployment(ctx, otelNamespace, clickHouseDeploymentName, clickHouseLabels, map[string]string{},
 		nil,
-		[]apiv1.Container{{
-			Name:  "clickhouse",
-			Image: defaultClickHouseImage,
-			// Mirrors docker_otel.go: CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT lets the
-			// collector connect as the default user from another pod (without it,
-			// remote exports fail with code 516 "Authentication failed").
-			Env: []apiv1.EnvVar{
-				{Name: "CLICKHOUSE_DB", Value: "otel"},
-				{Name: "CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT", Value: "1"},
-			},
-			Ports: []apiv1.ContainerPort{
-				{Name: "http", ContainerPort: int32(clickHouseHTTPPort), Protocol: apiv1.ProtocolTCP},
-				{Name: "native", ContainerPort: int32(clickHouseNativePort), Protocol: apiv1.ProtocolTCP},
-			},
-			VolumeMounts: []apiv1.VolumeMount{{Name: "init", MountPath: clickHouseInitDirMountPath}},
-			ReadinessProbe: &apiv1.Probe{
-				ProbeHandler:        apiv1.ProbeHandler{HTTPGet: &apiv1.HTTPGetAction{Path: "/ping", Port: intstr.FromInt(int(clickHouseHTTPPort))}},
-				InitialDelaySeconds: 3, PeriodSeconds: 2, TimeoutSeconds: 3,
-			},
-		}},
-		[]apiv1.Volume{{
-			Name:         "init",
-			VolumeSource: apiv1.VolumeSource{ConfigMap: &apiv1.ConfigMapVolumeSource{LocalObjectReference: apiv1.LocalObjectReference{Name: clickHouseInitConfigMapName}}},
-		}},
+		[]apiv1.Container{container},
+		volumes,
 		nil, nil, nil)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the ClickHouse deployment.")
@@ -132,11 +145,7 @@ func ensureClickHouse(ctx context.Context, k8sManager *kubernetes_manager.Kubern
 	if err := k8sManager.WaitForPodManagedByDeployment(ctx, deployment, otelDeploymentMaxRetries, otelDeploymentRetryInterval); err != nil {
 		return stacktrace.Propagate(err, "An error occurred waiting for the ClickHouse deployment to come online.")
 	}
-	if _, err := k8sManager.CreateService(ctx, otelNamespace, clickHouseServiceName, clickHouseLabels, map[string]string{}, clickHouseLabels, apiv1.ServiceTypeClusterIP,
-		[]apiv1.ServicePort{
-			{Name: "http", Port: int32(clickHouseHTTPPort), TargetPort: intstr.FromInt(int(clickHouseHTTPPort)), Protocol: apiv1.ProtocolTCP},
-			{Name: "native", Port: int32(clickHouseNativePort), TargetPort: intstr.FromInt(int(clickHouseNativePort)), Protocol: apiv1.ProtocolTCP},
-		}); err != nil {
+	if _, err := k8sManager.CreateService(ctx, otelNamespace, clickHouseServiceName, clickHouseLabels, map[string]string{}, clickHouseLabels, apiv1.ServiceTypeClusterIP, servicePorts); err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the ClickHouse service.")
 	}
 	return nil
@@ -151,28 +160,40 @@ func ensureCollector(ctx context.Context, k8sManager *kubernetes_manager.Kuberne
 	if _, err := k8sManager.CreateConfigMap(ctx, otelNamespace, collectorConfigMapName, collectorLabels, map[string]string{}, map[string]string{collectorConfigFileName: collectorConfig}); err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the collector config ConfigMap.")
 	}
+	container := apiv1.Container{ //nolint:exhaustruct
+		Name:  "collector",
+		Image: defaultCollectorImage,
+		Args:  []string{fmt.Sprintf("--config=%v/%v", collectorConfigDirMountPath, collectorConfigFileName)},
+		Ports: []apiv1.ContainerPort{
+			{Name: "otlp-grpc", ContainerPort: int32(collectorOTLPGRPCPort), Protocol: apiv1.ProtocolTCP}, //nolint:exhaustruct
+			{Name: "otlp-http", ContainerPort: int32(collectorOTLPHTTPPort), Protocol: apiv1.ProtocolTCP}, //nolint:exhaustruct
+			{Name: "loki", ContainerPort: int32(collectorLokiPort), Protocol: apiv1.ProtocolTCP},          //nolint:exhaustruct
+			{Name: "health", ContainerPort: int32(collectorHealthPort), Protocol: apiv1.ProtocolTCP},      //nolint:exhaustruct
+		},
+		VolumeMounts: []apiv1.VolumeMount{
+			{Name: "config", MountPath: collectorConfigDirMountPath}, //nolint:exhaustruct
+		},
+		ReadinessProbe: &apiv1.Probe{ //nolint:exhaustruct
+			ProbeHandler:        apiv1.ProbeHandler{HTTPGet: &apiv1.HTTPGetAction{Path: "/", Port: intstr.FromInt(int(collectorHealthPort))}}, //nolint:exhaustruct
+			InitialDelaySeconds: probeInitialDelaySeconds, PeriodSeconds: probePeriodSeconds, TimeoutSeconds: probeTimeoutSeconds,
+		},
+	}
+	volumes := []apiv1.Volume{
+		{
+			Name:         "config",
+			VolumeSource: apiv1.VolumeSource{ConfigMap: &apiv1.ConfigMapVolumeSource{LocalObjectReference: apiv1.LocalObjectReference{Name: collectorConfigMapName}}}, //nolint:exhaustruct
+		},
+	}
+	servicePorts := []apiv1.ServicePort{
+		{Name: "otlp-grpc", Port: int32(collectorOTLPGRPCPort), TargetPort: intstr.FromInt(int(collectorOTLPGRPCPort)), Protocol: apiv1.ProtocolTCP}, //nolint:exhaustruct
+		{Name: "otlp-http", Port: int32(collectorOTLPHTTPPort), TargetPort: intstr.FromInt(int(collectorOTLPHTTPPort)), Protocol: apiv1.ProtocolTCP}, //nolint:exhaustruct
+		{Name: "loki", Port: int32(collectorLokiPort), TargetPort: intstr.FromInt(int(collectorLokiPort)), Protocol: apiv1.ProtocolTCP},              //nolint:exhaustruct
+	}
+
 	deployment, err := k8sManager.CreateDeployment(ctx, otelNamespace, collectorDeploymentName, collectorLabels, map[string]string{},
 		nil,
-		[]apiv1.Container{{
-			Name:  "collector",
-			Image: defaultCollectorImage,
-			Args:  []string{fmt.Sprintf("--config=%v/%v", collectorConfigDirMountPath, collectorConfigFileName)},
-			Ports: []apiv1.ContainerPort{
-				{Name: "otlp-grpc", ContainerPort: int32(collectorOTLPGRPCPort), Protocol: apiv1.ProtocolTCP},
-				{Name: "otlp-http", ContainerPort: int32(collectorOTLPHTTPPort), Protocol: apiv1.ProtocolTCP},
-				{Name: "loki", ContainerPort: int32(collectorLokiPort), Protocol: apiv1.ProtocolTCP},
-				{Name: "health", ContainerPort: int32(collectorHealthPort), Protocol: apiv1.ProtocolTCP},
-			},
-			VolumeMounts: []apiv1.VolumeMount{{Name: "config", MountPath: collectorConfigDirMountPath}},
-			ReadinessProbe: &apiv1.Probe{
-				ProbeHandler:        apiv1.ProbeHandler{HTTPGet: &apiv1.HTTPGetAction{Path: "/", Port: intstr.FromInt(int(collectorHealthPort))}},
-				InitialDelaySeconds: 3, PeriodSeconds: 2, TimeoutSeconds: 3,
-			},
-		}},
-		[]apiv1.Volume{{
-			Name:         "config",
-			VolumeSource: apiv1.VolumeSource{ConfigMap: &apiv1.ConfigMapVolumeSource{LocalObjectReference: apiv1.LocalObjectReference{Name: collectorConfigMapName}}},
-		}},
+		[]apiv1.Container{container},
+		volumes,
 		nil, nil, nil)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the collector deployment.")
@@ -181,12 +202,7 @@ func ensureCollector(ctx context.Context, k8sManager *kubernetes_manager.Kuberne
 	if err := k8sManager.WaitForPodManagedByDeployment(ctx, deployment, otelDeploymentMaxRetries, otelDeploymentRetryInterval); err != nil {
 		return stacktrace.Propagate(err, "An error occurred waiting for the collector deployment to come online.")
 	}
-	if _, err := k8sManager.CreateService(ctx, otelNamespace, collectorServiceName, collectorLabels, map[string]string{}, collectorLabels, apiv1.ServiceTypeClusterIP,
-		[]apiv1.ServicePort{
-			{Name: "otlp-grpc", Port: int32(collectorOTLPGRPCPort), TargetPort: intstr.FromInt(int(collectorOTLPGRPCPort)), Protocol: apiv1.ProtocolTCP},
-			{Name: "otlp-http", Port: int32(collectorOTLPHTTPPort), TargetPort: intstr.FromInt(int(collectorOTLPHTTPPort)), Protocol: apiv1.ProtocolTCP},
-			{Name: "loki", Port: int32(collectorLokiPort), TargetPort: intstr.FromInt(int(collectorLokiPort)), Protocol: apiv1.ProtocolTCP},
-		}); err != nil {
+	if _, err := k8sManager.CreateService(ctx, otelNamespace, collectorServiceName, collectorLabels, map[string]string{}, collectorLabels, apiv1.ServiceTypeClusterIP, servicePorts); err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the collector service.")
 	}
 	return nil
