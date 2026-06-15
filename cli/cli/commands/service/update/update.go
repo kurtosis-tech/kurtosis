@@ -291,6 +291,7 @@ func run(
 		updatedServiceConfig.Privileged,
 		updatedServiceConfig.BindMounts,
 		updatedServiceConfig.HostPIDNamespace,
+		updatedServiceConfig.HostCgroupNamespace,
 	)
 
 	addServiceStarlarkStr := service_helpers.GetAddServiceStarlarkScript(serviceName, serviceConfigStr)

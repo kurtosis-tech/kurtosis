@@ -36,7 +36,7 @@ kurtosis-clusters:
     should-enable-default-logs-sink: true
 
     # Optional. Allows Docker-only ServiceConfig.privileged, ServiceConfig.bind_mounts,
-    # and ServiceConfig.host_pid_namespace fields for CLI runs against this cluster. Default: false.
+    # and ServiceConfig.host_pid_namespace / ServiceConfig.host_cgroup_namespace fields for CLI runs against this cluster. Default: false.
     # This is a CLI/request opt-in, not an engine-side operator policy. Direct API
     # clients can also opt in by setting allow_privileged_mode on the run request.
     allow-privileged-mode: false

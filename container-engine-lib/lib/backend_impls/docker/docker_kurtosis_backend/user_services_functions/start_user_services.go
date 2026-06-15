@@ -565,8 +565,9 @@ func createStartServiceOperation(
 		privileged := serviceConfig.GetPrivileged()
 		bindMounts := serviceConfig.GetBindMounts()
 		hostPIDNamespace := serviceConfig.GetHostPIDNamespace()
-		if privileged || len(bindMounts) > 0 || hostPIDNamespace {
-			logrus.Warnf("service '%v' is starting with privileged=%v, bind_mounts=%v, host_pid_namespace=%v; this grants the container elevated host access", id, privileged, bindMounts, hostPIDNamespace)
+		hostCgroupNamespace := serviceConfig.GetHostCgroupNamespace()
+		if privileged || len(bindMounts) > 0 || hostPIDNamespace || hostCgroupNamespace {
+			logrus.Warnf("service '%v' is starting with privileged=%v, bind_mounts=%v, host_pid_namespace=%v, host_cgroup_namespace=%v; this grants the container elevated host access", id, privileged, bindMounts, hostPIDNamespace, hostCgroupNamespace)
 		}
 		gpuConfig := serviceConfig.GetGpuConfig()
 		shmSizeMegabytes := gpuConfig.GetShmSizeMegabytes()
@@ -779,6 +780,10 @@ func createStartServiceOperation(
 
 		if hostPIDNamespace {
 			createAndStartArgsBuilder.WithHostPIDNamespace(true)
+		}
+
+		if hostCgroupNamespace {
+			createAndStartArgsBuilder.WithHostCgroupNamespace(true)
 		}
 
 		if len(bindMounts) > 0 {

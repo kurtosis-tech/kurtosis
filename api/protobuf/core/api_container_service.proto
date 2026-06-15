@@ -213,6 +213,9 @@ message ServiceInfo {
   // Whether the service was started in the Docker host PID namespace.
   bool host_pid_namespace = 28;
 
+  // Whether the service was started in the Docker host cgroup namespace.
+  bool host_cgroup_namespace = 29;
+
   reserved 23, 24, 25;
   reserved "shm_size_megabytes", "ulimits", "gpu_count", "gpu_device_ids";
 }
