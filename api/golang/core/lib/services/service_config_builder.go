@@ -52,6 +52,7 @@ type ServiceConfig struct {
 	Privileged                  bool                `json:"privileged,omitempty" yaml:"privileged,omitempty"`
 	BindMounts                  map[string]string   `json:"bind_mounts,omitempty" yaml:"bind_mounts,omitempty"`
 	HostPIDNamespace            bool                `json:"host_pid_namespace,omitempty" yaml:"host_pid_namespace,omitempty"`
+	HostCgroupNamespace         bool                `json:"host_cgroup_namespace,omitempty" yaml:"host_cgroup_namespace,omitempty"`
 }
 
 func portToStarlark(port *kurtosis_core_rpc_api_bindings.Port) string {
@@ -166,6 +167,7 @@ func GetFullServiceConfigStarlark(
 	privileged bool,
 	bindMounts map[string]string,
 	hostPIDNamespace bool,
+	hostCgroupNamespace bool,
 ) string {
 	starlarkFields := []string{}
 	starlarkFields = append(starlarkFields, fmt.Sprintf(`image=%q`, containerImageName))
@@ -293,6 +295,10 @@ func GetFullServiceConfigStarlark(
 
 	if hostPIDNamespace {
 		starlarkFields = append(starlarkFields, `host_pid_namespace=True`)
+	}
+
+	if hostCgroupNamespace {
+		starlarkFields = append(starlarkFields, `host_cgroup_namespace=True`)
 	}
 
 	if len(bindMounts) > 0 {

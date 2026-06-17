@@ -325,6 +325,15 @@ config = ServiceConfig(
     # OPTIONAL (Default: False)
     host_pid_namespace = False,
 
+    # Start the container in Docker's host cgroup namespace, equivalent to docker run --cgroupns=host.
+    # This makes /sys/fs/cgroup reflect the host's full cgroup hierarchy instead of just the
+    # container's own subtree, which is needed by tools that read sibling containers' cgroup stats,
+    # such as cAdvisor.
+    # Docker only — using this on the Kubernetes backend fails at interpretation time.
+    # This field also requires the same explicit run opt-in as privileged=True.
+    # OPTIONAL (Default: False)
+    host_cgroup_namespace = False,
+
     # GPU configuration: device selection, shared-memory size, ulimits, and driver.
     # All GPU-related settings are bundled in a GpuConfig object since they only apply to GPU workloads.
     # OPTIONAL (Default: None — no GPU access)
@@ -377,18 +386,19 @@ config = ServiceConfig(
 ```
 ### Opt-in and update limitations
 
-`privileged`, `bind_mounts`, and `host_pid_namespace` give the resulting container elevated host access. They are denied
-by default and require an explicit run opt-in through `kurtosis run --privileged`,
+`privileged`, `bind_mounts`, `host_pid_namespace`, and `host_cgroup_namespace` give the resulting container elevated
+host access. They are denied by default and require an explicit run opt-in through `kurtosis run --privileged`,
 `kurtosis service add --privileged`, `kurtosis service update --privileged`, the per-cluster
 `allow-privileged-mode: true` config value, or the `allow_privileged_mode` API field.
 
 `--privileged` is an allow flag. It permits packages or JSON service configs that explicitly set
-`ServiceConfig(privileged=True)`, `bind_mounts={...}`, or `host_pid_namespace=True`; it does not set
-those fields automatically.
+`ServiceConfig(privileged=True)`, `bind_mounts={...}`, `host_pid_namespace=True`, or `host_cgroup_namespace=True`; it
+does not set those fields automatically.
 
 `plan.set_service` and `kurtosis service update` currently preserve and can enable these fields, but
 cannot clear an existing `privileged=True`, remove existing bind mounts, or unset
-`host_pid_namespace=True`. To remove privileged access today, recreate the service without those fields.
+`host_pid_namespace=True` / `host_cgroup_namespace=True`. To remove privileged access today, recreate the service
+without those fields.
 
 For a usage walkthrough and allowlist details, see the
 [Privileged containers & Docker socket guide](../../guides/running-privileged-containers.md).
