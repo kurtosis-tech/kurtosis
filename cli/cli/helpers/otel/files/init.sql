@@ -1,5 +1,9 @@
 CREATE DATABASE IF NOT EXISTS otel;
 
+-- Database for the ethereum-package observoor eBPF profiler. observoor's
+-- migrator creates its own tables on startup but expects the database to exist.
+CREATE DATABASE IF NOT EXISTS observoor;
+
 CREATE TABLE IF NOT EXISTS otel.otel_logs
 (
     Timestamp                  DateTime64(9) CODEC(Delta(8), ZSTD(1)),
