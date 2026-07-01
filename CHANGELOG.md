@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.20.0](https://github.com/kurtosis-tech/kurtosis/compare/1.19.0...1.20.0) (2026-06-16)
+
+
+### Features
+
+* **cli:** add backend-log-collector config to auto-start OTel stack ([#3136](https://github.com/kurtosis-tech/kurtosis/issues/3136)) ([9a011e6](https://github.com/kurtosis-tech/kurtosis/commit/9a011e6f31c8ec0847cb5425ae8473543d80915a))
+
+
+### Bug Fixes
+
+* **kubernetes:** retry exec when kubelet refuses the stream before the container is ready ([#3148](https://github.com/kurtosis-tech/kurtosis/issues/3148)) ([13551eb](https://github.com/kurtosis-tech/kurtosis/commit/13551eb3344ae5c39fc193e99b51063f53f6c239))
+* pre-allocate host ports for user services on Docker ([#3071](https://github.com/kurtosis-tech/kurtosis/issues/3071)) ([22c7c65](https://github.com/kurtosis-tech/kurtosis/commit/22c7c65ea02b0052d2afec4a7eaa70bb68b441de))
+
 ## [1.19.0](https://github.com/kurtosis-tech/kurtosis/compare/1.18.3...1.19.0) (2026-06-02)
 
 
