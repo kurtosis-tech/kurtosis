@@ -57,7 +57,13 @@ func StartOtel(ctx context.Context, clusterType resolved_config.KurtosisClusterT
 			return nil, stacktrace.Propagate(err, "An error occurred starting otel containers in Docker.")
 		}
 		return endpoints, nil
-	case resolved_config.KurtosisClusterType_Podman, resolved_config.KurtosisClusterType_Kubernetes:
+	case resolved_config.KurtosisClusterType_Kubernetes:
+		endpoints, err := StartOtelInK8s(ctx)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred starting otel resources in Kubernetes.")
+		}
+		return endpoints, nil
+	case resolved_config.KurtosisClusterType_Podman:
 		return nil, stacktrace.NewError(unsupportedClusterTypeErrorMsg, clusterType.String())
 	default:
 		return nil, stacktrace.NewError("Unsupported cluster type: %v", clusterType.String())
@@ -74,7 +80,11 @@ func StopOtel(ctx context.Context, clusterType resolved_config.KurtosisClusterTy
 		if err = StopOtelInDocker(ctx, dockerManager); err != nil {
 			return stacktrace.Propagate(err, "An error occurred stopping otel containers in Docker.")
 		}
-	case resolved_config.KurtosisClusterType_Podman, resolved_config.KurtosisClusterType_Kubernetes:
+	case resolved_config.KurtosisClusterType_Kubernetes:
+		if err := StopOtelInK8s(ctx); err != nil {
+			return stacktrace.Propagate(err, "An error occurred stopping otel resources in Kubernetes.")
+		}
+	case resolved_config.KurtosisClusterType_Podman:
 		return stacktrace.NewError(unsupportedClusterTypeErrorMsg, clusterType.String())
 	default:
 		return stacktrace.NewError("Unsupported cluster type: %v", clusterType.String())
