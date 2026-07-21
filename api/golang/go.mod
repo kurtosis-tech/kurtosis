@@ -10,7 +10,7 @@ replace (
 require (
 	connectrpc.com/connect v1.20.0
 	github.com/Masterminds/semver/v3 v3.5.0
-	github.com/getkin/kin-openapi v0.140.0
+	github.com/getkin/kin-openapi v0.143.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230818182330-1a86869414d2
@@ -50,8 +50,8 @@ require (
 	github.com/mikelolasagasti/xz v1.0.1 // indirect
 	github.com/minio/minlz v1.0.1 // indirect
 	github.com/nwaples/rardecode/v2 v2.2.0 // indirect
-	github.com/oasdiff/yaml v0.1.0 // indirect
-	github.com/oasdiff/yaml3 v0.0.13 // indirect
+	github.com/oasdiff/yaml v0.1.1 // indirect
+	github.com/oasdiff/yaml3 v0.0.14 // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2 // indirect
