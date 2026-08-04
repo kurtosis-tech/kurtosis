@@ -1,0 +1,64 @@
+<clickhouse>
+    <!--
+        Single-node "cluster" configuration for the kurtosis otel ClickHouse.
+
+        The otel_logs / otel_traces tables are plain MergeTree and do not need
+        any of this. It exists so that tenants whose schema uses Replicated
+        engines and `ON CLUSTER '{cluster}'` DDL — e.g. the ethereum-package
+        observoor eBPF profiler — can create their tables in this same instance
+        instead of standing up a second ClickHouse.
+
+        Mounted as a single file into /etc/clickhouse-server/config.d/, so it is
+        merged with (not a replacement for) the image's default config, including
+        docker_related_config.xml which already sets listen_host=0.0.0.0.
+    -->
+
+    <macros>
+        <installation>kurtosis-otel</installation>
+        <cluster>kurtosis-otel</cluster>
+        <shard>1</shard>
+        <replica>kurtosis-otel-clickhouse</replica>
+    </macros>
+
+    <!--
+        Single-replica cluster. The replica host is "localhost" so distributed
+        DDL resolves to this node regardless of the container's hostname.
+    -->
+    <remote_servers replace="true">
+        <kurtosis-otel>
+            <shard>
+                <replica>
+                    <host>localhost</host>
+                    <port>9000</port>
+                </replica>
+            </shard>
+        </kurtosis-otel>
+    </remote_servers>
+
+    <!-- Embedded ClickHouse Keeper, required by Replicated table engines. -->
+    <keeper_server>
+        <tcp_port>9181</tcp_port>
+        <server_id>1</server_id>
+        <log_storage_path>/var/lib/clickhouse/coordination/log</log_storage_path>
+        <snapshot_storage_path>/var/lib/clickhouse/coordination/snapshots</snapshot_storage_path>
+        <coordination_settings>
+            <operation_timeout_ms>10000</operation_timeout_ms>
+            <session_timeout_ms>30000</session_timeout_ms>
+            <raft_logs_level>warning</raft_logs_level>
+        </coordination_settings>
+        <raft_configuration>
+            <server>
+                <id>1</id>
+                <hostname>localhost</hostname>
+                <port>9444</port>
+            </server>
+        </raft_configuration>
+    </keeper_server>
+
+    <zookeeper>
+        <node>
+            <host>localhost</host>
+            <port>9181</port>
+        </node>
+    </zookeeper>
+</clickhouse>

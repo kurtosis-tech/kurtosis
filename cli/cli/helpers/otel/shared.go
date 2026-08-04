@@ -28,7 +28,12 @@ const (
 	// collide with a developer's own ClickHouse (8123) or OTLP collector (4317/4318)
 	// already bound on the Docker host. Must match the ethereum-package's
 	// ENGINE_OTEL_* constants in main.star.
-	clickHouseHTTPHostPort    = uint16(18123)
+	clickHouseHTTPHostPort = uint16(18123)
+	// clickHouseNativeHostPort publishes ClickHouse's native (binary) protocol on
+	// the Docker host so enclave services that speak it directly — e.g.
+	// ethereum-package's observoor eBPF profiler — can write into the same
+	// ClickHouse as traces/logs instead of standing up their own instance.
+	clickHouseNativeHostPort  = uint16(19000)
 	collectorOTLPGRPCHostPort = uint16(14317)
 	collectorOTLPHTTPHostPort = uint16(14318)
 
