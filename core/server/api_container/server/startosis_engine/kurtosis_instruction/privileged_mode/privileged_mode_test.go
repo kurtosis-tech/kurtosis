@@ -64,6 +64,25 @@ func TestValidateServiceConfigAllowsHostPIDNamespaceOnDockerWithOptIn(t *testing
 	require.Nil(t, err)
 }
 
+func TestValidateServiceConfigRejectsHostCgroupNamespaceWithoutOptIn(t *testing.T) {
+	serviceConfig := service.GetEmptyServiceConfig()
+	serviceConfig.SetHostCgroupNamespace(true)
+
+	err := ValidateServiceConfig(serviceConfig, false, args.KurtosisBackendType_Docker)
+
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "did not opt in")
+}
+
+func TestValidateServiceConfigAllowsHostCgroupNamespaceOnDockerWithOptIn(t *testing.T) {
+	serviceConfig := service.GetEmptyServiceConfig()
+	serviceConfig.SetHostCgroupNamespace(true)
+
+	err := ValidateServiceConfig(serviceConfig, true, args.KurtosisBackendType_Docker)
+
+	require.Nil(t, err)
+}
+
 func TestValidateServiceConfigRejectsPrivilegedOnKubernetesEvenWithOptIn(t *testing.T) {
 	serviceConfig := service.GetEmptyServiceConfig()
 	serviceConfig.SetPrivileged(true)
