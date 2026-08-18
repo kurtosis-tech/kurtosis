@@ -5,7 +5,7 @@ go 1.26.0
 require (
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/segmentio/backo-go v1.1.0
-	github.com/sirupsen/logrus v1.9.4
+	github.com/sirupsen/logrus v1.10.0
 	github.com/stretchr/testify v1.11.1
 	gopkg.in/segmentio/analytics-go.v3 v3.1.0
 )
