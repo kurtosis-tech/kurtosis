@@ -13,7 +13,7 @@ require (
 	github.com/kurtosis-tech/example-api-server/api/golang v0.0.0-20211207020812-00a54fc29318
 	github.com/kurtosis-tech/example-datastore-server/api/golang v0.0.0-20211207020830-504dbf5ed1a6
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
-	github.com/sirupsen/logrus v1.9.4
+	github.com/sirupsen/logrus v1.10.0
 	github.com/stretchr/testify v1.11.1
 	google.golang.org/grpc v1.83.0
 	google.golang.org/protobuf v1.36.11

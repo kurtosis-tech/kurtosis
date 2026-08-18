@@ -21,7 +21,7 @@ require (
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/labstack/echo/v4 v4.15.4
 	github.com/oapi-codegen/runtime v1.4.1
-	github.com/sirupsen/logrus v1.9.4
+	github.com/sirupsen/logrus v1.10.0
 	github.com/stretchr/testify v1.11.1
 	google.golang.org/grpc v1.83.0
 	google.golang.org/protobuf v1.36.11
