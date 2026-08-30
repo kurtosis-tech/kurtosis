@@ -97,6 +97,9 @@ type privateServiceConfig struct {
 	// Whether to start the container in the host PID namespace. Docker backend only.
 	HostPIDNamespace bool
 
+	// Whether to start the container in the host cgroup namespace. Docker backend only.
+	HostCgroupNamespace bool
+
 	// GpuConfig bundles GPU device selection, shared-memory size, and ulimits.
 	// All three only apply to GPU workloads; use NewGpuConfig to construct.
 	GpuConfig GpuConfig
@@ -165,6 +168,7 @@ func CreateServiceConfig(
 		Privileged:                   false,
 		BindMounts:                   nil,
 		HostPIDNamespace:             false,
+		HostCgroupNamespace:          false,
 		GpuConfig:                    gpuConfig,
 	}
 	return &ServiceConfig{internalServiceConfig}, nil
@@ -418,4 +422,12 @@ func (serviceConfig *ServiceConfig) GetHostPIDNamespace() bool {
 
 func (serviceConfig *ServiceConfig) SetHostPIDNamespace(hostPIDNamespace bool) {
 	serviceConfig.privateServiceConfig.HostPIDNamespace = hostPIDNamespace
+}
+
+func (serviceConfig *ServiceConfig) GetHostCgroupNamespace() bool {
+	return serviceConfig.privateServiceConfig.HostCgroupNamespace
+}
+
+func (serviceConfig *ServiceConfig) SetHostCgroupNamespace(hostCgroupNamespace bool) {
+	serviceConfig.privateServiceConfig.HostCgroupNamespace = hostCgroupNamespace
 }
