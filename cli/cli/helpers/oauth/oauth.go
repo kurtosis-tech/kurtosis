@@ -3,7 +3,7 @@ package oauth
 import (
 	"bufio"
 	"fmt"
-	"github.com/cli/cli/v2/api"
+	ghapi "github.com/cli/go-gh/v2/pkg/api"
 	gitbrowser "github.com/cli/go-gh/v2/pkg/browser"
 	"github.com/cli/oauth"
 	"io"
@@ -98,7 +98,7 @@ func AuthFlow() (string, string, error) {
 		return "", "", err
 	}
 
-	userLogin, err := getViewer(oauthHost, token.Token, os.Stderr)
+	userLogin, err := getViewer(oauthHost, token.Token)
 	if err != nil {
 		return "", "", err
 	}
@@ -106,24 +106,24 @@ func AuthFlow() (string, string, error) {
 	return token.Token, userLogin, nil
 }
 
-type cfg struct {
-	token string
-}
-
-func (c cfg) ActiveToken(hostname string) (string, string) {
-	return c.token, "oauth_token"
-}
-
-func getViewer(hostname, token string, logWriter io.Writer) (string, error) {
-	opts := api.HTTPClientOptions{ // nolint: exhaustruct
-		Config: cfg{token: token},
-		Log:    logWriter,
-	}
-	client, err := api.NewHTTPClient(opts)
+func getViewer(hostname, token string) (string, error) {
+	client, err := ghapi.NewGraphQLClient(ghapi.ClientOptions{ // nolint: exhaustruct
+		AuthToken: token,
+		Host:      hostname,
+	})
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("an error occurred creating GitHub API client: %w", err)
 	}
-	return api.CurrentLoginName(api.NewClientFromHTTP(client), hostname)
+
+	var query struct {
+		Viewer struct {
+			Login string
+		}
+	}
+	if err := client.Query("UserCurrent", &query, nil); err != nil {
+		return "", fmt.Errorf("an error occurred retrieving the GitHub username: %w", err)
+	}
+	return query.Viewer.Login, nil
 }
 
 func waitForEnter(r io.Reader) error {
