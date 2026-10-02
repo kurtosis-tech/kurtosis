@@ -20,11 +20,11 @@ require (
 	github.com/kurtosis-tech/kurtosis/path-compression v0.0.0-20260325155815-f36ae687d73d // needs to be pinned as the replace above won't work when importing the api standalone
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/labstack/echo/v4 v4.15.4
-	github.com/oapi-codegen/runtime v1.4.1
-	github.com/sirupsen/logrus v1.9.4
+	github.com/oapi-codegen/runtime v1.6.0
+	github.com/sirupsen/logrus v1.10.0
 	github.com/stretchr/testify v1.12.0
 	google.golang.org/grpc v1.83.2
-	google.golang.org/protobuf v1.36.11
+	google.golang.org/protobuf v1.36.12
 )
 
 require (
