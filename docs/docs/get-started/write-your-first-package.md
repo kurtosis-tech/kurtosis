@@ -942,7 +942,7 @@ Second, we'd love to hear from you! Please don't hesitate to:
 - Use `kurtosis feedback` to file an issue on our [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose)
 - Ask questions in our [Github Discussions forum][github-discussions]
 - [Join our community on Discord](https://discord.gg/6Jjp9c89z9)
-- [Reach out to us on Twitter](https://twitter.com/KurtosisTech)
+- [Reach out to us on Twitter](https://x.com/KurtosisTech)
 
 Finally, if you found Kurtosis interesting or useful, we'd appreciate a [star on Github](https://github.com/kurtosis-tech/kurtosis)!
 

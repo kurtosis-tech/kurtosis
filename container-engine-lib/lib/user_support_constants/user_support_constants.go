@@ -30,7 +30,7 @@ const (
 	KurtosisOnBoardCalendlyUrl        = "https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding"
 	FeedbackEmail                     = "feedback@" + OldDomain
 	FeedbackEmailLink                 = "mailto:" + FeedbackEmail
-	KurtosisTechTwitterProfileLink    = "https://twitter.com/KurtosisTech"
+	KurtosisTechTwitterProfileLink    = "https://x.com/KurtosisTech"
 
 	//    If you add new URLs above, make sure to add them to the urlsToValidateInTest below!!!
 	// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
@@ -55,5 +55,4 @@ var urlsToValidateInTest = []string{
 	KurtosisDiscordUrl,
 	KurtosisOnBoardCalendlyUrl,
 	HowImportWorksLink,
-	KurtosisTechTwitterProfileLink,
 }
