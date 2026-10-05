@@ -629,7 +629,7 @@ Kurtosis is an open source tool maintained by [MAINTAINERS](./MAINTAINERS.md). I
 [discord]: https://discord.gg/6Jjp9c89z9
 [kurtosis-tech]: https://github.com/kurtosis-tech
 [docs]: https://docs.kurtosis.com
-[twitter]: https://twitter.com/KurtosisTech
+[twitter]: https://x.com/KurtosisTech
 [starlark-explanation]: https://docs.kurtosis.com/explanations/starlark
 [stackoverflow-2022-developer-survey--other-tools]: https://survey.stackoverflow.co/2022/#most-popular-technologies-tools-tech-prof
 [delve-docs]: https://github.com/go-delve/delve/blob/master/Documentation/cli/README.md
