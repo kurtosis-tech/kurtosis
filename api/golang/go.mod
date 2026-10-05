@@ -69,3 +69,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/kurtosis-tech/kurtosis/cloud/api/golang => ../../cloud/api/golang
+
+replace github.com/kurtosis-tech/kurtosis/contexts-config-store => ../../contexts-config-store
