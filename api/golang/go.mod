@@ -69,3 +69,7 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
+
+replace github.com/kurtosis-tech/kurtosis/cloud/api/golang => ../../cloud/api/golang
+
+replace github.com/kurtosis-tech/kurtosis/contexts-config-store => ../../contexts-config-store

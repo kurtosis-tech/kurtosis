@@ -21,3 +21,9 @@ require (
 	golang.org/x/text v0.41.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa // indirect
 )
+
+replace github.com/kurtosis-tech/kurtosis/contexts-config-store => ../../../contexts-config-store
+
+replace github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang => ../../../grpc-file-transfer/golang
+
+replace github.com/kurtosis-tech/kurtosis/path-compression => ../../../path-compression
