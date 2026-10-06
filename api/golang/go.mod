@@ -19,7 +19,7 @@ require (
 	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang v0.0.0-20230803130419-099ee7a4e3dc // needs to be pinned as the replace above won't work when importing the api standalone
 	github.com/kurtosis-tech/kurtosis/path-compression v0.0.0-20260325155815-f36ae687d73d // needs to be pinned as the replace above won't work when importing the api standalone
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
-	github.com/labstack/echo/v4 v4.15.4
+	github.com/labstack/echo/v4 v4.16.0
 	github.com/oapi-codegen/runtime v1.7.0
 	github.com/sirupsen/logrus v1.10.0
 	github.com/stretchr/testify v1.12.0
