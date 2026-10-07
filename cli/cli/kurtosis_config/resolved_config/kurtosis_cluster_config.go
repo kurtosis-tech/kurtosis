@@ -28,13 +28,11 @@ const (
 type BackendLogCollector string
 
 const (
-	// BackendLogCollectorVector is the existing Vector-only behaviour and the default when the field is unset.
+	// BackendLogCollectorVector is the Vector-only behaviour and the default for non-Docker clusters.
 	BackendLogCollectorVector BackendLogCollector = "vector"
 	// BackendLogCollectorOtel auto-starts the OpenTelemetry collector + ClickHouse side containers (Docker-only) when the
-	// engine starts and configures Vector to ship logs to the collector via Loki HTTP.
+	// engine starts and configures Vector to ship logs to the collector via Loki HTTP. Default for Docker clusters.
 	BackendLogCollectorOtel BackendLogCollector = "otel"
-
-	DefaultBackendLogCollector = BackendLogCollectorVector
 )
 
 // IsValid reports whether s is a recognised BackendLogCollector value.
@@ -58,6 +56,7 @@ type KurtosisClusterConfig struct {
 	shouldEnableDefaultLogsSink bool
 	allowPrivilegedMode         bool
 	backendLogCollector         BackendLogCollector
+	isBackendLogCollectorSet    bool
 }
 
 type LogsAggregatorConfig struct {
@@ -143,8 +142,12 @@ func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v9.Kurto
 		allowPrivilegedMode = *overrides.AllowPrivilegedMode
 	}
 
-	backendLogCollector := DefaultBackendLogCollector
-	if overrides.BackendLogCollector != nil {
+	backendLogCollector := BackendLogCollectorVector
+	if clusterType == KurtosisClusterType_Docker && !grafloki.ShouldStartBeforeEngine {
+		backendLogCollector = BackendLogCollectorOtel
+	}
+	isBackendLogCollectorSet := overrides.BackendLogCollector != nil
+	if isBackendLogCollectorSet {
 		candidate := BackendLogCollector(*overrides.BackendLogCollector)
 		if !candidate.IsValid() {
 			return nil, stacktrace.NewError(
@@ -183,6 +186,7 @@ func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v9.Kurto
 		shouldEnableDefaultLogsSink: shouldEnableDefaultLogsSink,
 		allowPrivilegedMode:         allowPrivilegedMode,
 		backendLogCollector:         backendLogCollector,
+		isBackendLogCollectorSet:    isBackendLogCollectorSet,
 	}, nil
 }
 
@@ -224,6 +228,10 @@ func (clusterConfig *KurtosisClusterConfig) GetAllowPrivilegedMode() bool {
 
 func (clusterConfig *KurtosisClusterConfig) GetBackendLogCollector() BackendLogCollector {
 	return clusterConfig.backendLogCollector
+}
+
+func (clusterConfig *KurtosisClusterConfig) IsBackendLogCollectorSet() bool {
+	return clusterConfig.isBackendLogCollectorSet
 }
 
 // ====================================================================================================

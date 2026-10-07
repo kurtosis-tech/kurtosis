@@ -42,13 +42,15 @@ kurtosis-clusters:
     allow-privileged-mode: false
 
     # Optional. Selects which log-collector stack the engine wires up at start.
-    # Valid values: "vector" (default), "otel".
+    # Valid values: "vector", "otel". Default: "otel" on Docker, "vector" on Kubernetes and Podman
+    # (and on Docker when `grafana-loki.should-start-before-engine: true`).
     # When set to "otel" (Docker only), `kurtosis engine start`/`restart` auto-starts the
     # OpenTelemetry collector and ClickHouse side containers and configures the engine's
     # Vector aggregator to ship logs to the collector via Loki HTTP. Equivalent to running
     # `kurtosis otel start` before `kurtosis engine start`.
-    # Mutually exclusive with `grafana-loki.should-start-before-engine: true` below.
-    backend-log-collector: vector
+    # If the side containers fail to start and this field is unset, the engine starts without them.
+    # Set to "vector" to opt out. Mutually exclusive with `grafana-loki.should-start-before-engine: true` below.
+    backend-log-collector: otel
 
     # Optional. Configures external sinks to export service logs from enclaves.
     # This uses Vector under the hood and supports all Vector sink types.

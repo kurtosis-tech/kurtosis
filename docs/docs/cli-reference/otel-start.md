@@ -26,7 +26,7 @@ Once the side containers are running, enclave logs are tagged with the enclave n
 
 `kurtosis otel start` is **Docker-only** — it returns an error on Kubernetes and Podman backends. It is also mutually exclusive with [grafloki start][grafloki-start]: running `kurtosis otel start` skips any configured Grafana/Loki setup, and the engine will only export logs to the OpenTelemetry collector while the otel side containers are running.
 
-To make the OpenTelemetry collector the default for every engine start, set [`backend-log-collector: otel`][kurtosis-config] in `kurtosis-config.yml`:
+On Docker, the OpenTelemetry collector is the default: `kurtosis engine start` and `kurtosis engine restart` auto-start the side containers and wire up the Loki sink, so `kurtosis otel start` is only needed after an `otel stop`. To opt out, set [`backend-log-collector: vector`][kurtosis-config] in `kurtosis-config.yml`:
 
 ```yaml
 config-version: 9
@@ -34,12 +34,12 @@ should-send-metrics: true
 kurtosis-clusters:
   docker:
     type: docker
-    backend-log-collector: otel
+    backend-log-collector: vector
 ```
 
-With that in place, `kurtosis engine start` and `kurtosis engine restart` auto-start the OpenTelemetry side containers and wire up the Loki sink — no need to invoke `kurtosis otel start` manually each time. This option is Docker-only and mutually exclusive with `grafana-loki.should-start-before-engine: true`.
+The default also falls back to Vector when `grafana-loki.should-start-before-engine: true` is set.
 
-To stop the side containers and revert the engine to its default log sink, use [otel stop][otel-stop].
+To stop the side containers until the next engine start, use [otel stop][otel-stop].
 
 Read more about sinks and how to [export logs][export-logs] from Kurtosis.
 
