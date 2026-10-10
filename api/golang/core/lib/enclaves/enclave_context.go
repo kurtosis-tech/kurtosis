@@ -871,6 +871,7 @@ func (enclaveCtx *EnclaveContext) convertServiceInfoToServiceContext(serviceInfo
 		serviceInfo.GetPrivileged(),
 		serviceInfo.GetBindMounts(),
 		serviceInfo.GetHostPidNamespace(),
+		serviceInfo.GetHostCgroupNamespace(),
 	)
 
 	return serviceContext, nil

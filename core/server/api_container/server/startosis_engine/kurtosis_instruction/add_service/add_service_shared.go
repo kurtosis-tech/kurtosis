@@ -232,6 +232,10 @@ func replaceMagicStrings(
 		renderedServiceConfig.SetHostPIDNamespace(true)
 	}
 
+	if serviceConfig.GetHostCgroupNamespace() {
+		renderedServiceConfig.SetHostCgroupNamespace(true)
+	}
+
 	if len(serviceConfig.GetBindMounts()) > 0 {
 		renderedServiceConfig.SetBindMounts(serviceConfig.GetBindMounts())
 	}

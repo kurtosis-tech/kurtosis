@@ -499,6 +499,7 @@ func NewServiceInfo(
 		Privileged:                          false,
 		BindMounts:                          nil,
 		HostPidNamespace:                    false,
+		HostCgroupNamespace:                 false,
 	}
 }
 

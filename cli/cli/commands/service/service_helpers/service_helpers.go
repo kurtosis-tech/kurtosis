@@ -124,6 +124,7 @@ func GetServiceInfo(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisC
 		Privileged:                  service.GetPrivileged(),
 		BindMounts:                  service.GetBindMounts(),
 		HostPIDNamespace:            service.GetHostPidNamespace(),
+		HostCgroupNamespace:         service.GetHostCgroupNamespace(),
 	}
 
 	return service, serviceConfig, nil

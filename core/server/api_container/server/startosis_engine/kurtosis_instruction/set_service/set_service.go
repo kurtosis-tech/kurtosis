@@ -255,6 +255,9 @@ func upsertServiceConfigs(currServiceConfig, serviceConfigOverride *service.Serv
 	if serviceConfigOverride.GetHostPIDNamespace() {
 		currServiceConfig.SetHostPIDNamespace(true)
 	}
+	if serviceConfigOverride.GetHostCgroupNamespace() {
+		currServiceConfig.SetHostCgroupNamespace(true)
+	}
 	if bindMountsOverride := serviceConfigOverride.GetBindMounts(); len(bindMountsOverride) > 0 {
 		currServiceConfig.SetBindMounts(bindMountsOverride)
 	}

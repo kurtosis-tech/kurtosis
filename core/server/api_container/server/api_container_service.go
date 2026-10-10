@@ -1229,6 +1229,7 @@ func getServiceInfoFromServiceObj(serviceObj *service.Service, serviceConfig *se
 	serviceInfoResponse.Privileged = serviceConfig.GetPrivileged()
 	serviceInfoResponse.BindMounts = serviceConfig.GetBindMounts()
 	serviceInfoResponse.HostPidNamespace = serviceConfig.GetHostPIDNamespace()
+	serviceInfoResponse.HostCgroupNamespace = serviceConfig.GetHostCgroupNamespace()
 
 	return serviceInfoResponse, nil
 }

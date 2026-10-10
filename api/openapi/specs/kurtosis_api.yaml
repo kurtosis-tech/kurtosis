@@ -1085,6 +1085,9 @@ components:
         host_pid_namespace:
           type: boolean
           description: Whether the service was started in the Docker host PID namespace.
+        host_cgroup_namespace:
+          type: boolean
+          description: Whether the service was started in the Docker host cgroup namespace.
       required:
         - service_uuid
         - private_ip_addr

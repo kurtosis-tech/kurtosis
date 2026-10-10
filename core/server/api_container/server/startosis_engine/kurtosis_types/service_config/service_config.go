@@ -61,6 +61,7 @@ const (
 	PrivilegedAttr                  = "privileged"
 	BindMountsAttr                  = "bind_mounts"
 	HostPIDNamespaceAttr            = "host_pid_namespace"
+	HostCgroupNamespaceAttr         = "host_cgroup_namespace"
 
 	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
@@ -282,6 +283,12 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 				},
 				{
 					Name:              HostPIDNamespaceAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Bool],
+					Validator:         nil,
+				},
+				{
+					Name:              HostCgroupNamespaceAttr,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Bool],
 					Validator:         nil,
@@ -695,6 +702,15 @@ func (config *ServiceConfig) ToKurtosisType(
 		hostPIDNamespace = bool(hostPIDNamespaceStarlark)
 	}
 
+	hostCgroupNamespace := false
+	hostCgroupNamespaceStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Bool](config.KurtosisValueTypeDefault, HostCgroupNamespaceAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found {
+		hostCgroupNamespace = bool(hostCgroupNamespaceStarlark)
+	}
+
 	bindMounts := map[string]string{}
 	bindMountsStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](config.KurtosisValueTypeDefault, BindMountsAttr)
 	if interpretationErr != nil {
@@ -773,6 +789,9 @@ func (config *ServiceConfig) ToKurtosisType(
 	}
 	if hostPIDNamespace {
 		serviceConfig.SetHostPIDNamespace(true)
+	}
+	if hostCgroupNamespace {
+		serviceConfig.SetHostCgroupNamespace(true)
 	}
 	if len(bindMounts) > 0 {
 		serviceConfig.SetBindMounts(bindMounts)

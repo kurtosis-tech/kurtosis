@@ -320,6 +320,7 @@ func run(
 			serviceConfigJson.Privileged,
 			serviceConfigJson.BindMounts,
 			serviceConfigJson.HostPIDNamespace,
+			serviceConfigJson.HostCgroupNamespace,
 		)
 	} else {
 		entrypoint := []string{}
@@ -497,6 +498,7 @@ func GetServiceConfigStarlark(
 		privateIPAddressPlaceholder,
 		false,
 		nil,
+		false,
 		false), nil
 }
 

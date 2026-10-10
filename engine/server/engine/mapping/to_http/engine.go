@@ -171,18 +171,19 @@ func ToHttpServiceInfo(service *rpc_api.ServiceInfo) api_type.ServiceInfo {
 	publicPorts := utils.MapMapValues(service.MaybePublicPorts, ToHttpPorts)
 	privatePorts := utils.MapMapValues(service.PrivatePorts, ToHttpPorts)
 	return api_type.ServiceInfo{
-		Container:        container,
-		PublicIpAddr:     &service.MaybePublicIpAddr,
-		PublicPorts:      &publicPorts,
-		Name:             service.Name,
-		PrivateIpAddr:    service.PrivateIpAddr,
-		PrivatePorts:     privatePorts,
-		Privileged:       &service.Privileged,
-		BindMounts:       &service.BindMounts,
-		HostPidNamespace: &service.HostPidNamespace,
-		ServiceStatus:    serviceStatus,
-		ServiceUuid:      service.ServiceUuid,
-		ShortenedUuid:    service.ShortenedUuid,
+		Container:           container,
+		PublicIpAddr:        &service.MaybePublicIpAddr,
+		PublicPorts:         &publicPorts,
+		Name:                service.Name,
+		PrivateIpAddr:       service.PrivateIpAddr,
+		PrivatePorts:        privatePorts,
+		Privileged:          &service.Privileged,
+		BindMounts:          &service.BindMounts,
+		HostPidNamespace:    &service.HostPidNamespace,
+		HostCgroupNamespace: &service.HostCgroupNamespace,
+		ServiceStatus:       serviceStatus,
+		ServiceUuid:         service.ServiceUuid,
+		ShortenedUuid:       service.ShortenedUuid,
 	}
 }
 

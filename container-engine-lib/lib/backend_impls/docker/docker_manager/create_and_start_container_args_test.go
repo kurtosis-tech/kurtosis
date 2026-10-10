@@ -33,6 +33,13 @@ func TestCreateAndStartContainerArgs_WithHostPIDNamespace(t *testing.T) {
 	require.True(t, args.hostPIDNamespace)
 }
 
+func TestCreateAndStartContainerArgs_WithHostCgroupNamespace(t *testing.T) {
+	args := NewCreateAndStartContainerArgsBuilder("img", "name", "net").
+		WithHostCgroupNamespace(true).
+		Build()
+	require.True(t, args.hostCgroupNamespace)
+}
+
 func TestCreateAndStartContainerArgs_HostPIDNamespaceDefaultsToFalse(t *testing.T) {
 	args := NewCreateAndStartContainerArgsBuilder("img", "name", "net").Build()
 	require.False(t, args.hostPIDNamespace)

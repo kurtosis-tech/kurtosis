@@ -325,6 +325,9 @@ func createStartServiceOperation(
 		if serviceConfig.GetHostPIDNamespace() {
 			return nil, stacktrace.NewError("Service '%v' has host_pid_namespace=true but host PID namespace is not supported on the Kubernetes backend; this feature is Docker-only", serviceUuid)
 		}
+		if serviceConfig.GetHostCgroupNamespace() {
+			return nil, stacktrace.NewError("Service '%v' has host_cgroup_namespace=true but host cgroup namespace is not supported on the Kubernetes backend; this feature is Docker-only", serviceUuid)
+		}
 		gpuConfig := serviceConfig.GetGpuConfig()
 		shmSizeMegabytes := gpuConfig.GetShmSizeMegabytes()
 		gpuCount := gpuConfig.GetCount()
