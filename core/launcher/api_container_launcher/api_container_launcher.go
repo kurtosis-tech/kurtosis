@@ -7,9 +7,12 @@ package api_container_launcher
 import (
 	"context"
 	"fmt"
+	"os"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/image_org"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
@@ -21,7 +24,7 @@ const (
 	enclaveDataVolumeDirpath = "/kurtosis-data"
 
 	// TODO This should come from the same logic that builds the server image!!!!!
-	containerImage = "kurtosistech/core"
+	containerImageName = "core"
 )
 
 type ApiContainerLauncher struct {
@@ -116,10 +119,14 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred generating the API container's environment variables")
 	}
+	if org := os.Getenv(image_org.EnvVarName); org != "" {
+		envVars[image_org.EnvVarName] = org
+	}
 
 	containerImageAndTag := fmt.Sprintf(
-		"%v:%v",
-		containerImage,
+		"%v/%v:%v",
+		image_org.Get(),
+		containerImageName,
 		imageVersionTag,
 	)
 

@@ -8,11 +8,13 @@ package engine_server_launcher
 import (
 	"context"
 	"net"
+	"os"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/image_org"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
@@ -22,7 +24,7 @@ import (
 
 const (
 	// TODO This should come from the same logic that builds the server image!!!!!
-	containerImage = "kurtosistech/engine"
+	containerImageName = "engine"
 )
 
 type EngineServerLauncher struct {
@@ -152,10 +154,13 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred generating the engine server's environment variables")
 	}
+	if org := os.Getenv(image_org.EnvVarName); org != "" {
+		envVars[image_org.EnvVarName] = org
+	}
 
 	engine, err := launcher.kurtosisBackend.CreateEngine(
 		ctx,
-		containerImage,
+		image_org.Get()+"/"+containerImageName,
 		imageVersionTag,
 		grpcListenPortNum,
 		envVars,

@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/image_org"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander/args"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -66,7 +67,7 @@ const (
 
 	filesArtifactExpansionDirsParentDirpath string = "/files-artifacts"
 	// TODO This should be populated from the build flow that builds the files-artifacts-expander Docker image
-	filesArtifactsExpanderImage string = "kurtosistech/files-artifacts-expander"
+	filesArtifactsExpanderImageName string = "files-artifacts-expander"
 
 	minimumMemoryAllocationMegabytes = 6
 )
@@ -832,8 +833,9 @@ func ConvertFilesArtifactsMounts(filesArtifactsMountDirpathsMap map[string][]str
 	}
 
 	expanderImageAndTag := fmt.Sprintf(
-		"%v:%v",
-		filesArtifactsExpanderImage,
+		"%v/%v:%v",
+		image_org.Get(),
+		filesArtifactsExpanderImageName,
 		apiContainerInfo.GetVersion(),
 	)
 
