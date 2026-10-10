@@ -7,9 +7,12 @@ package api_container_launcher
 import (
 	"context"
 	"fmt"
+	"os"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/kubernetes_grace"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
@@ -115,6 +118,10 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	envVars, ownIpAddressEnvvar, err := args.GetEnvFromArgs(argsObj)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred generating the API container's environment variables")
+	}
+	// Propagate the optional pod-delete grace override so APIC-created pods honor it.
+	if v := os.Getenv(kubernetes_grace.EnvVarName); v != "" {
+		envVars[kubernetes_grace.EnvVarName] = v
 	}
 
 	containerImageAndTag := fmt.Sprintf(
