@@ -44,6 +44,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/image_org"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/image_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	path_compression "github.com/kurtosis-tech/kurtosis/path-compression"
@@ -154,8 +155,6 @@ const (
 	coresToMilliCores      = 1000
 	bytesInMegaBytes       = 1000000
 	dontStreamStats        = false
-
-	kurtosisTagPrefix = "kurtosistech/"
 
 	// Per https://github.com/hashicorp/waypoint/pull/1937/files
 	buildkitSessionSharedKey = ""
@@ -357,7 +356,7 @@ func (manager *DockerManager) ListUnusedImages(ctx context.Context) ([]image.Sum
 			continue
 		}
 		for _, tag := range image.RepoTags {
-			if strings.Contains(tag, kurtosisTagPrefix) && containsSemVer(tag) && !strings.Contains(tag, kurtosis_sdk_version.KurtosisVersion) {
+			if strings.Contains(tag, image_org.Get()+"/") && containsSemVer(tag) && !strings.Contains(tag, kurtosis_sdk_version.KurtosisVersion) {
 				unusedImages = append(unusedImages, image)
 			}
 		}

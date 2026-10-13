@@ -15,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/image_org"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -27,9 +28,9 @@ const (
 	githubAuthTokenOverrideFlagKey = "github-auth-token"
 	logRetentionPeriodFlagKey      = "log-retention-period"
 
-	defaultEngineVersion          = ""
-	kurtosisTechEngineImagePrefix = "kurtosistech/engine"
-	imageVersionDelimiter         = ":"
+	defaultEngineVersion  = ""
+	engineImageName       = "engine"
+	imageVersionDelimiter = ":"
 
 	defaultShouldRestartAPIContainers = "false"
 	restartAPIContainersFlagKey       = "restart-api-containers"
@@ -174,13 +175,13 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 
 	if engineVersion == defaultEngineVersion && isDebugMode {
 		engineDebugVersion := fmt.Sprintf("%s-%s", kurtosis_version.KurtosisVersion, defaults.DefaultKurtosisContainerDebugImageNameSuffix)
-		logrus.Infof("Starting Kurtosis engine in debug mode from image '%v%v%v'...", kurtosisTechEngineImagePrefix, imageVersionDelimiter, engineDebugVersion)
+		logrus.Infof("Starting Kurtosis engine in debug mode from image '%v/%v%v%v'...", image_org.Get(), engineImageName, imageVersionDelimiter, engineDebugVersion)
 		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithCustomVersion(ctx, engineDebugVersion, logLevel, enclavePoolSize, true, githubAuthTokenOverride, shouldRestartAPIContainers, domain, logRetentionPeriodStr, defaults.DefaultLogsSinks)
 	} else if engineVersion == defaultEngineVersion {
-		logrus.Infof("Starting Kurtosis engine from image '%v%v%v'...", kurtosisTechEngineImagePrefix, imageVersionDelimiter, kurtosis_version.KurtosisVersion)
+		logrus.Infof("Starting Kurtosis engine from image '%v/%v%v%v'...", image_org.Get(), engineImageName, imageVersionDelimiter, kurtosis_version.KurtosisVersion)
 		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel, enclavePoolSize, githubAuthTokenOverride, shouldRestartAPIContainers, domain, logRetentionPeriodStr, defaults.DefaultLogsSinks)
 	} else {
-		logrus.Infof("Starting Kurtosis engine from image '%v%v%v'...", kurtosisTechEngineImagePrefix, imageVersionDelimiter, engineVersion)
+		logrus.Infof("Starting Kurtosis engine from image '%v/%v%v%v'...", image_org.Get(), engineImageName, imageVersionDelimiter, engineVersion)
 		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithCustomVersion(ctx, engineVersion, logLevel, enclavePoolSize, defaults.DefaultEnableDebugMode, githubAuthTokenOverride, shouldRestartAPIContainers, domain, logRetentionPeriodStr, defaults.DefaultLogsSinks)
 	}
 	if startEngineErr != nil {
