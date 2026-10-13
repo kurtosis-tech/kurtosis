@@ -7,8 +7,8 @@ package engine_server_launcher
 
 import (
 	"context"
+	"fmt"
 	"net"
-	"os"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
@@ -23,7 +23,6 @@ import (
 )
 
 const (
-	// TODO This should come from the same logic that builds the server image!!!!!
 	containerImageName = "engine"
 )
 
@@ -154,13 +153,11 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred generating the engine server's environment variables")
 	}
-	if org := os.Getenv(image_org.EnvVarName); org != "" {
-		envVars[image_org.EnvVarName] = org
-	}
+	envVars[image_org.EnvVarName] = image_org.Get()
 
 	engine, err := launcher.kurtosisBackend.CreateEngine(
 		ctx,
-		image_org.Get()+"/"+containerImageName,
+		fmt.Sprintf("%v/%v", image_org.Get(), containerImageName),
 		imageVersionTag,
 		grpcListenPortNum,
 		envVars,

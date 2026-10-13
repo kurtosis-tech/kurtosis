@@ -66,8 +66,7 @@ const (
 	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
 	filesArtifactExpansionDirsParentDirpath string = "/files-artifacts"
-	// TODO This should be populated from the build flow that builds the files-artifacts-expander Docker image
-	filesArtifactsExpanderImageName string = "files-artifacts-expander"
+	filesArtifactsExpanderImageName         string = "files-artifacts-expander"
 
 	minimumMemoryAllocationMegabytes = 6
 )
