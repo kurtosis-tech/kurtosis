@@ -3,7 +3,7 @@ module github.com/kurtosis-tech/kurtosis/enclave-manager
 go 1.26.0
 
 require (
-	connectrpc.com/connect v1.20.0
+	connectrpc.com/connect v1.21.0
 	github.com/google/go-github/v60 v60.0.0
 	github.com/kurtosis-tech/kurtosis/api/golang v1.18.0
 	github.com/kurtosis-tech/kurtosis/cloud/api/golang v0.88.12
@@ -12,7 +12,7 @@ require (
 	github.com/kurtosis-tech/kurtosis/enclave-manager/api/golang v0.0.0-20230828153722-32770ca96513
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/rs/cors v1.11.1
-	github.com/sirupsen/logrus v1.10.0
+	github.com/sirupsen/logrus v1.10.2
 	google.golang.org/protobuf v1.36.12
 )
 
