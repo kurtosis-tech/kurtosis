@@ -22,6 +22,7 @@ import (
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/kubernetes_grace"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	v1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -106,13 +107,16 @@ var commandToRunWhenCreatingUserServiceShell = []string{
 }
 
 var (
-	globalDeletePolicy  = metav1.DeletePropagationForeground
-	globalDeleteOptions = metav1.DeleteOptions{
+	globalDeletePolicy = metav1.DeletePropagationForeground
+	// nil keeps Kubernetes' default grace; the env var can set it to 0 for fast,
+	// graceless teardown of Kurtosis' ephemeral pods.
+	podDeleteGracePeriod = kubernetes_grace.Override()
+	globalDeleteOptions  = metav1.DeleteOptions{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "",
 			APIVersion: "",
 		},
-		GracePeriodSeconds: nil,
+		GracePeriodSeconds: podDeleteGracePeriod,
 		Preconditions:      nil,
 		OrphanDependents:   nil,
 		PropagationPolicy:  &globalDeletePolicy,
@@ -1113,7 +1117,7 @@ func (manager *KubernetesManager) CreatePod(
 		Containers:                    podContainers,
 		EphemeralContainers:           nil,
 		RestartPolicy:                 restartPolicy,
-		TerminationGracePeriodSeconds: nil,
+		TerminationGracePeriodSeconds: podDeleteGracePeriod,
 		ActiveDeadlineSeconds:         nil,
 		DNSPolicy:                     "",
 		NodeSelector:                  nodeSelectors,
@@ -1335,7 +1339,7 @@ func (manager *KubernetesManager) CreateDaemonSet(
 				Containers:                    containers,
 				EphemeralContainers:           nil,
 				RestartPolicy:                 "",
-				TerminationGracePeriodSeconds: nil,
+				TerminationGracePeriodSeconds: podDeleteGracePeriod,
 				ActiveDeadlineSeconds:         nil,
 				DNSPolicy:                     "",
 				NodeSelector:                  nodeSelector,
@@ -1576,7 +1580,7 @@ func (manager *KubernetesManager) CreateDeployment(
 				Containers:                    containers,
 				EphemeralContainers:           nil,
 				RestartPolicy:                 "",
-				TerminationGracePeriodSeconds: nil,
+				TerminationGracePeriodSeconds: podDeleteGracePeriod,
 				ActiveDeadlineSeconds:         nil,
 				DNSPolicy:                     "",
 				NodeSelector:                  nodeSelector,
@@ -2786,7 +2790,7 @@ func (manager *KubernetesManager) CreateJob(
 		// We don't want Kubernetes automagically restarting our containers
 		RestartPolicy:                 apiv1.RestartPolicyNever,
 		EphemeralContainers:           nil,
-		TerminationGracePeriodSeconds: nil,
+		TerminationGracePeriodSeconds: podDeleteGracePeriod,
 		ActiveDeadlineSeconds:         nil,
 		DNSPolicy:                     "",
 		NodeSelector:                  nil,
