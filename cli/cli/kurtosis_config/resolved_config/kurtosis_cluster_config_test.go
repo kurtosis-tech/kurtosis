@@ -445,3 +445,41 @@ func TestNewKurtosisClusterConfigLogsCollectorFullConfig(t *testing.T) {
 	require.Equal(t, "grep", actualKurtosisClusterConfig.logsCollector.Filters[0].Name)
 	require.Equal(t, "lua", actualKurtosisClusterConfig.logsCollector.Filters[1].Name)
 }
+
+func TestNewKurtosisClusterConfigBackendLogCollectorDefaults(t *testing.T) {
+	dockerType := KurtosisClusterType_Docker.String()
+	podmanType := KurtosisClusterType_Podman.String()
+	shouldStartBeforeEngine := true
+	vector := string(BackendLogCollectorVector)
+
+	tests := []struct {
+		name                string
+		clusterType         *string
+		grafloki            *v9.GrafanaLokiConfigV9
+		backendLogCollector *string
+		expected            BackendLogCollector
+		expectedSet         bool
+	}{
+		{"docker unset", &dockerType, nil, nil, BackendLogCollectorOtel, false},
+		{"docker explicit vector", &dockerType, nil, &vector, BackendLogCollectorVector, true},
+		{"docker with grafloki before engine", &dockerType, &v9.GrafanaLokiConfigV9{ShouldStartBeforeEngine: shouldStartBeforeEngine, GrafanaImage: "", LokiImage: ""}, nil, BackendLogCollectorVector, false},
+		{"podman unset", &podmanType, nil, nil, BackendLogCollectorVector, false},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			clusterConfig, err := NewKurtosisClusterConfigFromOverrides("test", &v9.KurtosisClusterConfigV9{
+				Type:                        test.clusterType,
+				Config:                      nil,
+				LogsAggregator:              nil,
+				LogsCollector:               nil,
+				GrafanaLokiConfig:           test.grafloki,
+				ShouldEnableDefaultLogsSink: nil,
+				AllowPrivilegedMode:         nil,
+				BackendLogCollector:         test.backendLogCollector,
+			})
+			require.NoError(t, err)
+			require.Equal(t, test.expected, clusterConfig.GetBackendLogCollector())
+			require.Equal(t, test.expectedSet, clusterConfig.IsBackendLogCollectorSet())
+		})
+	}
+}
