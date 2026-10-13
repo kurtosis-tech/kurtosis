@@ -1,15 +1,16 @@
 ---
-title: Running privileged containers, host PID namespace, and Docker-socket services
+title: Running privileged containers, host PID/cgroup namespaces, and Docker-socket services
 sidebar_label: Privileged containers & Docker socket
 slug: /running-privileged-containers
 sidebar_position: 17
 ---
 
-This guide covers three related, **Docker-only**, opt-in `ServiceConfig` features:
+This guide covers four related, **Docker-only**, opt-in `ServiceConfig` features:
 
 - `privileged` — start a container with Docker's `--privileged` flag.
 - `bind_mounts` — bind-mount allowlisted host paths into the container. The only host path currently allowlisted is `/var/run/docker.sock`, which lets a container talk to the host's Docker daemon (a "docker-in-docker"–style service such as [`ethpandaops/disruptoor`](https://github.com/ethpandaops/disruptoor)).
 - `host_pid_namespace` — start a container with Docker's `--pid=host`, which lets tools such as disruptoor use `nsenter` against sibling container network namespaces.
+- `host_cgroup_namespace` — start a container with Docker's `--cgroupns=host`, which makes `/sys/fs/cgroup` reflect the host's full cgroup hierarchy so tools such as [cAdvisor](https://github.com/google/cadvisor) can read sibling containers' resource stats.
 
 Both features grant the resulting container elevated access to the host. They are denied by default and must be explicitly allowed for the run that interprets the Starlark. Use them only with images you trust.
 
@@ -26,8 +27,8 @@ If you only need a specific Linux capability (`NET_ADMIN`, `SYS_PTRACE`, …), p
 
 - **Docker only.** These fields are rejected at interpretation time on the Kubernetes backend with an explicit error.
 - **`bind_mounts` host paths are allowlisted.** Today only `/var/run/docker.sock` is permitted. Attempting any other host path (`/etc/passwd`, `/`, `/home/...`, …) fails at interpretation time. Expanding the allowlist is a deliberate code change in `kurtosis_types/service_config/service_config.go`, not configuration.
-- **Run opt-in required.** A package or JSON service config can request `privileged=True`, `bind_mounts={...}`, or `host_pid_namespace=True`, but the run must opt in with `--privileged`, `allow-privileged-mode: true`, or the API's `allow_privileged_mode` field.
-- **No clear operation yet.** `plan.set_service` and `kurtosis service update` preserve and can enable privileged fields, but cannot currently clear `privileged=True`, remove existing bind mounts, or unset `host_pid_namespace=True`.
+- **Run opt-in required.** A package or JSON service config can request `privileged=True`, `bind_mounts={...}`, `host_pid_namespace=True`, or `host_cgroup_namespace=True`, but the run must opt in with `--privileged`, `allow-privileged-mode: true`, or the API's `allow_privileged_mode` field.
+- **No clear operation yet.** `plan.set_service` and `kurtosis service update` preserve and can enable privileged fields, but cannot currently clear `privileged=True`, remove existing bind mounts, or unset `host_pid_namespace=True` / `host_cgroup_namespace=True`.
 
 ## Example
 
@@ -59,14 +60,14 @@ def run(plan):
 If you run this package without opting in, interpretation fails before execution:
 
 ```
-ServiceConfig requested privileged=true, bind_mounts, or host_pid_namespace=true, but this run did not opt in.
+ServiceConfig requested privileged=true, bind_mounts, host_pid_namespace=true, or host_cgroup_namespace=true, but this run did not opt in.
 Pass --privileged on the CLI, or set allow-privileged-mode: true in kurtosis-config.yml
 ```
 
 If you try this on the Kubernetes backend, interpretation fails even if the run opts in:
 
 ```
-ServiceConfig requested privileged=true, bind_mounts, or host_pid_namespace=true,
+ServiceConfig requested privileged=true, bind_mounts, host_pid_namespace=true, or host_cgroup_namespace=true,
 but these settings are Docker-only and are not supported on the Kubernetes backend
 ```
 
@@ -85,7 +86,7 @@ For a one-off CLI run, pass `--privileged`:
 kurtosis run --privileged github.com/example/package
 ```
 
-For `kurtosis service add`, the flag permits a JSON service config that explicitly contains `privileged: true`, `bind_mounts`, or `host_pid_namespace: true`:
+For `kurtosis service add`, the flag permits a JSON service config that explicitly contains `privileged: true`, `bind_mounts`, `host_pid_namespace: true`, or `host_cgroup_namespace: true`:
 
 ```bash
 kurtosis service add --privileged my-enclave disruptoor --json-service-config ./service-config.json
@@ -109,7 +110,7 @@ kurtosis-clusters:
 
 For direct API/SDK usage, set the run request's `allow_privileged_mode` field or use the SDK's privileged-mode run config option.
 
-`--privileged` and `allow-privileged-mode` are allow flags. They do not make every service privileged. A service only receives elevated access if its `ServiceConfig` explicitly sets `privileged=True`, `bind_mounts`, or `host_pid_namespace=True`.
+`--privileged` and `allow-privileged-mode` are allow flags. They do not make every service privileged. A service only receives elevated access if its `ServiceConfig` explicitly sets `privileged=True`, `bind_mounts`, `host_pid_namespace=True`, or `host_cgroup_namespace=True`.
 
 When a privileged, bind-mounted, or host-PID service starts, Kurtosis logs a warning recording which service is being granted what, which is useful for auditing in CI logs.
 
@@ -121,5 +122,5 @@ When a privileged, bind-mounted, or host-PID service starts, Kurtosis logs a war
 
 ## See also
 
-- [`ServiceConfig` reference](../api-reference/starlark-reference/service-config.md) — full field-by-field documentation including `privileged`, `bind_mounts`, and `host_pid_namespace`.
+- [`ServiceConfig` reference](../api-reference/starlark-reference/service-config.md) — full field-by-field documentation including `privileged`, `bind_mounts`, `host_pid_namespace`, and `host_cgroup_namespace`.
 - [Linux `capabilities(7)`](https://man7.org/linux/man-pages/man7/capabilities.7.html) — for narrower alternatives to `privileged`.

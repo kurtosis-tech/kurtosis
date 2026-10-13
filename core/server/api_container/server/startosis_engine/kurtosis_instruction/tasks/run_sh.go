@@ -138,6 +138,12 @@ func NewRunShService(
 					Validator:         nil,
 				},
 				{
+					Name:              service_config.HostCgroupNamespaceAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Bool],
+					Validator:         nil,
+				},
+				{
 					Name:              service_config.BindMountsAttr,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
@@ -475,7 +481,7 @@ func (builtin *RunShCapabilities) Description() string {
 	return builtin.description
 }
 
-// applyPrivilegedArgs reads optional privileged/host_pid_namespace/bind_mounts arguments
+// applyPrivilegedArgs reads optional privileged/host_pid_namespace/host_cgroup_namespace/bind_mounts arguments
 // off a run_sh invocation and sets them on the underlying service config. The bind_mounts
 // host-path allowlist is enforced by the argument validator (service_config.ValidateBindMounts).
 func applyPrivilegedArgs(serviceConfig *service.ServiceConfig, arguments *builtin_argument.ArgumentValuesSet) *startosis_errors.InterpretationError {
@@ -495,6 +501,15 @@ func applyPrivilegedArgs(serviceConfig *service.ServiceConfig, arguments *builti
 		}
 		if bool(hostPIDVal) {
 			serviceConfig.SetHostPIDNamespace(true)
+		}
+	}
+	if arguments.IsSet(service_config.HostCgroupNamespaceAttr) {
+		hostCgroupVal, err := builtin_argument.ExtractArgumentValue[starlark.Bool](arguments, service_config.HostCgroupNamespaceAttr)
+		if err != nil {
+			return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", service_config.HostCgroupNamespaceAttr)
+		}
+		if bool(hostCgroupVal) {
+			serviceConfig.SetHostCgroupNamespace(true)
 		}
 	}
 	if arguments.IsSet(service_config.BindMountsAttr) {

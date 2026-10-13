@@ -46,6 +46,7 @@ type CreateAndStartContainerArgs struct {
 	gpuDriver                                string
 	privileged                               bool
 	hostPIDNamespace                         bool
+	hostCgroupNamespace                      bool
 }
 
 // Builder for creating CreateAndStartContainerArgs object
@@ -84,6 +85,7 @@ type CreateAndStartContainerArgsBuilder struct {
 	gpuDriver                                string
 	privileged                               bool
 	hostPIDNamespace                         bool
+	hostCgroupNamespace                      bool
 }
 
 /*
@@ -129,6 +131,7 @@ func NewCreateAndStartContainerArgsBuilder(dockerImage string, name string, netw
 		gpuDriver:                                "",
 		privileged:                               false,
 		hostPIDNamespace:                         false,
+		hostCgroupNamespace:                      false,
 	}
 }
 
@@ -198,6 +201,7 @@ func (builder *CreateAndStartContainerArgsBuilder) Build() *CreateAndStartContai
 		gpuDriver:                                builder.gpuDriver,
 		privileged:                               builder.privileged,
 		hostPIDNamespace:                         builder.hostPIDNamespace,
+		hostCgroupNamespace:                      builder.hostCgroupNamespace,
 	}
 }
 
@@ -369,5 +373,11 @@ func (builder *CreateAndStartContainerArgsBuilder) WithPrivileged(privileged boo
 // WithHostPIDNamespace starts the container in the host PID namespace.
 func (builder *CreateAndStartContainerArgsBuilder) WithHostPIDNamespace(hostPIDNamespace bool) *CreateAndStartContainerArgsBuilder {
 	builder.hostPIDNamespace = hostPIDNamespace
+	return builder
+}
+
+// WithHostCgroupNamespace starts the container in the host cgroup namespace.
+func (builder *CreateAndStartContainerArgsBuilder) WithHostCgroupNamespace(hostCgroupNamespace bool) *CreateAndStartContainerArgsBuilder {
+	builder.hostCgroupNamespace = hostCgroupNamespace
 	return builder
 }

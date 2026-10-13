@@ -291,6 +291,7 @@ func run(
 		updatedServiceConfig.Privileged,
 		updatedServiceConfig.BindMounts,
 		updatedServiceConfig.HostPIDNamespace,
+		updatedServiceConfig.HostCgroupNamespace,
 	)
 
 	addServiceStarlarkStr := service_helpers.GetAddServiceStarlarkScript(serviceName, serviceConfigStr)
@@ -394,6 +395,7 @@ func parseOverridesServiceConfigFromFlags(
 		Privileged:                  false,
 		BindMounts:                  nil,
 		HostPIDNamespace:            false,
+		HostCgroupNamespace:         false,
 	}, nil
 }
 
@@ -451,6 +453,7 @@ func createUpdatedServiceConfigFromOverrides(overridesServiceConfig, currService
 
 	updatedPrivileged := currServiceConfig.Privileged || overridesServiceConfig.Privileged
 	updatedHostPIDNamespace := currServiceConfig.HostPIDNamespace || overridesServiceConfig.HostPIDNamespace
+	updatedHostCgroupNamespace := currServiceConfig.HostCgroupNamespace || overridesServiceConfig.HostCgroupNamespace
 
 	updatedBindMounts := map[string]string{}
 	for hostPath, containerPath := range currServiceConfig.BindMounts {
@@ -482,5 +485,6 @@ func createUpdatedServiceConfigFromOverrides(overridesServiceConfig, currService
 		Privileged:                  updatedPrivileged,
 		BindMounts:                  updatedBindMounts,
 		HostPIDNamespace:            updatedHostPIDNamespace,
+		HostCgroupNamespace:         updatedHostCgroupNamespace,
 	}
 }

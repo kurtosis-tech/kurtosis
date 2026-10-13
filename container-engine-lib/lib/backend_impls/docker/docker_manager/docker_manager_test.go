@@ -229,10 +229,45 @@ func TestGetContainerHostConfigWithHostPIDNamespace(t *testing.T) {
 		"",
 		false,
 		true,
+		false,
 	)
 
 	require.NoError(t, err)
 	require.Equal(t, container.PidMode(hostPIDMode), hostConfig.PidMode)
+}
+
+func TestGetContainerHostConfigWithHostCgroupNamespace(t *testing.T) {
+	manager := &DockerManager{
+		dockerClient:          nil,
+		dockerClientNoTimeout: nil,
+		podmanMode:            false,
+	}
+	hostConfig, err := manager.getContainerHostConfig(
+		map[ContainerCapability]bool{},
+		map[ContainerSecurityOpt]bool{},
+		DefaultNetworkMode,
+		map[string]string{},
+		map[string]string{},
+		map[nat.Port]PortPublishSpec{},
+		false,
+		0,
+		0,
+		nil,
+		false,
+		NoRestart,
+		[]string{},
+		0,
+		nil,
+		0,
+		nil,
+		"",
+		false,
+		false,
+		true,
+	)
+
+	require.NoError(t, err)
+	require.Equal(t, container.CgroupnsMode(hostCgroupnsMode), hostConfig.CgroupnsMode)
 }
 
 func TestUlimitsDefaultToNilInArgsBuilder(t *testing.T) {
