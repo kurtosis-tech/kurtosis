@@ -49,7 +49,6 @@ require (
 	github.com/charmbracelet/bubbles v0.21.0
 	github.com/charmbracelet/bubbletea v1.3.4
 	github.com/charmbracelet/lipgloss v1.1.1-0.20250319133953-166f707985bc
-	github.com/cli/cli/v2 v2.67.0
 	github.com/cli/go-gh/v2 v2.12.1
 	github.com/cli/oauth v1.1.1
 	github.com/compose-spec/compose-go v1.17.0
@@ -230,8 +229,6 @@ require (
 	github.com/segmentio/backo-go v1.1.0 // indirect
 	github.com/segmentio/encoding v0.2.7 // indirect
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 // indirect
-	github.com/shurcooL/githubv4 v0.0.0-20240120211514-18a1ae0e79dc // indirect
-	github.com/shurcooL/graphql v0.0.0-20230722043721-ed46e5a46466 // indirect
 	github.com/skeema/knownhosts v1.3.1 // indirect
 	github.com/smacker/go-tree-sitter v0.0.0-20230226123037-c459dbde1464 // indirect
 	github.com/soheilhy/cmux v0.1.5 // indirect
