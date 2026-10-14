@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-yaml/yaml"
+	"gopkg.in/yaml.v2"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	store_spec2 "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/store_spec"

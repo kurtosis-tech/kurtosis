@@ -17,7 +17,7 @@ import (
 const (
 	// We use this image and version because we already are using this in other projects so there is a high probability
 	// that the image is in the local machine's cache
-	creatorContainerImage = "alpine:3.17"
+	creatorContainerImage = "alpine:3.24"
 	creatorContainerName  = "kurtosis-github-auth-storage-creator"
 
 	shBinaryFilepath = "/bin/sh"

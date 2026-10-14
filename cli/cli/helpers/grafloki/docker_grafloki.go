@@ -10,7 +10,7 @@ import (
 
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
-	"github.com/go-yaml/yaml"
+	"gopkg.in/yaml.v2"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"

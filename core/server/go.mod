@@ -33,7 +33,6 @@ require (
 require (
 	github.com/compose-spec/compose-go v1.20.2
 	github.com/go-git/go-git/v5 v5.19.2
-	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/hashicorp/go-envparse v0.1.0
 	github.com/itchyny/gojq v0.12.19
 	github.com/joho/godotenv v1.5.1
@@ -44,7 +43,8 @@ require (
 	go.etcd.io/bbolt v1.4.3
 	go.starlark.net v0.0.0-20230224151120-c52844e64a10
 	golang.org/x/exp v0.0.0-20260603202125-055de637280b
-	golang.org/x/sync v0.22.0
+	golang.org/x/sync v0.23.0
+	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.36.1
 )
 
@@ -117,7 +117,7 @@ require (
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
-	github.com/klauspost/compress v1.18.6 // indirect
+	github.com/klauspost/compress v1.18.7 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
 	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0-20231024185242-de10c7bab36c // indirect
@@ -172,12 +172,12 @@ require (
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	go4.org v0.0.0-20230225012048-214862532bf5 // indirect
 	golang.org/x/arch v0.4.0 // indirect
-	golang.org/x/crypto v0.55.0 // indirect
-	golang.org/x/net v0.58.0 // indirect
+	golang.org/x/crypto v0.57.0 // indirect
+	golang.org/x/net v0.60.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
-	golang.org/x/sys v0.47.0 // indirect
-	golang.org/x/term v0.45.0 // indirect
-	golang.org/x/text v0.41.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/term v0.46.0 // indirect
+	golang.org/x/text v0.42.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260921155816-b14227669459 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260921155816-b14227669459 // indirect

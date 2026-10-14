@@ -6,10 +6,10 @@ require (
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/rs/cors v1.11.1
 	github.com/sirupsen/logrus v1.10.2
-	golang.org/x/net v0.58.0
+	golang.org/x/net v0.60.0
 )
 
 require (
-	golang.org/x/sys v0.47.0 // indirect
-	golang.org/x/text v0.41.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/text v0.42.0 // indirect
 )

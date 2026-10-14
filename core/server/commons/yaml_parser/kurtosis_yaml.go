@@ -1,7 +1,7 @@
 package yaml_parser
 
 import (
-	"github.com/go-yaml/yaml"
+	"gopkg.in/yaml.v2"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"os"
