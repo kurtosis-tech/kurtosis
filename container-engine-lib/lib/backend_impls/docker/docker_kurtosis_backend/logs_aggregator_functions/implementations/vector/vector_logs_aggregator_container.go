@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
@@ -20,6 +21,7 @@ const (
 	timeBetweenCleanRetries            = 200 * time.Millisecond
 	cleaningSuccessStatusCode          = 0
 	stopLogsAggregatorContainerTimeout = 1 * time.Second
+	reloadConfigSignal                 = "SIGHUP"
 )
 
 type vectorLogsAggregatorContainer struct{}
@@ -128,6 +130,48 @@ func (vector *vectorLogsAggregatorContainer) CreateAndStart(
 
 	shouldRemoveLogsAggregatorContainer = false
 	return containerId, containerLabelStrs, removeContainerFunc, nil
+}
+
+func (vector *vectorLogsAggregatorContainer) Reconfigure(
+	ctx context.Context,
+	logsAggregator *types.Container,
+	logsListeningPortNumber uint16,
+	sinks logs_aggregator.Sinks,
+	httpPortNumber uint16,
+	targetNetworkId string,
+	shouldEnablePersistentVolumeLogsCollection bool,
+	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
+	dockerManager *docker_manager.DockerManager,
+) error {
+	if logsAggregator.GetImageName() != containerImage {
+		return stacktrace.NewError("The logs aggregator container runs image '%v' instead of '%v'", logsAggregator.GetImageName(), containerImage)
+	}
+	cmdArgs := logsAggregator.GetCmdArgs()
+	if len(cmdArgs) == 0 || !strings.HasPrefix(cmdArgs[len(cmdArgs)-1], execCmdName+" ") {
+		return stacktrace.NewError("The logs aggregator container with ID '%v' does not run Vector as PID 1 so it cannot reload its configuration", logsAggregator.GetId())
+	}
+	if logsAggregator.GetStatus() != types.ContainerStatus_Running {
+		return stacktrace.NewError("The logs aggregator container with ID '%v' is not running", logsAggregator.GetId())
+	}
+
+	logsAggregatorConfigVolumeAttrs, err := objAttrsProvider.ForLogsAggregatorConfigVolume()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the logs aggregator config volume attributes")
+	}
+	configVolumeName, err := createVolume(ctx, logsAggregatorConfigVolumeAttrs, dockerManager)
+	if err != nil {
+		return err
+	}
+
+	vectorConfigurationCreatorObj := createVectorConfigurationCreatorForKurtosis(logsListeningPortNumber, httpPortNumber, sinks, shouldEnablePersistentVolumeLogsCollection)
+	if err := vectorConfigurationCreatorObj.CreateConfiguration(ctx, targetNetworkId, configVolumeName, dockerManager); err != nil {
+		return stacktrace.Propagate(err, "An error occurred rewriting the logs aggregator configuration in volume '%v'", configVolumeName)
+	}
+
+	if err := dockerManager.SignalContainer(ctx, logsAggregator.GetId(), reloadConfigSignal); err != nil {
+		return stacktrace.Propagate(err, "An error occurred reloading the logs aggregator configuration")
+	}
+	return nil
 }
 
 func (vector *vectorLogsAggregatorContainer) GetLogsBaseDirPath() string {

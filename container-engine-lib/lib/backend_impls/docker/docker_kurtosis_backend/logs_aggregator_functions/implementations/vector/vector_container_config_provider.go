@@ -11,6 +11,7 @@ import (
 const (
 	shBinaryFilepath = "/bin/sh"
 	shCmdFlag        = "-c"
+	execCmdName      = "exec"
 	httpProtocolStr  = "http"
 )
 
@@ -57,7 +58,8 @@ func (vector *vectorContainerConfigProvider) GetContainerArgs(
 	overrideCmd := []string{
 		shCmdFlag,
 		fmt.Sprintf(
-			"%v %v=%v",
+			"%v %v %v=%v",
+			execCmdName,
 			binaryFilepath,
 			configFileFlag,
 			configFilepath,
