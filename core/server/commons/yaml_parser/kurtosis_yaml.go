@@ -1,9 +1,9 @@
 package yaml_parser
 
 import (
-	"gopkg.in/yaml.v2"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v2"
 	"os"
 )
 

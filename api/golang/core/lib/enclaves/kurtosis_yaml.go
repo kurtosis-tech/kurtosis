@@ -1,8 +1,8 @@
 package enclaves
 
 import (
-	"gopkg.in/yaml.v2"
 	"github.com/kurtosis-tech/stacktrace"
+	"gopkg.in/yaml.v2"
 	"os"
 )
 

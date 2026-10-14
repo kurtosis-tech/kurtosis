@@ -1,10 +1,10 @@
 package kurtosis_package
 
 import (
-	"gopkg.in/yaml.v2"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v2"
 	"os"
 	"path"
 	"testing"
