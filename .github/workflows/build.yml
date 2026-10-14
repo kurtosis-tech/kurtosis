@@ -200,7 +200,7 @@ jobs:
           echo "Version that will be persisted: ${version_to_publish}"
           docker save -o ${{ env.FILES_ARTIFACTS_EXPANDER_IMAGE_FILENAME }} "${image_name_with_version}"
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: files-artifacts-expander-image
           path: ${{ env.FILES_ARTIFACTS_EXPANDER_IMAGE_FILENAME }}
@@ -267,7 +267,7 @@ jobs:
           echo "Version that will be persisted: ${version_to_publish}"
           docker save -o ${{ env.CORE_IMAGE_FILENAME }} "${image_name_with_version}"
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: core-server-image
           path: ${{ env.CORE_IMAGE_FILENAME }}
@@ -299,7 +299,7 @@ jobs:
       - name: Build
         run: enclave-manager/scripts/build.sh
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: enclave-manager-webapp
           path: engine/server/webapp/
@@ -366,7 +366,7 @@ jobs:
           echo "Version that will be persisted: ${version_to_publish}"
           docker save -o ${{ env.ENGINE_IMAGE_FILENAME }} "${image_name_with_version}"
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: engine-server-image
           path: ${{ env.ENGINE_IMAGE_FILENAME }}
@@ -401,7 +401,7 @@ jobs:
       - name: Build CLI (single architecture)
         run: cli/cli/scripts/build.sh false
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: cli-binary
           path: ${{ env.CLI_DIST_PATH }}/
@@ -972,7 +972,7 @@ jobs:
           done
           zip -r "${output_dirname}.zip" "${output_dirname}" || true
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: enclave-dumps-typescript-docker
