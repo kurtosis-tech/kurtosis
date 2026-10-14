@@ -1022,6 +1022,13 @@ func (manager *DockerManager) KillContainer(ctx context.Context, containerId str
 	return nil
 }
 
+func (manager *DockerManager) SignalContainer(ctx context.Context, containerId string, signal string) error {
+	if err := manager.dockerClient.ContainerKill(ctx, containerId, signal); err != nil {
+		return stacktrace.Propagate(err, "An error occurred sending signal '%v' to container '%v'", signal, containerId)
+	}
+	return nil
+}
+
 /*
 RemoveContainer
 Removes the container with the given ID, deleting it permanently
