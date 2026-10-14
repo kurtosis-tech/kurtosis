@@ -3,9 +3,12 @@ package engine_functions
 import (
 	"context"
 
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_aggregator_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/reverse_proxy_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/stacktrace"
 )
@@ -66,6 +69,18 @@ func StopEngines(
 			"An error occurred stopping engine '%v'",
 			guidStr,
 		)
+	}
+
+	enclaveNetworks, err := dockerManager.GetNetworksByLabels(ctx, map[string]string{
+		docker_label_key.AppIDDockerLabelKey.GetString(): label_value_consts.AppIDDockerLabelValue.GetString(),
+	})
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclave networks")
+	}
+	if len(enclaveNetworks) == 0 {
+		if err := logs_aggregator_functions.DestroyLogsAggregator(ctx, dockerManager); err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred removing the logging components.")
+		}
 	}
 
 	// Stop reverse proxy
