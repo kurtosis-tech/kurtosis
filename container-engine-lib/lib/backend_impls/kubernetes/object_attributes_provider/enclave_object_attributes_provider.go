@@ -39,6 +39,7 @@ type KubernetesEnclaveObjectAttributesProvider interface {
 	ForUserServicePod(
 		uuid service.ServiceUUID,
 		id service.ServiceName,
+		enclaveName string,
 		privatePorts map[string]*port_spec.PortSpec,
 		userLabels map[string]string,
 	) (KubernetesObjectAttributes, error)
@@ -158,6 +159,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServiceSer
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServicePod(
 	serviceUUID service.ServiceUUID,
 	serviceName service.ServiceName,
+	enclaveName string,
 	privatePorts map[string]*port_spec.PortSpec,
 	userLabels map[string]string,
 ) (KubernetesObjectAttributes, error) {
@@ -193,6 +195,14 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServicePod
 		return nil, stacktrace.Propagate(err, "An error occurred creating a service name Kubernetes label value from string '%v'", string(serviceName))
 	}
 	labels[kubernetes_label_key.LogsServiceNameKubernetesLabelKey] = nameLabelValue
+
+	if enclaveName != "" {
+		enclaveNameLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(enclaveName)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating an enclave name Kubernetes label value from string '%v'", enclaveName)
+		}
+		labels[kubernetes_label_key.EnclaveNameKubernetesLabelKey] = enclaveNameLabelValue
+	}
 
 	// add user custom label
 	for userLabelKey, userLabelValue := range userLabels {
