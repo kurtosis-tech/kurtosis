@@ -19,7 +19,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.5.0
 	github.com/adrg/xdg v0.5.3
 	github.com/denisbrodbeck/machineid v1.0.1
-	github.com/dmarkham/enumer v1.6.3
+	github.com/dmarkham/enumer v1.7.2
 	github.com/docker/distribution v2.8.3+incompatible // indirect
 	github.com/kurtosis-tech/kurtosis/api/golang v1.18.0 // local dependency
 	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // local dependency
