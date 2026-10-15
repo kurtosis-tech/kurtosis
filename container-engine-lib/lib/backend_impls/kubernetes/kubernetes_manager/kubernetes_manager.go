@@ -430,6 +430,7 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(
 			VolumeAttributesClassName: nil,
 		},
 		Status: apiv1.PersistentVolumeClaimStatus{
+			HealthStatus:                     nil,
 			Phase:                            "",
 			AccessModes:                      nil,
 			Capacity:                         nil,
@@ -1108,6 +1109,7 @@ func (manager *KubernetesManager) CreatePod(
 		ManagedFields:              nil,
 	}
 	podSpec := apiv1.PodSpec{
+		EvictionResponders:            nil,
 		Volumes:                       podVolumes,
 		InitContainers:                initContainers,
 		Containers:                    podContainers,
@@ -1162,6 +1164,7 @@ func (manager *KubernetesManager) CreatePod(
 		ObjectMeta: podMeta,
 		Spec:       podSpec,
 		Status: apiv1.PodStatus{
+			VolumeHealth:                         nil,
 			Phase:                                "",
 			Conditions:                           nil,
 			Message:                              "",
@@ -1330,6 +1333,7 @@ func (manager *KubernetesManager) CreateDaemonSet(
 				ManagedFields:              nil,
 			},
 			Spec: apiv1.PodSpec{
+				EvictionResponders:            nil,
 				Volumes:                       volumes,
 				InitContainers:                initContainers,
 				Containers:                    containers,
@@ -1570,6 +1574,7 @@ func (manager *KubernetesManager) CreateDeployment(
 		Template: apiv1.PodTemplateSpec{
 			ObjectMeta: deploymentMeta,
 			Spec: apiv1.PodSpec{
+				EvictionResponders:            nil,
 				ShareProcessNamespace:         nil,
 				Volumes:                       volumes,
 				InitContainers:                initContainers,
@@ -1861,6 +1866,7 @@ func (kubernetesManager *KubernetesManager) GetVolumeSourceForHostPath(mountPath
 func (kubernetesManager *KubernetesManager) GetVolumeSourceForConfigMap(configMapName string) apiv1.VolumeSource {
 	return apiv1.VolumeSource{
 		ConfigMap: &apiv1.ConfigMapVolumeSource{
+			DefaultUser:          nil,
 			LocalObjectReference: apiv1.LocalObjectReference{Name: configMapName},
 			Items:                nil,
 			DefaultMode:          nil,
@@ -2320,6 +2326,7 @@ func (manager *KubernetesManager) RemoveDirPathFromNode(ctx context.Context, nam
 				ResizePolicy: nil,
 				VolumeMounts: []apiv1.VolumeMount{
 					{
+						BindMountOptions:  nil,
 						Name:              hostVolumeName,
 						ReadOnly:          false,
 						MountPath:         mountPath,
@@ -2780,9 +2787,10 @@ func (manager *KubernetesManager) CreateJob(
 	}
 
 	podSpec := apiv1.PodSpec{
-		InitContainers: nil,
-		Containers:     containers,
-		Volumes:        volumes,
+		EvictionResponders: nil,
+		InitContainers:     nil,
+		Containers:         containers,
+		Volumes:            volumes,
 		// We don't want Kubernetes automagically restarting our containers
 		RestartPolicy:                 apiv1.RestartPolicyNever,
 		EphemeralContainers:           nil,
@@ -2828,6 +2836,7 @@ func (manager *KubernetesManager) CreateJob(
 	manualSelectors := jobLabels != nil
 
 	jobSpec := batchv1.JobSpec{
+		Scheduling:     nil,
 		ManualSelector: &manualSelectors,
 		BackoffLimit:   &numRetries,
 		Selector: &metav1.LabelSelector{

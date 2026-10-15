@@ -57,6 +57,7 @@ func (volumeAndClaim *kubernetesVolumeWithClaim) GetVolume() *apiv1.Volume {
 
 func (volumeAndClaim *kubernetesVolumeWithClaim) GetVolumeMount(mountPath string) *apiv1.VolumeMount {
 	return &apiv1.VolumeMount{
+		BindMountOptions:  nil,
 		Name:              volumeAndClaim.VolumeClaimName,
 		ReadOnly:          false,
 		RecursiveReadOnly: nil,

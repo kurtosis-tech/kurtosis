@@ -446,6 +446,7 @@ func createStartServiceOperation(
 				podVolumes = append(podVolumes, deviceVolume)
 
 				deviceVolumeMount := apiv1.VolumeMount{
+					BindMountOptions:  nil,
 					Name:              volumeName,
 					MountPath:         devicePath,
 					ReadOnly:          false,
@@ -465,6 +466,7 @@ func createStartServiceOperation(
 				Name: "dshm",
 				VolumeSource: apiv1.VolumeSource{ //nolint:exhaustruct
 					EmptyDir: &apiv1.EmptyDirVolumeSource{
+						Mode:      nil,
 						Medium:    apiv1.StorageMediumMemory,
 						SizeLimit: &shmQuantity,
 					},
