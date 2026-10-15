@@ -512,6 +512,7 @@ func generateFluentBitConfigStr(
 		LogsEnclaveUUIDLabel          string
 		LogsServiceUUIDLabel          string
 		LogsServiceNameLabel          string
+		EnclaveNameLabel              string
 		K8sApiServerURL               string
 		LogsAggregatorHost            string
 		LogsAggregatorPortNum         uint16
@@ -530,6 +531,7 @@ func generateFluentBitConfigStr(
 		LogsEnclaveUUIDLabel:          kubernetes_label_key.LogsEnclaveUUIDKubernetesLabelKey.GetString(),
 		LogsServiceUUIDLabel:          kubernetes_label_key.LogsServiceUUIDKubernetesLabelKey.GetString(),
 		LogsServiceNameLabel:          kubernetes_label_key.LogsServiceNameKubernetesLabelKey.GetString(),
+		EnclaveNameLabel:              kubernetes_label_key.EnclaveNameKubernetesLabelKey.GetString(),
 		K8sApiServerURL:               k8sApiServerUrl,
 		LogsAggregatorPortNum:         logsAggregatorPortNun,
 		LogsAggregatorHost:            logsAggregatorHost,
