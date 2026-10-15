@@ -1,0 +1,56 @@
+name: go mod tidy
+
+concurrency:
+  group: "go-mod-tidy-${{ github.ref }}"
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+  merge_group:
+
+jobs:
+  check-if-code-change:
+    runs-on: ubuntu-latest
+    outputs:
+      change: ${{ steps.check.outputs.change }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - run: |
+          if git --no-pager diff --exit-code origin/main...HEAD -- . ':!docs' ':!*.md'; then
+            echo "change=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "change=true" >> "$GITHUB_OUTPUT"
+          fi
+        id: check
+  go-mod-tidy:
+    needs: check-if-code-change
+    if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
+    name: go mod tidy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.26'
+          cache: false
+      - run: scripts/generate-kurtosis-version.sh
+      - name: Verify every Go module is tidy
+        env:
+          GOWORK: 'off'
+        run: |
+          status=0
+          for mod in $(git ls-files '*go.mod'); do
+            dir="$(dirname "${mod}")"
+            echo "::group::${dir}"
+            if ! (cd "${dir}" && go mod tidy -diff); then
+              echo "::error file=${mod}::${dir} is not tidy; run 'go mod tidy' in ${dir}"
+              status=1
+            fi
+            echo "::endgroup::"
+          done
+          exit "${status}"
