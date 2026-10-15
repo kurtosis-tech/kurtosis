@@ -16,7 +16,7 @@ import (
 const (
 	// We use this image and version because we already are using this in other projects so there is a high probability
 	// that the image is in the local machine's cache
-	configuratorContainerImage      = "alpine:3.17"
+	configuratorContainerImage      = "alpine:3.24"
 	configuratorContainerNamePrefix = "kurtosis-fluentbit-configurator"
 
 	shBinaryFilepath = "/bin/sh"

@@ -1,7 +1,6 @@
 package overrides_deserializers
 
 import (
-	"github.com/go-yaml/yaml"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/config_version"
 	v0 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v0"
 	v1 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v1"
@@ -14,6 +13,7 @@ import (
 	v8 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v8"
 	v9 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v9"
 	"github.com/kurtosis-tech/stacktrace"
+	"gopkg.in/yaml.v2"
 )
 
 type configOverridesDeserializer func(configFileBytes []byte) (interface{}, error)

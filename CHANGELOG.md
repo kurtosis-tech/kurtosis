@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.21.0](https://github.com/kurtosis-tech/kurtosis/compare/1.20.0...1.21.0) (2026-10-14)
+
+
+### Features
+
+* **cli:** make otel the default backend log collector on Docker ([#3257](https://github.com/kurtosis-tech/kurtosis/issues/3257)) ([1bac65d](https://github.com/kurtosis-tech/kurtosis/commit/1bac65d797c85f90707f656de6dfbb534a7c21e4))
+* KURTOSIS_IMAGE_ORG env var to override the org prefix of Kurtosis' own images ([#3157](https://github.com/kurtosis-tech/kurtosis/issues/3157)) ([581a902](https://github.com/kurtosis-tech/kurtosis/commit/581a9024dfc725c4622b55b84648b59c5e9c13c6))
+
+
+### Bug Fixes
+
+* keep the logs aggregator running across engine restarts on Docker ([#3261](https://github.com/kurtosis-tech/kurtosis/issues/3261)) ([7665abd](https://github.com/kurtosis-tech/kurtosis/commit/7665abdf7848739e306e1480dddedef30e663e6e))
+* patch vulnerable Go toolchain, dependencies and base images ([#3262](https://github.com/kurtosis-tech/kurtosis/issues/3262)) ([0d5547d](https://github.com/kurtosis-tech/kurtosis/commit/0d5547d1f45002562613681bdd0e1a7c4ed78eb9))
+* retry pinned host port bind collisions on Docker ([#3240](https://github.com/kurtosis-tech/kurtosis/issues/3240)) ([416757e](https://github.com/kurtosis-tech/kurtosis/commit/416757eda610e729ab5c5bc9c3e625603f4a0075))
+* tidy Go modules and patch vulnerable dependencies ([#3241](https://github.com/kurtosis-tech/kurtosis/issues/3241)) ([51c13b6](https://github.com/kurtosis-tech/kurtosis/commit/51c13b6b88320743e4cf003cd9140ce4fe6a5062))
+
 ## [1.20.0](https://github.com/kurtosis-tech/kurtosis/compare/1.19.0...1.20.0) (2026-06-16)
 
 
