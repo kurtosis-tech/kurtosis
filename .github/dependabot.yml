@@ -1,4 +1,10 @@
 version: 2
+
+multi-ecosystem-groups:
+  all-deps:
+    schedule:
+      interval: "weekly"
+
 updates:
   - package-ecosystem: "gomod"
     directories:
@@ -21,13 +27,9 @@ updates:
       - "/metrics-library/golang"
       - "/name_generator"
       - "/path-compression"
-    schedule:
-      interval: "weekly"
-    groups:
-      all-go-deps:
-        group-by: dependency-name
-        patterns:
-          - "*"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "all-deps"
 
   - package-ecosystem: "npm"
     directories:
@@ -35,20 +37,12 @@ updates:
       - "/docs"
       - "/enclave-manager/web"
       - "/internal_testsuites/typescript"
-    schedule:
-      interval: "weekly"
-    groups:
-      all-npm-deps:
-        group-by: dependency-name
-        patterns:
-          - "*"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "all-deps"
 
   - package-ecosystem: "github-actions"
     directory: "/"
-    schedule:
-      interval: "weekly"
-    groups:
-      all-actions:
-        group-by: dependency-name
-        patterns:
-          - "*"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "all-deps"
