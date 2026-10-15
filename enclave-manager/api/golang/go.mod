@@ -11,7 +11,7 @@ require (
 	connectrpc.com/connect v1.21.0
 	github.com/kurtosis-tech/kurtosis/api/golang v0.81.9
 	github.com/kurtosis-tech/kurtosis/cloud/api/golang v0.88.12
-	google.golang.org/grpc v1.83.2
+	google.golang.org/grpc v1.84.0
 	google.golang.org/protobuf v1.36.12
 )
 
@@ -19,7 +19,7 @@ require (
 	golang.org/x/net v0.60.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260706201446-f0a921348800 // indirect
 )
 
 replace github.com/kurtosis-tech/kurtosis/contexts-config-store => ../../../contexts-config-store
