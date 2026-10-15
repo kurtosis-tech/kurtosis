@@ -146,6 +146,16 @@ func StartRegisteredUserServices(
 		}
 	}
 
+	namespaceName, err := shared_helpers.GetEnclaveNamespaceName(ctx, enclaveUuid, cliModeArgs, apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting namespace name for enclave '%v'", enclaveUuid)
+	}
+	enclaveNamespace, err := kubernetesManager.GetNamespace(ctx, namespaceName)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting namespace '%v' for enclave '%v'", namespaceName, enclaveUuid)
+	}
+	enclaveName := enclaveNamespace.Annotations[kubernetes_annotation_key_consts.EnclaveNameAnnotationKey.GetString()]
+
 	// Get existing objects by UUID. We use UUIDs and not Names as Names can match services being deleted or services in other Enclaves.
 	serviceUUIDsToFilter := map[service.ServiceUUID]bool{}
 	for serviceUuid := range services {
@@ -181,6 +191,7 @@ func StartRegisteredUserServices(
 	successfulStarts, failedStarts, err := runStartServiceOperationsInParallel(
 		ctx,
 		enclaveUuid,
+		enclaveName,
 		serviceRegisteredThatCanBeStarted,
 		existingObjectsAndResources,
 		kubernetesManager,
@@ -243,6 +254,7 @@ func RemoveRegisteredUserServiceProcesses(
 func runStartServiceOperationsInParallel(
 	ctx context.Context,
 	enclaveUUID enclave.EnclaveUUID,
+	enclaveName string,
 	services map[service.ServiceUUID]*service.ServiceConfig,
 	servicesObjectsAndResources map[service.ServiceUUID]*shared_helpers.UserServiceObjectsAndKubernetesResources,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
@@ -260,6 +272,7 @@ func runStartServiceOperationsInParallel(
 			config,
 			servicesObjectsAndResources,
 			enclaveUUID,
+			enclaveName,
 			kubernetesManager,
 			restartPolicy)
 	}
@@ -294,6 +307,7 @@ func createStartServiceOperation(
 	serviceConfig *service.ServiceConfig,
 	servicesObjectsAndResources map[service.ServiceUUID]*shared_helpers.UserServiceObjectsAndKubernetesResources,
 	enclaveUuid enclave.EnclaveUUID,
+	enclaveName string,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 	restartPolicy apiv1.RestartPolicy) operation_parallelizer.Operation {
 
@@ -494,7 +508,7 @@ func createStartServiceOperation(
 		}()
 
 		// Create the pod
-		podAttributes, err := enclaveObjAttributesProvider.ForUserServicePod(serviceUuid, serviceName, privatePorts, serviceConfig.GetLabels())
+		podAttributes, err := enclaveObjAttributesProvider.ForUserServicePod(serviceUuid, serviceName, enclaveName, privatePorts, serviceConfig.GetLabels())
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting attributes for new pod for service with UUID '%v'", serviceUuid)
 		}
