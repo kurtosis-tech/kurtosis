@@ -1,4 +1,10 @@
 version: 2
+
+multi-ecosystem-groups:
+  all-deps:
+    schedule:
+      interval: "weekly"
+
 updates:
   - package-ecosystem: "gomod"
     directories:
@@ -21,22 +27,9 @@ updates:
       - "/metrics-library/golang"
       - "/name_generator"
       - "/path-compression"
-    schedule:
-      interval: "weekly"
-    cooldown:
-      default-days: 7
-    groups:
-      go-minor-patch:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
-      go-major:
-        patterns:
-          - "*"
-        update-types:
-          - "major"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "all-deps"
 
   - package-ecosystem: "npm"
     directories:
@@ -44,38 +37,12 @@ updates:
       - "/docs"
       - "/enclave-manager/web"
       - "/internal_testsuites/typescript"
-    schedule:
-      interval: "weekly"
-    cooldown:
-      default-days: 7
-    groups:
-      npm-minor-patch:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
-      npm-major:
-        patterns:
-          - "*"
-        update-types:
-          - "major"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "all-deps"
 
   - package-ecosystem: "github-actions"
     directory: "/"
-    schedule:
-      interval: "weekly"
-    cooldown:
-      default-days: 7
-    groups:
-      actions-minor-patch:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
-      actions-major:
-        patterns:
-          - "*"
-        update-types:
-          - "major"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "all-deps"
