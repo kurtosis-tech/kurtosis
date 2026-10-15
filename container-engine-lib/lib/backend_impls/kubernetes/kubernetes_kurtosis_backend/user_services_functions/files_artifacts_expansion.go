@@ -28,6 +28,7 @@ func prepareFilesArtifactsExpansionResources(
 			VolumeSource: apiv1.VolumeSource{
 				HostPath: nil,
 				EmptyDir: &apiv1.EmptyDirVolumeSource{
+					Mode:      nil,
 					Medium:    "",
 					SizeLimit: nil,
 				},
@@ -70,6 +71,7 @@ func prepareFilesArtifactsExpansionResources(
 		subdirName := strconv.Itoa(volumeSubdirIndex)
 
 		expanderContainerMount := apiv1.VolumeMount{
+			BindMountOptions:  nil,
 			Name:              filesArtifactExpansionVolumeName,
 			ReadOnly:          isFilesArtifactExpansionVolumeReadOnly,
 			RecursiveReadOnly: nil,
@@ -81,6 +83,7 @@ func prepareFilesArtifactsExpansionResources(
 		volumeMountsOnExpanderContainer = append(volumeMountsOnExpanderContainer, expanderContainerMount)
 
 		userServiceContainerMount := apiv1.VolumeMount{
+			BindMountOptions:  nil,
 			Name:              filesArtifactExpansionVolumeName,
 			ReadOnly:          isFilesArtifactExpansionVolumeReadOnly,
 			RecursiveReadOnly: nil,

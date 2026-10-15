@@ -206,6 +206,7 @@ func createLogsAggregatorDeployment(
 			ResizePolicy: nil,
 			VolumeMounts: []apiv1.VolumeMount{
 				{
+					BindMountOptions:  nil,
 					Name:              vectorConfigVolumeName,
 					ReadOnly:          false,
 					MountPath:         vectorConfigMountPath,
@@ -215,6 +216,7 @@ func createLogsAggregatorDeployment(
 					RecursiveReadOnly: nil,
 				},
 				{
+					BindMountOptions:  nil,
 					Name:              kurtosisLogsVolumeName,
 					ReadOnly:          false,
 					MountPath:         kurtosisLogsMountPath,
@@ -224,6 +226,7 @@ func createLogsAggregatorDeployment(
 					RecursiveReadOnly: nil,
 				},
 				{
+					BindMountOptions:  nil,
 					Name:              vectorDataDirVolumeName,
 					ReadOnly:          false,
 					MountPath:         vectorDataDirMountPath,

@@ -189,6 +189,7 @@ func createLokiResources(ctx context.Context, k8sManager *kubernetes_manager.Kub
 					ProbeHandler: apiv1.ProbeHandler{
 						Exec: nil,
 						HTTPGet: &apiv1.HTTPGetAction{
+							Protocol:    nil,
 							Path:        "/ready",
 							Port:        intstr.FromInt(lokiPort),
 							Host:        "",
@@ -374,6 +375,7 @@ func createGrafanaResources(ctx context.Context, k8sManager *kubernetes_manager.
 				},
 				VolumeMounts: []apiv1.VolumeMount{
 					{
+						BindMountOptions:  nil,
 						Name:              grafanaDatasourcesKey,
 						MountPath:         grafanaDatasourcesPath,
 						ReadOnly:          false,
@@ -413,6 +415,7 @@ func createGrafanaResources(ctx context.Context, k8sManager *kubernetes_manager.
 			Name: grafanaDatasourcesKey,
 			VolumeSource: apiv1.VolumeSource{
 				ConfigMap: &apiv1.ConfigMapVolumeSource{
+					DefaultUser: nil,
 					LocalObjectReference: apiv1.LocalObjectReference{
 						Name: grafanaDatasourceConfigMapName,
 					},

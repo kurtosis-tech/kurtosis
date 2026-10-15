@@ -78,6 +78,7 @@ func (vector *vectorConfigurationCreator) CreateConfiguration(
 			Args:    []string{"validate", vectorConfigFilePath},
 			VolumeMounts: []apiv1.VolumeMount{
 				{
+					BindMountOptions:  nil,
 					Name:              vectorConfigVolumeName,
 					ReadOnly:          true,
 					MountPath:         vectorConfigMountPath,
