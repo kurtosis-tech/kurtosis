@@ -3,14 +3,14 @@ module github.com/kurtosis-tech/kurtosis/cloud/api/golang
 go 1.26.0
 
 require (
-	connectrpc.com/connect v1.20.0
-	google.golang.org/grpc v1.81.1
-	google.golang.org/protobuf v1.36.11
+	connectrpc.com/connect v1.21.0
+	google.golang.org/grpc v1.84.0
+	google.golang.org/protobuf v1.36.12
 )
 
 require (
-	golang.org/x/net v0.55.0 // indirect
-	golang.org/x/sys v0.45.0 // indirect
-	golang.org/x/text v0.37.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260226221140-a57be14db171 // indirect
+	golang.org/x/net v0.60.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/text v0.42.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260706201446-f0a921348800 // indirect
 )

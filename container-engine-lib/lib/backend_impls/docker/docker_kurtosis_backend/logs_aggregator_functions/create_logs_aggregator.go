@@ -30,34 +30,51 @@ func CreateLogsAggregator(
 	func(),
 	error,
 ) {
-	_, found, err := getLogsAggregatorContainer(ctx, dockerManager)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting logs aggregator container.")
-	}
-	if found {
-		logrus.Debugf("Found existing logs aggregator; cannot start a new one.")
-		logsAggregatorObj, containerId, err := getLogsAggregatorObjectAndContainerId(ctx, dockerManager)
-		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred getting existing logs aggregator.")
-		}
-		removeCtx := context.Background()
-		removeLogsAggregatorContainerFunc := func() {
-			if err := dockerManager.RemoveContainer(removeCtx, containerId); err != nil {
-				logrus.Errorf(
-					"Something failed while trying to remove the logs aggregator container with ID '%v'. Error was:\n%v",
-					containerId,
-					err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs aggregator server with Docker container ID '%v'!!!!!!", containerId)
-			}
-		}
-		return logsAggregatorObj, removeLogsAggregatorContainerFunc, nil
-	}
-
 	logsAggregatorNetwork, err := shared_helpers.GetEngineAndLogsComponentsNetwork(ctx, dockerManager)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator network.")
 	}
 	targetNetworkId := logsAggregatorNetwork.GetId()
+
+	existingLogsAggregatorContainer, found, err := getLogsAggregatorContainer(ctx, dockerManager)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting logs aggregator container.")
+	}
+	if found {
+		reconfigureErr := logsAggregatorContainer.Reconfigure(
+			ctx,
+			existingLogsAggregatorContainer,
+			defaultLogsListeningPortNum,
+			sinks,
+			logsAggregatorHttpPortNumber,
+			targetNetworkId,
+			shouldEnablePersistentVolumeLogsCollection,
+			objAttrsProvider,
+			dockerManager,
+		)
+		if reconfigureErr == nil {
+			logsAggregatorObj, err := reuseLogsAggregator(ctx, existingLogsAggregatorContainer.GetId(), logsAggregatorContainer, targetNetworkId, dockerManager)
+			if err != nil {
+				return nil, nil, stacktrace.Propagate(err, "An error occurred reusing the existing logs aggregator.")
+			}
+			removeCtx := context.Background()
+			containerId := existingLogsAggregatorContainer.GetId()
+			removeLogsAggregatorContainerFunc := func() {
+				if err := dockerManager.RemoveContainer(removeCtx, containerId); err != nil {
+					logrus.Errorf(
+						"Something failed while trying to remove the logs aggregator container with ID '%v'. Error was:\n%v",
+						containerId,
+						err)
+					logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs aggregator server with Docker container ID '%v'!!!!!!", containerId)
+				}
+			}
+			return logsAggregatorObj, removeLogsAggregatorContainerFunc, nil
+		}
+		logrus.Warnf("Recreating the logs aggregator because the existing one could not be reconfigured: %v", reconfigureErr)
+		if err := DestroyLogsAggregator(ctx, dockerManager); err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred removing the existing logs aggregator.")
+		}
+	}
 
 	containerId, containerLabels, removeLogsAggregatorContainerFunc, err := logsAggregatorContainer.CreateAndStart(
 		ctx,
@@ -109,4 +126,24 @@ func CreateLogsAggregator(
 
 	shouldRemoveLogsAggregatorContainer = false
 	return logsAggregator, removeLogsAggregatorFunc, nil
+}
+
+func reuseLogsAggregator(
+	ctx context.Context,
+	containerId string,
+	logsAggregatorContainer LogsAggregatorContainer,
+	targetNetworkId string,
+	dockerManager *docker_manager.DockerManager,
+) (*logs_aggregator.LogsAggregator, error) {
+	logsAggregatorObj, _, err := getLogsAggregatorObjectAndContainerId(ctx, dockerManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator with container ID '%v'.", containerId)
+	}
+	if logsAggregatorObj == nil {
+		return nil, stacktrace.NewError("The logs aggregator with container ID '%v' disappeared while reconfiguring it", containerId)
+	}
+	if err := waitForLogsAggregatorAvailability(ctx, logsAggregatorObj.GetMaybePrivateIpAddr(), logsAggregatorContainer.GetHttpHealthCheckEndpoint(), logsAggregatorObj.GetPrivateHttpPort().GetNumber(), targetNetworkId, dockerManager); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for the reconfigured logs aggregator to become available")
+	}
+	return logsAggregatorObj, nil
 }

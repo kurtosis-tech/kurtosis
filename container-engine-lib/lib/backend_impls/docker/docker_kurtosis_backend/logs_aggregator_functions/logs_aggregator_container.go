@@ -24,6 +24,18 @@ type LogsAggregatorContainer interface {
 		dockerManager *docker_manager.DockerManager,
 	) (string, map[string]string, func(), error)
 
+	Reconfigure(
+		ctx context.Context,
+		logsAggregator *types.Container,
+		logsListeningPort uint16,
+		sinks logs_aggregator.Sinks,
+		httpPortNumber uint16,
+		targetNetworkId string,
+		shouldEnablePersistentVolumeLogsCollection bool,
+		objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
+		dockerManager *docker_manager.DockerManager,
+	) error
+
 	// GetLogsBaseDirPath returns the base directory path where all logs will be output on its container
 	GetLogsBaseDirPath() string
 

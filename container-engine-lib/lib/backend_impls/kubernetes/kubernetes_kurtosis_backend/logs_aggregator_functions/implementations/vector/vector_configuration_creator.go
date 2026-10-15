@@ -6,13 +6,13 @@ import (
 	"io"
 	"time"
 
-	"github.com/go-yaml/yaml"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v2"
 	apiv1 "k8s.io/api/core/v1"
 )
 
@@ -78,6 +78,7 @@ func (vector *vectorConfigurationCreator) CreateConfiguration(
 			Args:    []string{"validate", vectorConfigFilePath},
 			VolumeMounts: []apiv1.VolumeMount{
 				{
+					BindMountOptions:  nil,
 					Name:              vectorConfigVolumeName,
 					ReadOnly:          true,
 					MountPath:         vectorConfigMountPath,

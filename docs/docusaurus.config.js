@@ -138,7 +138,7 @@ const config = {
 							},
 							{
 								label: 'Twitter',
-								href: 'https://twitter.com/KurtosisTech',
+								href: 'https://x.com/KurtosisTech',
 							},
 							{
 								label: 'GitHub',

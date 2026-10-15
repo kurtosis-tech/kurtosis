@@ -26,7 +26,7 @@ jobs:
     outputs:
       change: ${{ steps.check.outputs.change }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - run: |
@@ -41,6 +41,7 @@ jobs:
     name: golang-lint
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         directory:
           - container-engine-lib
@@ -56,22 +57,34 @@ jobs:
           - internal_testsuites/golang
           - cli/cli
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
-      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
         with:
           go-version: '1.26'
-          cache: false
+          cache-dependency-path: ${{ matrix.directory }}/go.sum
       # Generate versions
       - run: scripts/generate-kurtosis-version.sh
         if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
+      - name: Download modules
+        if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
+        working-directory: ${{ matrix.directory }}
+        run: |
+          for attempt in 1 2 3 4 5; do
+            go list -deps -test ./... > /dev/null && exit 0
+            sleep $((attempt * 10))
+          done
+          exit 1
       - name: lint ${{ matrix.directory }}
         if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
-        uses: golangci/golangci-lint-action@82606bf257cbaff209d206a39f5134f0cfbfd2ee # v9.2.1
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        env:
+          GOPROXY: "off"
         with:
           version: ${{ env.GOLINT_VERSION }}
-          install-mode: goinstall
+          install-mode: binary
+          verify: false
           working-directory: ${{ matrix.directory }}
           args: --timeout=3m
           skip-cache: true

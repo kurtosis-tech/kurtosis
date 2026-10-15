@@ -51,6 +51,7 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
 	}
+	engineManager.SetSkipConfiguredOtel(true)
 
 	engineStatus, _, _, err := engineManager.GetEngineStatus(ctx)
 	if err != nil {

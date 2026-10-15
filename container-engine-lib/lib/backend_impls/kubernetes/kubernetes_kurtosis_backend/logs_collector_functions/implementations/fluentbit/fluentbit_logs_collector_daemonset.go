@@ -332,6 +332,7 @@ func createLogsCollectorDaemonSet(
 				// https://docs.fluentbit.io/manual/installation/kubernetes#details
 				//
 				{
+					BindMountOptions:  nil,
 					Name:              varLogVolumeName,
 					ReadOnly:          false,
 					RecursiveReadOnly: nil,
@@ -341,6 +342,7 @@ func createLogsCollectorDaemonSet(
 					SubPathExpr:       "",
 				},
 				{
+					BindMountOptions:  nil,
 					Name:              varLibDockerContainersVolumeName,
 					ReadOnly:          false,
 					RecursiveReadOnly: nil,
@@ -350,6 +352,7 @@ func createLogsCollectorDaemonSet(
 					SubPathExpr:       "",
 				},
 				{
+					BindMountOptions:  nil,
 					Name:              varLogDockerContainersVolumeName,
 					ReadOnly:          false,
 					RecursiveReadOnly: nil,
@@ -359,6 +362,7 @@ func createLogsCollectorDaemonSet(
 					SubPathExpr:       "",
 				},
 				{
+					BindMountOptions:  nil,
 					Name:              fluentBitConfigVolumeName,
 					ReadOnly:          false,
 					RecursiveReadOnly: nil,
@@ -368,6 +372,7 @@ func createLogsCollectorDaemonSet(
 					SubPathExpr:       "",
 				},
 				{
+					BindMountOptions:  nil,
 					Name:              fluentBitHostLogsVolumeName,
 					ReadOnly:          false,
 					RecursiveReadOnly: nil,
@@ -377,6 +382,7 @@ func createLogsCollectorDaemonSet(
 					SubPathExpr:       "",
 				},
 				{
+					BindMountOptions:  nil,
 					Name:              fluentBitCheckpointDbVolumeName,
 					ReadOnly:          false,
 					RecursiveReadOnly: nil,

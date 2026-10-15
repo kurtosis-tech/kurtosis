@@ -76,12 +76,20 @@ runs:
       shell: bash
       run: |
         kurtosis_version="$(./scripts/get-docker-tag.sh)"
+        images=("kurtosistech/core:$kurtosis_version" "kurtosistech/engine:$kurtosis_version" "kurtosistech/files-artifacts-expander:$kurtosis_version")
         for i in $(seq 1 3); do
-          if k3d image import "kurtosistech/core:$kurtosis_version" \
-                              "kurtosistech/engine:$kurtosis_version" \
-                              "kurtosistech/files-artifacts-expander:$kurtosis_version" 2>&1; then
-            echo "Images imported successfully on attempt ${i}"
-            break
+          if k3d image import --mode direct "${images[@]}" 2>&1; then
+            missing=0
+            for image in "${images[@]}"; do
+              if ! docker exec k3d-k3s-default-server-0 crictl inspecti "docker.io/${image}" >/dev/null 2>&1; then
+                echo "Image ${image} not present in k3d node"
+                missing=1
+              fi
+            done
+            if [ "${missing}" = "0" ]; then
+              echo "Images imported successfully on attempt ${i}"
+              break
+            fi
           fi
           echo "Attempt ${i}: k3d image import failed, retrying in 5s..."
           sleep 5
