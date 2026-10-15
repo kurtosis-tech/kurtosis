@@ -22,7 +22,7 @@ updates:
       - "/name_generator"
       - "/path-compression"
     schedule:
-      interval: "monthly"
+      interval: "weekly"
     cooldown:
       default-days: 7
     groups:
@@ -45,7 +45,7 @@ updates:
       - "/enclave-manager/web"
       - "/internal_testsuites/typescript"
     schedule:
-      interval: "monthly"
+      interval: "weekly"
     cooldown:
       default-days: 7
     groups:
@@ -64,7 +64,7 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "monthly"
+      interval: "weekly"
     cooldown:
       default-days: 7
     groups:
