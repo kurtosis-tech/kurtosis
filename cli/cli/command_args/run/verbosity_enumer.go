@@ -34,15 +34,18 @@ func _VerbosityNoOp() {
 var _VerbosityValues = []Verbosity{Brief, Detailed, Executable, OutputOnly, Description}
 
 var _VerbosityNameToValueMap = map[string]Verbosity{
-	_VerbosityName[0:5]:        Brief,
+	_VerbosityName[0:5]:   Brief,
+	_VerbosityName[5:13]:  Detailed,
+	_VerbosityName[13:23]: Executable,
+	_VerbosityName[23:34]: OutputOnly,
+	_VerbosityName[34:45]: Description,
+}
+
+var _VerbosityLowerNameToValueMap = map[string]Verbosity{
 	_VerbosityLowerName[0:5]:   Brief,
-	_VerbosityName[5:13]:       Detailed,
 	_VerbosityLowerName[5:13]:  Detailed,
-	_VerbosityName[13:23]:      Executable,
 	_VerbosityLowerName[13:23]: Executable,
-	_VerbosityName[23:34]:      OutputOnly,
 	_VerbosityLowerName[23:34]: OutputOnly,
-	_VerbosityName[34:45]:      Description,
 	_VerbosityLowerName[34:45]: Description,
 }
 
@@ -61,7 +64,7 @@ func VerbosityString(s string) (Verbosity, error) {
 		return val, nil
 	}
 
-	if val, ok := _VerbosityNameToValueMap[strings.ToLower(s)]; ok {
+	if val, ok := _VerbosityLowerNameToValueMap[strings.ToLower(s)]; ok {
 		return val, nil
 	}
 	return 0, fmt.Errorf("%s does not belong to Verbosity values", s)

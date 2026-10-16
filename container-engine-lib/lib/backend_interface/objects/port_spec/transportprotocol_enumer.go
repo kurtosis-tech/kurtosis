@@ -32,11 +32,14 @@ func _TransportProtocolNoOp() {
 var _TransportProtocolValues = []TransportProtocol{TransportProtocol_TCP, TransportProtocol_SCTP, TransportProtocol_UDP}
 
 var _TransportProtocolNameToValueMap = map[string]TransportProtocol{
-	_TransportProtocolName[0:3]:       TransportProtocol_TCP,
+	_TransportProtocolName[0:3]:  TransportProtocol_TCP,
+	_TransportProtocolName[3:7]:  TransportProtocol_SCTP,
+	_TransportProtocolName[7:10]: TransportProtocol_UDP,
+}
+
+var _TransportProtocolLowerNameToValueMap = map[string]TransportProtocol{
 	_TransportProtocolLowerName[0:3]:  TransportProtocol_TCP,
-	_TransportProtocolName[3:7]:       TransportProtocol_SCTP,
 	_TransportProtocolLowerName[3:7]:  TransportProtocol_SCTP,
-	_TransportProtocolName[7:10]:      TransportProtocol_UDP,
 	_TransportProtocolLowerName[7:10]: TransportProtocol_UDP,
 }
 
@@ -53,7 +56,7 @@ func TransportProtocolString(s string) (TransportProtocol, error) {
 		return val, nil
 	}
 
-	if val, ok := _TransportProtocolNameToValueMap[strings.ToLower(s)]; ok {
+	if val, ok := _TransportProtocolLowerNameToValueMap[strings.ToLower(s)]; ok {
 		return val, nil
 	}
 	return 0, fmt.Errorf("%s does not belong to TransportProtocol values", s)

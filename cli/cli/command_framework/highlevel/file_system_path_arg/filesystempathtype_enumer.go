@@ -32,11 +32,14 @@ func _FileSystemPathTypeNoOp() {
 var _FileSystemPathTypeValues = []FileSystemPathType{FileSystemPathType_Filepath, FileSystemPathType_Dirpath, FileSystemPathType_FilepathOrDirpath}
 
 var _FileSystemPathTypeNameToValueMap = map[string]FileSystemPathType{
-	_FileSystemPathTypeName[0:8]:        FileSystemPathType_Filepath,
+	_FileSystemPathTypeName[0:8]:   FileSystemPathType_Filepath,
+	_FileSystemPathTypeName[8:15]:  FileSystemPathType_Dirpath,
+	_FileSystemPathTypeName[15:34]: FileSystemPathType_FilepathOrDirpath,
+}
+
+var _FileSystemPathTypeLowerNameToValueMap = map[string]FileSystemPathType{
 	_FileSystemPathTypeLowerName[0:8]:   FileSystemPathType_Filepath,
-	_FileSystemPathTypeName[8:15]:       FileSystemPathType_Dirpath,
 	_FileSystemPathTypeLowerName[8:15]:  FileSystemPathType_Dirpath,
-	_FileSystemPathTypeName[15:34]:      FileSystemPathType_FilepathOrDirpath,
 	_FileSystemPathTypeLowerName[15:34]: FileSystemPathType_FilepathOrDirpath,
 }
 
@@ -53,7 +56,7 @@ func FileSystemPathTypeString(s string) (FileSystemPathType, error) {
 		return val, nil
 	}
 
-	if val, ok := _FileSystemPathTypeNameToValueMap[strings.ToLower(s)]; ok {
+	if val, ok := _FileSystemPathTypeLowerNameToValueMap[strings.ToLower(s)]; ok {
 		return val, nil
 	}
 	return 0, fmt.Errorf("%s does not belong to FileSystemPathType values", s)

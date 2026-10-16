@@ -32,11 +32,14 @@ func _EnclaveStatusNoOp() {
 var _EnclaveStatusValues = []EnclaveStatus{EnclaveStatus_Empty, EnclaveStatus_Running, EnclaveStatus_Stopped}
 
 var _EnclaveStatusNameToValueMap = map[string]EnclaveStatus{
-	_EnclaveStatusName[0:5]:        EnclaveStatus_Empty,
+	_EnclaveStatusName[0:5]:   EnclaveStatus_Empty,
+	_EnclaveStatusName[5:12]:  EnclaveStatus_Running,
+	_EnclaveStatusName[12:19]: EnclaveStatus_Stopped,
+}
+
+var _EnclaveStatusLowerNameToValueMap = map[string]EnclaveStatus{
 	_EnclaveStatusLowerName[0:5]:   EnclaveStatus_Empty,
-	_EnclaveStatusName[5:12]:       EnclaveStatus_Running,
 	_EnclaveStatusLowerName[5:12]:  EnclaveStatus_Running,
-	_EnclaveStatusName[12:19]:      EnclaveStatus_Stopped,
 	_EnclaveStatusLowerName[12:19]: EnclaveStatus_Stopped,
 }
 
@@ -53,7 +56,7 @@ func EnclaveStatusString(s string) (EnclaveStatus, error) {
 		return val, nil
 	}
 
-	if val, ok := _EnclaveStatusNameToValueMap[strings.ToLower(s)]; ok {
+	if val, ok := _EnclaveStatusLowerNameToValueMap[strings.ToLower(s)]; ok {
 		return val, nil
 	}
 	return 0, fmt.Errorf("%s does not belong to EnclaveStatus values", s)
