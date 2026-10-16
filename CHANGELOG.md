@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.22.0](https://github.com/kurtosis-tech/kurtosis/compare/1.21.0...1.22.0) (2026-10-15)
+
+
+### Features
+
+* **logs/k8s:** emit kurtosis_service_name + kurtosis_enclave_name on collected logs ([#3156](https://github.com/kurtosis-tech/kurtosis/issues/3156)) ([b2a1d81](https://github.com/kurtosis-tech/kurtosis/commit/b2a1d8111c720ee05d9f4110f30cedbe2bd81b61))
+
+
+### Bug Fixes
+
+* restore npm package publishing after setup-node v7 dropped the placeholder auth token ([#3264](https://github.com/kurtosis-tech/kurtosis/issues/3264)) ([e8a5ecf](https://github.com/kurtosis-tech/kurtosis/commit/e8a5ecf15fe483ee039986913a7cb37daba96479))
+
 ## [1.21.0](https://github.com/kurtosis-tech/kurtosis/compare/1.20.0...1.21.0) (2026-10-14)
 
 
