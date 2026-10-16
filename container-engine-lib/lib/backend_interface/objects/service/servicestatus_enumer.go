@@ -32,11 +32,14 @@ func _ServiceStatusNoOp() {
 var _ServiceStatusValues = []ServiceStatus{ServiceStatus_Registered, ServiceStatus_Started, ServiceStatus_Stopped}
 
 var _ServiceStatusNameToValueMap = map[string]ServiceStatus{
-	_ServiceStatusName[0:10]:       ServiceStatus_Registered,
+	_ServiceStatusName[0:10]:  ServiceStatus_Registered,
+	_ServiceStatusName[10:17]: ServiceStatus_Started,
+	_ServiceStatusName[17:24]: ServiceStatus_Stopped,
+}
+
+var _ServiceStatusLowerNameToValueMap = map[string]ServiceStatus{
 	_ServiceStatusLowerName[0:10]:  ServiceStatus_Registered,
-	_ServiceStatusName[10:17]:      ServiceStatus_Started,
 	_ServiceStatusLowerName[10:17]: ServiceStatus_Started,
-	_ServiceStatusName[17:24]:      ServiceStatus_Stopped,
 	_ServiceStatusLowerName[17:24]: ServiceStatus_Stopped,
 }
 
@@ -53,7 +56,7 @@ func ServiceStatusString(s string) (ServiceStatus, error) {
 		return val, nil
 	}
 
-	if val, ok := _ServiceStatusNameToValueMap[strings.ToLower(s)]; ok {
+	if val, ok := _ServiceStatusLowerNameToValueMap[strings.ToLower(s)]; ok {
 		return val, nil
 	}
 	return 0, fmt.Errorf("%s does not belong to ServiceStatus values", s)

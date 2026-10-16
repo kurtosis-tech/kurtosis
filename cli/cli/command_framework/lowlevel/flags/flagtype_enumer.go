@@ -33,13 +33,16 @@ func _FlagTypeNoOp() {
 var _FlagTypeValues = []FlagType{FlagType_String, FlagType_Uint8, FlagType_Uint32, FlagType_Bool}
 
 var _FlagTypeNameToValueMap = map[string]FlagType{
-	_FlagTypeName[0:6]:        FlagType_String,
+	_FlagTypeName[0:6]:   FlagType_String,
+	_FlagTypeName[6:11]:  FlagType_Uint8,
+	_FlagTypeName[11:17]: FlagType_Uint32,
+	_FlagTypeName[17:21]: FlagType_Bool,
+}
+
+var _FlagTypeLowerNameToValueMap = map[string]FlagType{
 	_FlagTypeLowerName[0:6]:   FlagType_String,
-	_FlagTypeName[6:11]:       FlagType_Uint8,
 	_FlagTypeLowerName[6:11]:  FlagType_Uint8,
-	_FlagTypeName[11:17]:      FlagType_Uint32,
 	_FlagTypeLowerName[11:17]: FlagType_Uint32,
-	_FlagTypeName[17:21]:      FlagType_Bool,
 	_FlagTypeLowerName[17:21]: FlagType_Bool,
 }
 
@@ -57,7 +60,7 @@ func FlagTypeString(s string) (FlagType, error) {
 		return val, nil
 	}
 
-	if val, ok := _FlagTypeNameToValueMap[strings.ToLower(s)]; ok {
+	if val, ok := _FlagTypeLowerNameToValueMap[strings.ToLower(s)]; ok {
 		return val, nil
 	}
 	return 0, fmt.Errorf("%s does not belong to FlagType values", s)

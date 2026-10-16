@@ -39,25 +39,28 @@ func _ConfigVersionNoOp() {
 var _ConfigVersionValues = []ConfigVersion{ConfigVersion_v0, ConfigVersion_v1, ConfigVersion_v2, ConfigVersion_v3, ConfigVersion_v4, ConfigVersion_v5, ConfigVersion_v6, ConfigVersion_v7, ConfigVersion_v8, ConfigVersion_v9}
 
 var _ConfigVersionNameToValueMap = map[string]ConfigVersion{
-	_ConfigVersionName[0:16]:         ConfigVersion_v0,
+	_ConfigVersionName[0:16]:    ConfigVersion_v0,
+	_ConfigVersionName[16:32]:   ConfigVersion_v1,
+	_ConfigVersionName[32:48]:   ConfigVersion_v2,
+	_ConfigVersionName[48:64]:   ConfigVersion_v3,
+	_ConfigVersionName[64:80]:   ConfigVersion_v4,
+	_ConfigVersionName[80:96]:   ConfigVersion_v5,
+	_ConfigVersionName[96:112]:  ConfigVersion_v6,
+	_ConfigVersionName[112:128]: ConfigVersion_v7,
+	_ConfigVersionName[128:144]: ConfigVersion_v8,
+	_ConfigVersionName[144:160]: ConfigVersion_v9,
+}
+
+var _ConfigVersionLowerNameToValueMap = map[string]ConfigVersion{
 	_ConfigVersionLowerName[0:16]:    ConfigVersion_v0,
-	_ConfigVersionName[16:32]:        ConfigVersion_v1,
 	_ConfigVersionLowerName[16:32]:   ConfigVersion_v1,
-	_ConfigVersionName[32:48]:        ConfigVersion_v2,
 	_ConfigVersionLowerName[32:48]:   ConfigVersion_v2,
-	_ConfigVersionName[48:64]:        ConfigVersion_v3,
 	_ConfigVersionLowerName[48:64]:   ConfigVersion_v3,
-	_ConfigVersionName[64:80]:        ConfigVersion_v4,
 	_ConfigVersionLowerName[64:80]:   ConfigVersion_v4,
-	_ConfigVersionName[80:96]:        ConfigVersion_v5,
 	_ConfigVersionLowerName[80:96]:   ConfigVersion_v5,
-	_ConfigVersionName[96:112]:       ConfigVersion_v6,
 	_ConfigVersionLowerName[96:112]:  ConfigVersion_v6,
-	_ConfigVersionName[112:128]:      ConfigVersion_v7,
 	_ConfigVersionLowerName[112:128]: ConfigVersion_v7,
-	_ConfigVersionName[128:144]:      ConfigVersion_v8,
 	_ConfigVersionLowerName[128:144]: ConfigVersion_v8,
-	_ConfigVersionName[144:160]:      ConfigVersion_v9,
 	_ConfigVersionLowerName[144:160]: ConfigVersion_v9,
 }
 
@@ -81,7 +84,7 @@ func ConfigVersionString(s string) (ConfigVersion, error) {
 		return val, nil
 	}
 
-	if val, ok := _ConfigVersionNameToValueMap[strings.ToLower(s)]; ok {
+	if val, ok := _ConfigVersionLowerNameToValueMap[strings.ToLower(s)]; ok {
 		return val, nil
 	}
 	return 0, fmt.Errorf("%s does not belong to ConfigVersion values", s)

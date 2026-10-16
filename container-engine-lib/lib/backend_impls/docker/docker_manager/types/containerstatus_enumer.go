@@ -36,19 +36,22 @@ func _ContainerStatusNoOp() {
 var _ContainerStatusValues = []ContainerStatus{ContainerStatus_Paused, ContainerStatus_Restarting, ContainerStatus_Running, ContainerStatus_Removing, ContainerStatus_Dead, ContainerStatus_Created, ContainerStatus_Exited}
 
 var _ContainerStatusNameToValueMap = map[string]ContainerStatus{
-	_ContainerStatusName[0:6]:        ContainerStatus_Paused,
+	_ContainerStatusName[0:6]:   ContainerStatus_Paused,
+	_ContainerStatusName[6:16]:  ContainerStatus_Restarting,
+	_ContainerStatusName[16:23]: ContainerStatus_Running,
+	_ContainerStatusName[23:31]: ContainerStatus_Removing,
+	_ContainerStatusName[31:35]: ContainerStatus_Dead,
+	_ContainerStatusName[35:42]: ContainerStatus_Created,
+	_ContainerStatusName[42:48]: ContainerStatus_Exited,
+}
+
+var _ContainerStatusLowerNameToValueMap = map[string]ContainerStatus{
 	_ContainerStatusLowerName[0:6]:   ContainerStatus_Paused,
-	_ContainerStatusName[6:16]:       ContainerStatus_Restarting,
 	_ContainerStatusLowerName[6:16]:  ContainerStatus_Restarting,
-	_ContainerStatusName[16:23]:      ContainerStatus_Running,
 	_ContainerStatusLowerName[16:23]: ContainerStatus_Running,
-	_ContainerStatusName[23:31]:      ContainerStatus_Removing,
 	_ContainerStatusLowerName[23:31]: ContainerStatus_Removing,
-	_ContainerStatusName[31:35]:      ContainerStatus_Dead,
 	_ContainerStatusLowerName[31:35]: ContainerStatus_Dead,
-	_ContainerStatusName[35:42]:      ContainerStatus_Created,
 	_ContainerStatusLowerName[35:42]: ContainerStatus_Created,
-	_ContainerStatusName[42:48]:      ContainerStatus_Exited,
 	_ContainerStatusLowerName[42:48]: ContainerStatus_Exited,
 }
 
@@ -69,7 +72,7 @@ func ContainerStatusString(s string) (ContainerStatus, error) {
 		return val, nil
 	}
 
-	if val, ok := _ContainerStatusNameToValueMap[strings.ToLower(s)]; ok {
+	if val, ok := _ContainerStatusLowerNameToValueMap[strings.ToLower(s)]; ok {
 		return val, nil
 	}
 	return 0, fmt.Errorf("%s does not belong to ContainerStatus values", s)

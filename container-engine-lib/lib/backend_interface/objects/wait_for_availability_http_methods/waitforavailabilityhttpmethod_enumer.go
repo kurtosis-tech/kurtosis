@@ -32,11 +32,14 @@ func _WaitForAvailabilityHttpMethodNoOp() {
 var _WaitForAvailabilityHttpMethodValues = []WaitForAvailabilityHttpMethod{WaitForAvailabilityHttpMethod_GET, WaitForAvailabilityHttpMethod_POST, WaitForAvailabilityHttpMethod_HEAD}
 
 var _WaitForAvailabilityHttpMethodNameToValueMap = map[string]WaitForAvailabilityHttpMethod{
-	_WaitForAvailabilityHttpMethodName[0:3]:       WaitForAvailabilityHttpMethod_GET,
+	_WaitForAvailabilityHttpMethodName[0:3]:  WaitForAvailabilityHttpMethod_GET,
+	_WaitForAvailabilityHttpMethodName[3:7]:  WaitForAvailabilityHttpMethod_POST,
+	_WaitForAvailabilityHttpMethodName[7:11]: WaitForAvailabilityHttpMethod_HEAD,
+}
+
+var _WaitForAvailabilityHttpMethodLowerNameToValueMap = map[string]WaitForAvailabilityHttpMethod{
 	_WaitForAvailabilityHttpMethodLowerName[0:3]:  WaitForAvailabilityHttpMethod_GET,
-	_WaitForAvailabilityHttpMethodName[3:7]:       WaitForAvailabilityHttpMethod_POST,
 	_WaitForAvailabilityHttpMethodLowerName[3:7]:  WaitForAvailabilityHttpMethod_POST,
-	_WaitForAvailabilityHttpMethodName[7:11]:      WaitForAvailabilityHttpMethod_HEAD,
 	_WaitForAvailabilityHttpMethodLowerName[7:11]: WaitForAvailabilityHttpMethod_HEAD,
 }
 
@@ -53,7 +56,7 @@ func WaitForAvailabilityHttpMethodString(s string) (WaitForAvailabilityHttpMetho
 		return val, nil
 	}
 
-	if val, ok := _WaitForAvailabilityHttpMethodNameToValueMap[strings.ToLower(s)]; ok {
+	if val, ok := _WaitForAvailabilityHttpMethodLowerNameToValueMap[strings.ToLower(s)]; ok {
 		return val, nil
 	}
 	return 0, fmt.Errorf("%s does not belong to WaitForAvailabilityHttpMethod values", s)

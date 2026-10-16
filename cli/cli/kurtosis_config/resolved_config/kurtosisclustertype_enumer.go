@@ -32,11 +32,14 @@ func _KurtosisClusterTypeNoOp() {
 var _KurtosisClusterTypeValues = []KurtosisClusterType{KurtosisClusterType_Docker, KurtosisClusterType_Kubernetes, KurtosisClusterType_Podman}
 
 var _KurtosisClusterTypeNameToValueMap = map[string]KurtosisClusterType{
-	_KurtosisClusterTypeName[0:6]:        KurtosisClusterType_Docker,
+	_KurtosisClusterTypeName[0:6]:   KurtosisClusterType_Docker,
+	_KurtosisClusterTypeName[6:16]:  KurtosisClusterType_Kubernetes,
+	_KurtosisClusterTypeName[16:22]: KurtosisClusterType_Podman,
+}
+
+var _KurtosisClusterTypeLowerNameToValueMap = map[string]KurtosisClusterType{
 	_KurtosisClusterTypeLowerName[0:6]:   KurtosisClusterType_Docker,
-	_KurtosisClusterTypeName[6:16]:       KurtosisClusterType_Kubernetes,
 	_KurtosisClusterTypeLowerName[6:16]:  KurtosisClusterType_Kubernetes,
-	_KurtosisClusterTypeName[16:22]:      KurtosisClusterType_Podman,
 	_KurtosisClusterTypeLowerName[16:22]: KurtosisClusterType_Podman,
 }
 
@@ -53,7 +56,7 @@ func KurtosisClusterTypeString(s string) (KurtosisClusterType, error) {
 		return val, nil
 	}
 
-	if val, ok := _KurtosisClusterTypeNameToValueMap[strings.ToLower(s)]; ok {
+	if val, ok := _KurtosisClusterTypeLowerNameToValueMap[strings.ToLower(s)]; ok {
 		return val, nil
 	}
 	return 0, fmt.Errorf("%s does not belong to KurtosisClusterType values", s)

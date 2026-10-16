@@ -31,9 +31,12 @@ func _ContainerStatusNoOp() {
 var _ContainerStatusValues = []ContainerStatus{ContainerStatus_Stopped, ContainerStatus_Running}
 
 var _ContainerStatusNameToValueMap = map[string]ContainerStatus{
-	_ContainerStatusName[0:7]:       ContainerStatus_Stopped,
+	_ContainerStatusName[0:7]:  ContainerStatus_Stopped,
+	_ContainerStatusName[7:14]: ContainerStatus_Running,
+}
+
+var _ContainerStatusLowerNameToValueMap = map[string]ContainerStatus{
 	_ContainerStatusLowerName[0:7]:  ContainerStatus_Stopped,
-	_ContainerStatusName[7:14]:      ContainerStatus_Running,
 	_ContainerStatusLowerName[7:14]: ContainerStatus_Running,
 }
 
@@ -49,7 +52,7 @@ func ContainerStatusString(s string) (ContainerStatus, error) {
 		return val, nil
 	}
 
-	if val, ok := _ContainerStatusNameToValueMap[strings.ToLower(s)]; ok {
+	if val, ok := _ContainerStatusLowerNameToValueMap[strings.ToLower(s)]; ok {
 		return val, nil
 	}
 	return 0, fmt.Errorf("%s does not belong to ContainerStatus values", s)

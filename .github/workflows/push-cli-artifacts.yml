@@ -71,6 +71,14 @@ jobs:
         if: inputs.dry-run
         run: cli/cli/scripts/build.sh true false
 
+      - name: Verify the release build leaves git clean
+        if: inputs.dry-run
+        run: |
+          if ! git diff --exit-code --stat; then
+            echo "::error::The CLI build modified tracked files, so goreleaser would refuse to publish (git is in a dirty state). Run 'go generate ./...' in cli/cli and commit the result."
+            exit 1
+          fi
+
       - name: Build and publish CLI
         if: ${{ !inputs.dry-run }}
         env:
