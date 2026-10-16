@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.22.1](https://github.com/kurtosis-tech/kurtosis/compare/1.22.0...1.22.1) (2026-10-16)
+
+
+### Bug Fixes
+
+* regenerate enumer code and catch a dirty CLI release build in CI ([#3277](https://github.com/kurtosis-tech/kurtosis/issues/3277)) ([f4730c9](https://github.com/kurtosis-tech/kurtosis/commit/f4730c931fb7ca7d5fcb7d3b05dadd9d2bba6dde))
+
 ## [1.22.0](https://github.com/kurtosis-tech/kurtosis/compare/1.21.0...1.22.0) (2026-10-15)
 
 
