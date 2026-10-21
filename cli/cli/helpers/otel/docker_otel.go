@@ -2,7 +2,9 @@ package otel
 
 import (
 	"context"
+	"crypto/sha256"
 	_ "embed"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
@@ -26,6 +28,7 @@ const (
 	bridgeNetworkName = "bridge"
 
 	clickHouseInitSQLMountPath = "/docker-entrypoint-initdb.d/init.sql"
+	clickHouseConfigMountPath  = "/etc/clickhouse-server/config.d/kurtosis-otel.xml"
 	collectorConfigMountPath   = "/etc/otelcol/config.yaml"
 
 	clickHouseMaxAvailabilityRetries    = 60
@@ -40,6 +43,7 @@ var CollectorContainerNamePrefix = fmt.Sprintf("%v-", CollectorContainerLabel)
 var clickHouseContainerLabels = map[string]string{
 	docker_label_key.ContainerTypeDockerLabelKey.GetString(): ClickHouseContainerLabel,
 }
+var clickHouseConfigHashLabelKey = docker_label_key.MustCreateNewDockerLabelKey("com.kurtosistech.otel-clickhouse-config-hash")
 var collectorContainerLabels = map[string]string{
 	docker_label_key.ContainerTypeDockerLabelKey.GetString(): CollectorContainerLabel,
 }
@@ -49,6 +53,14 @@ var clickHouseInitSQL string
 
 //go:embed files/collector-bootstrap-config.yaml
 var collectorBootstrapConfig string
+
+//go:embed files/clickhouse-config.xml
+var clickHouseConfig string
+
+var clickHouseConfigHash = func() string {
+	sum := sha256.Sum256([]byte(clickHouseConfig))
+	return hex.EncodeToString(sum[:])[:12]
+}()
 
 func StartOtelInDocker(ctx context.Context, dockerManager *docker_manager.DockerManager) (*Endpoints, error) {
 	clickHouseContainer, err := getContainerByLabel(ctx, dockerManager, clickHouseContainerLabels)
@@ -145,6 +157,11 @@ func createClickHouseContainer(ctx context.Context, dockerManager *docker_manage
 		return "", "", nil, stacktrace.Propagate(err, "An error occurred writing ClickHouse init SQL.")
 	}
 
+	configFilepath, err := writeTempFile("otel-clickhouse-config-*.xml", clickHouseConfig)
+	if err != nil {
+		return "", "", nil, stacktrace.Propagate(err, "An error occurred writing ClickHouse config.")
+	}
+
 	clickHouseUuid, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
 		return "", "", nil, stacktrace.Propagate(err, "An error occurred generating a uuid for otel ClickHouse.")
@@ -161,11 +178,15 @@ func createClickHouseContainer(ctx context.Context, dockerManager *docker_manage
 		}).
 		WithBindMounts(map[string]string{
 			initSQLFilepath: clickHouseInitSQLMountPath,
+			configFilepath:  clickHouseConfigMountPath,
 		}).
 		WithFetchingLatestImageIfMissing().
 		WithRestartPolicy(docker_manager.RestartOnFailure).
 		WithNetworkMode(bridgeNetworkName).
-		WithLabels(clickHouseContainerLabels).
+		WithLabels(map[string]string{
+			docker_label_key.ContainerTypeDockerLabelKey.GetString(): ClickHouseContainerLabel,
+			clickHouseConfigHashLabelKey.GetString():                 clickHouseConfigHash,
+		}).
 		Build()
 
 	clickHouseContainerId, _, err := dockerManager.CreateAndStartContainer(ctx, clickHouseArgs)
@@ -288,6 +309,9 @@ func getEndpointsOnBridgeNetwork(ctx context.Context, dockerManager *docker_mana
 func clickHouseContainerNeedsRecreation(clickHouseContainer *types.Container) bool {
 	if clickHouseContainer == nil {
 		return false
+	}
+	if clickHouseContainer.GetLabels()[clickHouseConfigHashLabelKey.GetString()] != clickHouseConfigHash {
+		return true
 	}
 	return !hasExpectedHostPortBinding(clickHouseContainer.GetHostPortBindings(), clickHouseHTTPPort, clickHouseHTTPHostPort)
 }
