@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.22.2](https://github.com/kurtosis-tech/kurtosis/compare/1.22.1...1.22.2) (2026-10-21)
+
+
+### Bug Fixes
+
+* build with Go 1.26.10 for the eMudhra CA compromise ([#3283](https://github.com/kurtosis-tech/kurtosis/issues/3283)) ([425efe3](https://github.com/kurtosis-tech/kurtosis/commit/425efe37cff212110ef1ba1317b5fe3e24a275e3))
+* stop otel ClickHouse from logging at trace level and filling system log tables ([#3285](https://github.com/kurtosis-tech/kurtosis/issues/3285)) ([0ad6888](https://github.com/kurtosis-tech/kurtosis/commit/0ad68887f78746bf38479d982b70b2ea35a9fa53))
+
 ## [1.22.1](https://github.com/kurtosis-tech/kurtosis/compare/1.22.0...1.22.1) (2026-10-16)
 
 
