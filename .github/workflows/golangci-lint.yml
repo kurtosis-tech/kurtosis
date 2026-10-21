@@ -63,6 +63,7 @@ jobs:
         if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
         with:
           go-version: '1.26'
+          check-latest: true
           cache-dependency-path: ${{ matrix.directory }}/go.sum
       # Generate versions
       - run: scripts/generate-kurtosis-version.sh

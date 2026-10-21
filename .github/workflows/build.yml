@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  GO_VERSION: '1.26.9'
+  GO_VERSION: '1.26.10'
   RUST_VERSION: '1.88.0'
   API_NODE_VERSION: '22.16.0'
   UI_NODE_VERSION: '22.16.0'
@@ -57,6 +57,7 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
+          check-latest: true
           cache: true
           cache-dependency-path: container-engine-lib/go.sum
 
@@ -73,6 +74,7 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
+          check-latest: true
           cache: true
           cache-dependency-path: contexts-config-store/go.sum
 
@@ -89,6 +91,7 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
+          check-latest: true
           cache: true
           cache-dependency-path: grpc-file-transfer/golang/go.sum
 
@@ -105,6 +108,7 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
+          check-latest: true
           cache: true
           cache-dependency-path: metrics-library/golang/go.sum
 
@@ -121,6 +125,7 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
+          check-latest: true
           cache: true
           cache-dependency-path: name_generator/go.sum
 
@@ -140,6 +145,7 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
+          check-latest: true
           cache: true
           cache-dependency-path: api/golang/go.sum
 
@@ -173,6 +179,7 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
+          check-latest: true
           cache: true
           cache-dependency-path: core/files_artifacts_expander/go.sum
 
@@ -216,6 +223,7 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
+          check-latest: true
           cache: true
           cache-dependency-path: core/launcher/go.sum
 
@@ -235,6 +243,7 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
+          check-latest: true
           cache: true
           cache-dependency-path: core/server/go.sum
 
@@ -315,6 +324,7 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
+          check-latest: true
           cache: true
           cache-dependency-path: engine/launcher/go.sum
 
@@ -334,6 +344,7 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
+          check-latest: true
           cache: true
           cache-dependency-path: engine/server/go.sum
 
@@ -385,6 +396,7 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
+          check-latest: true
           cache: true
           cache-dependency-path: cli/cli/go.sum
 
@@ -454,6 +466,7 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
+          check-latest: true
           cache: true
           cache-dependency-path: cli/cli/go.sum
 
@@ -506,7 +519,7 @@ jobs:
     if: needs.check-docs-only.outputs.has-code-changes == 'true'
     uses: ./.github/workflows/push-cli-artifacts.yml
     with:
-      go-version: '1.26.9'
+      go-version: '1.26.10'
       dry-run: true
 
   # ============================================================================
@@ -527,6 +540,7 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
+          check-latest: true
           cache: false
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -745,6 +759,7 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
+          check-latest: true
           cache: false
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -800,6 +815,7 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
+          check-latest: true
           cache: true
           cache-dependency-path: internal_testsuites/golang/go.sum
 
@@ -861,6 +877,7 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
+          check-latest: true
           cache: true
           cache-dependency-path: internal_testsuites/golang/go.sum
 
@@ -1055,6 +1072,7 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
+          check-latest: true
           cache: false
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -1157,6 +1175,7 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
+          check-latest: true
           cache: false
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -1241,6 +1260,7 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
+          check-latest: true
           cache: false
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
