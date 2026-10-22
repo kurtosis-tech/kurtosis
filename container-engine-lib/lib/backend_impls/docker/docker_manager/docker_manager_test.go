@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/network"
 	"github.com/docker/go-connections/nat"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -292,4 +293,18 @@ func TestBuildDeviceRequestsForAllGpus(t *testing.T) {
 	result := buildDeviceRequests(-1, nil, "nvidia")
 	require.Len(t, result, 1)
 	assert.Equal(t, -1, result[0].Count)
+}
+
+func TestFilterNetworksByExactName(t *testing.T) {
+	// Docker's name filter returns these for 'bridge' on a Docker Swarm node
+	dockerNetworks := []network.Inspect{
+		{ID: "a0b36d104fd2", Name: "bridge"},
+		{ID: "991089c092a0", Name: "docker_gwbridge"},
+	}
+
+	matchingNetworks := filterNetworksByExactName(dockerNetworks, "bridge")
+
+	require.Len(t, matchingNetworks, 1)
+	require.Equal(t, "a0b36d104fd2", matchingNetworks[0].ID)
+	require.Empty(t, filterNetworksByExactName(dockerNetworks, "gwbridge"))
 }
