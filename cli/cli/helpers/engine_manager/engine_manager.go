@@ -132,12 +132,12 @@ func (manager *EngineManager) SetSkipConfiguredOtel(skip bool) {
 }
 
 func (manager *EngineManager) startConfiguredOtel(ctx context.Context, clusterType resolved_config.KurtosisClusterType, engineStatus EngineStatus) (logs_aggregator.Sinks, error) {
+	if manager.skipConfiguredOtel || manager.clusterConfig.GetBackendLogCollector() != resolved_config.BackendLogCollectorOtel {
+		return nil, nil
+	}
 	// The sinks are only consumed when a new engine is created. Checking the side containers on every CLI call
 	// costs several sequential Docker API requests, which adds up on a slow Docker daemon.
 	if engineStatus != EngineStatus_Stopped {
-		return nil, nil
-	}
-	if manager.skipConfiguredOtel || manager.clusterConfig.GetBackendLogCollector() != resolved_config.BackendLogCollectorOtel {
 		return nil, nil
 	}
 	otelEndpoints, err := otel.StartOtel(ctx, clusterType)
