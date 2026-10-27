@@ -417,6 +417,7 @@ func (manager *EnclaveManager) getExistingAndHistoricalEnclaveIdentifiersWithout
 		}
 		enclaveIdentifiersResult = append(enclaveIdentifiersResult, identifiers)
 	}
+	manager.allExistingAndHistoricalIdentifiers = enclaveIdentifiersResult
 
 	return enclaveIdentifiersResult, nil
 }
