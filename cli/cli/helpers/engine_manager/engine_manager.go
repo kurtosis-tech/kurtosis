@@ -131,8 +131,13 @@ func (manager *EngineManager) SetSkipConfiguredOtel(skip bool) {
 	manager.skipConfiguredOtel = skip
 }
 
-func (manager *EngineManager) startConfiguredOtel(ctx context.Context, clusterType resolved_config.KurtosisClusterType) (logs_aggregator.Sinks, error) {
+func (manager *EngineManager) startConfiguredOtel(ctx context.Context, clusterType resolved_config.KurtosisClusterType, engineStatus EngineStatus) (logs_aggregator.Sinks, error) {
 	if manager.skipConfiguredOtel || manager.clusterConfig.GetBackendLogCollector() != resolved_config.BackendLogCollectorOtel {
+		return nil, nil
+	}
+	// The sinks are only consumed when a new engine is created. Checking the side containers on every CLI call
+	// costs several sequential Docker API requests, which adds up on a slow Docker daemon.
+	if engineStatus != EngineStatus_Stopped {
 		return nil, nil
 	}
 	otelEndpoints, err := otel.StartOtel(ctx, clusterType)
@@ -241,7 +246,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(
 	}
 	additionalSinks = combineSinks(additionalSinks, lokiSink)
 
-	otelSink, err := manager.startConfiguredOtel(ctx, clusterType)
+	otelSink, err := manager.startConfiguredOtel(ctx, clusterType, status)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -314,7 +319,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 	}
 	additionalSinks = combineSinks(additionalSinks, lokiSink)
 
-	otelSink, err := manager.startConfiguredOtel(ctx, clusterType)
+	otelSink, err := manager.startConfiguredOtel(ctx, clusterType, status)
 	if err != nil {
 		return nil, nil, err
 	}
