@@ -7,6 +7,31 @@
   resolved "https://registry.npmjs.org/@bufbuild/buf-darwin-arm64/-/buf-darwin-arm64-1.26.1.tgz"
   integrity sha512-nmyWiT/59RFja0ZuXFxjNGoAMDPTApU66CZUUevkFVWbNB9nzeQDjx2vsJyACY64k5fTgZiaelSiyppwObQknw==
 
+"@bufbuild/buf-darwin-x64@1.26.1":
+  version "1.26.1"
+  resolved "https://registry.npmjs.org/@bufbuild/buf-darwin-x64/-/buf-darwin-x64-1.26.1.tgz"
+  integrity sha512-jl5WmUv30OW8JiRLid9+mVx1XVH0XttpUfkQfmqDFdUHGfdy4XWYK8kr84YyWu0SiMTIt1mPXkqG5UM3x+tdIQ==
+
+"@bufbuild/buf-linux-aarch64@1.26.1":
+  version "1.26.1"
+  resolved "https://registry.npmjs.org/@bufbuild/buf-linux-aarch64/-/buf-linux-aarch64-1.26.1.tgz"
+  integrity sha512-EedR2KDW/yDIxQKWuq1Y/g7IuwTgvelqylGVO7muMxt2JWShobyUaU6GIU8JB4yhIbqRQYCL2KqBsvDJbJtCUw==
+
+"@bufbuild/buf-linux-x64@1.26.1":
+  version "1.26.1"
+  resolved "https://registry.npmjs.org/@bufbuild/buf-linux-x64/-/buf-linux-x64-1.26.1.tgz"
+  integrity sha512-5iFL+MmWqR4cBLVNpgsjRecdHgcTxFaIkVYlQV9q8acbaJn5rgOIjUr1tzcBao9YsL3rdBhHvKkgnQ9gi1IiTw==
+
+"@bufbuild/buf-win32-arm64@1.26.1":
+  version "1.26.1"
+  resolved "https://registry.npmjs.org/@bufbuild/buf-win32-arm64/-/buf-win32-arm64-1.26.1.tgz"
+  integrity sha512-/ayymSD12gBetN98ErkH0CBGRLTmtYAp4fmbPuvq8zuJcL0eiAnK6d7ZFjTc+vDMuKY/aelQN7dj9WhzdYAQSQ==
+
+"@bufbuild/buf-win32-x64@1.26.1":
+  version "1.26.1"
+  resolved "https://registry.npmjs.org/@bufbuild/buf-win32-x64/-/buf-win32-x64-1.26.1.tgz"
+  integrity sha512-k9Dy3Z9P96wYR43lUhUo0jbjMSo001+MRBlsadEYiw85POqx6RWVaGyHLrxC2Ly7g+aGMisey050OjqfCWtKTA==
+
 "@bufbuild/buf@^1.26.1":
   version "1.26.1"
   resolved "https://registry.npmjs.org/@bufbuild/buf/-/buf-1.26.1.tgz"
@@ -762,13 +787,6 @@ protobufjs@^7.5.3:
     "@types/node" ">=13.7.0"
     long "^5.3.2"
 
-randombytes@^2.1.0:
-  version "2.1.0"
-  resolved "https://registry.npmjs.org/randombytes/-/randombytes-2.1.0.tgz"
-  integrity sha512-vYl3iOX+4CKUWuxGi9Ukhie6fsqXqS9FE2Zaic4tNFD2N2QQaXOMFbuKK4QmDHC0JO6B1Zp41J0LpT0oR68amQ==
-  dependencies:
-    safe-buffer "^5.1.0"
-
 readdirp@^4.0.1:
   version "4.1.2"
   resolved "https://registry.npmjs.org/readdirp/-/readdirp-4.1.2.tgz"
@@ -779,11 +797,6 @@ require-directory@^2.1.1:
   resolved "https://registry.npmjs.org/require-directory/-/require-directory-2.1.1.tgz"
   integrity sha512-fGxEI7+wsG9xrvdjsrlmL22OMTTiHRwAMroiEeMgq8gzoLC/PQr7RsRDSTLUg/bZAZtF+TVIkHc6/4RIKrui+Q==
 
-safe-buffer@^5.1.0:
-  version "5.2.1"
-  resolved "https://registry.npmjs.org/safe-buffer/-/safe-buffer-5.2.1.tgz"
-  integrity sha512-rp3So07KcdmmKbGvgaNxQSJr7bGVSVk5S9Eq1F+ppbRo70+YeaDxkw5Dd8NPN+GD6bjnYm2VuPuCXmpuYvmCXQ==
-
 semver@^7.3.5:
   version "7.5.2"
   resolved "https://registry.npmjs.org/semver/-/semver-7.5.2.tgz"
@@ -791,12 +804,10 @@ semver@^7.3.5:
   dependencies:
     lru-cache "^6.0.0"
 
-serialize-javascript@^6.0.2:
-  version "6.0.2"
-  resolved "https://registry.npmjs.org/serialize-javascript/-/serialize-javascript-6.0.2.tgz"
-  integrity sha512-Saa1xPByTTq2gdeFZYLLo+RFE35NHZkAbqZeWNd3BpzppeVisAqpDjcp8dyf6uIvEqJRd46jemmyA4iFIeVk8g==
-  dependencies:
-    randombytes "^2.1.0"
+serialize-javascript@^7.1.3:
+  version "7.1.4"
+  resolved "https://registry.npmjs.org/serialize-javascript/-/serialize-javascript-7.1.4.tgz"
+  integrity sha512-FqlEuoTq/zRmA4Lg6aOqyH3lCHbUtCB0bmHCeFniX2GBdDqMJM3FwdvEhlE5Pim1dlt2FfBdVPmUNNiGhhKqpw==
 
 shebang-command@^2.0.0:
   version "2.0.0"
@@ -898,7 +909,7 @@ ts-mocha@^11.1.0:
   resolved "https://registry.npmjs.org/ts-mocha/-/ts-mocha-11.1.0.tgz"
   integrity sha512-yT7FfzNRCu8ZKkYvAOiH01xNma/vLq6Vit7yINKYFNVP8e5UyrYXSOMIipERTpzVKJQ4Qcos5bQo1tNERNZevQ==
 
-"ts-node@^7.X.X || ^8.X.X || ^9.X.X || ^10.X.X":
+ts-node@^10.9.2, "ts-node@^7.X.X || ^8.X.X || ^9.X.X || ^10.X.X":
   version "10.9.2"
   resolved "https://registry.npmjs.org/ts-node/-/ts-node-10.9.2.tgz"
   integrity sha512-f0FFpIdcHgn8zcPSbf1dRevwt047YMnaiJM3u2w2RewrB+fob/zePZcrOyQoLMMO7aBIddLcQIEK5dYjkLnGrQ==

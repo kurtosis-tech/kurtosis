@@ -58,7 +58,7 @@ require (
 	github.com/kurtosis-tech/kurtosis/enclave-manager/server v0.0.0-00010101000000-000000000000
 	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang v0.0.0-20230803130419-099ee7a4e3dc
 	github.com/kurtosis-tech/kurtosis/metrics-library/golang v0.0.0-20231206095907-9bdf0d02cb90
-	github.com/labstack/echo/v4 v4.16.0
+	github.com/labstack/echo/v4 v4.16.1
 	github.com/rs/cors v1.11.1
 	github.com/spf13/afero v1.15.0
 	golang.org/x/exp v0.0.0-20260603202125-055de637280b
