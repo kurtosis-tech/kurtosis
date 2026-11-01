@@ -366,7 +366,7 @@ func (manager *DockerManager) ListUnusedImages(ctx context.Context) ([]image.Sum
 
 /*
 GetNetworksByName
-Returns Network list matching the given name (if any).
+Returns Network list whose name is exactly the given name (if any).
 */
 // TODO Combine with GetNetworksByLabel using a search filter builder
 func (manager *DockerManager) GetNetworksByName(ctx context.Context, name string) ([]*docker_manager_types.Network, error) {
@@ -378,6 +378,8 @@ func (manager *DockerManager) GetNetworksByName(ctx context.Context, name string
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred checking for existence of network with name %v", name)
 	}
+	// Docker's name filter matches substrings, e.g. 'bridge' also matches Docker Swarm's 'docker_gwbridge'
+	dockerNetworks = filterNetworksByExactName(dockerNetworks, name)
 
 	networks, err := newNetworkListFromDockerNetworkList(dockerNetworks)
 	if err != nil {
@@ -2321,6 +2323,16 @@ func getLabelsFilterArgs(searchFilterKey string, labels map[string]string) filte
 	}
 	labelsFilterList := filters.NewArgs(filtersArgs...)
 	return labelsFilterList
+}
+
+func filterNetworksByExactName(dockerNetworks []network.Inspect, name string) []network.Inspect {
+	matchingNetworks := []network.Inspect{}
+	for _, dockerNetwork := range dockerNetworks {
+		if dockerNetwork.Name == name {
+			matchingNetworks = append(matchingNetworks, dockerNetwork)
+		}
+	}
+	return matchingNetworks
 }
 
 func newNetworkListFromDockerNetworkList(dockerNetworks []network.Inspect) ([]*docker_manager_types.Network, error) {
