@@ -210,7 +210,7 @@ func (network *DefaultServiceNetwork) AddServices(
 		return map[service.ServiceName]*service.Service{}, failedServices, nil
 	}
 
-	startedServicesPerUuid, failedServicePerUuid := network.startRegisteredServices(ctx, servicesToStart, batchSize)
+	startedServicesPerUuid, failedServicePerUuid := network.startRegisteredServices(ctx, servicesToStart, batchSize, true)
 
 	for serviceName, serviceRegistration := range serviceSuccessfullyRegistered {
 		serviceUuid := serviceRegistration.GetUUID()
@@ -370,7 +370,7 @@ func (network *DefaultServiceNetwork) UpdateServices(ctx context.Context, update
 		}
 		serviceToRecreate[serviceUuid] = newServiceConfig
 	}
-	recreatedService, failedToRecreateService := network.startRegisteredServices(ctx, serviceToRecreate, batchSize)
+	recreatedService, failedToRecreateService := network.startRegisteredServices(ctx, serviceToRecreate, batchSize, false)
 	for serviceUuid, failedToRecreateServiceErr := range failedToRecreateService {
 		serviceName, found := serviceUuidToNameMap[serviceUuid]
 		if !found {
@@ -1085,6 +1085,7 @@ func (network *DefaultServiceNetwork) startRegisteredServices(
 	ctx context.Context,
 	serviceConfigs map[service.ServiceUUID]*service.ServiceConfig,
 	batchSize int,
+	stopOnFirstFailure bool,
 ) (map[service.ServiceUUID]*service.Service, map[service.ServiceUUID]error) {
 	wg := sync.WaitGroup{}
 
@@ -1100,14 +1101,20 @@ func (network *DefaultServiceNetwork) startRegisteredServices(
 		serviceToStartUuid := serviceUuid
 		serviceToStartConfig := serviceConfig
 
-		if len(failedServices) > 0 {
-			// stop scheduling more service start
-			// as one already failed, the full batch will be reverted anyway so no need to continue any further
-			break
-		}
 		// The concurrencyControlChan will block if the buffer is currently full, i.e. if maxConcurrentServiceStart
 		// subroutines are already running in the background
 		concurrencyControlChan <- true
+		if stopOnFirstFailure {
+			mapWriteMutex.Lock()
+			hasFailure := len(failedServices) > 0
+			mapWriteMutex.Unlock()
+			if hasFailure {
+				// stop scheduling more service start
+				// as one already failed, the full batch will be reverted anyway so no need to continue any further
+				<-concurrencyControlChan
+				break
+			}
+		}
 		wg.Add(1)
 		go func() {
 			defer func() {
