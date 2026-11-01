@@ -410,6 +410,9 @@ type ServiceInfo struct {
 	BindMounts *map[string]string `json:"bind_mounts,omitempty"`
 	Container  Container          `json:"container"`
 
+	// HostCgroupNamespace Whether the service was started in the Docker host cgroup namespace.
+	HostCgroupNamespace *bool `json:"host_cgroup_namespace,omitempty"`
+
 	// HostPidNamespace Whether the service was started in the Docker host PID namespace.
 	HostPidNamespace *bool `json:"host_pid_namespace,omitempty"`
 
