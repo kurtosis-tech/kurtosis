@@ -714,8 +714,11 @@ jobs:
           if [ $number_skipped_instructions -ne 7 ]; then exit 1; fi
 
       # Clean all at the end
+      # The otel side containers outlive `clean -a` and the engine; only `otel stop` removes them
       - name: Final cleanup
-        run: ${KURTOSIS_BINPATH} clean -a
+        run: |
+          ${KURTOSIS_BINPATH} clean -a
+          ${KURTOSIS_BINPATH} otel stop
 
       # Verify cleanup
       - name: Verify cleanup - containers
@@ -1132,6 +1135,7 @@ jobs:
         run: |
           ${KURTOSIS_BINPATH} clean -a
           ${KURTOSIS_BINPATH} engine stop
+          ${KURTOSIS_BINPATH} otel stop
 
       # Verify cleanup
       - name: Verify containers cleaned

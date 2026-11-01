@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
@@ -31,8 +30,6 @@ const (
 	localhostAddr     = "127.0.0.1"
 	rootUserUid       = 0
 )
-
-var EmptyDockerClientOpts = []client.Opt{}
 
 var LokiContainerNamePrefix = fmt.Sprintf("%v-", LokiContainerLabel)
 var GrafanaContainerNamePrefix = fmt.Sprintf("%v-", GrafanaContainerLabel)

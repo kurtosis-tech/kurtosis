@@ -104,6 +104,15 @@ func getLocalDockerKurtosisBackend(
 	optionalApiContainerModeArgs *APIContainerModeArgs,
 	usePodmanMode bool,
 ) (backend_interface.KurtosisBackend, error) {
+	localDockerBackend, err := getDockerKurtosisBackend(GetLocalDockerClientOpts(), optionalApiContainerModeArgs, usePodmanMode)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Unable to build local Kurtosis Docker backend")
+	}
+	return localDockerBackend, nil
+}
+
+// GetLocalDockerClientOpts returns the Docker client options used to connect to the local Docker (or Podman) daemon
+func GetLocalDockerClientOpts() []client.Opt {
 	dockerClientOpts := []client.Opt{
 		client.WithAPIVersionNegotiation(),
 	}
@@ -133,12 +142,7 @@ func getLocalDockerKurtosisBackend(
 			client.EnvOverrideHost)
 		dockerClientOpts = append(dockerClientOpts, client.FromEnv)
 	}
-
-	localDockerBackend, err := getDockerKurtosisBackend(dockerClientOpts, optionalApiContainerModeArgs, usePodmanMode)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unable to build local Kurtosis Docker backend")
-	}
-	return localDockerBackend, nil
+	return dockerClientOpts
 }
 
 // getRemoteDockerKurtosisBackend is a Docker backend running on a remote host

@@ -3,8 +3,8 @@ package otel
 import (
 	"context"
 
-	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/stacktrace"
@@ -35,8 +35,6 @@ const (
 	unsupportedClusterTypeErrorMsg = "kurtosis otel is Docker-only; current cluster backend is '%v'."
 )
 
-var emptyDockerClientOpts = []client.Opt{}
-
 type Endpoints struct {
 	ClickHouseHTTPURL       string
 	ClickHouseNativeAddress string
@@ -48,7 +46,7 @@ type Endpoints struct {
 func StartOtel(ctx context.Context, clusterType resolved_config.KurtosisClusterType) (*Endpoints, error) {
 	switch clusterType {
 	case resolved_config.KurtosisClusterType_Docker:
-		dockerManager, err := docker_manager.CreateDockerManager(emptyDockerClientOpts)
+		dockerManager, err := docker_manager.CreateDockerManager(backend_creator.GetLocalDockerClientOpts())
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating the Docker manager to start otel.")
 		}
@@ -67,7 +65,7 @@ func StartOtel(ctx context.Context, clusterType resolved_config.KurtosisClusterT
 func StopOtel(ctx context.Context, clusterType resolved_config.KurtosisClusterType) error {
 	switch clusterType {
 	case resolved_config.KurtosisClusterType_Docker:
-		dockerManager, err := docker_manager.CreateDockerManager(emptyDockerClientOpts)
+		dockerManager, err := docker_manager.CreateDockerManager(backend_creator.GetLocalDockerClientOpts())
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred creating the Docker manager to stop otel.")
 		}
