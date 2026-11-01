@@ -20,5 +20,8 @@
   },
   "dependencies": {
     "picomatch": "2.3.2"
+  },
+  "resolutions": {
+    "@tootallnate/once": "^2.0.1"
   }
 }
