@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.22.3](https://github.com/kurtosis-tech/kurtosis/compare/1.22.2...1.22.3) (2026-11-02)
+
+
+### Bug Fixes
+
+* bump dependencies with open security advisories ([#3295](https://github.com/kurtosis-tech/kurtosis/issues/3295)) ([fb5a582](https://github.com/kurtosis-tech/kurtosis/commit/fb5a582fa65e82e47e1a4acbdddf3d3b07480468))
+* bump follow-redirects to 1.16.2 in docs ([#3300](https://github.com/kurtosis-tech/kurtosis/issues/3300)) ([3b0f7f1](https://github.com/kurtosis-tech/kurtosis/commit/3b0f7f13d7d796b035437dc354fcb6f9820864e9))
+* honor DOCKER_HOST in otel and grafloki side containers ([#3294](https://github.com/kurtosis-tech/kurtosis/issues/3294)) ([f206e63](https://github.com/kurtosis-tech/kurtosis/commit/f206e63a0a1667591221fd7b256dfbe3f278943a))
+* keep pre-existing enclaves resolvable after an engine restart ([#3279](https://github.com/kurtosis-tech/kurtosis/issues/3279)) ([96ce60a](https://github.com/kurtosis-tech/kurtosis/commit/96ce60a25b44d1de82d274ddd186e291900cf35a))
+* match the engine's bridge network by exact name ([#3286](https://github.com/kurtosis-tech/kurtosis/issues/3286)) ([0a7861a](https://github.com/kurtosis-tech/kurtosis/commit/0a7861a2cfbca488820dfa0b2ae056632da40e4a))
+* stop update_service from dropping services when another restart fails ([#3301](https://github.com/kurtosis-tech/kurtosis/issues/3301)) ([f51f9ce](https://github.com/kurtosis-tech/kurtosis/commit/f51f9ceae88dd057a228bda2a481b2bc621eaabd))
+
 ## [1.22.2](https://github.com/kurtosis-tech/kurtosis/compare/1.22.1...1.22.2) (2026-10-21)
 
 
