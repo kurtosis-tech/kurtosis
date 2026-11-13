@@ -22,3 +22,6 @@ export {ServiceLog} from "./engine/lib/kurtosis_context/service_log";
 export { LogLineFilter } from "./engine/lib/kurtosis_context/log_line_filter";
 
 export { EnclaveAPIContainerHostMachineInfo } from "./engine/kurtosis_engine_rpc_api_bindings/engine_service_pb"
+
+// Auth
+export { getAuthToken, getGrpcNodeAuthClientOptions } from "./auth/auth";
