@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.23.1](https://github.com/kurtosis-tech/kurtosis/compare/1.23.0...1.23.1) (2026-11-13)
+
+
+### Bug Fixes
+
+* make podman network lookup work with podman's Docker API ([#3306](https://github.com/kurtosis-tech/kurtosis/issues/3306)) ([256c260](https://github.com/kurtosis-tech/kurtosis/commit/256c260de0a5776fda948e16300ebfa982f4ee79))
+
 ## [1.23.0](https://github.com/kurtosis-tech/kurtosis/compare/1.22.2...1.23.0) (2026-11-13)
 
 
