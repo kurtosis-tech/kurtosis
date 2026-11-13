@@ -391,8 +391,17 @@ func StopOtelInDocker(ctx context.Context, dockerManager *docker_manager.DockerM
 		return stacktrace.Propagate(err, "An error occurred getting ClickHouse container by labels: %v", clickHouseContainerLabels)
 	}
 	if clickHouseContainer != nil {
+		dataVolumeName, err := dockerManager.GetContainerVolumeNameMountedAt(ctx, clickHouseContainer.GetId(), clickHouseDataDirpath)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting the data volume of otel ClickHouse container '%v'", clickHouseContainer.GetName())
+		}
 		if err := dockerManager.RemoveContainer(ctx, clickHouseContainer.GetName()); err != nil {
 			return stacktrace.Propagate(err, "An error occurred removing otel ClickHouse container '%v'", clickHouseContainer.GetName())
+		}
+		if dataVolumeName != "" {
+			if err := dockerManager.RemoveVolume(ctx, dataVolumeName); err != nil {
+				return stacktrace.Propagate(err, "An error occurred removing otel ClickHouse data volume '%v'", dataVolumeName)
+			}
 		}
 	}
 
