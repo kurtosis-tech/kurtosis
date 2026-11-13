@@ -29,6 +29,19 @@ type ApiContainerLauncher struct {
 	kurtosisBackend backend_interface.KurtosisBackend
 }
 
+func GetDefaultContainerImageAndTag() string {
+	return getContainerImageAndTag(kurtosis_version.KurtosisVersion)
+}
+
+func getContainerImageAndTag(imageVersionTag string) string {
+	return fmt.Sprintf(
+		"%v/%v:%v",
+		image_org.Get(),
+		containerImageName,
+		imageVersionTag,
+	)
+}
+
 func NewApiContainerLauncher(kurtosisBackend backend_interface.KurtosisBackend) *ApiContainerLauncher {
 	return &ApiContainerLauncher{kurtosisBackend: kurtosisBackend}
 }
@@ -119,12 +132,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	}
 	envVars[image_org.EnvVarName] = image_org.Get()
 
-	containerImageAndTag := fmt.Sprintf(
-		"%v/%v:%v",
-		image_org.Get(),
-		containerImageName,
-		imageVersionTag,
-	)
+	containerImageAndTag := getContainerImageAndTag(imageVersionTag)
 
 	logrus.Debugf("Launching Kurtosis API container...")
 	apiContainer, err := launcher.kurtosisBackend.CreateAPIContainer(

@@ -9,6 +9,8 @@ package docker_manager
 // PortPublishSpec
 type portPublishSpecType string
 
+const HostPortBindLoopbackLabelValue = "loopback"
+
 const (
 	// The port should not be published to the host machine at all
 	noPublishing portPublishSpecType = "NONE"

@@ -5,7 +5,9 @@ import (
 	"testing"
 
 	"github.com/docker/go-connections/nat"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
 	"github.com/stretchr/testify/require"
 )
 
@@ -19,5 +21,12 @@ func newClickHouseContainer(labels map[string]string) *types.Container {
 func TestClickHouseContainerNeedsRecreationOnConfigHashMismatch(t *testing.T) {
 	require.True(t, clickHouseContainerNeedsRecreation(newClickHouseContainer(map[string]string{})))
 	require.True(t, clickHouseContainerNeedsRecreation(newClickHouseContainer(map[string]string{clickHouseConfigHashLabelKey.GetString(): "stale"})))
-	require.False(t, clickHouseContainerNeedsRecreation(newClickHouseContainer(map[string]string{clickHouseConfigHashLabelKey.GetString(): clickHouseConfigHash})))
+	require.False(t, clickHouseContainerNeedsRecreation(newClickHouseContainer(map[string]string{
+		clickHouseConfigHashLabelKey.GetString():                clickHouseConfigHash,
+		docker_label_key.HostPortBindDockerLabelKey.GetString(): docker_manager.HostPortBindLoopbackLabelValue,
+	})))
+}
+
+func TestClickHouseContainerNeedsRecreationWhenNotPublishedOnLoopback(t *testing.T) {
+	require.True(t, clickHouseContainerNeedsRecreation(newClickHouseContainer(map[string]string{clickHouseConfigHashLabelKey.GetString(): clickHouseConfigHash})))
 }

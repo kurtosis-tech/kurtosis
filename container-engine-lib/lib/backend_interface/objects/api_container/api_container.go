@@ -29,6 +29,8 @@ type APIContainer struct {
 
 	// Identifies if this API container is running in a production mode enclave
 	isProductionEnclave bool
+
+	imageName string
 }
 
 func NewAPIContainer(
@@ -40,6 +42,7 @@ func NewAPIContainer(
 	publicGrpcPort *port_spec.PortSpec,
 	bridgeNetworkIpAddress net.IP,
 	isProductionEnclave bool,
+	imageName string,
 ) *APIContainer {
 	return &APIContainer{
 		enclaveId:              enclaveId,
@@ -50,7 +53,12 @@ func NewAPIContainer(
 		publicGrpcPort:         publicGrpcPort,
 		bridgeNetworkIpAddress: bridgeNetworkIpAddress,
 		isProductionEnclave:    isProductionEnclave,
+		imageName:              imageName,
 	}
+}
+
+func (apiContainer *APIContainer) GetImageName() string {
+	return apiContainer.imageName
 }
 
 func (apiContainer *APIContainer) GetEnclaveID() enclave.EnclaveUUID {

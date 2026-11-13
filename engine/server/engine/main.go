@@ -287,6 +287,8 @@ func runMain() error {
 		if err := enclaveManager.RestartAllEnclaveAPIContainers(ctx); err != nil {
 			return stacktrace.Propagate(err, "An error occurred restarting all API containers.")
 		}
+	} else if err := enclaveManager.RestartOutdatedEnclaveAPIContainers(ctx); err != nil {
+		return stacktrace.Propagate(err, "An error occurred restarting the API containers created by another Kurtosis version.")
 	}
 
 	go func() {

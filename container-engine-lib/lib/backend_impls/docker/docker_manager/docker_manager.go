@@ -26,6 +26,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/image"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/api/types/volume"
@@ -1038,8 +1039,29 @@ Args:
 	containerId: ID of Docker container to remove
 */
 func (manager *DockerManager) RemoveContainer(ctx context.Context, containerId string) error {
+	return manager.removeContainer(ctx, containerId, shouldRemoveAnonymousVolumesWhenRemovingContainers)
+}
+
+func (manager *DockerManager) RemoveContainerKeepingVolumes(ctx context.Context, containerId string) error {
+	return manager.removeContainer(ctx, containerId, false)
+}
+
+func (manager *DockerManager) GetContainerVolumeNameMountedAt(ctx context.Context, containerId string, containerDirpath string) (string, error) {
+	containerInfo, err := manager.InspectContainer(ctx, containerId)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred inspecting container '%v' to find the volume mounted at '%v'", containerId, containerDirpath)
+	}
+	for _, containerMount := range containerInfo.Mounts {
+		if containerMount.Type == mount.TypeVolume && containerMount.Destination == containerDirpath {
+			return containerMount.Name, nil
+		}
+	}
+	return "", nil
+}
+
+func (manager *DockerManager) removeContainer(ctx context.Context, containerId string, shouldRemoveAnonymousVolumes bool) error {
 	removeOpts := &container.RemoveOptions{
-		RemoveVolumes: shouldRemoveAnonymousVolumesWhenRemovingContainers,
+		RemoveVolumes: shouldRemoveAnonymousVolumes,
 		RemoveLinks:   shouldRemoveLinksWhenRemovingContainers,
 		Force:         shouldKillContainersWhenRemovingContainers,
 	}
