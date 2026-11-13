@@ -122,6 +122,7 @@ config = ServiceConfig(
     # This only applies to Docker; the port ids here must be a subset of `ports`
     # If no ports are provided; normal ports behavior will happen and the exposed ports will be randomly allocated
     # This doesn't work on Kubernetes!!!
+    # Public ports are published on 127.0.0.1 unless the PortSpec sets `host_ip`
     # OPTIONAL (Default: {})
     public_ports = {
         "grpc": PortSpec(

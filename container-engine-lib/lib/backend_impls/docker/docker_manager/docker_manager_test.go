@@ -308,3 +308,53 @@ func TestFilterNetworksByExactName(t *testing.T) {
 	require.Equal(t, "a0b36d104fd2", matchingNetworks[0].ID)
 	require.Empty(t, filterNetworksByExactName(dockerNetworks, "gwbridge"))
 }
+
+func TestLoopbackBindingsAreSelected(t *testing.T) {
+	port := nat.Port("9710/tcp")
+	portMap := nat.PortMap{
+		port: []nat.PortBinding{
+			{
+				HostIP:   "127.0.0.1",
+				HostPort: "9710",
+			},
+		},
+	}
+	hostPortBindings := getHostPortBindingsOnExpectedInterface(portMap)
+	require.Equal(t, 1, len(hostPortBindings))
+
+	binding, found := hostPortBindings[port]
+	require.True(t, found)
+	require.Equal(t, "127.0.0.1", binding.HostIP)
+	require.Equal(t, "9710", binding.HostPort)
+}
+
+func TestPublishSpecsBindToLoopbackUnlessAllInterfacesRequested(t *testing.T) {
+	require.Equal(t, "127.0.0.1", NewAutomaticPublishingSpec().getHostIp())
+	require.Equal(t, "127.0.0.1", NewManualPublishingSpec(9710).getHostIp())
+	require.Equal(t, "0.0.0.0", NewManualPublishingSpecOnHostIp(30303, "0.0.0.0").getHostIp())
+
+	dockerManager := &DockerManager{podmanMode: false}
+	require.Equal(t, "127.0.0.1", dockerManager.getPublishHostIp(NewManualPublishingSpec(9710)))
+
+	podmanManager := &DockerManager{podmanMode: true}
+	require.Equal(t, "0.0.0.0", podmanManager.getPublishHostIp(NewManualPublishingSpec(9710)))
+}
+
+func TestIpv6BindingsAreSkippedAndSpecificHostIpIsReported(t *testing.T) {
+	port := nat.Port("30303/tcp")
+	portMap := nat.PortMap{
+		port: []nat.PortBinding{
+			{
+				HostIP:   "::",
+				HostPort: "30303",
+			},
+			{
+				HostIP:   "10.0.0.5",
+				HostPort: "30303",
+			},
+		},
+	}
+	hostPortBindings := getHostPortBindingsOnExpectedInterface(portMap)
+	require.Equal(t, 1, len(hostPortBindings))
+	require.Equal(t, "10.0.0.5", hostPortBindings[port].HostIP)
+}

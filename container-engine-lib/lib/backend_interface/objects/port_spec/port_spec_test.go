@@ -27,6 +27,7 @@ func TestNewPortSpec_WithApplicationProtocolPresent(t *testing.T) {
 		&httpAppProtocol,
 		portWaitForTest,
 		nil,
+		nil,
 	}
 
 	specActual := &PortSpec{
@@ -45,6 +46,7 @@ func TestNewPortSpec_WithApplicationProtocolAbsent(t *testing.T) {
 		TransportProtocol_TCP,
 		nil,
 		portWaitForTest,
+		nil,
 		nil,
 	}
 
@@ -72,4 +74,26 @@ func TestPortSpecMarshallers(t *testing.T) {
 	require.NoError(t, err)
 
 	require.EqualValues(t, originalPortSpec, newPortSpec)
+}
+
+func TestPortSpecWithHostIpRoundTripsAndLeavesOriginalUntouched(t *testing.T) {
+	originalPortSpec, err := NewPortSpec(30303, TransportProtocol_TCP, "", portWaitForTest, "")
+	require.NoError(t, err)
+	require.Nil(t, originalPortSpec.GetMaybeHostIp())
+
+	exposedPortSpec := originalPortSpec.WithHostIp("0.0.0.0")
+	require.Nil(t, originalPortSpec.GetMaybeHostIp())
+	require.Equal(t, "0.0.0.0", *exposedPortSpec.GetMaybeHostIp())
+
+	marshalledPortSpec, err := json.Marshal(exposedPortSpec)
+	require.NoError(t, err)
+
+	// nolint: exhaustruct
+	unmarshalledPortSpec := &PortSpec{}
+	require.NoError(t, json.Unmarshal(marshalledPortSpec, unmarshalledPortSpec))
+	require.Equal(t, "0.0.0.0", *unmarshalledPortSpec.GetMaybeHostIp())
+
+	marshalledOriginal, err := json.Marshal(originalPortSpec)
+	require.NoError(t, err)
+	require.NotContains(t, string(marshalledOriginal), "HostIp")
 }

@@ -28,6 +28,8 @@ type PortPublishSpec interface {
 	// If true, after the container starts then this port must be found in the host machine ports list and reported
 	//  to the user as part of container start
 	mustBeFoundAfterContainerStart() bool
+
+	getHostIp() string
 }
 
 // ====================================================================================================
@@ -39,6 +41,7 @@ type PortPublishSpec interface {
 type simplePortPublishSpec struct {
 	publishType                   portPublishSpecType
 	shouldFindAfterContainerStart bool
+	hostIp                        string
 }
 
 func (spec *simplePortPublishSpec) getType() portPublishSpecType {
@@ -49,19 +52,26 @@ func (spec *simplePortPublishSpec) mustBeFoundAfterContainerStart() bool {
 	return spec.shouldFindAfterContainerStart
 }
 
+func (spec *simplePortPublishSpec) getHostIp() string {
+	return spec.hostIp
+}
+
 // Returns a PortPublishSpec indicating that the port shouldn't be published to the host machine at all
 func NewNoPublishingSpec() PortPublishSpec {
 	return &simplePortPublishSpec{
 		publishType:                   noPublishing,
 		shouldFindAfterContainerStart: false,
+		hostIp:                        "",
 	}
 }
 
-// Returns a PortPublishSpec indicating that the port should be published to an automatically-assigned port on the host machine
+// Returns a PortPublishSpec indicating that the port should be published to an automatically-assigned port on the
+// host machine's loopback interface
 func NewAutomaticPublishingSpec() PortPublishSpec {
 	return &simplePortPublishSpec{
 		publishType:                   automaticPublishing,
 		shouldFindAfterContainerStart: true,
+		hostIp:                        loopbackHostIp,
 	}
 }
 
@@ -81,12 +91,24 @@ func (option *manuallySpecifiedPortPublishSpec) getHostMachinePortNum() uint16 {
 	return option.hostMachinePortNum
 }
 
-// Returns a PortPublishSpec indicating that the port should be published to the given port on the host machine
+// Returns a PortPublishSpec indicating that the port should be published to the given port on the host machine's
+// loopback interface
 func NewManualPublishingSpec(hostMachinePortNum uint16) PortPublishSpec {
+	return newManualPublishingSpec(hostMachinePortNum, loopbackHostIp)
+}
+
+// Returns a PortPublishSpec indicating that the port should be published to the given port on the given host machine
+// interface IP
+func NewManualPublishingSpecOnHostIp(hostMachinePortNum uint16, hostIp string) PortPublishSpec {
+	return newManualPublishingSpec(hostMachinePortNum, hostIp)
+}
+
+func newManualPublishingSpec(hostMachinePortNum uint16, hostIp string) PortPublishSpec {
 	return &manuallySpecifiedPortPublishSpec{
 		simplePortPublishSpec: simplePortPublishSpec{
 			publishType:                   manualPublishing,
 			shouldFindAfterContainerStart: true,
+			hostIp:                        hostIp,
 		},
 		hostMachinePortNum: hostMachinePortNum,
 	}

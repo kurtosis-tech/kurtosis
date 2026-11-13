@@ -17,6 +17,7 @@ type privatePortSpec struct {
 	ApplicationProtocol *string
 	Wait                *Wait
 	Url                 *string
+	HostIp              *string `json:",omitempty"`
 }
 
 // This method accepts port number, transportProtocol, and application protocol (which is optional), and port wait
@@ -42,6 +43,7 @@ func NewPortSpec(number uint16, transportProtocol TransportProtocol, maybeApplic
 		ApplicationProtocol: appProtocol,
 		Wait:                wait,
 		Url:                 url,
+		HostIp:              nil,
 	}
 
 	portSpecObj := &PortSpec{internalPortSpec}
@@ -63,6 +65,16 @@ func (spec *PortSpec) GetMaybeApplicationProtocol() *string {
 
 func (spec *PortSpec) GetUrl() *string {
 	return spec.privatePortSpec.Url
+}
+
+func (spec *PortSpec) GetMaybeHostIp() *string {
+	return spec.privatePortSpec.HostIp
+}
+
+func (spec *PortSpec) WithHostIp(hostIp string) *PortSpec {
+	specCopy := *spec.privatePortSpec
+	specCopy.HostIp = &hostIp
+	return &PortSpec{&specCopy}
 }
 
 func (spec *PortSpec) GetWait() *Wait {

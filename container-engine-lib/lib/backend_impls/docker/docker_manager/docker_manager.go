@@ -64,12 +64,10 @@ const (
 	//  kill signal"
 	dockerKillSignal = "KILL"
 
-	expectedHostIp = "0.0.0.0"
+	allInterfacesHostIp = "0.0.0.0"
+	loopbackHostIp      = "127.0.0.1"
 
-	// When Docker binds a container port to the host machine, it binds it to host interface 0.0.0.0
-	// Linux machines will use 127.0.0.1 for 0.0.0.0, but Windows machines don't
-	// We therefore return 127.0.0.1 to the users rather than 0.0.0.0 so everybody can use them
-	hostPortBindingInterfaceForUserConsumption = "127.0.0.1"
+	hostPortBindingInterfaceForUserConsumption = loopbackHostIp
 
 	// Character Docker uses to separate the repo from
 	dockerTagSeparatorChar = ":"
@@ -871,10 +869,9 @@ func (manager *DockerManager) CreateAndStartContainer(
 				//Then, if the container is running, show the error related to the ports problem
 				return "", nil, stacktrace.NewError(
 					"%v ports were to be published to the host machine, but container '%v' never got host machine port"+
-						" bindings on interface %v for all published ports even after %v checks with %v between checks.",
+						" bindings on an IPv4 interface for all published ports even after %v checks with %v between checks.",
 					numPublishedPorts,
 					containerId,
-					expectedHostIp,
 					maxNumHostPortBindingChecks,
 					timeBetweenHostPortBindingChecks,
 				)
@@ -1884,14 +1881,9 @@ func (manager *DockerManager) getContainerHostConfig(
 		case noPublishing:
 			continue
 		case automaticPublishing:
-			hostIp := ""
-			if manager.podmanMode {
-				hostIp = expectedHostIp // podman requires to be 0.0.0.0
-			}
 			portMap[containerPort] = []nat.PortBinding{
-				// Leaving this struct empty will cause Docker to automatically choose an interface IP & port on the host machine
 				{
-					HostIP:   hostIp,
+					HostIP:   manager.getPublishHostIp(publishSpec),
 					HostPort: "",
 				},
 			}
@@ -1906,7 +1898,7 @@ func (manager *DockerManager) getContainerHostConfig(
 			hostMachinePortNumStr := fmt.Sprintf("%v", manualSpec.getHostMachinePortNum())
 			portMap[containerPort] = []nat.PortBinding{
 				{
-					HostIP:   expectedHostIp,
+					HostIP:   manager.getPublishHostIp(manualSpec),
 					HostPort: hostMachinePortNumStr,
 				},
 			}
@@ -2167,6 +2159,13 @@ func (manager *DockerManager) removeContainerWithRetriesOnFailureForZombieProces
 	return stacktrace.Propagate(err, "All %d attempts to remove container with ID '%s' failed", maxRetries, containerId)
 }
 
+func (manager *DockerManager) getPublishHostIp(publishSpec PortPublishSpec) string {
+	if manager.podmanMode {
+		return allInterfacesHostIp
+	}
+	return publishSpec.getHostIp()
+}
+
 // Takes in a PortMap (as reported by Docker container inspect) and returns a map of the used ports -> host port binding on the expected interface
 // If no bindings for the interface are found, len(output) < len(input)
 func getHostPortBindingsOnExpectedInterface(hostPortBindingsOnAllInterfaces nat.PortMap) map[nat.Port]*nat.PortBinding {
@@ -2179,15 +2178,20 @@ func getHostPortBindingsOnExpectedInterface(hostPortBindingsOnAllInterfaces nat.
 				interfaceBinding.HostPort,
 				port,
 			)
-			if interfaceBinding.HostIP == expectedHostIp {
-				logrus.Tracef("Interface binding matched expected host IP '%v'; registering binding", expectedHostIp)
-				result[port] = &nat.PortBinding{
-					HostIP:   hostPortBindingInterfaceForUserConsumption,
-					HostPort: interfaceBinding.HostPort,
-				}
-				// Finding multiple public ports for the same interface would be silly, and unnecessary, so we break here
-				break
+			parsedHostIp := net.ParseIP(interfaceBinding.HostIP)
+			if parsedHostIp == nil || parsedHostIp.To4() == nil {
+				continue
 			}
+			hostIpForUserConsumption := interfaceBinding.HostIP
+			if hostIpForUserConsumption == allInterfacesHostIp {
+				hostIpForUserConsumption = hostPortBindingInterfaceForUserConsumption
+			}
+			logrus.Tracef("Interface binding on IPv4 host IP '%v'; registering binding", interfaceBinding.HostIP)
+			result[port] = &nat.PortBinding{
+				HostIP:   hostIpForUserConsumption,
+				HostPort: interfaceBinding.HostPort,
+			}
+			break
 		}
 	}
 	return result

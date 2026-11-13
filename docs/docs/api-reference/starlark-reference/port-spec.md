@@ -36,14 +36,23 @@ port_spec = PortSpec(
     # If this is not set then Kurtosis creates a URL using the application protocol, service name and port number
     # OPTIONAL (DEFAULT: "")
     url = ""
+
+    # The IPv4 address of the host machine interface that this port is published on
+    # Only used for ports listed in `public_ports` on Docker; ignored everywhere else
+    # Set it to "0.0.0.0" to make the port reachable from other machines, e.g. for P2P ports
+    # OPTIONAL (DEFAULT: "127.0.0.1")
+    host_ip = "127.0.0.1"
 )
 ```
 The above constructor returns a `PortSpec` object that defines information about a port for use in [`add_service`][add-service-reference].
+
+Ports are published on the host machine's loopback interface (`127.0.0.1`) by default, so they are reachable only from the machine running Kurtosis. To reach a port from another machine, list it in [`ServiceConfig.public_ports`][service-config-reference] with `host_ip = "0.0.0.0"`. Anything published this way is reachable by everyone who can reach the host, and Docker publishes ports ahead of host firewalls such as `ufw`, so only use it for ports that are safe to expose.
 
 The `wait` field represents the timeout duration that Kurtosis will use when checking whether a service's declared UDP or TCP port are open and ready for traffic and connections upon startup. This is the default way to perform a readiness check using Kurtosis. However, there are other ways to perform a readiness check. Specifically, you can also use [`ServiceConfig.ReadyConditions`][ready-conditions] to check if a service is ready with a a REST call, or you can use the [Wait][wait] instruction if you need to perform a one-off readiness check after service startup.
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [future-references-reference]: ../../advanced-concepts/future-references.md
 [add-service-reference]: ./plan.md#add_service
+[service-config-reference]: ./service-config.md
 [ready-conditions]: ./ready-condition.md
 [wait]: ./plan.md#wait
