@@ -13,7 +13,8 @@ kurtosis engine start
 Then you can run a Starlark script using Kurtosis+Rust:
 
 ```rust
-use kurtosis_sdk::{engine_api::{engine_service_client::{EngineServiceClient}, CreateEnclaveArgs}, enclave_api::{api_container_service_client::ApiContainerServiceClient, RunStarlarkScriptArgs}};
+use kurtosis_sdk::{auth::AuthInterceptor, engine_api::{engine_service_client::{EngineServiceClient}, CreateEnclaveArgs}, enclave_api::{api_container_service_client::ApiContainerServiceClient, RunStarlarkScriptArgs}};
+use tonic::transport::Channel;
 use kurtosis_sdk::enclave_api::starlark_run_response_line::RunResponseLine::InstructionResult;
 
 const STARLARK_SCRIPT : &str = "
@@ -24,7 +25,11 @@ def main(plan):
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // CREATE ENCLAVE
-    let mut engine = EngineServiceClient::connect("https://[::1]:9710").await?;
+    // The engine and API containers require the auth token the CLI stores when it starts the engine.
+    // AuthInterceptor reads it from KURTOSIS_API_AUTH_TOKEN or the Kurtosis config directory.
+    let auth = AuthInterceptor::from_local_config();
+    let engine_channel = Channel::from_static("http://127.0.0.1:9710").connect().await?;
+    let mut engine = EngineServiceClient::with_interceptor(engine_channel, auth.clone());
     let create_enclave_response = engine.create_enclave(CreateEnclaveArgs{
         enclave_name: "my-rust-test".to_string(),
         api_container_log_level: "info".to_string(),
@@ -35,7 +40,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     // CONNECT TO ENCLAVE
     let enclave_port = create_enclave_response.enclave_info.expect("Enclave info must be present").api_container_host_machine_info.expect("Enclave host machine info must be present").grpc_port_on_host_machine;
-    let mut enclave = ApiContainerServiceClient::connect(format!("https://[::1]:{}", enclave_port)).await?;
+    let enclave_channel = Channel::from_shared(format!("http://127.0.0.1:{}", enclave_port))?.connect().await?;
+    let mut enclave = ApiContainerServiceClient::with_interceptor(enclave_channel, auth);
     
     // RUN STARLARK SCRIPT
     let mut run_result = enclave.run_starlark_script(RunStarlarkScriptArgs{
