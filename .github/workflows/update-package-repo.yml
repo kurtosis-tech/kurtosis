@@ -31,7 +31,7 @@ jobs:
       - name: Install repo tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y dpkg-dev createrepo-c
+          sudo apt-get install -y dpkg-dev apt-utils createrepo-c
 
       - name: Checkout existing GitHub Pages
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
