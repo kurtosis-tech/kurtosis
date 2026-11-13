@@ -168,6 +168,14 @@ const (
 	defaultContainerStopTimeout = 1 * time.Second
 )
 
+// Podman's Docker-compatible API reports the default network under a different name than the network's real name:
+// the network list exposes it as "bridge" while the network is named "podman", and the container's network settings
+// expose the real name. Kurtosis only ever resolves these two names, so treat them as aliases in podman mode.
+var podmanDefaultNetworkNameAliases = map[string]string{
+	NameOfNetworkToStartEngineAndLogServiceContainersInPodman: NameOfNetworkToStartEngineAndLogServiceContainersInDocker,
+	NameOfNetworkToStartEngineAndLogServiceContainersInDocker: NameOfNetworkToStartEngineAndLogServiceContainersInPodman,
+}
+
 type RestartPolicy string
 
 const (
@@ -367,16 +375,15 @@ Returns Network list whose name is exactly the given name (if any).
 */
 // TODO Combine with GetNetworksByLabel using a search filter builder
 func (manager *DockerManager) GetNetworksByName(ctx context.Context, name string) ([]*docker_manager_types.Network, error) {
-	nameSearchArgs := filters.NewArgs(filters.KeyValuePair{
-		Key:   networkNameSearchFilterKey,
-		Value: name,
-	})
-	dockerNetworks, err := manager.getNetworksByFilterArgs(ctx, nameSearchArgs)
+	// Podman ignores the name filter on its network list endpoint and returns an empty list, so list every
+	// network and match the name client-side instead of relying on the server-side filter
+	allDockerNetworks, err := manager.getNetworksByFilterArgs(ctx, filters.NewArgs())
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred checking for existence of network with name %v", name)
+		return nil, stacktrace.Propagate(err, "An error occurred listing networks while looking up the network with name %v", name)
 	}
-	// Docker's name filter matches substrings, e.g. 'bridge' also matches Docker Swarm's 'docker_gwbridge'
-	dockerNetworks = filterNetworksByExactName(dockerNetworks, name)
+	// Docker's name filter matches substrings, e.g. 'bridge' also matches Docker Swarm's 'docker_gwbridge',
+	// so match the name exactly
+	dockerNetworks := filterNetworksByName(allDockerNetworks, name, manager.podmanMode)
 
 	networks, err := newNetworkListFromDockerNetworkList(dockerNetworks)
 	if err != nil {
@@ -896,6 +903,13 @@ func (manager *DockerManager) GetContainerIP(ctx context.Context, networkName st
 	}
 	allNetworkInfo := resp.NetworkSettings.Networks
 	networkInfo, found := allNetworkInfo[networkName]
+	if !found && manager.podmanMode {
+		// Podman reports the default network under a different name in the network list than in the container's
+		// network settings, so fall back to its alias before giving up
+		if aliasName, hasAlias := podmanDefaultNetworkNameAliases[networkName]; hasAlias {
+			networkInfo, found = allNetworkInfo[aliasName]
+		}
+	}
 	if !found {
 		return "", stacktrace.NewError("Container ID '%v' isn't connected to network '%v'", containerId, networkName)
 	}
@@ -2343,6 +2357,19 @@ func filterNetworksByExactName(dockerNetworks []network.Inspect, name string) []
 	for _, dockerNetwork := range dockerNetworks {
 		if dockerNetwork.Name == name {
 			matchingNetworks = append(matchingNetworks, dockerNetwork)
+		}
+	}
+	return matchingNetworks
+}
+
+// filterNetworksByName returns the networks whose name exactly matches the given name. In podman mode, the default
+// network is also matched by its alias, because podman's Docker-compatible API reports it under a different name in
+// the network list than the network's real name.
+func filterNetworksByName(dockerNetworks []network.Inspect, name string, isPodman bool) []network.Inspect {
+	matchingNetworks := filterNetworksByExactName(dockerNetworks, name)
+	if len(matchingNetworks) == 0 && isPodman {
+		if aliasName, found := podmanDefaultNetworkNameAliases[name]; found {
+			matchingNetworks = filterNetworksByExactName(dockerNetworks, aliasName)
 		}
 	}
 	return matchingNetworks
