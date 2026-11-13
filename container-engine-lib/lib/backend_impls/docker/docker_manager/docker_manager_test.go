@@ -333,14 +333,6 @@ func TestPublishSpecsBindToLoopbackUnlessAllInterfacesRequested(t *testing.T) {
 	require.Equal(t, "127.0.0.1", NewManualPublishingSpec(9710).getHostIp())
 	require.Equal(t, "0.0.0.0", NewManualPublishingSpecOnHostIp(30303, "0.0.0.0").getHostIp())
 	require.Equal(t, "0.0.0.0", NewAutomaticPublishingSpecOnHostIp("0.0.0.0").getHostIp())
-
-	// nolint: exhaustruct
-	dockerManager := &DockerManager{podmanMode: false}
-	require.Equal(t, "127.0.0.1", dockerManager.getPublishHostIp(NewManualPublishingSpec(9710)))
-
-	// nolint: exhaustruct
-	podmanManager := &DockerManager{podmanMode: true}
-	require.Equal(t, "0.0.0.0", podmanManager.getPublishHostIp(NewManualPublishingSpec(9710)))
 }
 
 func TestIpv6BindingsAreSkippedAndSpecificHostIpIsReported(t *testing.T) {

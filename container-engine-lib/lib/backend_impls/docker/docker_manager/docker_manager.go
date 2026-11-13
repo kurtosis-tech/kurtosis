@@ -1905,7 +1905,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		case automaticPublishing:
 			portMap[containerPort] = []nat.PortBinding{
 				{
-					HostIP:   manager.getPublishHostIp(publishSpec),
+					HostIP:   publishSpec.getHostIp(),
 					HostPort: "",
 				},
 			}
@@ -1920,7 +1920,7 @@ func (manager *DockerManager) getContainerHostConfig(
 			hostMachinePortNumStr := fmt.Sprintf("%v", manualSpec.getHostMachinePortNum())
 			portMap[containerPort] = []nat.PortBinding{
 				{
-					HostIP:   manager.getPublishHostIp(manualSpec),
+					HostIP:   manualSpec.getHostIp(),
 					HostPort: hostMachinePortNumStr,
 				},
 			}
@@ -2179,13 +2179,6 @@ func (manager *DockerManager) removeContainerWithRetriesOnFailureForZombieProces
 		return nil
 	}
 	return stacktrace.Propagate(err, "All %d attempts to remove container with ID '%s' failed", maxRetries, containerId)
-}
-
-func (manager *DockerManager) getPublishHostIp(publishSpec PortPublishSpec) string {
-	if manager.podmanMode {
-		return allInterfacesHostIp
-	}
-	return publishSpec.getHostIp()
 }
 
 // Takes in a PortMap (as reported by Docker container inspect) and returns a map of the used ports -> host port binding on the expected interface
