@@ -79,6 +79,8 @@ const (
 
 	hostPIDMode = "host"
 
+	hostCgroupnsMode = "host"
+
 	// This is the magic domain name inside a container that Docker will give the host machine running Docker itself
 	// This is available by default on Docker for Mac & Windows because they run in VMs, but needs to be specifically
 	//  bound in Docker for Linux
@@ -696,7 +698,8 @@ func (manager *DockerManager) CreateAndStartContainer(
 		args.gpuDeviceIDs,
 		args.gpuDriver,
 		args.privileged,
-		args.hostPIDNamespace)
+		args.hostPIDNamespace,
+		args.hostCgroupNamespace)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
@@ -1863,6 +1866,7 @@ func (manager *DockerManager) getContainerHostConfig(
 	gpuDriver string,
 	privileged bool,
 	hostPIDNamespace bool,
+	hostCgroupNamespace bool,
 ) (hostConfig *container.HostConfig, err error) {
 
 	bindsList := make([]string, 0, len(bindMounts))
@@ -2007,6 +2011,10 @@ func (manager *DockerManager) getContainerHostConfig(
 	if hostPIDNamespace {
 		pidMode = container.PidMode(hostPIDMode)
 	}
+	cgroupnsMode := container.CgroupnsMode("")
+	if hostCgroupNamespace {
+		cgroupnsMode = container.CgroupnsMode(hostCgroupnsMode)
+	}
 
 	// NOTE: Do NOT use PublishAllPorts here!!!! This will work if a Dockerfile doesn't have an EXPOSE directive, but
 	//  if the Dockerfile *does* have and EXPOSE directive then _only_ the ports with EXPOSE will be published
@@ -2027,7 +2035,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		Annotations:     map[string]string{},
 		CapAdd:          addedCapabilitiesSlice,
 		CapDrop:         nil,
-		CgroupnsMode:    "",
+		CgroupnsMode:    cgroupnsMode,
 		DNS:             nil,
 		DNSOptions:      nil,
 		DNSSearch:       nil,

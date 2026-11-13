@@ -44,6 +44,7 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				Privileged:                  false,
 				BindMounts:                  nil,
 				HostPIDNamespace:            false,
+				HostCgroupNamespace:         false,
 			},
 			overrideConfig: &services.ServiceConfig{
 				Image:      "new-image",
@@ -74,6 +75,7 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				Privileged:                  false,
 				BindMounts:                  nil,
 				HostPIDNamespace:            false,
+				HostCgroupNamespace:         false,
 			},
 			expectedUpdatedConfig: &services.ServiceConfig{
 				Image:      "new-image",
@@ -110,6 +112,7 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				Privileged:                  false,
 				BindMounts:                  nil,
 				HostPIDNamespace:            false,
+				HostCgroupNamespace:         false,
 			},
 		},
 		{
@@ -143,6 +146,7 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				Privileged:                  false,
 				BindMounts:                  nil,
 				HostPIDNamespace:            false,
+				HostCgroupNamespace:         false,
 			},
 			overrideConfig: &services.ServiceConfig{
 				Image:                       "",
@@ -166,6 +170,7 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				Privileged:                  false,
 				BindMounts:                  nil,
 				HostPIDNamespace:            false,
+				HostCgroupNamespace:         false,
 			},
 			expectedUpdatedConfig: &services.ServiceConfig{
 				Image:      "base-image",
@@ -195,6 +200,7 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				Privileged:                  false,
 				BindMounts:                  nil,
 				HostPIDNamespace:            false,
+				HostCgroupNamespace:         false,
 			},
 		},
 		{
@@ -228,6 +234,7 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				Privileged:                  false,
 				BindMounts:                  nil,
 				HostPIDNamespace:            false,
+				HostCgroupNamespace:         false,
 			},
 			overrideConfig: &services.ServiceConfig{
 				Image: "",
@@ -258,6 +265,7 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				Privileged:                  false,
 				BindMounts:                  nil,
 				HostPIDNamespace:            false,
+				HostCgroupNamespace:         false,
 			},
 			expectedUpdatedConfig: &services.ServiceConfig{
 				Image: "original",
@@ -288,6 +296,7 @@ func TestCreateUpdatedServiceConfigFromOverrides(t *testing.T) {
 				Privileged:                  false,
 				BindMounts:                  nil,
 				HostPIDNamespace:            false,
+				HostCgroupNamespace:         false,
 			},
 		},
 	}
@@ -329,7 +338,8 @@ func TestCreateUpdatedServiceConfigFromOverridesPreservesPrivilegedFields(t *tes
 		BindMounts: map[string]string{
 			"/var/run/docker.sock": "/var/run/docker.sock",
 		},
-		HostPIDNamespace: true,
+		HostPIDNamespace:    true,
+		HostCgroupNamespace: false,
 	}
 	overrideConfig := &services.ServiceConfig{
 		Image:                       "new-image",
@@ -354,7 +364,8 @@ func TestCreateUpdatedServiceConfigFromOverridesPreservesPrivilegedFields(t *tes
 		BindMounts: map[string]string{
 			"/var/run/docker.sock": "/docker.sock",
 		},
-		HostPIDNamespace: false,
+		HostPIDNamespace:    false,
+		HostCgroupNamespace: false,
 	}
 
 	updated := createUpdatedServiceConfigFromOverrides(overrideConfig, currConfig)

@@ -42,9 +42,10 @@ type ServiceContext struct {
 	labels map[string]string
 
 	// Docker-only elevated access settings
-	privileged       bool
-	bindMounts       map[string]string
-	hostPIDNamespace bool
+	privileged          bool
+	bindMounts          map[string]string
+	hostPIDNamespace    bool
+	hostCgroupNamespace bool
 }
 
 func NewServiceContext(
@@ -59,19 +60,21 @@ func NewServiceContext(
 	privileged bool,
 	bindMounts map[string]string,
 	hostPIDNamespace bool,
+	hostCgroupNamespace bool,
 ) *ServiceContext {
 	return &ServiceContext{
-		client:           client,
-		serviceName:      serviceName,
-		serviceUuid:      serviceUuid,
-		privateIpAddr:    privateIpAddr,
-		privatePorts:     privatePorts,
-		publicIpAddr:     publicIpAddr,
-		publicPorts:      publicPorts,
-		labels:           labels,
-		privileged:       privileged,
-		bindMounts:       bindMounts,
-		hostPIDNamespace: hostPIDNamespace,
+		client:              client,
+		serviceName:         serviceName,
+		serviceUuid:         serviceUuid,
+		privateIpAddr:       privateIpAddr,
+		privatePorts:        privatePorts,
+		publicIpAddr:        publicIpAddr,
+		publicPorts:         publicPorts,
+		labels:              labels,
+		privileged:          privileged,
+		bindMounts:          bindMounts,
+		hostPIDNamespace:    hostPIDNamespace,
+		hostCgroupNamespace: hostCgroupNamespace,
 	}
 }
 
@@ -113,6 +116,10 @@ func (service *ServiceContext) GetBindMounts() map[string]string {
 
 func (service *ServiceContext) GetHostPIDNamespace() bool {
 	return service.hostPIDNamespace
+}
+
+func (service *ServiceContext) GetHostCgroupNamespace() bool {
+	return service.hostCgroupNamespace
 }
 
 func (service *ServiceContext) ExecCommand(command []string) (int32, string, error) {
