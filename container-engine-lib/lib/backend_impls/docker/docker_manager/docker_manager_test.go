@@ -309,6 +309,36 @@ func TestFilterNetworksByExactName(t *testing.T) {
 	require.Empty(t, filterNetworksByExactName(dockerNetworks, "gwbridge"))
 }
 
+func TestFilterNetworksByNameMatchesPodmanDefaultNetworkAlias(t *testing.T) {
+	// Podman's Docker-compatible API lists the default network as 'bridge' while the network is named 'podman'
+	dockerNetworks := []network.Inspect{
+		{ID: "2f259bab93aa", Name: NameOfNetworkToStartEngineAndLogServiceContainersInDocker}, //nolint:exhaustruct
+	}
+
+	matchingNetworks := filterNetworksByName(dockerNetworks, NameOfNetworkToStartEngineAndLogServiceContainersInPodman, true)
+	require.Len(t, matchingNetworks, 1)
+	require.Equal(t, "2f259bab93aa", matchingNetworks[0].ID)
+
+	// The alias is only used in podman mode
+	require.Empty(t, filterNetworksByName(dockerNetworks, NameOfNetworkToStartEngineAndLogServiceContainersInPodman, false))
+}
+
+func TestFilterNetworksByNamePrefersExactMatchOverPodmanAlias(t *testing.T) {
+	dockerNetworks := []network.Inspect{
+		{ID: "bridge-id", Name: NameOfNetworkToStartEngineAndLogServiceContainersInDocker}, //nolint:exhaustruct
+		{ID: "podman-id", Name: NameOfNetworkToStartEngineAndLogServiceContainersInPodman}, //nolint:exhaustruct
+	}
+
+	matchingNetworks := filterNetworksByName(dockerNetworks, NameOfNetworkToStartEngineAndLogServiceContainersInPodman, true)
+	require.Len(t, matchingNetworks, 1)
+	require.Equal(t, "podman-id", matchingNetworks[0].ID)
+}
+
+func TestPodmanDefaultNetworkNameAliases(t *testing.T) {
+	require.Equal(t, NameOfNetworkToStartEngineAndLogServiceContainersInDocker, podmanDefaultNetworkNameAliases[NameOfNetworkToStartEngineAndLogServiceContainersInPodman])
+	require.Equal(t, NameOfNetworkToStartEngineAndLogServiceContainersInPodman, podmanDefaultNetworkNameAliases[NameOfNetworkToStartEngineAndLogServiceContainersInDocker])
+}
+
 func TestLoopbackBindingsAreSelected(t *testing.T) {
 	port := nat.Port("9710/tcp")
 	portMap := nat.PortMap{
