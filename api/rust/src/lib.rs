@@ -1,3 +1,5 @@
+pub mod auth;
+
 pub mod engine_api {
 	include!("./engine_api.rs");
 }

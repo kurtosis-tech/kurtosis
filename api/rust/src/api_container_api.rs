@@ -20,6 +20,9 @@ pub struct Port {
     /// this is useful in the cloud context; ignore in local
     #[prost(string, optional, tag = "6")]
     pub alias: ::core::option::Option<::prost::alloc::string::String>,
+    /// The host machine interface IP that a public port is published on, e.g. "127.0.0.1" or "0.0.0.0"
+    #[prost(string, optional, tag = "7")]
+    pub host_ip: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// Nested message and enum types in `Port`.
 pub mod port {
@@ -229,6 +232,50 @@ pub struct ServiceInfo {
     /// Wheter TTy is enabled
     #[prost(bool, optional, tag = "20")]
     pub tty_enabled: ::core::option::Option<bool>,
+    /// Linux capabilities to add to the container (e.g., "NET_ADMIN", "SYS_PTRACE")
+    #[prost(string, repeated, tag = "21")]
+    pub capabilities: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    /// GPU configuration: device selection, shared-memory size, and ulimits.
+    /// All GPU-related settings are bundled here since they only apply to GPU workloads.
+    #[prost(message, optional, tag = "22")]
+    pub gpu_config: ::core::option::Option<GpuConfig>,
+    /// Whether the service was started with Docker privileged mode.
+    #[prost(bool, tag = "26")]
+    pub privileged: bool,
+    /// Host-path -> container-path bind mounts configured on the service.
+    #[prost(map = "string, string", tag = "27")]
+    pub bind_mounts: ::std::collections::HashMap<
+        ::prost::alloc::string::String,
+        ::prost::alloc::string::String,
+    >,
+    /// Whether the service was started in the Docker host PID namespace.
+    #[prost(bool, tag = "28")]
+    pub host_pid_namespace: bool,
+}
+/// GpuConfig bundles all GPU-related container settings.
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GpuConfig {
+    /// Number of GPUs to expose. 0 = none, -1 = all available, N = N GPUs.
+    #[prost(int64, tag = "1")]
+    pub count: i64,
+    /// Specific GPU device IDs to pin (e.g. \["0","1"\] or \["GPU-abc123"\]).
+    /// When set, count is ignored for device selection.
+    #[prost(string, repeated, tag = "2")]
+    pub device_ids: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    /// Size of /dev/shm in megabytes. 0 means use the runtime default (usually 64MB).
+    #[prost(uint64, tag = "3")]
+    pub shm_size_megabytes: u64,
+    /// Resource limits for the container. Maps limit name (e.g. "memlock") to value (soft=hard).
+    #[prost(map = "string, int64", tag = "4")]
+    pub ulimits: ::std::collections::HashMap<::prost::alloc::string::String, i64>,
+    /// Docker DeviceRequest driver name (e.g. "nvidia", "amd"). Defaults to "nvidia".
+    #[prost(string, tag = "5")]
+    pub docker_driver: ::prost::alloc::string::String,
+    /// Kubernetes resource name for GPU requests (e.g. "nvidia.com/gpu", "amd.com/gpu").
+    /// Defaults to "nvidia.com/gpu".
+    #[prost(string, tag = "6")]
+    pub k8s_resource_name: ::prost::alloc::string::String,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -263,6 +310,12 @@ pub struct RunStarlarkScriptArgs {
     /// If true, executes the package in parallel meaning each instruction runs as soon as its dependencies are finished
     #[prost(bool, optional, tag = "17")]
     pub parallel: ::core::option::Option<bool>,
+    /// If true, performs resource availability check before execution. Defaults to true.
+    #[prost(bool, optional, tag = "18")]
+    pub resource_check: ::core::option::Option<bool>,
+    /// If true, permits Docker-only privileged containers, host bind mounts, and host PID namespace for this run.
+    #[prost(bool, optional, tag = "19")]
+    pub allow_privileged_mode: ::core::option::Option<bool>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -315,6 +368,12 @@ pub struct RunStarlarkPackageArgs {
     /// If true, executes the package in parallel meaning each instruction runs as soon as its dependencies are finished
     #[prost(bool, optional, tag = "17")]
     pub parallel: ::core::option::Option<bool>,
+    /// If true, performs resource availability check before execution. Defaults to true.
+    #[prost(bool, optional, tag = "18")]
+    pub resource_check: ::core::option::Option<bool>,
+    /// If true, permits Docker-only privileged containers, host bind mounts, and host PID namespace for this run.
+    #[prost(bool, optional, tag = "19")]
+    pub allow_privileged_mode: ::core::option::Option<bool>,
     /// Deprecated: If the package is local, it should have been uploaded with UploadStarlarkPackage prior to calling
     /// RunStarlarkPackage. If the package is remote and must be cloned within the APIC, use the standalone boolean flag
     /// clone_package below
@@ -795,6 +854,9 @@ pub struct StarlarkScriptPlanYamlArgs {
     /// The name of the main function, the default value is "run"
     #[prost(string, optional, tag = "5")]
     pub main_function_name: ::core::option::Option<::prost::alloc::string::String>,
+    /// If true, permits Docker-only privileged containers, host bind mounts, and host PID namespace while interpreting the plan.
+    #[prost(bool, optional, tag = "6")]
+    pub allow_privileged_mode: ::core::option::Option<bool>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -816,6 +878,9 @@ pub struct StarlarkPackagePlanYamlArgs {
     /// The name of the main function, the default value is "run"
     #[prost(string, optional, tag = "5")]
     pub main_function_name: ::core::option::Option<::prost::alloc::string::String>,
+    /// If true, permits Docker-only privileged containers, host bind mounts, and host PID namespace while interpreting the plan.
+    #[prost(bool, optional, tag = "6")]
+    pub allow_privileged_mode: ::core::option::Option<bool>,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]

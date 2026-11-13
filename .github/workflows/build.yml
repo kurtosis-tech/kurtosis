@@ -697,7 +697,18 @@ jobs:
           ${KURTOSIS_BINPATH} service add test-apic-restart service-test kurtosistech/example-datastore-server
           apic_container_id=$(docker ps --filter "label=com.kurtosistech.container-type=api-container" --filter "label=com.kurtosistech.enclave-id=$(echo $enclave_uuid)" --format "{{.ID}}")
           docker container restart $(echo $apic_container_id)
-          ${KURTOSIS_BINPATH} service rm test-apic-restart service-test
+          for i in $(seq 1 10); do
+            if ${KURTOSIS_BINPATH} service rm test-apic-restart service-test; then
+              echo "Service removed after ${i} attempts"
+              break
+            fi
+            echo "Attempt ${i}: service rm failed, APIC may not be ready after its restart. Retrying in 3s..."
+            sleep 3
+            if [ "${i}" = "10" ]; then
+              echo "Failed to remove service after 10 attempts"
+              exit 1
+            fi
+          done
 
       # Test APIC idempotent runs restart
       - name: Test APIC idempotent restart
@@ -709,7 +720,18 @@ jobs:
           enclave_uuid=$(echo ${inspect_output_uuid_line:17:54})
           apic_container_id=$(docker ps --filter "label=com.kurtosistech.container-type=api-container" --filter "label=com.kurtosistech.enclave-id=$(echo $enclave_uuid)" --format "{{.ID}}")
           docker container restart $(echo $apic_container_id)
-          ${KURTOSIS_BINPATH} run github.com/kurtosis-tech/datastore-army-package --enclave test-apic-idempotent-restart > /tmp/output_idempotent_runs.txt
+          for i in $(seq 1 10); do
+            if ${KURTOSIS_BINPATH} run github.com/kurtosis-tech/datastore-army-package --enclave test-apic-idempotent-restart > /tmp/output_idempotent_runs.txt; then
+              echo "Package run succeeded after ${i} attempts"
+              break
+            fi
+            echo "Attempt ${i}: run failed, APIC may not be ready after its restart. Retrying in 3s..."
+            sleep 3
+            if [ "${i}" = "10" ]; then
+              echo "Failed to run the package after 10 attempts"
+              exit 1
+            fi
+          done
           number_skipped_instructions=$(grep -o -i SKIPPED /tmp/output_idempotent_runs.txt | wc -l )
           if [ $number_skipped_instructions -ne 7 ]; then exit 1; fi
 

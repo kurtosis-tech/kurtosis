@@ -117,3 +117,24 @@ func TestAllowedBrowserOriginsAreTheWebUIOnly(t *testing.T) {
 	require.Contains(t, GetAllowedBrowserOrigins("kurtosis.example.com"), "https://kurtosis.example.com")
 	require.NotContains(t, GetAllowedBrowserOrigins(""), "*")
 }
+
+func TestGrpcRequestsWithoutTokenGetAnUnauthenticatedGrpcStatus(t *testing.T) {
+	handler := NewHttpMiddleware(testToken)(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+		writer.WriteHeader(http.StatusOK)
+	}))
+	for _, contentType := range []string{"application/grpc", "application/grpc+proto", "application/grpc-web+proto"} {
+		request := httptest.NewRequest(http.MethodPost, "/engine_api.EngineService/GetEngineInfo", nil)
+		request.Header.Set("Content-Type", contentType)
+		recorder := httptest.NewRecorder()
+		handler.ServeHTTP(recorder, request)
+		require.Equal(t, http.StatusOK, recorder.Code, contentType)
+		require.Equal(t, "16", recorder.Header().Get("Grpc-Status"), contentType)
+		require.Equal(t, contentType, recorder.Header().Get("Content-Type"), contentType)
+	}
+
+	jsonRequest := httptest.NewRequest(http.MethodPost, "/engine_api.EngineService/GetEngineInfo", nil)
+	jsonRequest.Header.Set("Content-Type", "application/json")
+	jsonRecorder := httptest.NewRecorder()
+	handler.ServeHTTP(jsonRecorder, jsonRequest)
+	require.Equal(t, http.StatusUnauthorized, jsonRecorder.Code)
+}

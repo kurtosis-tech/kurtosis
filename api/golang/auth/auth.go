@@ -34,6 +34,12 @@ const (
 	unauthorizedMessage  = "missing or invalid Kurtosis API auth token"
 	forbiddenHostMessage = "request Host is not allowed"
 
+	contentTypeHeaderName     = "Content-Type"
+	grpcContentTypePrefix     = "application/grpc"
+	grpcStatusHeaderName      = "Grpc-Status"
+	grpcMessageHeaderName     = "Grpc-Message"
+	grpcUnauthenticatedStatus = "16"
+
 	localhostHostname      = "localhost"
 	engineProxyHostname    = "engine"
 	webUIPort              = "9711"
@@ -105,9 +111,21 @@ func NewHttpMiddleware(token string) func(http.Handler) http.Handler {
 				next.ServeHTTP(writer, request)
 				return
 			}
-			http.Error(writer, unauthorizedMessage, http.StatusUnauthorized)
+			writeUnauthorized(writer, request)
 		})
 	}
+}
+
+func writeUnauthorized(writer http.ResponseWriter, request *http.Request) {
+	contentType := request.Header.Get(contentTypeHeaderName)
+	if strings.HasPrefix(contentType, grpcContentTypePrefix) {
+		writer.Header().Set(contentTypeHeaderName, contentType)
+		writer.Header().Set(grpcStatusHeaderName, grpcUnauthenticatedStatus)
+		writer.Header().Set(grpcMessageHeaderName, unauthorizedMessage)
+		writer.WriteHeader(http.StatusOK)
+		return
+	}
+	http.Error(writer, unauthorizedMessage, http.StatusUnauthorized)
 }
 
 func NewHostValidationMiddleware(domain string) func(http.Handler) http.Handler {
