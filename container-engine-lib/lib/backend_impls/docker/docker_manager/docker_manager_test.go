@@ -110,7 +110,7 @@ func TestCorrectPortIsSelectedWhenIPv6IsPresent(t *testing.T) {
 
 	portBinding, found := hostPortBindings["7444/tcp"]
 	require.True(t, found)
-	require.Equal(t, "127.0.0.1", portBinding.HostIP)
+	require.Equal(t, "0.0.0.0", portBinding.HostIP)
 	require.Equal(t, "49050", portBinding.HostPort)
 }
 
@@ -140,12 +140,12 @@ func TestCorrectSelectionWhenTwoOfSameIPs(t *testing.T) {
 
 	publicBinding1, found := hostPortBindings[port1]
 	require.True(t, found)
-	require.Equal(t, "127.0.0.1", publicBinding1.HostIP)
+	require.Equal(t, "0.0.0.0", publicBinding1.HostIP)
 	require.Equal(t, "9710", publicBinding1.HostPort)
 
 	publicBinding2, found := hostPortBindings[port2]
 	require.True(t, found)
-	require.Equal(t, "127.0.0.1", publicBinding2.HostIP)
+	require.Equal(t, "0.0.0.0", publicBinding2.HostIP)
 	require.Equal(t, "9711", publicBinding2.HostPort)
 }
 
@@ -307,4 +307,49 @@ func TestFilterNetworksByExactName(t *testing.T) {
 	require.Len(t, matchingNetworks, 1)
 	require.Equal(t, "a0b36d104fd2", matchingNetworks[0].ID)
 	require.Empty(t, filterNetworksByExactName(dockerNetworks, "gwbridge"))
+}
+
+func TestLoopbackBindingsAreSelected(t *testing.T) {
+	port := nat.Port("9710/tcp")
+	portMap := nat.PortMap{
+		port: []nat.PortBinding{
+			{
+				HostIP:   "127.0.0.1",
+				HostPort: "9710",
+			},
+		},
+	}
+	hostPortBindings := getHostPortBindingsOnExpectedInterface(portMap)
+	require.Equal(t, 1, len(hostPortBindings))
+
+	binding, found := hostPortBindings[port]
+	require.True(t, found)
+	require.Equal(t, "127.0.0.1", binding.HostIP)
+	require.Equal(t, "9710", binding.HostPort)
+}
+
+func TestPublishSpecsBindToLoopbackUnlessAllInterfacesRequested(t *testing.T) {
+	require.Equal(t, "127.0.0.1", NewAutomaticPublishingSpec().getHostIp())
+	require.Equal(t, "127.0.0.1", NewManualPublishingSpec(9710).getHostIp())
+	require.Equal(t, "0.0.0.0", NewManualPublishingSpecOnHostIp(30303, "0.0.0.0").getHostIp())
+	require.Equal(t, "0.0.0.0", NewAutomaticPublishingSpecOnHostIp("0.0.0.0").getHostIp())
+}
+
+func TestIpv6BindingsAreSkippedAndSpecificHostIpIsReported(t *testing.T) {
+	port := nat.Port("30303/tcp")
+	portMap := nat.PortMap{
+		port: []nat.PortBinding{
+			{
+				HostIP:   "::",
+				HostPort: "30303",
+			},
+			{
+				HostIP:   "10.0.0.5",
+				HostPort: "30303",
+			},
+		},
+	}
+	hostPortBindings := getHostPortBindingsOnExpectedInterface(portMap)
+	require.Equal(t, 1, len(hostPortBindings))
+	require.Equal(t, "10.0.0.5", hostPortBindings[port].HostIP)
 }

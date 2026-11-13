@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/auth"
 	"net/http"
 	"net/url"
 	"strings"
@@ -50,21 +51,23 @@ type WebServer struct {
 	apiKeyMutex         *sync.RWMutex
 	engineServiceClient *kurtosis_engine_rpc_api_bindingsconnect.EngineServiceClient
 	enforceAuth         bool
+	authToken           string
 	instanceConfig      *kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse
 	instanceConfigMap   map[string]*kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse
 	apiKeyMap           map[string]*string
 	githubAccessToken   string
 }
 
-func NewWebserver(enforceAuth bool) (*WebServer, error) {
+func NewWebserver(enforceAuth bool, authToken string) (*WebServer, error) {
 	engineServiceClient := kurtosis_engine_rpc_api_bindingsconnect.NewEngineServiceClient(
-		http.DefaultClient,
+		auth.NewHttpClient(authToken),
 		engineHostUrl,
 	)
 	githubAuthToken := github_auth_storage_creator.GetGitHubAuthToken()
 	return &WebServer{
 		engineServiceClient: &engineServiceClient,
 		enforceAuth:         enforceAuth,
+		authToken:           authToken,
 		instanceConfigMutex: &sync.RWMutex{},
 		apiKeyMutex:         &sync.RWMutex{},
 		apiKeyMap:           map[string]*string{},
@@ -874,7 +877,7 @@ func (c *WebServer) createAPICClient(
 		return nil, stacktrace.Propagate(err, "Failed to parse the connection url for the APIC")
 	}
 	apiContainerServiceClient := kurtosis_core_rpc_api_bindingsconnect.NewApiContainerServiceClient(
-		http.DefaultClient,
+		auth.NewHttpClient(c.authToken),
 		host.String(),
 		connect.WithGRPCWeb(),
 	)
@@ -995,8 +998,8 @@ func extractJwtToken(header http.Header) (string, error) {
 	return reqToken, nil
 }
 
-func RunEnclaveManagerApiServer(enforceAuth bool) error {
-	srv, err := NewWebserver(enforceAuth)
+func RunEnclaveManagerApiServer(enforceAuth bool, domain string, authToken string) error {
+	srv, err := NewWebserver(enforceAuth, authToken)
 	if err != nil {
 		logrus.Fatal("an error occurred while processing the auth settings, exiting!", err)
 		return err
@@ -1007,11 +1010,19 @@ func RunEnclaveManagerApiServer(enforceAuth bool) error {
 	apiServer := connect_server.NewConnectServer(
 		listenPort,
 		grpcServerStopGracePeriod,
-		handler,
+		auth.NewApiMiddleware(authToken, domain)(handler),
 		apiPath,
 	)
 
 	emCors := cors.AllowAll()
+	if !enforceAuth {
+		// nolint:exhaustruct
+		emCors = cors.New(cors.Options{
+			AllowedOrigins: auth.GetAllowedBrowserOrigins(domain),
+			AllowedMethods: []string{http.MethodGet, http.MethodPost, http.MethodOptions},
+			AllowedHeaders: []string{"*"},
+		})
+	}
 	emCors.Log = logrus.StandardLogger()
 
 	if err := apiServer.RunServerUntilInterruptedWithCors(emCors); err != nil {

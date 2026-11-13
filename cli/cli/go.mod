@@ -64,7 +64,6 @@ require (
 	github.com/kurtosis-tech/kurtosis/core/server v0.0.0-20261005085553-e74bd927eca4
 	github.com/kurtosis-tech/kurtosis/name_generator v0.0.0
 	github.com/kurtosis-tech/kurtosis/path-compression v0.0.0-20260325155815-f36ae687d73d
-	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20230710164206-90b674acb269
 	github.com/kurtosis-tech/vscode-kurtosis/starlark-lsp v0.0.0-20230406131103-c466e04f1b89
 	github.com/xlab/treeprint v1.2.0
 	github.com/zalando/go-keyring v0.2.5

@@ -51,6 +51,21 @@ func StartGrafLokiInDocker(ctx context.Context, graflokiConfig resolved_config.G
 		return "", "", stacktrace.Propagate(err, "An error occurred getting Grafana container by labels: %v.", grafanaContainerLabels)
 	}
 
+	if lokiContainer != nil && !publishesHostPortsOnLoopback(lokiContainer) {
+		logrus.Infof("Existing Loki container is not published on loopback. Recreating Loki and Grafana...")
+		if err := dockerManager.RemoveContainer(ctx, lokiContainer.GetName()); err != nil {
+			return "", "", stacktrace.Propagate(err, "An error occurred removing Loki container '%v' before recreating it.", lokiContainer.GetName())
+		}
+		lokiContainer = nil
+	}
+	if grafanaContainer != nil && !publishesHostPortsOnLoopback(grafanaContainer) {
+		logrus.Infof("Existing Grafana container is not published on loopback. Recreating it...")
+		if err := dockerManager.RemoveContainer(ctx, grafanaContainer.GetName()); err != nil {
+			return "", "", stacktrace.Propagate(err, "An error occurred removing Grafana container '%v' before recreating it.", grafanaContainer.GetName())
+		}
+		grafanaContainer = nil
+	}
+
 	lokiHost := ""
 	lokiWasCreated := false
 	removeLokiContainerFunc := func() {}
@@ -155,7 +170,7 @@ func createLokiContainer(ctx context.Context, dockerManager *docker_manager.Dock
 		WithFetchingLatestImageIfMissing().
 		WithRestartPolicy(docker_manager.RestartOnFailure).
 		WithNetworkMode(bridgeNetworkName).
-		WithLabels(lokiContainerLabels).
+		WithLabels(withLoopbackBindLabel(lokiContainerLabels)).
 		Build()
 	lokiContainerId, _, err := dockerManager.CreateAndStartContainer(ctx, lokiArgs)
 	if err != nil {
@@ -251,7 +266,7 @@ func createGrafanaContainer(ctx context.Context, dockerManager *docker_manager.D
 		WithFetchingLatestImageIfMissing().
 		WithRestartPolicy(docker_manager.RestartOnFailure).
 		WithNetworkMode(bridgeNetworkName).
-		WithLabels(grafanaContainerLabels).
+		WithLabels(withLoopbackBindLabel(grafanaContainerLabels)).
 		WithUser(root).
 		Build()
 	grafanaContainerId, _, err := dockerManager.CreateAndStartContainer(ctx, grafanaArgs)
@@ -326,6 +341,20 @@ func StopGrafLokiInDocker(ctx context.Context, dockerManager *docker_manager.Doc
 	}
 
 	return nil
+}
+
+func publishesHostPortsOnLoopback(container *types.Container) bool {
+	return container.GetLabels()[docker_label_key.HostPortBindDockerLabelKey.GetString()] == docker_manager.HostPortBindLoopbackLabelValue
+}
+
+func withLoopbackBindLabel(containerLabels map[string]string) map[string]string {
+	labels := map[string]string{
+		docker_label_key.HostPortBindDockerLabelKey.GetString(): docker_manager.HostPortBindLoopbackLabelValue,
+	}
+	for key, value := range containerLabels {
+		labels[key] = value
+	}
+	return labels
 }
 
 func getContainerByLabel(ctx context.Context, dockerManager *docker_manager.DockerManager, containerLabels map[string]string) (*types.Container, error) {

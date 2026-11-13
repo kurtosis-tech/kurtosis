@@ -308,7 +308,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	}
 
 	isProductionEnclave := getProductionModeFromEnvVars(customEnvVars)
-	result, err := getApiContainerObjectFromContainerInfo(containerId, labelStrs, types.ContainerStatus_Running, hostMachinePortBindings, bridgeNetworkIpAddress, isProductionEnclave)
+	result, err := getApiContainerObjectFromContainerInfo(containerId, labelStrs, types.ContainerStatus_Running, hostMachinePortBindings, bridgeNetworkIpAddress, isProductionEnclave, image)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating an API container object from container with ID '%v'", containerId)
 	}
@@ -457,6 +457,7 @@ func (backend *DockerKurtosisBackend) getMatchingApiContainers(ctx context.Conte
 			// This avoids unnessarily calling GetContainerIP/InspectContainer on all API containers
 			"",
 			isProductionEnclave,
+			apiContainer.GetImageName(),
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred converting container with ID '%v' into an API container object", apiContainer.GetId())
@@ -498,6 +499,7 @@ func getApiContainerObjectFromContainerInfo(
 	allHostMachinePortBindings map[nat.Port]*nat.PortBinding,
 	bridgeNetworkIpAddrStr string,
 	isProductionEnclave bool,
+	imageName string,
 ) (*api_container.APIContainer, error) {
 	enclaveId, found := labels[docker_label_key.EnclaveUUIDDockerLabelKey.GetString()]
 	if !found {
@@ -565,6 +567,7 @@ func getApiContainerObjectFromContainerInfo(
 		publicGrpcPortSpec,
 		bridgeNetworkIpAddr,
 		isProductionEnclave,
+		imageName,
 	)
 
 	return result, nil
@@ -583,6 +586,7 @@ func getApiContainerObjectFromContainerInfoWithBridgeNetworkIpAddress(
 		apicObj.GetPublicGRPCPort(),
 		net.ParseIP(bridgeNetworkIpAddress),
 		apicObj.IsProductionEnclave(),
+		apicObj.GetImageName(),
 	)
 	return result, nil
 }

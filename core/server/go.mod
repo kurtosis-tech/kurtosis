@@ -34,11 +34,12 @@ require (
 	github.com/compose-spec/compose-go v1.20.2
 	github.com/go-git/go-git/v5 v5.19.2
 	github.com/hashicorp/go-envparse v0.1.0
+	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/itchyny/gojq v0.12.19
 	github.com/joho/godotenv v1.5.1
 	github.com/kurtosis-tech/kurtosis/path-compression v0.0.0-20260325155815-f36ae687d73d
-	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20230710164206-90b674acb269
 	github.com/pkg/errors v0.9.1
+	github.com/soheilhy/cmux v0.1.5
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c
 	go.etcd.io/bbolt v1.4.3
 	go.starlark.net v0.0.0-20230224151120-c52844e64a10
@@ -54,6 +55,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.3.0 // indirect
 	github.com/STARRY-S/zip v0.2.3 // indirect
+	github.com/adrg/xdg v0.5.3 // indirect
 	github.com/andybalholm/brotli v1.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bodgit/plumbing v1.3.0 // indirect
@@ -112,7 +114,6 @@ require (
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/imdario/mergo v0.3.16 // indirect
-	github.com/improbable-eng/grpc-web v0.15.0 // indirect
 	github.com/itchyny/timefmt-go v0.1.8 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -149,7 +150,6 @@ require (
 	github.com/segmentio/backo-go v1.1.0 // indirect
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 // indirect
 	github.com/skeema/knownhosts v1.3.1 // indirect
-	github.com/soheilhy/cmux v0.1.5 // indirect
 	github.com/sorairolake/lzip-go v0.3.8 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect

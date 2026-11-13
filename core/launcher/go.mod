@@ -14,12 +14,14 @@ require (
 )
 
 require (
+	github.com/kurtosis-tech/kurtosis/api/golang v1.18.0
 	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0-00010101000000-000000000000
 	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0-00010101000000-000000000000
 	github.com/kurtosis-tech/kurtosis/metrics-library/golang v0.0.0-20231206095907-9bdf0d02cb90
 )
 
 require (
+	github.com/adrg/xdg v0.5.3 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.1 // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -34,6 +36,9 @@ require (
 	golang.org/x/net v0.60.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260921155816-b14227669459 // indirect
+	google.golang.org/grpc v1.84.0 // indirect
+	google.golang.org/protobuf v1.36.12 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/segmentio/analytics-go.v3 v3.1.0 // indirect
 	k8s.io/api v0.37.1 // indirect

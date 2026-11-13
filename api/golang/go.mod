@@ -26,11 +26,13 @@ require (
 	google.golang.org/protobuf v1.36.12
 )
 
-require gopkg.in/yaml.v2 v2.4.0
+require (
+	github.com/adrg/xdg v0.5.3
+	gopkg.in/yaml.v2 v2.4.0
+)
 
 require (
 	github.com/STARRY-S/zip v0.2.3 // indirect
-	github.com/adrg/xdg v0.5.3 // indirect
 	github.com/andybalholm/brotli v1.2.0 // indirect
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/bodgit/plumbing v1.3.0 // indirect

@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"go.starlark.net/starlark"
+	"net"
 	"reflect"
 	"strings"
 )
@@ -21,6 +22,8 @@ const (
 	WaitAttr                    = "wait"
 
 	UrlAttr = "url"
+
+	HostIpAttr = "host_ip"
 
 	maxPortNumber                 = 65535
 	minPortNumber                 = 1
@@ -74,6 +77,12 @@ func NewPortSpecType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.ValidateURL(value, UrlAttr)
 					},
+				},
+				{
+					Name:              HostIpAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
+					Validator:         validateHostIp,
 				},
 			},
 		},
@@ -129,6 +138,8 @@ func CreatePortSpecUsingGoValues(
 		portUrl := fmt.Sprintf("%v://%v:%v", *maybeApplicationProtocol, serviceName, portNumber)
 		args = append(args, starlark.String(portUrl))
 	}
+
+	args = append(args, nil)
 
 	argumentDefinitions := NewPortSpecType().Arguments
 	argumentValuesSet := builtin_argument.NewArgumentValuesSet(argumentDefinitions, args)
@@ -215,7 +226,28 @@ func (portSpec *PortSpec) ToKurtosisType() (*port_spec.PortSpec, *startosis_erro
 		// this should never happen since we're checking every attribute defensively here
 		return nil, startosis_errors.NewInterpretationError("Unexpected error occurred parsing the following port spec: '%s'", portSpec.String())
 	}
+
+	hostIpValue, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](
+		portSpec.KurtosisValueTypeDefault, HostIpAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found && hostIpValue.GoString() != "" {
+		parsedPortSpec = parsedPortSpec.WithHostIp(hostIpValue.GoString())
+	}
 	return parsedPortSpec, nil
+}
+
+func validateHostIp(value starlark.Value) *startosis_errors.InterpretationError {
+	hostIpStr, ok := value.(starlark.String)
+	if !ok {
+		return startosis_errors.NewInterpretationError("Value for '%s' was expected to be a starlark.String but was '%s'", HostIpAttr, reflect.TypeOf(value))
+	}
+	parsedHostIp := net.ParseIP(hostIpStr.GoString())
+	if parsedHostIp == nil || parsedHostIp.To4() == nil {
+		return startosis_errors.NewInterpretationError("Value for '%s' must be an IPv4 address but was '%s'", HostIpAttr, hostIpStr.GoString())
+	}
+	return nil
 }
 
 func parsePortNumber(isSet bool, portNumberStarlark starlark.Int) (uint16, *startosis_errors.InterpretationError) {

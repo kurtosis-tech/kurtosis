@@ -129,6 +129,7 @@ var fileServerPortSpec = &kurtosis_core_rpc_api_bindings.Port{
 	MaybeWaitTimeout:         defaultWaitTimeoutForTest,
 	Locked:                   nil,
 	Alias:                    nil,
+	HostIp:                   nil,
 }
 var datastorePortSpec = &kurtosis_core_rpc_api_bindings.Port{
 	Number:                   uint32(datastore_rpc_api_consts.ListenPort),
@@ -137,6 +138,7 @@ var datastorePortSpec = &kurtosis_core_rpc_api_bindings.Port{
 	MaybeWaitTimeout:         defaultWaitTimeoutForTest,
 	Locked:                   nil,
 	Alias:                    nil,
+	HostIp:                   nil,
 }
 var apiPortSpec = &kurtosis_core_rpc_api_bindings.Port{
 	Number:                   uint32(example_api_server_rpc_api_consts.ListenPort),
@@ -145,6 +147,7 @@ var apiPortSpec = &kurtosis_core_rpc_api_bindings.Port{
 	MaybeWaitTimeout:         defaultWaitTimeoutForTest,
 	Locked:                   nil,
 	Alias:                    nil,
+	HostIp:                   nil,
 }
 
 type GrpcAvailabilityChecker interface {

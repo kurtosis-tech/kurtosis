@@ -730,14 +730,22 @@ func createStartServiceOperation(
 				if !found {
 					return nil, stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v', but it was not found", portId, privatePortSpec.GetNumber())
 				}
-				dockerUsedPorts[dockerPort] = docker_manager.NewManualPublishingSpec(publicPortSpec.GetNumber())
+				if maybeHostIp := publicPortSpec.GetMaybeHostIp(); maybeHostIp != nil {
+					dockerUsedPorts[dockerPort] = docker_manager.NewManualPublishingSpecOnHostIp(publicPortSpec.GetNumber(), *maybeHostIp)
+				} else {
+					dockerUsedPorts[dockerPort] = docker_manager.NewManualPublishingSpec(publicPortSpec.GetNumber())
+				}
 				hasPinnedPorts = true
 			} else if !publishUdp && privatePortSpec.GetTransportProtocol() == port_spec.TransportProtocol_UDP {
 				// When publish_udp=false and port is UDP, don't publish to host
 				// This avoids Docker Desktop 4.41.2+ UDP port publishing issues
 				dockerUsedPorts[dockerPort] = docker_manager.NewNoPublishingSpec()
 			} else {
-				dockerUsedPorts[dockerPort] = docker_manager.NewAutomaticPublishingSpec()
+				if maybeHostIp := privatePortSpec.GetMaybeHostIp(); maybeHostIp != nil {
+					dockerUsedPorts[dockerPort] = docker_manager.NewAutomaticPublishingSpecOnHostIp(*maybeHostIp)
+				} else {
+					dockerUsedPorts[dockerPort] = docker_manager.NewAutomaticPublishingSpec()
+				}
 				hasAutoPublishedPorts = true
 			}
 		}

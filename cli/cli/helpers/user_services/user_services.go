@@ -3,6 +3,7 @@ package user_services
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/auth"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
@@ -80,7 +81,11 @@ func GetUserServicePortBindingStrings(userService *kurtosis_core_rpc_api_binding
 			if privatePortSpec.GetMaybeApplicationProtocol() != "" {
 				applicationProtocol = fmt.Sprintf("%v%v", privatePorts[portId].GetMaybeApplicationProtocol(), linkDelimeter)
 			}
-			resultLines[portId] = currentPortLine + fmt.Sprintf(" -> %v%v:%v", applicationProtocol, publicIpAddr, publicPortSpec.GetNumber())
+			portPublicIpAddr := publicIpAddr
+			if publicPortSpec.GetHostIp() != "" {
+				portPublicIpAddr = publicPortSpec.GetHostIp()
+			}
+			resultLines[portId] = currentPortLine + fmt.Sprintf(" -> %v%v:%v", applicationProtocol, portPublicIpAddr, publicPortSpec.GetNumber())
 		}
 	}
 
@@ -105,7 +110,7 @@ func GetUserServiceInfoMapFromAPIContainer(ctx context.Context, enclaveInfo *kur
 		apicHostMachineIp,
 		apicHostMachineGrpcPort,
 	)
-	conn, err := grpc.NewClient(apiContainerHostGrpcUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(apiContainerHostGrpcUrl, grpc.WithTransportCredentials(insecure.NewCredentials()), auth.GrpcDialOption())
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,

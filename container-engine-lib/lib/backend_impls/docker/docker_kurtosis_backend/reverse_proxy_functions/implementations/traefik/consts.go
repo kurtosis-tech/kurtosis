@@ -2,7 +2,7 @@ package traefik
 
 const (
 	////////////////////////--TRAEFIK CONTAINER CONFIGURATION SECTION--/////////////////////////////
-	containerImage = "traefik:2.10.6"
+	containerImage = "traefik:v2.11.62"
 
 	configDirpath  = "/etc/traefik/"
 	configFilepath = configDirpath + "traefik.yml"

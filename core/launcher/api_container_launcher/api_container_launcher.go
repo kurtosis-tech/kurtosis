@@ -7,6 +7,8 @@ package api_container_launcher
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/auth"
+	"os"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
@@ -27,6 +29,19 @@ const (
 
 type ApiContainerLauncher struct {
 	kurtosisBackend backend_interface.KurtosisBackend
+}
+
+func GetDefaultContainerImageAndTag() string {
+	return getContainerImageAndTag(kurtosis_version.KurtosisVersion)
+}
+
+func getContainerImageAndTag(imageVersionTag string) string {
+	return fmt.Sprintf(
+		"%v/%v:%v",
+		image_org.Get(),
+		containerImageName,
+		imageVersionTag,
+	)
 }
 
 func NewApiContainerLauncher(kurtosisBackend backend_interface.KurtosisBackend) *ApiContainerLauncher {
@@ -118,13 +133,9 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		return nil, stacktrace.Propagate(err, "An error occurred generating the API container's environment variables")
 	}
 	envVars[image_org.EnvVarName] = image_org.Get()
+	envVars[auth.EnvVarName] = os.Getenv(auth.EnvVarName)
 
-	containerImageAndTag := fmt.Sprintf(
-		"%v/%v:%v",
-		image_org.Get(),
-		containerImageName,
-		imageVersionTag,
-	)
+	containerImageAndTag := getContainerImageAndTag(imageVersionTag)
 
 	logrus.Debugf("Launching Kurtosis API container...")
 	apiContainer, err := launcher.kurtosisBackend.CreateAPIContainer(

@@ -1,11 +1,12 @@
 package api_container_gateway
 
 import (
+	"github.com/kurtosis-tech/kurtosis/api/golang/auth"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/connection"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/server/api_container_gateway"
-	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/grpc_server"
 	"github.com/kurtosis-tech/stacktrace"
 	"google.golang.org/grpc"
 	"time"
@@ -36,9 +37,14 @@ func RunApiContainerGatewayUntilStopped(connectionProvider *connection.GatewayCo
 	apiContainerGatewayServiceRegistrationFunc := func(grpcServer *grpc.Server) {
 		kurtosis_core_rpc_api_bindings.RegisterApiContainerServiceServer(grpcServer, apiContainerGatewayServer)
 	}
-	apiContainerGatewayGrpcServer := minimal_grpc_server.NewMinimalGRPCServer(
+	authToken, err := auth.GetToken()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the Kurtosis API auth token")
+	}
+	apiContainerGatewayGrpcServer := grpc_server.NewGrpcServer(
 		gatewayPort,
 		grpcServerStopGracePeriod,
+		auth.NewGrpcServerOptions(authToken),
 		[]func(*grpc.Server){
 			apiContainerGatewayServiceRegistrationFunc,
 		},

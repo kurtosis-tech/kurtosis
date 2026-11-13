@@ -15,6 +15,8 @@ const (
 	containerTypeLabelKeyStr = labelNamespaceStr + "container-type"
 	volumeTypeLabelKeyStr    = labelNamespaceStr + "volume-type"
 
+	hostPortBindLabelKeyStr = labelNamespaceStr + "host-port-bind"
+
 	// A label to identify a Kurtosis resource (e.g. network, container, etc.) by its id
 	idLabelKeyStr = labelNamespaceStr + "id"
 
@@ -59,6 +61,7 @@ var AppIDDockerLabelKey = MustCreateNewDockerLabelKey(appIdLabelKeyStr)
 
 var ContainerTypeDockerLabelKey = MustCreateNewDockerLabelKey(containerTypeLabelKeyStr)
 var VolumeTypeDockerLabelKey = MustCreateNewDockerLabelKey(volumeTypeLabelKeyStr)
+var HostPortBindDockerLabelKey = MustCreateNewDockerLabelKey(hostPortBindLabelKeyStr)
 var IDDockerLabelKey = MustCreateNewDockerLabelKey(idLabelKeyStr)
 var GUIDDockerLabelKey = MustCreateNewDockerLabelKey(guidLabelKeyStr)
 var PortSpecsDockerLabelKey = MustCreateNewDockerLabelKey(portSpecsLabelKeyStr)

@@ -26,6 +26,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/image"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/api/types/volume"
@@ -64,12 +65,8 @@ const (
 	//  kill signal"
 	dockerKillSignal = "KILL"
 
-	expectedHostIp = "0.0.0.0"
-
-	// When Docker binds a container port to the host machine, it binds it to host interface 0.0.0.0
-	// Linux machines will use 127.0.0.1 for 0.0.0.0, but Windows machines don't
-	// We therefore return 127.0.0.1 to the users rather than 0.0.0.0 so everybody can use them
-	hostPortBindingInterfaceForUserConsumption = "127.0.0.1"
+	allInterfacesHostIp = "0.0.0.0"
+	loopbackHostIp      = "127.0.0.1"
 
 	// Character Docker uses to separate the repo from
 	dockerTagSeparatorChar = ":"
@@ -871,10 +868,9 @@ func (manager *DockerManager) CreateAndStartContainer(
 				//Then, if the container is running, show the error related to the ports problem
 				return "", nil, stacktrace.NewError(
 					"%v ports were to be published to the host machine, but container '%v' never got host machine port"+
-						" bindings on interface %v for all published ports even after %v checks with %v between checks.",
+						" bindings on an IPv4 interface for all published ports even after %v checks with %v between checks.",
 					numPublishedPorts,
 					containerId,
-					expectedHostIp,
 					maxNumHostPortBindingChecks,
 					timeBetweenHostPortBindingChecks,
 				)
@@ -1041,8 +1037,29 @@ Args:
 	containerId: ID of Docker container to remove
 */
 func (manager *DockerManager) RemoveContainer(ctx context.Context, containerId string) error {
+	return manager.removeContainer(ctx, containerId, shouldRemoveAnonymousVolumesWhenRemovingContainers)
+}
+
+func (manager *DockerManager) RemoveContainerKeepingVolumes(ctx context.Context, containerId string) error {
+	return manager.removeContainer(ctx, containerId, false)
+}
+
+func (manager *DockerManager) GetContainerVolumeNameMountedAt(ctx context.Context, containerId string, containerDirpath string) (string, error) {
+	containerInfo, err := manager.InspectContainer(ctx, containerId)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred inspecting container '%v' to find the volume mounted at '%v'", containerId, containerDirpath)
+	}
+	for _, containerMount := range containerInfo.Mounts {
+		if containerMount.Type == mount.TypeVolume && containerMount.Destination == containerDirpath {
+			return containerMount.Name, nil
+		}
+	}
+	return "", nil
+}
+
+func (manager *DockerManager) removeContainer(ctx context.Context, containerId string, shouldRemoveAnonymousVolumes bool) error {
 	removeOpts := &container.RemoveOptions{
-		RemoveVolumes: shouldRemoveAnonymousVolumesWhenRemovingContainers,
+		RemoveVolumes: shouldRemoveAnonymousVolumes,
 		RemoveLinks:   shouldRemoveLinksWhenRemovingContainers,
 		Force:         shouldKillContainersWhenRemovingContainers,
 	}
@@ -1884,14 +1901,9 @@ func (manager *DockerManager) getContainerHostConfig(
 		case noPublishing:
 			continue
 		case automaticPublishing:
-			hostIp := ""
-			if manager.podmanMode {
-				hostIp = expectedHostIp // podman requires to be 0.0.0.0
-			}
 			portMap[containerPort] = []nat.PortBinding{
-				// Leaving this struct empty will cause Docker to automatically choose an interface IP & port on the host machine
 				{
-					HostIP:   hostIp,
+					HostIP:   publishSpec.getHostIp(),
 					HostPort: "",
 				},
 			}
@@ -1906,7 +1918,7 @@ func (manager *DockerManager) getContainerHostConfig(
 			hostMachinePortNumStr := fmt.Sprintf("%v", manualSpec.getHostMachinePortNum())
 			portMap[containerPort] = []nat.PortBinding{
 				{
-					HostIP:   expectedHostIp,
+					HostIP:   manualSpec.getHostIp(),
 					HostPort: hostMachinePortNumStr,
 				},
 			}
@@ -2179,15 +2191,16 @@ func getHostPortBindingsOnExpectedInterface(hostPortBindingsOnAllInterfaces nat.
 				interfaceBinding.HostPort,
 				port,
 			)
-			if interfaceBinding.HostIP == expectedHostIp {
-				logrus.Tracef("Interface binding matched expected host IP '%v'; registering binding", expectedHostIp)
-				result[port] = &nat.PortBinding{
-					HostIP:   hostPortBindingInterfaceForUserConsumption,
-					HostPort: interfaceBinding.HostPort,
-				}
-				// Finding multiple public ports for the same interface would be silly, and unnecessary, so we break here
-				break
+			parsedHostIp := net.ParseIP(interfaceBinding.HostIP)
+			if parsedHostIp == nil || parsedHostIp.To4() == nil {
+				continue
 			}
+			logrus.Tracef("Interface binding on IPv4 host IP '%v'; registering binding", interfaceBinding.HostIP)
+			result[port] = &nat.PortBinding{
+				HostIP:   interfaceBinding.HostIP,
+				HostPort: interfaceBinding.HostPort,
+			}
+			break
 		}
 	}
 	return result

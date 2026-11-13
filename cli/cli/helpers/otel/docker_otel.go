@@ -37,6 +37,11 @@ const (
 	tempFilePerms = 0644
 )
 
+const (
+	defaultClickHouseDataVolumeName = "kurtosis-otel-clickhouse-data"
+	clickHouseDataDirpath           = "/var/lib/clickhouse"
+)
+
 var ClickHouseContainerNamePrefix = fmt.Sprintf("%v-", ClickHouseContainerLabel)
 var CollectorContainerNamePrefix = fmt.Sprintf("%v-", CollectorContainerLabel)
 
@@ -72,9 +77,17 @@ func StartOtelInDocker(ctx context.Context, dockerManager *docker_manager.Docker
 		return nil, stacktrace.Propagate(err, "An error occurred getting collector container by labels: %v.", collectorContainerLabels)
 	}
 
+	clickHouseDataVolumeName := defaultClickHouseDataVolumeName
 	if clickHouseContainerNeedsRecreation(clickHouseContainer) {
-		logrus.Infof("Existing otel ClickHouse container is stale. Recreating it...")
-		if err := dockerManager.RemoveContainer(ctx, clickHouseContainer.GetName()); err != nil {
+		logrus.Infof("Existing otel ClickHouse container is stale. Recreating it with its stored logs...")
+		existingDataVolumeName, err := dockerManager.GetContainerVolumeNameMountedAt(ctx, clickHouseContainer.GetId(), clickHouseDataDirpath)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting the data volume of stale otel ClickHouse container '%v'.", clickHouseContainer.GetName())
+		}
+		if existingDataVolumeName != "" {
+			clickHouseDataVolumeName = existingDataVolumeName
+		}
+		if err := dockerManager.RemoveContainerKeepingVolumes(ctx, clickHouseContainer.GetName()); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred removing stale otel ClickHouse container '%v'.", clickHouseContainer.GetName())
 		}
 		clickHouseContainer = nil
@@ -86,7 +99,7 @@ func StartOtelInDocker(ctx context.Context, dockerManager *docker_manager.Docker
 	removeClickHouseContainerFunc := func() {}
 	if clickHouseContainer == nil {
 		logrus.Infof("No running otel ClickHouse container found. Creating it...")
-		clickHouseHTTPURL, clickHouseNativeAddress, removeClickHouseContainerFunc, err = createClickHouseContainer(ctx, dockerManager)
+		clickHouseHTTPURL, clickHouseNativeAddress, removeClickHouseContainerFunc, err = createClickHouseContainer(ctx, dockerManager, clickHouseDataVolumeName)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating otel ClickHouse container.")
 		}
@@ -146,7 +159,7 @@ func StartOtelInDocker(ctx context.Context, dockerManager *docker_manager.Docker
 	}, nil
 }
 
-func createClickHouseContainer(ctx context.Context, dockerManager *docker_manager.DockerManager) (string, string, func(), error) {
+func createClickHouseContainer(ctx context.Context, dockerManager *docker_manager.DockerManager, dataVolumeName string) (string, string, func(), error) {
 	bridgeNetworkId, err := dockerManager.GetNetworkIdByName(ctx, bridgeNetworkName)
 	if err != nil {
 		return "", "", nil, stacktrace.Propagate(err, "An error occurred getting Docker network id by Name: %v", bridgeNetworkName)
@@ -180,12 +193,16 @@ func createClickHouseContainer(ctx context.Context, dockerManager *docker_manage
 			initSQLFilepath: clickHouseInitSQLMountPath,
 			configFilepath:  clickHouseConfigMountPath,
 		}).
+		WithVolumeMounts(map[string]string{
+			dataVolumeName: clickHouseDataDirpath,
+		}).
 		WithFetchingLatestImageIfMissing().
 		WithRestartPolicy(docker_manager.RestartOnFailure).
 		WithNetworkMode(bridgeNetworkName).
 		WithLabels(map[string]string{
 			docker_label_key.ContainerTypeDockerLabelKey.GetString(): ClickHouseContainerLabel,
 			clickHouseConfigHashLabelKey.GetString():                 clickHouseConfigHash,
+			docker_label_key.HostPortBindDockerLabelKey.GetString():  docker_manager.HostPortBindLoopbackLabelValue,
 		}).
 		Build()
 
@@ -251,7 +268,10 @@ func createCollectorContainer(ctx context.Context, dockerManager *docker_manager
 		WithFetchingLatestImageIfMissing().
 		WithRestartPolicy(docker_manager.RestartOnFailure).
 		WithNetworkMode(bridgeNetworkName).
-		WithLabels(collectorContainerLabels).
+		WithLabels(map[string]string{
+			docker_label_key.ContainerTypeDockerLabelKey.GetString(): CollectorContainerLabel,
+			docker_label_key.HostPortBindDockerLabelKey.GetString():  docker_manager.HostPortBindLoopbackLabelValue,
+		}).
 		Build()
 
 	collectorContainerId, _, err := dockerManager.CreateAndStartContainer(ctx, collectorArgs)
@@ -313,6 +333,9 @@ func clickHouseContainerNeedsRecreation(clickHouseContainer *types.Container) bo
 	if clickHouseContainer.GetLabels()[clickHouseConfigHashLabelKey.GetString()] != clickHouseConfigHash {
 		return true
 	}
+	if !publishesHostPortsOnLoopback(clickHouseContainer) {
+		return true
+	}
 	return !hasExpectedHostPortBinding(clickHouseContainer.GetHostPortBindings(), clickHouseHTTPPort, clickHouseHTTPHostPort)
 }
 
@@ -323,8 +346,15 @@ func collectorContainerNeedsRecreation(collectorContainer *types.Container, clic
 	if clickHouseWasCreated {
 		return true
 	}
+	if !publishesHostPortsOnLoopback(collectorContainer) {
+		return true
+	}
 	hostPortBindings := collectorContainer.GetHostPortBindings()
 	return !hasExpectedHostPortBinding(hostPortBindings, collectorOTLPGRPCPort, collectorOTLPGRPCHostPort) || !hasExpectedHostPortBinding(hostPortBindings, collectorOTLPHTTPPort, collectorOTLPHTTPHostPort)
+}
+
+func publishesHostPortsOnLoopback(container *types.Container) bool {
+	return container.GetLabels()[docker_label_key.HostPortBindDockerLabelKey.GetString()] == docker_manager.HostPortBindLoopbackLabelValue
 }
 
 func hasExpectedHostPortBinding(hostPortBindings map[nat.Port]*nat.PortBinding, containerPort uint16, hostPort uint16) bool {
@@ -361,8 +391,17 @@ func StopOtelInDocker(ctx context.Context, dockerManager *docker_manager.DockerM
 		return stacktrace.Propagate(err, "An error occurred getting ClickHouse container by labels: %v", clickHouseContainerLabels)
 	}
 	if clickHouseContainer != nil {
+		dataVolumeName, err := dockerManager.GetContainerVolumeNameMountedAt(ctx, clickHouseContainer.GetId(), clickHouseDataDirpath)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting the data volume of otel ClickHouse container '%v'", clickHouseContainer.GetName())
+		}
 		if err := dockerManager.RemoveContainer(ctx, clickHouseContainer.GetName()); err != nil {
 			return stacktrace.Propagate(err, "An error occurred removing otel ClickHouse container '%v'", clickHouseContainer.GetName())
+		}
+		if dataVolumeName != "" {
+			if err := dockerManager.RemoveVolume(ctx, dataVolumeName); err != nil {
+				return stacktrace.Propagate(err, "An error occurred removing otel ClickHouse data volume '%v'", dataVolumeName)
+			}
 		}
 	}
 

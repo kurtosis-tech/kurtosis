@@ -423,19 +423,41 @@ func (manager *EnclaveManager) getExistingAndHistoricalEnclaveIdentifiersWithout
 }
 
 func (manager *EnclaveManager) RestartAllEnclaveAPIContainers(ctx context.Context) error {
+	return manager.restartEnclaveAPIContainers(ctx, func(*api_container.APIContainer) bool { return true })
+}
 
-	logrus.Info("Restarting all API containers...")
+func (manager *EnclaveManager) RestartOutdatedEnclaveAPIContainers(ctx context.Context) error {
+	return manager.restartEnclaveAPIContainers(ctx, isOutdatedAPIContainer)
+}
 
+func isOutdatedAPIContainer(apiContainer *api_container.APIContainer) bool {
+	imageName := apiContainer.GetImageName()
+	return imageName != "" && imageName != api_container_launcher.GetDefaultContainerImageAndTag()
+}
+
+func (manager *EnclaveManager) restartEnclaveAPIContainers(ctx context.Context, shouldRestart func(*api_container.APIContainer) bool) error {
 	getAPIContainersRunningFilters := &api_container.APIContainerFilters{
 		EnclaveIDs: nil,
 		Statuses: map[container.ContainerStatus]bool{
 			container.ContainerStatus_Running: true,
 		},
 	}
-	allAPIContainersRunning, err := manager.kurtosisBackend.GetAPIContainers(ctx, getAPIContainersRunningFilters)
+	allRunningAPIContainers, err := manager.kurtosisBackend.GetAPIContainers(ctx, getAPIContainersRunningFilters)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting API containers using filters '%+v'", getAPIContainersRunningFilters)
 	}
+
+	allAPIContainersRunning := map[enclave.EnclaveUUID]*api_container.APIContainer{}
+	for enclaveUuid, apiContainer := range allRunningAPIContainers {
+		if shouldRestart(apiContainer) {
+			allAPIContainersRunning[enclaveUuid] = apiContainer
+		}
+	}
+	if len(allAPIContainersRunning) == 0 {
+		return nil
+	}
+
+	logrus.Infof("Restarting %v API container(s)...", len(allAPIContainersRunning))
 
 	apiContainersToDestroyEnclaveUuids := map[enclave.EnclaveUUID]bool{}
 	for enclaveUuid := range allAPIContainersRunning {
@@ -476,7 +498,7 @@ func (manager *EnclaveManager) RestartAllEnclaveAPIContainers(ctx context.Contex
 		}
 	}
 
-	logrus.Info("...all API containers restarted.")
+	logrus.Info("...API containers restarted.")
 
 	return nil
 }

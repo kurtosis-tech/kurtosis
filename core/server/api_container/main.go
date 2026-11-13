@@ -8,6 +8,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/auth"
 	"net"
 	"os"
 	"path"
@@ -28,6 +29,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/args/kurtosis_backend_config"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/grpc_server"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
@@ -38,7 +40,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/analytics_logger"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/source"
-	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
@@ -104,6 +105,11 @@ func runMain() error {
 	serverArgs, ownIpAddress, err := args.GetArgsFromEnv()
 	if err != nil {
 		return stacktrace.Propagate(err, "Couldn't retrieve API container args from the environment")
+	}
+
+	authToken, err := auth.GetServerToken()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the Kurtosis API auth token")
 	}
 
 	logLevel, err := logrus.ParseLevel(serverArgs.LogLevel)
@@ -263,9 +269,10 @@ func runMain() error {
 	apiContainerServiceRegistrationFunc := func(grpcServer *grpc.Server) {
 		kurtosis_core_rpc_api_bindings.RegisterApiContainerServiceServer(grpcServer, apiContainerService)
 	}
-	apiContainerServer := minimal_grpc_server.NewMinimalGRPCServer(
+	apiContainerServer := grpc_server.NewGrpcServer(
 		serverArgs.GrpcListenPortNum,
 		grpcServerStopGracePeriod,
+		auth.NewGrpcServerOptions(authToken),
 		[]func(*grpc.Server){
 			apiContainerServiceRegistrationFunc,
 		},

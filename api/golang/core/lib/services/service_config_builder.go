@@ -316,6 +316,7 @@ func ConvertJsonPortToApiPort(jsonPorts map[string]Port) map[string]*kurtosis_co
 			MaybeWaitTimeout:         port.Wait,
 			Locked:                   nil,
 			Alias:                    nil,
+			HostIp:                   nil,
 		}
 		apiPorts[portId] = apiPort
 	}

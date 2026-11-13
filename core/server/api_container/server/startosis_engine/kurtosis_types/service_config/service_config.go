@@ -2,7 +2,9 @@ package service_config
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/auth"
 	"math"
+	"os"
 	"path"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
@@ -830,6 +832,7 @@ func ConvertFilesArtifactsMounts(filesArtifactsMountDirpathsMap map[string][]str
 	if err != nil {
 		return nil, startosis_errors.NewInterpretationError("An error occurred getting files artifacts expander environment variables using args: %+v", filesArtifactsExpanderArgs)
 	}
+	expanderEnvVars[auth.EnvVarName] = os.Getenv(auth.EnvVarName)
 
 	expanderImageAndTag := fmt.Sprintf(
 		"%v/%v:%v",

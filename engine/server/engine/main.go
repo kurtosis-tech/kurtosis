@@ -8,6 +8,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/auth"
 	"io/fs"
 	"math"
 	"net"
@@ -94,8 +95,7 @@ const (
 )
 
 var (
-	defaultCORSOrigins []string = []string{"*"}
-	defaultCORSHeaders []string = []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept}
+	defaultCORSHeaders []string = []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization}
 )
 
 // Nil indicates that the KurtosisBackend should not operate in API container mode, which is appropriate here
@@ -144,6 +144,11 @@ func runMain() error {
 	serverArgs, err := args.GetArgsFromEnv()
 	if err != nil {
 		return stacktrace.Propagate(err, "Couldn't retrieve engine server args from the environment")
+	}
+
+	authToken, err := auth.GetServerToken()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the Kurtosis API auth token")
 	}
 
 	logLevel, err := logrus.ParseLevel(serverArgs.LogLevelStr)
@@ -240,9 +245,9 @@ func runMain() error {
 			w.Header().Add("Cache-Control", "no-store")
 			fileServer.ServeHTTP(w, r)
 		})
-		handler.Handle(pprofPath, http.HandlerFunc(http.DefaultServeMux.ServeHTTP))
+		handler.Handle(pprofPath, auth.NewHttpMiddleware(authToken)(http.HandlerFunc(http.DefaultServeMux.ServeHTTP)))
 
-		err := http.ListenAndServe(webappPortAddr, handler)
+		err := http.ListenAndServe(webappPortAddr, auth.NewHostValidationMiddleware(serverArgs.Domain)(handler))
 		if err != nil {
 			logrus.Debugf("error while starting the webapp: \n%v", err)
 		}
@@ -250,7 +255,7 @@ func runMain() error {
 
 	go func() {
 		enforceAuth := serverArgs.OnBastionHost
-		err = em_api.RunEnclaveManagerApiServer(enforceAuth)
+		err = em_api.RunEnclaveManagerApiServer(enforceAuth, serverArgs.Domain, authToken)
 		if err != nil {
 			logrus.Fatal("an error occurred while processing the auth settings, exiting!", err)
 			fmt.Fprintln(logrus.StandardLogger().Out, err)
@@ -287,6 +292,8 @@ func runMain() error {
 		if err := enclaveManager.RestartAllEnclaveAPIContainers(ctx); err != nil {
 			return stacktrace.Propagate(err, "An error occurred restarting all API containers.")
 		}
+	} else if err := enclaveManager.RestartOutdatedEnclaveAPIContainers(ctx); err != nil {
+		logrus.Errorf("An error occurred restarting the API containers created by another Kurtosis version; the affected enclaves need '--restart-api-containers' or to be recreated:\n%v", err)
 	}
 
 	go func() {
@@ -296,6 +303,7 @@ func runMain() error {
 			enclaveManager,
 			logsDatabaseClient,
 			metricsClient,
+			authToken,
 		)
 		if err != nil {
 			logrus.Fatal("The REST API server is down, exiting!", err)
@@ -318,12 +326,21 @@ func runMain() error {
 		}
 	}()
 
-	engineHttpServer := connect_server.NewConnectServer(serverArgs.GrpcListenPortNum, grpcServerStopGracePeriod, handler, apiPath)
-	if err := engineHttpServer.RunServerUntilInterruptedWithCors(cors.AllowAll()); err != nil {
+	engineHttpServer := connect_server.NewConnectServer(serverArgs.GrpcListenPortNum, grpcServerStopGracePeriod, auth.NewApiMiddleware(authToken, serverArgs.Domain)(handler), apiPath)
+	if err := engineHttpServer.RunServerUntilInterruptedWithCors(newBrowserCors(serverArgs.Domain)); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the server.")
 	}
 
 	return nil
+}
+
+func newBrowserCors(domain string) *cors.Cors {
+	// nolint:exhaustruct
+	return cors.New(cors.Options{
+		AllowedOrigins: auth.GetAllowedBrowserOrigins(domain),
+		AllowedMethods: []string{http.MethodGet, http.MethodPost, http.MethodOptions},
+		AllowedHeaders: []string{"*"},
+	})
 }
 
 func getEnclaveManager(
@@ -455,6 +472,7 @@ func restApiServer(
 	enclave_manager *enclave_manager.EnclaveManager,
 	logsDatabaseClient centralized_logs.LogsDatabaseClient,
 	metricsClient metrics_client.MetricsClient,
+	authToken string,
 ) error {
 
 	asyncStarlarkLogs := streaming.NewStreamerPool[*kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine](streamerPoolSize, streamerExpirationTime)
@@ -480,7 +498,7 @@ func restApiServer(
 	}))
 
 	// Setup CORS policies for the REST API server
-	allowOrigins := utils.DerefWith(serverArgs.AllowedCORSOrigins, defaultCORSOrigins)
+	allowOrigins := utils.DerefWith(serverArgs.AllowedCORSOrigins, auth.GetAllowedBrowserOrigins(serverArgs.Domain))
 	logrus.Infof("Setting-up CORS policy to accept requests from origins: %v", allowOrigins)
 
 	// nolint:exhaustruct
@@ -550,6 +568,8 @@ func restApiServer(
 	} else {
 		server.ServeSwaggerUI(echoRouter, pathToApiGroup, pathToWebsocketSpecs, server.NewSwaggerUIConfig(swaggerWebsocket))
 	}
+
+	echoRouter.Use(echo.WrapMiddleware(auth.NewApiMiddleware(authToken, serverArgs.Domain)))
 
 	// ============================== Start Server ======================================
 	return echoRouter.Start(net.JoinHostPort(engine.RESTAPIHostIP, fmt.Sprint(engine.RESTAPIPortAddr)))
