@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/api/golang/auth"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
@@ -38,7 +39,16 @@ func run(_ context.Context, _ *flags.ParsedFlags, _ *args.ParsedArgs) error {
 		logrus.Warn("Kurtosis Cloud has been deprecated. Switch to a local kurtosis context to use the local Kurtosis web UI instead.")
 	}
 
-	if err := multi_os_command_executor.OpenFile(webUILink); err != nil {
+	link := webUILink
+	authToken, err := auth.GetToken()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the Kurtosis API auth token")
+	}
+	if authToken != "" {
+		link = webUILink + "#" + auth.TokenUrlFragmentPrefix + authToken
+	}
+
+	if err := multi_os_command_executor.OpenFile(link); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while opening the Kurtosis Web UI")
 	}
 	return nil

@@ -7,6 +7,8 @@ package api_container_launcher
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/auth"
+	"os"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
@@ -131,6 +133,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		return nil, stacktrace.Propagate(err, "An error occurred generating the API container's environment variables")
 	}
 	envVars[image_org.EnvVarName] = image_org.Get()
+	envVars[auth.EnvVarName] = os.Getenv(auth.EnvVarName)
 
 	containerImageAndTag := getContainerImageAndTag(imageVersionTag)
 

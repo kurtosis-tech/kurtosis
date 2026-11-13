@@ -3,6 +3,7 @@
  * All Rights Reserved.
  */
 
+import {getGrpcNodeAuthClientOptions} from "../../../auth/auth";
 import {ok, err, Result, Err} from "neverthrow";
 import * as jspb from "google-protobuf";
 import type {
@@ -95,7 +96,7 @@ export class EnclaveContext {
             const apiContainerServiceNode = await import( /* webpackIgnore: true */ "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb")
 
             const apiContainerGrpcUrl: string = `${ipAddress}:${apiContainerGrpcPortNum}`
-            const apiContainerClient = new apiContainerServiceNode.ApiContainerServiceClient(apiContainerGrpcUrl, grpc_node.credentials.createInsecure());
+            const apiContainerClient = new apiContainerServiceNode.ApiContainerServiceClient(apiContainerGrpcUrl, grpc_node.credentials.createInsecure(), await getGrpcNodeAuthClientOptions(grpc_node));
             genericApiContainerClient = new GrpcNodeApiContainerClient(apiContainerClient, enclaveUuid, enclaveName)
 
             const nodeTgzArchiver = await import(/* webpackIgnore: true */ "./node_tgz_archiver")

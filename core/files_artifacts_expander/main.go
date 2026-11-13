@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/gammazero/workerpool"
+	"github.com/kurtosis-tech/kurtosis/api/golang/auth"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander/args"
 	"github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang/grpc_file_streaming"
@@ -76,7 +77,7 @@ func runMain() error {
 	}
 	apiContainerPortNum := filesArtifactExpanderArgs.ApiContainerPort
 	grpcUrl := fmt.Sprintf("%v:%v", apiContainerIpAddr, apiContainerPortNum)
-	apiContainerConnection, err := grpc.NewClient(grpcUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	apiContainerConnection, err := grpc.NewClient(grpcUrl, grpc.WithTransportCredentials(insecure.NewCredentials()), auth.GrpcDialOption())
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to create a client connection to API container at address '%v', instead a non-nil error was returned", grpcUrl)
 	}

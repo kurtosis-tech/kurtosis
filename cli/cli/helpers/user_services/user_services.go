@@ -3,6 +3,7 @@ package user_services
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/auth"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
@@ -105,7 +106,7 @@ func GetUserServiceInfoMapFromAPIContainer(ctx context.Context, enclaveInfo *kur
 		apicHostMachineIp,
 		apicHostMachineGrpcPort,
 	)
-	conn, err := grpc.NewClient(apiContainerHostGrpcUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(apiContainerHostGrpcUrl, grpc.WithTransportCredentials(insecure.NewCredentials()), auth.GrpcDialOption())
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,

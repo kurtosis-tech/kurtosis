@@ -8,6 +8,7 @@ package engine_server_launcher
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/auth"
 	"net"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
@@ -154,6 +155,11 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred generating the engine server's environment variables")
 	}
 	envVars[image_org.EnvVarName] = image_org.Get()
+	authToken, err := auth.GetOrCreateToken()
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the Kurtosis API auth token")
+	}
+	envVars[auth.EnvVarName] = authToken
 
 	engine, err := launcher.kurtosisBackend.CreateEngine(
 		ctx,

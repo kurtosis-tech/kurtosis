@@ -29,6 +29,7 @@ import {
     newStopEnclaveArgs
 } from "../constructor_calls";
 import {Readable} from "stream";
+import {getGrpcNodeAuthClientOptions} from "../../../auth/auth";
 import {LogLineFilter} from "./log_line_filter";
 import {Enclaves} from "./enclaves";
 import {EnclaveIdentifiers} from "./enclave_identifiers";
@@ -69,7 +70,7 @@ export class KurtosisContext {
             const engineServiceNode = await import( /* webpackIgnore: true */ "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_pb")
 
             const kurtosisEngineSocketStr: string = `${LOCAL_HOSTNAME}:${DEFAULT_GRPC_ENGINE_SERVER_PORT_NUM}`
-            const engineServiceClientNode = new engineServiceNode.EngineServiceClient(kurtosisEngineSocketStr, grpc_node.credentials.createInsecure())
+            const engineServiceClientNode = new engineServiceNode.EngineServiceClient(kurtosisEngineSocketStr, grpc_node.credentials.createInsecure(), await getGrpcNodeAuthClientOptions(grpc_node))
             genericEngineClient = new GrpcNodeEngineClient(engineServiceClientNode)
         } catch(error) {
             if (error instanceof Error) {

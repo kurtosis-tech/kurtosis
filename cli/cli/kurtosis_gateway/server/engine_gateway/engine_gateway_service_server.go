@@ -3,6 +3,7 @@ package engine_gateway
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/auth"
 	"sync"
 	"time"
 
@@ -340,7 +341,7 @@ func waitForGatewayReady(apiContainerHostMachineInfo *kurtosis_engine_rpc_api_bi
 	backgroundCtx := context.Background()
 	gatewayAddress := fmt.Sprintf("%v:%v", apiContainerHostMachineInfo.IpOnHostMachine, apiContainerHostMachineInfo.GrpcPortOnHostMachine)
 
-	conn, err := grpc.NewClient(gatewayAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(gatewayAddress, grpc.WithTransportCredentials(insecure.NewCredentials()), auth.GrpcDialOption())
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected to be dial in to API container running at address '%v', instead a non-nil error was returned", gatewayAddress)
 	}

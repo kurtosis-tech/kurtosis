@@ -3,6 +3,7 @@ package connection
 import (
 	"bytes"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/auth"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -211,7 +212,7 @@ func (connection *gatewayConnectionToKurtosisImpl) GetGrpcClientConn() (resultCl
 	}
 	localGrpcPortNum := localPorts[grpcPortId].GetNumber()
 	localGrpcServerAddress := fmt.Sprintf("%v:%v", localHostIpStr, localGrpcPortNum)
-	grpcConnection, err := grpc.NewClient(localGrpcServerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	grpcConnection, err := grpc.NewClient(localGrpcServerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()), auth.GrpcDialOption())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to create a GRPC client connection on address '%v', but a non-nil error was returned", localGrpcServerAddress)
 	}
