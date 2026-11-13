@@ -741,7 +741,11 @@ func createStartServiceOperation(
 				// This avoids Docker Desktop 4.41.2+ UDP port publishing issues
 				dockerUsedPorts[dockerPort] = docker_manager.NewNoPublishingSpec()
 			} else {
-				dockerUsedPorts[dockerPort] = docker_manager.NewAutomaticPublishingSpec()
+				if maybeHostIp := privatePortSpec.GetMaybeHostIp(); maybeHostIp != nil {
+					dockerUsedPorts[dockerPort] = docker_manager.NewAutomaticPublishingSpecOnHostIp(*maybeHostIp)
+				} else {
+					dockerUsedPorts[dockerPort] = docker_manager.NewAutomaticPublishingSpec()
+				}
 				hasAutoPublishedPorts = true
 			}
 		}

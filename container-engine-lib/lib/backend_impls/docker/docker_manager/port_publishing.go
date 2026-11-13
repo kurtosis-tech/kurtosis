@@ -93,6 +93,16 @@ func (option *manuallySpecifiedPortPublishSpec) getHostMachinePortNum() uint16 {
 	return option.hostMachinePortNum
 }
 
+// Returns a PortPublishSpec indicating that the port should be published to an automatically-assigned port on the
+// given host machine interface IP
+func NewAutomaticPublishingSpecOnHostIp(hostIp string) PortPublishSpec {
+	return &simplePortPublishSpec{
+		publishType:                   automaticPublishing,
+		shouldFindAfterContainerStart: true,
+		hostIp:                        hostIp,
+	}
+}
+
 // Returns a PortPublishSpec indicating that the port should be published to the given port on the host machine's
 // loopback interface
 func NewManualPublishingSpec(hostMachinePortNum uint16) PortPublishSpec {
