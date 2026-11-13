@@ -81,7 +81,11 @@ func GetUserServicePortBindingStrings(userService *kurtosis_core_rpc_api_binding
 			if privatePortSpec.GetMaybeApplicationProtocol() != "" {
 				applicationProtocol = fmt.Sprintf("%v%v", privatePorts[portId].GetMaybeApplicationProtocol(), linkDelimeter)
 			}
-			resultLines[portId] = currentPortLine + fmt.Sprintf(" -> %v%v:%v", applicationProtocol, publicIpAddr, publicPortSpec.GetNumber())
+			portPublicIpAddr := publicIpAddr
+			if publicPortSpec.GetHostIp() != "" {
+				portPublicIpAddr = publicPortSpec.GetHostIp()
+			}
+			resultLines[portId] = currentPortLine + fmt.Sprintf(" -> %v%v:%v", applicationProtocol, portPublicIpAddr, publicPortSpec.GetNumber())
 		}
 	}
 

@@ -85,6 +85,9 @@ message Port {
 
   // this is useful in the cloud context; ignore in local
   optional string alias = 6;
+
+  // The host machine interface IP that a public port is published on, e.g. "127.0.0.1" or "0.0.0.0"
+  optional string host_ip = 7;
 }
 
 message Container {

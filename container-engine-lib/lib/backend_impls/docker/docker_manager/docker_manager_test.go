@@ -110,7 +110,7 @@ func TestCorrectPortIsSelectedWhenIPv6IsPresent(t *testing.T) {
 
 	portBinding, found := hostPortBindings["7444/tcp"]
 	require.True(t, found)
-	require.Equal(t, "127.0.0.1", portBinding.HostIP)
+	require.Equal(t, "0.0.0.0", portBinding.HostIP)
 	require.Equal(t, "49050", portBinding.HostPort)
 }
 
@@ -140,12 +140,12 @@ func TestCorrectSelectionWhenTwoOfSameIPs(t *testing.T) {
 
 	publicBinding1, found := hostPortBindings[port1]
 	require.True(t, found)
-	require.Equal(t, "127.0.0.1", publicBinding1.HostIP)
+	require.Equal(t, "0.0.0.0", publicBinding1.HostIP)
 	require.Equal(t, "9710", publicBinding1.HostPort)
 
 	publicBinding2, found := hostPortBindings[port2]
 	require.True(t, found)
-	require.Equal(t, "127.0.0.1", publicBinding2.HostIP)
+	require.Equal(t, "0.0.0.0", publicBinding2.HostIP)
 	require.Equal(t, "9711", publicBinding2.HostPort)
 }
 

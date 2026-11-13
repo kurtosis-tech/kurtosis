@@ -29,6 +29,7 @@ func NewPort(
 		MaybeWaitTimeout:         maybeWaitTimeout,
 		Locked:                   nil,
 		Alias:                    nil,
+		HostIp:                   nil,
 	}
 }
 

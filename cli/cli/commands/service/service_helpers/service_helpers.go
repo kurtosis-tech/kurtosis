@@ -279,6 +279,7 @@ func parsePortSpecStr(specStr string) (*kurtosis_core_rpc_api_bindings.Port, err
 		MaybeWaitTimeout:         defaultPortWaitTimeoutStr, //TODO we should add this to the port's arguments instead of using only a default value
 		Locked:                   nil,
 		Alias:                    nil,
+		HostIp:                   nil,
 	}, nil
 }
 

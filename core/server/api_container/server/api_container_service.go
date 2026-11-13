@@ -811,6 +811,7 @@ func transformPortSpecToApiPort(port *port_spec.PortSpec) (*kurtosis_core_rpc_ap
 	}
 
 	result := binding_constructors.NewPort(uint32(portNumUint16), apiProto, maybeApplicationProtocol, maybeWaitTimeout)
+	result.HostIp = port.GetMaybeHostIp()
 	return result, nil
 }
 

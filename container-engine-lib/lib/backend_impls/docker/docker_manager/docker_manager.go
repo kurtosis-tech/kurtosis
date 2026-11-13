@@ -68,8 +68,6 @@ const (
 	allInterfacesHostIp = "0.0.0.0"
 	loopbackHostIp      = "127.0.0.1"
 
-	hostPortBindingInterfaceForUserConsumption = loopbackHostIp
-
 	// Character Docker uses to separate the repo from
 	dockerTagSeparatorChar = ":"
 
@@ -2197,13 +2195,9 @@ func getHostPortBindingsOnExpectedInterface(hostPortBindingsOnAllInterfaces nat.
 			if parsedHostIp == nil || parsedHostIp.To4() == nil {
 				continue
 			}
-			hostIpForUserConsumption := interfaceBinding.HostIP
-			if hostIpForUserConsumption == allInterfacesHostIp {
-				hostIpForUserConsumption = hostPortBindingInterfaceForUserConsumption
-			}
 			logrus.Tracef("Interface binding on IPv4 host IP '%v'; registering binding", interfaceBinding.HostIP)
 			result[port] = &nat.PortBinding{
-				HostIP:   hostIpForUserConsumption,
+				HostIP:   interfaceBinding.HostIP,
 				HostPort: interfaceBinding.HostPort,
 			}
 			break

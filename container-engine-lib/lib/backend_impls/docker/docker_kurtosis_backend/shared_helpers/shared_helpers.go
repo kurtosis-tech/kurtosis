@@ -32,6 +32,8 @@ import (
 )
 
 const (
+	loopbackIpAddrStr = "127.0.0.1"
+
 	shouldGetStoppedContainersWhenGettingServiceInfo = true
 
 	// Engine container port number string parsing constants
@@ -161,7 +163,11 @@ func GetPublicPortBindingFromPrivatePortSpec(privatePortSpec *port_spec.PortSpec
 	}
 
 	hostMachineIpAddrStr := hostMachinePortBinding.HostIP
-	hostMachineIp := net.ParseIP(hostMachineIpAddrStr)
+	hostMachineBindIp := net.ParseIP(hostMachineIpAddrStr)
+	hostMachineIp := hostMachineBindIp
+	if hostMachineBindIp != nil && hostMachineBindIp.IsUnspecified() {
+		hostMachineIp = net.ParseIP(loopbackIpAddrStr)
+	}
 	if hostMachineIp == nil {
 		return nil, nil, stacktrace.NewError(
 			"Found host machine IP string '%v' for port spec with number '%v' and protocol '%v', but it wasn't a valid IP",
@@ -194,7 +200,7 @@ func GetPublicPortBindingFromPrivatePortSpec(privatePortSpec *port_spec.PortSpec
 			err, "An error occurred creating public port spec with host machine port num '%v',  transport protocol '%v' and application protocol '%v'", hostMachinePortNumUint16, privatePortSpec.GetTransportProtocol().String(), maybeApplicationProtocol)
 	}
 
-	return hostMachineIp, publicPortSpec, nil
+	return hostMachineIp, publicPortSpec.WithHostIp(hostMachineBindIp.String()), nil
 }
 
 func TransformPortSpecToDockerPort(portSpec *port_spec.PortSpec) (nat.Port, error) {
