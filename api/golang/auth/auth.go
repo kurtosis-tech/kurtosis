@@ -81,6 +81,14 @@ func GetOrCreateToken() (string, error) {
 	return token, nil
 }
 
+func GetServerToken() (string, error) {
+	token := strings.TrimSpace(os.Getenv(EnvVarName))
+	if token == "" {
+		return "", stacktrace.NewError("Refusing to serve the Kurtosis API without an auth token; set the '%v' environment variable", EnvVarName)
+	}
+	return token, nil
+}
+
 func GrpcDialOption() grpc.DialOption {
 	return grpc.WithPerRPCCredentials(tokenCredentials{})
 }
@@ -92,9 +100,6 @@ func NewHttpClient(token string) *http.Client {
 
 func NewHttpMiddleware(token string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
-		if token == "" {
-			return next
-		}
 		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			if request.Method == http.MethodOptions || isValidBearer(request.Header.Get(httpHeaderName), token) {
 				next.ServeHTTP(writer, request)
@@ -150,9 +155,6 @@ func isAllowedHost(hostHeader string, domain string) bool {
 }
 
 func NewGrpcServerOptions(token string) []grpc.ServerOption {
-	if token == "" {
-		return nil
-	}
 	return []grpc.ServerOption{
 		grpc.ChainUnaryInterceptor(func(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 			if err := checkGrpcContext(ctx, token); err != nil {
@@ -180,6 +182,9 @@ func checkGrpcContext(ctx context.Context, token string) error {
 }
 
 func isValidBearer(headerValue string, token string) bool {
+	if token == "" {
+		return false
+	}
 	presentedToken, found := strings.CutPrefix(headerValue, bearerPrefix)
 	return found && subtle.ConstantTimeCompare([]byte(presentedToken), []byte(token)) == 1
 }

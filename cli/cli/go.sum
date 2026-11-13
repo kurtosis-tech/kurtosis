@@ -544,8 +544,6 @@ github.com/kurtosis-tech/kurtosis-package-indexer/server v0.0.0-20240222174809-4
 github.com/kurtosis-tech/kurtosis-package-indexer/server v0.0.0-20240222174809-4f74727f5e3b/go.mod h1:rZl8/7egTj6V3VjWvbRtkIeGvFudUvHfZZ9r94eGR+4=
 github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230818182330-1a86869414d2 h1:izciXrFyFR+ihJ7nLTOkoIX5GzBPIp8gVKlw94gIc98=
 github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230818182330-1a86869414d2/go.mod h1:bWSMQK3WHVTGHX9CjxPAb/LtzcmfOxID2wdzakSWQxo=
-github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20230710164206-90b674acb269 h1:yOo1I1iAyp0oYcGJ8AEAvt95QmpKNL1NYm1ZDqJW/LU=
-github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20230710164206-90b674acb269/go.mod h1:hCgrTsWf5Z8i+DOIvOw5xBMnNjrBruv89s1hjtbAPcw=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409 h1:YQTATifMUwZEtZYb0LVA7DK2pj8s71iY8rzweuUQ5+g=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409/go.mod h1:y5weVs5d9wXXHcDA1awRxkIhhHC1xxYJN8a7aXnE6S8=
 github.com/kurtosis-tech/starlark-lsp v0.0.0-20231103163737-8f660a80cb17 h1:9a2G1iV+NMYam2pDZpiUwet7EabM9trYyE0B9ArNgis=

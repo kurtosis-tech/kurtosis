@@ -146,6 +146,11 @@ func runMain() error {
 		return stacktrace.Propagate(err, "Couldn't retrieve engine server args from the environment")
 	}
 
+	authToken, err := auth.GetServerToken()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the Kurtosis API auth token")
+	}
+
 	logLevel, err := logrus.ParseLevel(serverArgs.LogLevelStr)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing the log level string '%v':", serverArgs.LogLevelStr)
@@ -240,7 +245,7 @@ func runMain() error {
 			w.Header().Add("Cache-Control", "no-store")
 			fileServer.ServeHTTP(w, r)
 		})
-		handler.Handle(pprofPath, auth.NewHttpMiddleware(os.Getenv(auth.EnvVarName))(http.HandlerFunc(http.DefaultServeMux.ServeHTTP)))
+		handler.Handle(pprofPath, auth.NewHttpMiddleware(authToken)(http.HandlerFunc(http.DefaultServeMux.ServeHTTP)))
 
 		err := http.ListenAndServe(webappPortAddr, auth.NewHostValidationMiddleware(serverArgs.Domain)(handler))
 		if err != nil {
@@ -250,7 +255,7 @@ func runMain() error {
 
 	go func() {
 		enforceAuth := serverArgs.OnBastionHost
-		err = em_api.RunEnclaveManagerApiServer(enforceAuth, serverArgs.Domain)
+		err = em_api.RunEnclaveManagerApiServer(enforceAuth, serverArgs.Domain, authToken)
 		if err != nil {
 			logrus.Fatal("an error occurred while processing the auth settings, exiting!", err)
 			fmt.Fprintln(logrus.StandardLogger().Out, err)
@@ -288,7 +293,7 @@ func runMain() error {
 			return stacktrace.Propagate(err, "An error occurred restarting all API containers.")
 		}
 	} else if err := enclaveManager.RestartOutdatedEnclaveAPIContainers(ctx); err != nil {
-		return stacktrace.Propagate(err, "An error occurred restarting the API containers created by another Kurtosis version.")
+		logrus.Errorf("An error occurred restarting the API containers created by another Kurtosis version; the affected enclaves need '--restart-api-containers' or to be recreated:\n%v", err)
 	}
 
 	go func() {
@@ -298,6 +303,7 @@ func runMain() error {
 			enclaveManager,
 			logsDatabaseClient,
 			metricsClient,
+			authToken,
 		)
 		if err != nil {
 			logrus.Fatal("The REST API server is down, exiting!", err)
@@ -320,7 +326,7 @@ func runMain() error {
 		}
 	}()
 
-	engineHttpServer := connect_server.NewConnectServer(serverArgs.GrpcListenPortNum, grpcServerStopGracePeriod, auth.NewApiMiddleware(os.Getenv(auth.EnvVarName), serverArgs.Domain)(handler), apiPath)
+	engineHttpServer := connect_server.NewConnectServer(serverArgs.GrpcListenPortNum, grpcServerStopGracePeriod, auth.NewApiMiddleware(authToken, serverArgs.Domain)(handler), apiPath)
 	if err := engineHttpServer.RunServerUntilInterruptedWithCors(newBrowserCors(serverArgs.Domain)); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the server.")
 	}
@@ -466,6 +472,7 @@ func restApiServer(
 	enclave_manager *enclave_manager.EnclaveManager,
 	logsDatabaseClient centralized_logs.LogsDatabaseClient,
 	metricsClient metrics_client.MetricsClient,
+	authToken string,
 ) error {
 
 	asyncStarlarkLogs := streaming.NewStreamerPool[*kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine](streamerPoolSize, streamerExpirationTime)
@@ -562,7 +569,7 @@ func restApiServer(
 		server.ServeSwaggerUI(echoRouter, pathToApiGroup, pathToWebsocketSpecs, server.NewSwaggerUIConfig(swaggerWebsocket))
 	}
 
-	echoRouter.Use(echo.WrapMiddleware(auth.NewApiMiddleware(os.Getenv(auth.EnvVarName), serverArgs.Domain)))
+	echoRouter.Use(echo.WrapMiddleware(auth.NewApiMiddleware(authToken, serverArgs.Domain)))
 
 	// ============================== Start Server ======================================
 	return echoRouter.Start(net.JoinHostPort(engine.RESTAPIHostIP, fmt.Sprint(engine.RESTAPIPortAddr)))

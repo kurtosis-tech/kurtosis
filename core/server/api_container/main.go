@@ -107,6 +107,11 @@ func runMain() error {
 		return stacktrace.Propagate(err, "Couldn't retrieve API container args from the environment")
 	}
 
+	authToken, err := auth.GetServerToken()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the Kurtosis API auth token")
+	}
+
 	logLevel, err := logrus.ParseLevel(serverArgs.LogLevel)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing the log level string '%v':", serverArgs.LogLevel)
@@ -267,7 +272,7 @@ func runMain() error {
 	apiContainerServer := grpc_server.NewGrpcServer(
 		serverArgs.GrpcListenPortNum,
 		grpcServerStopGracePeriod,
-		auth.NewGrpcServerOptions(os.Getenv(auth.EnvVarName)),
+		auth.NewGrpcServerOptions(authToken),
 		[]func(*grpc.Server){
 			apiContainerServiceRegistrationFunc,
 		},

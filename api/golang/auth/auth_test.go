@@ -35,9 +35,26 @@ func TestHttpMiddlewareRejectsMissingOrWrongToken(t *testing.T) {
 	require.Equal(t, http.StatusOK, serveWithMiddleware(testToken, http.MethodPost, "Bearer "+testToken))
 }
 
-func TestHttpMiddlewareLetsPreflightThroughAndIsDisabledWithoutToken(t *testing.T) {
+func TestHttpMiddlewareLetsPreflightThrough(t *testing.T) {
 	require.Equal(t, http.StatusOK, serveWithMiddleware(testToken, http.MethodOptions, ""))
-	require.Equal(t, http.StatusOK, serveWithMiddleware("", http.MethodPost, ""))
+}
+
+func TestEmptyServerTokenFailsClosed(t *testing.T) {
+	require.Equal(t, http.StatusUnauthorized, serveWithMiddleware("", http.MethodPost, ""))
+	require.Equal(t, http.StatusUnauthorized, serveWithMiddleware("", http.MethodPost, "Bearer "))
+	require.Equal(t, http.StatusUnauthorized, serveWithMiddleware("", http.MethodPost, "Bearer anything"))
+
+	emptyBearerCtx := metadata.NewIncomingContext(context.Background(), metadata.Pairs(grpcMetadataKey, "Bearer "))
+	require.Equal(t, codes.Unauthenticated, status.Code(checkGrpcContext(emptyBearerCtx, "")))
+	require.Len(t, NewGrpcServerOptions(""), 2)
+
+	t.Setenv(EnvVarName, "")
+	_, err := GetServerToken()
+	require.Error(t, err)
+	t.Setenv(EnvVarName, testToken)
+	serverToken, err := GetServerToken()
+	require.NoError(t, err)
+	require.Equal(t, testToken, serverToken)
 }
 
 func TestGrpcContextCheck(t *testing.T) {

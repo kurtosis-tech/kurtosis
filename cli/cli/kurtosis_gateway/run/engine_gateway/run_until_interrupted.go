@@ -1,12 +1,13 @@
 package engine_gateway
 
 import (
+	"github.com/kurtosis-tech/kurtosis/api/golang/auth"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/connection"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/live_engine_client_supplier"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/server/engine_gateway"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
-	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/grpc_server"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -34,9 +35,14 @@ func RunEngineGatewayUntilInterrupted(kurtosisBackend backend_interface.Kurtosis
 	logrus.Infof("You can use this gateway as a drop-in replacement for Kurtosis engine. To connect to the gateway, send a request to '%v:%v'", localHostIpStr, engineGatewayPort)
 	logrus.Infof("To kill the running gateway, press CTRL+C")
 
-	engineGatewayGrpcServer := minimal_grpc_server.NewMinimalGRPCServer(
+	authToken, err := auth.GetToken()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the Kurtosis API auth token")
+	}
+	engineGatewayGrpcServer := grpc_server.NewGrpcServer(
 		engineGatewayPort,
 		grpcServerStopGracePeriod,
+		auth.NewGrpcServerOptions(authToken),
 		[]func(*grpc.Server){
 			engineGatewayServiceRegistrationFunc,
 		},
