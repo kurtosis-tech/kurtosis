@@ -539,6 +539,12 @@ func (backend *KubernetesKurtosisBackend) CreateLogsCollectorForEnclave(
 	*logs_collector.LogsCollector,
 	error,
 ) {
+	// Self-bootstrap the logs aggregator + collector if missing (no-op when present);
+	// covers engines deployed out-of-band (e.g. Helm/GitOps) that skip CreateEngine.
+	if err := backend.ensureLogsComponents(ctx); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred ensuring the logs aggregator + collector exist")
+	}
+
 	maybeLogsAggregator, err := logs_aggregator_functions.GetLogsAggregator(ctx, backend.kubernetesManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator. The logs collector cannot be run without a logs aggregator.")
